@@ -117,21 +117,11 @@ const Tasks = () => {
   }, [])
 
   // Create custom marker icons
-  const createCustomIcon = (emoji: string) => {
-    return new Icon({
-      iconUrl: `data:image/svg+xml;base64,${btoa(`
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-          <circle cx="20" cy="20" r="18" fill="#3b82f6" stroke="white" stroke-width="3"/>
-          <text x="20" y="26" font-size="18" text-anchor="middle" fill="white">${emoji}</text>
-        </svg>
-      `)}`,
-      iconSize: [40, 40],
-      iconAnchor: [20, 40],
-      popupAnchor: [0, -40]
-    })
-  }
-
-  return (
+    // Use default Leaflet markers - emojis cause btoa encoding issues
+  const createCustomIcon = (category: string) => {
+    // Return default marker - we'll just use different colors or the default marker
+    return new Icon.Default()
+  }return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6">
