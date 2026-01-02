@@ -55,6 +55,8 @@
         "browseCategories": "Обзор категорий",
     "browseCategoriesDesc": "Выберите категорию, чтобы начать просмотр объявлений",
     "viewAllListings": "Посмотреть все объявления",
+        "browseByCategory": "Просмотр по категориям",
+    "clearCategory": "Очистить категорию",
     "categories": {
       "electronics": "Электроника",
       "vehicles": "Транспорт",
