@@ -136,15 +136,7 @@ const Tasks = () => {
             zoom={13}
             style={{ height: '100%', width: '100%' }}
 
-                      {/* User Location Marker */}
-          <CircleMarker
-            center={[userLocation.lat, userLocation.lng]}
-            radius={10}
-            pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.7 }}
-          >
-            <Popup>You are here</Popup>
-          </CircleMarker>
-          >
+        
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
