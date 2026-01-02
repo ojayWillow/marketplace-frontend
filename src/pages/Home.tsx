@@ -22,7 +22,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/listings/categories"                className="btn bg-white text-primary-700 hover:bg-primary-50 px-8 py-3 text-lg font-semibold"
+                              to="/listings/categories"
               >
                 {t('home.buysell')}
               </Link>
