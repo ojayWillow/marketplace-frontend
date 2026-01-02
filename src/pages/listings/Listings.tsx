@@ -17,7 +17,7 @@ export default function Listings() {
   const { data: listings, isLoading, isError } = useListings({
     search: search || undefined,
     category: category || undefined
-                                                               })
+  })
 
   if (isLoading) return <LoadingSpinner />
   if (isError) return <ErrorMessage message="Failed to load listings" />
@@ -68,7 +68,7 @@ export default function Listings() {
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">{t('listings.noListings')}</p>
         </div>
-          </div>
-  )
       )}
+    </div>
+  )
 }
