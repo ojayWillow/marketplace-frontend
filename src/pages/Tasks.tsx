@@ -120,7 +120,8 @@ const Tasks = () => {
     // Use default Leaflet markers - emojis cause btoa encoding issues
   const createCustomIcon = (category: string) => 
     return new Icon.Default()
-  }return (
+  }r
+  eturn (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6">
