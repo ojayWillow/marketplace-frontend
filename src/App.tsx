@@ -7,6 +7,7 @@ import Listings from './pages/listings/Listings'
 import ListingDetail from './pages/listings/ListingDetail'
 import CreateListing from './pages/listings/CreateListing'
 import ProtectedRoute from './components/ProtectedRoute'
+import Tasks from './pages/Tasks'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="listings" element={<Listings />} />
+                <Route path="tasks" element={<Tasks />} />
         <Route path="listings/:id" element={<ListingDetail />} />
         <Route
           path="listings/create"
