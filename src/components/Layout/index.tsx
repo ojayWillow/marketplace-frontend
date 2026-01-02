@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Header from './Header'
+import Footer from './Footer'
 
 export default function Layout() {
   return (
@@ -8,13 +9,7 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <footer className="bg-secondary-800 text-white py-8">
-        <div className="container-page">
-          <div className="text-center text-secondary-400 text-sm">
-            © 2026 Marketplace Latvia. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

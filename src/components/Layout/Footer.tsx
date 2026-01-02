@@ -1,56 +1,63 @@
-import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'
 
-const Footer = () => {
-  const { t } = useTranslation();
+export default function Footer() {
+  const { t } = useTranslation()
+  const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-secondary-800 text-white py-8 mt-auto">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <footer className="bg-gray-900 text-gray-400">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Brand */}
           <div>
-            <h3 className="text-xl font-bold mb-4">Marketplace</h3>
-            <p className="text-secondary-300">
-              {t('listings.subtitle')}
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">M</span>
+              </div>
+              <span className="font-bold text-xl text-white">
+                {t('common.appName')}
+              </span>
+            </div>
+            <p className="text-sm">
+              {t('home.heroSubtitle')}
             </p>
           </div>
-          
+
+          {/* Links */}
           <div>
-            <h4 className="font-semibold mb-4">{t('footer.about')}</h4>
-            <ul className="space-y-2">
+            <h3 className="text-white font-semibold mb-4">
+              {t('common.listings')}
+            </h3>
+            <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/about" className="text-secondary-300 hover:text-white transition-colors">
-                  {t('footer.about')}
-                </Link>
+                <a href="/listings" className="hover:text-white transition-colors">
+                  {t('listings.allListings')}
+                </a>
               </li>
               <li>
-                <Link to="/terms" className="text-secondary-300 hover:text-white transition-colors">
-                  {t('footer.terms')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-secondary-300 hover:text-white transition-colors">
-                  {t('footer.privacy')}
-                </Link>
+                <a href="/listings/create" className="hover:text-white transition-colors">
+                  {t('listings.createNew')}
+                </a>
               </li>
             </ul>
           </div>
-          
+
+          {/* Contact */}
           <div>
-            <h4 className="font-semibold mb-4">{t('footer.contact')}</h4>
-            <ul className="space-y-2 text-secondary-300">
-              <li>Email: info@marketplace.lv</li>
-              <li>Phone: +371 1234 5678</li>
+            <h3 className="text-white font-semibold mb-4">
+              {t('common.contact')}
+            </h3>
+            <ul className="space-y-2 text-sm">
+              <li>info@marketplace.lv</li>
+              <li>Riga, Latvia</li>
             </ul>
           </div>
         </div>
-        
-        <div className="border-t border-secondary-700 mt-8 pt-8 text-center text-secondary-400">
-          <p>{t('footer.copyright')}</p>
+
+        <div className="mt-8 pt-8 border-t border-gray-800 text-sm text-center">
+          &copy; {currentYear} {t('common.appName')}. All rights reserved.
         </div>
       </div>
     </footer>
-  );
-};
-
-export default Footer;
+  )
+}
