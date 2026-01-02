@@ -15,7 +15,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
-                ath="listings" element={<Listings />} />
+<Route p                ath="listings" element={<Listings />} />
         <Route path="listings/:id" element={<ListingDetail />} />
         <Route
           path="listings/create"
