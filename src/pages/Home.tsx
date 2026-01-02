@@ -22,7 +22,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                              to="/listings/categories"
+                              to="/listings"
                               className="btn bg-white text-primary-700 hover:bg-primary-50 px-8 py-3 text-lg font-semibold"
             >
                 {t('home.buysell')}
@@ -44,7 +44,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Buy/Sell Card */}
             <Link
-              to="//listings/categories"
+              to="//listings"
               className="card p-8 hover:shadow-lg transition-shadow group"
             >
               <div className="w-16 h-16 bg-primary-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary-200 transition-colors">
