@@ -52,6 +52,9 @@
     "locationLabel": "City/Region",
     "contactLabel": "Contact information",
     "publishButton": "Publish",
+        "browseCategories": "Browse Categories",
+    "browseCategoriesDesc": "Select a category to start browsing listings",
+    "viewAllListings": "View all listings",
     "categories": {
       "electronics": "Electronics",
       "vehicles": "Vehicles",
