@@ -52,6 +52,9 @@
     "locationLabel": "Pilsēta/Novads",
     "contactLabel": "Kontaktinformācija",
     "publishButton": "Publicēt",
+        "browseCategories": "Pārlūkot kategorijas",
+    "browseCategoriesDesc": "Izvēlieties kategoriju, lai sāktu pārlūkot sludinājumus",
+    "viewAllListings": "Skatīt visus sludinājumus",
     "categories": {
       "electronics": "Elektronika",
       "vehicles": "Transports",
