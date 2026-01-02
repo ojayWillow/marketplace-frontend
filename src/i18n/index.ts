@@ -1,16 +1,16 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import LanguageDetector from 'i18next-browser-languagedetector'
 
-import lv from './locales/lv.json';
-import ru from './locales/ru.json';
-import en from './locales/en.json';
+import lv from './locales/lv.json'
+import ru from './locales/ru.json'
+import en from './locales/en.json'
 
 const resources = {
   lv: { translation: lv },
   ru: { translation: ru },
   en: { translation: en },
-};
+}
 
 i18n
   .use(LanguageDetector)
@@ -18,7 +18,6 @@ i18n
   .init({
     resources,
     fallbackLng: 'lv',
-    supportedLngs: ['lv', 'ru', 'en'],
     interpolation: {
       escapeValue: false,
     },
@@ -26,6 +25,6 @@ i18n
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
     },
-  });
+  })
 
-export default i18n;
+export default i18n
