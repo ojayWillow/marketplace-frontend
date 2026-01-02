@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet'
 import { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -135,13 +135,23 @@ const Tasks = () => {
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
+
+                      {/* User Location Marker */}
+          <CircleMarker
+            center={[userLocation.lat, userLocation.lng]}
+            radius={10}
+            pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.7 }}
+          >
+            <Popup>You are here</Popup>
+          </CircleMarker>
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {tasks.map((task) => (
+            130
+            ((task) => (
               <Marker
                 key={task.id}
                 position={[task.lat, task.lng]}
