@@ -5,7 +5,6 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import Listings from './pages/listings/Listings'
 import ListingDetail from './pages/listings/ListingDetail'
-import Categories from './pages/listings/Categories'
 import CreateListing from './pages/listings/CreateListing'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -16,8 +15,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
-                <Route path="listings/categories" element={<Categories />} />
-        <Route path="listings" element={<Listings />} />
+                ath="listings" element={<Listings />} />
         <Route path="listings/:id" element={<ListingDetail />} />
         <Route
           path="listings/create"
