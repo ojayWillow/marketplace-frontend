@@ -55,6 +55,8 @@
         "browseCategories": "Browse Categories",
     "browseCategoriesDesc": "Select a category to start browsing listings",
     "viewAllListings": "View all listings",
+        "browseByCategory": "Browse by Category",
+    "clearCategory": "Clear category",
     "categories": {
       "electronics": "Electronics",
       "vehicles": "Vehicles",
