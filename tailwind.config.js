@@ -33,18 +33,6 @@ export default {
           900: '#0f172a',
           950: '#020617',
         },
-        success: {
-          500: '#22c55e',
-          600: '#16a34a',
-        },
-        warning: {
-          500: '#f59e0b',
-          600: '#d97706',
-        },
-        error: {
-          500: '#ef4444',
-          600: '#dc2626',
-        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
