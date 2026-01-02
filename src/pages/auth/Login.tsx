@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useLogin } from '../../api/hooks/useAuth'
-import Alert from '../../components/ui/Alert'
+import { useLogin } from '../../hooks/useAuth'
+import ErrorMessage from '../../components/ui/ErrorMessage'
 
 export default function Login() {
   const { t } = useTranslation()
   const login = useLogin()
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -18,21 +17,31 @@ export default function Login() {
     login.mutate(formData)
   }
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full">
         <div className="card p-8">
-          <h1 className="text-2xl font-bold text-center text-secondary-900 mb-6">
-            {t('auth.loginTitle')}
-          </h1>
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {t('auth.loginTitle')}
+            </h1>
+          </div>
 
           {login.isError && (
-            <div className="mb-4">
-              <Alert type="error">{t('auth.loginError')}</Alert>
-            </div>
+            <ErrorMessage
+              message={t('auth.loginError')}
+              className="mb-6"
+            />
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="label">
                 {t('auth.email')}
@@ -40,9 +49,10 @@ export default function Login() {
               <input
                 type="email"
                 id="email"
-                className="input"
+                name="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleChange}
+                className="input"
                 required
               />
             </div>
@@ -54,25 +64,29 @@ export default function Login() {
               <input
                 type="password"
                 id="password"
-                className="input"
+                name="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={handleChange}
+                className="input"
                 required
               />
             </div>
 
             <button
               type="submit"
-              className="btn-primary w-full"
               disabled={login.isPending}
+              className="btn-primary w-full py-3"
             >
               {login.isPending ? t('common.loading') : t('auth.loginButton')}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-secondary-600">
+          <p className="mt-6 text-center text-sm text-gray-600">
             {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-primary-600 hover:underline font-medium">
+            <Link
+              to="/register"
+              className="text-primary-600 hover:text-primary-700 font-medium"
+            >
               {t('common.register')}
             </Link>
           </p>

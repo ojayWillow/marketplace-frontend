@@ -1,85 +1,76 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useRegister } from '../../api/hooks/useAuth'
-import Alert from '../../components/ui/Alert'
+import { useRegister } from '../../hooks/useAuth'
+import ErrorMessage from '../../components/ui/ErrorMessage'
 
 export default function Register() {
   const { t } = useTranslation()
   const register = useRegister()
-
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
+    phone: '',
   })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = t('errors.required')
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = t('errors.required')
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('errors.invalidEmail')
-    }
-    if (formData.password.length < 6) {
-      newErrors.password = t('errors.passwordMin')
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = t('errors.passwordMatch')
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+  const [passwordError, setPasswordError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validate()) {
-      register.mutate({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone || undefined,
-      })
+    setPasswordError('')
+
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError('Passwords do not match')
+      return
     }
+
+    register.mutate({
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone || undefined,
+    })
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
+    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full">
         <div className="card p-8">
-          <h1 className="text-2xl font-bold text-center text-secondary-900 mb-6">
-            {t('auth.registerTitle')}
-          </h1>
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {t('auth.registerTitle')}
+            </h1>
+          </div>
 
-          {register.isError && (
-            <div className="mb-4">
-              <Alert type="error">{t('auth.registerError')}</Alert>
-            </div>
+          {(register.isError || passwordError) && (
+            <ErrorMessage
+              message={passwordError || t('auth.registerError')}
+              className="mb-6"
+            />
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="label">
-                {t('auth.name')}
+              <label htmlFor="username" className="label">
+                {t('auth.username')}
               </label>
               <input
                 type="text"
-                id="name"
-                className={`input ${errors.name ? 'input-error' : ''}`}
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="input"
+                required
               />
-              {errors.name && (
-                <p className="mt-1 text-sm text-error-500">{errors.name}</p>
-              )}
             </div>
 
             <div>
@@ -89,25 +80,25 @@ export default function Register() {
               <input
                 type="email"
                 id="email"
-                className={`input ${errors.email ? 'input-error' : ''}`}
+                name="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleChange}
+                className="input"
+                required
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-error-500">{errors.email}</p>
-              )}
             </div>
 
             <div>
               <label htmlFor="phone" className="label">
-                {t('auth.phone')} <span className="text-secondary-400">(optional)</span>
+                {t('auth.phone')} <span className="text-gray-400">(optional)</span>
               </label>
               <input
                 type="tel"
                 id="phone"
-                className="input"
+                name="phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={handleChange}
+                className="input"
                 placeholder="+371 20000000"
               />
             </div>
@@ -119,13 +110,13 @@ export default function Register() {
               <input
                 type="password"
                 id="password"
-                className={`input ${errors.password ? 'input-error' : ''}`}
+                name="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={handleChange}
+                className="input"
+                required
+                minLength={6}
               />
-              {errors.password && (
-                <p className="mt-1 text-sm text-error-500">{errors.password}</p>
-              )}
             </div>
 
             <div>
@@ -135,27 +126,29 @@ export default function Register() {
               <input
                 type="password"
                 id="confirmPassword"
-                className={`input ${errors.confirmPassword ? 'input-error' : ''}`}
+                name="confirmPassword"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={handleChange}
+                className="input"
+                required
               />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-error-500">{errors.confirmPassword}</p>
-              )}
             </div>
 
             <button
               type="submit"
-              className="btn-primary w-full"
               disabled={register.isPending}
+              className="btn-primary w-full py-3"
             >
               {register.isPending ? t('common.loading') : t('auth.registerButton')}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-secondary-600">
+          <p className="mt-6 text-center text-sm text-gray-600">
             {t('auth.hasAccount')}{' '}
-            <Link to="/login" className="text-primary-600 hover:underline font-medium">
+            <Link
+              to="/login"
+              className="text-primary-600 hover:text-primary-700 font-medium"
+            >
               {t('common.login')}
             </Link>
           </p>
