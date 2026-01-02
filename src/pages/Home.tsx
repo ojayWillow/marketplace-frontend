@@ -25,8 +25,6 @@ export default function Home() {
                               to="/listings/categories"
                               className="btn bg-white text-primary-700 hover:bg-primary-50 px-8 py-3 text-lg font-semibold"
             >
-              {t('home.buysell')}
-              >
                 {t('home.buysell')}
               </Link>
               <Link
