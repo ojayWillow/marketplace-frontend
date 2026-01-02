@@ -135,15 +135,13 @@ const Tasks = () => {
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
-
-        
+          >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            130
-            ((task) => (
+            {tasks.map((task) => (
               <Marker
                 key={task.id}
                 position={[task.lat, task.lng]}
