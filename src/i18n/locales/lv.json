@@ -55,6 +55,8 @@
         "browseCategories": "Pārlūkot kategorijas",
     "browseCategoriesDesc": "Izvēlieties kategoriju, lai sāktu pārlūkot sludinājumus",
     "viewAllListings": "Skatīt visus sludinājumus",
+        "browseByCategory": "Pārlūkot pēc kategorijas",
+    "clearCategory": "Notīrīt kategoriju",
     "categories": {
       "electronics": "Elektronika",
       "vehicles": "Transports",
