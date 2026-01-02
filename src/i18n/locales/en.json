@@ -1,0 +1,89 @@
+{
+  "common": {
+    "home": "Home",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "submit": "Submit",
+    "price": "Price",
+    "category": "Category",
+    "location": "Location",
+    "description": "Description",
+    "contact": "Contact",
+    "date": "Date",
+    "all": "All"
+  },
+  "nav": {
+    "buySell": "Buy & Sell",
+    "quickHelp": "Quick Help",
+    "myListings": "My Listings",
+    "profile": "Profile"
+  },
+  "home": {
+    "title": "Latvian Marketplace",
+    "subtitle": "Buy, sell and find help in your neighborhood",
+    "browseListings": "Browse Listings",
+    "postListing": "Post a Listing",
+    "featuredListings": "Latest Listings"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Name",
+    "phone": "Phone",
+    "loginTitle": "Sign In",
+    "registerTitle": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginButton": "Sign In",
+    "registerButton": "Register",
+    "loginError": "Invalid email or password",
+    "registerError": "Registration failed"
+  },
+  "listings": {
+    "title": "Listings",
+    "create": "Create Listing",
+    "noListings": "No listings found",
+    "filter": "Filter",
+    "sort": "Sort",
+    "newest": "Newest",
+    "priceAsc": "Price: Low to High",
+    "priceDesc": "Price: High to Low",
+    "formTitle": "Listing Title",
+    "formDescription": "Description",
+    "formPrice": "Price (€)",
+    "formCategory": "Category",
+    "formLocation": "Location",
+    "formSubmit": "Publish Listing",
+    "seller": "Seller",
+    "postedOn": "Posted on",
+    "contactSeller": "Contact Seller"
+  },
+  "categories": {
+    "electronics": "Electronics",
+    "clothing": "Clothing",
+    "home": "Home & Garden",
+    "sports": "Sports",
+    "vehicles": "Vehicles",
+    "property": "Property",
+    "pets": "Pets",
+    "services": "Services",
+    "other": "Other"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email format",
+    "passwordMin": "Password must be at least 6 characters",
+    "passwordMatch": "Passwords do not match",
+    "generic": "An error occurred. Please try again."
+  }
+}

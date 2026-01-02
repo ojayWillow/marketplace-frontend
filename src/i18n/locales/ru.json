@@ -1,0 +1,89 @@
+{
+  "common": {
+    "home": "Главная",
+    "login": "Войти",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "search": "Поиск",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "back": "Назад",
+    "submit": "Отправить",
+    "price": "Цена",
+    "category": "Категория",
+    "location": "Местонахождение",
+    "description": "Описание",
+    "contact": "Контакты",
+    "date": "Дата",
+    "all": "Все"
+  },
+  "nav": {
+    "buySell": "Купить & Продать",
+    "quickHelp": "Быстрая Помощь",
+    "myListings": "Мои объявления",
+    "profile": "Профиль"
+  },
+  "home": {
+    "title": "Латвийская Торговая Платформа",
+    "subtitle": "Покупайте, продавайте и находите помощь рядом",
+    "browseListings": "Смотреть объявления",
+    "postListing": "Добавить объявление",
+    "featuredListings": "Новые объявления"
+  },
+  "auth": {
+    "email": "Эл. почта",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердить пароль",
+    "name": "Имя",
+    "phone": "Телефон",
+    "loginTitle": "Войти в систему",
+    "registerTitle": "Создать аккаунт",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "loginButton": "Войти",
+    "registerButton": "Зарегистрироваться",
+    "loginError": "Неверный е-мейл или пароль",
+    "registerError": "Ошибка регистрации"
+  },
+  "listings": {
+    "title": "Объявления",
+    "create": "Добавить объявление",
+    "noListings": "Объявления не найдены",
+    "filter": "Фильтр",
+    "sort": "Сортировка",
+    "newest": "Новые",
+    "priceAsc": "Цена: по возрастанию",
+    "priceDesc": "Цена: по убыванию",
+    "formTitle": "Заголовок объявления",
+    "formDescription": "Описание",
+    "formPrice": "Цена (€)",
+    "formCategory": "Категория",
+    "formLocation": "Местонахождение",
+    "formSubmit": "Опубликовать",
+    "seller": "Продавец",
+    "postedOn": "Опубликовано",
+    "contactSeller": "Связаться с продавцом"
+  },
+  "categories": {
+    "electronics": "Электроника",
+    "clothing": "Одежда",
+    "home": "Для дома",
+    "sports": "Спорт",
+    "vehicles": "Транспорт",
+    "property": "Недвижимость",
+    "pets": "Животные",
+    "services": "Услуги",
+    "other": "Другое"
+  },
+  "errors": {
+    "required": "Это поле обязательно",
+    "invalidEmail": "Неверный формат е-мейла",
+    "passwordMin": "Пароль должен быть не менее 6 символов",
+    "passwordMatch": "Пароли не совпадают",
+    "generic": "Ошибка. Попробуйте еще раз."
+  }
+}

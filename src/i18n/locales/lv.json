@@ -1,0 +1,89 @@
+{
+  "common": {
+    "home": "Sākums",
+    "login": "Ieiet",
+    "register": "Reģistrēties",
+    "logout": "Iziet",
+    "search": "Meklēt",
+    "loading": "Ielādē...",
+    "error": "Kļūda",
+    "save": "Saglabāt",
+    "cancel": "Atcelt",
+    "delete": "Dzēst",
+    "edit": "Rediģēt",
+    "back": "Atpakaļ",
+    "submit": "Iesniegt",
+    "price": "Cena",
+    "category": "Kategorija",
+    "location": "Atrašanās vieta",
+    "description": "Apraksts",
+    "contact": "Kontakti",
+    "date": "Datums",
+    "all": "Visi"
+  },
+  "nav": {
+    "buySell": "Pirkt & Pārdot",
+    "quickHelp": "Ātrā Palīdzība",
+    "myListings": "Mani sludinājumi",
+    "profile": "Profils"
+  },
+  "home": {
+    "title": "Latvijas Tirgus Platforma",
+    "subtitle": "Pērc, pārdod un atrodi palīdzību savā apkaimē",
+    "browseListings": "Skatīt sludinājumus",
+    "postListing": "Pievienot sludinājumu",
+    "featuredListings": "Jaunākie sludinājumi"
+  },
+  "auth": {
+    "email": "E-pasts",
+    "password": "Parole",
+    "confirmPassword": "Apstiprināt paroli",
+    "name": "Vārds",
+    "phone": "Tālrunis",
+    "loginTitle": "Ieiet sistēmā",
+    "registerTitle": "Izveidot kontu",
+    "noAccount": "Nav konta?",
+    "hasAccount": "Jau ir konts?",
+    "loginButton": "Ieiet",
+    "registerButton": "Reģistrēties",
+    "loginError": "Nepareizs e-pasts vai parole",
+    "registerError": "Reģistrācija neizdevās"
+  },
+  "listings": {
+    "title": "Sludinājumi",
+    "create": "Pievienot sludinājumu",
+    "noListings": "Nav atrasti sludinājumi",
+    "filter": "Filtrēt",
+    "sort": "Kārtot",
+    "newest": "Jaunākie",
+    "priceAsc": "Cena: no zemākās",
+    "priceDesc": "Cena: no augstākās",
+    "formTitle": "Sludinājuma nosaukums",
+    "formDescription": "Apraksts",
+    "formPrice": "Cena (€)",
+    "formCategory": "Kategorija",
+    "formLocation": "Atrašanās vieta",
+    "formSubmit": "Publicēt sludinājumu",
+    "seller": "Pārdevējs",
+    "postedOn": "Publicēts",
+    "contactSeller": "Sazināties ar pārdevēju"
+  },
+  "categories": {
+    "electronics": "Elektronika",
+    "clothing": "Apģērbs",
+    "home": "Mājai",
+    "sports": "Sports",
+    "vehicles": "Transportlīdzekļi",
+    "property": "Nekustamais īpašums",
+    "pets": "Dzīvnieki",
+    "services": "Pakalpojumi",
+    "other": "Cits"
+  },
+  "errors": {
+    "required": "Šis lauks ir obligāts",
+    "invalidEmail": "Nepareizs e-pasta formāts",
+    "passwordMin": "Parolei jābūt vismaz 6 simboliem",
+    "passwordMatch": "Paroles nesakrīt",
+    "generic": "Kļūda. Lūdzu, mēģiniet vēlreiz."
+  }
+}
