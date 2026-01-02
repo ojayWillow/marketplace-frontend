@@ -19,7 +19,7 @@ export default function Listings() {
     category: category || undefined
                                                                })
 
-  return (if (isLoading) return <LoadingSpinner />
+  if (isLoading) return <LoadingSpinner />
   if (isError) return <ErrorMessage message="Failed to load listings" />
 
   return (
