@@ -52,6 +52,9 @@
     "locationLabel": "Город/Район",
     "contactLabel": "Контактная информация",
     "publishButton": "Опубликовать",
+        "browseCategories": "Обзор категорий",
+    "browseCategoriesDesc": "Выберите категорию, чтобы начать просмотр объявлений",
+    "viewAllListings": "Посмотреть все объявления",
     "categories": {
       "electronics": "Электроника",
       "vehicles": "Транспорт",
