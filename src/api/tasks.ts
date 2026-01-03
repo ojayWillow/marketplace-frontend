@@ -66,10 +66,47 @@ export const createTask = async (taskData: Partial<Task>): Promise<Task> => {
 /**
  * Accept and assign a task to a user
  */
-export const acceptTask = async (taskId: number, userId: number): Promise<Task> => {
-  const response = await apiClient.post(`/api/tasks/${taskId}/accept`, { user_id: userId });
-  return response.data.task;
+const fetchTasks = async () => {
+  try {
+    setLoading(true);
+    
+    // Fetch available tasks
+    const availableResponse = await getTasks({
+      latitude: userLocation.lat,
+      longitude: userLocation.lng,
+      radius: 10,
+      status: 'open'
+    });
+    
+    const tasksWithIcons = availableResponse.tasks.map(task => ({
+      ...task,
+      icon: getCategoryIcon(task.category)
+    }));
+    
+    setTasks(tasksWithIcons);
+    
+    // Fetch user's accepted tasks if logged in
+    if (isAuthenticated && user?.id) {
+      const myTasksResponse = await getMyTasks();
+      
+      const userTasks = myTasksResponse.tasks.map(task => ({
+        ...task,
+        icon: getCategoryIcon(task.category),
+        distance: task.distance || 0
+      }));
+      
+      setMyTasks(userTasks);
+    }
+    
+    setError(null);
+  } catch (err) {
+    console.error('Error fetching tasks:', err);
+    setError('Failed to load tasks. Please try again later.');
+  } finally {
+    setLoading(false);
+  }
 };
+
 
 /**
  * Mark a task as completed
