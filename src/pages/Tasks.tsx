@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import { Icon, divIcon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, acceptTask, Task as APITask } from '../api/tasks';
@@ -27,7 +27,9 @@ interface Task extends APITask {
 const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<'available' | 'my-tasks'>('available');
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acceptingTask, setAcceptingTask] = useState<number | null>(null);
@@ -55,20 +57,42 @@ const Tasks = () => {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const response = await getTasks({
+      
+      // Fetch available tasks
+      const availableResponse = await getTasks({
         latitude: userLocation.lat,
         longitude: userLocation.lng,
-        radius: 10, // 10km radius
+        radius: 10,
         status: 'open'
       });
       
-      // Map backend tasks to include UI icons based on category
-      const tasksWithIcons = response.tasks.map(task => ({
+      const tasksWithIcons = availableResponse.tasks.map(task => ({
         ...task,
         icon: getCategoryIcon(task.category)
       }));
       
       setTasks(tasksWithIcons);
+      
+      // Fetch user's assigned tasks if logged in
+      if (isAuthenticated && user?.id) {
+        const myTasksResponse = await getTasks({
+          latitude: userLocation.lat,
+          longitude: userLocation.lng,
+          radius: 100, // Wider radius for accepted tasks
+          status: 'assigned'
+        });
+        
+        // Filter to only show tasks assigned to current user
+        const userTasks = myTasksResponse.tasks
+          .filter(task => task.assigned_to_id === user.id)
+          .map(task => ({
+            ...task,
+            icon: getCategoryIcon(task.category)
+          }));
+        
+        setMyTasks(userTasks);
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -80,9 +104,8 @@ const Tasks = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [userLocation]);
+  }, [userLocation, isAuthenticated, user?.id]);
 
-  // Get icon emoji based on category
   const getCategoryIcon = (category: string): string => {
     const iconMap: { [key: string]: string } = {
       'pet-care': '🐕',
@@ -96,8 +119,15 @@ const Tasks = () => {
     return iconMap[category] || iconMap['default'];
   };
 
-  // Create custom marker icons
   const createCustomIcon = (category: string) => new Icon.Default();
+  
+  // Create custom icon for user location
+  const userLocationIcon = divIcon({
+    className: 'custom-user-icon',
+    html: '<div style="background: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
 
   const handleAcceptTask = async (taskId: number) => {
     if (!isAuthenticated) {
@@ -114,15 +144,19 @@ const Tasks = () => {
     try {
       setAcceptingTask(taskId);
       await acceptTask(taskId, user.id);
-      alert('Task accepted successfully!');
-      // Refresh tasks list
+      alert('Task accepted! Check "My Tasks" tab for navigation.');
       await fetchTasks();
+      setActiveTab('my-tasks');
     } catch (error) {
       console.error('Error accepting task:', error);
       alert('Failed to accept task. Please try again.');
     } finally {
       setAcceptingTask(null);
     }
+  };
+
+  const getNavigationUrl = (task: Task) => {
+    return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${task.latitude},${task.longitude}`;
   };
 
   if (loading) {
@@ -153,6 +187,8 @@ const Tasks = () => {
     );
   }
 
+  const displayTasks = activeTab === 'available' ? tasks : myTasks;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
@@ -162,9 +198,6 @@ const Tasks = () => {
             <p className="text-gray-600">
               Browse nearby tasks and earn money by helping others
             </p>
-            <p className="text-sm text-green-600 mt-1">
-              ✓ Connected to backend - Showing {tasks.length} tasks within 10km
-            </p>
           </div>
           {isAuthenticated && (
             <button
@@ -172,6 +205,32 @@ const Tasks = () => {
               className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
             >
               + Create Task
+            </button>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 flex gap-2">
+          <button
+            onClick={() => setActiveTab('available')}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'available'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            Available Tasks ({tasks.length})
+          </button>
+          {isAuthenticated && (
+            <button
+              onClick={() => setActiveTab('my-tasks')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'my-tasks'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              My Tasks ({myTasks.length})
             </button>
           )}
         </div>
@@ -188,7 +247,20 @@ const Tasks = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {tasks.map((task) => (
+            {/* User location marker */}
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={userLocationIcon}
+            >
+              <Popup>
+                <div className="p-2">
+                  <p className="font-bold">📍 Your Location</p>
+                </div>
+              </Popup>
+            </Marker>
+            
+            {/* Task markers */}
+            {displayTasks.map((task) => (
               <Marker
                 key={task.id}
                 position={[task.latitude, task.longitude]}
@@ -198,17 +270,28 @@ const Tasks = () => {
                   <div className="p-2">
                     <h3 className="font-bold text-lg mb-1">{task.title}</h3>
                     <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2">
                       <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
                       <span className="text-gray-500 text-sm">{task.distance?.toFixed(1) || '0.0'}km away</span>
                     </div>
-                    <button 
-                      onClick={() => handleAcceptTask(task.id)}
-                      disabled={acceptingTask === task.id}
-                      className="mt-2 w-full bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 disabled:bg-gray-400"
-                    >
-                      {acceptingTask === task.id ? 'Accepting...' : 'Accept Task'}
-                    </button>
+                    {activeTab === 'available' ? (
+                      <button 
+                        onClick={() => handleAcceptTask(task.id)}
+                        disabled={acceptingTask === task.id}
+                        className="w-full bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                      >
+                        {acceptingTask === task.id ? 'Accepting...' : 'Accept Task'}
+                      </button>
+                    ) : (
+                      <a
+                        href={getNavigationUrl(task)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600 text-center"
+                      >
+                        🗺️ Navigate
+                      </a>
+                    )}
                   </div>
                 </Popup>
               </Marker>
@@ -218,17 +301,21 @@ const Tasks = () => {
 
         {/* Tasks List */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Available Tasks</h2>
-          {tasks.length === 0 ? (
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {activeTab === 'available' ? 'Available Tasks' : 'My Accepted Tasks'}
+          </h2>
+          {displayTasks.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No tasks available in your area. Check back later!
+              {activeTab === 'available'
+                ? 'No tasks available in your area. Check back later!'
+                : 'You haven\'t accepted any tasks yet.'}
             </div>
           ) : (
             <div className="space-y-4">
-              {tasks.map((task) => (
+              {displayTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -237,24 +324,36 @@ const Tasks = () => {
                         <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
                       </div>
                       <p className="text-gray-600 mb-2">{task.description}</p>
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-4 text-sm mb-2">
                         <span className="text-gray-500">📍 {task.distance?.toFixed(1) || '0.0'}km away</span>
                         <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
                           {task.category}
                         </span>
                       </div>
+                      <p className="text-xs text-gray-500">📍 {task.location}</p>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-green-600 mb-2">
                         €{task.budget || task.reward || 0}
                       </div>
-                      <button 
-                        onClick={() => handleAcceptTask(task.id)}
-                        disabled={acceptingTask === task.id}
-                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
-                      </button>
+                      {activeTab === 'available' ? (
+                        <button 
+                          onClick={() => handleAcceptTask(task.id)}
+                          disabled={acceptingTask === task.id}
+                          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
+                        </button>
+                      ) : (
+                        <a
+                          href={getNavigationUrl(task)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+                        >
+                          🗺️ Navigate
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
