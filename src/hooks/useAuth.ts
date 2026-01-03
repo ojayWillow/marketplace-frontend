@@ -11,7 +11,8 @@ export function useLogin() {
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => authApi.login(credentials),
     onSuccess: (data) => {
-      setAuth(data.user, data.access_token)
+      // Backend returns 'token', not 'access_token'
+      setAuth(data.user, data.token)
       navigate('/')
     },
   })
@@ -24,7 +25,8 @@ export function useRegister() {
   return useMutation({
     mutationFn: (data: RegisterData) => authApi.register(data),
     onSuccess: (data) => {
-      setAuth(data.user, data.access_token)
+      // Backend returns 'token', not 'access_token'
+      setAuth(data.user, data.token)
       navigate('/')
     },
   })
