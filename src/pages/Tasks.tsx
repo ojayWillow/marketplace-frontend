@@ -106,14 +106,10 @@ const Tasks = () => {
         ...task,
         icon: getCategoryIcon(task.category),
         distance: task.distance || 0
-      }));
-      
-      setError(null);    }         }));
+      setMyTasks(userTasks);      
         
         setMyTasks(userTasks);
-      }
-      
-      setError(null);
+    }      setError(null);
     } catch (err) {
       console.error('Error fetching tasks:', err);
       setError('Failed to load tasks. Please try again later.');
