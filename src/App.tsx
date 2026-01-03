@@ -8,6 +8,7 @@ import ListingDetail from './pages/listings/ListingDetail'
 import CreateListing from './pages/listings/CreateListing'
 import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
+import CreateTask from './pages/CreateTask'
 
 function App() {
   return (
@@ -17,7 +18,8 @@ function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="listings" element={<Listings />} />
-                <Route path="tasks" element={<Tasks />} />
+        <Route path="tasks" element={<Tasks />} />
+        <Route path="tasks/create" element={<CreateTask />} />
         <Route path="listings/:id" element={<ListingDetail />} />
         <Route
           path="listings/create"
