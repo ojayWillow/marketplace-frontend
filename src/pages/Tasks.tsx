@@ -24,6 +24,12 @@ interface Task extends APITask {
   icon?: string;
 }
 
+interface AddressSuggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
 // Component to handle map clicks for location selection
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   useMapEvents({
@@ -58,9 +64,24 @@ const Tasks = () => {
   const [locationGranted, setLocationGranted] = useState(false);
   const [manualLocationSet, setManualLocationSet] = useState(false);
   const [addressSearch, setAddressSearch] = useState('');
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [locationName, setLocationName] = useState('');
   const hasFetchedRef = useRef(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     // Check if we have a saved manual location
@@ -108,38 +129,60 @@ const Tasks = () => {
     fetchTasks(true);
   };
 
-  const searchAddress = async () => {
-    if (!addressSearch.trim()) return;
-    
+  // Debounced address search for autocomplete
+  const searchAddressSuggestions = async (query: string) => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
     setSearchingAddress(true);
     try {
-      // Using Nominatim (OpenStreetMap) free geocoding API
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressSearch)}&limit=1`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
         {
           headers: {
-            'Accept-Language': 'en'
+            'Accept-Language': 'en,lv'
           }
         }
       );
       const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lng = parseFloat(result.lon);
-        const name = result.display_name.split(',').slice(0, 2).join(', ');
-        handleLocationSelect(lat, lng, name);
-        setAddressSearch('');
-      } else {
-        alert('Address not found. Please try a different search term.');
-      }
+      setSuggestions(data);
+      setShowSuggestions(data.length > 0);
     } catch (err) {
       console.error('Error searching address:', err);
-      alert('Failed to search address. Please try again.');
+      setSuggestions([]);
     } finally {
       setSearchingAddress(false);
     }
+  };
+
+  // Handle input change with debounce
+  const handleAddressInputChange = (value: string) => {
+    setAddressSearch(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Debounce: wait 300ms after user stops typing
+    searchTimeoutRef.current = setTimeout(() => {
+      searchAddressSuggestions(value);
+    }, 300);
+  };
+
+  // Select a suggestion
+  const selectSuggestion = (suggestion: AddressSuggestion) => {
+    const lat = parseFloat(suggestion.lat);
+    const lng = parseFloat(suggestion.lon);
+    const name = suggestion.display_name.split(',').slice(0, 3).join(', ');
+    
+    handleLocationSelect(lat, lng, name);
+    setAddressSearch('');
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   const resetToAutoLocation = () => {
@@ -409,34 +452,54 @@ const Tasks = () => {
         {/* Location search and info */}
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex flex-col gap-3">
-            {/* Address search */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={addressSearch}
-                onChange={(e) => setAddressSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && searchAddress()}
-                placeholder="Search address or city (e.g., Jelgava, Latvia)"
-                className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                onClick={searchAddress}
-                disabled={searchingAddress || !addressSearch.trim()}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {searchingAddress ? 'Searching...' : '🔍 Search'}
-              </button>
+            {/* Address search with autocomplete */}
+            <div className="relative" ref={suggestionsRef}>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={addressSearch}
+                    onChange={(e) => handleAddressInputChange(e.target.value)}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    placeholder="Search address or city (e.g., Upes 15, Jelgava)"
+                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {searchingAddress && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Suggestions dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectSuggestion(suggestion)}
+                      className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-blue-50"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="text-blue-500 mt-0.5">📍</span>
+                        <span className="text-sm text-gray-700">{suggestion.display_name}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             {/* Current location info */}
             <div className="flex items-center justify-between text-sm">
               <p className="text-blue-800">
                 📍 {manualLocationSet && locationName ? (
-                  <span><strong>{locationName}</strong> (manually set)</span>
+                  <span><strong>{locationName}</strong></span>
                 ) : manualLocationSet ? (
-                  <span>Custom location (manually set)</span>
+                  <span>Custom location (click map to change)</span>
                 ) : (
-                  <span>Auto-detected location • Click map or search to change</span>
+                  <span>Auto-detected location • Search or click map to change</span>
                 )}
               </p>
               {manualLocationSet && (
