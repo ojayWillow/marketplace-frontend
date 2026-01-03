@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, Task as APITask } from '../api/tasks';
+import { getTasks, acceptTask, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 
 // Fix Leaflet default icon issue with Vite
@@ -26,10 +26,11 @@ interface Task extends APITask {
 
 const Tasks = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [acceptingTask, setAcceptingTask] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga center
 
   useEffect(() => {
@@ -51,34 +52,33 @@ const Tasks = () => {
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch tasks from backend
-    const fetchTasks = async () => {
-      try {
-        setLoading(true);
-        const response = await getTasks({
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-          radius: 10, // 10km radius
-          status: 'open'
-        });
-        
-        // Map backend tasks to include UI icons based on category
-        const tasksWithIcons = response.tasks.map(task => ({
-          ...task,
-          icon: getCategoryIcon(task.category)
-        }));
-        
-        setTasks(tasksWithIcons);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching tasks:', err);
-        setError('Failed to load tasks. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await getTasks({
+        latitude: userLocation.lat,
+        longitude: userLocation.lng,
+        radius: 10, // 10km radius
+        status: 'open'
+      });
+      
+      // Map backend tasks to include UI icons based on category
+      const tasksWithIcons = response.tasks.map(task => ({
+        ...task,
+        icon: getCategoryIcon(task.category)
+      }));
+      
+      setTasks(tasksWithIcons);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      setError('Failed to load tasks. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTasks();
   }, [userLocation]);
 
@@ -98,6 +98,32 @@ const Tasks = () => {
 
   // Create custom marker icons
   const createCustomIcon = (category: string) => new Icon.Default();
+
+  const handleAcceptTask = async (taskId: number) => {
+    if (!isAuthenticated) {
+      alert('Please login to accept tasks');
+      navigate('/login');
+      return;
+    }
+
+    if (!user?.id) {
+      alert('User information not available');
+      return;
+    }
+
+    try {
+      setAcceptingTask(taskId);
+      await acceptTask(taskId, user.id);
+      alert('Task accepted successfully!');
+      // Refresh tasks list
+      await fetchTasks();
+    } catch (error) {
+      console.error('Error accepting task:', error);
+      alert('Failed to accept task. Please try again.');
+    } finally {
+      setAcceptingTask(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -173,11 +199,15 @@ const Tasks = () => {
                     <h3 className="font-bold text-lg mb-1">{task.title}</h3>
                     <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-green-600 font-bold">${task.budget || task.reward || 0}</span>
+                      <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
                       <span className="text-gray-500 text-sm">{task.distance?.toFixed(1) || '0.0'}km away</span>
                     </div>
-                    <button className="mt-2 w-full bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">
-                      Accept Task
+                    <button 
+                      onClick={() => handleAcceptTask(task.id)}
+                      disabled={acceptingTask === task.id}
+                      className="mt-2 w-full bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                    >
+                      {acceptingTask === task.id ? 'Accepting...' : 'Accept Task'}
                     </button>
                   </div>
                 </Popup>
@@ -216,10 +246,14 @@ const Tasks = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-green-600 mb-2">
-                        ${task.budget || task.reward || 0}
+                        €{task.budget || task.reward || 0}
                       </div>
-                      <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
-                        Accept
+                      <button 
+                        onClick={() => handleAcceptTask(task.id)}
+                        disabled={acceptingTask === task.id}
+                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
                       </button>
                     </div>
                   </div>
