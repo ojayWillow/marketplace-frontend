@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, acceptTask, Task as APITask } from '../api/tasks';
+import { getTasks, acceptTask, getMyTasks, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 
 // Fix Leaflet default icon issue with Vite
