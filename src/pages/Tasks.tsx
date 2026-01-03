@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +35,7 @@ const Tasks = () => {
   const [acceptingTask, setAcceptingTask] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga
   const [locationGranted, setLocationGranted] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -72,7 +73,10 @@ const Tasks = () => {
     return iconMap[category] || iconMap['default'];
   };
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (forceRefresh = false) => {
+    // Prevent duplicate fetches unless forced
+    if (hasFetchedRef.current && !forceRefresh) return;
+    
     setLoading(true);
     setError(null);
     
@@ -91,6 +95,7 @@ const Tasks = () => {
       }));
       
       setTasks(tasksWithIcons);
+      hasFetchedRef.current = true;
     } catch (err) {
       console.error('Error fetching available tasks:', err);
       setError('Failed to load tasks. Please try again later.');
@@ -109,11 +114,9 @@ const Tasks = () => {
         
         setMyTasks(userTasks);
       } catch (err: any) {
-        console.error('Error fetching my tasks:', err);
-        // Don't set error state for my-tasks failure - just log it
-        // This prevents 401 from breaking the whole page
+        // Silently handle 401 - don't spam console
         if (err?.response?.status !== 401) {
-          console.error('Non-auth error fetching my tasks');
+          console.error('Error fetching my tasks:', err);
         }
         setMyTasks([]);
       }
@@ -123,8 +126,10 @@ const Tasks = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, [userLocation, isAuthenticated, user?.id]);
+    if (locationGranted) {
+      fetchTasks();
+    }
+  }, [locationGranted, isAuthenticated]);
 
   const createCustomIcon = (category: string) => new Icon.Default();
   
@@ -152,7 +157,8 @@ const Tasks = () => {
       setAcceptingTask(taskId);
       await acceptTask(taskId, user.id);
       alert('Task accepted! Check "My Tasks" tab for navigation.');
-      await fetchTasks();
+      hasFetchedRef.current = false; // Allow refresh
+      await fetchTasks(true);
       setActiveTab('my-tasks');
     } catch (error) {
       console.error('Error accepting task:', error);
@@ -201,7 +207,10 @@ const Tasks = () => {
           <div className="text-2xl font-bold text-red-600 mb-2">Error</div>
           <div className="text-gray-600">{error}</div>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => {
+              hasFetchedRef.current = false;
+              fetchTasks(true);
+            }} 
             className="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
           >
             Retry
