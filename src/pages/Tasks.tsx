@@ -450,8 +450,8 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* Location search and info */}
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        {/* Location search and info - with high z-index container */}
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 relative" style={{ zIndex: 1000 }}>
           <div className="flex flex-col gap-3">
             {/* Address search with autocomplete */}
             <div className="relative" ref={suggestionsRef}>
@@ -473,9 +473,12 @@ const Tasks = () => {
                 </div>
               </div>
               
-              {/* Suggestions dropdown */}
+              {/* Suggestions dropdown - fixed z-index */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div 
+                  className="absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+                  style={{ zIndex: 9999 }}
+                >
                   {suggestions.map((suggestion, index) => (
                     <button
                       key={index}
@@ -531,7 +534,7 @@ const Tasks = () => {
         )}
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 flex-wrap">
+        <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
           <button
             onClick={() => setActiveTab('available')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
