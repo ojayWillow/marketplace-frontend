@@ -33,6 +33,8 @@ const Tasks = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acceptingTask, setAcceptingTask] = useState<number | null>(null);
+    const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga
+    const [locationGranted, setLocationGranted] = useState(false);
   useEffect(() => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
