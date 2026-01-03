@@ -4,7 +4,7 @@ import { Icon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, Task as APITask } from '../api/tasks';
-import { useAuth } from '../stores/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -26,7 +26,7 @@ interface Task extends APITask {
 
 const Tasks = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuthStore();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
