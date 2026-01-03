@@ -33,7 +33,29 @@ const Tasks = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acceptingTask, setAcceptingTask] = useState<number | null>(null);
-  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga center
+  useEffect(() => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setUserLocation(newLocation);
+        setLocationGranted(true);
+        console.log('User location:', newLocation);
+      },
+      (error) => {
+        console.log('Geolocation error:', error);
+        setLocationGranted(false);
+        setError('Location access is required to use Quick Help. Please enable location in your browser settings.');
+      }
+    );
+  } else {
+    setError('Geolocation is not supported by your browser. Quick Help requires location access.');
+  }
+}, []);
+
 
   useEffect(() => {
     // Get user's location if available
@@ -154,6 +176,24 @@ const Tasks = () => {
       setAcceptingTask(null);
     }
   };
+
+  if (!locationGranted && !loading) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-md">
+        <div className="text-6xl mb-4">📍</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Location Required</h2>
+        <p className="text-gray-600 mb-4">
+          Quick Help needs your location to show nearby tasks and help you earn money.
+        </p>
+        <p className="text-sm text-gray-500">
+          Please enable location access in your browser settings and reload the page.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 
   const getNavigationUrl = (task: Task) => {
     return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${task.latitude},${task.longitude}`;
