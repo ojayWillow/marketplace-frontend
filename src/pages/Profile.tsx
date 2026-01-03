@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
 
 interface UserProfile {
@@ -37,6 +38,7 @@ interface Review {
 const Profile = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, setAuth, token } = useAuthStore();
+  const toast = useToastStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,10 +103,10 @@ const Profile = () => {
       }
       
       setEditing(false);
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
