@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, acceptTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
+import { useToastStore } from '../stores/toastStore';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -52,6 +53,7 @@ const MapRecenter = ({ lat, lng }: { lat: number; lng: number }) => {
 const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
+  const toast = useToastStore();
   const [activeTab, setActiveTab] = useState<'available' | 'my-tasks' | 'my-posted'>('available');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
@@ -306,26 +308,26 @@ const Tasks = () => {
 
   const handleAcceptTask = async (taskId: number) => {
     if (!isAuthenticated) {
-      alert('Please login to accept tasks');
+      toast.warning('Please login to accept tasks');
       navigate('/login');
       return;
     }
 
     if (!user?.id) {
-      alert('User information not available');
+      toast.error('User information not available');
       return;
     }
 
     try {
       setAcceptingTask(taskId);
       await acceptTask(taskId, user.id);
-      alert('Task accepted! Check "My Tasks" tab for navigation.');
+      toast.success('Task accepted! Check "My Tasks" tab for navigation.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
       setActiveTab('my-tasks');
     } catch (error: any) {
       console.error('Error accepting task:', error);
-      alert(error?.response?.data?.error || 'Failed to accept task. Please try again.');
+      toast.error(error?.response?.data?.error || 'Failed to accept task. Please try again.');
     } finally {
       setAcceptingTask(null);
     }
@@ -335,12 +337,12 @@ const Tasks = () => {
     try {
       setProcessingTask(taskId);
       await markTaskDone(taskId);
-      alert('Task marked as done! Waiting for the client to confirm.');
+      toast.success('Task marked as done! Waiting for the client to confirm.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
       console.error('Error marking task done:', error);
-      alert(error?.response?.data?.error || 'Failed to mark task as done.');
+      toast.error(error?.response?.data?.error || 'Failed to mark task as done.');
     } finally {
       setProcessingTask(null);
     }
@@ -350,12 +352,12 @@ const Tasks = () => {
     try {
       setProcessingTask(taskId);
       await confirmTaskCompletion(taskId);
-      alert('Task completed! You can now leave a review for the worker.');
+      toast.success('Task completed! You can now leave a review for the worker.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
       console.error('Error confirming task:', error);
-      alert(error?.response?.data?.error || 'Failed to confirm task completion.');
+      toast.error(error?.response?.data?.error || 'Failed to confirm task completion.');
     } finally {
       setProcessingTask(null);
     }
@@ -368,12 +370,12 @@ const Tasks = () => {
     try {
       setProcessingTask(taskId);
       await disputeTask(taskId, reason);
-      alert('Task has been disputed. Please contact the worker to resolve.');
+      toast.warning('Task has been disputed. Please contact the worker to resolve.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
       console.error('Error disputing task:', error);
-      alert(error?.response?.data?.error || 'Failed to dispute task.');
+      toast.error(error?.response?.data?.error || 'Failed to dispute task.');
     } finally {
       setProcessingTask(null);
     }
