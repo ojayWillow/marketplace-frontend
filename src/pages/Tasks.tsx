@@ -131,7 +131,7 @@ const Tasks = () => {
 
   // Debounced address search for autocomplete
   const searchAddressSuggestions = async (query: string) => {
-    if (query.length < 3) {
+    if (query.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -139,11 +139,12 @@ const Tasks = () => {
 
     setSearchingAddress(true);
     try {
+      // Using Nominatim with Latvia country code for better local results
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=lv&limit=8&addressdetails=1`,
         {
           headers: {
-            'Accept-Language': 'en,lv'
+            'Accept-Language': 'lv,en'
           }
         }
       );
@@ -461,7 +462,7 @@ const Tasks = () => {
                     value={addressSearch}
                     onChange={(e) => handleAddressInputChange(e.target.value)}
                     onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                    placeholder="Search address or city (e.g., Upes 15, Jelgava)"
+                    placeholder="Meklēt adresi vai pilsētu (piem., Likvērteni vai Jelgava)"
                     className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {searchingAddress && (
