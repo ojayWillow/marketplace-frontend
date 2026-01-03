@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
 import CreateTask from './pages/CreateTask'
 import Profile from './pages/Profile'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
@@ -45,6 +46,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* 404 catch-all route - must be last */}
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
