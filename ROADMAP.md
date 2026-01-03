@@ -1,8 +1,9 @@
 # Marketplace Frontend - Development Roadmap
 
-- **Last Updated**: January 3, 2026
-> **Current Phase**: Phase 1 - Project Setup  
-> **Status**: Planning Complete ✅
+**Last Updated**: January 4, 2026
+
+> **Current Phase**: Phase 5 - Quick Help Services (NEARLY COMPLETE)  
+> **Status**: MVP Functional ✅
 
 ---
 
@@ -22,167 +23,172 @@
 
 ## Tech Stack
 
-| Category | Technology | Why |
-|----------|------------|-----|
-| Framework | React 18 + Vite | Fast builds, modern DX |
-| Language | TypeScript | Type safety, better IDE support |
-| Styling | Tailwind CSS | Rapid development, mobile-first |
-| State | Zustand | Simple, scalable global state |
-| API | React Query (TanStack) | Caching, loading states, refetching |
-| Routing | React Router v6 | Industry standard |
-| i18n | react-i18next | LV/RU/EN support |
-| Forms | React Hook Form + Zod | Validation, performance |
-| Maps | Leaflet + react-leaflet | For Quick Help segment |
-| Icons | Lucide React | Clean, consistent icons |
+| Category | Technology | Status |
+|----------|------------|--------|
+| Framework | React 18 + Vite | ✅ Implemented |
+| Language | TypeScript | ✅ Implemented |
+| Styling | Tailwind CSS | ✅ Implemented |
+| State | Zustand | ✅ Implemented |
+| API | Axios | ✅ Implemented |
+| Routing | React Router v6 | ✅ Implemented |
+| i18n | react-i18next | ⬜ Partial (structure ready) |
+| Forms | Native + validation | ✅ Implemented |
+| Maps | Leaflet + react-leaflet | ✅ Implemented |
 
 ---
 
-## Phase 1: Project Foundation ⬅️ WE ARE HERE
+## ✅ Phase 1: Project Foundation (COMPLETED)
 
 **Goal**: Working dev environment with basic structure
 
 ### Tasks:
-- [ ] 1.1 Initialize Vite + React + TypeScript project
-- [ ] 1.2 Configure Tailwind CSS
-- [ ] 1.3 Set up folder structure
-- [ ] 1.4 Configure ESLint + Prettier
-- [ ] 1.5 Create API client (axios instance)
-- [ ] 1.6 Set up React Router with basic routes
-- [ ] 1.7 Set up i18n with LV/RU/EN skeleton
-- [ ] 1.8 Create base Layout component (Header, Footer)
-- [ ] 1.9 Create .env.example with backend URL
-- [ ] 1.10 Update README with setup instructions
+- [x] 1.1 Initialize Vite + React + TypeScript project
+- [x] 1.2 Configure Tailwind CSS
+- [x] 1.3 Set up folder structure
+- [x] 1.4 Configure ESLint
+- [x] 1.5 Create API client (axios instance)
+- [x] 1.6 Set up React Router with basic routes
+- [x] 1.7 Set up i18n skeleton (LV/RU/EN structure)
+- [x] 1.8 Create base Layout component (Header, Footer)
+- [x] 1.9 Create .env with backend URL
+- [x] 1.10 README with setup instructions
 
-**Deliverable**: `npm install && npm run dev` works, shows placeholder home page with language switcher
+**Status**: ✅ 100% Complete
 
 ---
 
-## Phase 2: Authentication UI
+## ✅ Phase 2: Authentication UI (COMPLETED)
 
 **Goal**: Users can register, login, and see their profile
 
 ### Tasks:
-- [ ] 2.1 Create Register page (`/register`)
-- [ ] 2.2 Create Login page (`/login`)
-- [ ] 2.3 Create auth store (Zustand) for token management
-- [ ] 2.4 Create Protected Route component
-- [ ] 2.5 Create Profile page (`/profile`)
-- [ ] 2.6 Add logout functionality
-- [ ] 2.7 Persist auth token in localStorage
-- [ ] 2.8 Add auth state to header (Login/Register vs Profile/Logout)
-- [ ] 2.9 Handle API errors (wrong password, email taken, etc.)
-- [ ] 2.10 Add form validation with Zod
+- [x] 2.1 Create Register page (`/register`)
+- [x] 2.2 Create Login page (`/login`)
+- [x] 2.3 Create auth store (Zustand) for token management
+- [x] 2.4 Create Protected Route component
+- [x] 2.5 Create Profile page (`/profile`)
+- [x] 2.6 Add logout functionality
+- [x] 2.7 Persist auth token in localStorage
+- [x] 2.8 Add auth state to header (Login/Register vs Profile/Logout)
+- [x] 2.9 Handle API errors (wrong password, email taken, etc.)
+- [x] 2.10 Form validation
 
-**Deliverable**: Full auth flow working with backend API
+**Status**: ✅ 100% Complete
 
 ### API Endpoints Used:
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/profile`
+- `POST /api/auth/register` ✅
+- `POST /api/auth/login` ✅
+- `GET /api/auth/profile` ✅
+- `PUT /api/auth/profile` ✅
 
 ---
 
-## Phase 3: Buy/Sell Classifieds (Core)
+## ✅ Phase 3: Buy/Sell Classifieds (COMPLETED)
 
 **Goal**: Users can browse and create listings
 
 ### Tasks:
-- [ ] 3.1 Create Listings Browse page (`/listings`)
-- [ ] 3.2 Create Listing Card component
-- [ ] 3.3 Add category filter sidebar/dropdown
-- [ ] 3.4 Add search functionality
-- [ ] 3.5 Create Listing Detail page (`/listings/:id`)
-- [ ] 3.6 Create New Listing page (`/listings/new`) - protected
-- [ ] 3.7 Create Edit Listing page (`/listings/:id/edit`) - protected
-- [ ] 3.8 Add pagination or infinite scroll
-- [ ] 3.9 Create "My Listings" page (`/my-listings`) - protected
-- [ ] 3.10 Add listing status badges (active, sold, etc.)
+- [x] 3.1 Create Listings Browse page (`/listings`)
+- [x] 3.2 Create Listing Card component
+- [x] 3.3 Add category filter dropdown
+- [x] 3.4 Add search functionality
+- [x] 3.5 Create Listing Detail page (`/listings/:id`)
+- [x] 3.6 Create New Listing page (`/listings/new`) - protected
+- [x] 3.7 Create Edit Listing page (`/listings/:id/edit`) - protected
+- [x] 3.8 Add pagination
+- [x] 3.9 Create "My Listings" page (`/my-listings`) - protected
+- [x] 3.10 Add listing status badges (active, sold, etc.)
 
-**Deliverable**: Complete Buy/Sell segment functional
+**Status**: ✅ 100% Complete
 
 ### API Endpoints Used:
-- `GET /api/listings`
-- `GET /api/listings/:id`
-- `POST /api/listings`
-- `PUT /api/listings/:id`
-- `DELETE /api/listings/:id`
+- `GET /api/listings` ✅
+- `GET /api/listings/:id` ✅
+- `POST /api/listings` ✅
+- `PUT /api/listings/:id` ✅
+- `DELETE /api/listings/:id` ✅
 
 ---
 
-## Phase 4: Reviews & User Trust
+## ⚠️ Phase 4: Reviews & User Trust (PARTIAL)
 
 **Goal**: Users can leave and view reviews
 
 ### Tasks:
-- [ ] 4.1 Create Review component (stars + text)
-- [ ] 4.2 Add reviews section to Listing Detail page
-- [ ] 4.3 Create "Leave Review" form
+- [x] 4.1 Create Review component (stars + text)
+- [x] 4.2 Add reviews section to Profile page
+- [x] 4.3 Create "Leave Review" form
 - [ ] 4.4 Show seller rating on listing cards
 - [ ] 4.5 Create User Profile public page (`/users/:id`)
-- [ ] 4.6 Show user's reviews on their profile
+- [x] 4.6 Show user's reviews on their profile
 - [ ] 4.7 Add review editing/deletion for reviewer
 
-**Deliverable**: Trust system visible throughout app
+**Status**: ⚠️ 60% Complete
 
 ### API Endpoints Used:
-- `GET /api/reviews?user_id=X`
-- `POST /api/reviews`
-- `PUT /api/reviews/:id`
-- `DELETE /api/reviews/:id`
+- `GET /api/reviews` ✅
+- `POST /api/reviews` ✅
+- `GET /api/users/:id/reviews` ✅
 
 ---
 
-## Phase 5: Quick Help Services
+## ✅ Phase 5: Quick Help Services (NEARLY COMPLETE)
 
 **Goal**: Task marketplace with map view
 
 ### Tasks:
-- [ ] 5.1 Create Tasks Browse page (`/tasks`)
-- [ ] 5.2 Create Task Card component
-- [ ] 5.3 Integrate Leaflet map view
-- [ ] 5.4 Show tasks as markers on map
-- [ ] 5.5 Create Task Detail page (`/tasks/:id`)
-- [ ] 5.6 Create New Task page (`/tasks/new`) - protected
-- [ ] 5.7 Create "Apply to Task" functionality
-- [ ] 5.8 Create "My Tasks" page (posted tasks)
-- [ ] 5.9 Create "My Applications" page (tasks applied to)
-- [ ] 5.10 Task creator can accept/reject applicants
+- [x] 5.1 Create Tasks Browse page (`/tasks`)
+- [x] 5.2 Create Task Card component
+- [x] 5.3 Integrate Leaflet map view
+- [x] 5.4 Show tasks as markers on map
+- [x] 5.5 Create Task Detail page (inline/popup)
+- [x] 5.6 Create New Task page (`/tasks/create`) - protected
+- [x] 5.7 Create "Accept Task" functionality
+- [x] 5.8 Create "My Tasks" tab (assigned to me)
+- [x] 5.9 Create "My Posted Tasks" tab (tasks I created)
+- [x] 5.10 Task creator can confirm/dispute completion
+- [x] 5.11 Worker can mark task as done
+- [x] 5.12 Google Maps navigation integration
+- [x] 5.13 Manual location picker (click on map)
+- [x] 5.14 Address search with autocomplete (Latvia-focused)
+- [x] 5.15 Location saved to localStorage
 
-**Deliverable**: Complete Quick Help segment functional
+**Status**: ✅ 95% Complete
 
 ### API Endpoints Used:
-- `GET /api/tasks`
-- `GET /api/tasks/:id`
-- `POST /api/tasks`
-- `PUT /api/tasks/:id`
-- `DELETE /api/tasks/:id`
-- `GET /api/task_responses`
-- `POST /api/task_responses`
-- `PUT /api/task_responses/:id`
+- `GET /api/tasks` ✅
+- `GET /api/tasks/:id` ✅
+- `POST /api/tasks` ✅
+- `POST /api/tasks/:id/accept` ✅
+- `POST /api/tasks/:id/done` ✅
+- `POST /api/tasks/:id/confirm` ✅
+- `POST /api/tasks/:id/dispute` ✅
+- `GET /api/tasks/my` ✅
+- `GET /api/tasks/created` ✅
 
 ---
 
-## Phase 6: Polish & UX
+## ⚠️ Phase 6: Polish & UX (PARTIAL)
 
 **Goal**: Production-ready user experience
 
 ### Tasks:
-- [ ] 6.1 Add loading skeletons/spinners
-- [ ] 6.2 Add toast notifications (success/error)
-- [ ] 6.3 Improve mobile navigation (hamburger menu)
+- [x] 6.1 Add loading states
+- [x] 6.2 Add alert notifications (success/error)
+- [x] 6.3 Mobile navigation (hamburger menu)
 - [ ] 6.4 Add 404 page
-- [ ] 6.5 Add empty states (no listings, no tasks)
+- [x] 6.5 Add empty states (no listings, no tasks)
 - [ ] 6.6 SEO meta tags
 - [ ] 6.7 Favicon and app icons
 - [ ] 6.8 Performance optimization (lazy loading)
 - [ ] 6.9 Accessibility audit (a11y)
 - [ ] 6.10 Cross-browser testing
 
-**Deliverable**: Polished, professional UI
+**Status**: ⚠️ 40% Complete
 
 ---
 
-## Phase 7: Advanced Features (Future)
+## ⬜ Phase 7: Advanced Features (FUTURE)
 
 **Goal**: Enhanced functionality
 
@@ -198,131 +204,124 @@
 - [ ] 7.9 PWA support (offline, installable)
 - [ ] 7.10 Payment integration (Stripe)
 
+**Status**: ⬜ Not Started
+
 ---
 
-## Folder Structure (Target)
+## Progress Summary
 
+| Phase | Status | Completion |
+|-------|--------|------------|
+| 1. Project Foundation | ✅ Complete | 100% |
+| 2. Authentication UI | ✅ Complete | 100% |
+| 3. Buy/Sell Classifieds | ✅ Complete | 100% |
+| 4. Reviews & Trust | ⚠️ Partial | 60% |
+| 5. Quick Help Services | ✅ Nearly Complete | 95% |
+| 6. Polish & UX | ⚠️ Partial | 40% |
+| 7. Advanced Features | ⬜ Not Started | 0% |
+
+**Overall MVP Status: ~85% Complete** 🎉
+
+---
+
+## What's Working (January 4, 2026)
+
+### Authentication ✅
+- User registration with validation
+- User login with JWT tokens
+- Profile viewing and editing
+- Protected routes
+- Persistent login (localStorage)
+
+### Classifieds (Buy/Sell) ✅
+- Browse all listings
+- Filter by category
+- Search listings
+- View listing details
+- Create new listings
+- Edit own listings
+- Delete own listings
+- "My Listings" page
+
+### Quick Help (Tasks) ✅
+- Browse tasks on map
+- Location-based task discovery
+- Manual location setting (search + click)
+- Address autocomplete (Latvia-focused, Nominatim)
+- Create tasks with location picker
+- Accept tasks as worker
+- Mark tasks as done (worker)
+- Confirm completion (creator)
+- Dispute task (creator)
+- "My Tasks" tab (assigned to me)
+- "My Posted Tasks" tab (I created)
+- Google Maps navigation to tasks
+- Task status workflow (open → assigned → pending → completed)
+
+### Reviews ✅
+- View reviews on profile
+- Submit reviews for users
+
+---
+
+## Recent Updates (January 3-4, 2026)
+
+### Location Features
+- ✅ Manual location picker - click anywhere on map
+- ✅ Address search bar with autocomplete
+- ✅ Latvia-focused search (countrycodes=lv)
+- ✅ Location saved to localStorage
+- ✅ "Reset to auto-detect" option
+- ✅ Map recenters when location changes
+
+### Task Workflow
+- ✅ Complete task lifecycle implemented
+- ✅ Worker marks done → Creator confirms/disputes
+- ✅ Status badges for all states
+- ✅ Pending confirmation notifications
+
+### UI Improvements
+- ✅ Three-tab interface (Available/My Tasks/My Posted)
+- ✅ Task counts in tab labels
+- ✅ Fixed dropdown z-index issues
+- ✅ Latvian placeholder text in search
+
+---
+
+## Next Steps (Recommended)
+
+### High Priority
+1. **Image uploads** - Allow photos for listings and profile pictures
+2. **404 page** - Handle invalid routes gracefully
+3. **Public user profiles** - View other users' profiles and reviews
+
+### Medium Priority
+4. **Full i18n** - Complete LV/RU/EN translations
+5. **Toast notifications** - Better feedback than alerts
+6. **Review editing** - Allow users to edit/delete their reviews
+
+### Lower Priority
+7. **Messaging** - Chat between task creators and workers
+8. **Favorites** - Save listings/tasks for later
+9. **Payment integration** - Stripe for task payments
+
+---
+
+## How to Run
+
+```bash
+# Frontend
+cd marketplace-frontend
+npm install
+npm run dev
+
+# Backend (separate terminal)
+cd marketplace-backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+python wsgi.py
 ```
-marketplace-frontend/
-├── public/
-│   └── locales/           # Translation JSON files
-│       ├── lv/
-│       ├── ru/
-│       └── en/
-├── src/
-│   ├── api/               # API client & React Query hooks
-│   │   ├── client.ts      # Axios instance
-│   │   └── hooks/         # useListings, useAuth, etc.
-│   ├── components/        # Reusable UI components
-│   │   ├── ui/            # Buttons, Inputs, Cards, etc.
-│   │   └── layout/        # Header, Footer, Sidebar
-│   ├── pages/             # Route pages
-│   │   ├── Home.tsx
-│   │   ├── auth/          # Login, Register, Profile
-│   │   ├── listings/      # Browse, Detail, Create, Edit
-│   │   └── tasks/         # Browse, Detail, Create
-│   ├── stores/            # Zustand stores
-│   │   └── authStore.ts
-│   ├── i18n/              # i18n configuration
-│   │   └── index.ts
-│   ├── lib/               # Utilities, helpers
-│   ├── types/             # TypeScript types
-│   ├── App.tsx            # Main app with routes
-│   └── main.tsx           # Entry point
-├── index.html
-├── package.json
-├── vite.config.ts
-├── tailwind.config.js
-├── tsconfig.json
-├── .env.example
-├── ROADMAP.md             # This file
-└── README.md
-```
 
----
-
-## Definition of Done (Per Phase)
-
-Each phase is complete when:
-- [ ] All tasks checked off
-- [ ] No TypeScript errors
-- [ ] No console errors
-- [ ] Works on mobile (responsive)
-- [ ] All 3 languages have translations
-- [ ] Tested with backend API
-- [ ] Code committed and pushed
-
----
-
-## Progress Tracker
-
-| Phase | Status | Started | Completed |
-|-------|--------|---------|-----------|
-| 1. Project Foundation | 🔲 Not Started | - | - |
-| 2. Authentication UI | 🔲 Not Started | - | - |
-| 3. Buy/Sell Classifieds | 🔲 Not Started | - | - |
-| 4. Reviews & Trust | 🔲 Not Started | - | - |
-| 5. Quick Help Services | 🔲 Not Started | - | - |
-| 6. Polish & UX | 🔲 Not Started | - | - |
-| 7. Advanced Features | 🔲 Not Started | - | - |
-
----
-
-## How We Work
-
-1. **One phase at a time** - Complete each phase before moving on
-2. **Small commits** - Each task = one commit when possible
-3. **Test with backend** - Verify API integration at each step
-4. **Mobile-first** - Design for phone, enhance for desktop
-5. **Translations together** - Add all 3 languages for each new text
-
-
-## Recent Updates (January 3, 2026)
-
-### ✅ Completed Features:
-
-#### Task Management Enhancements
-- **Tabbed Interface** - Added three-tab system for better task organization
-  - "All Tasks" - View all open tasks within search radius
-  - "My Tasks" - View tasks you've accepted
-  - "Available Tasks" - View unaccepted open tasks
-  - Task counts displayed in each tab label
-
-#### User Location Features
-- **Live User Location** - Blue marker shows your current position on map
-  - Integrated browser geolocation API
-  - Blue circle marker for clear visibility
-  - Automatic map centering on user location
-
-#### Navigation Integration
-- **Google Maps Navigation** - One-click directions to task locations
-  - "Navigate" button on each task card
-  - Opens Google Maps with route from current location to task
-  - Distance estimates displayed on task cards
-
-#### Backend API Improvements
-- **My Tasks Endpoint** - GET `/api/tasks/my` for authenticated users
-  - Returns tasks assigned to current user
-  - Filters by JWT identity
-  - Only returns tasks with 'assigned' status
-
-#### Bug Fixes
-- **Task Creation with Location** - Fixed datetime handling issues
-  - Resolved SQLite TypeError when saving location data
-  - Proper ISO string to datetime conversion
-  - Tasks with locations now save successfully
-
-- **Task Acceptance Flow** - Improved status transitions
-  - Accept button properly updates to 'assigned' status
-  - Correctly assigns to authenticated user
-  - Tasks move from Available to My Tasks after acceptance
-  - Added authentication checks before allowing acceptance
-
-
----
-
-## Next Action
-
-**Start Phase 1, Task 1.1**: Initialize Vite + React + TypeScript project
-
-Ready to begin? ✅
+Frontend: http://localhost:5173  
+Backend: http://localhost:5000
