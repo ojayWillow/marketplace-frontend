@@ -285,6 +285,21 @@
 - ✅ Task counts in tab labels
 - ✅ Fixed dropdown z-index issues
 - ✅ Latvian placeholder text in search
+- 
+### Image Upload & Media (January 4, 2026)
+- ✅ Image upload endpoint with file validation (type, size)
+- ✅ Multi-image upload in Create Listing with preview
+- ✅ Image gallery in Listing Detail with thumbnails
+- ✅ Image navigation (prev/next) with indicators
+- ✅ File storage in uploads/ folder
+
+### Profile & User Experience
+- ✅ Full Profile page with edit capability
+- ✅ Public user profiles at `/users/:id`
+- ✅ Profile stats (rating, completion rate, reviews)
+- ✅ 404 Not Found page with helpful navigation
+- ✅ Toast notification system (replaces alerts)
+- ✅ Smooth animations and transitions
 
 ---
 
