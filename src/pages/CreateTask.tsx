@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTask } from '../api/tasks';
+import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 
 const CreateTask = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [searchingAddress, setSearchingAddress] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -26,6 +29,28 @@ const CreateTask = () => {
     { value: 'delivery', label: '📄 Delivery', icon: '📄' },
     { value: 'outdoor', label: '🌿 Outdoor', icon: '🌿' },
   ];
+
+  // Debounced geocoding search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (formData.location.length > 3) {
+        try {
+          setSearchingAddress(true);
+          const results = await geocodeAddress(formData.location);
+          setAddressSuggestions(results);
+        } catch (error) {
+          console.error('Geocoding error:', error);
+          setAddressSuggestions([]);
+        } finally {
+          setSearchingAddress(false);
+        }
+      } else {
+        setAddressSuggestions([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +80,16 @@ const CreateTask = () => {
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
+  };
+
+  const selectAddress = (result: GeocodingResult) => {
+    setFormData(prev => ({
+      ...prev,
+      location: result.display_name,
+      latitude: parseFloat(result.lat),
+      longitude: parseFloat(result.lon)
+    }));
+    setAddressSuggestions([]);
   };
 
   return (
@@ -120,10 +155,10 @@ const CreateTask = () => {
               </select>
             </div>
 
-            {/* Location */}
-            <div>
+            {/* Location with Geocoding */}
+            <div className="relative">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location *
+                Location * {searchingAddress && <span className="text-blue-500 text-xs">(searching...)</span>}
               </label>
               <input
                 type="text"
@@ -132,9 +167,32 @@ const CreateTask = () => {
                 required
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="e.g., Riga, Centrs"
+                placeholder="e.g., Riga, Centrs or Brivibas iela 1, Riga"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoComplete="off"
               />
+              
+              {/* Address Suggestions Dropdown */}
+              {addressSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {addressSuggestions.map((result, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => selectAddress(result)}
+                      className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="text-sm text-gray-900">{result.display_name}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {formData.location && (
+                <p className="text-xs text-gray-500 mt-1">
+                  📍 Coordinates: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                </p>
+              )}
             </div>
 
             {/* Budget */}
