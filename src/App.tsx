@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
 import CreateTask from './pages/CreateTask'
 import Profile from './pages/Profile'
+import UserProfile from './pages/UserProfile'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -46,6 +47,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* Public user profile */}
+        <Route path="users/:id" element={<UserProfile />} />
         {/* 404 catch-all route - must be last */}
         <Route path="*" element={<NotFound />} />
       </Route>
