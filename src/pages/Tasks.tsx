@@ -59,11 +59,25 @@ const Tasks = () => {
     }
   }, []);
 
+  const getCategoryIcon = (category: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'pet-care': '🐕',
+      'moving': '📦',
+      'shopping': '🛒',
+      'cleaning': '🧹',
+      'delivery': '📄',
+      'outdoor': '🌿',
+      'default': '💼'
+    };
+    return iconMap[category] || iconMap['default'];
+  };
+
   const fetchTasks = async () => {
+    setLoading(true);
+    setError(null);
+    
+    // Fetch available tasks (public endpoint - no auth required)
     try {
-      setLoading(true);
-      
-      // Fetch available tasks
       const availableResponse = await getTasks({
         latitude: userLocation.lat,
         longitude: userLocation.lng,
@@ -77,47 +91,40 @@ const Tasks = () => {
       }));
       
       setTasks(tasksWithIcons);
-      
-    // Fetch user's accepted tasks if logged in
-    if (isAuthenticated && user?.id) {
-      const myTasksResponse = await getMyTasks();
-      
-      const userTasks = myTasksResponse.tasks.map(task => ({
-        ...task,
-        icon: getCategoryIcon(task.category),
-        distance: task.distance || 0
-      }));
-      
-      setMyTasks(userTasks);
+    } catch (err) {
+      console.error('Error fetching available tasks:', err);
+      setError('Failed to load tasks. Please try again later.');
     }
     
-    setError(null);
-
-      
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setError('Failed to load tasks. Please try again later.');
-    } finally {
-      setLoading(false);
+    // Fetch user's accepted tasks if logged in (separate try-catch to not break page on 401)
+    if (isAuthenticated && user?.id) {
+      try {
+        const myTasksResponse = await getMyTasks();
+        
+        const userTasks = myTasksResponse.tasks.map(task => ({
+          ...task,
+          icon: getCategoryIcon(task.category),
+          distance: task.distance || 0
+        }));
+        
+        setMyTasks(userTasks);
+      } catch (err: any) {
+        console.error('Error fetching my tasks:', err);
+        // Don't set error state for my-tasks failure - just log it
+        // This prevents 401 from breaking the whole page
+        if (err?.response?.status !== 401) {
+          console.error('Non-auth error fetching my tasks');
+        }
+        setMyTasks([]);
+      }
     }
+    
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchTasks();
   }, [userLocation, isAuthenticated, user?.id]);
-
-  const getCategoryIcon = (category: string): string => {
-    const iconMap: { [key: string]: string } = {
-      'pet-care': '🐕',
-      'moving': '📦',
-      'shopping': '🛒',
-      'cleaning': '🧹',
-      'delivery': '📄',
-      'outdoor': '🌿',
-      'default': '💼'
-    };
-    return iconMap[category] || iconMap['default'];
-  };
 
   const createCustomIcon = (category: string) => new Icon.Default();
   
