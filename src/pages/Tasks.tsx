@@ -98,21 +98,18 @@ const Tasks = () => {
       setTasks(tasksWithIcons);
       
       // Fetch user's assigned tasks if logged in
-      if (isAuthenticated && user?.id) {
-        const myTasksResponse = await getTasks({
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-          radius: 100, // Wider radius for accepted tasks
-          status: 'assigned'
-        });
-        
-        // Filter to only show tasks assigned to current user
-        const userTasks = myTasksResponse.tasks
-          .filter(task => task.assigned_to_id === user.id)
-          .map(task => ({
-            ...task,
-            icon: getCategoryIcon(task.category)
-          }));
+     // Fetch user's accepted tasks if logged in
+    if (isAuthenticated && user?.id) {
+      const myTasksResponse = await getMyTasks();
+      
+      const userTasks = myTasksResponse.tasks.map(task => ({
+        ...task,
+        icon: getCategoryIcon(task.category),
+        distance: task.distance || 0
+      }));
+      
+      setMyTasks(userTasks);
+    }         }));
         
         setMyTasks(userTasks);
       }
