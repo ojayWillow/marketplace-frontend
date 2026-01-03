@@ -51,9 +51,25 @@ export default function Header() {
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600">
-                  {user?.username}
-                </span>
+                <Link 
+                  to="/profile" 
+                  className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-2"
+                >
+                  {user?.avatar_url || user?.profile_picture_url ? (
+                    <img 
+                      src={user.avatar_url || user.profile_picture_url} 
+                      alt="" 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">
+                        {user?.username?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span>{user?.username}</span>
+                </Link>
                 <button
                   onClick={logout}
                   className="btn-secondary text-sm"
@@ -137,9 +153,26 @@ export default function Header() {
               <div className="mt-4 flex flex-col space-y-2">
                 {isAuthenticated ? (
                   <>
-                    <span className="text-sm text-gray-600 px-3">
-                      {user?.username}
-                    </span>
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {user?.avatar_url || user?.profile_picture_url ? (
+                        <img 
+                          src={user.avatar_url || user.profile_picture_url} 
+                          alt="" 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500 text-sm">
+                            {user?.username?.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <span>{user?.username} - My Profile</span>
+                    </Link>
                     <button
                       onClick={() => {
                         logout()
