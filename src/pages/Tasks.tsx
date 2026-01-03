@@ -108,8 +108,7 @@ const Tasks = () => {
         distance: task.distance || 0
       }));
       
-      setMyTasks(userTasks);
-    }         }));
+      setError(null);    }         }));
         
         setMyTasks(userTasks);
       }
