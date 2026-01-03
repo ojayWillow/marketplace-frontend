@@ -4,6 +4,7 @@ import { Icon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, Task as APITask } from '../api/tasks';
+import { useAuth } from '../stores/authStore';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -25,6 +26,7 @@ interface Task extends APITask {
 
 const Tasks = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,12 +140,14 @@ const Tasks = () => {
               ✓ Connected to backend - Showing {tasks.length} tasks within 10km
             </p>
           </div>
-          <button
-            onClick={() => navigate('/tasks/create')}
-            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
-          >
-            + Create Task
-          </button>
+          {isAuthenticated && (
+            <button
+              onClick={() => navigate('/tasks/create')}
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
+            >
+              + Create Task
+            </button>
+          )}
         </div>
 
         {/* Map Container */}
