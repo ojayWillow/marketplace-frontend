@@ -22,11 +22,15 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Response interceptor - handle 401
+// Response interceptor - handle 401 (but not for non-critical endpoints)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only auto-logout on 401 for critical auth endpoints, not for optional features
+    const url = error.config?.url || ''
+    const isOptionalEndpoint = url.includes('/tasks/my')
+    
+    if (error.response?.status === 401 && !isOptionalEndpoint) {
       useAuthStore.getState().logout()
     }
     return Promise.reject(error)
