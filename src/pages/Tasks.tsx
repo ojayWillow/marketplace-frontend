@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
+import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, Task as APITask } from '../api/tasks';
 
@@ -23,6 +24,7 @@ interface Task extends APITask {
 }
 
 const Tasks = () => {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,14 +128,22 @@ const Tasks = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
-          <p className="text-gray-600">
-            Browse nearby tasks and earn money by helping others
-          </p>
-          <p className="text-sm text-green-600 mt-1">
-            ✓ Connected to backend - Showing {tasks.length} tasks within 10km
-          </p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
+            <p className="text-gray-600">
+              Browse nearby tasks and earn money by helping others
+            </p>
+            <p className="text-sm text-green-600 mt-1">
+              ✓ Connected to backend - Showing {tasks.length} tasks within 10km
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/tasks/create')}
+            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
+          >
+            + Create Task
+          </button>
         </div>
 
         {/* Map Container */}
