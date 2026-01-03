@@ -9,6 +9,7 @@ import CreateListing from './pages/listings/CreateListing'
 import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
 import CreateTask from './pages/CreateTask'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateListing />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />
