@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
@@ -34,6 +34,15 @@ const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, 
   return null;
 };
 
+// Component to recenter map when location changes
+const MapRecenter = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([lat, lng], 13);
+  }, [lat, lng, map]);
+  return null;
+};
+
 const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
@@ -48,14 +57,18 @@ const Tasks = () => {
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga
   const [locationGranted, setLocationGranted] = useState(false);
   const [manualLocationSet, setManualLocationSet] = useState(false);
+  const [addressSearch, setAddressSearch] = useState('');
+  const [searchingAddress, setSearchingAddress] = useState(false);
+  const [locationName, setLocationName] = useState('');
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
     // Check if we have a saved manual location
     const savedLocation = localStorage.getItem('userManualLocation');
     if (savedLocation) {
-      const { lat, lng } = JSON.parse(savedLocation);
+      const { lat, lng, name } = JSON.parse(savedLocation);
       setUserLocation({ lat, lng });
+      setLocationName(name || '');
       setManualLocationSet(true);
       setLocationGranted(true);
       return;
@@ -83,20 +96,56 @@ const Tasks = () => {
     }
   }, []);
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const handleLocationSelect = (lat: number, lng: number, name?: string) => {
     const newLocation = { lat, lng };
     setUserLocation(newLocation);
     setManualLocationSet(true);
+    setLocationName(name || '');
     // Save to localStorage for persistence
-    localStorage.setItem('userManualLocation', JSON.stringify(newLocation));
+    localStorage.setItem('userManualLocation', JSON.stringify({ ...newLocation, name: name || '' }));
     // Refetch tasks for new location
     hasFetchedRef.current = false;
     fetchTasks(true);
   };
 
+  const searchAddress = async () => {
+    if (!addressSearch.trim()) return;
+    
+    setSearchingAddress(true);
+    try {
+      // Using Nominatim (OpenStreetMap) free geocoding API
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressSearch)}&limit=1`,
+        {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        }
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+        const name = result.display_name.split(',').slice(0, 2).join(', ');
+        handleLocationSelect(lat, lng, name);
+        setAddressSearch('');
+      } else {
+        alert('Address not found. Please try a different search term.');
+      }
+    } catch (err) {
+      console.error('Error searching address:', err);
+      alert('Failed to search address. Please try again.');
+    } finally {
+      setSearchingAddress(false);
+    }
+  };
+
   const resetToAutoLocation = () => {
     localStorage.removeItem('userManualLocation');
     setManualLocationSet(false);
+    setLocationName('');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -357,23 +406,48 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* Location info banner */}
+        {/* Location search and info */}
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-blue-800 text-sm">
-              📍 <strong>Click anywhere on the map</strong> to set your location manually.
-              {manualLocationSet && (
-                <span className="ml-2 text-blue-600">(Using custom location)</span>
-              )}
-            </p>
-            {manualLocationSet && (
+          <div className="flex flex-col gap-3">
+            {/* Address search */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={addressSearch}
+                onChange={(e) => setAddressSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchAddress()}
+                placeholder="Search address or city (e.g., Jelgava, Latvia)"
+                className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
               <button
-                onClick={resetToAutoLocation}
-                className="text-sm text-blue-600 hover:text-blue-700 underline"
+                onClick={searchAddress}
+                disabled={searchingAddress || !addressSearch.trim()}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                Reset to auto-detect
+                {searchingAddress ? 'Searching...' : '🔍 Search'}
               </button>
-            )}
+            </div>
+            
+            {/* Current location info */}
+            <div className="flex items-center justify-between text-sm">
+              <p className="text-blue-800">
+                📍 {manualLocationSet && locationName ? (
+                  <span><strong>{locationName}</strong> (manually set)</span>
+                ) : manualLocationSet ? (
+                  <span>Custom location (manually set)</span>
+                ) : (
+                  <span>Auto-detected location • Click map or search to change</span>
+                )}
+              </p>
+              {manualLocationSet && (
+                <button
+                  onClick={resetToAutoLocation}
+                  className="text-blue-600 hover:text-blue-700 underline"
+                >
+                  Reset to auto-detect
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -447,8 +521,11 @@ const Tasks = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
+            {/* Recenter map when location changes */}
+            <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
+            
             {/* Click handler for manual location selection */}
-            <LocationPicker onLocationSelect={handleLocationSelect} />
+            <LocationPicker onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)} />
             
             <Marker
               position={[userLocation.lat, userLocation.lng]}
@@ -457,6 +534,7 @@ const Tasks = () => {
               <Popup>
                 <div className="p-2">
                   <p className="font-bold">📍 Your Location</p>
+                  {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
                   <p className="text-xs text-gray-500">
                     {manualLocationSet ? '(Manually set)' : '(Auto-detected)'}
                   </p>
