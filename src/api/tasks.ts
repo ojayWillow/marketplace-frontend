@@ -21,6 +21,7 @@ export interface Task {
   assigned_to_id?: number;
   created_at?: string;
   updated_at?: string;
+  completed_at?: string;
 }
 
 export interface GetTasksParams {
@@ -48,10 +49,18 @@ export const getTasks = async (params: GetTasksParams = {}): Promise<GetTasksRes
 };
 
 /**
- * Get tasks assigned to current user
+ * Get tasks assigned to current user (as worker)
  */
 export const getMyTasks = async (): Promise<GetTasksResponse> => {
   const response = await apiClient.get('/api/tasks/my');
+  return response.data;
+};
+
+/**
+ * Get tasks created by current user (as client)
+ */
+export const getCreatedTasks = async (): Promise<GetTasksResponse> => {
+  const response = await apiClient.get('/api/tasks/created');
   return response.data;
 };
 
@@ -80,7 +89,39 @@ export const acceptTask = async (taskId: number, userId: number): Promise<Task> 
 };
 
 /**
- * Mark a task as completed
+ * Worker marks task as done - awaiting creator confirmation
+ */
+export const markTaskDone = async (taskId: number): Promise<Task> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/mark-done`);
+  return response.data.task;
+};
+
+/**
+ * Creator confirms task completion
+ */
+export const confirmTaskCompletion = async (taskId: number): Promise<Task> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/confirm`);
+  return response.data.task;
+};
+
+/**
+ * Creator disputes task completion
+ */
+export const disputeTask = async (taskId: number, reason?: string): Promise<Task> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/dispute`, { reason });
+  return response.data.task;
+};
+
+/**
+ * Creator cancels a task
+ */
+export const cancelTask = async (taskId: number): Promise<Task> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/cancel`);
+  return response.data.task;
+};
+
+/**
+ * Mark a task as completed (legacy - use markTaskDone + confirmTaskCompletion instead)
  */
 export const completeTask = async (taskId: number): Promise<Task> => {
   const response = await apiClient.post(`/api/tasks/${taskId}/complete`);
