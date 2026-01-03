@@ -51,7 +51,7 @@ export const getTasks = async (params: GetTasksParams = {}): Promise<GetTasksRes
  * Get tasks assigned to current user
  */
 export const getMyTasks = async (): Promise<GetTasksResponse> => {
-  const response = await apiClient.get('/api/tasks/my-tasks');
+  const response = await apiClient.get('/api/tasks/my');
   return response.data;
 };
 
