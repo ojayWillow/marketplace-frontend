@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useListing, useDeleteListing } from '../../hooks/useListings'
 import { useAuthStore } from '../../stores/authStore'
+import { getImageUrl } from '../../api/uploads'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import ErrorMessage from '../../components/ui/ErrorMessage'
 
@@ -12,8 +14,12 @@ export default function ListingDetail() {
   const { user } = useAuthStore()
   const { data: listing, isLoading, isError } = useListing(Number(id))
   const deleteListing = useDeleteListing()
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
   const isOwner = user && listing && user.id === listing.user_id
+
+  // Parse images from comma-separated string
+  const images = listing?.images ? listing.images.split(',').filter(Boolean) : []
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this listing?')) {
@@ -51,22 +57,88 @@ export default function ListingDetail() {
       </Link>
 
       <div className="card">
-        {/* Image placeholder */}
-        <div className="aspect-video bg-gray-100 flex items-center justify-center">
-          <svg
-            className="w-24 h-24 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </div>
+        {/* Image Gallery */}
+        {images.length > 0 ? (
+          <div className="bg-gray-100">
+            {/* Main Image */}
+            <div className="aspect-video relative overflow-hidden">
+              <img
+                src={getImageUrl(images[selectedImageIndex])}
+                alt={listing.title}
+                className="w-full h-full object-contain bg-gray-900"
+              />
+              
+              {/* Image counter */}
+              {images.length > 1 && (
+                <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+                  {selectedImageIndex + 1} / {images.length}
+                </div>
+              )}
+              
+              {/* Navigation arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImageIndex(prev => prev === 0 ? images.length - 1 : prev - 1)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setSelectedImageIndex(prev => prev === images.length - 1 ? 0 : prev + 1)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
+            
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div className="flex gap-2 p-3 overflow-x-auto">
+                {images.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      index === selectedImageIndex
+                        ? 'border-blue-500 ring-2 ring-blue-200'
+                        : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <img
+                      src={getImageUrl(img)}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Placeholder when no images */
+          <div className="aspect-video bg-gray-100 flex items-center justify-center">
+            <svg
+              className="w-24 h-24 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        )}
 
         <div className="p-6 sm:p-8">
           {/* Header */}
