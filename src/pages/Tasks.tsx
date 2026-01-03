@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
@@ -24,6 +24,16 @@ interface Task extends APITask {
   icon?: string;
 }
 
+// Component to handle map clicks for location selection
+const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
+  useMapEvents({
+    click: (e) => {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+};
+
 const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
@@ -37,9 +47,20 @@ const Tasks = () => {
   const [processingTask, setProcessingTask] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga
   const [locationGranted, setLocationGranted] = useState(false);
+  const [manualLocationSet, setManualLocationSet] = useState(false);
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    // Check if we have a saved manual location
+    const savedLocation = localStorage.getItem('userManualLocation');
+    if (savedLocation) {
+      const { lat, lng } = JSON.parse(savedLocation);
+      setUserLocation({ lat, lng });
+      setManualLocationSet(true);
+      setLocationGranted(true);
+      return;
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -52,14 +73,43 @@ const Tasks = () => {
         },
         (error) => {
           console.log('Geolocation error:', error);
-          setLocationGranted(false);
-          setError('Location access is required to use Quick Help. Please enable location in your browser settings.');
+          // Still allow access but with default location
+          setLocationGranted(true);
         }
       );
     } else {
-      setError('Geolocation is not supported by your browser. Quick Help requires location access.');
+      // Still allow access with default location
+      setLocationGranted(true);
     }
   }, []);
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    const newLocation = { lat, lng };
+    setUserLocation(newLocation);
+    setManualLocationSet(true);
+    // Save to localStorage for persistence
+    localStorage.setItem('userManualLocation', JSON.stringify(newLocation));
+    // Refetch tasks for new location
+    hasFetchedRef.current = false;
+    fetchTasks(true);
+  };
+
+  const resetToAutoLocation = () => {
+    localStorage.removeItem('userManualLocation');
+    setManualLocationSet(false);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          hasFetchedRef.current = false;
+          fetchTasks(true);
+        }
+      );
+    }
+  };
 
   const getCategoryIcon = (category: string): string => {
     const iconMap: { [key: string]: string } = {
@@ -240,18 +290,12 @@ const Tasks = () => {
     return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${task.latitude},${task.longitude}`;
   };
 
-  if (!locationGranted && !loading) {
+  if (loading && !locationGranted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-md">
-          <div className="text-6xl mb-4">📍</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Location Required</h2>
-          <p className="text-gray-600 mb-4">
-            Quick Help needs your location to show nearby tasks and help you earn money.
-          </p>
-          <p className="text-sm text-gray-500">
-            Please enable location access in your browser settings and reload the page.
-          </p>
+        <div className="text-center">
+          <div className="text-2xl font-bold text-gray-900 mb-2">Loading...</div>
+          <div className="text-gray-600">Getting your location</div>
         </div>
       </div>
     );
@@ -311,6 +355,26 @@ const Tasks = () => {
               + Create Task
             </button>
           )}
+        </div>
+
+        {/* Location info banner */}
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-blue-800 text-sm">
+              📍 <strong>Click anywhere on the map</strong> to set your location manually.
+              {manualLocationSet && (
+                <span className="ml-2 text-blue-600">(Using custom location)</span>
+              )}
+            </p>
+            {manualLocationSet && (
+              <button
+                onClick={resetToAutoLocation}
+                className="text-sm text-blue-600 hover:text-blue-700 underline"
+              >
+                Reset to auto-detect
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Notification for pending confirmations */}
@@ -383,6 +447,9 @@ const Tasks = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
+            {/* Click handler for manual location selection */}
+            <LocationPicker onLocationSelect={handleLocationSelect} />
+            
             <Marker
               position={[userLocation.lat, userLocation.lng]}
               icon={userLocationIcon}
@@ -390,6 +457,9 @@ const Tasks = () => {
               <Popup>
                 <div className="p-2">
                   <p className="font-bold">📍 Your Location</p>
+                  <p className="text-xs text-gray-500">
+                    {manualLocationSet ? '(Manually set)' : '(Auto-detected)'}
+                  </p>
                 </div>
               </Popup>
             </Marker>
