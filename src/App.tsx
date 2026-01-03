@@ -19,7 +19,14 @@ function App() {
         <Route path="register" element={<Register />} />
         <Route path="listings" element={<Listings />} />
         <Route path="tasks" element={<Tasks />} />
-        <Route path="tasks/create" element={<CreateTask />} />
+        <Route
+          path="tasks/create"
+          element={
+            <ProtectedRoute>
+              <CreateTask />
+            </ProtectedRoute>
+          }
+        />
         <Route path="listings/:id" element={<ListingDetail />} />
         <Route
           path="listings/create"
