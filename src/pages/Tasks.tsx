@@ -78,20 +78,22 @@ const Tasks = () => {
       
       setTasks(tasksWithIcons);
       
-      // Fetch user's accepted tasks if logged in
-      if (isAuthenticated && user?.id) {
-        const myTasksResponse = await getMyTasks();
-        
-        const userTasks = myTasksResponse.tasks.map(task => ({
-          ...task,
-          icon: getCategoryIcon(task.category),
-          distance: task.distance || 0
-        }));
-        
-        setMyTasks(userTasks);
-      }
+    // Fetch user's accepted tasks if logged in
+    if (isAuthenticated && user?.id) {
+      const myTasksResponse = await getMyTasks();
       
-      setError(null);
+      const userTasks = myTasksResponse.tasks.map(task => ({
+        ...task,
+        icon: getCategoryIcon(task.category),
+        distance: task.distance || 0
+      }));
+      
+      setMyTasks(userTasks);
+    }
+    
+    setError(null);
+
+      
     } catch (err) {
       console.error('Error fetching tasks:', err);
       setError('Failed to load tasks. Please try again later.');
