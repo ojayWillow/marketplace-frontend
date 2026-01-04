@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getTask, Task, acceptTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
+import { getTask, Task, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -12,6 +12,8 @@ const TaskDetail = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [applicationMessage, setApplicationMessage] = useState('');
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -32,21 +34,26 @@ const TaskDetail = () => {
     }
   };
 
-  const handleAcceptTask = async () => {
+  const handleApplyTask = async () => {
     if (!isAuthenticated || !user?.id) {
-      toast.warning('Please login to accept tasks');
+      toast.warning('Please login to apply');
       navigate('/login');
       return;
     }
 
     try {
       setActionLoading(true);
-      await acceptTask(Number(id), user.id);
-      toast.success('Task accepted! You can now start working on it.');
-      fetchTask();
+      await applyToTask(Number(id), applicationMessage);
+      toast.success('✅ Application submitted! The task owner will review your application and get back to you.');
+      setShowApplicationForm(false);
+      setApplicationMessage('');
+      // Navigate back to tasks page
+      setTimeout(() => {
+        navigate('/tasks');
+      }, 2000);
     } catch (error: any) {
-      console.error('Error accepting task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to accept task');
+      console.error('Error applying to task:', error);
+      toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -194,10 +201,7 @@ const TaskDetail = () => {
           <div className="text-6xl mb-4">💭</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Task not found</h2>
           <p className="text-gray-600 mb-4">This task may have been removed or doesn't exist.</p>
-          <Link
-            to="/tasks"
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-          >
+          <Link to="/tasks" className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
             Browse Tasks
           </Link>
         </div>
@@ -207,7 +211,7 @@ const TaskDetail = () => {
 
   const isCreator = user?.id === task.creator_id;
   const isAssigned = user?.id === task.assigned_to_id;
-  const canAccept = isAuthenticated && !isCreator && task.status === 'open';
+  const canApply = isAuthenticated && !isCreator && task.status === 'open';
   const canMarkDone = isAssigned && (task.status === 'assigned' || task.status === 'in_progress');
   const canConfirm = isCreator && task.status === 'pending_confirmation';
   const canDispute = isCreator && task.status === 'pending_confirmation';
@@ -217,20 +221,14 @@ const TaskDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Back button */}
-        <Link
-          to="/tasks"
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
-        >
+        <Link to="/tasks" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
           <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back to Tasks
         </Link>
 
-        {/* Main card */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -241,19 +239,14 @@ const TaskDetail = () => {
                     <p className="text-gray-500">{getCategoryLabel(task.category)}</p>
                   </div>
                 </div>
-                
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {getStatusBadge(task.status)}
                   {getPriorityBadge(task.priority || 'normal')}
                   {task.is_urgent && (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
-                      ⚡ Urgent
-                    </span>
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">⚡ Urgent</span>
                   )}
                 </div>
               </div>
-              
-              {/* Budget */}
               {task.budget && (
                 <div className="text-right">
                   <p className="text-sm text-gray-500">Budget</p>
@@ -263,18 +256,15 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Details */}
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Description</h2>
             <p className="text-gray-700 whitespace-pre-wrap mb-6">{task.description}</p>
 
-            {/* Info grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-500 mb-1">📍 Location</p>
                 <p className="font-medium text-gray-900">{task.location}</p>
               </div>
-              
               {task.deadline && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-500 mb-1">📅 Deadline</p>
@@ -290,7 +280,6 @@ const TaskDetail = () => {
                   </p>
                 </div>
               )}
-              
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-500 mb-1">📆 Posted</p>
                 <p className="font-medium text-gray-900">
@@ -301,136 +290,104 @@ const TaskDetail = () => {
                   })}
                 </p>
               </div>
-              
               {task.creator_name && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-500 mb-1">👤 Posted by</p>
-                  <Link 
-                    to={`/users/${task.creator_id}`}
-                    className="font-medium text-blue-600 hover:text-blue-700"
-                  >
+                  <Link to={`/users/${task.creator_id}`} className="font-medium text-blue-600 hover:text-blue-700">
                     {task.creator_name}
                   </Link>
                 </div>
               )}
-              
               {task.assigned_to_name && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-500 mb-1">🛠️ Assigned to</p>
-                  <Link 
-                    to={`/users/${task.assigned_to_id}`}
-                    className="font-medium text-blue-600 hover:text-blue-700"
-                  >
+                  <Link to={`/users/${task.assigned_to_id}`} className="font-medium text-blue-600 hover:text-blue-700">
                     {task.assigned_to_name}
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* Actions */}
             <div className="border-t pt-6">
-              <div className="flex flex-wrap gap-3">
-                {/* Accept task button */}
-                {canAccept && (
-                  <button
-                    onClick={handleAcceptTask}
-                    disabled={actionLoading}
-                    className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium"
-                  >
-                    {actionLoading ? 'Processing...' : '✓ Accept This Task'}
-                  </button>
+              <div className="flex flex-col gap-3">
+                {/* Apply button with form */}
+                {canApply && (
+                  <>
+                    {!showApplicationForm ? (
+                      <button onClick={() => setShowApplicationForm(true)} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium text-lg">
+                        📝 Apply for This Task
+                      </button>
+                    ) : (
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                        <h3 className="font-semibold text-gray-900 mb-3">Submit Your Application</h3>
+                        <textarea value={applicationMessage} onChange={(e) => setApplicationMessage(e.target.value)} placeholder="Introduce yourself and explain why you're a good fit for this task (optional)..." className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3 min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <div className="flex gap-2">
+                          <button onClick={handleApplyTask} disabled={actionLoading} className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium">
+                            {actionLoading ? '⏳ Submitting...' : '✅ Submit Application'}
+                          </button>
+                          <button onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* Mark as done button (for assigned worker) */}
                 {canMarkDone && (
-                  <button
-                    onClick={handleMarkDone}
-                    disabled={actionLoading}
-                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium"
-                  >
+                  <button onClick={handleMarkDone} disabled={actionLoading} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium">
                     {actionLoading ? 'Processing...' : '✓ Mark as Done'}
                   </button>
                 )}
 
-                {/* Confirm completion (for creator) */}
                 {canConfirm && (
-                  <button
-                    onClick={handleConfirmDone}
-                    disabled={actionLoading}
-                    className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium"
-                  >
+                  <button onClick={handleConfirmDone} disabled={actionLoading} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium">
                     {actionLoading ? 'Processing...' : '✓ Confirm Completed'}
                   </button>
                 )}
 
-                {/* Dispute button (for creator) */}
                 {canDispute && (
-                  <button
-                    onClick={handleDispute}
-                    disabled={actionLoading}
-                    className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-medium"
-                  >
+                  <button onClick={handleDispute} disabled={actionLoading} className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-medium">
                     {actionLoading ? 'Processing...' : '⚠️ Dispute'}
                   </button>
                 )}
 
-                {/* Edit button (for creator) */}
                 {canEdit && (
-                  <Link
-                    to={`/tasks/${task.id}/edit`}
-                    className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 font-medium"
-                  >
+                  <Link to={`/tasks/${task.id}/edit`} className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 font-medium text-center">
                     ✏️ Edit Task
                   </Link>
                 )}
 
-                {/* Cancel button (for creator) */}
                 {canCancel && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={actionLoading}
-                    className="bg-red-100 text-red-700 px-6 py-3 rounded-lg hover:bg-red-200 disabled:bg-gray-200 font-medium"
-                  >
+                  <button onClick={handleCancel} disabled={actionLoading} className="bg-red-100 text-red-700 px-6 py-3 rounded-lg hover:bg-red-200 disabled:bg-gray-200 font-medium">
                     {actionLoading ? 'Processing...' : 'Cancel Task'}
                   </button>
                 )}
 
-                {/* Login prompt */}
                 {!isAuthenticated && task.status === 'open' && (
-                  <Link
-                    to="/login"
-                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
-                  >
-                    Login to Accept Task
+                  <Link to="/login" className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium text-center">
+                    Login to Apply
                   </Link>
                 )}
 
-                {/* Status messages */}
                 {isCreator && task.status === 'assigned' && (
                   <div className="flex items-center text-yellow-600 bg-yellow-50 px-4 py-3 rounded-lg">
-                    <span className="mr-2">⏳</span>
-                    Waiting for worker to complete this task
+                    <span className="mr-2">⏳</span> Waiting for worker to complete this task
                   </div>
                 )}
-                
                 {isAssigned && task.status === 'pending_confirmation' && (
                   <div className="flex items-center text-purple-600 bg-purple-50 px-4 py-3 rounded-lg">
-                    <span className="mr-2">⏳</span>
-                    Waiting for creator to confirm completion
+                    <span className="mr-2">⏳</span> Waiting for creator to confirm completion
                   </div>
                 )}
-                
                 {task.status === 'completed' && (
                   <div className="flex items-center text-green-600 bg-green-50 px-4 py-3 rounded-lg">
-                    <span className="mr-2">✅</span>
-                    This task has been completed
+                    <span className="mr-2">✅</span> This task has been completed
                   </div>
                 )}
-                
                 {task.status === 'cancelled' && (
                   <div className="flex items-center text-gray-600 bg-gray-50 px-4 py-3 rounded-lg">
-                    <span className="mr-2">❌</span>
-                    This task has been cancelled
+                    <span className="mr-2">❌</span> This task has been cancelled
                   </div>
                 )}
               </div>
@@ -438,7 +395,6 @@ const TaskDetail = () => {
           </div>
         </div>
 
-        {/* Map placeholder */}
         {task.latitude && task.longitude && (
           <div className="mt-6 bg-white rounded-lg shadow-md p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">🗺️ Location</h2>
@@ -447,12 +403,7 @@ const TaskDetail = () => {
                 <p className="text-2xl mb-2">📍</p>
                 <p>{task.location}</p>
                 <p className="text-sm mt-1">Lat: {task.latitude.toFixed(4)}, Lng: {task.longitude.toFixed(4)}</p>
-                <a 
-                  href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-block text-blue-600 hover:text-blue-700 text-sm"
-                >
+                <a href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-blue-600 hover:text-blue-700 text-sm">
                   Open in Google Maps →
                 </a>
               </div>
