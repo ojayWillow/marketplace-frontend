@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
 import { listingsApi, type Listing } from '../api/listings';
+import { reviewsApi } from '../api/reviews';
 import { getImageUrl } from '../api/uploads';
 import { Task, getMyTasks, getCreatedTasks, cancelTask, confirmTaskCompletion } from '../api/tasks';
 
@@ -54,6 +55,8 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'about' | 'listings' | 'tasks' | 'reviews'>('about');
   const [taskSubTab, setTaskSubTab] = useState<'assigned' | 'created'>('assigned');
+  const [editingReview, setEditingReview] = useState<number | null>(null);
+  const [reviewEditData, setReviewEditData] = useState<{ rating: number; content: string }>({ rating: 5, content: '' });
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -167,6 +170,38 @@ const Profile = () => {
     }
   };
 
+  const handleEditReview = (review: Review) => {
+    setEditingReview(review.id);
+    setReviewEditData({ rating: review.rating, content: review.content || '' });
+  };
+
+  const handleSaveReview = async (reviewId: number) => {
+    try {
+      await reviewsApi.update(reviewId, reviewEditData);
+      setReviews(prev => prev.map(r => 
+        r.id === reviewId ? { ...r, ...reviewEditData } : r
+      ));
+      setEditingReview(null);
+      toast.success('Review updated successfully');
+    } catch (error) {
+      console.error('Error updating review:', error);
+      toast.error('Failed to update review');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    
+    try {
+      await reviewsApi.delete(reviewId);
+      setReviews(prev => prev.filter(r => r.id !== reviewId));
+      toast.success('Review deleted successfully');
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      toast.error('Failed to delete review');
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -204,6 +239,23 @@ const Profile = () => {
           >
             ★
           </span>
+        ))}
+      </div>
+    );
+  };
+
+  const renderEditableStars = (rating: number, onChange: (rating: number) => void) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map(star => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className={`text-2xl ${star <= rating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400 transition-colors`}
+          >
+            ★
+          </button>
         ))}
       </div>
     );
@@ -807,27 +859,79 @@ const Profile = () => {
               <div className="space-y-4">
                 {reviews.map(review => (
                   <div key={review.id} className="border-b pb-4 last:border-b-0">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        {review.reviewer_avatar ? (
-                          <img src={review.reviewer_avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          <span className="text-gray-500">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900">{review.reviewer_name}</span>
-                          {renderStars(review.rating)}
+                    {editingReview === review.id ? (
+                      // Edit mode
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                          {renderEditableStars(reviewEditData.rating, (rating) => 
+                            setReviewEditData(prev => ({ ...prev, rating }))
+                          )}
                         </div>
-                        {review.content && (
-                          <p className="text-gray-600">{review.content}</p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </p>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+                          <textarea
+                            value={reviewEditData.content}
+                            onChange={(e) => setReviewEditData(prev => ({ ...prev, content: e.target.value }))}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSaveReview(review.id)}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingReview(null)}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      // View mode
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          {review.reviewer_avatar ? (
+                            <img src={review.reviewer_avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            <span className="text-gray-500">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">{review.reviewer_name}</span>
+                            {renderStars(review.rating)}
+                          </div>
+                          {review.content && (
+                            <p className="text-gray-600">{review.content}</p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {user && review.reviewer_id === user.id && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditReview(review)}
+                              className="text-sm text-blue-600 hover:text-blue-700"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview(review.id)}
+                              className="text-sm text-red-600 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
