@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTask } from '../api/tasks';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
+import { useAuthStore } from '../stores/authStore';
+import { useToastStore } from '../stores/toastStore';
 
 const CreateTask = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuthStore();
+  const toast = useToastStore();
   const [loading, setLoading] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
@@ -30,6 +34,14 @@ const CreateTask = () => {
     { value: 'outdoor', label: '🌿 Outdoor', icon: '🌿' },
   ];
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.warning('Please login to create a task');
+      navigate('/login');
+    }
+  }, [isAuthenticated]);
+
   // Debounced geocoding search
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -54,21 +66,44 @@ const CreateTask = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.id) {
+      toast.error('You must be logged in to create a task');
+      navigate('/login');
+      return;
+    }
+    
+    if (!formData.title.trim()) {
+      toast.error('Please enter a task title');
+      return;
+    }
+    
+    if (!formData.description.trim()) {
+      toast.error('Please enter a task description');
+      return;
+    }
+    
+    if (!formData.location.trim()) {
+      toast.error('Please enter a location');
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const taskData = {
         ...formData,
-        creator_id: 1, // TODO: Get from auth context
+        creator_id: user.id,
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
         deadline: formData.deadline || undefined
       };
 
       await createTask(taskData);
+      toast.success('Task created successfully! It will now appear in Quick Help.');
       navigate('/tasks');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      toast.error(error?.response?.data?.error || 'Failed to create task. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -198,7 +233,7 @@ const CreateTask = () => {
             {/* Budget */}
             <div>
               <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
-                Budget (EUR)
+                Budget (EUR) *
               </label>
               <input
                 type="number"
@@ -206,11 +241,13 @@ const CreateTask = () => {
                 name="budget"
                 step="0.01"
                 min="0"
+                required
                 value={formData.budget}
                 onChange={handleChange}
                 placeholder="e.g., 25.00"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              <p className="text-xs text-gray-500 mt-1">How much are you willing to pay for this task?</p>
             </div>
 
             {/* Deadline */}
