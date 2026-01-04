@@ -13,7 +13,7 @@ export const uploadImage = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await api.post('/uploads', formData, {
+  const response = await api.post('/api/uploads', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -40,7 +40,7 @@ export const uploadImages = async (files: File[]): Promise<UploadResponse[]> => 
  * Delete an uploaded image
  */
 export const deleteImage = async (filename: string): Promise<void> => {
-  await api.delete(`/uploads/${filename}`);
+  await api.delete(`/api/uploads/${filename}`);
 };
 
 /**
