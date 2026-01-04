@@ -66,13 +66,8 @@ const Profile = () => {
       return;
     }
     fetchProfile();
+    fetchMyListings(); // Fetch listings on page load for accurate count
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (activeTab === 'listings' && myListings.length === 0 && !listingsLoading) {
-      fetchMyListings();
-    }
-  }, [activeTab]);
 
   const fetchProfile = async () => {
     try {
@@ -108,7 +103,7 @@ const Profile = () => {
       setMyListings(response.listings || []);
     } catch (error) {
       console.error('Error fetching my listings:', error);
-      toast.error('Failed to load your listings');
+      // Don't show toast on initial load, only show error in tab view
     } finally {
       setListingsLoading(false);
     }
