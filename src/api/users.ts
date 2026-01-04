@@ -32,7 +32,7 @@ export interface UserReview {
  * Get public profile of a user
  */
 export const getPublicUser = async (userId: number): Promise<PublicUser> => {
-  const response = await api.get(`/auth/users/${userId}`);
+  const response = await api.get(`/api/users/${userId}`);
   return response.data;
 };
 
@@ -40,6 +40,6 @@ export const getPublicUser = async (userId: number): Promise<PublicUser> => {
  * Get reviews for a user
  */
 export const getUserReviews = async (userId: number): Promise<{ reviews: UserReview[]; total: number }> => {
-  const response = await api.get(`/auth/users/${userId}/reviews`);
+  const response = await api.get(`/api/users/${userId}/reviews`);
   return response.data;
 };
