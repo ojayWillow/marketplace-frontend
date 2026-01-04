@@ -5,6 +5,7 @@ import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
 import { listingsApi, type Listing } from '../api/listings';
 import { getImageUrl } from '../api/uploads';
+import { Task, getMyTasks, getCreatedTasks, cancelTask, confirmTaskDone } from '../api/tasks';
 
 interface UserProfile {
   id: number;
@@ -44,11 +45,15 @@ const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(false);
+  const [tasksLoading, setTasksLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'listings' | 'reviews'>('about');
+  const [activeTab, setActiveTab] = useState<'about' | 'listings' | 'tasks' | 'reviews'>('about');
+  const [taskSubTab, setTaskSubTab] = useState<'assigned' | 'created'>('assigned');
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -66,7 +71,8 @@ const Profile = () => {
       return;
     }
     fetchProfile();
-    fetchMyListings(); // Fetch listings on page load for accurate count
+    fetchMyListings();
+    fetchTasks();
   }, [isAuthenticated]);
 
   const fetchProfile = async () => {
@@ -103,9 +109,24 @@ const Profile = () => {
       setMyListings(response.listings || []);
     } catch (error) {
       console.error('Error fetching my listings:', error);
-      // Don't show toast on initial load, only show error in tab view
     } finally {
       setListingsLoading(false);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      setTasksLoading(true);
+      const [assigned, created] = await Promise.all([
+        getMyTasks(),
+        getCreatedTasks()
+      ]);
+      setMyTasks(assigned.tasks || []);
+      setCreatedTasks(created.tasks || []);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    } finally {
+      setTasksLoading(false);
     }
   };
 
@@ -122,13 +143,36 @@ const Profile = () => {
     }
   };
 
+  const handleCancelTask = async (taskId: number) => {
+    if (!window.confirm('Are you sure you want to cancel this task?')) return;
+    
+    try {
+      await cancelTask(taskId);
+      toast.success('Task cancelled');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error cancelling task:', error);
+      toast.error('Failed to cancel task');
+    }
+  };
+
+  const handleConfirmTask = async (taskId: number) => {
+    try {
+      await confirmTaskDone(taskId);
+      toast.success('Task marked as completed!');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error confirming task:', error);
+      toast.error('Failed to confirm task');
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
       const response = await apiClient.put('/api/auth/profile', formData);
       setProfile(response.data.user);
       
-      // Update auth store with new user data
       if (token) {
         setAuth(response.data.user, token);
       }
@@ -168,14 +212,36 @@ const Profile = () => {
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'active':
+      case 'open':
         return 'bg-green-100 text-green-700';
       case 'sold':
+      case 'completed':
         return 'bg-blue-100 text-blue-700';
+      case 'assigned':
+      case 'in_progress':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'pending_confirmation':
+        return 'bg-purple-100 text-purple-700';
+      case 'cancelled':
       case 'expired':
         return 'bg-gray-100 text-gray-700';
+      case 'disputed':
+        return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, string> = {
+      'pet-care': '🐕',
+      'moving': '📦',
+      'shopping': '🛒',
+      'cleaning': '🧹',
+      'delivery': '📄',
+      'outdoor': '🌿',
+    };
+    return icons[category] || '📋';
   };
 
   if (loading) {
@@ -198,6 +264,8 @@ const Profile = () => {
     year: 'numeric',
     month: 'long'
   });
+
+  const totalTasks = myTasks.length + createdTasks.length;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -304,7 +372,7 @@ const Profile = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setActiveTab('about')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
@@ -324,6 +392,16 @@ const Profile = () => {
             }`}
           >
             My Listings ({myListings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('tasks')}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'tasks'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            My Tasks ({totalTasks})
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -552,6 +630,166 @@ const Profile = () => {
                   );
                 })}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Tasks Tab */}
+        {activeTab === 'tasks' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">My Tasks</h2>
+              <Link
+                to="/tasks/create"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                + Create Task
+              </Link>
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="flex gap-2 mb-6 border-b">
+              <button
+                onClick={() => setTaskSubTab('assigned')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  taskSubTab === 'assigned'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Assigned to Me ({myTasks.length})
+              </button>
+              <button
+                onClick={() => setTaskSubTab('created')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  taskSubTab === 'created'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Created by Me ({createdTasks.length})
+              </button>
+            </div>
+
+            {tasksLoading ? (
+              <div className="text-center py-8 text-gray-600">Loading tasks...</div>
+            ) : (
+              <>
+                {/* Assigned Tasks */}
+                {taskSubTab === 'assigned' && (
+                  <>
+                    {myTasks.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">🔍</div>
+                        <p className="text-gray-500 mb-4">No tasks assigned to you yet.</p>
+                        <Link
+                          to="/tasks"
+                          className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          Browse Available Tasks
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {myTasks.map(task => (
+                          <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
+                                  <h3 className="font-medium text-gray-900">{task.title}</h3>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                                    {task.status.replace('_', ' ')}
+                                  </span>
+                                </div>
+                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  <span>📍 {task.location}</span>
+                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Created Tasks */}
+                {taskSubTab === 'created' && (
+                  <>
+                    {createdTasks.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">📋</div>
+                        <p className="text-gray-500 mb-4">You haven't created any tasks yet.</p>
+                        <Link
+                          to="/tasks/create"
+                          className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          Create Your First Task
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {createdTasks.map(task => (
+                          <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
+                                  <h3 className="font-medium text-gray-900">{task.title}</h3>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                                    {task.status.replace('_', ' ')}
+                                  </span>
+                                  {task.is_urgent && (
+                                    <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
+                                      Urgent
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  <span>📍 {task.location}</span>
+                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
+                                </div>
+                              </div>
+                              
+                              {/* Actions */}
+                              <div className="flex gap-2 ml-4">
+                                {task.status === 'pending_confirmation' && (
+                                  <button
+                                    onClick={() => handleConfirmTask(task.id)}
+                                    className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                                  >
+                                    ✓ Confirm
+                                  </button>
+                                )}
+                                {task.status === 'open' && (
+                                  <>
+                                    <Link
+                                      to={`/tasks/${task.id}/edit`}
+                                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                    >
+                                      ✏️ Edit
+                                    </Link>
+                                    <button
+                                      onClick={() => handleCancelTask(task.id)}
+                                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         )}
