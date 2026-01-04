@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, acceptTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, cancelTask, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
@@ -806,12 +806,20 @@ const Tasks = () => {
               >
                 <Popup>
                   <div className="p-2">
-                    <h3 className="font-bold text-lg mb-1">{task.title}</h3>
+                    <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">
+                      {task.title}
+                    </Link>
                     <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
                       {getStatusBadge(task.status)}
                     </div>
+                    <Link 
+                      to={`/tasks/${task.id}`}
+                      className="text-xs text-blue-500 hover:text-blue-700"
+                    >
+                      View Details →
+                    </Link>
                   </div>
                 </Popup>
               </Marker>
@@ -981,10 +989,15 @@ const TaskCard = ({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">{task.icon}</span>
-            <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+            <Link 
+              to={`/tasks/${task.id}`}
+              className="text-lg font-semibold text-gray-900 hover:text-blue-600 hover:underline"
+            >
+              {task.title}
+            </Link>
             {getStatusBadge(task.status)}
           </div>
-          <p className="text-gray-600 mb-2">{task.description}</p>
+          <p className="text-gray-600 mb-2 line-clamp-2">{task.description}</p>
           <div className="flex items-center gap-4 text-sm mb-2">
             <span className="text-gray-500">📍 {task.distance?.toFixed(1) || '0.0'}km away</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
@@ -992,8 +1005,14 @@ const TaskCard = ({
             </span>
           </div>
           <p className="text-xs text-gray-500">📍 {task.location}</p>
+          <Link 
+            to={`/tasks/${task.id}`}
+            className="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block"
+          >
+            View Details →
+          </Link>
         </div>
-        <div className="text-right">
+        <div className="text-right ml-4">
           <div className="text-2xl font-bold text-green-600 mb-2">
             €{task.budget || task.reward || 0}
           </div>
@@ -1001,7 +1020,7 @@ const TaskCard = ({
           {/* Available Tasks - Accept button */}
           {activeTab === 'available' && (
             <button 
-              onClick={() => onAccept(task.id)}
+              onClick={(e) => { e.preventDefault(); onAccept(task.id); }}
               disabled={acceptingTask === task.id}
               className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
