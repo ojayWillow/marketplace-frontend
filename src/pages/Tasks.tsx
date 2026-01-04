@@ -97,11 +97,12 @@ const Tasks = () => {
   const [locationName, setLocationName] = useState('');
   const [searchRadius, setSearchRadius] = useState(25); // Default 25km
   
-  // NEW: Search and filter state
+  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [showFilters, setShowFilters] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -119,18 +120,7 @@ const Tasks = () => {
   }, []);
 
   useEffect(() => {
-    // Check if we have a saved manual location
-    const savedLocation = localStorage.getItem('userManualLocation');
-    if (savedLocation) {
-      const { lat, lng, name } = JSON.parse(savedLocation);
-      setUserLocation({ lat, lng });
-      setLocationName(name || '');
-      setManualLocationSet(true);
-      setLocationGranted(true);
-      return;
-    }
-
-    // Load saved radius
+    // Don't check for manual location - always auto-detect by default
     const savedRadius = localStorage.getItem('taskSearchRadius');
     if (savedRadius) {
       setSearchRadius(parseInt(savedRadius, 10));
@@ -148,12 +138,10 @@ const Tasks = () => {
         },
         (error) => {
           console.log('Geolocation error:', error);
-          // Still allow access but with default location
           setLocationGranted(true);
         }
       );
     } else {
-      // Still allow access with default location
       setLocationGranted(true);
     }
   }, []);
@@ -163,11 +151,9 @@ const Tasks = () => {
     setUserLocation(newLocation);
     setManualLocationSet(true);
     setLocationName(name || '');
-    // Save to localStorage for persistence
-    localStorage.setItem('userManualLocation', JSON.stringify({ ...newLocation, name: name || '' }));
-    // Refetch tasks for new location
     hasFetchedRef.current = false;
     fetchTasks(true);
+    setShowLocationModal(false);
   };
 
   const handleRadiusChange = (newRadius: number) => {
@@ -187,7 +173,6 @@ const Tasks = () => {
 
     setSearchingAddress(true);
     try {
-      // Using Nominatim with Latvia country code for better local results
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=lv&limit=8&addressdetails=1`,
         {
@@ -207,27 +192,20 @@ const Tasks = () => {
     }
   };
 
-  // Handle input change with debounce
   const handleAddressInputChange = (value: string) => {
     setAddressSearch(value);
-    
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    
-    // Debounce: wait 300ms after user stops typing
     searchTimeoutRef.current = setTimeout(() => {
       searchAddressSuggestions(value);
     }, 300);
   };
 
-  // Select a suggestion
   const selectSuggestion = (suggestion: AddressSuggestion) => {
     const lat = parseFloat(suggestion.lat);
     const lng = parseFloat(suggestion.lon);
     const name = suggestion.display_name.split(',').slice(0, 3).join(', ');
-    
     handleLocationSelect(lat, lng, name);
     setAddressSearch('');
     setSuggestions([]);
@@ -235,7 +213,6 @@ const Tasks = () => {
   };
 
   const resetToAutoLocation = () => {
-    localStorage.removeItem('userManualLocation');
     setManualLocationSet(false);
     setLocationName('');
     if (navigator.geolocation) {
@@ -277,7 +254,6 @@ const Tasks = () => {
     setLoading(true);
     setError(null);
     
-    // Fetch available tasks
     try {
       const availableResponse = await getTasks({
         latitude: userLocation.lat,
@@ -287,7 +263,6 @@ const Tasks = () => {
         category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       
-      // Filter out tasks created by current user
       const filteredTasks = availableResponse.tasks.filter(task => {
         if (!user?.id) return true;
         return task.creator_id !== user.id;
@@ -305,13 +280,10 @@ const Tasks = () => {
       setError('Failed to load tasks. Please try again later.');
     }
     
-    // Fetch user's tasks if logged in
     if (isAuthenticated && user?.id) {
       try {
-        // Tasks I'm working on
         const myTasksResponse = await getMyTasks();
         const userTasks = myTasksResponse.tasks.map(task => {
-          // Calculate distance from user location
           const distance = calculateDistance(
             userLocation.lat,
             userLocation.lng,
@@ -326,7 +298,6 @@ const Tasks = () => {
         });
         setMyTasks(userTasks);
         
-        // Tasks I created
         const createdResponse = await getCreatedTasks();
         const createdTasks = createdResponse.tasks.map(task => ({
           ...task,
@@ -351,7 +322,6 @@ const Tasks = () => {
     }
   }, [locationGranted, isAuthenticated]);
 
-  // Refetch when user changes (login/logout)
   useEffect(() => {
     if (locationGranted) {
       hasFetchedRef.current = false;
@@ -359,7 +329,6 @@ const Tasks = () => {
     }
   }, [user?.id]);
 
-  // Refetch when category filter changes
   useEffect(() => {
     if (locationGranted) {
       hasFetchedRef.current = false;
@@ -367,10 +336,8 @@ const Tasks = () => {
     }
   }, [selectedCategory]);
 
-  // Refetch when user location changes to recalculate distances
   useEffect(() => {
     if (locationGranted && myTasks.length > 0) {
-      // Recalculate distances for my tasks when location changes
       const updatedMyTasks = myTasks.map(task => {
         const distance = calculateDistance(
           userLocation.lat,
@@ -452,7 +419,7 @@ const Tasks = () => {
 
   const handleDispute = async (taskId: number) => {
     const reason = prompt('Please describe the issue:');
-    if (reason === null) return; // User cancelled
+    if (reason === null) return;
     
     try {
       setProcessingTask(taskId);
@@ -493,16 +460,13 @@ const Tasks = () => {
     return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${task.latitude},${task.longitude}`;
   };
 
-  // Filter tasks based on search query and price range
   const filterTasks = (taskList: Task[]) => {
     return taskList.filter(task => {
-      // Search filter
       const matchesSearch = searchQuery === '' || 
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.location.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Price filter
       const taskPrice = task.budget || task.reward || 0;
       const matchesPrice = taskPrice >= priceRange.min && taskPrice <= priceRange.max;
       
@@ -552,19 +516,10 @@ const Tasks = () => {
     );
   }
 
-  // Get tasks for current tab and apply filters
   const rawDisplayTasks = activeTab === 'available' ? tasks : activeTab === 'my-tasks' ? myTasks : postedTasks;
   const displayTasks = filterTasks(rawDisplayTasks);
-  
-  // Filter tasks for map display - exclude completed/cancelled tasks
-  const mapTasks = displayTasks.filter(task => 
-    !['completed', 'cancelled'].includes(task.status)
-  );
-
-  // Pending confirmation tasks for creator
+  const mapTasks = displayTasks.filter(task => !['completed', 'cancelled'].includes(task.status));
   const pendingConfirmation = postedTasks.filter(t => t.status === 'pending_confirmation');
-  
-  // Active posted tasks (not completed/cancelled) for display
   const activePostedTasks = filterTasks(postedTasks.filter(t => !['completed', 'cancelled'].includes(t.status)));
   const completedPostedTasks = filterTasks(postedTasks.filter(t => t.status === 'completed'));
 
@@ -574,201 +529,160 @@ const Tasks = () => {
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
-            <p className="text-gray-600">
-              Browse nearby tasks and earn money by helping others
-            </p>
+            <p className="text-gray-600">Browse nearby tasks and earn money by helping others</p>
           </div>
           {isAuthenticated ? (
-            <button
-              onClick={() => navigate('/tasks/create')}
-              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
-            >
+            <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
               + Create Task
             </button>
           ) : (
-            <button
-              onClick={() => navigate('/login')}
-              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
-            >
+            <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
               Login to Create Task
             </button>
           )}
         </div>
 
-        {/* Search and Filters */}
+        {/* SINGLE UNIFIED BAR */}
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
-          <div className="flex flex-col gap-4">
-            {/* Search bar */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tasks by title, description, or location..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
-                  showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                ⚙️ Filters
-              </button>
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tasks..."
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             
-            {/* Expanded filters */}
-            {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                {/* Category filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {CATEGORIES.map(cat => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.icon} {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Price range */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (€)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (€)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) || 1000 }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            )}
+            {/* Location Display + Button */}
+            <button
+              onClick={() => setShowLocationModal(!showLocationModal)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <span>📍</span>
+              <span className="text-sm text-gray-700">
+                {manualLocationSet && locationName ? locationName.split(',')[0] : 'Auto-detected'}
+              </span>
+            </button>
+            
+            {/* Radius Selector */}
+            <select
+              value={searchRadius}
+              onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 km</option>
+              <option value={10}>10 km</option>
+              <option value={25}>25 km</option>
+              <option value={50}>50 km</option>
+              <option value={100}>100 km</option>
+            </select>
+            
+            {/* Filters Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 py-2 rounded-lg border transition-colors ${
+                showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              ⚙️
+            </button>
           </div>
-        </div>
-
-        {/* Location search and info - with high z-index container */}
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 relative" style={{ zIndex: 999 }}>
-          <div className="flex flex-col gap-3">
-            {/* Address search with autocomplete */}
-            <div className="relative" ref={suggestionsRef}>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={addressSearch}
-                    onChange={(e) => handleAddressInputChange(e.target.value)}
-                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                    placeholder="Search address or city (e.g., Riga, Jelgava)"
-                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  {searchingAddress && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Radius selector */}
-                <select
-                  value={searchRadius}
-                  onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))}
-                  className="px-3 py-2 border border-blue-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={25}>25 km</option>
-                  <option value={50}>50 km</option>
-                  <option value={100}>100 km</option>
-                </select>
+          
+          {/* Location Modal */}
+          {showLocationModal && (
+            <div className="mt-3 p-3 bg-blue-50 border-t border-blue-200 rounded-lg" ref={suggestionsRef}>
+              <div className="mb-2">
+                <input
+                  type="text"
+                  value={addressSearch}
+                  onChange={(e) => handleAddressInputChange(e.target.value)}
+                  placeholder="Search address or city..."
+                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                {searchingAddress && <span className="text-sm text-blue-600">Searching...</span>}
               </div>
               
-              {/* Suggestions dropdown - fixed z-index */}
               {showSuggestions && suggestions.length > 0 && (
-                <div 
-                  className="absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
-                  style={{ zIndex: 9999 }}
-                >
+                <div className="max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg">
                   {suggestions.map((suggestion, index) => (
                     <button
                       key={index}
                       onClick={() => selectSuggestion(suggestion)}
-                      className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-blue-50"
+                      className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0"
                     >
-                      <div className="flex items-start gap-2">
-                        <span className="text-blue-500 mt-0.5">📍</span>
-                        <span className="text-sm text-gray-700">{suggestion.display_name}</span>
-                      </div>
+                      <span className="text-sm">{suggestion.display_name}</span>
                     </button>
                   ))}
                 </div>
               )}
-            </div>
-            
-            {/* Current location info */}
-            <div className="flex items-center justify-between text-sm">
-              <p className="text-blue-800">
-                📍 {manualLocationSet && locationName ? (
-                  <span><strong>{locationName}</strong> • within {searchRadius}km</span>
-                ) : manualLocationSet ? (
-                  <span>Custom location • within {searchRadius}km</span>
-                ) : (
-                  <span>Auto-detected location • within {searchRadius}km</span>
-                )}
-              </p>
+              
               {manualLocationSet && (
-                <button
-                  onClick={resetToAutoLocation}
-                  className="text-blue-600 hover:text-blue-700 underline"
-                >
+                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-blue-600 hover:underline">
                   Reset to auto-detect
                 </button>
               )}
             </div>
-          </div>
+          )}
+          
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {CATEGORIES.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={priceRange.min}
+                  onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={priceRange.max}
+                  onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) || 1000 }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Notification for pending confirmations */}
         {pendingConfirmation.length > 0 && activeTab !== 'my-posted' && (
           <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-yellow-800">
               📢 You have {pendingConfirmation.length} task(s) waiting for your confirmation!
-              <button 
-                onClick={() => setActiveTab('my-posted')}
-                className="ml-2 text-yellow-600 underline hover:text-yellow-700"
-              >
+              <button onClick={() => setActiveTab('my-posted')} className="ml-2 text-yellow-600 underline hover:text-yellow-700">
                 View now
               </button>
             </p>
           </div>
         )}
 
-        {/* Tabs */}
         <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
           <button
             onClick={() => setActiveTab('available')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'available'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+              activeTab === 'available' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
             Available Tasks ({filterTasks(tasks).length})
@@ -778,9 +692,7 @@ const Tasks = () => {
               <button
                 onClick={() => setActiveTab('my-tasks')}
                 className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'my-tasks'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  activeTab === 'my-tasks' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 My Tasks ({myTasks.length})
@@ -788,9 +700,7 @@ const Tasks = () => {
               <button
                 onClick={() => setActiveTab('my-posted')}
                 className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${
-                  activeTab === 'my-posted'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  activeTab === 'my-posted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 My Posted Tasks ({postedTasks.length})
@@ -804,62 +714,34 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* Map Container - only show non-completed tasks */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6" style={{ height: '400px' }}>
-          <MapContainer
-            center={[userLocation.lat, userLocation.lng]}
-            zoom={13}
-            style={{ height: '100%', width: '100%' }}
-          >
+          <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            
-            {/* Recenter map when location changes */}
             <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
-            
-            {/* Click handler for manual location selection */}
             <LocationPicker onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)} />
-            
-            <Marker
-              position={[userLocation.lat, userLocation.lng]}
-              icon={userLocationIcon}
-            >
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
               <Popup>
                 <div className="p-2">
                   <p className="font-bold">📍 Your Location</p>
                   {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
-                  <p className="text-xs text-gray-500">
-                    {manualLocationSet ? '(Manually set)' : '(Auto-detected)'}
-                  </p>
+                  <p className="text-xs text-gray-500">{manualLocationSet ? '(Manually set)' : '(Auto-detected)'}</p>
                 </div>
               </Popup>
             </Marker>
-            
-            {/* Only show non-completed/non-cancelled tasks on map */}
             {mapTasks.map((task) => (
-              <Marker
-                key={task.id}
-                position={[task.latitude, task.longitude]}
-                icon={createCustomIcon(task.category)}
-              >
+              <Marker key={task.id} position={[task.latitude, task.longitude]} icon={createCustomIcon(task.category)}>
                 <Popup>
                   <div className="p-2">
-                    <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">
-                      {task.title}
-                    </Link>
+                    <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
                     <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
                       {getStatusBadge(task.status)}
                     </div>
-                    <Link 
-                      to={`/tasks/${task.id}`}
-                      className="text-xs text-blue-500 hover:text-blue-700"
-                    >
-                      View Details →
-                    </Link>
+                    <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
                   </div>
                 </Popup>
               </Marker>
@@ -867,25 +749,19 @@ const Tasks = () => {
           </MapContainer>
         </div>
 
-        {/* Tasks List */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             {activeTab === 'available' ? 'Available Tasks' : activeTab === 'my-tasks' ? 'My Accepted Tasks' : 'My Posted Tasks'}
             {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
           </h2>
           
-          {/* For My Posted Tasks, show active tasks first, then completed in a separate section */}
           {activeTab === 'my-posted' ? (
             <>
-              {/* Active Tasks */}
               {activePostedTasks.length === 0 && completedPostedTasks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <div className="text-4xl mb-4">📝</div>
                   <p>You haven't posted any tasks yet.</p>
-                  <button
-                    onClick={() => navigate('/tasks/create')}
-                    className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-                  >
+                  <button onClick={() => navigate('/tasks/create')} className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
                     Create Your First Task
                   </button>
                 </div>
@@ -894,48 +770,20 @@ const Tasks = () => {
                   {activePostedTasks.length > 0 && (
                     <div className="space-y-4 mb-8">
                       {activePostedTasks.map((task) => (
-                        <TaskCard 
-                          key={task.id} 
-                          task={task} 
-                          activeTab={activeTab}
-                          processingTask={processingTask}
-                          acceptingTask={acceptingTask}
-                          onAccept={handleAcceptTask}
-                          onMarkDone={handleMarkDone}
-                          onConfirm={handleConfirmCompletion}
-                          onDispute={handleDispute}
-                          onCancel={handleCancelTask}
-                          onEdit={handleEditTask}
-                          getStatusBadge={getStatusBadge}
-                          getNavigationUrl={getNavigationUrl}
-                        />
+                        <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} acceptingTask={acceptingTask}
+                          onAccept={handleAcceptTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
+                          onCancel={handleCancelTask} onEdit={handleEditTask} getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
                       ))}
                     </div>
                   )}
-                  
-                  {/* Completed Tasks Section */}
                   {completedPostedTasks.length > 0 && (
                     <>
-                      <h3 className="text-lg font-semibold text-gray-700 mb-4 border-t pt-6">
-                        Completed Tasks ({completedPostedTasks.length})
-                      </h3>
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4 border-t pt-6">Completed Tasks ({completedPostedTasks.length})</h3>
                       <div className="space-y-4 opacity-75">
                         {completedPostedTasks.map((task) => (
-                          <TaskCard 
-                            key={task.id} 
-                            task={task} 
-                            activeTab={activeTab}
-                            processingTask={processingTask}
-                            acceptingTask={acceptingTask}
-                            onAccept={handleAcceptTask}
-                            onMarkDone={handleMarkDone}
-                            onConfirm={handleConfirmCompletion}
-                            onDispute={handleDispute}
-                            onCancel={handleCancelTask}
-                            onEdit={handleEditTask}
-                            getStatusBadge={getStatusBadge}
-                            getNavigationUrl={getNavigationUrl}
-                          />
+                          <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} acceptingTask={acceptingTask}
+                            onAccept={handleAcceptTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
+                            onCancel={handleCancelTask} onEdit={handleEditTask} getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
                         ))}
                       </div>
                     </>
@@ -950,16 +798,11 @@ const Tasks = () => {
                   <div className="text-4xl mb-4">{activeTab === 'available' ? '🔍' : '📋'}</div>
                   <p>
                     {activeTab === 'available'
-                      ? searchQuery 
-                        ? `No tasks found matching "${searchQuery}"` 
-                        : `No tasks available within ${searchRadius}km. Try increasing the search radius or changing filters.`
+                      ? searchQuery ? `No tasks found matching "${searchQuery}"` : `No tasks available within ${searchRadius}km.`
                       : "You haven't accepted any tasks yet."}
                   </p>
                   {activeTab === 'available' && (searchQuery || selectedCategory !== 'all') && (
-                    <button
-                      onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
-                      className="mt-4 text-blue-500 hover:text-blue-600 underline"
-                    >
+                    <button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4 text-blue-500 hover:text-blue-600 underline">
                       Clear filters
                     </button>
                   )}
@@ -967,21 +810,9 @@ const Tasks = () => {
               ) : (
                 <div className="space-y-4">
                   {displayTasks.map((task) => (
-                    <TaskCard 
-                      key={task.id} 
-                      task={task} 
-                      activeTab={activeTab}
-                      processingTask={processingTask}
-                      acceptingTask={acceptingTask}
-                      onAccept={handleAcceptTask}
-                      onMarkDone={handleMarkDone}
-                      onConfirm={handleConfirmCompletion}
-                      onDispute={handleDispute}
-                      onCancel={handleCancelTask}
-                      onEdit={handleEditTask}
-                      getStatusBadge={getStatusBadge}
-                      getNavigationUrl={getNavigationUrl}
-                    />
+                    <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} acceptingTask={acceptingTask}
+                      onAccept={handleAcceptTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
+                      onCancel={handleCancelTask} onEdit={handleEditTask} getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
                   ))}
                 </div>
               )}
@@ -993,7 +824,6 @@ const Tasks = () => {
   );
 };
 
-// Extracted TaskCard component for cleaner code
 interface TaskCardProps {
   task: Task;
   activeTab: 'available' | 'my-tasks' | 'my-posted';
@@ -1009,108 +839,57 @@ interface TaskCardProps {
   getNavigationUrl: (task: Task) => string;
 }
 
-const TaskCard = ({ 
-  task, 
-  activeTab, 
-  processingTask, 
-  acceptingTask,
-  onAccept, 
-  onMarkDone, 
-  onConfirm, 
-  onDispute,
-  onCancel,
-  onEdit,
-  getStatusBadge,
-  getNavigationUrl
-}: TaskCardProps) => {
+const TaskCard = ({ task, activeTab, processingTask, acceptingTask, onAccept, onMarkDone, onConfirm, onDispute, onCancel, onEdit, getStatusBadge, getNavigationUrl }: TaskCardProps) => {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">{task.icon}</span>
-            <Link 
-              to={`/tasks/${task.id}`}
-              className="text-lg font-semibold text-gray-900 hover:text-blue-600 hover:underline"
-            >
-              {task.title}
-            </Link>
+            <Link to={`/tasks/${task.id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600 hover:underline">{task.title}</Link>
             {getStatusBadge(task.status)}
           </div>
           <p className="text-gray-600 mb-2 line-clamp-2">{task.description}</p>
           <div className="flex items-center gap-4 text-sm mb-2">
             <span className="text-gray-500">📍 {task.distance?.toFixed(1) || '0.0'}km away</span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-              {task.category}
-            </span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">{task.category}</span>
           </div>
           <p className="text-xs text-gray-500">📍 {task.location}</p>
-          <Link 
-            to={`/tasks/${task.id}`}
-            className="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block"
-          >
-            View Details →
-          </Link>
+          <Link to={`/tasks/${task.id}`} className="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block">View Details →</Link>
         </div>
         <div className="text-right ml-4">
-          <div className="text-2xl font-bold text-green-600 mb-2">
-            €{task.budget || task.reward || 0}
-          </div>
-          
-          {/* Available Tasks - Accept button */}
+          <div className="text-2xl font-bold text-green-600 mb-2">€{task.budget || task.reward || 0}</div>
           {activeTab === 'available' && (
-            <button 
-              onClick={(e) => { e.preventDefault(); onAccept(task.id); }}
-              disabled={acceptingTask === task.id}
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
+            <button onClick={(e) => { e.preventDefault(); onAccept(task.id); }} disabled={acceptingTask === task.id}
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
               {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
             </button>
           )}
-          
-          {/* My Tasks (Worker view) */}
           {activeTab === 'my-tasks' && (
             <div className="space-y-2">
-              <a
-                href={getNavigationUrl(task)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 text-center"
-              >
+              <a href={getNavigationUrl(task)} target="_blank" rel="noopener noreferrer"
+                className="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 text-center">
                 🗺️ Navigate
               </a>
               {task.status === 'assigned' && (
-                <button
-                  onClick={() => onMarkDone(task.id)}
-                  disabled={processingTask === task.id}
-                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 disabled:bg-gray-400"
-                >
+                <button onClick={() => onMarkDone(task.id)} disabled={processingTask === task.id}
+                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 disabled:bg-gray-400">
                   {processingTask === task.id ? 'Processing...' : '✅ Mark as Done'}
                 </button>
               )}
-              {task.status === 'pending_confirmation' && (
-                <p className="text-sm text-yellow-600">Waiting for client confirmation...</p>
-              )}
+              {task.status === 'pending_confirmation' && <p className="text-sm text-yellow-600">Waiting for client confirmation...</p>}
             </div>
           )}
-          
-          {/* My Posted Tasks (Creator view) */}
           {activeTab === 'my-posted' && (
             <div className="space-y-2">
               {task.status === 'pending_confirmation' && (
                 <>
-                  <button
-                    onClick={() => onConfirm(task.id)}
-                    disabled={processingTask === task.id}
-                    className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:bg-gray-400"
-                  >
+                  <button onClick={() => onConfirm(task.id)} disabled={processingTask === task.id}
+                    className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:bg-gray-400">
                     {processingTask === task.id ? 'Processing...' : '✅ Confirm Done'}
                   </button>
-                  <button
-                    onClick={() => onDispute(task.id)}
-                    disabled={processingTask === task.id}
-                    className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:bg-gray-400"
-                  >
+                  <button onClick={() => onDispute(task.id)} disabled={processingTask === task.id}
+                    className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:bg-gray-400">
                     ⚠️ Dispute
                   </button>
                 </>
@@ -1119,31 +898,19 @@ const TaskCard = ({
                 <>
                   <p className="text-sm text-gray-500 mb-2">Waiting for someone to accept...</p>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => onEdit(task.id)}
-                      className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 text-sm"
-                    >
+                    <button onClick={() => onEdit(task.id)} className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 text-sm">
                       ✏️ Edit
                     </button>
-                    <button
-                      onClick={() => onCancel(task.id)}
-                      disabled={processingTask === task.id}
-                      className="flex-1 bg-red-100 text-red-600 py-2 px-3 rounded hover:bg-red-200 text-sm disabled:opacity-50"
-                    >
+                    <button onClick={() => onCancel(task.id)} disabled={processingTask === task.id}
+                      className="flex-1 bg-red-100 text-red-600 py-2 px-3 rounded hover:bg-red-200 text-sm disabled:opacity-50">
                       Cancel
                     </button>
                   </div>
                 </>
               )}
-              {task.status === 'assigned' && (
-                <p className="text-sm text-blue-600">Worker is on it!</p>
-              )}
-              {task.status === 'completed' && (
-                <p className="text-sm text-green-600">✅ Completed</p>
-              )}
-              {task.status === 'cancelled' && (
-                <p className="text-sm text-gray-500">Cancelled</p>
-              )}
+              {task.status === 'assigned' && <p className="text-sm text-blue-600">Worker is on it!</p>}
+              {task.status === 'completed' && <p className="text-sm text-green-600">✅ Completed</p>}
+              {task.status === 'cancelled' && <p className="text-sm text-gray-500">Cancelled</p>}
             </div>
           )}
         </div>
