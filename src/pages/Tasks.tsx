@@ -70,6 +70,7 @@ const Tasks = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [locationName, setLocationName] = useState('');
+  const [searchRadius, setSearchRadius] = useState(25); // Default 25km
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -95,6 +96,12 @@ const Tasks = () => {
       setManualLocationSet(true);
       setLocationGranted(true);
       return;
+    }
+
+    // Load saved radius
+    const savedRadius = localStorage.getItem('taskSearchRadius');
+    if (savedRadius) {
+      setSearchRadius(parseInt(savedRadius, 10));
     }
 
     if (navigator.geolocation) {
@@ -127,6 +134,13 @@ const Tasks = () => {
     // Save to localStorage for persistence
     localStorage.setItem('userManualLocation', JSON.stringify({ ...newLocation, name: name || '' }));
     // Refetch tasks for new location
+    hasFetchedRef.current = false;
+    fetchTasks(true);
+  };
+
+  const handleRadiusChange = (newRadius: number) => {
+    setSearchRadius(newRadius);
+    localStorage.setItem('taskSearchRadius', newRadius.toString());
     hasFetchedRef.current = false;
     fetchTasks(true);
   };
@@ -244,11 +258,17 @@ const Tasks = () => {
       const availableResponse = await getTasks({
         latitude: userLocation.lat,
         longitude: userLocation.lng,
-        radius: 10,
+        radius: searchRadius,
         status: 'open'
       });
       
-      const tasksWithIcons = availableResponse.tasks.map(task => ({
+      // Filter out tasks created by current user
+      const filteredTasks = availableResponse.tasks.filter(task => {
+        if (!user?.id) return true;
+        return task.creator_id !== user.id;
+      });
+      
+      const tasksWithIcons = filteredTasks.map(task => ({
         ...task,
         icon: getCategoryIcon(task.category)
       }));
@@ -296,6 +316,14 @@ const Tasks = () => {
       fetchTasks();
     }
   }, [locationGranted, isAuthenticated]);
+
+  // Refetch when user changes (login/logout)
+  useEffect(() => {
+    if (locationGranted) {
+      hasFetchedRef.current = false;
+      fetchTasks(true);
+    }
+  }, [user?.id]);
 
   const createCustomIcon = (category: string) => new Icon.Default();
   
@@ -427,10 +455,20 @@ const Tasks = () => {
     );
   }
 
+  // Get tasks for current tab
   const displayTasks = activeTab === 'available' ? tasks : activeTab === 'my-tasks' ? myTasks : postedTasks;
+  
+  // Filter tasks for map display - exclude completed/cancelled tasks
+  const mapTasks = displayTasks.filter(task => 
+    !['completed', 'cancelled'].includes(task.status)
+  );
 
   // Pending confirmation tasks for creator
   const pendingConfirmation = postedTasks.filter(t => t.status === 'pending_confirmation');
+  
+  // Active posted tasks (not completed/cancelled) for display
+  const activePostedTasks = postedTasks.filter(t => !['completed', 'cancelled'].includes(t.status));
+  const completedPostedTasks = postedTasks.filter(t => t.status === 'completed');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -473,6 +511,19 @@ const Tasks = () => {
                     </div>
                   )}
                 </div>
+                
+                {/* Radius selector */}
+                <select
+                  value={searchRadius}
+                  onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))}
+                  className="px-3 py-2 border border-blue-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value={5}>5 km</option>
+                  <option value={10}>10 km</option>
+                  <option value={25}>25 km</option>
+                  <option value={50}>50 km</option>
+                  <option value={100}>100 km</option>
+                </select>
               </div>
               
               {/* Suggestions dropdown - fixed z-index */}
@@ -501,11 +552,11 @@ const Tasks = () => {
             <div className="flex items-center justify-between text-sm">
               <p className="text-blue-800">
                 📍 {manualLocationSet && locationName ? (
-                  <span><strong>{locationName}</strong></span>
+                  <span><strong>{locationName}</strong> • within {searchRadius}km</span>
                 ) : manualLocationSet ? (
-                  <span>Custom location (click map to change)</span>
+                  <span>Custom location • within {searchRadius}km</span>
                 ) : (
-                  <span>Auto-detected location • Search or click map to change</span>
+                  <span>Auto-detected location • within {searchRadius}km</span>
                 )}
               </p>
               {manualLocationSet && (
@@ -578,7 +629,7 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* Map Container */}
+        {/* Map Container - only show non-completed tasks */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6" style={{ height: '400px' }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
@@ -586,7 +637,7 @@ const Tasks = () => {
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer
-              attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
@@ -611,7 +662,8 @@ const Tasks = () => {
               </Popup>
             </Marker>
             
-            {displayTasks.map((task) => (
+            {/* Only show non-completed/non-cancelled tasks on map */}
+            {mapTasks.map((task) => (
               <Marker
                 key={task.id}
                 position={[task.latitude, task.longitude]}
@@ -637,115 +689,216 @@ const Tasks = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             {activeTab === 'available' ? 'Available Tasks' : activeTab === 'my-tasks' ? 'My Accepted Tasks' : 'My Posted Tasks'}
           </h2>
-          {displayTasks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {activeTab === 'available'
-                ? 'No tasks available in your area. Check back later!'
-                : activeTab === 'my-tasks'
-                ? "You haven't accepted any tasks yet."
-                : "You haven't posted any tasks yet."}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {displayTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">{task.icon}</span>
-                        <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-                        {getStatusBadge(task.status)}
-                      </div>
-                      <p className="text-gray-600 mb-2">{task.description}</p>
-                      <div className="flex items-center gap-4 text-sm mb-2">
-                        <span className="text-gray-500">📍 {task.distance?.toFixed(1) || '0.0'}km away</span>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                          {task.category}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500">📍 {task.location}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600 mb-2">
-                        €{task.budget || task.reward || 0}
-                      </div>
-                      
-                      {/* Available Tasks - Accept button */}
-                      {activeTab === 'available' && (
-                        <button 
-                          onClick={() => handleAcceptTask(task.id)}
-                          disabled={acceptingTask === task.id}
-                          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                          {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
-                        </button>
-                      )}
-                      
-                      {/* My Tasks (Worker view) */}
-                      {activeTab === 'my-tasks' && (
-                        <div className="space-y-2">
-                          <a
-                            href={getNavigationUrl(task)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 text-center"
-                          >
-                            🗺️ Navigate
-                          </a>
-                          {task.status === 'assigned' && (
-                            <button
-                              onClick={() => handleMarkDone(task.id)}
-                              disabled={processingTask === task.id}
-                              className="w-full bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 disabled:bg-gray-400"
-                            >
-                              {processingTask === task.id ? 'Processing...' : '✅ Mark as Done'}
-                            </button>
-                          )}
-                          {task.status === 'pending_confirmation' && (
-                            <p className="text-sm text-yellow-600">Waiting for client confirmation...</p>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* My Posted Tasks (Creator view) */}
-                      {activeTab === 'my-posted' && (
-                        <div className="space-y-2">
-                          {task.status === 'pending_confirmation' && (
-                            <>
-                              <button
-                                onClick={() => handleConfirmCompletion(task.id)}
-                                disabled={processingTask === task.id}
-                                className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:bg-gray-400"
-                              >
-                                {processingTask === task.id ? 'Processing...' : '✅ Confirm Done'}
-                              </button>
-                              <button
-                                onClick={() => handleDispute(task.id)}
-                                disabled={processingTask === task.id}
-                                className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:bg-gray-400"
-                              >
-                                ⚠️ Dispute
-                              </button>
-                            </>
-                          )}
-                          {task.status === 'open' && (
-                            <p className="text-sm text-gray-500">Waiting for someone to accept...</p>
-                          )}
-                          {task.status === 'assigned' && (
-                            <p className="text-sm text-blue-600">Worker is on it!</p>
-                          )}
-                          {task.status === 'completed' && (
-                            <p className="text-sm text-green-600">✅ Completed</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          
+          {/* For My Posted Tasks, show active tasks first, then completed in a separate section */}
+          {activeTab === 'my-posted' ? (
+            <>
+              {/* Active Tasks */}
+              {activePostedTasks.length === 0 && completedPostedTasks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  You haven't posted any tasks yet.
                 </div>
-              ))}
+              ) : (
+                <>
+                  {activePostedTasks.length > 0 && (
+                    <div className="space-y-4 mb-8">
+                      {activePostedTasks.map((task) => (
+                        <TaskCard 
+                          key={task.id} 
+                          task={task} 
+                          activeTab={activeTab}
+                          processingTask={processingTask}
+                          acceptingTask={acceptingTask}
+                          onAccept={handleAcceptTask}
+                          onMarkDone={handleMarkDone}
+                          onConfirm={handleConfirmCompletion}
+                          onDispute={handleDispute}
+                          getStatusBadge={getStatusBadge}
+                          getNavigationUrl={getNavigationUrl}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Completed Tasks Section */}
+                  {completedPostedTasks.length > 0 && (
+                    <>
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4 border-t pt-6">
+                        Completed Tasks ({completedPostedTasks.length})
+                      </h3>
+                      <div className="space-y-4 opacity-75">
+                        {completedPostedTasks.map((task) => (
+                          <TaskCard 
+                            key={task.id} 
+                            task={task} 
+                            activeTab={activeTab}
+                            processingTask={processingTask}
+                            acceptingTask={acceptingTask}
+                            onAccept={handleAcceptTask}
+                            onMarkDone={handleMarkDone}
+                            onConfirm={handleConfirmCompletion}
+                            onDispute={handleDispute}
+                            getStatusBadge={getStatusBadge}
+                            getNavigationUrl={getNavigationUrl}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {displayTasks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {activeTab === 'available'
+                    ? `No tasks available within ${searchRadius}km. Try increasing the search radius.`
+                    : "You haven't accepted any tasks yet."}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {displayTasks.map((task) => (
+                    <TaskCard 
+                      key={task.id} 
+                      task={task} 
+                      activeTab={activeTab}
+                      processingTask={processingTask}
+                      acceptingTask={acceptingTask}
+                      onAccept={handleAcceptTask}
+                      onMarkDone={handleMarkDone}
+                      onConfirm={handleConfirmCompletion}
+                      onDispute={handleDispute}
+                      getStatusBadge={getStatusBadge}
+                      getNavigationUrl={getNavigationUrl}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Extracted TaskCard component for cleaner code
+interface TaskCardProps {
+  task: Task;
+  activeTab: 'available' | 'my-tasks' | 'my-posted';
+  processingTask: number | null;
+  acceptingTask: number | null;
+  onAccept: (taskId: number) => void;
+  onMarkDone: (taskId: number) => void;
+  onConfirm: (taskId: number) => void;
+  onDispute: (taskId: number) => void;
+  getStatusBadge: (status: string) => JSX.Element;
+  getNavigationUrl: (task: Task) => string;
+}
+
+const TaskCard = ({ 
+  task, 
+  activeTab, 
+  processingTask, 
+  acceptingTask,
+  onAccept, 
+  onMarkDone, 
+  onConfirm, 
+  onDispute,
+  getStatusBadge,
+  getNavigationUrl
+}: TaskCardProps) => {
+  return (
+    <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">{task.icon}</span>
+            <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+            {getStatusBadge(task.status)}
+          </div>
+          <p className="text-gray-600 mb-2">{task.description}</p>
+          <div className="flex items-center gap-4 text-sm mb-2">
+            <span className="text-gray-500">📍 {task.distance?.toFixed(1) || '0.0'}km away</span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
+              {task.category}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500">📍 {task.location}</p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-green-600 mb-2">
+            €{task.budget || task.reward || 0}
+          </div>
+          
+          {/* Available Tasks - Accept button */}
+          {activeTab === 'available' && (
+            <button 
+              onClick={() => onAccept(task.id)}
+              disabled={acceptingTask === task.id}
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
+            </button>
+          )}
+          
+          {/* My Tasks (Worker view) */}
+          {activeTab === 'my-tasks' && (
+            <div className="space-y-2">
+              <a
+                href={getNavigationUrl(task)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 text-center"
+              >
+                🗺️ Navigate
+              </a>
+              {task.status === 'assigned' && (
+                <button
+                  onClick={() => onMarkDone(task.id)}
+                  disabled={processingTask === task.id}
+                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 disabled:bg-gray-400"
+                >
+                  {processingTask === task.id ? 'Processing...' : '✅ Mark as Done'}
+                </button>
+              )}
+              {task.status === 'pending_confirmation' && (
+                <p className="text-sm text-yellow-600">Waiting for client confirmation...</p>
+              )}
+            </div>
+          )}
+          
+          {/* My Posted Tasks (Creator view) */}
+          {activeTab === 'my-posted' && (
+            <div className="space-y-2">
+              {task.status === 'pending_confirmation' && (
+                <>
+                  <button
+                    onClick={() => onConfirm(task.id)}
+                    disabled={processingTask === task.id}
+                    className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:bg-gray-400"
+                  >
+                    {processingTask === task.id ? 'Processing...' : '✅ Confirm Done'}
+                  </button>
+                  <button
+                    onClick={() => onDispute(task.id)}
+                    disabled={processingTask === task.id}
+                    className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:bg-gray-400"
+                  >
+                    ⚠️ Dispute
+                  </button>
+                </>
+              )}
+              {task.status === 'open' && (
+                <p className="text-sm text-gray-500">Waiting for someone to accept...</p>
+              )}
+              {task.status === 'assigned' && (
+                <p className="text-sm text-blue-600">Worker is on it!</p>
+              )}
+              {task.status === 'completed' && (
+                <p className="text-sm text-green-600">✅ Completed</p>
+              )}
             </div>
           )}
         </div>
