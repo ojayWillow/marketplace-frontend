@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { Listing } from '../../../api/types'
+import { getImageUrl } from '../../../api/uploads'
 
 interface ListingCardProps {
   listing: Listing
@@ -9,23 +10,47 @@ interface ListingCardProps {
 export default function ListingCard({ listing }: ListingCardProps) {
   const { t } = useTranslation()
 
+  // Get the first image from the listing
+  const getFirstImage = (): string | null => {
+    if (listing.images) {
+      const imageList = listing.images.split(',').filter(Boolean)
+      if (imageList.length > 0) {
+        return getImageUrl(imageList[0].trim())
+      }
+    }
+    if (listing.image_urls && listing.image_urls.length > 0) {
+      return getImageUrl(listing.image_urls[0])
+    }
+    return null
+  }
+
+  const imageUrl = getFirstImage()
+
   return (
     <Link to={`/listings/${listing.id}`} className="card group hover:shadow-lg transition-shadow">
-      {/* Image placeholder */}
-      <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center">
-        <svg
-          className="w-12 h-12 text-gray-300 group-hover:text-gray-400 transition-colors"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      {/* Image */}
+      <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={listing.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-        </svg>
+        ) : (
+          <svg
+            className="w-12 h-12 text-gray-300 group-hover:text-gray-400 transition-colors"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        )}
       </div>
 
       <div className="p-4">
