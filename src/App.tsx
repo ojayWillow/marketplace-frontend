@@ -9,6 +9,7 @@ import CreateListing from './pages/listings/CreateListing'
 import EditListing from './pages/listings/EditListing'
 import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
+import TaskDetail from './pages/TaskDetail'
 import CreateTask from './pages/CreateTask'
 import EditTask from './pages/EditTask'
 import Profile from './pages/Profile'
@@ -24,6 +25,7 @@ function App() {
         <Route path="register" element={<Register />} />
         <Route path="listings" element={<Listings />} />
         <Route path="tasks" element={<Tasks />} />
+        <Route path="tasks/:id" element={<TaskDetail />} />
         {/* Alias for /tasks */}
         <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
         <Route
