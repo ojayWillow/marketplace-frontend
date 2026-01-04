@@ -5,7 +5,7 @@ import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
 import { listingsApi, type Listing } from '../api/listings';
 import { getImageUrl } from '../api/uploads';
-import { Task, getMyTasks, getCreatedTasks, cancelTask, confirmTaskDone } from '../api/tasks';
+import { Task, getMyTasks, getCreatedTasks, cancelTask, confirmTaskCompletion } from '../api/tasks';
 
 interface UserProfile {
   id: number;
@@ -158,7 +158,7 @@ const Profile = () => {
 
   const handleConfirmTask = async (taskId: number) => {
     try {
-      await confirmTaskDone(taskId);
+      await confirmTaskCompletion(taskId);
       toast.success('Task marked as completed!');
       fetchTasks();
     } catch (error) {
