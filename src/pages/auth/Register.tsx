@@ -57,7 +57,7 @@ export default function Register() {
             />
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
             <div>
               <label htmlFor="username" className="label">
                 {t('auth.username')}
@@ -70,6 +70,7 @@ export default function Register() {
                 onChange={handleChange}
                 className="input"
                 required
+                autoComplete="new-username"
               />
             </div>
 
@@ -85,6 +86,7 @@ export default function Register() {
                 onChange={handleChange}
                 className="input"
                 required
+                autoComplete="new-email"
               />
             </div>
 
@@ -100,6 +102,7 @@ export default function Register() {
                 onChange={handleChange}
                 className="input"
                 placeholder="+371 20000000"
+                autoComplete="new-phone"
               />
             </div>
 
@@ -116,6 +119,7 @@ export default function Register() {
                 className="input"
                 required
                 minLength={6}
+                autoComplete="new-password"
               />
             </div>
 
@@ -131,6 +135,7 @@ export default function Register() {
                 onChange={handleChange}
                 className="input"
                 required
+                autoComplete="new-password"
               />
             </div>
 
