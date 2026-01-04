@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 're
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, acceptTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, cancelTask, Task as APITask } from '../api/tasks';
+import { getTasks, applyToTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, cancelTask, getTaskApplications, acceptApplication, rejectApplication, Task as APITask, TaskApplication } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -23,6 +23,7 @@ L.Icon.Default.mergeOptions({
 // Extend API Task with UI-specific properties
 interface Task extends APITask {
   icon?: string;
+  applicationCount?: number;
 }
 
 interface AddressSuggestion {
@@ -33,7 +34,7 @@ interface AddressSuggestion {
 
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Radius of the Earth in kilometers
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -56,7 +57,6 @@ const CATEGORIES = [
   { value: 'outdoor', label: 'Outdoor', icon: '🌿' },
 ];
 
-// Component to handle map clicks for location selection
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   useMapEvents({
     click: (e) => {
@@ -66,7 +66,6 @@ const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, 
   return null;
 };
 
-// Component to recenter map when location changes
 const MapRecenter = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
   useEffect(() => {
@@ -85,9 +84,9 @@ const Tasks = () => {
   const [postedTasks, setPostedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [acceptingTask, setAcceptingTask] = useState<number | null>(null);
+  const [applyingTask, setApplyingTask] = useState<number | null>(null);
   const [processingTask, setProcessingTask] = useState<number | null>(null);
-  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default to Riga
+  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [locationGranted, setLocationGranted] = useState(false);
   const [manualLocationSet, setManualLocationSet] = useState(false);
   const [addressSearch, setAddressSearch] = useState('');
@@ -95,20 +94,23 @@ const Tasks = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [locationName, setLocationName] = useState('');
-  const [searchRadius, setSearchRadius] = useState(25); // Default 25km
+  const [searchRadius, setSearchRadius] = useState(25);
   
-  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [showFilters, setShowFilters] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   
+  // Application management state
+  const [viewingApplications, setViewingApplications] = useState<number | null>(null);
+  const [applications, setApplications] = useState<TaskApplication[]>([]);
+  const [loadingApplications, setLoadingApplications] = useState(false);
+  
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
@@ -120,7 +122,6 @@ const Tasks = () => {
   }, []);
 
   useEffect(() => {
-    // Don't check for manual location - always auto-detect by default
     const savedRadius = localStorage.getItem('taskSearchRadius');
     if (savedRadius) {
       setSearchRadius(parseInt(savedRadius, 10));
@@ -129,11 +130,7 @@ const Tasks = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setUserLocation(newLocation);
+          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           setLocationGranted(true);
         },
         (error) => {
@@ -147,8 +144,7 @@ const Tasks = () => {
   }, []);
 
   const handleLocationSelect = (lat: number, lng: number, name?: string) => {
-    const newLocation = { lat, lng };
-    setUserLocation(newLocation);
+    setUserLocation({ lat, lng });
     setManualLocationSet(true);
     setLocationName(name || '');
     hasFetchedRef.current = false;
@@ -163,7 +159,6 @@ const Tasks = () => {
     fetchTasks(true);
   };
 
-  // Debounced address search for autocomplete
   const searchAddressSuggestions = async (query: string) => {
     if (query.length < 2) {
       setSuggestions([]);
@@ -175,11 +170,7 @@ const Tasks = () => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=lv&limit=8&addressdetails=1`,
-        {
-          headers: {
-            'Accept-Language': 'lv,en'
-          }
-        }
+        { headers: { 'Accept-Language': 'lv,en' } }
       );
       const data = await response.json();
       setSuggestions(data);
@@ -194,12 +185,8 @@ const Tasks = () => {
 
   const handleAddressInputChange = (value: string) => {
     setAddressSearch(value);
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    searchTimeoutRef.current = setTimeout(() => {
-      searchAddressSuggestions(value);
-    }, 300);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => searchAddressSuggestions(value), 300);
   };
 
   const selectSuggestion = (suggestion: AddressSuggestion) => {
@@ -216,16 +203,11 @@ const Tasks = () => {
     setManualLocationSet(false);
     setLocationName('');
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          hasFetchedRef.current = false;
-          fetchTasks(true);
-        }
-      );
+      navigator.geolocation.getCurrentPosition((position) => {
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        hasFetchedRef.current = false;
+        fetchTasks(true);
+      });
     }
   };
 
@@ -284,17 +266,8 @@ const Tasks = () => {
       try {
         const myTasksResponse = await getMyTasks();
         const userTasks = myTasksResponse.tasks.map(task => {
-          const distance = calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            task.latitude,
-            task.longitude
-          );
-          return {
-            ...task,
-            icon: getCategoryIcon(task.category),
-            distance: distance
-          };
+          const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
+          return { ...task, icon: getCategoryIcon(task.category), distance };
         });
         setMyTasks(userTasks);
         
@@ -317,9 +290,7 @@ const Tasks = () => {
   };
 
   useEffect(() => {
-    if (locationGranted) {
-      fetchTasks();
-    }
+    if (locationGranted) fetchTasks();
   }, [locationGranted, isAuthenticated]);
 
   useEffect(() => {
@@ -327,24 +298,12 @@ const Tasks = () => {
       hasFetchedRef.current = false;
       fetchTasks(true);
     }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (locationGranted) {
-      hasFetchedRef.current = false;
-      fetchTasks(true);
-    }
-  }, [selectedCategory]);
+  }, [user?.id, selectedCategory]);
 
   useEffect(() => {
     if (locationGranted && myTasks.length > 0) {
       const updatedMyTasks = myTasks.map(task => {
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          task.latitude,
-          task.longitude
-        );
+        const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
         return { ...task, distance };
       });
       setMyTasks(updatedMyTasks);
@@ -360,30 +319,69 @@ const Tasks = () => {
     iconAnchor: [10, 10]
   });
 
-  const handleAcceptTask = async (taskId: number) => {
+  // NEW: Apply to task
+  const handleApplyTask = async (taskId: number) => {
     if (!isAuthenticated) {
-      toast.warning('Please login to accept tasks');
+      toast.warning('Please login to apply');
       navigate('/login');
       return;
     }
 
-    if (!user?.id) {
-      toast.error('User information not available');
-      return;
-    }
-
     try {
-      setAcceptingTask(taskId);
-      await acceptTask(taskId, user.id);
-      toast.success('Task accepted! Check "My Tasks" tab for navigation.');
+      setApplyingTask(taskId);
+      await applyToTask(taskId);
+      toast.success('Application submitted! The task owner will review your application.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
-      setActiveTab('my-tasks');
     } catch (error: any) {
-      console.error('Error accepting task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to accept task. Please try again.');
+      console.error('Error applying to task:', error);
+      toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
     } finally {
-      setAcceptingTask(null);
+      setApplyingTask(null);
+    }
+  };
+
+  // NEW: View applications for a task
+  const handleViewApplications = async (taskId: number) => {
+    setLoadingApplications(true);
+    setViewingApplications(taskId);
+    try {
+      const response = await getTaskApplications(taskId);
+      setApplications(response.applications);
+    } catch (error: any) {
+      console.error('Error fetching applications:', error);
+      toast.error('Failed to load applications');
+      setViewingApplications(null);
+    } finally {
+      setLoadingApplications(false);
+    }
+  };
+
+  // NEW: Accept an application
+  const handleAcceptApplication = async (taskId: number, applicationId: number) => {
+    try {
+      await acceptApplication(taskId, applicationId);
+      toast.success('Application accepted! Task has been assigned.');
+      setViewingApplications(null);
+      hasFetchedRef.current = false;
+      await fetchTasks(true);
+    } catch (error: any) {
+      console.error('Error accepting application:', error);
+      toast.error(error?.response?.data?.error || 'Failed to accept application');
+    }
+  };
+
+  // NEW: Reject an application
+  const handleRejectApplication = async (taskId: number, applicationId: number) => {
+    try {
+      await rejectApplication(taskId, applicationId);
+      toast.success('Application rejected');
+      // Refresh applications list
+      const response = await getTaskApplications(taskId);
+      setApplications(response.applications);
+    } catch (error: any) {
+      console.error('Error rejecting application:', error);
+      toast.error('Failed to reject application');
     }
   };
 
@@ -406,7 +404,7 @@ const Tasks = () => {
     try {
       setProcessingTask(taskId);
       await confirmTaskCompletion(taskId);
-      toast.success('Task completed! You can now leave a review for the worker.');
+      toast.success('Task completed!');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
@@ -424,7 +422,7 @@ const Tasks = () => {
     try {
       setProcessingTask(taskId);
       await disputeTask(taskId, reason);
-      toast.warning('Task has been disputed. Please contact the worker to resolve.');
+      toast.warning('Task has been disputed.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
@@ -502,13 +500,7 @@ const Tasks = () => {
         <div className="text-center">
           <div className="text-2xl font-bold text-red-600 mb-2">Error</div>
           <div className="text-gray-600">{error}</div>
-          <button 
-            onClick={() => {
-              hasFetchedRef.current = false;
-              fetchTasks(true);
-            }} 
-            className="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-          >
+          <button onClick={() => { hasFetchedRef.current = false; fetchTasks(true); }} className="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
             Retry
           </button>
         </div>
@@ -545,123 +537,62 @@ const Tasks = () => {
         {/* SINGLE UNIFIED BAR */}
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
           <div className="flex items-center gap-3">
-            {/* Search Input */}
             <div className="relative flex-1">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tasks..."
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
-            
-            {/* Location Display + Button */}
-            <button
-              onClick={() => setShowLocationModal(!showLocationModal)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-            >
+            <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
               <span>📍</span>
-              <span className="text-sm text-gray-700">
-                {manualLocationSet && locationName ? locationName.split(',')[0] : 'Auto-detected'}
-              </span>
+              <span className="text-sm text-gray-700">{manualLocationSet && locationName ? locationName.split(',')[0] : 'Auto-detected'}</span>
             </button>
-            
-            {/* Radius Selector */}
-            <select
-              value={searchRadius}
-              onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
-            >
+            <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
               <option value={5}>5 km</option>
               <option value={10}>10 km</option>
               <option value={25}>25 km</option>
               <option value={50}>50 km</option>
               <option value={100}>100 km</option>
             </select>
-            
-            {/* Filters Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2 rounded-lg border transition-colors ${
-                showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-            >
+            <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
               ⚙️
             </button>
           </div>
           
-          {/* Location Modal */}
           {showLocationModal && (
             <div className="mt-3 p-3 bg-blue-50 border-t border-blue-200 rounded-lg" ref={suggestionsRef}>
               <div className="mb-2">
-                <input
-                  type="text"
-                  value={addressSearch}
-                  onChange={(e) => handleAddressInputChange(e.target.value)}
-                  placeholder="Search address or city..."
-                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="text" value={addressSearch} onChange={(e) => handleAddressInputChange(e.target.value)} placeholder="Search address or city..." className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
                 {searchingAddress && <span className="text-sm text-blue-600">Searching...</span>}
               </div>
-              
               {showSuggestions && suggestions.length > 0 && (
                 <div className="max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg">
                   {suggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => selectSuggestion(suggestion)}
-                      className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0"
-                    >
+                    <button key={index} onClick={() => selectSuggestion(suggestion)} className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0">
                       <span className="text-sm">{suggestion.display_name}</span>
                     </button>
                   ))}
                 </div>
               )}
-              
               {manualLocationSet && (
-                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-blue-600 hover:underline">
-                  Reset to auto-detect
-                </button>
+                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-blue-600 hover:underline">Reset to auto-detect</button>
               )}
             </div>
           )}
           
-          {/* Filters Panel */}
           {showFilters && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  {CATEGORIES.map(cat => (
-                    <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
-                  ))}
+                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                  {CATEGORIES.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (€)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={priceRange.min}
-                  onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="number" min="0" value={priceRange.min} onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (€)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={priceRange.max}
-                  onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) || 1000 }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="number" min="0" value={priceRange.max} onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) || 1000 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
           )}
@@ -671,43 +602,24 @@ const Tasks = () => {
           <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-yellow-800">
               📢 You have {pendingConfirmation.length} task(s) waiting for your confirmation!
-              <button onClick={() => setActiveTab('my-posted')} className="ml-2 text-yellow-600 underline hover:text-yellow-700">
-                View now
-              </button>
+              <button onClick={() => setActiveTab('my-posted')} className="ml-2 text-yellow-600 underline hover:text-yellow-700">View now</button>
             </p>
           </div>
         )}
 
         <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
-          <button
-            onClick={() => setActiveTab('available')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'available' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
+          <button onClick={() => setActiveTab('available')} className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'available' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
             Available Tasks ({filterTasks(tasks).length})
           </button>
           {isAuthenticated && (
             <>
-              <button
-                onClick={() => setActiveTab('my-tasks')}
-                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'my-tasks' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-              >
+              <button onClick={() => setActiveTab('my-tasks')} className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'my-tasks' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
                 My Tasks ({myTasks.length})
               </button>
-              <button
-                onClick={() => setActiveTab('my-posted')}
-                className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${
-                  activeTab === 'my-posted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-              >
+              <button onClick={() => setActiveTab('my-posted')} className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${activeTab === 'my-posted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
                 My Posted Tasks ({postedTasks.length})
                 {pendingConfirmation.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingConfirmation.length}
-                  </span>
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{pendingConfirmation.length}</span>
                 )}
               </button>
             </>
@@ -716,10 +628,7 @@ const Tasks = () => {
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6" style={{ height: '400px' }}>
           <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
             <LocationPicker onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)} />
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
@@ -761,18 +670,17 @@ const Tasks = () => {
                 <div className="text-center py-8 text-gray-500">
                   <div className="text-4xl mb-4">📝</div>
                   <p>You haven't posted any tasks yet.</p>
-                  <button onClick={() => navigate('/tasks/create')} className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                    Create Your First Task
-                  </button>
+                  <button onClick={() => navigate('/tasks/create')} className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">Create Your First Task</button>
                 </div>
               ) : (
                 <>
                   {activePostedTasks.length > 0 && (
                     <div className="space-y-4 mb-8">
                       {activePostedTasks.map((task) => (
-                        <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} acceptingTask={acceptingTask}
-                          onAccept={handleAcceptTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
-                          onCancel={handleCancelTask} onEdit={handleEditTask} getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
+                        <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} applyingTask={applyingTask}
+                          onApply={handleApplyTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
+                          onCancel={handleCancelTask} onEdit={handleEditTask} onViewApplications={handleViewApplications}
+                          getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
                       ))}
                     </div>
                   )}
@@ -781,9 +689,10 @@ const Tasks = () => {
                       <h3 className="text-lg font-semibold text-gray-700 mb-4 border-t pt-6">Completed Tasks ({completedPostedTasks.length})</h3>
                       <div className="space-y-4 opacity-75">
                         {completedPostedTasks.map((task) => (
-                          <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} acceptingTask={acceptingTask}
-                            onAccept={handleAcceptTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
-                            onCancel={handleCancelTask} onEdit={handleEditTask} getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
+                          <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} applyingTask={applyingTask}
+                            onApply={handleApplyTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
+                            onCancel={handleCancelTask} onEdit={handleEditTask} onViewApplications={handleViewApplications}
+                            getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
                         ))}
                       </div>
                     </>
@@ -802,23 +711,66 @@ const Tasks = () => {
                       : "You haven't accepted any tasks yet."}
                   </p>
                   {activeTab === 'available' && (searchQuery || selectedCategory !== 'all') && (
-                    <button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4 text-blue-500 hover:text-blue-600 underline">
-                      Clear filters
-                    </button>
+                    <button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4 text-blue-500 hover:text-blue-600 underline">Clear filters</button>
                   )}
                 </div>
               ) : (
                 <div className="space-y-4">
                   {displayTasks.map((task) => (
-                    <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} acceptingTask={acceptingTask}
-                      onAccept={handleAcceptTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
-                      onCancel={handleCancelTask} onEdit={handleEditTask} getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
+                    <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} applyingTask={applyingTask}
+                      onApply={handleApplyTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
+                      onCancel={handleCancelTask} onEdit={handleEditTask} onViewApplications={handleViewApplications}
+                      getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
                   ))}
                 </div>
               )}
             </>
           )}
         </div>
+
+        {/* Application Modal */}
+        {viewingApplications && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setViewingApplications(null)}>
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Applications</h3>
+                <button onClick={() => setViewingApplications(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+              </div>
+              {loadingApplications ? (
+                <p className="text-center py-8 text-gray-500">Loading...</p>
+              ) : applications.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">No applications yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {applications.map(app => (
+                    <div key={app.id} className={`border rounded-lg p-4 ${app.status === 'accepted' ? 'bg-green-50 border-green-200' : app.status === 'rejected' ? 'bg-gray-50' : 'bg-white'}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{app.applicant_name}</p>
+                          <p className="text-sm text-gray-600">{app.applicant_email}</p>
+                          {app.message && <p className="text-sm text-gray-700 mt-2">"{app.message}"</p>}
+                          <p className="text-xs text-gray-500 mt-1">{new Date(app.created_at).toLocaleString()}</p>
+                        </div>
+                        <div className="ml-4">
+                          {app.status === 'pending' ? (
+                            <div className="flex gap-2">
+                              <button onClick={() => handleAcceptApplication(viewingApplications, app.id)} className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">✓ Accept</button>
+                              <button onClick={() => handleRejectApplication(viewingApplications, app.id)} className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">× Reject</button>
+                            </div>
+                          ) : (
+                            <span className={`text-sm font-medium px-2 py-1 rounded ${app.status === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                              {app.status === 'accepted' ? '✓ Accepted' : '× Rejected'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -828,18 +780,19 @@ interface TaskCardProps {
   task: Task;
   activeTab: 'available' | 'my-tasks' | 'my-posted';
   processingTask: number | null;
-  acceptingTask: number | null;
-  onAccept: (taskId: number) => void;
+  applyingTask: number | null;
+  onApply: (taskId: number) => void;
   onMarkDone: (taskId: number) => void;
   onConfirm: (taskId: number) => void;
   onDispute: (taskId: number) => void;
   onCancel: (taskId: number) => void;
   onEdit: (taskId: number) => void;
+  onViewApplications: (taskId: number) => void;
   getStatusBadge: (status: string) => JSX.Element;
   getNavigationUrl: (task: Task) => string;
 }
 
-const TaskCard = ({ task, activeTab, processingTask, acceptingTask, onAccept, onMarkDone, onConfirm, onDispute, onCancel, onEdit, getStatusBadge, getNavigationUrl }: TaskCardProps) => {
+const TaskCard = ({ task, activeTab, processingTask, applyingTask, onApply, onMarkDone, onConfirm, onDispute, onCancel, onEdit, onViewApplications, getStatusBadge, getNavigationUrl }: TaskCardProps) => {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
@@ -859,12 +812,16 @@ const TaskCard = ({ task, activeTab, processingTask, acceptingTask, onAccept, on
         </div>
         <div className="text-right ml-4">
           <div className="text-2xl font-bold text-green-600 mb-2">€{task.budget || task.reward || 0}</div>
+          
+          {/* Available Tasks - Apply button */}
           {activeTab === 'available' && (
-            <button onClick={(e) => { e.preventDefault(); onAccept(task.id); }} disabled={acceptingTask === task.id}
+            <button onClick={(e) => { e.preventDefault(); onApply(task.id); }} disabled={applyingTask === task.id}
               className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
-              {acceptingTask === task.id ? 'Accepting...' : 'Accept'}
+              {applyingTask === task.id ? 'Applying...' : 'Apply'}
             </button>
           )}
+          
+          {/* My Tasks (Worker view) */}
           {activeTab === 'my-tasks' && (
             <div className="space-y-2">
               <a href={getNavigationUrl(task)} target="_blank" rel="noopener noreferrer"
@@ -880,6 +837,8 @@ const TaskCard = ({ task, activeTab, processingTask, acceptingTask, onAccept, on
               {task.status === 'pending_confirmation' && <p className="text-sm text-yellow-600">Waiting for client confirmation...</p>}
             </div>
           )}
+          
+          {/* My Posted Tasks (Creator view with application management) */}
           {activeTab === 'my-posted' && (
             <div className="space-y-2">
               {task.status === 'pending_confirmation' && (
@@ -896,15 +855,13 @@ const TaskCard = ({ task, activeTab, processingTask, acceptingTask, onAccept, on
               )}
               {task.status === 'open' && (
                 <>
-                  <p className="text-sm text-gray-500 mb-2">Waiting for someone to accept...</p>
+                  <button onClick={() => onViewApplications(task.id)} className="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 mb-2">
+                    📜 View Applications
+                  </button>
                   <div className="flex gap-2">
-                    <button onClick={() => onEdit(task.id)} className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 text-sm">
-                      ✏️ Edit
-                    </button>
+                    <button onClick={() => onEdit(task.id)} className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 text-sm">✏️ Edit</button>
                     <button onClick={() => onCancel(task.id)} disabled={processingTask === task.id}
-                      className="flex-1 bg-red-100 text-red-600 py-2 px-3 rounded hover:bg-red-200 text-sm disabled:opacity-50">
-                      Cancel
-                    </button>
+                      className="flex-1 bg-red-100 text-red-600 py-2 px-3 rounded hover:bg-red-200 text-sm disabled:opacity-50">Cancel</button>
                   </div>
                 </>
               )}
