@@ -10,6 +10,7 @@ import EditListing from './pages/listings/EditListing'
 import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
 import CreateTask from './pages/CreateTask'
+import EditTask from './pages/EditTask'
 import Profile from './pages/Profile'
 import UserProfile from './pages/UserProfile'
 import NotFound from './pages/NotFound'
@@ -30,6 +31,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="tasks/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditTask />
             </ProtectedRoute>
           }
         />
