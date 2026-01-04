@@ -17,6 +17,13 @@ export function useListing(id: number) {
   })
 }
 
+export function useMyListings(params?: { page?: number; per_page?: number; status?: string }) {
+  return useQuery({
+    queryKey: ['myListings', params],
+    queryFn: () => listingsApi.getMy(params),
+  })
+}
+
 export function useCreateListing() {
   const queryClient = useQueryClient()
 
@@ -24,6 +31,7 @@ export function useCreateListing() {
     mutationFn: (data: CreateListingData) => listingsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      queryClient.invalidateQueries({ queryKey: ['myListings'] })
     },
   })
 }
@@ -36,6 +44,7 @@ export function useUpdateListing() {
       listingsApi.update(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      queryClient.invalidateQueries({ queryKey: ['myListings'] })
       queryClient.invalidateQueries({ queryKey: ['listing', id] })
     },
   })
@@ -48,6 +57,7 @@ export function useDeleteListing() {
     mutationFn: (id: number) => listingsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      queryClient.invalidateQueries({ queryKey: ['myListings'] })
     },
   })
 }
