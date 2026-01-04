@@ -24,6 +24,18 @@ export interface Task {
   completed_at?: string;
 }
 
+export interface TaskApplication {
+  id: number;
+  task_id: number;
+  applicant_id: number;
+  applicant_name: string;
+  applicant_email?: string;
+  message?: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  task?: Task;
+}
+
 export interface GetTasksParams {
   page?: number;
   per_page?: number;
@@ -38,6 +50,11 @@ export interface GetTasksResponse {
   tasks: Task[];
   total: number;
   page: number;
+}
+
+export interface GetApplicationsResponse {
+  applications: TaskApplication[];
+  total: number;
 }
 
 /**
@@ -80,8 +97,52 @@ export const createTask = async (taskData: Partial<Task>): Promise<Task> => {
   return response.data.task;
 };
 
+// ============ APPLICATION SYSTEM FUNCTIONS ============
+
 /**
- * Accept and assign a task to a user
+ * Apply to a task
+ */
+export const applyToTask = async (taskId: number, message?: string): Promise<TaskApplication> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/apply`, { message });
+  return response.data.application;
+};
+
+/**
+ * Get all applications for a task (owner only)
+ */
+export const getTaskApplications = async (taskId: number): Promise<GetApplicationsResponse> => {
+  const response = await apiClient.get(`/api/tasks/${taskId}/applications`);
+  return response.data;
+};
+
+/**
+ * Accept an application and assign task
+ */
+export const acceptApplication = async (taskId: number, applicationId: number): Promise<{ task: Task; application: TaskApplication }> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/applications/${applicationId}/accept`);
+  return response.data;
+};
+
+/**
+ * Reject an application
+ */
+export const rejectApplication = async (taskId: number, applicationId: number): Promise<TaskApplication> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/applications/${applicationId}/reject`);
+  return response.data.application;
+};
+
+/**
+ * Get my applications (as applicant)
+ */
+export const getMyApplications = async (): Promise<GetApplicationsResponse> => {
+  const response = await apiClient.get('/api/tasks/my-applications');
+  return response.data;
+};
+
+// ============ END APPLICATION SYSTEM FUNCTIONS ============
+
+/**
+ * Accept and assign a task to a user (DEPRECATED - use applyToTask instead)
  */
 export const acceptTask = async (taskId: number, userId: number): Promise<Task> => {
   const response = await apiClient.post(`/api/tasks/${taskId}/accept`, { user_id: userId });
