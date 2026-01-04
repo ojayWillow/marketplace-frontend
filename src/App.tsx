@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Login from './pages/auth/Login'
@@ -6,6 +6,7 @@ import Register from './pages/auth/Register'
 import Listings from './pages/listings/Listings'
 import ListingDetail from './pages/listings/ListingDetail'
 import CreateListing from './pages/listings/CreateListing'
+import EditListing from './pages/listings/EditListing'
 import ProtectedRoute from './components/ProtectedRoute'
 import Tasks from './pages/Tasks'
 import CreateTask from './pages/CreateTask'
@@ -22,6 +23,8 @@ function App() {
         <Route path="register" element={<Register />} />
         <Route path="listings" element={<Listings />} />
         <Route path="tasks" element={<Tasks />} />
+        {/* Alias for /tasks */}
+        <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
         <Route
           path="tasks/create"
           element={
@@ -36,6 +39,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateListing />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="listings/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditListing />
             </ProtectedRoute>
           }
         />
