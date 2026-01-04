@@ -78,7 +78,10 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
-  const [activeTab, setActiveTab] = useState<'available' | 'my-tasks' | 'my-posted'>('available');
+  
+  // NEW: Simplified to 2 tabs
+  const [activeTab, setActiveTab] = useState<'available' | 'active'>('available');
+  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [postedTasks, setPostedTasks] = useState<Task[]>([]);
@@ -265,17 +268,21 @@ const Tasks = () => {
     if (isAuthenticated && user?.id) {
       try {
         const myTasksResponse = await getMyTasks();
-        const userTasks = myTasksResponse.tasks.map(task => {
-          const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
-          return { ...task, icon: getCategoryIcon(task.category), distance };
-        });
+        const userTasks = myTasksResponse.tasks
+          .filter(t => !['completed', 'cancelled'].includes(t.status)) // Filter out completed/cancelled
+          .map(task => {
+            const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
+            return { ...task, icon: getCategoryIcon(task.category), distance };
+          });
         setMyTasks(userTasks);
         
         const createdResponse = await getCreatedTasks();
-        const createdTasks = createdResponse.tasks.map(task => ({
-          ...task,
-          icon: getCategoryIcon(task.category)
-        }));
+        const createdTasks = createdResponse.tasks
+          .filter(t => !['completed', 'cancelled'].includes(t.status)) // Filter out completed/cancelled
+          .map(task => ({
+            ...task,
+            icon: getCategoryIcon(task.category)
+          }));
         setPostedTasks(createdTasks);
       } catch (err: any) {
         if (err?.response?.status !== 401) {
@@ -319,7 +326,6 @@ const Tasks = () => {
     iconAnchor: [10, 10]
   });
 
-  // NEW: Apply to task
   const handleApplyTask = async (taskId: number) => {
     if (!isAuthenticated) {
       toast.warning('Please login to apply');
@@ -341,7 +347,6 @@ const Tasks = () => {
     }
   };
 
-  // NEW: View applications for a task
   const handleViewApplications = async (taskId: number) => {
     setLoadingApplications(true);
     setViewingApplications(taskId);
@@ -357,7 +362,6 @@ const Tasks = () => {
     }
   };
 
-  // NEW: Accept an application
   const handleAcceptApplication = async (taskId: number, applicationId: number) => {
     try {
       await acceptApplication(taskId, applicationId);
@@ -371,12 +375,10 @@ const Tasks = () => {
     }
   };
 
-  // NEW: Reject an application
   const handleRejectApplication = async (taskId: number, applicationId: number) => {
     try {
       await rejectApplication(taskId, applicationId);
       toast.success('Application rejected');
-      // Refresh applications list
       const response = await getTaskApplications(taskId);
       setApplications(response.applications);
     } catch (error: any) {
@@ -404,7 +406,7 @@ const Tasks = () => {
     try {
       setProcessingTask(taskId);
       await confirmTaskCompletion(taskId);
-      toast.success('Task completed!');
+      toast.success('Task completed! Thank you.');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
@@ -508,12 +510,12 @@ const Tasks = () => {
     );
   }
 
-  const rawDisplayTasks = activeTab === 'available' ? tasks : activeTab === 'my-tasks' ? myTasks : postedTasks;
+  // NEW: Combined active tasks (my tasks + posted tasks)
+  const combinedActiveTasks = [...myTasks, ...postedTasks];
+  const rawDisplayTasks = activeTab === 'available' ? tasks : combinedActiveTasks;
   const displayTasks = filterTasks(rawDisplayTasks);
   const mapTasks = displayTasks.filter(task => !['completed', 'cancelled'].includes(task.status));
   const pendingConfirmation = postedTasks.filter(t => t.status === 'pending_confirmation');
-  const activePostedTasks = filterTasks(postedTasks.filter(t => !['completed', 'cancelled'].includes(t.status)));
-  const completedPostedTasks = filterTasks(postedTasks.filter(t => t.status === 'completed'));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -598,31 +600,27 @@ const Tasks = () => {
           )}
         </div>
 
-        {pendingConfirmation.length > 0 && activeTab !== 'my-posted' && (
+        {pendingConfirmation.length > 0 && activeTab !== 'active' && (
           <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-yellow-800">
               📢 You have {pendingConfirmation.length} task(s) waiting for your confirmation!
-              <button onClick={() => setActiveTab('my-posted')} className="ml-2 text-yellow-600 underline hover:text-yellow-700">View now</button>
+              <button onClick={() => setActiveTab('active')} className="ml-2 text-yellow-600 underline hover:text-yellow-700">View now</button>
             </p>
           </div>
         )}
 
+        {/* NEW: Simplified 2-tab system */}
         <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
           <button onClick={() => setActiveTab('available')} className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'available' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
             Available Tasks ({filterTasks(tasks).length})
           </button>
           {isAuthenticated && (
-            <>
-              <button onClick={() => setActiveTab('my-tasks')} className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'my-tasks' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
-                My Tasks ({myTasks.length})
-              </button>
-              <button onClick={() => setActiveTab('my-posted')} className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${activeTab === 'my-posted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
-                My Posted Tasks ({postedTasks.length})
-                {pendingConfirmation.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{pendingConfirmation.length}</span>
-                )}
-              </button>
-            </>
+            <button onClick={() => setActiveTab('active')} className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${activeTab === 'active' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
+              My Active Tasks ({combinedActiveTasks.length})
+              {pendingConfirmation.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{pendingConfirmation.length}</span>
+              )}
+            </button>
           )}
         </div>
 
@@ -660,71 +658,49 @@ const Tasks = () => {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {activeTab === 'available' ? 'Available Tasks' : activeTab === 'my-tasks' ? 'My Accepted Tasks' : 'My Posted Tasks'}
+            {activeTab === 'available' ? 'Available Tasks' : 'My Active Tasks'}
             {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
           </h2>
           
-          {activeTab === 'my-posted' ? (
-            <>
-              {activePostedTasks.length === 0 && completedPostedTasks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-4">📝</div>
-                  <p>You haven't posted any tasks yet.</p>
-                  <button onClick={() => navigate('/tasks/create')} className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">Create Your First Task</button>
-                </div>
-              ) : (
-                <>
-                  {activePostedTasks.length > 0 && (
-                    <div className="space-y-4 mb-8">
-                      {activePostedTasks.map((task) => (
-                        <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} applyingTask={applyingTask}
-                          onApply={handleApplyTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
-                          onCancel={handleCancelTask} onEdit={handleEditTask} onViewApplications={handleViewApplications}
-                          getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
-                      ))}
-                    </div>
-                  )}
-                  {completedPostedTasks.length > 0 && (
-                    <>
-                      <h3 className="text-lg font-semibold text-gray-700 mb-4 border-t pt-6">Completed Tasks ({completedPostedTasks.length})</h3>
-                      <div className="space-y-4 opacity-75">
-                        {completedPostedTasks.map((task) => (
-                          <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} applyingTask={applyingTask}
-                            onApply={handleApplyTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
-                            onCancel={handleCancelTask} onEdit={handleEditTask} onViewApplications={handleViewApplications}
-                            getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </>
+          {displayTasks.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="text-4xl mb-4">{activeTab === 'available' ? '🔍' : '📋'}</div>
+              <p>
+                {activeTab === 'available'
+                  ? searchQuery ? `No tasks found matching "${searchQuery}"` : `No tasks available within ${searchRadius}km.`
+                  : "You don't have any active tasks."}
+              </p>
+              {activeTab === 'available' && (searchQuery || selectedCategory !== 'all') && (
+                <button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4 text-blue-500 hover:text-blue-600 underline">Clear filters</button>
               )}
-            </>
+            </div>
           ) : (
-            <>
-              {displayTasks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-4">{activeTab === 'available' ? '🔍' : '📋'}</div>
-                  <p>
-                    {activeTab === 'available'
-                      ? searchQuery ? `No tasks found matching "${searchQuery}"` : `No tasks available within ${searchRadius}km.`
-                      : "You haven't accepted any tasks yet."}
-                  </p>
-                  {activeTab === 'available' && (searchQuery || selectedCategory !== 'all') && (
-                    <button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4 text-blue-500 hover:text-blue-600 underline">Clear filters</button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {displayTasks.map((task) => (
-                    <TaskCard key={task.id} task={task} activeTab={activeTab} processingTask={processingTask} applyingTask={applyingTask}
-                      onApply={handleApplyTask} onMarkDone={handleMarkDone} onConfirm={handleConfirmCompletion} onDispute={handleDispute}
-                      onCancel={handleCancelTask} onEdit={handleEditTask} onViewApplications={handleViewApplications}
-                      getStatusBadge={getStatusBadge} getNavigationUrl={getNavigationUrl} />
-                  ))}
-                </div>
-              )}
-            </>
+            <div className="space-y-4">
+              {displayTasks.map((task) => {
+                // Determine which view mode based on task ownership
+                const isMyAcceptedTask = myTasks.some(t => t.id === task.id);
+                const isMyPostedTask = postedTasks.some(t => t.id === task.id);
+                
+                return (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    viewMode={activeTab === 'available' ? 'available' : isMyPostedTask ? 'posted' : 'accepted'}
+                    processingTask={processingTask} 
+                    applyingTask={applyingTask}
+                    onApply={handleApplyTask} 
+                    onMarkDone={handleMarkDone} 
+                    onConfirm={handleConfirmCompletion} 
+                    onDispute={handleDispute}
+                    onCancel={handleCancelTask} 
+                    onEdit={handleEditTask} 
+                    onViewApplications={handleViewApplications}
+                    getStatusBadge={getStatusBadge} 
+                    getNavigationUrl={getNavigationUrl} 
+                  />
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -778,7 +754,7 @@ const Tasks = () => {
 
 interface TaskCardProps {
   task: Task;
-  activeTab: 'available' | 'my-tasks' | 'my-posted';
+  viewMode: 'available' | 'accepted' | 'posted';
   processingTask: number | null;
   applyingTask: number | null;
   onApply: (taskId: number) => void;
@@ -792,7 +768,7 @@ interface TaskCardProps {
   getNavigationUrl: (task: Task) => string;
 }
 
-const TaskCard = ({ task, activeTab, processingTask, applyingTask, onApply, onMarkDone, onConfirm, onDispute, onCancel, onEdit, onViewApplications, getStatusBadge, getNavigationUrl }: TaskCardProps) => {
+const TaskCard = ({ task, viewMode, processingTask, applyingTask, onApply, onMarkDone, onConfirm, onDispute, onCancel, onEdit, onViewApplications, getStatusBadge, getNavigationUrl }: TaskCardProps) => {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
@@ -814,15 +790,15 @@ const TaskCard = ({ task, activeTab, processingTask, applyingTask, onApply, onMa
           <div className="text-2xl font-bold text-green-600 mb-2">€{task.budget || task.reward || 0}</div>
           
           {/* Available Tasks - Apply button */}
-          {activeTab === 'available' && (
+          {viewMode === 'available' && (
             <button onClick={(e) => { e.preventDefault(); onApply(task.id); }} disabled={applyingTask === task.id}
               className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
               {applyingTask === task.id ? 'Applying...' : 'Apply'}
             </button>
           )}
           
-          {/* My Tasks (Worker view) */}
-          {activeTab === 'my-tasks' && (
+          {/* My Accepted Tasks (Worker view) */}
+          {viewMode === 'accepted' && (
             <div className="space-y-2">
               <a href={getNavigationUrl(task)} target="_blank" rel="noopener noreferrer"
                 className="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 text-center">
@@ -838,8 +814,8 @@ const TaskCard = ({ task, activeTab, processingTask, applyingTask, onApply, onMa
             </div>
           )}
           
-          {/* My Posted Tasks (Creator view with application management) */}
-          {activeTab === 'my-posted' && (
+          {/* My Posted Tasks (Creator view) */}
+          {viewMode === 'posted' && (
             <div className="space-y-2">
               {task.status === 'pending_confirmation' && (
                 <>
@@ -866,8 +842,6 @@ const TaskCard = ({ task, activeTab, processingTask, applyingTask, onApply, onMa
                 </>
               )}
               {task.status === 'assigned' && <p className="text-sm text-blue-600">Worker is on it!</p>}
-              {task.status === 'completed' && <p className="text-sm text-green-600">✅ Completed</p>}
-              {task.status === 'cancelled' && <p className="text-sm text-gray-500">Cancelled</p>}
             </div>
           )}
         </div>
