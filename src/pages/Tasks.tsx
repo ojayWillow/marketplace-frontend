@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 're
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, acceptTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, Task as APITask } from '../api/tasks';
+import { getTasks, acceptTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, cancelTask, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -30,6 +30,17 @@ interface AddressSuggestion {
   lat: string;
   lon: string;
 }
+
+// Category definitions
+const CATEGORIES = [
+  { value: 'all', label: 'All Categories', icon: '📋' },
+  { value: 'pet-care', label: 'Pet Care', icon: '🐕' },
+  { value: 'moving', label: 'Moving', icon: '📦' },
+  { value: 'shopping', label: 'Shopping', icon: '🛒' },
+  { value: 'cleaning', label: 'Cleaning', icon: '🧹' },
+  { value: 'delivery', label: 'Delivery', icon: '📄' },
+  { value: 'outdoor', label: 'Outdoor', icon: '🌿' },
+];
 
 // Component to handle map clicks for location selection
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
@@ -71,6 +82,13 @@ const Tasks = () => {
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [locationName, setLocationName] = useState('');
   const [searchRadius, setSearchRadius] = useState(25); // Default 25km
+  
+  // NEW: Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
+  const [showFilters, setShowFilters] = useState(false);
+  
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -221,16 +239,8 @@ const Tasks = () => {
   };
 
   const getCategoryIcon = (category: string): string => {
-    const iconMap: { [key: string]: string } = {
-      'pet-care': '🐕',
-      'moving': '📦',
-      'shopping': '🛒',
-      'cleaning': '🧹',
-      'delivery': '📄',
-      'outdoor': '🌿',
-      'default': '💼'
-    };
-    return iconMap[category] || iconMap['default'];
+    const cat = CATEGORIES.find(c => c.value === category);
+    return cat?.icon || '💼';
   };
 
   const getStatusBadge = (status: string) => {
@@ -259,7 +269,8 @@ const Tasks = () => {
         latitude: userLocation.lat,
         longitude: userLocation.lng,
         radius: searchRadius,
-        status: 'open'
+        status: 'open',
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       
       // Filter out tasks created by current user
@@ -324,6 +335,14 @@ const Tasks = () => {
       fetchTasks(true);
     }
   }, [user?.id]);
+
+  // Refetch when category filter changes
+  useEffect(() => {
+    if (locationGranted) {
+      hasFetchedRef.current = false;
+      fetchTasks(true);
+    }
+  }, [selectedCategory]);
 
   const createCustomIcon = (category: string) => new Icon.Default();
   
@@ -409,8 +428,46 @@ const Tasks = () => {
     }
   };
 
+  const handleCancelTask = async (taskId: number) => {
+    if (!confirm('Are you sure you want to cancel this task?')) return;
+    
+    try {
+      setProcessingTask(taskId);
+      await cancelTask(taskId);
+      toast.success('Task has been cancelled.');
+      hasFetchedRef.current = false;
+      await fetchTasks(true);
+    } catch (error: any) {
+      console.error('Error cancelling task:', error);
+      toast.error(error?.response?.data?.error || 'Failed to cancel task.');
+    } finally {
+      setProcessingTask(null);
+    }
+  };
+
+  const handleEditTask = (taskId: number) => {
+    navigate(`/tasks/${taskId}/edit`);
+  };
+
   const getNavigationUrl = (task: Task) => {
     return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${task.latitude},${task.longitude}`;
+  };
+
+  // Filter tasks based on search query and price range
+  const filterTasks = (taskList: Task[]) => {
+    return taskList.filter(task => {
+      // Search filter
+      const matchesSearch = searchQuery === '' || 
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.location.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Price filter
+      const taskPrice = task.budget || task.reward || 0;
+      const matchesPrice = taskPrice >= priceRange.min && taskPrice <= priceRange.max;
+      
+      return matchesSearch && matchesPrice;
+    });
   };
 
   if (loading && !locationGranted) {
@@ -455,8 +512,9 @@ const Tasks = () => {
     );
   }
 
-  // Get tasks for current tab
-  const displayTasks = activeTab === 'available' ? tasks : activeTab === 'my-tasks' ? myTasks : postedTasks;
+  // Get tasks for current tab and apply filters
+  const rawDisplayTasks = activeTab === 'available' ? tasks : activeTab === 'my-tasks' ? myTasks : postedTasks;
+  const displayTasks = filterTasks(rawDisplayTasks);
   
   // Filter tasks for map display - exclude completed/cancelled tasks
   const mapTasks = displayTasks.filter(task => 
@@ -467,8 +525,8 @@ const Tasks = () => {
   const pendingConfirmation = postedTasks.filter(t => t.status === 'pending_confirmation');
   
   // Active posted tasks (not completed/cancelled) for display
-  const activePostedTasks = postedTasks.filter(t => !['completed', 'cancelled'].includes(t.status));
-  const completedPostedTasks = postedTasks.filter(t => t.status === 'completed');
+  const activePostedTasks = filterTasks(postedTasks.filter(t => !['completed', 'cancelled'].includes(t.status)));
+  const completedPostedTasks = filterTasks(postedTasks.filter(t => t.status === 'completed'));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -480,18 +538,95 @@ const Tasks = () => {
               Browse nearby tasks and earn money by helping others
             </p>
           </div>
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <button
               onClick={() => navigate('/tasks/create')}
               className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
             >
               + Create Task
             </button>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium"
+            >
+              Login to Create Task
+            </button>
           )}
         </div>
 
+        {/* Search and Filters */}
+        <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
+          <div className="flex flex-col gap-4">
+            {/* Search bar */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tasks by title, description, or location..."
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              </div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 py-2 rounded-lg border transition-colors ${
+                  showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                ⚙️ Filters
+              </button>
+            </div>
+            
+            {/* Expanded filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                {/* Category filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {CATEGORIES.map(cat => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.icon} {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Price range */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (€)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={priceRange.min}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (€)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={priceRange.max}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) || 1000 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Location search and info - with high z-index container */}
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 relative" style={{ zIndex: 1000 }}>
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 relative" style={{ zIndex: 999 }}>
           <div className="flex flex-col gap-3">
             {/* Address search with autocomplete */}
             <div className="relative" ref={suggestionsRef}>
@@ -502,7 +637,7 @@ const Tasks = () => {
                     value={addressSearch}
                     onChange={(e) => handleAddressInputChange(e.target.value)}
                     onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                    placeholder="Meklēt adresi vai pilsētu (piem., Likvērteni vai Jelgava)"
+                    placeholder="Search address or city (e.g., Riga, Jelgava)"
                     className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {searchingAddress && (
@@ -596,7 +731,7 @@ const Tasks = () => {
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
-            Available Tasks ({tasks.length})
+            Available Tasks ({filterTasks(tasks).length})
           </button>
           {isAuthenticated && (
             <>
@@ -688,6 +823,7 @@ const Tasks = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             {activeTab === 'available' ? 'Available Tasks' : activeTab === 'my-tasks' ? 'My Accepted Tasks' : 'My Posted Tasks'}
+            {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
           </h2>
           
           {/* For My Posted Tasks, show active tasks first, then completed in a separate section */}
@@ -696,7 +832,14 @@ const Tasks = () => {
               {/* Active Tasks */}
               {activePostedTasks.length === 0 && completedPostedTasks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  You haven't posted any tasks yet.
+                  <div className="text-4xl mb-4">📝</div>
+                  <p>You haven't posted any tasks yet.</p>
+                  <button
+                    onClick={() => navigate('/tasks/create')}
+                    className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                  >
+                    Create Your First Task
+                  </button>
                 </div>
               ) : (
                 <>
@@ -713,6 +856,8 @@ const Tasks = () => {
                           onMarkDone={handleMarkDone}
                           onConfirm={handleConfirmCompletion}
                           onDispute={handleDispute}
+                          onCancel={handleCancelTask}
+                          onEdit={handleEditTask}
                           getStatusBadge={getStatusBadge}
                           getNavigationUrl={getNavigationUrl}
                         />
@@ -738,6 +883,8 @@ const Tasks = () => {
                             onMarkDone={handleMarkDone}
                             onConfirm={handleConfirmCompletion}
                             onDispute={handleDispute}
+                            onCancel={handleCancelTask}
+                            onEdit={handleEditTask}
                             getStatusBadge={getStatusBadge}
                             getNavigationUrl={getNavigationUrl}
                           />
@@ -752,9 +899,22 @@ const Tasks = () => {
             <>
               {displayTasks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  {activeTab === 'available'
-                    ? `No tasks available within ${searchRadius}km. Try increasing the search radius.`
-                    : "You haven't accepted any tasks yet."}
+                  <div className="text-4xl mb-4">{activeTab === 'available' ? '🔍' : '📋'}</div>
+                  <p>
+                    {activeTab === 'available'
+                      ? searchQuery 
+                        ? `No tasks found matching "${searchQuery}"` 
+                        : `No tasks available within ${searchRadius}km. Try increasing the search radius or changing filters.`
+                      : "You haven't accepted any tasks yet."}
+                  </p>
+                  {activeTab === 'available' && (searchQuery || selectedCategory !== 'all') && (
+                    <button
+                      onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
+                      className="mt-4 text-blue-500 hover:text-blue-600 underline"
+                    >
+                      Clear filters
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -769,6 +929,8 @@ const Tasks = () => {
                       onMarkDone={handleMarkDone}
                       onConfirm={handleConfirmCompletion}
                       onDispute={handleDispute}
+                      onCancel={handleCancelTask}
+                      onEdit={handleEditTask}
                       getStatusBadge={getStatusBadge}
                       getNavigationUrl={getNavigationUrl}
                     />
@@ -793,6 +955,8 @@ interface TaskCardProps {
   onMarkDone: (taskId: number) => void;
   onConfirm: (taskId: number) => void;
   onDispute: (taskId: number) => void;
+  onCancel: (taskId: number) => void;
+  onEdit: (taskId: number) => void;
   getStatusBadge: (status: string) => JSX.Element;
   getNavigationUrl: (task: Task) => string;
 }
@@ -806,6 +970,8 @@ const TaskCard = ({
   onMarkDone, 
   onConfirm, 
   onDispute,
+  onCancel,
+  onEdit,
   getStatusBadge,
   getNavigationUrl
 }: TaskCardProps) => {
@@ -891,13 +1057,33 @@ const TaskCard = ({
                 </>
               )}
               {task.status === 'open' && (
-                <p className="text-sm text-gray-500">Waiting for someone to accept...</p>
+                <>
+                  <p className="text-sm text-gray-500 mb-2">Waiting for someone to accept...</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onEdit(task.id)}
+                      className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 text-sm"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={() => onCancel(task.id)}
+                      disabled={processingTask === task.id}
+                      className="flex-1 bg-red-100 text-red-600 py-2 px-3 rounded hover:bg-red-200 text-sm disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
               )}
               {task.status === 'assigned' && (
                 <p className="text-sm text-blue-600">Worker is on it!</p>
               )}
               {task.status === 'completed' && (
                 <p className="text-sm text-green-600">✅ Completed</p>
+              )}
+              {task.status === 'cancelled' && (
+                <p className="text-sm text-gray-500">Cancelled</p>
               )}
             </div>
           )}
