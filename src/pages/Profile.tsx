@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
+import { listingsApi, type Listing } from '../api/listings';
+import { getImageUrl } from '../api/uploads';
 
 interface UserProfile {
   id: number;
@@ -41,10 +43,12 @@ const Profile = () => {
   const toast = useToastStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [myListings, setMyListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listingsLoading, setListingsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'reviews'>('about');
+  const [activeTab, setActiveTab] = useState<'about' | 'listings' | 'reviews'>('about');
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -63,6 +67,12 @@ const Profile = () => {
     }
     fetchProfile();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (activeTab === 'listings' && myListings.length === 0 && !listingsLoading) {
+      fetchMyListings();
+    }
+  }, [activeTab]);
 
   const fetchProfile = async () => {
     try {
@@ -88,6 +98,32 @@ const Profile = () => {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMyListings = async () => {
+    try {
+      setListingsLoading(true);
+      const response = await listingsApi.getMy();
+      setMyListings(response.listings || []);
+    } catch (error) {
+      console.error('Error fetching my listings:', error);
+      toast.error('Failed to load your listings');
+    } finally {
+      setListingsLoading(false);
+    }
+  };
+
+  const handleDeleteListing = async (listingId: number) => {
+    if (!window.confirm('Are you sure you want to delete this listing?')) return;
+    
+    try {
+      await listingsApi.delete(listingId);
+      setMyListings(prev => prev.filter(l => l.id !== listingId));
+      toast.success('Listing deleted successfully');
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      toast.error('Failed to delete listing');
     }
   };
 
@@ -132,6 +168,19 @@ const Profile = () => {
         ))}
       </div>
     );
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-700';
+      case 'sold':
+        return 'bg-blue-100 text-blue-700';
+      case 'expired':
+        return 'bg-gray-100 text-gray-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
   };
 
   if (loading) {
@@ -272,6 +321,16 @@ const Profile = () => {
             About
           </button>
           <button
+            onClick={() => setActiveTab('listings')}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'listings'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            My Listings ({myListings.length})
+          </button>
+          <button
             onClick={() => setActiveTab('reviews')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'reviews'
@@ -398,6 +457,105 @@ const Profile = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Listings Tab */}
+        {activeTab === 'listings' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">My Listings</h2>
+              <Link
+                to="/listings/create"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                + Create Listing
+              </Link>
+            </div>
+            
+            {listingsLoading ? (
+              <div className="text-center py-8 text-gray-600">Loading listings...</div>
+            ) : myListings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📝</div>
+                <p className="text-gray-500 mb-4">You haven't created any listings yet.</p>
+                <Link
+                  to="/listings/create"
+                  className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Create Your First Listing
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myListings.map(listing => {
+                  const images = listing.images ? listing.images.split(',').filter(Boolean) : [];
+                  const firstImage = images[0];
+                  
+                  return (
+                    <div key={listing.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="flex">
+                        {/* Image */}
+                        <div className="w-32 h-32 bg-gray-100 flex-shrink-0">
+                          {firstImage ? (
+                            <img
+                              src={getImageUrl(firstImage)}
+                              alt={listing.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 p-3 flex flex-col">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-medium text-gray-900 line-clamp-1">{listing.title}</h3>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(listing.status)}`}>
+                              {listing.status}
+                            </span>
+                          </div>
+                          
+                          <p className="text-blue-600 font-semibold mt-1">
+                            €{Number(listing.price).toLocaleString()}
+                          </p>
+                          
+                          <p className="text-gray-500 text-sm mt-1 line-clamp-1">
+                            {listing.location || 'No location'}
+                          </p>
+                          
+                          <div className="flex gap-2 mt-auto pt-2">
+                            <Link
+                              to={`/listings/${listing.id}`}
+                              className="text-sm text-blue-600 hover:text-blue-700"
+                            >
+                              View
+                            </Link>
+                            <Link
+                              to={`/listings/${listing.id}/edit`}
+                              className="text-sm text-gray-600 hover:text-gray-700"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteListing(listing.id)}
+                              className="text-sm text-red-600 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
