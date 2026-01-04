@@ -31,6 +31,20 @@ interface AddressSuggestion {
   lon: string;
 }
 
+// Haversine formula to calculate distance between two coordinates
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return distance;
+};
+
 // Category definitions
 const CATEGORIES = [
   { value: 'all', label: 'All Categories', icon: '📋' },
@@ -296,11 +310,20 @@ const Tasks = () => {
       try {
         // Tasks I'm working on
         const myTasksResponse = await getMyTasks();
-        const userTasks = myTasksResponse.tasks.map(task => ({
-          ...task,
-          icon: getCategoryIcon(task.category),
-          distance: task.distance || 0
-        }));
+        const userTasks = myTasksResponse.tasks.map(task => {
+          // Calculate distance from user location
+          const distance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            task.latitude,
+            task.longitude
+          );
+          return {
+            ...task,
+            icon: getCategoryIcon(task.category),
+            distance: distance
+          };
+        });
         setMyTasks(userTasks);
         
         // Tasks I created
@@ -343,6 +366,23 @@ const Tasks = () => {
       fetchTasks(true);
     }
   }, [selectedCategory]);
+
+  // Refetch when user location changes to recalculate distances
+  useEffect(() => {
+    if (locationGranted && myTasks.length > 0) {
+      // Recalculate distances for my tasks when location changes
+      const updatedMyTasks = myTasks.map(task => {
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          task.latitude,
+          task.longitude
+        );
+        return { ...task, distance };
+      });
+      setMyTasks(updatedMyTasks);
+    }
+  }, [userLocation]);
 
   const createCustomIcon = (category: string) => new Icon.Default();
   
