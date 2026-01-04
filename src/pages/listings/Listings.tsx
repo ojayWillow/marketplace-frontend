@@ -42,13 +42,25 @@ export default function Listings() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
 
   // Fetch listings when category is selected
-  const { data: listings, isLoading, isError } = useListings(
+  const { data: listingsData, isLoading, isError } = useListings(
     category ? { category } : undefined
   )
 
+  // Safely extract listings array - handle both array and object responses
+  const listings = useMemo(() => {
+    if (!listingsData) return []
+    // If it's already an array, use it directly
+    if (Array.isArray(listingsData)) return listingsData
+    // If it's an object with a listings property, extract it
+    if (listingsData && typeof listingsData === 'object' && 'listings' in listingsData) {
+      return Array.isArray((listingsData as any).listings) ? (listingsData as any).listings : []
+    }
+    return []
+  }, [listingsData])
+
   // Filter and sort listings
   const filteredListings = useMemo(() => {
-    if (!listings) return []
+    if (!listings || !Array.isArray(listings)) return []
     
     let result = [...listings]
     
@@ -56,7 +68,7 @@ export default function Listings() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       result = result.filter(listing =>
-        listing.title.toLowerCase().includes(query) ||
+        listing.title?.toLowerCase().includes(query) ||
         listing.description?.toLowerCase().includes(query) ||
         listing.location?.toLowerCase().includes(query)
       )
