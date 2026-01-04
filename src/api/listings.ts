@@ -1,12 +1,22 @@
 import apiClient from './client'
 import type { Listing, CreateListingData } from './types'
 
+export type { Listing }
+
 export interface ListingsQueryParams {
   category?: string
   location?: string
   search?: string
   page?: number
   per_page?: number
+  status?: string
+}
+
+export interface MyListingsResponse {
+  listings: Listing[]
+  total: number
+  pages: number
+  current_page: number
 }
 
 export const listingsApi = {
@@ -17,6 +27,11 @@ export const listingsApi = {
 
   getById: async (id: number): Promise<Listing> => {
     const response = await apiClient.get(`/api/listings/${id}`)
+    return response.data
+  },
+
+  getMy: async (params?: { page?: number; per_page?: number; status?: string }): Promise<MyListingsResponse> => {
+    const response = await apiClient.get('/api/listings/my', { params })
     return response.data
   },
 
@@ -34,3 +49,6 @@ export const listingsApi = {
     await apiClient.delete(`/api/listings/${id}`)
   },
 }
+
+// Legacy export for backward compatibility
+export const getListings = listingsApi.getAll
