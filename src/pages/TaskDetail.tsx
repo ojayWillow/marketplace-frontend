@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getTask, Task, acceptTask, markTaskDone, confirmTaskDone, cancelTask, disputeTask } from '../api/tasks';
+import { getTask, Task, acceptTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -69,7 +69,7 @@ const TaskDetail = () => {
   const handleConfirmDone = async () => {
     try {
       setActionLoading(true);
-      await confirmTaskDone(Number(id));
+      await confirmTaskCompletion(Number(id));
       toast.success('Task completed! Thank you for using our service.');
       fetchTask();
     } catch (error: any) {
