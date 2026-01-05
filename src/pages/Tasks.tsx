@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 're
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, getHelpers, Helper, Task as APITask } from '../api/tasks';
+import { getTasks, Task as APITask } from '../api/tasks';
+import { getOfferings, Offering } from '../api/offerings';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -53,6 +54,11 @@ const CATEGORIES = [
   { value: 'cleaning', label: 'Cleaning', icon: '🧹' },
   { value: 'delivery', label: 'Delivery', icon: '📄' },
   { value: 'outdoor', label: 'Outdoor', icon: '🌿' },
+  { value: 'babysitting', label: 'Babysitting', icon: '👶' },
+  { value: 'car-wash', label: 'Car Wash', icon: '🚗' },
+  { value: 'assembly', label: 'Assembly', icon: '🔧' },
+  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
+  { value: 'repair', label: 'Repair', icon: '🛠️' },
 ];
 
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
@@ -92,11 +98,11 @@ const Tasks = () => {
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
   
-  // Three main tabs: jobs, helpers, all
-  const [activeTab, setActiveTab] = useState<'jobs' | 'helpers' | 'all'>('all');
+  // Three main tabs: jobs, offerings, all
+  const [activeTab, setActiveTab] = useState<'jobs' | 'offerings' | 'all'>('all');
   
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [helpers, setHelpers] = useState<Helper[]>([]);
+  const [offerings, setOfferings] = useState<Offering[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
@@ -246,18 +252,19 @@ const Tasks = () => {
       
       setTasks(tasksWithIcons);
       
-      // Fetch helpers
+      // Fetch offerings
       try {
-        const helpersResponse = await getHelpers({
+        const offeringsResponse = await getOfferings({
           latitude: userLocation.lat,
           longitude: userLocation.lng,
           radius: searchRadius,
+          status: 'active',
           category: selectedCategory !== 'all' ? selectedCategory : undefined
         });
-        setHelpers(helpersResponse.helpers || []);
+        setOfferings(offeringsResponse.offerings || []);
       } catch (err) {
-        console.log('Helpers API not available yet');
-        setHelpers([]);
+        console.log('Offerings API not available yet');
+        setOfferings([]);
       }
       
       hasFetchedRef.current = true;
@@ -287,9 +294,9 @@ const Tasks = () => {
     iconAnchor: [10, 10]
   });
 
-  const helperLocationIcon = divIcon({
-    className: 'custom-helper-icon',
-    html: '<div style="background: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+  const offeringLocationIcon = divIcon({
+    className: 'custom-offering-icon',
+    html: '<div style="background: #f59e0b; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
     iconSize: [20, 20],
     iconAnchor: [10, 10]
   });
@@ -305,12 +312,12 @@ const Tasks = () => {
     });
   };
 
-  const filterHelpers = (helperList: Helper[]) => {
-    return helperList.filter(helper => {
+  const filterOfferings = (offeringList: Offering[]) => {
+    return offeringList.filter(offering => {
       const matchesSearch = searchQuery === '' || 
-        helper.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (helper.bio && helper.bio.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (helper.skills && helper.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())));
+        offering.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        offering.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (offering.experience && offering.experience.toLowerCase().includes(searchQuery.toLowerCase()));
       
       return matchesSearch;
     });
@@ -353,16 +360,16 @@ const Tasks = () => {
   }
 
   const filteredTasks = filterTasks(tasks);
-  const filteredHelpers = filterHelpers(helpers);
+  const filteredOfferings = filterOfferings(offerings);
 
   // Get map markers based on active tab
   const getMapMarkers = () => {
-    if (activeTab === 'jobs') return { tasks: filteredTasks, helpers: [] };
-    if (activeTab === 'helpers') return { tasks: [], helpers: filteredHelpers };
-    return { tasks: filteredTasks, helpers: filteredHelpers };
+    if (activeTab === 'jobs') return { tasks: filteredTasks, offerings: [] };
+    if (activeTab === 'offerings') return { tasks: [], offerings: filteredOfferings };
+    return { tasks: filteredTasks, offerings: filteredOfferings };
   };
 
-  const { tasks: mapTasks, helpers: mapHelpers } = getMapMarkers();
+  const { tasks: mapTasks, offerings: mapOfferings } = getMapMarkers();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -374,9 +381,14 @@ const Tasks = () => {
           </div>
           <div className="flex gap-3">
             {isAuthenticated && (
-              <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
-                + Post a Job
-              </button>
+              <>
+                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
+                  + Post a Job
+                </button>
+                <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium">
+                  + Post Offering
+                </button>
+              </>
             )}
             {!isAuthenticated && (
               <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
@@ -390,7 +402,7 @@ const Tasks = () => {
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or helpers..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
@@ -442,16 +454,16 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* THREE TABS: Jobs, Helpers, All */}
+        {/* THREE TABS: All, Jobs, Offerings */}
         <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
           <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
-            🌐 All ({filteredTasks.length + filteredHelpers.length})
+            🌐 All ({filteredTasks.length + filteredOfferings.length})
           </button>
           <button onClick={() => setActiveTab('jobs')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💼 Jobs ({filteredTasks.length})
           </button>
-          <button onClick={() => setActiveTab('helpers')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'helpers' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
-            🤝 Helpers ({filteredHelpers.length})
+          <button onClick={() => setActiveTab('offerings')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+            👋 Offerings ({filteredOfferings.length})
           </button>
         </div>
 
@@ -486,18 +498,22 @@ const Tasks = () => {
                 </Popup>
               </Marker>
             ))}
-            {/* Helper markers (green) */}
-            {mapHelpers.map((helper) => (
-              <Marker key={`helper-${helper.id}`} position={[helper.latitude || userLocation.lat, helper.longitude || userLocation.lng]} icon={helperLocationIcon}>
+            {/* Offering markers (amber/orange) */}
+            {mapOfferings.map((offering) => (
+              <Marker key={`offering-${offering.id}`} position={[offering.latitude, offering.longitude]} icon={offeringLocationIcon}>
                 <Popup>
                   <div className="p-2">
-                    <Link to={`/users/${helper.id}`} className="font-bold text-lg mb-1 text-green-600 hover:text-green-800 hover:underline">{helper.name}</Link>
-                    <p className="text-sm text-gray-600 mb-2">{helper.bio?.substring(0, 100) || 'Available for help'}...</p>
-                    <div className="flex items-center gap-2 mb-2">
-                      <StarRating rating={helper.rating || 0} />
-                      <span className="text-sm text-gray-500">({helper.review_count || 0})</span>
+                    <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
+                    <p className="text-sm text-gray-600 mb-2">{offering.description.substring(0, 100)}...</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-green-600 font-bold">
+                        €{offering.price || 0}
+                        {offering.price_type === 'hourly' && '/hr'}
+                        {offering.price_type === 'negotiable' && ' (negotiable)'}
+                      </span>
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">{offering.category}</span>
                     </div>
-                    <Link to={`/users/${helper.id}`} className="text-xs text-green-500 hover:text-green-700">View Profile →</Link>
+                    <Link to={`/offerings/${offering.id}`} className="text-xs text-amber-500 hover:text-amber-700">View Details →</Link>
                   </div>
                 </Popup>
               </Marker>
@@ -512,17 +528,17 @@ const Tasks = () => {
             <span>Jobs</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span>Helpers</span>
+            <div className="w-4 h-4 rounded-full bg-amber-500"></div>
+            <span>Offerings</span>
           </div>
         </div>
 
         {/* CONTENT AREA */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {activeTab === 'all' && 'Jobs & Helpers'}
+            {activeTab === 'all' && 'Jobs & Offerings'}
             {activeTab === 'jobs' && 'Available Jobs'}
-            {activeTab === 'helpers' && 'Available Helpers'}
+            {activeTab === 'offerings' && 'Service Offerings'}
             {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
           </h2>
           
@@ -549,23 +565,23 @@ const Tasks = () => {
             </div>
           )}
           
-          {/* Helpers Section (shown in 'all' and 'helpers' tabs) */}
-          {(activeTab === 'all' || activeTab === 'helpers') && (
+          {/* Offerings Section (shown in 'all' and 'offerings' tabs) */}
+          {(activeTab === 'all' || activeTab === 'offerings') && (
             <div>
-              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">🤝 Helpers <span className="text-sm font-normal text-gray-500">({filteredHelpers.length})</span></h3>}
+              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">👋 Offerings <span className="text-sm font-normal text-gray-500">({filteredOfferings.length})</span></h3>}
               
-              {filteredHelpers.length === 0 ? (
+              {filteredOfferings.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                  <div className="text-4xl mb-4">🤝</div>
-                  <p>No helpers available in your area yet</p>
+                  <div className="text-4xl mb-4">👋</div>
+                  <p>No service offerings available in your area yet</p>
                   {isAuthenticated && (
-                    <Link to="/profile" className="mt-4 text-green-500 hover:text-green-600 underline block">Become a helper</Link>
+                    <button onClick={() => navigate('/offerings/create')} className="mt-4 text-amber-500 hover:text-amber-600 underline">Create your first offering</button>
                   )}
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredHelpers.map((helper) => (
-                    <HelperCard key={helper.id} helper={helper} userLocation={userLocation} />
+                  {filteredOfferings.map((offering) => (
+                    <OfferingCard key={offering.id} offering={offering} userLocation={userLocation} />
                   ))}
                 </div>
               )}
@@ -575,11 +591,11 @@ const Tasks = () => {
         
         {/* CTA for logged-in users */}
         {isAuthenticated && (
-          <div className="mt-6 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg p-6 text-white">
+          <div className="mt-6 bg-gradient-to-r from-blue-500 to-amber-500 rounded-lg p-6 text-white">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
-                <p className="text-blue-100">View your posted jobs, applications, and helper profile in your profile page.</p>
+                <p className="text-blue-100">View your posted jobs, offerings, and applications in your profile page.</p>
               </div>
               <Link to="/profile" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
                 Go to Profile →
@@ -621,52 +637,49 @@ const JobCard = ({ task, userLocation }: { task: Task; userLocation: { lat: numb
   );
 };
 
-// Helper Card Component
-const HelperCard = ({ helper, userLocation }: { helper: Helper; userLocation: { lat: number; lng: number } }) => {
-  const distance = helper.latitude && helper.longitude 
-    ? calculateDistance(userLocation.lat, userLocation.lng, helper.latitude, helper.longitude)
-    : null;
+// Offering Card Component
+const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
+  const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
   
   return (
-    <Link to={`/users/${helper.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-green-300 transition-all">
+    <Link to={`/offerings/${offering.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-amber-300 transition-all">
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="flex-shrink-0">
-          {helper.avatar ? (
-            <img src={helper.avatar} alt={helper.name} className="w-14 h-14 rounded-full object-cover border-2 border-green-200" />
+          {offering.creator_avatar ? (
+            <img src={offering.creator_avatar} alt={offering.creator_name} className="w-14 h-14 rounded-full object-cover border-2 border-amber-200" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xl font-bold">
-              {helper.name?.charAt(0)?.toUpperCase() || '?'}
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xl font-bold">
+              {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
             </div>
           )}
         </div>
         
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-900 truncate">{helper.name}</h4>
+          <h4 className="font-semibold text-gray-900 truncate">{offering.title}</h4>
+          <p className="text-xs text-gray-500 mb-1">by {offering.creator_name}</p>
           
           {/* Rating */}
-          <div className="flex items-center gap-1 mt-1">
-            <StarRating rating={helper.rating || 0} />
-            <span className="text-sm text-gray-500">({helper.review_count || 0})</span>
-          </div>
-          
-          {/* Skills */}
-          {helper.skills && helper.skills.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {helper.skills.slice(0, 3).map((skill, index) => (
-                <span key={index} className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">{skill}</span>
-              ))}
-              {helper.skills.length > 3 && (
-                <span className="text-xs text-gray-500">+{helper.skills.length - 3}</span>
-              )}
+          {offering.creator_rating !== undefined && (
+            <div className="flex items-center gap-1 mb-2">
+              <StarRating rating={offering.creator_rating} />
+              <span className="text-sm text-gray-500">({offering.creator_review_count || 0})</span>
             </div>
           )}
           
-          {/* Distance & Stats */}
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-            {distance !== null && <span>📍 {distance.toFixed(1)}km</span>}
-            <span>✅ {helper.completed_tasks || 0} tasks</span>
+          {/* Price */}
+          <div className="text-lg font-bold text-green-600 mb-2">
+            €{offering.price || 0}
+            {offering.price_type === 'hourly' && '/hr'}
+            {offering.price_type === 'fixed' && ' fixed'}
+            {offering.price_type === 'negotiable' && ' (neg)'}
+          </div>
+          
+          {/* Category & Distance */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{offering.category}</span>
+            <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
           </div>
         </div>
       </div>
