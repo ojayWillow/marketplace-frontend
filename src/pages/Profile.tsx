@@ -6,7 +6,7 @@ import apiClient from '../api/client';
 import { listingsApi, type Listing } from '../api/listings';
 import { reviewsApi } from '../api/reviews';
 import { getImageUrl, uploadImage } from '../api/uploads';
-import { Task, getMyTasks, getCreatedTasks, cancelTask, confirmTaskCompletion } from '../api/tasks';
+import { Task, TaskApplication, getMyTasks, getCreatedTasks, getMyApplications, cancelTask, confirmTaskCompletion } from '../api/tasks';
 
 interface UserProfile {
   id: number;
@@ -57,9 +57,10 @@ const generateAvatarUrl = (style: string, seed: string) => {
 };
 
 type ActiveTab = 'about' | 'listings' | 'tasks' | 'reviews';
-type TaskSubTab = 'assigned' | 'created';
+type TaskSubTab = 'assigned' | 'created' | 'applications';
 type AssignedStatusFilter = 'active' | 'completed' | 'all';
 type CreatedStatusFilter = 'open' | 'in_progress' | 'completed' | 'all';
+type ApplicationStatusFilter = 'pending' | 'accepted' | 'rejected' | 'all';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -71,9 +72,11 @@ const Profile = () => {
   const [myListings, setMyListings] = useState<Listing[]>([]);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
+  const [myApplications, setMyApplications] = useState<TaskApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [tasksLoading, setTasksLoading] = useState(false);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingReview, setEditingReview] = useState<number | null>(null);
@@ -84,6 +87,7 @@ const Profile = () => {
   const taskSubTab = (searchParams.get('subtab') as TaskSubTab) || 'assigned';
   const assignedStatusFilter = (searchParams.get('assigned_filter') as AssignedStatusFilter) || 'active';
   const createdStatusFilter = (searchParams.get('created_filter') as CreatedStatusFilter) || 'all';
+  const applicationStatusFilter = (searchParams.get('application_filter') as ApplicationStatusFilter) || 'all';
 
   // Helper to update URL params
   const updateParams = (updates: Record<string, string>) => {
@@ -100,7 +104,7 @@ const Profile = () => {
 
   // Tab/filter setters that update URL
   const setActiveTab = (tab: ActiveTab) => {
-    updateParams({ tab, subtab: '', assigned_filter: '', created_filter: '' });
+    updateParams({ tab, subtab: '', assigned_filter: '', created_filter: '', application_filter: '' });
   };
 
   const setTaskSubTab = (subtab: TaskSubTab) => {
@@ -113,6 +117,10 @@ const Profile = () => {
 
   const setCreatedStatusFilter = (filter: CreatedStatusFilter) => {
     updateParams({ created_filter: filter });
+  };
+
+  const setApplicationStatusFilter = (filter: ApplicationStatusFilter) => {
+    updateParams({ application_filter: filter });
   };
   
   // Avatar picker state
@@ -140,6 +148,7 @@ const Profile = () => {
     fetchProfile();
     fetchMyListings();
     fetchTasks();
+    fetchApplications();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -204,6 +213,18 @@ const Profile = () => {
     }
   };
 
+  const fetchApplications = async () => {
+    try {
+      setApplicationsLoading(true);
+      const response = await getMyApplications();
+      setMyApplications(response.applications || []);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  };
+
   const handleDeleteListing = async (listingId: number) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return;
     
@@ -250,6 +271,19 @@ const Profile = () => {
     } catch (error: any) {
       console.error('Error marking task done:', error);
       toast.error(error?.response?.data?.error || 'Failed to mark task as done');
+    }
+  };
+
+  const handleWithdrawApplication = async (applicationId: number, taskId: number) => {
+    if (!window.confirm('Are you sure you want to withdraw your application?')) return;
+    
+    try {
+      await apiClient.delete(`/api/task_responses/${applicationId}`);
+      toast.success('Application withdrawn successfully');
+      fetchApplications();
+    } catch (error: any) {
+      console.error('Error withdrawing application:', error);
+      toast.error(error?.response?.data?.error || 'Failed to withdraw application');
     }
   };
 
@@ -399,14 +433,31 @@ const Profile = () => {
       case 'in_progress':
         return 'bg-yellow-100 text-yellow-700';
       case 'pending_confirmation':
+      case 'pending':
         return 'bg-purple-100 text-purple-700';
       case 'cancelled':
       case 'expired':
+      case 'rejected':
         return 'bg-gray-100 text-gray-700';
       case 'disputed':
         return 'bg-red-100 text-red-700';
+      case 'accepted':
+        return 'bg-green-100 text-green-700';
       default:
         return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getApplicationStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return { class: 'bg-yellow-100 text-yellow-700', label: '⏳ Pending', icon: '⏳' };
+      case 'accepted':
+        return { class: 'bg-green-100 text-green-700', label: '✅ Accepted', icon: '✅' };
+      case 'rejected':
+        return { class: 'bg-red-100 text-red-700', label: '❌ Rejected', icon: '❌' };
+      default:
+        return { class: 'bg-gray-100 text-gray-700', label: status, icon: '📋' };
     }
   };
 
@@ -448,6 +499,12 @@ const Profile = () => {
     return true;
   });
 
+  // Filter applications by status
+  const filteredApplications = myApplications.filter(app => {
+    if (applicationStatusFilter === 'all') return true;
+    return app.status === applicationStatusFilter;
+  });
+
   // Count tasks by status for badges
   const assignedActiveTasks = myTasks.filter(t => ['assigned', 'in_progress', 'pending_confirmation'].includes(t.status)).length;
   const assignedCompletedTasks = myTasks.filter(t => t.status === 'completed').length;
@@ -455,6 +512,11 @@ const Profile = () => {
   const createdOpenTasks = createdTasks.filter(t => t.status === 'open').length;
   const createdInProgressTasks = createdTasks.filter(t => ['assigned', 'in_progress', 'pending_confirmation'].includes(t.status)).length;
   const createdCompletedTasks = createdTasks.filter(t => t.status === 'completed').length;
+
+  // Count applications by status
+  const pendingApplications = myApplications.filter(a => a.status === 'pending').length;
+  const acceptedApplications = myApplications.filter(a => a.status === 'accepted').length;
+  const rejectedApplications = myApplications.filter(a => a.status === 'rejected').length;
 
   // Helper to get full avatar URL (handles both relative and absolute URLs)
   const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
@@ -471,8 +533,10 @@ const Profile = () => {
     params.set('subtab', taskSubTab);
     if (taskSubTab === 'assigned') {
       params.set('assigned_filter', assignedStatusFilter);
-    } else {
+    } else if (taskSubTab === 'created') {
       params.set('created_filter', createdStatusFilter);
+    } else {
+      params.set('application_filter', applicationStatusFilter);
     }
     return `/tasks/${taskId}?${params.toString()}`;
   };
@@ -1006,10 +1070,25 @@ const Profile = () => {
               >
                 Created by Me ({createdTasks.length})
               </button>
+              <button
+                onClick={() => setTaskSubTab('applications')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  taskSubTab === 'applications'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                My Applications ({myApplications.length})
+                {pendingApplications > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">
+                    {pendingApplications} pending
+                  </span>
+                )}
+              </button>
             </div>
 
-            {tasksLoading ? (
-              <div className="text-center py-8 text-gray-600">Loading tasks...</div>
+            {tasksLoading || applicationsLoading ? (
+              <div className="text-center py-8 text-gray-600">Loading...</div>
             ) : (
               <>
                 {/* Assigned Tasks */}
@@ -1282,6 +1361,165 @@ const Profile = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* My Applications Tab */}
+                {taskSubTab === 'applications' && (
+                  <>
+                    {/* Status Filter Pills */}
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      <button
+                        onClick={() => setApplicationStatusFilter('pending')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          applicationStatusFilter === 'pending'
+                            ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        ⏳ Pending ({pendingApplications})
+                      </button>
+                      <button
+                        onClick={() => setApplicationStatusFilter('accepted')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          applicationStatusFilter === 'accepted'
+                            ? 'bg-green-100 text-green-700 ring-2 ring-green-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        ✅ Accepted ({acceptedApplications})
+                      </button>
+                      <button
+                        onClick={() => setApplicationStatusFilter('rejected')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          applicationStatusFilter === 'rejected'
+                            ? 'bg-red-100 text-red-700 ring-2 ring-red-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        ❌ Rejected ({rejectedApplications})
+                      </button>
+                      <button
+                        onClick={() => setApplicationStatusFilter('all')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          applicationStatusFilter === 'all'
+                            ? 'bg-gray-700 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        All ({myApplications.length})
+                      </button>
+                    </div>
+
+                    {filteredApplications.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">📨</div>
+                        <p className="text-gray-500 mb-4">
+                          {myApplications.length === 0 
+                            ? "You haven't applied to any tasks yet." 
+                            : `No ${applicationStatusFilter} applications.`}
+                        </p>
+                        {myApplications.length === 0 && (
+                          <Link
+                            to="/tasks"
+                            className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                          >
+                            Browse Available Tasks
+                          </Link>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredApplications.map(application => {
+                          const task = application.task;
+                          const statusBadge = getApplicationStatusBadge(application.status);
+                          
+                          return (
+                            <div key={application.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    {task && <span className="text-xl">{getCategoryIcon(task.category)}</span>}
+                                    {task ? (
+                                      <Link 
+                                        to={`/tasks/${task.id}`}
+                                        className="font-medium text-gray-900 hover:text-blue-600"
+                                      >
+                                        {task.title}
+                                      </Link>
+                                    ) : (
+                                      <span className="font-medium text-gray-500">Task #{application.task_id}</span>
+                                    )}
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${statusBadge.class}`}>
+                                      {statusBadge.label}
+                                    </span>
+                                  </div>
+                                  
+                                  {task && (
+                                    <>
+                                      <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
+                                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                                        <span>📍 {task.location}</span>
+                                        {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
+                                      </div>
+                                    </>
+                                  )}
+                                  
+                                  {application.message && (
+                                    <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                                      <span className="font-medium">Your message:</span> {application.message}
+                                    </div>
+                                  )}
+                                  
+                                  <p className="text-xs text-gray-400 mt-2">
+                                    Applied on {new Date(application.created_at).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                                
+                                {/* Actions */}
+                                <div className="flex flex-col gap-2 min-w-[120px]">
+                                  {task && (
+                                    <Link
+                                      to={`/tasks/${task.id}`}
+                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                    >
+                                      View Task
+                                    </Link>
+                                  )}
+                                  
+                                  {application.status === 'pending' && (
+                                    <button
+                                      onClick={() => handleWithdrawApplication(application.id, application.task_id)}
+                                      className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                    >
+                                      Withdraw
+                                    </button>
+                                  )}
+                                  
+                                  {application.status === 'accepted' && task && (
+                                    <div className="text-center">
+                                      <span className="text-xs text-green-600 font-medium">🎉 You got the job!</span>
+                                    </div>
+                                  )}
+                                  
+                                  {application.status === 'rejected' && (
+                                    <div className="text-center">
+                                      <span className="text-xs text-gray-500">Better luck next time</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </>
