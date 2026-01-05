@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getTask, Task, TaskApplication, applyToTask, getTaskApplications, acceptApplication, rejectApplication, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
+import { getOfferings, Offering } from '../api/offerings';
 import { startConversation } from '../api/messages';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
+import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import apiClient from '../api/client';
 
 interface Review {
@@ -54,6 +56,10 @@ const TaskDetail = () => {
   const [applicationMessage, setApplicationMessage] = useState('');
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   
+  // Recommended helpers state
+  const [recommendedHelpers, setRecommendedHelpers] = useState<Offering[]>([]);
+  const [helpersLoading, setHelpersLoading] = useState(false);
+  
   // Review state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
@@ -73,6 +79,7 @@ const TaskDetail = () => {
     // Fetch applications when task is loaded and user is the creator
     if (task && user?.id === task.creator_id && task.status === 'open') {
       fetchApplications();
+      fetchRecommendedHelpers();
     }
     // Fetch reviews for completed tasks
     if (task && task.status === 'completed') {
@@ -105,6 +112,29 @@ const TaskDetail = () => {
       console.error('Error fetching applications:', error);
     } finally {
       setApplicationsLoading(false);
+    }
+  };
+
+  const fetchRecommendedHelpers = async () => {
+    if (!task || !task.latitude || !task.longitude) return;
+    
+    try {
+      setHelpersLoading(true);
+      const response = await getOfferings({
+        category: task.category,
+        latitude: task.latitude,
+        longitude: task.longitude,
+        radius: 50, // 50km radius
+        status: 'active',
+        per_page: 6
+      });
+      // Filter out the task creator's own offerings
+      const filtered = (response.offerings || []).filter(o => o.creator_id !== task.creator_id);
+      setRecommendedHelpers(filtered);
+    } catch (error) {
+      console.error('Error fetching recommended helpers:', error);
+    } finally {
+      setHelpersLoading(false);
     }
   };
 
@@ -177,6 +207,26 @@ const TaskDetail = () => {
       navigate(`/messages/${conversation.id}`);
     } catch (error: any) {
       console.error('Error starting conversation:', error);
+      toast.error(error?.response?.data?.error || 'Failed to start conversation');
+    }
+  };
+
+  const handleContactHelper = async (helper: Offering) => {
+    if (!isAuthenticated) {
+      toast.warning('Please login to contact helpers');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const { conversation } = await startConversation(
+        helper.creator_id, 
+        `Hi! I saw your "${helper.title}" offering and I have a job that might interest you: "${task?.title}"`,
+        task?.id
+      );
+      navigate(`/messages/${conversation.id}`);
+    } catch (error: any) {
+      console.error('Error contacting helper:', error);
       toast.error(error?.response?.data?.error || 'Failed to start conversation');
     }
   };
@@ -297,30 +347,6 @@ const TaskDetail = () => {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      'pet-care': '🐕',
-      'moving': '📦',
-      'shopping': '🛒',
-      'cleaning': '🧹',
-      'delivery': '📄',
-      'outdoor': '🌿',
-    };
-    return icons[category] || '📋';
-  };
-
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      'pet-care': 'Pet Care',
-      'moving': 'Moving',
-      'shopping': 'Shopping',
-      'cleaning': 'Cleaning',
-      'delivery': 'Delivery',
-      'outdoor': 'Outdoor',
-    };
-    return labels[category] || category;
-  };
-
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       'open': 'bg-green-100 text-green-700',
@@ -382,6 +408,133 @@ const TaskDetail = () => {
           </button>
         ))}
         {!interactive && rating && <span className="text-sm text-gray-500 ml-2">({rating.toFixed(1)})</span>}
+      </div>
+    );
+  };
+
+  // Render Recommended Helpers Section
+  const renderRecommendedHelpers = () => {
+    if (!task || task.status !== 'open' || user?.id !== task.creator_id) return null;
+
+    return (
+      <div className="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Header with explanation */}
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">✨</span>
+            <div>
+              <h2 className="text-lg font-bold">Recommended Helpers</h2>
+              <p className="text-amber-100 text-sm">
+                People offering <strong>{getCategoryLabel(task.category)}</strong> services near your job location
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4">
+          {/* Explanation box */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-amber-800">
+              <strong>💡 How matching works:</strong> We found helpers who offer <strong>{getCategoryLabel(task.category)}</strong> services within 50km of your job. 
+              Contact them directly or wait for applications!
+            </p>
+          </div>
+
+          {helpersLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-gray-500">Finding helpers...</p>
+            </div>
+          ) : recommendedHelpers.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <div className="text-4xl mb-2">👀</div>
+              <p className="text-gray-600 font-medium">No helpers found yet</p>
+              <p className="text-sm text-gray-500 mt-1">
+                No one is offering {getCategoryLabel(task.category)} services in this area yet.
+                <br />Don't worry — people can still apply to your job!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recommendedHelpers.map(helper => (
+                <div key={helper.id} className="border border-gray-200 rounded-lg p-4 hover:border-amber-300 hover:shadow-md transition-all">
+                  {/* Helper Avatar & Name */}
+                  <div className="flex items-center gap-3 mb-3">
+                    {helper.creator_avatar ? (
+                      <img 
+                        src={helper.creator_avatar} 
+                        alt={helper.creator_name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-amber-200"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg font-bold">
+                        {helper.creator_name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <Link 
+                        to={`/users/${helper.creator_id}`}
+                        className="font-medium text-gray-900 hover:text-amber-600 truncate block"
+                      >
+                        {helper.creator_name}
+                      </Link>
+                      {helper.creator_rating !== undefined && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-yellow-500 text-sm">
+                            {'★'.repeat(Math.floor(helper.creator_rating))}
+                            {'☆'.repeat(5 - Math.floor(helper.creator_rating))}
+                          </span>
+                          <span className="text-xs text-gray-500">({helper.creator_review_count || 0})</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Offering Title */}
+                  <Link 
+                    to={`/offerings/${helper.id}`}
+                    className="font-medium text-gray-800 hover:text-amber-600 line-clamp-1 block mb-2"
+                  >
+                    {helper.title}
+                  </Link>
+
+                  {/* Price & Distance */}
+                  <div className="flex items-center justify-between text-sm mb-3">
+                    <span className="text-green-600 font-semibold">
+                      €{helper.price || 0}
+                      {helper.price_type === 'hourly' && '/hr'}
+                    </span>
+                    {helper.distance && (
+                      <span className="text-gray-500">
+                        📍 {helper.distance.toFixed(1)}km away
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Contact Button */}
+                  <button
+                    onClick={() => handleContactHelper(helper)}
+                    className="w-full bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                  >
+                    💬 Contact
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Browse more link */}
+          {recommendedHelpers.length > 0 && (
+            <div className="mt-4 text-center">
+              <Link 
+                to={`/tasks?tab=offerings&category=${task.category}`}
+                className="text-amber-600 hover:text-amber-700 text-sm font-medium"
+              >
+                Browse all {getCategoryLabel(task.category)} offerings →
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -947,6 +1100,9 @@ const TaskDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Recommended Helpers Section - Only for task owner */}
+        {renderRecommendedHelpers()}
 
         {/* Reviews Section */}
         {renderReviewSection()}
