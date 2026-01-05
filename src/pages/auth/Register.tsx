@@ -1,8 +1,28 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useRegister } from '../../hooks/useAuth'
 import ErrorMessage from '../../components/ui/ErrorMessage'
+
+// Password strength calculator
+const calculatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  let score = 0;
+  
+  if (password.length >= 6) score += 1;
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
+  
+  if (score <= 2) return { score, label: 'Weak', color: 'bg-red-500' };
+  if (score <= 4) return { score, label: 'Medium', color: 'bg-yellow-500' };
+  return { score, label: 'Strong', color: 'bg-green-500' };
+};
+
+// Validation helpers
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidUsername = (username: string) => username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
 
 export default function Register() {
   const { t } = useTranslation()
@@ -14,16 +34,51 @@ export default function Register() {
     confirmPassword: '',
     phone: '',
   })
-  const [passwordError, setPasswordError] = useState('')
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Real-time validation
+  const validation = useMemo(() => ({
+    username: {
+      isValid: isValidUsername(formData.username),
+      message: formData.username.length < 3 
+        ? 'Username must be at least 3 characters' 
+        : 'Only letters, numbers, and underscores allowed'
+    },
+    email: {
+      isValid: isValidEmail(formData.email),
+      message: 'Please enter a valid email address'
+    },
+    password: {
+      isValid: formData.password.length >= 6,
+      message: 'Password must be at least 6 characters'
+    },
+    confirmPassword: {
+      isValid: formData.confirmPassword === formData.password && formData.confirmPassword.length > 0,
+      message: 'Passwords do not match'
+    }
+  }), [formData]);
+
+  const passwordStrength = useMemo(() => 
+    calculatePasswordStrength(formData.password), 
+    [formData.password]
+  );
+
+  const isFormValid = Object.values(validation).every(v => v.isValid);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setPasswordError('')
+    
+    // Mark all fields as touched
+    setTouched({
+      username: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
 
-    if (formData.password !== formData.confirmPassword) {
-      setPasswordError('Passwords do not match')
-      return
-    }
+    if (!isFormValid) return;
 
     register.mutate({
       username: formData.username,
@@ -34,11 +89,26 @@ export default function Register() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }))
   }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTouched(prev => ({ ...prev, [e.target.name]: true }));
+  }
+
+  // Validation icon component
+  const ValidationIcon = ({ isValid, show }: { isValid: boolean; show: boolean }) => {
+    if (!show) return null;
+    return isValid ? (
+      <span className="text-green-500 text-lg">✓</span>
+    ) : (
+      <span className="text-red-500 text-lg">✗</span>
+    );
+  };
 
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
@@ -48,51 +118,90 @@ export default function Register() {
             <h1 className="text-2xl font-bold text-gray-900">
               {t('auth.registerTitle')}
             </h1>
+            <p className="text-gray-500 text-sm mt-2">
+              Create your account to get started
+            </p>
           </div>
 
-          {(register.isError || passwordError) && (
+          {register.isError && (
             <ErrorMessage
-              message={passwordError || t('auth.registerError')}
+              message={t('auth.registerError')}
               className="mb-6"
             />
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            {/* Username */}
             <div>
-              <label htmlFor="username" className="label">
-                {t('auth.username')}
+              <label htmlFor="username" className="label flex items-center gap-1">
+                {t('auth.username')} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="input"
-                required
-                autoComplete="new-username"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`input pr-10 ${
+                    touched.username 
+                      ? validation.username.isValid 
+                        ? 'border-green-400 focus:ring-green-500' 
+                        : 'border-red-400 focus:ring-red-500'
+                      : ''
+                  }`}
+                  required
+                  autoComplete="new-username"
+                  placeholder="john_doe"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <ValidationIcon isValid={validation.username.isValid} show={touched.username && formData.username.length > 0} />
+                </div>
+              </div>
+              {touched.username && !validation.username.isValid && formData.username.length > 0 && (
+                <p className="text-red-500 text-xs mt-1">{validation.username.message}</p>
+              )}
             </div>
 
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="label">
-                {t('auth.email')}
+              <label htmlFor="email" className="label flex items-center gap-1">
+                {t('auth.email')} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="input"
-                required
-                autoComplete="new-email"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`input pr-10 ${
+                    touched.email 
+                      ? validation.email.isValid 
+                        ? 'border-green-400 focus:ring-green-500' 
+                        : 'border-red-400 focus:ring-red-500'
+                      : ''
+                  }`}
+                  required
+                  autoComplete="new-email"
+                  placeholder="you@example.com"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <ValidationIcon isValid={validation.email.isValid} show={touched.email && formData.email.length > 0} />
+                </div>
+              </div>
+              {touched.email && !validation.email.isValid && formData.email.length > 0 && (
+                <p className="text-red-500 text-xs mt-1">{validation.email.message}</p>
+              )}
             </div>
 
+            {/* Phone (Optional) */}
             <div>
-              <label htmlFor="phone" className="label">
-                {t('auth.phone')} <span className="text-gray-400">(optional)</span>
+              <label htmlFor="phone" className="label flex items-center gap-2">
+                {t('auth.phone')} 
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">optional</span>
               </label>
               <input
                 type="tel"
@@ -106,45 +215,130 @@ export default function Register() {
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="label">
-                {t('auth.password')}
+              <label htmlFor="password" className="label flex items-center gap-1">
+                {t('auth.password')} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="input"
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`input pr-20 ${
+                    touched.password 
+                      ? validation.password.isValid 
+                        ? 'border-green-400 focus:ring-green-500' 
+                        : 'border-red-400 focus:ring-red-500'
+                      : ''
+                  }`}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  placeholder="Min. 6 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                >
+                  {showPassword ? '🙈 Hide' : '👁️ Show'}
+                </button>
+              </div>
+              
+              {/* Password Strength Indicator */}
+              {formData.password.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                        style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${
+                      passwordStrength.label === 'Weak' ? 'text-red-500' :
+                      passwordStrength.label === 'Medium' ? 'text-yellow-600' : 'text-green-500'
+                    }`}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    💡 Use uppercase, numbers, and symbols for a stronger password
+                  </div>
+                </div>
+              )}
+              
+              {touched.password && !validation.password.isValid && (
+                <p className="text-red-500 text-xs mt-1">{validation.password.message}</p>
+              )}
             </div>
 
+            {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="label">
-                {t('auth.confirmPassword')}
+              <label htmlFor="confirmPassword" className="label flex items-center gap-1">
+                {t('auth.confirmPassword')} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="input"
-                required
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`input pr-20 ${
+                    touched.confirmPassword && formData.confirmPassword.length > 0
+                      ? validation.confirmPassword.isValid 
+                        ? 'border-green-400 focus:ring-green-500' 
+                        : 'border-red-400 focus:ring-red-500'
+                      : ''
+                  }`}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Repeat your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                >
+                  {showConfirmPassword ? '🙈 Hide' : '👁️ Show'}
+                </button>
+              </div>
+              {touched.confirmPassword && !validation.confirmPassword.isValid && formData.confirmPassword.length > 0 && (
+                <p className="text-red-500 text-xs mt-1">{validation.confirmPassword.message}</p>
+              )}
+              {formData.confirmPassword.length > 0 && validation.confirmPassword.isValid && (
+                <p className="text-green-500 text-xs mt-1">✓ Passwords match</p>
+              )}
             </div>
+
+            {/* Required fields note */}
+            <p className="text-xs text-gray-400">
+              <span className="text-red-500">*</span> Required fields
+            </p>
 
             <button
               type="submit"
-              disabled={register.isPending}
-              className="btn-primary w-full py-3"
+              disabled={register.isPending || !isFormValid}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                isFormValid 
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              {register.isPending ? t('common.loading') : t('auth.registerButton')}
+              {register.isPending ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Creating account...
+                </span>
+              ) : (
+                t('auth.registerButton')
+              )}
             </button>
           </form>
 
