@@ -4,6 +4,7 @@ import { createTask } from '../api/tasks';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
+import { CATEGORIES, CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
 
 const CreateTask = () => {
   const navigate = useNavigate();
@@ -25,15 +26,6 @@ const CreateTask = () => {
     difficulty: 'medium',
     is_urgent: false
   });
-
-  const categories = [
-    { value: 'pet-care', label: '🐕 Pet Care', icon: '🐕' },
-    { value: 'moving', label: '📦 Moving', icon: '📦' },
-    { value: 'shopping', label: '🛒 Shopping', icon: '🛒' },
-    { value: 'cleaning', label: '🧹 Cleaning', icon: '🧹' },
-    { value: 'delivery', label: '📄 Delivery', icon: '📄' },
-    { value: 'outdoor', label: '🌿 Outdoor', icon: '🌿' },
-  ];
 
   const difficulties = [
     { value: 'easy', label: '🟢 Easy', description: 'Simple task, minimal effort' },
@@ -168,6 +160,9 @@ const CreateTask = () => {
   // Get today's date in YYYY-MM-DD format for min date
   const today = new Date().toISOString().split('T')[0];
 
+  // Get selected category info
+  const selectedCategory = getCategoryByValue(formData.category);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
@@ -210,7 +205,7 @@ const CreateTask = () => {
               />
             </div>
 
-            {/* Category */}
+            {/* Category - Grouped */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                 Category *
@@ -223,12 +218,25 @@ const CreateTask = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
+                {CATEGORY_GROUPS.map(group => (
+                  <optgroup key={group.name} label={group.name}>
+                    {group.categories.map(catValue => {
+                      const cat = getCategoryByValue(catValue);
+                      if (!cat) return null;
+                      return (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.icon} {cat.label}
+                        </option>
+                      );
+                    })}
+                  </optgroup>
                 ))}
               </select>
+              {selectedCategory && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {selectedCategory.icon} {selectedCategory.description}
+                </p>
+              )}
             </div>
 
             {/* Location with Geocoding */}
@@ -367,6 +375,14 @@ const CreateTask = () => {
               <label htmlFor="is_urgent" className="ml-2 text-sm text-gray-700">
                 This is an urgent task
               </label>
+            </div>
+
+            {/* Matching hint */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-medium text-blue-800 mb-2">💡 Get matched with helpers</h3>
+              <p className="text-sm text-blue-700">
+                People offering <strong>{selectedCategory?.label || 'this type of'}</strong> services in your area will see your job and can apply to help you!
+              </p>
             </div>
 
             {/* Buttons */}
