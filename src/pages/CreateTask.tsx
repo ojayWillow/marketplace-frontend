@@ -20,8 +20,9 @@ const CreateTask = () => {
     location: '',
     latitude: 56.9496,
     longitude: 24.1052,
-    deadline: '',
-    priority: 'normal',
+    deadlineDate: '',
+    deadlineTime: '',
+    difficulty: 'medium',
     is_urgent: false
   });
 
@@ -33,6 +34,26 @@ const CreateTask = () => {
     { value: 'delivery', label: '📄 Delivery', icon: '📄' },
     { value: 'outdoor', label: '🌿 Outdoor', icon: '🌿' },
   ];
+
+  const difficulties = [
+    { value: 'easy', label: '🟢 Easy', description: 'Simple task, minimal effort' },
+    { value: 'medium', label: '🟡 Medium', description: 'Moderate effort required' },
+    { value: 'hard', label: '🔴 Hard', description: 'Challenging, requires skill or strength' },
+  ];
+
+  // Generate time options in 15-minute intervals
+  const timeOptions = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const hourStr = hour.toString().padStart(2, '0');
+      const minuteStr = minute.toString().padStart(2, '0');
+      const time24 = `${hourStr}:${minuteStr}`;
+      const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const ampm = hour < 12 ? 'AM' : 'PM';
+      const timeLabel = `${hour12}:${minuteStr} ${ampm}`;
+      timeOptions.push({ value: time24, label: timeLabel });
+    }
+  }
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -91,11 +112,28 @@ const CreateTask = () => {
     setLoading(true);
 
     try {
+      // Combine date and time for deadline
+      let deadline: string | undefined;
+      if (formData.deadlineDate) {
+        if (formData.deadlineTime) {
+          deadline = `${formData.deadlineDate}T${formData.deadlineTime}`;
+        } else {
+          deadline = `${formData.deadlineDate}T23:59`;
+        }
+      }
+
       const taskData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         creator_id: user.id,
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
-        deadline: formData.deadline || undefined
+        deadline: deadline,
+        priority: formData.difficulty, // Map difficulty to priority field in backend
+        is_urgent: formData.is_urgent
       };
 
       await createTask(taskData);
@@ -126,6 +164,9 @@ const CreateTask = () => {
     }));
     setAddressSuggestions([]);
   };
+
+  // Get today's date in YYYY-MM-DD format for min date
+  const today = new Date().toISOString().split('T')[0];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -250,37 +291,67 @@ const CreateTask = () => {
               <p className="text-xs text-gray-500 mt-1">How much are you willing to pay for this task?</p>
             </div>
 
-            {/* Deadline */}
+            {/* Deadline - Split into Date and Time */}
             <div>
-              <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Deadline (Optional)
               </label>
-              <input
-                type="datetime-local"
-                id="deadline"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="deadlineDate" className="block text-xs text-gray-500 mb-1">Date</label>
+                  <input
+                    type="date"
+                    id="deadlineDate"
+                    name="deadlineDate"
+                    value={formData.deadlineDate}
+                    onChange={handleChange}
+                    min={today}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deadlineTime" className="block text-xs text-gray-500 mb-1">Time</label>
+                  <select
+                    id="deadlineTime"
+                    name="deadlineTime"
+                    value={formData.deadlineTime}
+                    onChange={handleChange}
+                    disabled={!formData.deadlineDate}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+                  >
+                    <option value="">Any time</option>
+                    {timeOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">When do you need this task completed by?</p>
             </div>
 
-            {/* Priority */}
+            {/* Difficulty (was Priority) */}
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
-                Priority
+              <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
+                How hard is this task?
               </label>
               <select
-                id="priority"
-                name="priority"
-                value={formData.priority}
+                id="difficulty"
+                name="difficulty"
+                value={formData.difficulty}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
+                {difficulties.map(diff => (
+                  <option key={diff.value} value={diff.value}>
+                    {diff.label}
+                  </option>
+                ))}
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {difficulties.find(d => d.value === formData.difficulty)?.description}
+              </p>
             </div>
 
             {/* Urgent Checkbox */}
