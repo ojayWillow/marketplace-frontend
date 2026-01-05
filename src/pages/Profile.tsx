@@ -6,7 +6,7 @@ import apiClient from '../api/client';
 import { listingsApi, type Listing } from '../api/listings';
 import { reviewsApi } from '../api/reviews';
 import { getImageUrl, uploadImage } from '../api/uploads';
-import { Task, TaskApplication, getMyTasks, getCreatedTasks, getMyApplications, cancelTask, confirmTaskCompletion } from '../api/tasks';
+import { Task, TaskApplication, getCreatedTasks, getMyApplications, cancelTask, confirmTaskCompletion } from '../api/tasks';
 
 interface UserProfile {
   id: number;
@@ -57,8 +57,7 @@ const generateAvatarUrl = (style: string, seed: string) => {
 };
 
 type ActiveTab = 'about' | 'listings' | 'tasks' | 'reviews';
-type TaskSubTab = 'assigned' | 'created' | 'applications';
-type AssignedStatusFilter = 'active' | 'completed' | 'all';
+type TaskSubTab = 'created' | 'applications';
 type CreatedStatusFilter = 'open' | 'in_progress' | 'completed' | 'all';
 type ApplicationStatusFilter = 'pending' | 'accepted' | 'rejected' | 'all';
 
@@ -70,7 +69,6 @@ const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
   const [myApplications, setMyApplications] = useState<TaskApplication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,8 +82,7 @@ const Profile = () => {
   
   // Read state from URL params with defaults
   const activeTab = (searchParams.get('tab') as ActiveTab) || 'about';
-  const taskSubTab = (searchParams.get('subtab') as TaskSubTab) || 'assigned';
-  const assignedStatusFilter = (searchParams.get('assigned_filter') as AssignedStatusFilter) || 'active';
+  const taskSubTab = (searchParams.get('subtab') as TaskSubTab) || 'created';
   const createdStatusFilter = (searchParams.get('created_filter') as CreatedStatusFilter) || 'all';
   const applicationStatusFilter = (searchParams.get('application_filter') as ApplicationStatusFilter) || 'all';
 
@@ -104,15 +101,11 @@ const Profile = () => {
 
   // Tab/filter setters that update URL
   const setActiveTab = (tab: ActiveTab) => {
-    updateParams({ tab, subtab: '', assigned_filter: '', created_filter: '', application_filter: '' });
+    updateParams({ tab, subtab: '', created_filter: '', application_filter: '' });
   };
 
   const setTaskSubTab = (subtab: TaskSubTab) => {
     updateParams({ subtab });
-  };
-
-  const setAssignedStatusFilter = (filter: AssignedStatusFilter) => {
-    updateParams({ assigned_filter: filter });
   };
 
   const setCreatedStatusFilter = (filter: CreatedStatusFilter) => {
@@ -200,11 +193,7 @@ const Profile = () => {
   const fetchTasks = async () => {
     try {
       setTasksLoading(true);
-      const [assigned, created] = await Promise.all([
-        getMyTasks(),
-        getCreatedTasks()
-      ]);
-      setMyTasks(assigned.tasks || []);
+      const created = await getCreatedTasks();
       setCreatedTasks(created.tasks || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -262,23 +251,11 @@ const Profile = () => {
     }
   };
 
-  const handleMarkTaskDone = async (taskId: number) => {
-    try {
-      // This marks the task as done from the helper's side (pending confirmation from owner)
-      await apiClient.post(`/api/tasks/${taskId}/mark-done`);
-      toast.success('Task marked as done! Waiting for owner confirmation.');
-      fetchTasks();
-    } catch (error: any) {
-      console.error('Error marking task done:', error);
-      toast.error(error?.response?.data?.error || 'Failed to mark task as done');
-    }
-  };
-
   const handleWithdrawApplication = async (applicationId: number, taskId: number) => {
     if (!window.confirm('Are you sure you want to withdraw your application?')) return;
     
     try {
-      await apiClient.delete(`/api/task_responses/${applicationId}`);
+      await apiClient.delete(`/api/tasks/${taskId}/applications/${applicationId}`);
       toast.success('Application withdrawn successfully');
       fetchApplications();
     } catch (error: any) {
@@ -476,18 +453,6 @@ const Profile = () => {
     return icons[category] || '📋';
   };
 
-  // Filter assigned tasks by status
-  const filteredAssignedTasks = myTasks.filter(task => {
-    if (assignedStatusFilter === 'all') return true;
-    if (assignedStatusFilter === 'active') {
-      return ['assigned', 'in_progress', 'pending_confirmation'].includes(task.status);
-    }
-    if (assignedStatusFilter === 'completed') {
-      return task.status === 'completed';
-    }
-    return true;
-  });
-
   // Filter created tasks by status
   const filteredCreatedTasks = createdTasks.filter(task => {
     if (createdStatusFilter === 'all') return true;
@@ -505,10 +470,7 @@ const Profile = () => {
     return app.status === applicationStatusFilter;
   });
 
-  // Count tasks by status for badges
-  const assignedActiveTasks = myTasks.filter(t => ['assigned', 'in_progress', 'pending_confirmation'].includes(t.status)).length;
-  const assignedCompletedTasks = myTasks.filter(t => t.status === 'completed').length;
-  
+  // Count created tasks by status
   const createdOpenTasks = createdTasks.filter(t => t.status === 'open').length;
   const createdInProgressTasks = createdTasks.filter(t => ['assigned', 'in_progress', 'pending_confirmation'].includes(t.status)).length;
   const createdCompletedTasks = createdTasks.filter(t => t.status === 'completed').length;
@@ -531,9 +493,7 @@ const Profile = () => {
     params.set('from', 'profile');
     params.set('tab', activeTab);
     params.set('subtab', taskSubTab);
-    if (taskSubTab === 'assigned') {
-      params.set('assigned_filter', assignedStatusFilter);
-    } else if (taskSubTab === 'created') {
+    if (taskSubTab === 'created') {
       params.set('created_filter', createdStatusFilter);
     } else {
       params.set('application_filter', applicationStatusFilter);
@@ -562,7 +522,7 @@ const Profile = () => {
     month: 'long'
   });
 
-  const totalTasks = myTasks.length + createdTasks.length;
+  const totalTasks = createdTasks.length + myApplications.length;
   const currentAvatarUrl = getAvatarDisplayUrl(formData.avatar_url || profile.avatar_url || profile.profile_picture_url);
 
   return (
@@ -1051,16 +1011,6 @@ const Profile = () => {
             {/* Sub-tabs */}
             <div className="flex gap-2 mb-4 border-b">
               <button
-                onClick={() => setTaskSubTab('assigned')}
-                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                  taskSubTab === 'assigned'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Assigned to Me ({myTasks.length})
-              </button>
-              <button
                 onClick={() => setTaskSubTab('created')}
                 className={`px-4 py-2 font-medium border-b-2 transition-colors ${
                   taskSubTab === 'created'
@@ -1091,136 +1041,6 @@ const Profile = () => {
               <div className="text-center py-8 text-gray-600">Loading...</div>
             ) : (
               <>
-                {/* Assigned Tasks */}
-                {taskSubTab === 'assigned' && (
-                  <>
-                    {/* Status Filter Pills */}
-                    <div className="flex gap-2 mb-4 flex-wrap">
-                      <button
-                        onClick={() => setAssignedStatusFilter('active')}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          assignedStatusFilter === 'active'
-                            ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        🔄 Active ({assignedActiveTasks})
-                      </button>
-                      <button
-                        onClick={() => setAssignedStatusFilter('completed')}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          assignedStatusFilter === 'completed'
-                            ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        ✅ Completed ({assignedCompletedTasks})
-                      </button>
-                      <button
-                        onClick={() => setAssignedStatusFilter('all')}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          assignedStatusFilter === 'all'
-                            ? 'bg-gray-700 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        All ({myTasks.length})
-                      </button>
-                    </div>
-
-                    {filteredAssignedTasks.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="text-6xl mb-4">🔍</div>
-                        <p className="text-gray-500 mb-4">
-                          {myTasks.length === 0 
-                            ? 'No tasks assigned to you yet.' 
-                            : `No ${assignedStatusFilter} tasks.`}
-                        </p>
-                        {myTasks.length === 0 && (
-                          <Link
-                            to="/tasks"
-                            className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            Browse Available Tasks
-                          </Link>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {filteredAssignedTasks.map(task => (
-                          <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
-                                  <Link 
-                                    to={buildTaskDetailUrl(task.id)}
-                                    className="font-medium text-gray-900 hover:text-blue-600"
-                                  >
-                                    {task.title}
-                                  </Link>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
-                                    {task.status.replace('_', ' ')}
-                                  </span>
-                                </div>
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {task.location}</span>
-                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
-                                </div>
-                              </div>
-                              
-                              {/* Action Buttons */}
-                              <div className="flex flex-col gap-2 min-w-[120px]">
-                                {/* Active task actions */}
-                                {['assigned', 'in_progress'].includes(task.status) && (
-                                  <>
-                                    <button
-                                      onClick={() => handleMarkTaskDone(task.id)}
-                                      className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                                    >
-                                      ✓ Mark Done
-                                    </button>
-                                    <Link
-                                      to={buildTaskDetailUrl(task.id)}
-                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                    >
-                                      View Details
-                                    </Link>
-                                  </>
-                                )}
-                                
-                                {/* Pending confirmation */}
-                                {task.status === 'pending_confirmation' && (
-                                  <div className="text-center">
-                                    <span className="text-sm text-purple-600 font-medium">⏳ Waiting for confirmation</span>
-                                    <Link
-                                      to={buildTaskDetailUrl(task.id)}
-                                      className="mt-2 block px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                    >
-                                      View Details
-                                    </Link>
-                                  </div>
-                                )}
-
-                                {/* Completed task */}
-                                {task.status === 'completed' && (
-                                  <Link
-                                    to={buildTaskDetailUrl(task.id)}
-                                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                  >
-                                    View Details
-                                  </Link>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-
                 {/* Created Tasks */}
                 {taskSubTab === 'created' && (
                   <>
