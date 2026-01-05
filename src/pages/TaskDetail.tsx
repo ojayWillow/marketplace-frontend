@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getTask, Task, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
+import { startConversation } from '../api/messages';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -12,6 +13,7 @@ const TaskDetail = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [messageLoading, setMessageLoading] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [showApplicationForm, setShowApplicationForm] = useState(false);
 
@@ -34,6 +36,26 @@ const TaskDetail = () => {
     }
   };
 
+  const handleMessageCreator = async () => {
+    if (!isAuthenticated) {
+      toast.warning('Please login to send messages');
+      navigate('/login');
+      return;
+    }
+    if (!task?.creator_id) return;
+
+    try {
+      setMessageLoading(true);
+      const { conversation } = await startConversation(task.creator_id, undefined, task.id);
+      navigate(`/messages/${conversation.id}`);
+    } catch (error: any) {
+      console.error('Error starting conversation:', error);
+      toast.error(error?.response?.data?.error || 'Failed to start conversation');
+    } finally {
+      setMessageLoading(false);
+    }
+  };
+
   const handleApplyTask = async () => {
     if (!isAuthenticated || !user?.id) {
       toast.warning('Please login to apply');
@@ -47,7 +69,6 @@ const TaskDetail = () => {
       toast.success('✅ Application submitted! The task owner will review your application and get back to you.');
       setShowApplicationForm(false);
       setApplicationMessage('');
-      // Navigate back to tasks page
       setTimeout(() => {
         navigate('/tasks');
       }, 2000);
@@ -217,6 +238,7 @@ const TaskDetail = () => {
   const canDispute = isCreator && task.status === 'pending_confirmation';
   const canCancel = isCreator && task.status === 'open';
   const canEdit = isCreator && task.status === 'open';
+  const canMessageCreator = isAuthenticated && !isCreator && task.creator_id;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -283,21 +305,31 @@ const TaskDetail = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-500 mb-1">📆 Posted</p>
                 <p className="font-medium text-gray-900">
-                  {new Date(task.created_at).toLocaleDateString('en-US', {
+                  {task.created_at && new Date(task.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </p>
               </div>
-              {task.creator_name && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">👤 Posted by</p>
+              {/* Posted by section with message button */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-500 mb-1">👤 Posted by</p>
+                <div className="flex items-center justify-between">
                   <Link to={`/users/${task.creator_id}`} className="font-medium text-blue-600 hover:text-blue-700">
-                    {task.creator_name}
+                    {task.creator_name || 'Unknown'}
                   </Link>
+                  {canMessageCreator && (
+                    <button
+                      onClick={handleMessageCreator}
+                      disabled={messageLoading}
+                      className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200 disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                      {messageLoading ? '...' : '💬 Message'}
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
               {task.assigned_to_name && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-500 mb-1">🛠️ Assigned to</p>
