@@ -13,6 +13,7 @@ import TaskDetail from './pages/TaskDetail'
 import CreateTask from './pages/CreateTask'
 import EditTask from './pages/EditTask'
 import CreateOffering from './pages/CreateOffering'
+import OfferingDetail from './pages/OfferingDetail'
 import Profile from './pages/Profile'
 import UserProfile from './pages/UserProfile'
 import Messages from './pages/Messages'
@@ -48,6 +49,7 @@ function App() {
           }
         />
         {/* Offerings routes */}
+        <Route path="offerings/:id" element={<OfferingDetail />} />
         <Route
           path="offerings/create"
           element={
