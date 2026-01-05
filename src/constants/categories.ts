@@ -29,7 +29,7 @@ export const CATEGORIES: Category[] = [
   { value: 'elderly-care', label: 'Elderly Care', icon: '👴', description: 'Companionship, assistance, errands for seniors' },
   
   // Errands & Delivery
-  { value: 'delivery', label: 'Delivery', icon: '📦', description: 'Pick up and deliver items' },
+  { value: 'delivery', label: 'Delivery', icon: '🚚', description: 'Pick up and deliver items' },
   { value: 'shopping', label: 'Shopping', icon: '🛒', description: 'Grocery shopping, errands, buying items' },
   { value: 'errands', label: 'Errands', icon: '🏃', description: 'General errands, waiting in line, misc tasks' },
   
@@ -51,10 +51,10 @@ export const CATEGORIES: Category[] = [
   { value: 'other', label: 'Other', icon: '💼', description: 'Something else not listed above' },
 ];
 
-// For dropdown menus - includes "All" option
+// For dropdown menus - includes "All" option (label does NOT include icon, render separately)
 export const CATEGORY_OPTIONS = [
   { value: 'all', label: 'All Categories', icon: '📋' },
-  ...CATEGORIES.map(c => ({ value: c.value, label: `${c.icon} ${c.label}`, icon: c.icon }))
+  ...CATEGORIES.map(c => ({ value: c.value, label: c.label, icon: c.icon }))
 ];
 
 // Quick lookup by value
