@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
@@ -56,8 +56,14 @@ const generateAvatarUrl = (style: string, seed: string) => {
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
 };
 
+type ActiveTab = 'about' | 'listings' | 'tasks' | 'reviews';
+type TaskSubTab = 'assigned' | 'created';
+type AssignedStatusFilter = 'active' | 'completed' | 'all';
+type CreatedStatusFilter = 'open' | 'in_progress' | 'completed' | 'all';
+
 const Profile = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, user, setAuth, token } = useAuthStore();
   const toast = useToastStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -70,12 +76,44 @@ const Profile = () => {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'listings' | 'tasks' | 'reviews'>('about');
-  const [taskSubTab, setTaskSubTab] = useState<'assigned' | 'created'>('assigned');
-  const [assignedStatusFilter, setAssignedStatusFilter] = useState<'active' | 'completed' | 'all'>('active');
-  const [createdStatusFilter, setCreatedStatusFilter] = useState<'open' | 'in_progress' | 'completed' | 'all'>('all');
   const [editingReview, setEditingReview] = useState<number | null>(null);
   const [reviewEditData, setReviewEditData] = useState<{ rating: number; content: string }>({ rating: 5, content: '' });
+  
+  // Read state from URL params with defaults
+  const activeTab = (searchParams.get('tab') as ActiveTab) || 'about';
+  const taskSubTab = (searchParams.get('subtab') as TaskSubTab) || 'assigned';
+  const assignedStatusFilter = (searchParams.get('assigned_filter') as AssignedStatusFilter) || 'active';
+  const createdStatusFilter = (searchParams.get('created_filter') as CreatedStatusFilter) || 'all';
+
+  // Helper to update URL params
+  const updateParams = (updates: Record<string, string>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+    });
+    setSearchParams(newParams, { replace: true });
+  };
+
+  // Tab/filter setters that update URL
+  const setActiveTab = (tab: ActiveTab) => {
+    updateParams({ tab, subtab: '', assigned_filter: '', created_filter: '' });
+  };
+
+  const setTaskSubTab = (subtab: TaskSubTab) => {
+    updateParams({ subtab });
+  };
+
+  const setAssignedStatusFilter = (filter: AssignedStatusFilter) => {
+    updateParams({ assigned_filter: filter });
+  };
+
+  const setCreatedStatusFilter = (filter: CreatedStatusFilter) => {
+    updateParams({ created_filter: filter });
+  };
   
   // Avatar picker state
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -423,6 +461,20 @@ const Profile = () => {
     if (!url) return undefined;
     if (url.startsWith('http')) return url;
     return getImageUrl(url);
+  };
+
+  // Build URL with current params for "View Details" links
+  const buildTaskDetailUrl = (taskId: number) => {
+    const params = new URLSearchParams();
+    params.set('from', 'profile');
+    params.set('tab', activeTab);
+    params.set('subtab', taskSubTab);
+    if (taskSubTab === 'assigned') {
+      params.set('assigned_filter', assignedStatusFilter);
+    } else {
+      params.set('created_filter', createdStatusFilter);
+    }
+    return `/tasks/${taskId}?${params.toString()}`;
   };
 
   if (loading) {
@@ -1023,7 +1075,7 @@ const Profile = () => {
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <span className="text-xl">{getCategoryIcon(task.category)}</span>
                                   <Link 
-                                    to={`/tasks/${task.id}`}
+                                    to={buildTaskDetailUrl(task.id)}
                                     className="font-medium text-gray-900 hover:text-blue-600"
                                   >
                                     {task.title}
@@ -1051,7 +1103,7 @@ const Profile = () => {
                                       ✓ Mark Done
                                     </button>
                                     <Link
-                                      to={`/tasks/${task.id}`}
+                                      to={buildTaskDetailUrl(task.id)}
                                       className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
                                     >
                                       View Details
@@ -1064,7 +1116,7 @@ const Profile = () => {
                                   <div className="text-center">
                                     <span className="text-sm text-purple-600 font-medium">⏳ Waiting for confirmation</span>
                                     <Link
-                                      to={`/tasks/${task.id}`}
+                                      to={buildTaskDetailUrl(task.id)}
                                       className="mt-2 block px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
                                     >
                                       View Details
@@ -1075,7 +1127,7 @@ const Profile = () => {
                                 {/* Completed task */}
                                 {task.status === 'completed' && (
                                   <Link
-                                    to={`/tasks/${task.id}`}
+                                    to={buildTaskDetailUrl(task.id)}
                                     className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
                                   >
                                     View Details
@@ -1163,7 +1215,7 @@ const Profile = () => {
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <span className="text-xl">{getCategoryIcon(task.category)}</span>
                                   <Link 
-                                    to={`/tasks/${task.id}`}
+                                    to={buildTaskDetailUrl(task.id)}
                                     className="font-medium text-gray-900 hover:text-blue-600"
                                   >
                                     {task.title}
@@ -1212,7 +1264,7 @@ const Profile = () => {
                                 )}
                                 {['assigned', 'in_progress'].includes(task.status) && (
                                   <Link
-                                    to={`/tasks/${task.id}`}
+                                    to={buildTaskDetailUrl(task.id)}
                                     className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
                                   >
                                     View Details
@@ -1220,7 +1272,7 @@ const Profile = () => {
                                 )}
                                 {task.status === 'completed' && (
                                   <Link
-                                    to={`/tasks/${task.id}`}
+                                    to={buildTaskDetailUrl(task.id)}
                                     className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
                                   >
                                     View Details
