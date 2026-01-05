@@ -44,7 +44,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Buy/Sell Card */}
             <Link
-              to="//listings"
+              to="/listings"
               className="card p-8 hover:shadow-lg transition-shadow group"
             >
               <div className="w-16 h-16 bg-primary-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary-200 transition-colors">
