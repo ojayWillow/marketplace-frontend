@@ -480,6 +480,11 @@ const Profile = () => {
   const acceptedApplications = myApplications.filter(a => a.status === 'accepted').length;
   const rejectedApplications = myApplications.filter(a => a.status === 'rejected').length;
 
+  // Count total pending applications across all open tasks
+  const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
+    return sum + (task.pending_applications_count || 0);
+  }, 0);
+
   // Helper to get full avatar URL (handles both relative and absolute URLs)
   const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
     if (!url) return undefined;
@@ -769,13 +774,18 @@ const Profile = () => {
           </button>
           <button
             onClick={() => setActiveTab('tasks')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${
               activeTab === 'tasks'
                 ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
             My Tasks ({totalTasks})
+            {totalPendingApplicationsOnMyTasks > 0 && (
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold animate-pulse">
+                {totalPendingApplicationsOnMyTasks}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -1012,13 +1022,18 @@ const Profile = () => {
             <div className="flex gap-2 mb-4 border-b">
               <button
                 onClick={() => setTaskSubTab('created')}
-                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                className={`px-4 py-2 font-medium border-b-2 transition-colors relative ${
                   taskSubTab === 'created'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
                 Created by Me ({createdTasks.length})
+                {totalPendingApplicationsOnMyTasks > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
+                    {totalPendingApplicationsOnMyTasks} new
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setTaskSubTab('applications')}
@@ -1127,6 +1142,15 @@ const Profile = () => {
                                       Urgent
                                     </span>
                                   )}
+                                  {/* Application count badge */}
+                                  {task.status === 'open' && task.pending_applications_count !== undefined && task.pending_applications_count > 0 && (
+                                    <Link
+                                      to={buildTaskDetailUrl(task.id)}
+                                      className="px-2 py-0.5 text-xs rounded-full bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors animate-pulse"
+                                    >
+                                      📩 {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}
+                                    </Link>
+                                  )}
                                 </div>
                                 <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
                                 <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -1147,12 +1171,21 @@ const Profile = () => {
                                 )}
                                 {task.status === 'open' && (
                                   <>
-                                    <Link
-                                      to={`/tasks/${task.id}/edit`}
-                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                    >
-                                      ✏️ Edit
-                                    </Link>
+                                    {task.pending_applications_count !== undefined && task.pending_applications_count > 0 ? (
+                                      <Link
+                                        to={buildTaskDetailUrl(task.id)}
+                                        className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center font-medium"
+                                      >
+                                        👀 Review Applications
+                                      </Link>
+                                    ) : (
+                                      <Link
+                                        to={`/tasks/${task.id}/edit`}
+                                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                      >
+                                        ✏️ Edit
+                                      </Link>
+                                    )}
                                     <button
                                       onClick={() => handleCancelTask(task.id)}
                                       className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
