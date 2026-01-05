@@ -1030,7 +1030,7 @@ const Profile = () => {
               >
                 Created by Me ({createdTasks.length})
                 {totalPendingApplicationsOnMyTasks > 0 && (
-                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold animate-pulse">
                     {totalPendingApplicationsOnMyTasks} new
                   </span>
                 )}
@@ -1122,98 +1122,118 @@ const Profile = () => {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {filteredCreatedTasks.map(task => (
-                          <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
-                                  <Link 
-                                    to={buildTaskDetailUrl(task.id)}
-                                    className="font-medium text-gray-900 hover:text-blue-600"
-                                  >
-                                    {task.title}
-                                  </Link>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
-                                    {task.status.replace('_', ' ')}
+                        {filteredCreatedTasks.map(task => {
+                          const hasApplications = task.status === 'open' && (task.pending_applications_count || 0) > 0;
+                          
+                          return (
+                            <div 
+                              key={task.id} 
+                              className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                                hasApplications ? 'border-blue-400 bg-blue-50/30 ring-2 ring-blue-200' : ''
+                              }`}
+                            >
+                              {/* NEW: Prominent application alert banner */}
+                              {hasApplications && (
+                                <Link 
+                                  to={buildTaskDetailUrl(task.id)}
+                                  className="flex items-center justify-between bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg mb-3 hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-2xl">📩</span>
+                                    <div>
+                                      <span className="font-bold text-lg">
+                                        {task.pending_applications_count} new application{task.pending_applications_count !== 1 ? 's' : ''}!
+                                      </span>
+                                      <p className="text-blue-100 text-sm">Click to review and choose a helper</p>
+                                    </div>
+                                  </div>
+                                  <span className="bg-white text-blue-600 px-4 py-2 rounded-lg font-bold text-sm">
+                                    Review Now →
                                   </span>
-                                  {task.is_urgent && (
-                                    <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
-                                      Urgent
-                                    </span>
-                                  )}
-                                  {/* Application count badge */}
-                                  {task.status === 'open' && task.pending_applications_count !== undefined && task.pending_applications_count > 0 && (
-                                    <Link
-                                      to={buildTaskDetailUrl(task.id)}
-                                      className="px-2 py-0.5 text-xs rounded-full bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors animate-pulse"
-                                    >
-                                      📩 {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}
-                                    </Link>
-                                  )}
-                                </div>
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {task.location}</span>
-                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
-                                </div>
-                              </div>
+                                </Link>
+                              )}
                               
-                              {/* Actions */}
-                              <div className="flex flex-col gap-2 min-w-[120px]">
-                                {task.status === 'pending_confirmation' && (
-                                  <button
-                                    onClick={() => handleConfirmTask(task.id)}
-                                    className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                                  >
-                                    ✓ Confirm Done
-                                  </button>
-                                )}
-                                {task.status === 'open' && (
-                                  <>
-                                    {task.pending_applications_count !== undefined && task.pending_applications_count > 0 ? (
-                                      <Link
-                                        to={buildTaskDetailUrl(task.id)}
-                                        className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center font-medium"
-                                      >
-                                        👀 Review Applications
-                                      </Link>
-                                    ) : (
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span className="text-xl">{getCategoryIcon(task.category)}</span>
+                                    <Link 
+                                      to={buildTaskDetailUrl(task.id)}
+                                      className="font-medium text-gray-900 hover:text-blue-600"
+                                    >
+                                      {task.title}
+                                    </Link>
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                                      {task.status.replace('_', ' ')}
+                                    </span>
+                                    {task.is_urgent && (
+                                      <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
+                                        Urgent
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
+                                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                                    <span>📍 {task.location}</span>
+                                    {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
+                                  </div>
+                                </div>
+                                
+                                {/* Actions */}
+                                <div className="flex flex-col gap-2 min-w-[120px]">
+                                  {task.status === 'pending_confirmation' && (
+                                    <button
+                                      onClick={() => handleConfirmTask(task.id)}
+                                      className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                    >
+                                      ✓ Confirm Done
+                                    </button>
+                                  )}
+                                  {task.status === 'open' && !hasApplications && (
+                                    <>
                                       <Link
                                         to={`/tasks/${task.id}/edit`}
                                         className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
                                       >
                                         ✏️ Edit
                                       </Link>
-                                    )}
+                                      <button
+                                        onClick={() => handleCancelTask(task.id)}
+                                        className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  )}
+                                  {task.status === 'open' && hasApplications && (
                                     <button
                                       onClick={() => handleCancelTask(task.id)}
                                       className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                                     >
-                                      Cancel
+                                      Cancel Task
                                     </button>
-                                  </>
-                                )}
-                                {['assigned', 'in_progress'].includes(task.status) && (
-                                  <Link
-                                    to={buildTaskDetailUrl(task.id)}
-                                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                  >
-                                    View Details
-                                  </Link>
-                                )}
-                                {task.status === 'completed' && (
-                                  <Link
-                                    to={buildTaskDetailUrl(task.id)}
-                                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                  >
-                                    View Details
-                                  </Link>
-                                )}
+                                  )}
+                                  {['assigned', 'in_progress'].includes(task.status) && (
+                                    <Link
+                                      to={buildTaskDetailUrl(task.id)}
+                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                    >
+                                      View Details
+                                    </Link>
+                                  )}
+                                  {task.status === 'completed' && (
+                                    <Link
+                                      to={buildTaskDetailUrl(task.id)}
+                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                    >
+                                      View Details
+                                    </Link>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </>
