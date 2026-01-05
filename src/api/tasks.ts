@@ -25,6 +25,7 @@ export interface Task {
   created_at?: string;
   updated_at?: string;
   completed_at?: string;
+  pending_applications_count?: number; // Number of pending applications for this task
 }
 
 export interface Helper {
