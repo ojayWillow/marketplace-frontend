@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 're
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, applyToTask, getMyTasks, getCreatedTasks, markTaskDone, confirmTaskCompletion, disputeTask, cancelTask, getTaskApplications, acceptApplication, rejectApplication, Task as APITask, TaskApplication } from '../api/tasks';
+import { getTasks, getHelpers, Helper, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -23,7 +23,6 @@ L.Icon.Default.mergeOptions({
 // Extend API Task with UI-specific properties
 interface Task extends APITask {
   icon?: string;
-  applicationCount?: number;
 }
 
 interface AddressSuggestion {
@@ -42,8 +41,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-  return distance;
+  return R * c;
 };
 
 // Category definitions
@@ -74,19 +72,6 @@ const MapRecenter = ({ lat, lng }: { lat: number; lng: number }) => {
   return null;
 };
 
-// Helper function to format member since date
-const formatMemberSince = (dateString?: string): string => {
-  if (!dateString) return 'Unknown';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffDays < 30) return `${diffDays} days`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months`;
-  return `${Math.floor(diffDays / 365)} years`;
-};
-
 // Helper function to render star rating
 const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
@@ -107,16 +92,13 @@ const Tasks = () => {
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
   
-  // NEW: Simplified to 2 tabs
-  const [activeTab, setActiveTab] = useState<'available' | 'active'>('available');
+  // Three main tabs: jobs, helpers, all
+  const [activeTab, setActiveTab] = useState<'jobs' | 'helpers' | 'all'>('all');
   
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [postedTasks, setPostedTasks] = useState<Task[]>([]);
+  const [helpers, setHelpers] = useState<Helper[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [applyingTask, setApplyingTask] = useState<number | null>(null);
-  const [processingTask, setProcessingTask] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [locationGranted, setLocationGranted] = useState(false);
   const [manualLocationSet, setManualLocationSet] = useState(false);
@@ -129,19 +111,8 @@ const Tasks = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [showFilters, setShowFilters] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
-  
-  // Application management state
-  const [viewingApplications, setViewingApplications] = useState<number | null>(null);
-  const [applications, setApplications] = useState<TaskApplication[]>([]);
-  const [loadingApplications, setLoadingApplications] = useState(false);
-  
-  // Application form modal state
-  const [applyingToTask, setApplyingToTask] = useState<Task | null>(null);
-  const [applicationMessage, setApplicationMessage] = useState('');
-  const [submittingApplication, setSubmittingApplication] = useState(false);
   
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -184,7 +155,7 @@ const Tasks = () => {
     setManualLocationSet(true);
     setLocationName(name || '');
     hasFetchedRef.current = false;
-    fetchTasks(true);
+    fetchData(true);
     setShowLocationModal(false);
   };
 
@@ -192,7 +163,7 @@ const Tasks = () => {
     setSearchRadius(newRadius);
     localStorage.setItem('taskSearchRadius', newRadius.toString());
     hasFetchedRef.current = false;
-    fetchTasks(true);
+    fetchData(true);
   };
 
   const searchAddressSuggestions = async (query: string) => {
@@ -242,7 +213,7 @@ const Tasks = () => {
       navigator.geolocation.getCurrentPosition((position) => {
         setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
         hasFetchedRef.current = false;
-        fetchTasks(true);
+        fetchData(true);
       });
     }
   };
@@ -252,28 +223,15 @@ const Tasks = () => {
     return cat?.icon || '💼';
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: { [key: string]: { color: string; label: string } } = {
-      'open': { color: 'bg-green-100 text-green-700', label: 'Open' },
-      'assigned': { color: 'bg-blue-100 text-blue-700', label: 'In Progress' },
-      'in_progress': { color: 'bg-blue-100 text-blue-700', label: 'In Progress' },
-      'pending_confirmation': { color: 'bg-yellow-100 text-yellow-700', label: 'Awaiting Confirmation' },
-      'completed': { color: 'bg-gray-100 text-gray-700', label: 'Completed' },
-      'disputed': { color: 'bg-red-100 text-red-700', label: 'Disputed' },
-      'cancelled': { color: 'bg-gray-100 text-gray-500', label: 'Cancelled' },
-    };
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-700', label: status };
-    return <span className={`px-2 py-1 rounded text-xs font-medium ${config.color}`}>{config.label}</span>;
-  };
-
-  const fetchTasks = async (forceRefresh = false) => {
+  const fetchData = async (forceRefresh = false) => {
     if (hasFetchedRef.current && !forceRefresh) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      const availableResponse = await getTasks({
+      // Fetch available tasks (jobs)
+      const tasksResponse = await getTasks({
         latitude: userLocation.lat,
         longitude: userLocation.lng,
         radius: searchRadius,
@@ -281,76 +239,46 @@ const Tasks = () => {
         category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       
-      const filteredTasks = availableResponse.tasks.filter(task => {
-        if (!user?.id) return true;
-        return task.creator_id !== user.id;
-      });
-      
-      const tasksWithIcons = filteredTasks.map(task => ({
+      const tasksWithIcons = tasksResponse.tasks.map(task => ({
         ...task,
         icon: getCategoryIcon(task.category)
       }));
       
       setTasks(tasksWithIcons);
+      
+      // Fetch helpers
+      try {
+        const helpersResponse = await getHelpers({
+          latitude: userLocation.lat,
+          longitude: userLocation.lng,
+          radius: searchRadius,
+          category: selectedCategory !== 'all' ? selectedCategory : undefined
+        });
+        setHelpers(helpersResponse.helpers || []);
+      } catch (err) {
+        console.log('Helpers API not available yet');
+        setHelpers([]);
+      }
+      
       hasFetchedRef.current = true;
     } catch (err) {
-      console.error('Error fetching available tasks:', err);
-      setError('Failed to load tasks. Please try again later.');
-    }
-    
-    if (isAuthenticated && user?.id) {
-      try {
-        const myTasksResponse = await getMyTasks();
-        const userTasks = myTasksResponse.tasks
-          .filter(t => !['completed', 'cancelled'].includes(t.status)) // Filter out completed/cancelled
-          .map(task => {
-            const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
-            return { ...task, icon: getCategoryIcon(task.category), distance };
-          });
-        setMyTasks(userTasks);
-        
-        const createdResponse = await getCreatedTasks();
-        const createdTasks = createdResponse.tasks
-          .filter(t => !['completed', 'cancelled'].includes(t.status)) // Filter out completed/cancelled
-          .map(task => ({
-            ...task,
-            icon: getCategoryIcon(task.category)
-          }));
-        setPostedTasks(createdTasks);
-      } catch (err: any) {
-        if (err?.response?.status !== 401) {
-          console.error('Error fetching user tasks:', err);
-        }
-        setMyTasks([]);
-        setPostedTasks([]);
-      }
+      console.error('Error fetching data:', err);
+      setError('Failed to load data. Please try again later.');
     }
     
     setLoading(false);
   };
 
   useEffect(() => {
-    if (locationGranted) fetchTasks();
-  }, [locationGranted, isAuthenticated]);
+    if (locationGranted) fetchData();
+  }, [locationGranted]);
 
   useEffect(() => {
     if (locationGranted) {
       hasFetchedRef.current = false;
-      fetchTasks(true);
+      fetchData(true);
     }
-  }, [user?.id, selectedCategory]);
-
-  useEffect(() => {
-    if (locationGranted && myTasks.length > 0) {
-      const updatedMyTasks = myTasks.map(task => {
-        const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
-        return { ...task, distance };
-      });
-      setMyTasks(updatedMyTasks);
-    }
-  }, [userLocation]);
-
-  const createCustomIcon = (category: string) => new Icon.Default();
+  }, [selectedCategory]);
   
   const userLocationIcon = divIcon({
     className: 'custom-user-icon',
@@ -359,149 +287,12 @@ const Tasks = () => {
     iconAnchor: [10, 10]
   });
 
-  // Open the application form modal
-  const handleOpenApplyModal = (task: Task) => {
-    if (!isAuthenticated) {
-      toast.warning('Please login to apply');
-      navigate('/login');
-      return;
-    }
-    setApplyingToTask(task);
-    setApplicationMessage('');
-  };
-
-  // Submit the application with message
-  const handleSubmitApplication = async () => {
-    if (!applyingToTask) return;
-    
-    try {
-      setSubmittingApplication(true);
-      await applyToTask(applyingToTask.id, applicationMessage || undefined);
-      toast.success('Application submitted! The task owner will review your application.');
-      setApplyingToTask(null);
-      setApplicationMessage('');
-      hasFetchedRef.current = false;
-      await fetchTasks(true);
-    } catch (error: any) {
-      console.error('Error applying to task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
-    } finally {
-      setSubmittingApplication(false);
-    }
-  };
-
-  const handleViewApplications = async (taskId: number) => {
-    setLoadingApplications(true);
-    setViewingApplications(taskId);
-    try {
-      const response = await getTaskApplications(taskId);
-      setApplications(response.applications);
-    } catch (error: any) {
-      console.error('Error fetching applications:', error);
-      toast.error('Failed to load applications');
-      setViewingApplications(null);
-    } finally {
-      setLoadingApplications(false);
-    }
-  };
-
-  const handleAcceptApplication = async (taskId: number, applicationId: number) => {
-    try {
-      await acceptApplication(taskId, applicationId);
-      toast.success('Application accepted! Task has been assigned.');
-      setViewingApplications(null);
-      hasFetchedRef.current = false;
-      await fetchTasks(true);
-    } catch (error: any) {
-      console.error('Error accepting application:', error);
-      toast.error(error?.response?.data?.error || 'Failed to accept application');
-    }
-  };
-
-  const handleRejectApplication = async (taskId: number, applicationId: number) => {
-    try {
-      await rejectApplication(taskId, applicationId);
-      toast.success('Application rejected');
-      const response = await getTaskApplications(taskId);
-      setApplications(response.applications);
-    } catch (error: any) {
-      console.error('Error rejecting application:', error);
-      toast.error('Failed to reject application');
-    }
-  };
-
-  const handleMarkDone = async (taskId: number) => {
-    try {
-      setProcessingTask(taskId);
-      await markTaskDone(taskId);
-      toast.success('Task marked as done! Waiting for the client to confirm.');
-      hasFetchedRef.current = false;
-      await fetchTasks(true);
-    } catch (error: any) {
-      console.error('Error marking task done:', error);
-      toast.error(error?.response?.data?.error || 'Failed to mark task as done.');
-    } finally {
-      setProcessingTask(null);
-    }
-  };
-
-  const handleConfirmCompletion = async (taskId: number) => {
-    try {
-      setProcessingTask(taskId);
-      await confirmTaskCompletion(taskId);
-      toast.success('Task completed! Thank you.');
-      hasFetchedRef.current = false;
-      await fetchTasks(true);
-    } catch (error: any) {
-      console.error('Error confirming task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to confirm task completion.');
-    } finally {
-      setProcessingTask(null);
-    }
-  };
-
-  const handleDispute = async (taskId: number) => {
-    const reason = prompt('Please describe the issue:');
-    if (reason === null) return;
-    
-    try {
-      setProcessingTask(taskId);
-      await disputeTask(taskId, reason);
-      toast.warning('Task has been disputed.');
-      hasFetchedRef.current = false;
-      await fetchTasks(true);
-    } catch (error: any) {
-      console.error('Error disputing task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to dispute task.');
-    } finally {
-      setProcessingTask(null);
-    }
-  };
-
-  const handleCancelTask = async (taskId: number) => {
-    if (!confirm('Are you sure you want to cancel this task?')) return;
-    
-    try {
-      setProcessingTask(taskId);
-      await cancelTask(taskId);
-      toast.success('Task has been cancelled.');
-      hasFetchedRef.current = false;
-      await fetchTasks(true);
-    } catch (error: any) {
-      console.error('Error cancelling task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to cancel task.');
-    } finally {
-      setProcessingTask(null);
-    }
-  };
-
-  const handleEditTask = (taskId: number) => {
-    navigate(`/tasks/${taskId}/edit`);
-  };
-
-  const getNavigationUrl = (task: Task) => {
-    return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${task.latitude},${task.longitude}`;
-  };
+  const helperLocationIcon = divIcon({
+    className: 'custom-helper-icon',
+    html: '<div style="background: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
 
   const filterTasks = (taskList: Task[]) => {
     return taskList.filter(task => {
@@ -510,10 +301,18 @@ const Tasks = () => {
         task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.location.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const taskPrice = task.budget || task.reward || 0;
-      const matchesPrice = taskPrice >= priceRange.min && taskPrice <= priceRange.max;
+      return matchesSearch;
+    });
+  };
+
+  const filterHelpers = (helperList: Helper[]) => {
+    return helperList.filter(helper => {
+      const matchesSearch = searchQuery === '' || 
+        helper.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (helper.bio && helper.bio.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (helper.skills && helper.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())));
       
-      return matchesSearch && matchesPrice;
+      return matchesSearch;
     });
   };
 
@@ -532,8 +331,8 @@ const Tasks = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900 mb-2">Loading tasks...</div>
-          <div className="text-gray-600">Finding nearby Quick Help opportunities</div>
+          <div className="text-2xl font-bold text-gray-900 mb-2">Loading...</div>
+          <div className="text-gray-600">Finding nearby opportunities</div>
         </div>
       </div>
     );
@@ -545,7 +344,7 @@ const Tasks = () => {
         <div className="text-center">
           <div className="text-2xl font-bold text-red-600 mb-2">Error</div>
           <div className="text-gray-600">{error}</div>
-          <button onClick={() => { hasFetchedRef.current = false; fetchTasks(true); }} className="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+          <button onClick={() => { hasFetchedRef.current = false; fetchData(true); }} className="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
             Retry
           </button>
         </div>
@@ -553,12 +352,17 @@ const Tasks = () => {
     );
   }
 
-  // NEW: Combined active tasks (my tasks + posted tasks)
-  const combinedActiveTasks = [...myTasks, ...postedTasks];
-  const rawDisplayTasks = activeTab === 'available' ? tasks : combinedActiveTasks;
-  const displayTasks = filterTasks(rawDisplayTasks);
-  const mapTasks = displayTasks.filter(task => !['completed', 'cancelled'].includes(task.status));
-  const pendingConfirmation = postedTasks.filter(t => t.status === 'pending_confirmation');
+  const filteredTasks = filterTasks(tasks);
+  const filteredHelpers = filterHelpers(helpers);
+
+  // Get map markers based on active tab
+  const getMapMarkers = () => {
+    if (activeTab === 'jobs') return { tasks: filteredTasks, helpers: [] };
+    if (activeTab === 'helpers') return { tasks: [], helpers: filteredHelpers };
+    return { tasks: filteredTasks, helpers: filteredHelpers };
+  };
+
+  const { tasks: mapTasks, helpers: mapHelpers } = getMapMarkers();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -566,24 +370,27 @@ const Tasks = () => {
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
-            <p className="text-gray-600">Browse nearby tasks and earn money by helping others</p>
+            <p className="text-gray-600">Find help or offer your services</p>
           </div>
-          {isAuthenticated ? (
-            <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
-              + Create Task
-            </button>
-          ) : (
-            <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
-              Login to Create Task
-            </button>
-          )}
+          <div className="flex gap-3">
+            {isAuthenticated && (
+              <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
+                + Post a Job
+              </button>
+            )}
+            {!isAuthenticated && (
+              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
+                Login to Get Started
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* SINGLE UNIFIED BAR */}
+        {/* SEARCH BAR */}
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or helpers..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
@@ -631,42 +438,24 @@ const Tasks = () => {
                   {CATEGORIES.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (€)</label>
-                <input type="number" min="0" value={priceRange.min} onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (€)</label>
-                <input type="number" min="0" value={priceRange.max} onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) || 1000 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-              </div>
             </div>
           )}
         </div>
 
-        {pendingConfirmation.length > 0 && activeTab !== 'active' && (
-          <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-yellow-800">
-              📢 You have {pendingConfirmation.length} task(s) waiting for your confirmation!
-              <button onClick={() => setActiveTab('active')} className="ml-2 text-yellow-600 underline hover:text-yellow-700">View now</button>
-            </p>
-          </div>
-        )}
-
-        {/* NEW: Simplified 2-tab system */}
+        {/* THREE TABS: Jobs, Helpers, All */}
         <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
-          <button onClick={() => setActiveTab('available')} className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'available' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
-            Available Tasks ({filterTasks(tasks).length})
+          <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+            🌐 All ({filteredTasks.length + filteredHelpers.length})
           </button>
-          {isAuthenticated && (
-            <button onClick={() => setActiveTab('active')} className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${activeTab === 'active' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
-              My Active Tasks ({combinedActiveTasks.length})
-              {pendingConfirmation.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{pendingConfirmation.length}</span>
-              )}
-            </button>
-          )}
+          <button onClick={() => setActiveTab('jobs')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+            💼 Jobs ({filteredTasks.length})
+          </button>
+          <button onClick={() => setActiveTab('helpers')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'helpers' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+            🤝 Helpers ({filteredHelpers.length})
+          </button>
         </div>
 
+        {/* MAP */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6" style={{ height: '400px' }}>
           <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -681,17 +470,34 @@ const Tasks = () => {
                 </div>
               </Popup>
             </Marker>
+            {/* Task markers (blue) */}
             {mapTasks.map((task) => (
-              <Marker key={task.id} position={[task.latitude, task.longitude]} icon={createCustomIcon(task.category)}>
+              <Marker key={`task-${task.id}`} position={[task.latitude, task.longitude]}>
                 <Popup>
                   <div className="p-2">
                     <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
-                    <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                    <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
-                      {getStatusBadge(task.status)}
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">{task.category}</span>
                     </div>
                     <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+            {/* Helper markers (green) */}
+            {mapHelpers.map((helper) => (
+              <Marker key={`helper-${helper.id}`} position={[helper.latitude || userLocation.lat, helper.longitude || userLocation.lng]} icon={helperLocationIcon}>
+                <Popup>
+                  <div className="p-2">
+                    <Link to={`/users/${helper.id}`} className="font-bold text-lg mb-1 text-green-600 hover:text-green-800 hover:underline">{helper.name}</Link>
+                    <p className="text-sm text-gray-600 mb-2">{helper.bio?.substring(0, 100) || 'Available for help'}...</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <StarRating rating={helper.rating || 0} />
+                      <span className="text-sm text-gray-500">({helper.review_count || 0})</span>
+                    </div>
+                    <Link to={`/users/${helper.id}`} className="text-xs text-green-500 hover:text-green-700">View Profile →</Link>
                   </div>
                 </Popup>
               </Marker>
@@ -699,239 +505,85 @@ const Tasks = () => {
           </MapContainer>
         </div>
 
+        {/* Legend */}
+        <div className="flex gap-4 mb-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+            <span>Jobs</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+            <span>Helpers</span>
+          </div>
+        </div>
+
+        {/* CONTENT AREA */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {activeTab === 'available' ? 'Available Tasks' : 'My Active Tasks'}
+            {activeTab === 'all' && 'Jobs & Helpers'}
+            {activeTab === 'jobs' && 'Available Jobs'}
+            {activeTab === 'helpers' && 'Available Helpers'}
             {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
           </h2>
           
-          {displayTasks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-4">{activeTab === 'available' ? '🔍' : '📋'}</div>
-              <p>
-                {activeTab === 'available'
-                  ? searchQuery ? `No tasks found matching "${searchQuery}"` : `No tasks available within ${searchRadius}km.`
-                  : "You don't have any active tasks."}
-              </p>
-              {activeTab === 'available' && (searchQuery || selectedCategory !== 'all') && (
-                <button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="mt-4 text-blue-500 hover:text-blue-600 underline">Clear filters</button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {displayTasks.map((task) => {
-                // Determine which view mode based on task ownership
-                const isMyAcceptedTask = myTasks.some(t => t.id === task.id);
-                const isMyPostedTask = postedTasks.some(t => t.id === task.id);
-                
-                return (
-                  <TaskCard 
-                    key={task.id} 
-                    task={task} 
-                    viewMode={activeTab === 'available' ? 'available' : isMyPostedTask ? 'posted' : 'accepted'}
-                    processingTask={processingTask} 
-                    applyingTask={applyingTask}
-                    onApply={handleOpenApplyModal} 
-                    onMarkDone={handleMarkDone} 
-                    onConfirm={handleConfirmCompletion} 
-                    onDispute={handleDispute}
-                    onCancel={handleCancelTask} 
-                    onEdit={handleEditTask} 
-                    onViewApplications={handleViewApplications}
-                    getStatusBadge={getStatusBadge} 
-                    getNavigationUrl={getNavigationUrl} 
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Application Form Modal */}
-        {applyingToTask && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setApplyingToTask(null)}>
-            <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Your Application</h3>
+          {/* Jobs Section (shown in 'all' and 'jobs' tabs) */}
+          {(activeTab === 'all' || activeTab === 'jobs') && (
+            <div className="mb-8">
+              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💼 Jobs <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
               
-              <div className="mb-4">
-                <textarea
-                  value={applicationMessage}
-                  onChange={(e) => setApplicationMessage(e.target.value)}
-                  placeholder="Introduce yourself and explain why you're a good fit for this task (optional)..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={4}
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSubmitApplication}
-                  disabled={submittingApplication}
-                  className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
-                >
-                  {submittingApplication ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                      Submitting...
-                    </>
-                  ) : (
-                    <>✅ Submit Application</>
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                  <div className="text-4xl mb-4">💼</div>
+                  <p>No jobs found in your area</p>
+                  {isAuthenticated && (
+                    <button onClick={() => navigate('/tasks/create')} className="mt-4 text-blue-500 hover:text-blue-600 underline">Post the first job</button>
                   )}
-                </button>
-                <button
-                  onClick={() => setApplyingToTask(null)}
-                  disabled={submittingApplication}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Enhanced Application Modal */}
-        {viewingApplications && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setViewingApplications(null)}>
-            <div className="bg-white rounded-xl p-6 max-w-3xl w-full mx-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Applications</h3>
-                <button onClick={() => setViewingApplications(null)} className="text-gray-400 hover:text-gray-600 text-3xl font-light">×</button>
-              </div>
-              {loadingApplications ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading applications...</p>
-                </div>
-              ) : applications.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-5xl mb-4">📝</div>
-                  <p className="text-gray-500 text-lg">No applications yet</p>
-                  <p className="text-gray-400 text-sm mt-2">Share your task to get more applicants!</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {applications.map(app => (
-                    <div key={app.id} className={`border-2 rounded-xl p-5 transition-all ${
-                      app.status === 'accepted' ? 'bg-green-50 border-green-300' : 
-                      app.status === 'rejected' ? 'bg-gray-50 border-gray-200 opacity-60' : 
-                      'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
-                    }`}>
-                      <div className="flex gap-4">
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          {app.applicant_avatar ? (
-                            <img 
-                              src={app.applicant_avatar} 
-                              alt={app.applicant_name}
-                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                              {app.applicant_name?.charAt(0)?.toUpperCase() || '?'}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Main Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <h4 className="font-bold text-lg text-gray-900">{app.applicant_name}</h4>
-                              {app.applicant_city && (
-                                <p className="text-sm text-gray-500">📍 {app.applicant_city}</p>
-                              )}
-                            </div>
-                            
-                            {/* Status Badge or Action Buttons */}
-                            <div className="flex-shrink-0">
-                              {app.status === 'pending' ? (
-                                <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => handleAcceptApplication(viewingApplications, app.id)} 
-                                    className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
-                                  >
-                                    ✓ Accept
-                                  </button>
-                                  <button 
-                                    onClick={() => handleRejectApplication(viewingApplications, app.id)} 
-                                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
-                                  >
-                                    Decline
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                                  app.status === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'
-                                }`}>
-                                  {app.status === 'accepted' ? '✓ Accepted' : 'Declined'}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Stats Row */}
-                          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
-                            {/* Rating */}
-                            <div className="flex items-center gap-1">
-                              <StarRating rating={app.applicant_rating || 0} />
-                              <span className="text-gray-600 ml-1">
-                                {(app.applicant_rating || 0).toFixed(1)}
-                                {app.applicant_review_count !== undefined && app.applicant_review_count > 0 && (
-                                  <span className="text-gray-400"> ({app.applicant_review_count} reviews)</span>
-                                )}
-                              </span>
-                            </div>
-                            
-                            {/* Completed Tasks */}
-                            <div className="flex items-center gap-1 text-gray-600">
-                              <span>✅</span>
-                              <span>{app.applicant_completed_tasks || 0} tasks completed</span>
-                            </div>
-                            
-                            {/* Member Since */}
-                            <div className="flex items-center gap-1 text-gray-500">
-                              <span>📅</span>
-                              <span>Member for {formatMemberSince(app.applicant_member_since)}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Application Message */}
-                          {app.message && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                              <p className="text-sm text-gray-700 italic">"{app.message}"</p>
-                            </div>
-                          )}
-                          
-                          {/* Bio preview */}
-                          {app.applicant_bio && (
-                            <p className="mt-2 text-sm text-gray-600 line-clamp-2">{app.applicant_bio}</p>
-                          )}
-                          
-                          {/* Footer with timestamp and View Profile */}
-                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-400">
-                              Applied {new Date(app.created_at).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                            <Link 
-                              to={`/users/${app.applicant_id}`} 
-                              className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline"
-                              onClick={() => setViewingApplications(null)}
-                            >
-                              View Full Profile →
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {filteredTasks.map((task) => (
+                    <JobCard key={task.id} task={task} userLocation={userLocation} />
                   ))}
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* Helpers Section (shown in 'all' and 'helpers' tabs) */}
+          {(activeTab === 'all' || activeTab === 'helpers') && (
+            <div>
+              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">🤝 Helpers <span className="text-sm font-normal text-gray-500">({filteredHelpers.length})</span></h3>}
+              
+              {filteredHelpers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                  <div className="text-4xl mb-4">🤝</div>
+                  <p>No helpers available in your area yet</p>
+                  {isAuthenticated && (
+                    <Link to="/profile" className="mt-4 text-green-500 hover:text-green-600 underline block">Become a helper</Link>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredHelpers.map((helper) => (
+                    <HelperCard key={helper.id} helper={helper} userLocation={userLocation} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* CTA for logged-in users */}
+        {isAuthenticated && (
+          <div className="mt-6 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg p-6 text-white">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
+                <p className="text-blue-100">View your posted jobs, applications, and helper profile in your profile page.</p>
+              </div>
+              <Link to="/profile" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
+                Go to Profile →
+              </Link>
             </div>
           </div>
         )}
@@ -940,106 +592,85 @@ const Tasks = () => {
   );
 };
 
-interface TaskCardProps {
-  task: Task;
-  viewMode: 'available' | 'accepted' | 'posted';
-  processingTask: number | null;
-  applyingTask: number | null;
-  onApply: (task: Task) => void;
-  onMarkDone: (taskId: number) => void;
-  onConfirm: (taskId: number) => void;
-  onDispute: (taskId: number) => void;
-  onCancel: (taskId: number) => void;
-  onEdit: (taskId: number) => void;
-  onViewApplications: (taskId: number) => void;
-  getStatusBadge: (status: string) => JSX.Element;
-  getNavigationUrl: (task: Task) => string;
-}
-
-const TaskCard = ({ task, viewMode, processingTask, applyingTask, onApply, onMarkDone, onConfirm, onDispute, onCancel, onEdit, onViewApplications, getStatusBadge, getNavigationUrl }: TaskCardProps) => {
+// Job Card Component
+const JobCard = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
+  const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
+  
   return (
-    <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <Link to={`/tasks/${task.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">{task.icon}</span>
-            <Link to={`/tasks/${task.id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600 hover:underline">{task.title}</Link>
-            {getStatusBadge(task.status)}
+            <h4 className="text-lg font-semibold text-gray-900">{task.title}</h4>
           </div>
-          <p className="text-gray-600 mb-2 line-clamp-2">{task.description}</p>
-          <div className="flex items-center gap-4 text-sm mb-2">
-            <span className="text-gray-500">📍 {task.distance?.toFixed(1) || '0.0'}km away</span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">{task.category}</span>
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{task.category}</span>
           </div>
-          <p className="text-xs text-gray-500">📍 {task.location}</p>
-          {/* Show creator name for available tasks */}
-          {viewMode === 'available' && task.creator_name && (
-            <p className="text-sm text-gray-600 mt-1">
-              👤 Posted by: <Link to={`/users/${task.creator_id}`} className="text-blue-600 hover:underline">{task.creator_name}</Link>
-            </p>
+          {task.creator_name && (
+            <p className="text-xs text-gray-500 mt-2">Posted by {task.creator_name}</p>
           )}
-          <Link to={`/tasks/${task.id}`} className="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block">View Details →</Link>
         </div>
         <div className="text-right ml-4">
-          <div className="text-2xl font-bold text-green-600 mb-2">€{task.budget || task.reward || 0}</div>
-          
-          {/* Available Tasks - Apply button */}
-          {viewMode === 'available' && (
-            <button onClick={(e) => { e.preventDefault(); onApply(task); }} disabled={applyingTask === task.id}
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
-              {applyingTask === task.id ? 'Applying...' : 'Apply'}
-            </button>
-          )}
-          
-          {/* My Accepted Tasks (Worker view) */}
-          {viewMode === 'accepted' && (
-            <div className="space-y-2">
-              <a href={getNavigationUrl(task)} target="_blank" rel="noopener noreferrer"
-                className="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 text-center">
-                🗺️ Navigate
-              </a>
-              {task.status === 'assigned' && (
-                <button onClick={() => onMarkDone(task.id)} disabled={processingTask === task.id}
-                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 disabled:bg-gray-400">
-                  {processingTask === task.id ? 'Processing...' : '✅ Mark as Done'}
-                </button>
-              )}
-              {task.status === 'pending_confirmation' && <p className="text-sm text-yellow-600">Waiting for client confirmation...</p>}
-            </div>
-          )}
-          
-          {/* My Posted Tasks (Creator view) */}
-          {viewMode === 'posted' && (
-            <div className="space-y-2">
-              {task.status === 'pending_confirmation' && (
-                <>
-                  <button onClick={() => onConfirm(task.id)} disabled={processingTask === task.id}
-                    className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:bg-gray-400">
-                    {processingTask === task.id ? 'Processing...' : '✅ Confirm Done'}
-                  </button>
-                  <button onClick={() => onDispute(task.id)} disabled={processingTask === task.id}
-                    className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:bg-gray-400">
-                    ⚠️ Dispute
-                  </button>
-                </>              )}
-              {task.status === 'open' && (
-                <>
-                  <button onClick={() => onViewApplications(task.id)} className="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 mb-2">
-                    📜 View Applications
-                  </button>
-                  <div className="flex gap-2">
-                    <button onClick={() => onEdit(task.id)} className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 text-sm">✏️ Edit</button>
-                    <button onClick={() => onCancel(task.id)} disabled={processingTask === task.id}
-                      className="flex-1 bg-red-100 text-red-600 py-2 px-3 rounded hover:bg-red-200 text-sm disabled:opacity-50">Cancel</button>
-                  </div>
-                </>
-              )}
-              {task.status === 'assigned' && <p className="text-sm text-blue-600">Worker is on it!</p>}
+          <div className="text-xl font-bold text-green-600">€{task.budget || task.reward || 0}</div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+// Helper Card Component
+const HelperCard = ({ helper, userLocation }: { helper: Helper; userLocation: { lat: number; lng: number } }) => {
+  const distance = helper.latitude && helper.longitude 
+    ? calculateDistance(userLocation.lat, userLocation.lng, helper.latitude, helper.longitude)
+    : null;
+  
+  return (
+    <Link to={`/users/${helper.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-green-300 transition-all">
+      <div className="flex items-start gap-4">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          {helper.avatar ? (
+            <img src={helper.avatar} alt={helper.name} className="w-14 h-14 rounded-full object-cover border-2 border-green-200" />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xl font-bold">
+              {helper.name?.charAt(0)?.toUpperCase() || '?'}
             </div>
           )}
         </div>
+        
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-gray-900 truncate">{helper.name}</h4>
+          
+          {/* Rating */}
+          <div className="flex items-center gap-1 mt-1">
+            <StarRating rating={helper.rating || 0} />
+            <span className="text-sm text-gray-500">({helper.review_count || 0})</span>
+          </div>
+          
+          {/* Skills */}
+          {helper.skills && helper.skills.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {helper.skills.slice(0, 3).map((skill, index) => (
+                <span key={index} className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">{skill}</span>
+              ))}
+              {helper.skills.length > 3 && (
+                <span className="text-xs text-gray-500">+{helper.skills.length - 3}</span>
+              )}
+            </div>
+          )}
+          
+          {/* Distance & Stats */}
+          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+            {distance !== null && <span>📍 {distance.toFixed(1)}km</span>}
+            <span>✅ {helper.completed_tasks || 0} tasks</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
