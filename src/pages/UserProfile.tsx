@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getPublicUser, getUserReviews, PublicUser, UserReview } from '../api/users'
 import { getImageUrl } from '../api/uploads'
+import { startConversation } from '../api/messages'
 import { useAuthStore } from '../stores/authStore'
 import { useToastStore } from '../stores/toastStore'
 import apiClient from '../api/client'
@@ -12,6 +13,7 @@ import ErrorMessage from '../components/ui/ErrorMessage'
 export default function UserProfile() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { user: currentUser } = useAuthStore()
   const toast = useToastStore()
   const [user, setUser] = useState<PublicUser | null>(null)
@@ -21,6 +23,7 @@ export default function UserProfile() {
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [reviewData, setReviewData] = useState({ rating: 5, content: '' })
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [startingConversation, setStartingConversation] = useState(false)
 
   const isOwnProfile = currentUser && user && currentUser.id === user.id
 
@@ -48,6 +51,26 @@ export default function UserProfile() {
 
     fetchUserData()
   }, [id])
+
+  const handleStartConversation = async () => {
+    if (!currentUser) {
+      toast.error('Please login to send messages')
+      navigate('/login')
+      return
+    }
+
+    if (!id) return
+
+    try {
+      setStartingConversation(true)
+      const { conversation } = await startConversation(Number(id))
+      navigate(`/messages/${conversation.id}`)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to start conversation')
+    } finally {
+      setStartingConversation(false)
+    }
+  }
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -240,9 +263,16 @@ export default function UserProfile() {
             </div>
           </div>
 
-          {/* Leave Review Button */}
+          {/* Action Buttons */}
           {!isOwnProfile && currentUser && (
-            <div className="mt-6 pt-6 border-t">
+            <div className="mt-6 pt-6 border-t grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleStartConversation}
+                disabled={startingConversation}
+                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 flex items-center justify-center gap-2"
+              >
+                💬 {startingConversation ? 'Loading...' : 'Message'}
+              </button>
               <button
                 onClick={() => setShowReviewModal(true)}
                 className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
