@@ -914,6 +914,12 @@ const TaskCard = ({ task, viewMode, processingTask, applyingTask, onApply, onMar
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">{task.category}</span>
           </div>
           <p className="text-xs text-gray-500">📍 {task.location}</p>
+          {/* Show creator name for available tasks */}
+          {viewMode === 'available' && task.creator_name && (
+            <p className="text-sm text-gray-600 mt-1">
+              👤 Posted by: <Link to={`/users/${task.creator_id}`} className="text-blue-600 hover:underline">{task.creator_name}</Link>
+            </p>
+          )}
           <Link to={`/tasks/${task.id}`} className="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block">View Details →</Link>
         </div>
         <div className="text-right ml-4">
@@ -957,8 +963,7 @@ const TaskCard = ({ task, viewMode, processingTask, applyingTask, onApply, onMar
                     className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:bg-gray-400">
                     ⚠️ Dispute
                   </button>
-                </>
-              )}
+                </>              )}
               {task.status === 'open' && (
                 <>
                   <button onClick={() => onViewApplications(task.id)} className="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 mb-2">
