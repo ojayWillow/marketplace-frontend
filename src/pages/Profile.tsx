@@ -60,27 +60,29 @@ const Profile = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, setAuth, token } = useAuthStore();
   const toast = useToastStore();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [myListings, setMyListings] = useState<Listing[]>([]);
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
+  const [profile, setProfile] = useState&lt;UserProfile | null&gt;(null);
+  const [reviews, setReviews] = useState&lt;Review[]&gt;([]);
+  const [myListings, setMyListings] = useState&lt;Listing[]&gt;([]);
+  const [myTasks, setMyTasks] = useState&lt;Task[]&gt;([]);
+  const [createdTasks, setCreatedTasks] = useState&lt;Task[]&gt;([]);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'listings' | 'tasks' | 'reviews'>('about');
-  const [taskSubTab, setTaskSubTab] = useState<'assigned' | 'created'>('assigned');
-  const [editingReview, setEditingReview] = useState<number | null>(null);
-  const [reviewEditData, setReviewEditData] = useState<{ rating: number; content: string }>({ rating: 5, content: '' });
+  const [activeTab, setActiveTab] = useState&lt;'about' | 'listings' | 'tasks' | 'reviews'&gt;('about');
+  const [taskSubTab, setTaskSubTab] = useState&lt;'assigned' | 'created'&gt;('assigned');
+  const [assignedStatusFilter, setAssignedStatusFilter] = useState&lt;'active' | 'completed' | 'all'&gt;('active');
+  const [createdStatusFilter, setCreatedStatusFilter] = useState&lt;'open' | 'in_progress' | 'completed' | 'all'&gt;('all');
+  const [editingReview, setEditingReview] = useState&lt;number | null&gt;(null);
+  const [reviewEditData, setReviewEditData] = useState&lt;{ rating: number; content: string }&gt;({ rating: 5, content: '' });
   
   // Avatar picker state
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [selectedAvatarStyle, setSelectedAvatarStyle] = useState('avataaars');
   const [avatarSeed, setAvatarSeed] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef&lt;HTMLInputElement&gt;(null);
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -201,6 +203,18 @@ const Profile = () => {
     }
   };
 
+  const handleMarkTaskDone = async (taskId: number) => {
+    try {
+      // This marks the task as done from the helper's side (pending confirmation from owner)
+      await apiClient.post(`/api/tasks/${taskId}/mark-done`);
+      toast.success('Task marked as done! Waiting for owner confirmation.');
+      fetchTasks();
+    } catch (error: any) {
+      console.error('Error marking task done:', error);
+      toast.error(error?.response?.data?.error || 'Failed to mark task as done');
+    }
+  };
+
   const handleEditReview = (review: Review) => {
     setEditingReview(review.id);
     setReviewEditData({ rating: review.rating, content: review.content || '' });
@@ -253,7 +267,7 @@ const Profile = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent&lt;HTMLInputElement | HTMLTextAreaElement&gt;) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -272,7 +286,7 @@ const Profile = () => {
     setAvatarSeed(randomSeed);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent&lt;HTMLInputElement&gt;) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -291,7 +305,6 @@ const Profile = () => {
     try {
       setUploadingAvatar(true);
       const result = await uploadImage(file);
-      // Use getImageUrl with the url path returned from server (e.g., /api/uploads/xxx.jpg)
       const imageUrl = getImageUrl(result.url);
       setFormData(prev => ({ ...prev, avatar_url: imageUrl }));
       setShowAvatarPicker(false);
@@ -306,33 +319,33 @@ const Profile = () => {
 
   const renderStars = (rating: number) => {
     return (
-      <div className="flex items-center">
+      &lt;div className="flex items-center"&gt;
         {[1, 2, 3, 4, 5].map(star => (
-          <span 
+          &lt;span 
             key={star} 
-            className={`text-lg ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
-          >
+            className={`text-lg ${star &lt;= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+          &gt;
             ★
-          </span>
+          &lt;/span&gt;
         ))}
-      </div>
+      &lt;/div&gt;
     );
   };
 
   const renderEditableStars = (rating: number, onChange: (rating: number) => void) => {
     return (
-      <div className="flex items-center gap-1">
+      &lt;div className="flex items-center gap-1"&gt;
         {[1, 2, 3, 4, 5].map(star => (
-          <button
+          &lt;button
             key={star}
             type="button"
             onClick={() => onChange(star)}
-            className={`text-2xl ${star <= rating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400 transition-colors`}
-          >
+            className={`text-2xl ${star &lt;= rating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400 transition-colors`}
+          &gt;
             ★
-          </button>
+          &lt;/button&gt;
         ))}
-      </div>
+      &lt;/div&gt;
     );
   };
 
@@ -360,16 +373,50 @@ const Profile = () => {
   };
 
   const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
+    const icons: Record&lt;string, string&gt; = {
       'pet-care': '🐕',
       'moving': '📦',
       'shopping': '🛒',
       'cleaning': '🧹',
       'delivery': '📄',
       'outdoor': '🌿',
+      'babysitting': '👶',
+      'car-wash': '🚗',
+      'assembly': '🔧',
     };
     return icons[category] || '📋';
   };
+
+  // Filter assigned tasks by status
+  const filteredAssignedTasks = myTasks.filter(task => {
+    if (assignedStatusFilter === 'all') return true;
+    if (assignedStatusFilter === 'active') {
+      return ['assigned', 'in_progress', 'pending_confirmation'].includes(task.status);
+    }
+    if (assignedStatusFilter === 'completed') {
+      return task.status === 'completed';
+    }
+    return true;
+  });
+
+  // Filter created tasks by status
+  const filteredCreatedTasks = createdTasks.filter(task => {
+    if (createdStatusFilter === 'all') return true;
+    if (createdStatusFilter === 'open') return task.status === 'open';
+    if (createdStatusFilter === 'in_progress') {
+      return ['assigned', 'in_progress', 'pending_confirmation'].includes(task.status);
+    }
+    if (createdStatusFilter === 'completed') return task.status === 'completed';
+    return true;
+  });
+
+  // Count tasks by status for badges
+  const assignedActiveTasks = myTasks.filter(t => ['assigned', 'in_progress', 'pending_confirmation'].includes(t.status)).length;
+  const assignedCompletedTasks = myTasks.filter(t => t.status === 'completed').length;
+  
+  const createdOpenTasks = createdTasks.filter(t => t.status === 'open').length;
+  const createdInProgressTasks = createdTasks.filter(t => ['assigned', 'in_progress', 'pending_confirmation'].includes(t.status)).length;
+  const createdCompletedTasks = createdTasks.filter(t => t.status === 'completed').length;
 
   // Helper to get full avatar URL (handles both relative and absolute URLs)
   const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
@@ -380,17 +427,17 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading profile...</div>
-      </div>
+      &lt;div className="min-h-screen bg-gray-50 flex items-center justify-center"&gt;
+        &lt;div className="text-xl text-gray-600"&gt;Loading profile...&lt;/div&gt;
+      &lt;/div&gt;
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-red-600">Failed to load profile</div>
-      </div>
+      &lt;div className="min-h-screen bg-gray-50 flex items-center justify-center"&gt;
+        &lt;div className="text-xl text-red-600"&gt;Failed to load profile&lt;/div&gt;
+      &lt;/div&gt;
     );
   }
 
@@ -403,167 +450,167 @@ const Profile = () => {
   const currentAvatarUrl = getAvatarDisplayUrl(formData.avatar_url || profile.avatar_url || profile.profile_picture_url);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    &lt;div className="min-h-screen bg-gray-50 py-8"&gt;
+      &lt;div className="max-w-4xl mx-auto px-4"&gt;
         {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+        &lt;div className="bg-white rounded-lg shadow-md p-6 mb-6"&gt;
+          &lt;div className="flex flex-col md:flex-row items-start md:items-center gap-6"&gt;
             {/* Avatar */}
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            &lt;div className="relative"&gt;
+              &lt;div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden"&gt;
                 {currentAvatarUrl ? (
-                  <img 
+                  &lt;img 
                     src={currentAvatarUrl} 
                     alt={profile.username}
                     className="w-full h-full object-cover"
-                  />
+                  /&gt;
                 ) : (
-                  <span className="text-5xl text-gray-400">
+                  &lt;span className="text-5xl text-gray-400"&gt;
                     {profile.username.charAt(0).toUpperCase()}
-                  </span>
+                  &lt;/span&gt;
                 )}
-              </div>
-              {profile.is_verified && (
-                <div className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-1">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
+              &lt;/div&gt;
+              {profile.is_verified &amp;&amp; (
+                &lt;div className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-1"&gt;
+                  &lt;svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"&gt;
+                    &lt;path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /&gt;
+                  &lt;/svg&gt;
+                &lt;/div&gt;
               )}
-              {editing && (
-                <button
+              {editing &amp;&amp; (
+                &lt;button
                   onClick={() => setShowAvatarPicker(true)}
                   className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 transition-colors shadow-md"
-                >
+                &gt;
                   📷 Change
-                </button>
+                &lt;/button&gt;
               )}
-            </div>
+            &lt;/div&gt;
 
             {/* User Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">{profile.username}</h1>
-                {profile.is_verified && (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+            &lt;div className="flex-1"&gt;
+              &lt;div className="flex items-center gap-3 mb-2"&gt;
+                &lt;h1 className="text-2xl font-bold text-gray-900"&gt;{profile.username}&lt;/h1&gt;
+                {profile.is_verified &amp;&amp; (
+                  &lt;span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"&gt;
                     Verified
-                  </span>
+                  &lt;/span&gt;
                 )}
-              </div>
+              &lt;/div&gt;
               
-              {(profile.first_name || profile.last_name) && (
-                <p className="text-gray-600 mb-1">
+              {(profile.first_name || profile.last_name) &amp;&amp; (
+                &lt;p className="text-gray-600 mb-1"&gt;
                   {profile.first_name} {profile.last_name}
-                </p>
+                &lt;/p&gt;
               )}
               
-              {(profile.city || profile.country) && (
-                <p className="text-gray-500 text-sm mb-2">
+              {(profile.city || profile.country) &amp;&amp; (
+                &lt;p className="text-gray-500 text-sm mb-2"&gt;
                   📍 {[profile.city, profile.country].filter(Boolean).join(', ')}
-                </p>
+                &lt;/p&gt;
               )}
               
-              <p className="text-gray-400 text-sm">Member since {memberSince}</p>
-            </div>
+              &lt;p className="text-gray-400 text-sm"&gt;Member since {memberSince}&lt;/p&gt;
+            &lt;/div&gt;
 
             {/* Stats */}
-            <div className="flex gap-6 text-center">
-              <div>
-                <div className="flex items-center justify-center gap-1">
+            &lt;div className="flex gap-6 text-center"&gt;
+              &lt;div&gt;
+                &lt;div className="flex items-center justify-center gap-1"&gt;
                   {renderStars(profile.average_rating || 0)}
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
+                &lt;/div&gt;
+                &lt;p className="text-sm text-gray-500 mt-1"&gt;
                   {profile.average_rating?.toFixed(1) || '0.0'} ({profile.reviews_count || 0} reviews)
-                </p>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;div className="text-2xl font-bold text-green-600"&gt;
                   {profile.completion_rate?.toFixed(0) || 0}%
-                </div>
-                <p className="text-sm text-gray-500">Completion</p>
-              </div>
-            </div>
-          </div>
+                &lt;/div&gt;
+                &lt;p className="text-sm text-gray-500"&gt;Completion&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
 
           {/* Edit Button */}
-          <div className="mt-6 flex justify-end">
+          &lt;div className="mt-6 flex justify-end"&gt;
             {!editing ? (
-              <button
+              &lt;button
                 onClick={() => setEditing(true)}
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-              >
+              &gt;
                 Edit Profile
-              </button>
+              &lt;/button&gt;
             ) : (
-              <div className="flex gap-3">
-                <button
+              &lt;div className="flex gap-3"&gt;
+                &lt;button
                   onClick={() => setEditing(false)}
                   className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
-                >
+                &gt;
                   Cancel
-                </button>
-                <button
+                &lt;/button&gt;
+                &lt;button
                   onClick={handleSave}
                   disabled={saving}
                   className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:bg-gray-400"
-                >
+                &gt;
                   {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
+                &lt;/button&gt;
+              &lt;/div&gt;
             )}
-          </div>
-        </div>
+          &lt;/div&gt;
+        &lt;/div&gt;
 
         {/* Avatar Picker Modal */}
-        {showAvatarPicker && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAvatarPicker(false)}>
-            <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Choose Your Avatar</h3>
-                <button onClick={() => setShowAvatarPicker(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
-              </div>
+        {showAvatarPicker &amp;&amp; (
+          &lt;div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAvatarPicker(false)}&gt;
+            &lt;div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}&gt;
+              &lt;div className="flex justify-between items-center mb-6"&gt;
+                &lt;h3 className="text-xl font-bold text-gray-900"&gt;Choose Your Avatar&lt;/h3&gt;
+                &lt;button onClick={() => setShowAvatarPicker(false)} className="text-gray-400 hover:text-gray-600 text-2xl"&gt;×&lt;/button&gt;
+              &lt;/div&gt;
 
               {/* Upload Custom Photo */}
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-3">📷 Upload Your Photo</h4>
-                <div className="flex items-center gap-4">
-                  <input
+              &lt;div className="mb-6"&gt;
+                &lt;h4 className="font-medium text-gray-700 mb-3"&gt;📷 Upload Your Photo&lt;/h4&gt;
+                &lt;div className="flex items-center gap-4"&gt;
+                  &lt;input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={handleFileUpload}
                     className="hidden"
-                  />
-                  <button
+                  /&gt;
+                  &lt;button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingAvatar}
                     className="flex-1 border-2 border-dashed border-gray-300 rounded-lg py-8 px-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                  >
+                  &gt;
                     {uploadingAvatar ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                        <span>Uploading...</span>
-                      </div>
+                      &lt;div className="flex items-center justify-center gap-2"&gt;
+                        &lt;div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"&gt;&lt;/div&gt;
+                        &lt;span&gt;Uploading...&lt;/span&gt;
+                      &lt;/div&gt;
                     ) : (
-                      <>
-                        <div className="text-4xl mb-2">📁</div>
-                        <p className="text-gray-600">Click to upload an image</p>
-                        <p className="text-xs text-gray-400 mt-1">Max 5MB, JPG/PNG</p>
-                      </>
+                      &lt;&gt;
+                        &lt;div className="text-4xl mb-2"&gt;📁&lt;/div&gt;
+                        &lt;p className="text-gray-600"&gt;Click to upload an image&lt;/p&gt;
+                        &lt;p className="text-xs text-gray-400 mt-1"&gt;Max 5MB, JPG/PNG&lt;/p&gt;
+                      &lt;/&gt;
                     )}
-                  </button>
-                </div>
-              </div>
+                  &lt;/button&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
 
-              <div className="border-t pt-6">
-                <h4 className="font-medium text-gray-700 mb-3">🎨 Or Choose a Generated Avatar</h4>
+              &lt;div className="border-t pt-6"&gt;
+                &lt;h4 className="font-medium text-gray-700 mb-3"&gt;🎨 Or Choose a Generated Avatar&lt;/h4&gt;
                 
                 {/* Style Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-2">Avatar Style</label>
-                  <div className="flex flex-wrap gap-2">
+                &lt;div className="mb-4"&gt;
+                  &lt;label className="block text-sm text-gray-600 mb-2"&gt;Avatar Style&lt;/label&gt;
+                  &lt;div className="flex flex-wrap gap-2"&gt;
                     {AVATAR_STYLES.map(style => (
-                      <button
+                      &lt;button
                         key={style.id}
                         onClick={() => setSelectedAvatarStyle(style.id)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -571,561 +618,721 @@ const Profile = () => {
                             ? 'bg-blue-500 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
-                      >
+                      &gt;
                         {style.name}
-                      </button>
+                      &lt;/button&gt;
                     ))}
-                  </div>
-                </div>
+                  &lt;/div&gt;
+                &lt;/div&gt;
 
                 {/* Seed Input */}
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-2">Seed (customize your avatar)</label>
-                  <div className="flex gap-2">
-                    <input
+                &lt;div className="mb-4"&gt;
+                  &lt;label className="block text-sm text-gray-600 mb-2"&gt;Seed (customize your avatar)&lt;/label&gt;
+                  &lt;div className="flex gap-2"&gt;
+                    &lt;input
                       type="text"
                       value={avatarSeed}
                       onChange={(e) => setAvatarSeed(e.target.value)}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter any text..."
-                    />
-                    <button
+                    /&gt;
+                    &lt;button
                       onClick={handleRandomizeSeed}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
+                    &gt;
                       🎲 Random
-                    </button>
-                  </div>
-                </div>
+                    &lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
 
                 {/* Preview */}
-                <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-2">Preview</p>
-                    <img
+                &lt;div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg"&gt;
+                  &lt;div className="text-center"&gt;
+                    &lt;p className="text-sm text-gray-500 mb-2"&gt;Preview&lt;/p&gt;
+                    &lt;img
                       src={generateAvatarUrl(selectedAvatarStyle, avatarSeed)}
                       alt="Avatar Preview"
                       className="w-24 h-24 rounded-full border-4 border-white shadow-md"
-                    />
-                  </div>
-                </div>
+                    /&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
 
                 {/* Select Button */}
-                <button
+                &lt;button
                   onClick={handleSelectGeneratedAvatar}
                   className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                >
+                &gt;
                   ✅ Use This Avatar
-                </button>
-              </div>
-            </div>
-          </div>
+                &lt;/button&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <button
+        &lt;div className="flex gap-2 mb-6 flex-wrap"&gt;
+          &lt;button
             onClick={() => setActiveTab('about')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'about'
                 ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
-          >
+          &gt;
             About
-          </button>
-          <button
+          &lt;/button&gt;
+          &lt;button
             onClick={() => setActiveTab('listings')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'listings'
                 ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
-          >
+          &gt;
             My Listings ({myListings.length})
-          </button>
-          <button
+          &lt;/button&gt;
+          &lt;button
             onClick={() => setActiveTab('tasks')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'tasks'
                 ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
-          >
+          &gt;
             My Tasks ({totalTasks})
-          </button>
-          <button
+          &lt;/button&gt;
+          &lt;button
             onClick={() => setActiveTab('reviews')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'reviews'
                 ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
-          >
+          &gt;
             Reviews ({reviews.length})
-          </button>
-        </div>
+          &lt;/button&gt;
+        &lt;/div&gt;
 
         {/* About Tab */}
-        {activeTab === 'about' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
+        {activeTab === 'about' &amp;&amp; (
+          &lt;div className="bg-white rounded-lg shadow-md p-6"&gt;
+            &lt;h2 className="text-xl font-bold text-gray-900 mb-4"&gt;About&lt;/h2&gt;
             
             {editing ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input
+              &lt;div className="space-y-4"&gt;
+                &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4"&gt;
+                  &lt;div&gt;
+                    &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;First Name&lt;/label&gt;
+                    &lt;input
                       type="text"
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input
+                    /&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Last Name&lt;/label&gt;
+                    &lt;input
                       type="text"
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+                    /&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                  <textarea
+                &lt;div&gt;
+                  &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Bio&lt;/label&gt;
+                  &lt;textarea
                     name="bio"
                     value={formData.bio}
                     onChange={handleChange}
                     rows={4}
                     placeholder="Tell others about yourself..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+                  /&gt;
+                &lt;/div&gt;
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
+                &lt;div&gt;
+                  &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Phone&lt;/label&gt;
+                  &lt;input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+371 20000000"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+                  /&gt;
+                &lt;/div&gt;
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input
+                &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4"&gt;
+                  &lt;div&gt;
+                    &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;City&lt;/label&gt;
+                    &lt;input
                       type="text"
                       name="city"
                       value={formData.city}
                       onChange={handleChange}
                       placeholder="Riga"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input
+                    /&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Country&lt;/label&gt;
+                    &lt;input
                       type="text"
                       name="country"
                       value={formData.country}
                       onChange={handleChange}
                       placeholder="Latvia"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
+                    /&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
             ) : (
-              <div className="space-y-4">
+              &lt;div className="space-y-4"&gt;
                 {profile.bio ? (
-                  <p className="text-gray-700">{profile.bio}</p>
+                  &lt;p className="text-gray-700"&gt;{profile.bio}&lt;/p&gt;
                 ) : (
-                  <p className="text-gray-400 italic">No bio yet. Click "Edit Profile" to add one!</p>
+                  &lt;p className="text-gray-400 italic"&gt;No bio yet. Click "Edit Profile" to add one!&lt;/p&gt;
                 )}
                 
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-gray-500">Email:</span>
-                      <span className="ml-2 text-gray-700">{profile.email}</span>
-                    </div>
-                    {profile.phone && (
-                      <div>
-                        <span className="text-gray-500">Phone:</span>
-                        <span className="ml-2 text-gray-700">{profile.phone}</span>
-                      </div>
+                &lt;div className="border-t pt-4 mt-4"&gt;
+                  &lt;h3 className="font-medium text-gray-900 mb-3"&gt;Contact Information&lt;/h3&gt;
+                  &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm"&gt;
+                    &lt;div&gt;
+                      &lt;span className="text-gray-500"&gt;Email:&lt;/span&gt;
+                      &lt;span className="ml-2 text-gray-700"&gt;{profile.email}&lt;/span&gt;
+                    &lt;/div&gt;
+                    {profile.phone &amp;&amp; (
+                      &lt;div&gt;
+                        &lt;span className="text-gray-500"&gt;Phone:&lt;/span&gt;
+                        &lt;span className="ml-2 text-gray-700"&gt;{profile.phone}&lt;/span&gt;
+                      &lt;/div&gt;
                     )}
-                  </div>
-                </div>
-              </div>
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
             )}
-          </div>
+          &lt;/div&gt;
         )}
 
         {/* Listings Tab */}
-        {activeTab === 'listings' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">My Listings</h2>
-              <Link
+        {activeTab === 'listings' &amp;&amp; (
+          &lt;div className="bg-white rounded-lg shadow-md p-6"&gt;
+            &lt;div className="flex justify-between items-center mb-6"&gt;
+              &lt;h2 className="text-xl font-bold text-gray-900"&gt;My Listings&lt;/h2&gt;
+              &lt;Link
                 to="/listings/create"
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
+              &gt;
                 + Create Listing
-              </Link>
-            </div>
+              &lt;/Link&gt;
+            &lt;/div&gt;
             
             {listingsLoading ? (
-              <div className="text-center py-8 text-gray-600">Loading listings...</div>
+              &lt;div className="text-center py-8 text-gray-600"&gt;Loading listings...&lt;/div&gt;
             ) : myListings.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">📝</div>
-                <p className="text-gray-500 mb-4">You haven't created any listings yet.</p>
-                <Link
+              &lt;div className="text-center py-12"&gt;
+                &lt;div className="text-6xl mb-4"&gt;📝&lt;/div&gt;
+                &lt;p className="text-gray-500 mb-4"&gt;You haven't created any listings yet.&lt;/p&gt;
+                &lt;Link
                   to="/listings/create"
                   className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                >
+                &gt;
                   Create Your First Listing
-                </Link>
-              </div>
+                &lt;/Link&gt;
+              &lt;/div&gt;
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4"&gt;
                 {myListings.map(listing => {
                   const images = listing.images ? listing.images.split(',').filter(Boolean) : [];
                   const firstImage = images[0];
                   
                   return (
-                    <div key={listing.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="flex">
+                    &lt;div key={listing.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"&gt;
+                      &lt;div className="flex"&gt;
                         {/* Image */}
-                        <div className="w-32 h-32 bg-gray-100 flex-shrink-0">
+                        &lt;div className="w-32 h-32 bg-gray-100 flex-shrink-0"&gt;
                           {firstImage ? (
-                            <img
+                            &lt;img
                               src={getImageUrl(firstImage)}
                               alt={listing.title}
                               className="w-full h-full object-cover"
-                            />
+                            /&gt;
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
+                            &lt;div className="w-full h-full flex items-center justify-center text-gray-300"&gt;
+                              &lt;svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;
+                                &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /&gt;
+                              &lt;/svg&gt;
+                            &lt;/div&gt;
                           )}
-                        </div>
+                        &lt;/div&gt;
                         
                         {/* Content */}
-                        <div className="flex-1 p-3 flex flex-col">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-medium text-gray-900 line-clamp-1">{listing.title}</h3>
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(listing.status)}`}>
+                        &lt;div className="flex-1 p-3 flex flex-col"&gt;
+                          &lt;div className="flex items-start justify-between gap-2"&gt;
+                            &lt;h3 className="font-medium text-gray-900 line-clamp-1"&gt;{listing.title}&lt;/h3&gt;
+                            &lt;span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(listing.status)}`}&gt;
                               {listing.status}
-                            </span>
-                          </div>
+                            &lt;/span&gt;
+                          &lt;/div&gt;
                           
-                          <p className="text-blue-600 font-semibold mt-1">
+                          &lt;p className="text-blue-600 font-semibold mt-1"&gt;
                             €{Number(listing.price).toLocaleString()}
-                          </p>
+                          &lt;/p&gt;
                           
-                          <p className="text-gray-500 text-sm mt-1 line-clamp-1">
+                          &lt;p className="text-gray-500 text-sm mt-1 line-clamp-1"&gt;
                             {listing.location || 'No location'}
-                          </p>
+                          &lt;/p&gt;
                           
-                          <div className="flex gap-2 mt-auto pt-2">
-                            <Link
+                          &lt;div className="flex gap-2 mt-auto pt-2"&gt;
+                            &lt;Link
                               to={`/listings/${listing.id}`}
                               className="text-sm text-blue-600 hover:text-blue-700"
-                            >
+                            &gt;
                               View
-                            </Link>
-                            <Link
+                            &lt;/Link&gt;
+                            &lt;Link
                               to={`/listings/${listing.id}/edit`}
                               className="text-sm text-gray-600 hover:text-gray-700"
-                            >
+                            &gt;
                               Edit
-                            </Link>
-                            <button
+                            &lt;/Link&gt;
+                            &lt;button
                               onClick={() => handleDeleteListing(listing.id)}
                               className="text-sm text-red-600 hover:text-red-700"
-                            >
+                            &gt;
                               Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                            &lt;/button&gt;
+                          &lt;/div&gt;
+                        &lt;/div&gt;
+                      &lt;/div&gt;
+                    &lt;/div&gt;
                   );
                 })}
-              </div>
+              &lt;/div&gt;
             )}
-          </div>
+          &lt;/div&gt;
         )}
 
         {/* Tasks Tab */}
-        {activeTab === 'tasks' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">My Tasks</h2>
-              <Link
+        {activeTab === 'tasks' &amp;&amp; (
+          &lt;div className="bg-white rounded-lg shadow-md p-6"&gt;
+            &lt;div className="flex justify-between items-center mb-6"&gt;
+              &lt;h2 className="text-xl font-bold text-gray-900"&gt;My Tasks&lt;/h2&gt;
+              &lt;Link
                 to="/tasks/create"
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
+              &gt;
                 + Create Task
-              </Link>
-            </div>
+              &lt;/Link&gt;
+            &lt;/div&gt;
 
             {/* Sub-tabs */}
-            <div className="flex gap-2 mb-6 border-b">
-              <button
+            &lt;div className="flex gap-2 mb-4 border-b"&gt;
+              &lt;button
                 onClick={() => setTaskSubTab('assigned')}
                 className={`px-4 py-2 font-medium border-b-2 transition-colors ${
                   taskSubTab === 'assigned'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
-              >
+              &gt;
                 Assigned to Me ({myTasks.length})
-              </button>
-              <button
+              &lt;/button&gt;
+              &lt;button
                 onClick={() => setTaskSubTab('created')}
                 className={`px-4 py-2 font-medium border-b-2 transition-colors ${
                   taskSubTab === 'created'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
-              >
+              &gt;
                 Created by Me ({createdTasks.length})
-              </button>
-            </div>
+              &lt;/button&gt;
+            &lt;/div&gt;
 
             {tasksLoading ? (
-              <div className="text-center py-8 text-gray-600">Loading tasks...</div>
+              &lt;div className="text-center py-8 text-gray-600"&gt;Loading tasks...&lt;/div&gt;
             ) : (
-              <>
+              &lt;&gt;
                 {/* Assigned Tasks */}
-                {taskSubTab === 'assigned' && (
-                  <>
-                    {myTasks.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="text-6xl mb-4">🔍</div>
-                        <p className="text-gray-500 mb-4">No tasks assigned to you yet.</p>
-                        <Link
-                          to="/tasks"
-                          className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          Browse Available Tasks
-                        </Link>
-                      </div>
+                {taskSubTab === 'assigned' &amp;&amp; (
+                  &lt;&gt;
+                    {/* Status Filter Pills */}
+                    &lt;div className="flex gap-2 mb-4 flex-wrap"&gt;
+                      &lt;button
+                        onClick={() => setAssignedStatusFilter('active')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          assignedStatusFilter === 'active'
+                            ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        🔄 Active ({assignedActiveTasks})
+                      &lt;/button&gt;
+                      &lt;button
+                        onClick={() => setAssignedStatusFilter('completed')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          assignedStatusFilter === 'completed'
+                            ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        ✅ Completed ({assignedCompletedTasks})
+                      &lt;/button&gt;
+                      &lt;button
+                        onClick={() => setAssignedStatusFilter('all')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          assignedStatusFilter === 'all'
+                            ? 'bg-gray-700 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        All ({myTasks.length})
+                      &lt;/button&gt;
+                    &lt;/div&gt;
+
+                    {filteredAssignedTasks.length === 0 ? (
+                      &lt;div className="text-center py-12"&gt;
+                        &lt;div className="text-6xl mb-4"&gt;🔍&lt;/div&gt;
+                        &lt;p className="text-gray-500 mb-4"&gt;
+                          {myTasks.length === 0 
+                            ? 'No tasks assigned to you yet.' 
+                            : `No ${assignedStatusFilter} tasks.`}
+                        &lt;/p&gt;
+                        {myTasks.length === 0 &amp;&amp; (
+                          &lt;Link
+                            to="/tasks"
+                            className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                          &gt;
+                            Browse Available Tasks
+                          &lt;/Link&gt;
+                        )}
+                      &lt;/div&gt;
                     ) : (
-                      <div className="space-y-4">
-                        {myTasks.map(task => (
-                          <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
-                                  <h3 className="font-medium text-gray-900">{task.title}</h3>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                      &lt;div className="space-y-4"&gt;
+                        {filteredAssignedTasks.map(task => (
+                          &lt;div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow"&gt;
+                            &lt;div className="flex items-start justify-between gap-4"&gt;
+                              &lt;div className="flex-1"&gt;
+                                &lt;div className="flex items-center gap-2 mb-1 flex-wrap"&gt;
+                                  &lt;span className="text-xl"&gt;{getCategoryIcon(task.category)}&lt;/span&gt;
+                                  &lt;Link 
+                                    to={`/tasks/${task.id}`}
+                                    className="font-medium text-gray-900 hover:text-blue-600"
+                                  &gt;
+                                    {task.title}
+                                  &lt;/Link&gt;
+                                  &lt;span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}&gt;
                                     {task.status.replace('_', ' ')}
-                                  </span>
-                                </div>
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {task.location}</span>
-                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                                  &lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;p className="text-gray-600 text-sm line-clamp-2 mb-2"&gt;{task.description}&lt;/p&gt;
+                                &lt;div className="flex items-center gap-4 text-sm text-gray-500"&gt;
+                                  &lt;span&gt;📍 {task.location}&lt;/span&gt;
+                                  {task.budget &amp;&amp; &lt;span className="text-green-600 font-medium"&gt;€{task.budget}&lt;/span&gt;}
+                                &lt;/div&gt;
+                              &lt;/div&gt;
+                              
+                              {/* Action Buttons */}
+                              &lt;div className="flex flex-col gap-2 min-w-[120px]"&gt;
+                                {/* Active task actions */}
+                                {['assigned', 'in_progress'].includes(task.status) &amp;&amp; (
+                                  &lt;&gt;
+                                    &lt;button
+                                      onClick={() => handleMarkTaskDone(task.id)}
+                                      className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                    &gt;
+                                      ✓ Mark Done
+                                    &lt;/button&gt;
+                                    &lt;Link
+                                      to={`/tasks/${task.id}`}
+                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                    &gt;
+                                      View Details
+                                    &lt;/Link&gt;
+                                  &lt;/&gt;
+                                )}
+                                
+                                {/* Pending confirmation */}
+                                {task.status === 'pending_confirmation' &amp;&amp; (
+                                  &lt;div className="text-center"&gt;
+                                    &lt;span className="text-sm text-purple-600 font-medium"&gt;⏳ Waiting for confirmation&lt;/span&gt;
+                                    &lt;Link
+                                      to={`/tasks/${task.id}`}
+                                      className="mt-2 block px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                    &gt;
+                                      View Details
+                                    &lt;/Link&gt;
+                                  &lt;/div&gt;
+                                )}
+
+                                {/* Completed task */}
+                                {task.status === 'completed' &amp;&amp; (
+                                  &lt;Link
+                                    to={`/tasks/${task.id}`}
+                                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                  &gt;
+                                    View Details
+                                  &lt;/Link&gt;
+                                )}
+                              &lt;/div&gt;
+                            &lt;/div&gt;
+                          &lt;/div&gt;
                         ))}
-                      </div>
+                      &lt;/div&gt;
                     )}
-                  </>
+                  &lt;/&gt;
                 )}
 
                 {/* Created Tasks */}
-                {taskSubTab === 'created' && (
-                  <>
-                    {createdTasks.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="text-6xl mb-4">📋</div>
-                        <p className="text-gray-500 mb-4">You haven't created any tasks yet.</p>
-                        <Link
-                          to="/tasks/create"
-                          className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          Create Your First Task
-                        </Link>
-                      </div>
+                {taskSubTab === 'created' &amp;&amp; (
+                  &lt;&gt;
+                    {/* Status Filter Pills */}
+                    &lt;div className="flex gap-2 mb-4 flex-wrap"&gt;
+                      &lt;button
+                        onClick={() => setCreatedStatusFilter('open')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          createdStatusFilter === 'open'
+                            ? 'bg-green-100 text-green-700 ring-2 ring-green-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        📢 Open ({createdOpenTasks})
+                      &lt;/button&gt;
+                      &lt;button
+                        onClick={() => setCreatedStatusFilter('in_progress')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          createdStatusFilter === 'in_progress'
+                            ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        🔄 In Progress ({createdInProgressTasks})
+                      &lt;/button&gt;
+                      &lt;button
+                        onClick={() => setCreatedStatusFilter('completed')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          createdStatusFilter === 'completed'
+                            ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        ✅ Completed ({createdCompletedTasks})
+                      &lt;/button&gt;
+                      &lt;button
+                        onClick={() => setCreatedStatusFilter('all')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          createdStatusFilter === 'all'
+                            ? 'bg-gray-700 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      &gt;
+                        All ({createdTasks.length})
+                      &lt;/button&gt;
+                    &lt;/div&gt;
+
+                    {filteredCreatedTasks.length === 0 ? (
+                      &lt;div className="text-center py-12"&gt;
+                        &lt;div className="text-6xl mb-4"&gt;📋&lt;/div&gt;
+                        &lt;p className="text-gray-500 mb-4"&gt;
+                          {createdTasks.length === 0 
+                            ? "You haven't created any tasks yet." 
+                            : `No ${createdStatusFilter === 'all' ? '' : createdStatusFilter.replace('_', ' ')} tasks.`}
+                        &lt;/p&gt;
+                        {createdTasks.length === 0 &amp;&amp; (
+                          &lt;Link
+                            to="/tasks/create"
+                            className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                          &gt;
+                            Create Your First Task
+                          &lt;/Link&gt;
+                        )}
+                      &lt;/div&gt;
                     ) : (
-                      <div className="space-y-4">
-                        {createdTasks.map(task => (
-                          <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
-                                  <h3 className="font-medium text-gray-900">{task.title}</h3>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                      &lt;div className="space-y-4"&gt;
+                        {filteredCreatedTasks.map(task => (
+                          &lt;div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow"&gt;
+                            &lt;div className="flex items-start justify-between gap-4"&gt;
+                              &lt;div className="flex-1"&gt;
+                                &lt;div className="flex items-center gap-2 mb-1 flex-wrap"&gt;
+                                  &lt;span className="text-xl"&gt;{getCategoryIcon(task.category)}&lt;/span&gt;
+                                  &lt;Link 
+                                    to={`/tasks/${task.id}`}
+                                    className="font-medium text-gray-900 hover:text-blue-600"
+                                  &gt;
+                                    {task.title}
+                                  &lt;/Link&gt;
+                                  &lt;span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}&gt;
                                     {task.status.replace('_', ' ')}
-                                  </span>
-                                  {task.is_urgent && (
-                                    <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
+                                  &lt;/span&gt;
+                                  {task.is_urgent &amp;&amp; (
+                                    &lt;span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700"&gt;
                                       Urgent
-                                    </span>
+                                    &lt;/span&gt;
                                   )}
-                                </div>
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {task.location}</span>
-                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
-                                </div>
-                              </div>
+                                &lt;/div&gt;
+                                &lt;p className="text-gray-600 text-sm line-clamp-2 mb-2"&gt;{task.description}&lt;/p&gt;
+                                &lt;div className="flex items-center gap-4 text-sm text-gray-500"&gt;
+                                  &lt;span&gt;📍 {task.location}&lt;/span&gt;
+                                  {task.budget &amp;&amp; &lt;span className="text-green-600 font-medium"&gt;€{task.budget}&lt;/span&gt;}
+                                &lt;/div&gt;
+                              &lt;/div&gt;
                               
                               {/* Actions */}
-                              <div className="flex gap-2 ml-4">
-                                {task.status === 'pending_confirmation' && (
-                                  <button
+                              &lt;div className="flex flex-col gap-2 min-w-[120px]"&gt;
+                                {task.status === 'pending_confirmation' &amp;&amp; (
+                                  &lt;button
                                     onClick={() => handleConfirmTask(task.id)}
-                                    className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                                  >
-                                    ✓ Confirm
-                                  </button>
+                                    className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                  &gt;
+                                    ✓ Confirm Done
+                                  &lt;/button&gt;
                                 )}
-                                {task.status === 'open' && (
-                                  <>
-                                    <Link
+                                {task.status === 'open' &amp;&amp; (
+                                  &lt;&gt;
+                                    &lt;Link
                                       to={`/tasks/${task.id}/edit`}
-                                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                                    >
+                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                    &gt;
                                       ✏️ Edit
-                                    </Link>
-                                    <button
+                                    &lt;/Link&gt;
+                                    &lt;button
                                       onClick={() => handleCancelTask(task.id)}
-                                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
-                                    >
+                                      className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                    &gt;
                                       Cancel
-                                    </button>
-                                  </>
+                                    &lt;/button&gt;
+                                  &lt;/&gt;
                                 )}
-                              </div>
-                            </div>
-                          </div>
+                                {['assigned', 'in_progress'].includes(task.status) &amp;&amp; (
+                                  &lt;Link
+                                    to={`/tasks/${task.id}`}
+                                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                  &gt;
+                                    View Details
+                                  &lt;/Link&gt;
+                                )}
+                                {task.status === 'completed' &amp;&amp; (
+                                  &lt;Link
+                                    to={`/tasks/${task.id}`}
+                                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                  &gt;
+                                    View Details
+                                  &lt;/Link&gt;
+                                )}
+                              &lt;/div&gt;
+                            &lt;/div&gt;
+                          &lt;/div&gt;
                         ))}
-                      </div>
+                      &lt;/div&gt;
                     )}
-                  </>
+                  &lt;/&gt;
                 )}
-              </>
+              &lt;/&gt;
             )}
-          </div>
+          &lt;/div&gt;
         )}
 
         {/* Reviews Tab */}
-        {activeTab === 'reviews' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Reviews</h2>
+        {activeTab === 'reviews' &amp;&amp; (
+          &lt;div className="bg-white rounded-lg shadow-md p-6"&gt;
+            &lt;h2 className="text-xl font-bold text-gray-900 mb-4"&gt;Reviews&lt;/h2&gt;
             
             {reviews.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
+              &lt;p className="text-gray-500 text-center py-8"&gt;
                 No reviews yet. Complete tasks to receive reviews!
-              </p>
+              &lt;/p&gt;
             ) : (
-              <div className="space-y-4">
+              &lt;div className="space-y-4"&gt;
                 {reviews.map(review => (
-                  <div key={review.id} className="border-b pb-4 last:border-b-0">
+                  &lt;div key={review.id} className="border-b pb-4 last:border-b-0"&gt;
                     {editingReview === review.id ? (
                       // Edit mode
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                          {renderEditableStars(reviewEditData.rating, (rating) => 
+                      &lt;div className="space-y-3"&gt;
+                        &lt;div&gt;
+                          &lt;label className="block text-sm font-medium text-gray-700 mb-2"&gt;Rating&lt;/label&gt;
+                          {renderEditableStars(reviewEditData.rating, (rating) =&gt; 
                             setReviewEditData(prev => ({ ...prev, rating }))
                           )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
-                          <textarea
+                        &lt;/div&gt;
+                        &lt;div&gt;
+                          &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Comment&lt;/label&gt;
+                          &lt;textarea
                             value={reviewEditData.content}
                             onChange={(e) => setReviewEditData(prev => ({ ...prev, content: e.target.value }))}
                             rows={3}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <button
+                          /&gt;
+                        &lt;/div&gt;
+                        &lt;div className="flex gap-2"&gt;
+                          &lt;button
                             onClick={() => handleSaveReview(review.id)}
                             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                          >
+                          &gt;
                             Save
-                          </button>
-                          <button
+                          &lt;/button&gt;
+                          &lt;button
                             onClick={() => setEditingReview(null)}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                          >
+                          &gt;
                             Cancel
-                          </button>
-                        </div>
-                      </div>
+                          &lt;/button&gt;
+                        &lt;/div&gt;
+                      &lt;/div&gt;
                     ) : (
                       // View mode
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      &lt;div className="flex items-start gap-3"&gt;
+                        &lt;div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"&gt;
                           {review.reviewer_avatar ? (
-                            <img src={review.reviewer_avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                            &lt;img src={review.reviewer_avatar} alt="" className="w-full h-full rounded-full object-cover" /&gt;
                           ) : (
-                            <span className="text-gray-500">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
+                            &lt;span className="text-gray-500"&gt;{review.reviewer_name?.charAt(0).toUpperCase()}&lt;/span&gt;
                           )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">{review.reviewer_name}</span>
+                        &lt;/div&gt;
+                        &lt;div className="flex-1"&gt;
+                          &lt;div className="flex items-center gap-2 mb-1"&gt;
+                            &lt;span className="font-medium text-gray-900"&gt;{review.reviewer_name}&lt;/span&gt;
                             {renderStars(review.rating)}
-                          </div>
-                          {review.content && (
-                            <p className="text-gray-600">{review.content}</p>
+                          &lt;/div&gt;
+                          {review.content &amp;&amp; (
+                            &lt;p className="text-gray-600"&gt;{review.content}&lt;/p&gt;
                           )}
-                          <p className="text-xs text-gray-400 mt-1">
+                          &lt;p className="text-xs text-gray-400 mt-1"&gt;
                             {new Date(review.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {user && review.reviewer_id === user.id && (
-                          <div className="flex gap-2">
-                            <button
+                          &lt;/p&gt;
+                        &lt;/div&gt;
+                        {user &amp;&amp; review.reviewer_id === user.id &amp;&amp; (
+                          &lt;div className="flex gap-2"&gt;
+                            &lt;button
                               onClick={() => handleEditReview(review)}
                               className="text-sm text-blue-600 hover:text-blue-700"
-                            >
+                            &gt;
                               Edit
-                            </button>
-                            <button
+                            &lt;/button&gt;
+                            &lt;button
                               onClick={() => handleDeleteReview(review.id)}
                               className="text-sm text-red-600 hover:text-red-700"
-                            >
+                            &gt;
                               Delete
-                            </button>
-                          </div>
+                            &lt;/button&gt;
+                          &lt;/div&gt;
                         )}
-                      </div>
+                      &lt;/div&gt;
                     )}
-                  </div>
+                  &lt;/div&gt;
                 ))}
-              </div>
+              &lt;/div&gt;
             )}
-          </div>
+          &lt;/div&gt;
         )}
-      </div>
-    </div>
+      &lt;/div&gt;
+    &lt;/div&gt;
   );
 };
 
