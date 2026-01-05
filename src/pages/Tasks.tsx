@@ -7,6 +7,8 @@ import { getTasks, Task as APITask } from '../api/tasks';
 import { getOfferings, Offering } from '../api/offerings';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
+import { useMatchingStore } from '../stores/matchingStore';
+import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -45,22 +47,6 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 };
 
-// Category definitions
-const CATEGORIES = [
-  { value: 'all', label: 'All Categories', icon: '📋' },
-  { value: 'pet-care', label: 'Pet Care', icon: '🐕' },
-  { value: 'moving', label: 'Moving', icon: '📦' },
-  { value: 'shopping', label: 'Shopping', icon: '🛒' },
-  { value: 'cleaning', label: 'Cleaning', icon: '🧹' },
-  { value: 'delivery', label: 'Delivery', icon: '📄' },
-  { value: 'outdoor', label: 'Outdoor', icon: '🌿' },
-  { value: 'babysitting', label: 'Babysitting', icon: '👶' },
-  { value: 'car-wash', label: 'Car Wash', icon: '🚗' },
-  { value: 'assembly', label: 'Assembly', icon: '🔧' },
-  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
-  { value: 'repair', label: 'Repair', icon: '🛠️' },
-];
-
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   useMapEvents({
     click: (e) => {
@@ -97,6 +83,7 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
+  const { loadMyOfferings, isJobMatchingMyOfferings, myOfferingCategories } = useMatchingStore();
   
   // Three main tabs: jobs, offerings, all
   const [activeTab, setActiveTab] = useState<'jobs' | 'offerings' | 'all'>('all');
@@ -123,6 +110,13 @@ const Tasks = () => {
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Load user's offerings for matching (when logged in)
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadMyOfferings();
+    }
+  }, [isAuthenticated, loadMyOfferings]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -222,11 +216,6 @@ const Tasks = () => {
         fetchData(true);
       });
     }
-  };
-
-  const getCategoryIcon = (category: string): string => {
-    const cat = CATEGORIES.find(c => c.value === category);
-    return cat?.icon || '💼';
   };
 
   const fetchData = async (forceRefresh = false) => {
@@ -361,6 +350,11 @@ const Tasks = () => {
 
   const filteredTasks = filterTasks(tasks);
   const filteredOfferings = filterOfferings(offerings);
+  
+  // Count matching jobs for the badge
+  const matchingJobsCount = isAuthenticated 
+    ? filteredTasks.filter(t => isJobMatchingMyOfferings(t.category)).length 
+    : 0;
 
   // Get map markers based on active tab
   const getMapMarkers = () => {
@@ -397,6 +391,27 @@ const Tasks = () => {
             )}
           </div>
         </div>
+
+        {/* Matching notification banner */}
+        {isAuthenticated && matchingJobsCount > 0 && myOfferingCategories.length > 0 && (
+          <div className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-4 text-white shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">✨</span>
+                <div>
+                  <p className="font-semibold">{matchingJobsCount} job{matchingJobsCount !== 1 ? 's' : ''} match your offerings!</p>
+                  <p className="text-green-100 text-sm">Based on your active service offerings in: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setActiveTab('jobs')}
+                className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition-colors"
+              >
+                View Matches
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* SEARCH BAR */}
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
@@ -447,7 +462,7 @@ const Tasks = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  {CATEGORIES.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
+                  {CATEGORY_OPTIONS.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
                 </select>
               </div>
             </div>
@@ -459,8 +474,13 @@ const Tasks = () => {
           <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             🌐 All ({filteredTasks.length + filteredOfferings.length})
           </button>
-          <button onClick={() => setActiveTab('jobs')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+          <button onClick={() => setActiveTab('jobs')} className={`px-6 py-3 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💼 Jobs ({filteredTasks.length})
+            {isAuthenticated && matchingJobsCount > 0 && activeTab !== 'jobs' && (
+              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                {matchingJobsCount} match{matchingJobsCount !== 1 ? 'es' : ''}
+              </span>
+            )}
           </button>
           <button onClick={() => setActiveTab('offerings')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             👋 Offerings ({filteredOfferings.length})
@@ -531,6 +551,12 @@ const Tasks = () => {
             <div className="w-4 h-4 rounded-full bg-amber-500"></div>
             <span>Offerings</span>
           </div>
+          {isAuthenticated && myOfferingCategories.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">✨ Match</span>
+              <span>Jobs matching your offerings</span>
+            </div>
+          )}
         </div>
 
         {/* CONTENT AREA */}
@@ -558,7 +584,12 @@ const Tasks = () => {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {filteredTasks.map((task) => (
-                    <JobCard key={task.id} task={task} userLocation={userLocation} />
+                    <JobCard 
+                      key={task.id} 
+                      task={task} 
+                      userLocation={userLocation} 
+                      isMatching={isAuthenticated && isJobMatchingMyOfferings(task.category)}
+                    />
                   ))}
                 </div>
               )}
@@ -608,12 +639,26 @@ const Tasks = () => {
   );
 };
 
-// Job Card Component
-const JobCard = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
+// Job Card Component with matching indicator
+const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   
   return (
-    <Link to={`/tasks/${task.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all">
+    <Link 
+      to={`/tasks/${task.id}`} 
+      className={`block border rounded-lg p-4 hover:shadow-md transition-all ${
+        isMatching 
+          ? 'border-green-300 bg-green-50 hover:border-green-400' 
+          : 'border-gray-200 hover:border-blue-300'
+      }`}
+    >
+      {/* Matching badge */}
+      {isMatching && (
+        <div className="flex items-center gap-2 mb-2 text-green-700">
+          <span className="px-2 py-0.5 bg-green-200 rounded text-xs font-semibold">✨ Matches your offering</span>
+        </div>
+      )}
+      
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
@@ -623,7 +668,7 @@ const JobCard = ({ task, userLocation }: { task: Task; userLocation: { lat: numb
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{task.category}</span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
           </div>
           {task.creator_name && (
             <p className="text-xs text-gray-500 mt-2">Posted by {task.creator_name}</p>
@@ -678,7 +723,7 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
           
           {/* Category & Distance */}
           <div className="flex items-center gap-2 text-xs">
-            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{offering.category}</span>
+            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{getCategoryLabel(offering.category)}</span>
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
           </div>
         </div>
