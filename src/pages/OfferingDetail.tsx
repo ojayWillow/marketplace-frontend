@@ -4,24 +4,11 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getOffering, Offering } from '../api/offerings';
+import { getTasks, Task } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
+import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import apiClient from '../api/client';
-
-// Category definitions
-const CATEGORIES: Record<string, { label: string; icon: string }> = {
-  'pet-care': { label: 'Pet Care', icon: '🐕' },
-  'moving': { label: 'Moving', icon: '📦' },
-  'shopping': { label: 'Shopping', icon: '🛒' },
-  'cleaning': { label: 'Cleaning', icon: '🧹' },
-  'delivery': { label: 'Delivery', icon: '📄' },
-  'outdoor': { label: 'Outdoor', icon: '🌿' },
-  'babysitting': { label: 'Babysitting', icon: '👶' },
-  'car-wash': { label: 'Car Wash', icon: '🚗' },
-  'assembly': { label: 'Assembly', icon: '🔧' },
-  'plumbing': { label: 'Plumbing', icon: '🔧' },
-  'repair': { label: 'Repair', icon: '🛠️' },
-};
 
 // Helper function to render star rating
 const StarRating = ({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) => {
@@ -50,12 +37,23 @@ const OfferingDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contacting, setContacting] = useState(false);
+  
+  // Matching jobs state
+  const [matchingJobs, setMatchingJobs] = useState<Task[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchOffering();
     }
   }, [id]);
+
+  useEffect(() => {
+    // Fetch matching jobs when offering is loaded and user is the owner
+    if (offering && user?.id === offering.creator_id) {
+      fetchMatchingJobs();
+    }
+  }, [offering, user]);
 
   const fetchOffering = async () => {
     try {
@@ -68,6 +66,29 @@ const OfferingDetail = () => {
       setError(err?.response?.data?.error || 'Failed to load offering');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMatchingJobs = async () => {
+    if (!offering || !offering.latitude || !offering.longitude) return;
+    
+    try {
+      setJobsLoading(true);
+      const response = await getTasks({
+        category: offering.category,
+        latitude: offering.latitude,
+        longitude: offering.longitude,
+        radius: (offering as any).service_radius || 50,
+        status: 'open',
+        per_page: 6
+      });
+      // Filter out jobs created by the offering owner
+      const filtered = (response.tasks || []).filter(t => t.creator_id !== offering.creator_id);
+      setMatchingJobs(filtered);
+    } catch (error) {
+      console.error('Error fetching matching jobs:', error);
+    } finally {
+      setJobsLoading(false);
     }
   };
 
@@ -105,6 +126,98 @@ const OfferingDetail = () => {
     iconAnchor: [12, 12]
   });
 
+  // Render Matching Jobs Section
+  const renderMatchingJobs = () => {
+    if (!offering || user?.id !== offering.creator_id) return null;
+
+    return (
+      <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden">
+        {/* Header with explanation */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">💼</span>
+            <div>
+              <h2 className="text-lg font-bold">Jobs Matching Your Service</h2>
+              <p className="text-blue-100 text-sm">
+                Open <strong>{getCategoryLabel(offering.category)}</strong> jobs near your service area
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4">
+          {/* Explanation box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-blue-800">
+              <strong>💡 How matching works:</strong> These are jobs posted by people looking for <strong>{getCategoryLabel(offering.category)}</strong> help within your service radius. 
+              Apply directly or wait for them to find your offering!
+            </p>
+          </div>
+
+          {jobsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-gray-500">Finding matching jobs...</p>
+            </div>
+          ) : matchingJobs.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <div className="text-4xl mb-2">👀</div>
+              <p className="text-gray-600 font-medium">No matching jobs yet</p>
+              <p className="text-sm text-gray-500 mt-1">
+                No one is looking for {getCategoryLabel(offering.category)} help in your area right now.
+                <br />Don't worry — people can still find and contact you through your offering!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {matchingJobs.map(job => (
+                <Link 
+                  key={job.id} 
+                  to={`/tasks/${job.id}`}
+                  className="block border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl">{getCategoryIcon(job.category)}</span>
+                        <h4 className="font-semibold text-gray-900">{job.title}</h4>
+                        {job.is_urgent && (
+                          <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">⚡ Urgent</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2 mb-2">{job.description}</p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span>📍 {job.location?.split(',')[0] || 'Unknown'}</span>
+                        {job.distance && <span>• {job.distance.toFixed(1)}km away</span>}
+                        <span>• Posted by {job.creator_name || 'Someone'}</span>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-xl font-bold text-green-600">€{job.budget || 0}</div>
+                      <span className="text-xs text-gray-500">Budget</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Browse more link */}
+          {matchingJobs.length > 0 && (
+            <div className="mt-4 text-center">
+              <Link 
+                to={`/tasks?tab=jobs&category=${offering.category}`}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                Browse all {getCategoryLabel(offering.category)} jobs →
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -131,7 +244,8 @@ const OfferingDetail = () => {
     );
   }
 
-  const category = CATEGORIES[offering.category] || { label: offering.category, icon: '💼' };
+  const categoryIcon = getCategoryIcon(offering.category);
+  const categoryLabel = getCategoryLabel(offering.category);
   const isOwner = user?.id === offering.creator_id;
 
   return (
@@ -148,10 +262,10 @@ const OfferingDetail = () => {
           <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <span className="text-4xl">{category.icon}</span>
+                <span className="text-4xl">{categoryIcon}</span>
                 <div>
                   <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
-                    {category.label}
+                    {categoryLabel}
                   </span>
                   <h1 className="text-2xl md:text-3xl font-bold mt-2">{offering.title}</h1>
                 </div>
@@ -252,8 +366,8 @@ const OfferingDetail = () => {
               <div className="flex items-center gap-2 text-gray-600 mb-3">
                 <span>📍</span>
                 <span>{offering.location || 'Location not specified'}</span>
-                {offering.service_radius && (
-                  <span className="text-amber-600">• {offering.service_radius}km service radius</span>
+                {(offering as any).service_radius && (
+                  <span className="text-amber-600">• {(offering as any).service_radius}km service radius</span>
                 )}
               </div>
               {offering.latitude && offering.longitude && (
@@ -296,13 +410,13 @@ const OfferingDetail = () => {
               <div className="text-center">
                 <div className="text-2xl mb-1">📍</div>
                 <div className="text-sm text-gray-500">Range</div>
-                <div className="font-semibold">{offering.service_radius || 10}km</div>
+                <div className="font-semibold">{(offering as any).service_radius || 10}km</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl mb-1">📅</div>
                 <div className="text-sm text-gray-500">Posted</div>
                 <div className="font-semibold">
-                  {new Date(offering.created_at).toLocaleDateString()}
+                  {new Date(offering.created_at!).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -327,6 +441,9 @@ const OfferingDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Matching Jobs Section - Only for offering owner */}
+        {renderMatchingJobs()}
 
         {/* Related Info */}
         <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
