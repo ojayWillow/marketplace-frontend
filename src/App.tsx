@@ -14,6 +14,8 @@ import CreateTask from './pages/CreateTask'
 import EditTask from './pages/EditTask'
 import Profile from './pages/Profile'
 import UserProfile from './pages/UserProfile'
+import Messages from './pages/Messages'
+import Conversation from './pages/Conversation'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -66,6 +68,23 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        {/* Messaging */}
+        <Route
+          path="messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="messages/:id"
+          element={
+            <ProtectedRoute>
+              <Conversation />
             </ProtectedRoute>
           }
         />
