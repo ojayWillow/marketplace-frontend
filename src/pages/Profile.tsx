@@ -7,6 +7,8 @@ import { listingsApi, type Listing } from '../api/listings';
 import { reviewsApi } from '../api/reviews';
 import { getImageUrl, uploadImage } from '../api/uploads';
 import { Task, TaskApplication, getCreatedTasks, getMyApplications, cancelTask, confirmTaskCompletion } from '../api/tasks';
+import { getMyOfferings, deleteOffering, Offering } from '../api/offerings';
+import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 
 interface UserProfile {
   id: number;
@@ -57,7 +59,7 @@ const generateAvatarUrl = (style: string, seed: string) => {
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
 };
 
-type ActiveTab = 'about' | 'listings' | 'tasks' | 'reviews';
+type ActiveTab = 'about' | 'listings' | 'offerings' | 'tasks' | 'reviews';
 type TaskViewMode = 'my-tasks' | 'my-jobs';
 type TaskStatusFilter = 'all' | 'active' | 'completed';
 
@@ -69,10 +71,12 @@ const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
+  const [myOfferings, setMyOfferings] = useState<Offering[]>([]);
   const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
   const [myApplications, setMyApplications] = useState<TaskApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(false);
+  const [offeringsLoading, setOfferingsLoading] = useState(false);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -135,6 +139,7 @@ const Profile = () => {
     }
     fetchProfile();
     fetchMyListings();
+    fetchMyOfferings();
     fetchTasks();
     fetchApplications();
   }, [isAuthenticated]);
@@ -185,6 +190,18 @@ const Profile = () => {
     }
   };
 
+  const fetchMyOfferings = async () => {
+    try {
+      setOfferingsLoading(true);
+      const response = await getMyOfferings();
+      setMyOfferings(response.offerings || []);
+    } catch (error) {
+      console.error('Error fetching my offerings:', error);
+    } finally {
+      setOfferingsLoading(false);
+    }
+  };
+
   const fetchTasks = async () => {
     try {
       setTasksLoading(true);
@@ -219,6 +236,19 @@ const Profile = () => {
     } catch (error) {
       console.error('Error deleting listing:', error);
       toast.error('Failed to delete listing');
+    }
+  };
+
+  const handleDeleteOffering = async (offeringId: number) => {
+    if (!window.confirm('Are you sure you want to delete this service offering?')) return;
+    
+    try {
+      await deleteOffering(offeringId);
+      setMyOfferings(prev => prev.filter(o => o.id !== offeringId));
+      toast.success('Offering deleted successfully');
+    } catch (error) {
+      console.error('Error deleting offering:', error);
+      toast.error('Failed to delete offering');
     }
   };
 
@@ -410,6 +440,7 @@ const Profile = () => {
       case 'cancelled':
       case 'expired':
       case 'rejected':
+      case 'paused':
         return 'bg-gray-100 text-gray-700';
       case 'disputed':
         return 'bg-red-100 text-red-700';
@@ -418,21 +449,6 @@ const Profile = () => {
       default:
         return 'bg-gray-100 text-gray-700';
     }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      'pet-care': '🐕',
-      'moving': '📦',
-      'shopping': '🛒',
-      'cleaning': '🧹',
-      'delivery': '📄',
-      'outdoor': '🌿',
-      'babysitting': '👶',
-      'car-wash': '🚗',
-      'assembly': '🔧',
-    };
-    return icons[category] || '📋';
   };
 
   // Get tasks for current view mode
@@ -753,6 +769,16 @@ const Profile = () => {
             My Listings ({myListings.length})
           </button>
           <button
+            onClick={() => setActiveTab('offerings')}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'offerings'
+                ? 'bg-amber-500 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            👋 My Offerings ({myOfferings.length})
+          </button>
+          <button
             onClick={() => setActiveTab('tasks')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${
               activeTab === 'tasks'
@@ -886,7 +912,7 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Listings Tab */}
+        {/* Listings Tab (Marketplace items for sale) */}
         {activeTab === 'listings' && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-6">
@@ -986,7 +1012,111 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Tasks Tab - Simplified */}
+        {/* Offerings Tab (Service offerings) */}
+        {activeTab === 'offerings' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">My Service Offerings</h2>
+                <p className="text-sm text-gray-500">Services you offer to help others</p>
+              </div>
+              <Link
+                to="/offerings/create"
+                className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors"
+              >
+                + Create Offering
+              </Link>
+            </div>
+            
+            {offeringsLoading ? (
+              <div className="text-center py-8 text-gray-600">Loading offerings...</div>
+            ) : myOfferings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">👋</div>
+                <p className="text-gray-900 font-medium mb-2">No service offerings yet</p>
+                <p className="text-gray-500 mb-4">Create an offering to advertise your skills and get hired!</p>
+                <Link
+                  to="/offerings/create"
+                  className="inline-block bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition-colors"
+                >
+                  Create Your First Offering
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myOfferings.map(offering => (
+                  <div key={offering.id} className="border border-amber-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-amber-50/30">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">{getCategoryIcon(offering.category)}</span>
+                          <div>
+                            <Link 
+                              to={`/offerings/${offering.id}`}
+                              className="font-semibold text-gray-900 hover:text-amber-600"
+                            >
+                              {offering.title}
+                            </Link>
+                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(offering.status)}`}>
+                              {offering.status}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-600 text-sm line-clamp-2 mb-2">{offering.description}</p>
+                        
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-green-600 font-bold">
+                            €{offering.price || 0}
+                            {offering.price_type === 'hourly' && '/hr'}
+                          </span>
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">
+                            {getCategoryLabel(offering.category)}
+                          </span>
+                          {offering.location && (
+                            <span className="text-gray-500 text-xs">📍 {offering.location.split(',')[0]}</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 min-w-[90px]">
+                        <Link
+                          to={`/offerings/${offering.id}`}
+                          className="px-3 py-1.5 text-sm bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-center"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          to={`/offerings/${offering.id}/edit`}
+                          className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteOffering(offering.id)}
+                          className="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Info box */}
+            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h4 className="font-medium text-amber-800 mb-2">💡 Tip: Get discovered!</h4>
+              <p className="text-sm text-amber-700">
+                Your offerings appear in the Quick Help section when people search for services you provide. 
+                Make sure to add a detailed description and set your service area to attract more clients!
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Tasks Tab */}
         {activeTab === 'tasks' && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-6">
