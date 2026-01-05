@@ -1020,7 +1020,6 @@ const TaskDetail = () => {
               <p className="text-gray-600 text-sm flex items-center gap-1">
                 <span className="text-red-500">📍</span>
                 {task.location}
-                <span className="text-blue-500 ml-1">• {task.service_radius || 25}km service radius</span>
               </p>
             </div>
             <div className="h-48">
@@ -1040,23 +1039,18 @@ const TaskDetail = () => {
           </div>
         )}
 
-        {/* Stats Bar */}
+        {/* Stats Bar - Only 3 items for Jobs (no Range) */}
         <div className="mt-4 bg-white rounded-lg shadow-md p-3">
-          <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="grid grid-cols-3 gap-2 text-center">
             <div>
               <div className="text-lg">💰</div>
-              <p className="text-[10px] text-gray-500">Price</p>
+              <p className="text-[10px] text-gray-500">Budget</p>
               <p className="font-bold text-sm text-gray-900">€{task.budget || 0}</p>
             </div>
             <div>
               <div className="text-lg">📁</div>
-              <p className="text-[10px] text-gray-500">Type</p>
+              <p className="text-[10px] text-gray-500">Category</p>
               <p className="font-bold text-sm text-gray-900">{getCategoryLabel(task.category)}</p>
-            </div>
-            <div>
-              <div className="text-lg">📍</div>
-              <p className="text-[10px] text-gray-500">Range</p>
-              <p className="font-bold text-sm text-gray-900">{task.service_radius || 25}km</p>
             </div>
             <div>
               <div className="text-lg">📅</div>
