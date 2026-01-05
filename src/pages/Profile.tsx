@@ -291,7 +291,8 @@ const Profile = () => {
     try {
       setUploadingAvatar(true);
       const result = await uploadImage(file);
-      const imageUrl = getImageUrl(result.filename);
+      // Use getImageUrl with the url path returned from server (e.g., /api/uploads/xxx.jpg)
+      const imageUrl = getImageUrl(result.url);
       setFormData(prev => ({ ...prev, avatar_url: imageUrl }));
       setShowAvatarPicker(false);
       toast.success('Avatar uploaded successfully!');
@@ -370,6 +371,13 @@ const Profile = () => {
     return icons[category] || '📋';
   };
 
+  // Helper to get full avatar URL (handles both relative and absolute URLs)
+  const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    if (url.startsWith('http')) return url;
+    return getImageUrl(url);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -392,7 +400,7 @@ const Profile = () => {
   });
 
   const totalTasks = myTasks.length + createdTasks.length;
-  const currentAvatarUrl = formData.avatar_url || profile.avatar_url || profile.profile_picture_url;
+  const currentAvatarUrl = getAvatarDisplayUrl(formData.avatar_url || profile.avatar_url || profile.profile_picture_url);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
