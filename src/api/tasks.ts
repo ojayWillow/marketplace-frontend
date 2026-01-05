@@ -18,7 +18,10 @@ export interface Task {
   priority?: string;
   is_urgent?: boolean;
   creator_id: number;
+  creator_name?: string;
   assigned_to_id?: number;
+  assigned_to_name?: string;
+  deadline?: string;
   created_at?: string;
   updated_at?: string;
   completed_at?: string;
@@ -30,6 +33,13 @@ export interface TaskApplication {
   applicant_id: number;
   applicant_name: string;
   applicant_email?: string;
+  applicant_avatar?: string;
+  applicant_rating?: number;
+  applicant_review_count?: number;
+  applicant_completed_tasks?: number;
+  applicant_member_since?: string;
+  applicant_bio?: string;
+  applicant_city?: string;
   message?: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;

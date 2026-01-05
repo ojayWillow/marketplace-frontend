@@ -74,6 +74,34 @@ const MapRecenter = ({ lat, lng }: { lat: number; lng: number }) => {
   return null;
 };
 
+// Helper function to format member since date
+const formatMemberSince = (dateString?: string): string => {
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 30) return `${diffDays} days`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months`;
+  return `${Math.floor(diffDays / 365)} years`;
+};
+
+// Helper function to render star rating
+const StarRating = ({ rating }: { rating: number }) => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  
+  return (
+    <span className="text-yellow-500">
+      {'★'.repeat(fullStars)}
+      {hasHalfStar && '½'}
+      {'☆'.repeat(emptyStars)}
+    </span>
+  );
+};
+
 const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
@@ -704,40 +732,142 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* Application Modal */}
+        {/* Enhanced Application Modal */}
         {viewingApplications && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setViewingApplications(null)}>
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">Applications</h3>
-                <button onClick={() => setViewingApplications(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            <div className="bg-white rounded-xl p-6 max-w-3xl w-full mx-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Applications</h3>
+                <button onClick={() => setViewingApplications(null)} className="text-gray-400 hover:text-gray-600 text-3xl font-light">×</button>
               </div>
               {loadingApplications ? (
-                <p className="text-center py-8 text-gray-500">Loading...</p>
+                <div className="text-center py-12">
+                  <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading applications...</p>
+                </div>
               ) : applications.length === 0 ? (
-                <p className="text-center py-8 text-gray-500">No applications yet</p>
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-4">📝</div>
+                  <p className="text-gray-500 text-lg">No applications yet</p>
+                  <p className="text-gray-400 text-sm mt-2">Share your task to get more applicants!</p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {applications.map(app => (
-                    <div key={app.id} className={`border rounded-lg p-4 ${app.status === 'accepted' ? 'bg-green-50 border-green-200' : app.status === 'rejected' ? 'bg-gray-50' : 'bg-white'}`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{app.applicant_name}</p>
-                          <p className="text-sm text-gray-600">{app.applicant_email}</p>
-                          {app.message && <p className="text-sm text-gray-700 mt-2">"{app.message}"</p>}
-                          <p className="text-xs text-gray-500 mt-1">{new Date(app.created_at).toLocaleString()}</p>
-                        </div>
-                        <div className="ml-4">
-                          {app.status === 'pending' ? (
-                            <div className="flex gap-2">
-                              <button onClick={() => handleAcceptApplication(viewingApplications, app.id)} className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">✓ Accept</button>
-                              <button onClick={() => handleRejectApplication(viewingApplications, app.id)} className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">× Reject</button>
-                            </div>
+                    <div key={app.id} className={`border-2 rounded-xl p-5 transition-all ${
+                      app.status === 'accepted' ? 'bg-green-50 border-green-300' : 
+                      app.status === 'rejected' ? 'bg-gray-50 border-gray-200 opacity-60' : 
+                      'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
+                    }`}>
+                      <div className="flex gap-4">
+                        {/* Avatar */}
+                        <div className="flex-shrink-0">
+                          {app.applicant_avatar ? (
+                            <img 
+                              src={app.applicant_avatar} 
+                              alt={app.applicant_name}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                            />
                           ) : (
-                            <span className={`text-sm font-medium px-2 py-1 rounded ${app.status === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
-                              {app.status === 'accepted' ? '✓ Accepted' : '× Rejected'}
-                            </span>
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                              {app.applicant_name?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
                           )}
+                        </div>
+                        
+                        {/* Main Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <h4 className="font-bold text-lg text-gray-900">{app.applicant_name}</h4>
+                              {app.applicant_city && (
+                                <p className="text-sm text-gray-500">📍 {app.applicant_city}</p>
+                              )}
+                            </div>
+                            
+                            {/* Status Badge or Action Buttons */}
+                            <div className="flex-shrink-0">
+                              {app.status === 'pending' ? (
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => handleAcceptApplication(viewingApplications, app.id)} 
+                                    className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
+                                  >
+                                    ✓ Accept
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRejectApplication(viewingApplications, app.id)} 
+                                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                                  app.status === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {app.status === 'accepted' ? '✓ Accepted' : 'Declined'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Stats Row */}
+                          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
+                            {/* Rating */}
+                            <div className="flex items-center gap-1">
+                              <StarRating rating={app.applicant_rating || 0} />
+                              <span className="text-gray-600 ml-1">
+                                {(app.applicant_rating || 0).toFixed(1)}
+                                {app.applicant_review_count !== undefined && app.applicant_review_count > 0 && (
+                                  <span className="text-gray-400"> ({app.applicant_review_count} reviews)</span>
+                                )}
+                              </span>
+                            </div>
+                            
+                            {/* Completed Tasks */}
+                            <div className="flex items-center gap-1 text-gray-600">
+                              <span>✅</span>
+                              <span>{app.applicant_completed_tasks || 0} tasks completed</span>
+                            </div>
+                            
+                            {/* Member Since */}
+                            <div className="flex items-center gap-1 text-gray-500">
+                              <span>📅</span>
+                              <span>Member for {formatMemberSince(app.applicant_member_since)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Application Message */}
+                          {app.message && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                              <p className="text-sm text-gray-700 italic">"{app.message}"</p>
+                            </div>
+                          )}
+                          
+                          {/* Bio preview */}
+                          {app.applicant_bio && (
+                            <p className="mt-2 text-sm text-gray-600 line-clamp-2">{app.applicant_bio}</p>
+                          )}
+                          
+                          {/* Footer with timestamp and View Profile */}
+                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                            <p className="text-xs text-gray-400">
+                              Applied {new Date(app.created_at).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                            <Link 
+                              to={`/users/${app.applicant_id}`} 
+                              className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline"
+                              onClick={() => setViewingApplications(null)}
+                            >
+                              View Full Profile →
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>
