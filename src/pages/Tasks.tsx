@@ -92,14 +92,15 @@ const Tasks = () => {
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
+  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default: Riga
   const [locationGranted, setLocationGranted] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(true);
   const [manualLocationSet, setManualLocationSet] = useState(false);
   const [addressSearch, setAddressSearch] = useState('');
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
-  const [locationName, setLocationName] = useState('');
+  const [locationName, setLocationName] = useState('Riga, Latvia');
   const [searchRadius, setSearchRadius] = useState(25);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,6 +111,7 @@ const Tasks = () => {
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load user's offerings for matching (when logged in)
   useEffect(() => {
@@ -128,32 +130,64 @@ const Tasks = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Skip location detection function
+  const skipLocationDetection = () => {
+    setLocationLoading(false);
+    setLocationGranted(true);
+    setLocationName('Riga, Latvia');
+    if (locationTimeoutRef.current) {
+      clearTimeout(locationTimeoutRef.current);
+    }
+  };
+
   useEffect(() => {
     const savedRadius = localStorage.getItem('taskSearchRadius');
     if (savedRadius) {
       setSearchRadius(parseInt(savedRadius, 10));
     }
 
+    // Set a timeout to auto-skip after 5 seconds
+    locationTimeoutRef.current = setTimeout(() => {
+      if (locationLoading) {
+        skipLocationDetection();
+      }
+    }, 5000);
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           setLocationGranted(true);
+          setLocationLoading(false);
+          setLocationName('Your location');
+          if (locationTimeoutRef.current) {
+            clearTimeout(locationTimeoutRef.current);
+          }
         },
         (error) => {
           console.log('Geolocation error:', error);
           setLocationGranted(true);
-        }
+          setLocationLoading(false);
+          setLocationName('Riga, Latvia');
+        },
+        { timeout: 5000, enableHighAccuracy: false }
       );
     } else {
       setLocationGranted(true);
+      setLocationLoading(false);
     }
+
+    return () => {
+      if (locationTimeoutRef.current) {
+        clearTimeout(locationTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleLocationSelect = (lat: number, lng: number, name?: string) => {
     setUserLocation({ lat, lng });
     setManualLocationSet(true);
-    setLocationName(name || '');
+    setLocationName(name || 'Selected location');
     hasFetchedRef.current = false;
     fetchData(true);
     setShowLocationModal(false);
@@ -208,7 +242,7 @@ const Tasks = () => {
 
   const resetToAutoLocation = () => {
     setManualLocationSet(false);
-    setLocationName('');
+    setLocationName('Your location');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
@@ -312,23 +346,39 @@ const Tasks = () => {
     });
   };
 
-  if (loading && !locationGranted) {
+  // Improved loading state with skip option
+  if (locationLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900 mb-2">Loading...</div>
-          <div className="text-gray-600">Getting your location</div>
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md">
+          <div className="relative w-20 h-20 mx-auto mb-4">
+            <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-2xl">📍</div>
+          </div>
+          <div className="text-xl font-bold text-gray-900 mb-2">Finding your location...</div>
+          <div className="text-gray-600 mb-4">This helps show nearby jobs and services</div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+          </div>
+          <button 
+            onClick={skipLocationDetection}
+            className="text-blue-600 hover:text-blue-700 font-medium underline"
+          >
+            Skip → Use Riga as default
+          </button>
         </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (loading && !hasFetchedRef.current) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900 mb-2">Loading...</div>
-          <div className="text-gray-600">Finding nearby opportunities</div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <div className="text-xl font-bold text-gray-900 mb-2">Finding opportunities...</div>
+          <div className="text-gray-600">Searching within {searchRadius}km of {locationName}</div>
         </div>
       </div>
     );
@@ -337,11 +387,12 @@ const Tasks = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-red-600 mb-2">Error</div>
-          <div className="text-gray-600">{error}</div>
-          <button onClick={() => { hasFetchedRef.current = false; fetchData(true); }} className="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
-            Retry
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
+          <div className="text-5xl mb-4">⚠️</div>
+          <div className="text-2xl font-bold text-red-600 mb-2">Oops!</div>
+          <div className="text-gray-600 mb-4">{error}</div>
+          <button onClick={() => { hasFetchedRef.current = false; fetchData(true); }} className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">
+            Try Again
           </button>
         </div>
       </div>
@@ -368,25 +419,24 @@ const Tasks = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
-            <p className="text-gray-600">Find help or offer your services</p>
+            <p className="text-gray-600">Find help or offer your services nearby</p>
           </div>
-          <div className="flex gap-3">
-            {isAuthenticated && (
+          <div className="flex gap-3 flex-wrap">
+            {isAuthenticated ? (
               <>
-                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
-                  + Post a Job
+                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
+                  <span>📝</span> Post a Job
                 </button>
-                <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium">
-                  + Post Offering
+                <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
+                  <span>👋</span> Offer Service
                 </button>
               </>
-            )}
-            {!isAuthenticated && (
-              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
-                Login to Get Started
+            ) : (
+              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+                Login to Post Jobs or Offer Services
               </button>
             )}
           </div>
@@ -395,19 +445,19 @@ const Tasks = () => {
         {/* Matching notification banner */}
         {isAuthenticated && matchingJobsCount > 0 && myOfferingCategories.length > 0 && (
           <div className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-4 text-white shadow-md">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">✨</span>
                 <div>
                   <p className="font-semibold">{matchingJobsCount} job{matchingJobsCount !== 1 ? 's' : ''} match your offerings!</p>
-                  <p className="text-green-100 text-sm">Based on your active service offerings in: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
+                  <p className="text-green-100 text-sm">Based on your services: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setActiveTab('jobs')}
-                className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition-colors"
+                className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition-colors whitespace-nowrap"
               >
-                View Matches
+                View Matching Jobs →
               </button>
             </div>
           </div>
@@ -415,25 +465,27 @@ const Tasks = () => {
 
         {/* SEARCH BAR */}
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
-            <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
-              <span>📍</span>
-              <span className="text-sm text-gray-700">{manualLocationSet && locationName ? locationName.split(',')[0] : 'Auto-detected'}</span>
-            </button>
-            <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
-              <option value={5}>5 km</option>
-              <option value={10}>10 km</option>
-              <option value={25}>25 km</option>
-              <option value={50}>50 km</option>
-              <option value={100}>100 km</option>
-            </select>
-            <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-              ⚙️
-            </button>
+            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+              <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors flex-1 sm:flex-initial justify-center">
+                <span>📍</span>
+                <span className="text-sm text-gray-700 truncate max-w-[120px]">{manualLocationSet && locationName ? locationName.split(',')[0] : locationName}</span>
+              </button>
+              <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
+                <option value={5}>5 km</option>
+                <option value={10}>10 km</option>
+                <option value={25}>25 km</option>
+                <option value={50}>50 km</option>
+                <option value={100}>100 km</option>
+              </select>
+              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                ⚙️ Filters
+              </button>
+            </div>
           </div>
           
           {showLocationModal && (
@@ -470,98 +522,104 @@ const Tasks = () => {
         </div>
 
         {/* THREE TABS: All, Jobs, Offerings */}
-        <div className="mb-6 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
-          <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+        <div className="mb-4 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
+          <button onClick={() => setActiveTab('all')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             🌐 All ({filteredTasks.length + filteredOfferings.length})
           </button>
-          <button onClick={() => setActiveTab('jobs')} className={`px-6 py-3 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+          <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💼 Jobs ({filteredTasks.length})
             {isAuthenticated && matchingJobsCount > 0 && activeTab !== 'jobs' && (
               <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                {matchingJobsCount} match{matchingJobsCount !== 1 ? 'es' : ''}
+                {matchingJobsCount} match
               </span>
             )}
           </button>
-          <button onClick={() => setActiveTab('offerings')} className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+          <button onClick={() => setActiveTab('offerings')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             👋 Offerings ({filteredOfferings.length})
           </button>
         </div>
 
-        {/* MAP */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6" style={{ height: '400px' }}>
-          <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
-            <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
-            <LocationPicker onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)} />
-            <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
-              <Popup>
-                <div className="p-2">
-                  <p className="font-bold">📍 Your Location</p>
-                  {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
-                  <p className="text-xs text-gray-500">{manualLocationSet ? '(Manually set)' : '(Auto-detected)'}</p>
-                </div>
-              </Popup>
-            </Marker>
-            {/* Task markers (blue) */}
-            {mapTasks.map((task) => (
-              <Marker key={`task-${task.id}`} position={[task.latitude, task.longitude]}>
-                <Popup>
-                  <div className="p-2">
-                    <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
-                    <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">{task.category}</span>
-                    </div>
-                    <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-            {/* Offering markers (amber/orange) */}
-            {mapOfferings.map((offering) => (
-              <Marker key={`offering-${offering.id}`} position={[offering.latitude, offering.longitude]} icon={offeringLocationIcon}>
-                <Popup>
-                  <div className="p-2">
-                    <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
-                    <p className="text-sm text-gray-600 mb-2">{offering.description.substring(0, 100)}...</p>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-green-600 font-bold">
-                        €{offering.price || 0}
-                        {offering.price_type === 'hourly' && '/hr'}
-                        {offering.price_type === 'negotiable' && ' (negotiable)'}
-                      </span>
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">{offering.category}</span>
-                    </div>
-                    <Link to={`/offerings/${offering.id}`} className="text-xs text-amber-500 hover:text-amber-700">View Details →</Link>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-
-        {/* Legend */}
-        <div className="flex gap-4 mb-4 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-            <span>Jobs</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-amber-500"></div>
-            <span>Offerings</span>
-          </div>
-          {isAuthenticated && myOfferingCategories.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">✨ Match</span>
-              <span>Jobs matching your offerings</span>
+        {/* MAP with integrated legend */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          {/* Map Legend - Always visible above map */}
+          <div className="px-4 py-2 bg-gray-50 border-b flex flex-wrap items-center gap-4 text-sm">
+            <span className="font-medium text-gray-700">Map Legend:</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+              <span className="text-gray-600">Your location</span>
             </div>
-          )}
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span className="text-gray-600">Jobs (blue pins)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+              <span className="text-gray-600">Offerings (orange pins)</span>
+            </div>
+            {isAuthenticated && myOfferingCategories.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">✨</span>
+                <span className="text-gray-600">Matching jobs</span>
+              </div>
+            )}
+          </div>
+          <div style={{ height: '350px' }}>
+            <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
+              <LocationPicker onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)} />
+              <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+                <Popup>
+                  <div className="p-2">
+                    <p className="font-bold">📍 Your Location</p>
+                    {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
+                    <p className="text-xs text-gray-500">{manualLocationSet ? '(Manually set)' : '(Auto-detected)'}</p>
+                  </div>
+                </Popup>
+              </Marker>
+              {/* Task markers (blue) */}
+              {mapTasks.map((task) => (
+                <Marker key={`task-${task.id}`} position={[task.latitude, task.longitude]}>
+                  <Popup>
+                    <div className="p-2">
+                      <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
+                      <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">{task.category}</span>
+                      </div>
+                      <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+              {/* Offering markers (amber/orange) */}
+              {mapOfferings.map((offering) => (
+                <Marker key={`offering-${offering.id}`} position={[offering.latitude, offering.longitude]} icon={offeringLocationIcon}>
+                  <Popup>
+                    <div className="p-2">
+                      <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
+                      <p className="text-sm text-gray-600 mb-2">{offering.description.substring(0, 100)}...</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-green-600 font-bold">
+                          €{offering.price || 0}
+                          {offering.price_type === 'hourly' && '/hr'}
+                          {offering.price_type === 'negotiable' && ' (negotiable)'}
+                        </span>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">{offering.category}</span>
+                      </div>
+                      <Link to={`/offerings/${offering.id}`} className="text-xs text-amber-500 hover:text-amber-700">View Details →</Link>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
         </div>
 
         {/* CONTENT AREA */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
             {activeTab === 'all' && 'Jobs & Offerings'}
             {activeTab === 'jobs' && 'Available Jobs'}
             {activeTab === 'offerings' && 'Service Offerings'}
@@ -574,15 +632,24 @@ const Tasks = () => {
               {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💼 Jobs <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
               
               {filteredTasks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                  <div className="text-4xl mb-4">💼</div>
-                  <p>No jobs found in your area</p>
-                  {isAuthenticated && (
-                    <button onClick={() => navigate('/tasks/create')} className="mt-4 text-blue-500 hover:text-blue-600 underline">Post the first job</button>
+                <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
+                  <div className="text-5xl mb-4">💼</div>
+                  <p className="text-gray-900 font-semibold text-lg mb-2">No jobs posted nearby yet</p>
+                  <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                    Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.
+                  </p>
+                  {isAuthenticated ? (
+                    <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+                      📝 Post Your First Job
+                    </button>
+                  ) : (
+                    <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+                      Login to Post a Job
+                    </button>
                   )}
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {filteredTasks.map((task) => (
                     <JobCard 
                       key={task.id} 
@@ -602,15 +669,24 @@ const Tasks = () => {
               {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">👋 Offerings <span className="text-sm font-normal text-gray-500">({filteredOfferings.length})</span></h3>}
               
               {filteredOfferings.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                  <div className="text-4xl mb-4">👋</div>
-                  <p>No service offerings available in your area yet</p>
-                  {isAuthenticated && (
-                    <button onClick={() => navigate('/offerings/create')} className="mt-4 text-amber-500 hover:text-amber-600 underline">Create your first offering</button>
+                <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
+                  <div className="text-5xl mb-4">👋</div>
+                  <p className="text-gray-900 font-semibold text-lg mb-2">No service providers in your area yet</p>
+                  <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                    Are you skilled at something? Advertise your services here and get hired by people nearby!
+                  </p>
+                  {isAuthenticated ? (
+                    <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
+                      👋 Offer Your Services
+                    </button>
+                  ) : (
+                    <button onClick={() => navigate('/login')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
+                      Login to Offer Services
+                    </button>
                   )}
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredOfferings.map((offering) => (
                     <OfferingCard key={offering.id} offering={offering} userLocation={userLocation} />
                   ))}
@@ -628,8 +704,8 @@ const Tasks = () => {
                 <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
                 <p className="text-blue-100">View your posted jobs, offerings, and applications in your profile page.</p>
               </div>
-              <Link to="/profile" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
-                Go to Profile →
+              <Link to="/profile?tab=tasks" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
+                Go to My Tasks →
               </Link>
             </div>
           </div>
@@ -659,14 +735,14 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
         </div>
       )}
       
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">{task.icon}</span>
-            <h4 className="text-lg font-semibold text-gray-900">{task.title}</h4>
+            <span className="text-xl sm:text-2xl flex-shrink-0">{task.icon}</span>
+            <h4 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{task.title}</h4>
           </div>
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
           </div>
@@ -674,8 +750,8 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
             <p className="text-xs text-gray-500 mt-2">Posted by {task.creator_name}</p>
           )}
         </div>
-        <div className="text-right ml-4">
-          <div className="text-xl font-bold text-green-600">€{task.budget || task.reward || 0}</div>
+        <div className="text-right flex-shrink-0">
+          <div className="text-lg sm:text-xl font-bold text-green-600">€{task.budget || task.reward || 0}</div>
         </div>
       </div>
     </Link>
@@ -688,13 +764,13 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
   
   return (
     <Link to={`/offerings/${offering.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-amber-300 transition-all">
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         {/* Avatar */}
         <div className="flex-shrink-0">
           {offering.creator_avatar ? (
-            <img src={offering.creator_avatar} alt={offering.creator_name} className="w-14 h-14 rounded-full object-cover border-2 border-amber-200" />
+            <img src={offering.creator_avatar} alt={offering.creator_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-amber-200" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xl font-bold">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg sm:text-xl font-bold">
               {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
             </div>
           )}
@@ -702,19 +778,19 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
         
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-900 truncate">{offering.title}</h4>
+          <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{offering.title}</h4>
           <p className="text-xs text-gray-500 mb-1">by {offering.creator_name}</p>
           
           {/* Rating */}
-          {offering.creator_rating !== undefined && (
+          {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
             <div className="flex items-center gap-1 mb-2">
               <StarRating rating={offering.creator_rating} />
-              <span className="text-sm text-gray-500">({offering.creator_review_count || 0})</span>
+              <span className="text-xs sm:text-sm text-gray-500">({offering.creator_review_count || 0})</span>
             </div>
           )}
           
           {/* Price */}
-          <div className="text-lg font-bold text-green-600 mb-2">
+          <div className="text-base sm:text-lg font-bold text-green-600 mb-2">
             €{offering.price || 0}
             {offering.price_type === 'hourly' && '/hr'}
             {offering.price_type === 'fixed' && ' fixed'}
@@ -722,7 +798,7 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
           </div>
           
           {/* Category & Distance */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{getCategoryLabel(offering.category)}</span>
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
           </div>
