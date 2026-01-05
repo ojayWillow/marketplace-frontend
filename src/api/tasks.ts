@@ -27,6 +27,25 @@ export interface Task {
   completed_at?: string;
 }
 
+export interface Helper {
+  id: number;
+  name: string;
+  email?: string;
+  avatar?: string;
+  bio?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  rating?: number;
+  review_count?: number;
+  completed_tasks?: number;
+  skills?: string[];
+  categories?: string[];
+  hourly_rate?: number;
+  is_available?: boolean;
+  member_since?: string;
+}
+
 export interface TaskApplication {
   id: number;
   task_id: number;
@@ -56,8 +75,23 @@ export interface GetTasksParams {
   radius?: number;
 }
 
+export interface GetHelpersParams {
+  page?: number;
+  per_page?: number;
+  category?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+}
+
 export interface GetTasksResponse {
   tasks: Task[];
+  total: number;
+  page: number;
+}
+
+export interface GetHelpersResponse {
+  helpers: Helper[];
   total: number;
   page: number;
 }
@@ -72,6 +106,14 @@ export interface GetApplicationsResponse {
  */
 export const getTasks = async (params: GetTasksParams = {}): Promise<GetTasksResponse> => {
   const response = await apiClient.get('/api/tasks', { params });
+  return response.data;
+};
+
+/**
+ * Get helpers (users who marked themselves as available for work)
+ */
+export const getHelpers = async (params: GetHelpersParams = {}): Promise<GetHelpersResponse> => {
+  const response = await apiClient.get('/api/helpers', { params });
   return response.data;
 };
 
@@ -104,6 +146,14 @@ export const getTask = async (taskId: number): Promise<Task> => {
  */
 export const createTask = async (taskData: Partial<Task>): Promise<Task> => {
   const response = await apiClient.post('/api/tasks', taskData);
+  return response.data.task;
+};
+
+/**
+ * Update an existing task
+ */
+export const updateTask = async (taskId: number, taskData: Partial<Task>): Promise<Task> => {
+  const response = await apiClient.put(`/api/tasks/${taskId}`, taskData);
   return response.data.task;
 };
 
