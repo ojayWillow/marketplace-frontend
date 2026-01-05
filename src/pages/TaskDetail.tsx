@@ -4,6 +4,39 @@ import { getTask, Task, TaskApplication, applyToTask, getTaskApplications, accep
 import { startConversation } from '../api/messages';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
+import apiClient from '../api/client';
+
+interface Review {
+  id: number;
+  rating: number;
+  content: string;
+  reviewer_id: number;
+  reviewed_user_id: number;
+  review_type: string;
+  created_at: string;
+  reviewer?: {
+    id: number;
+    username: string;
+    profile_picture_url?: string;
+  };
+  reviewed_user?: {
+    id: number;
+    username: string;
+    profile_picture_url?: string;
+  };
+}
+
+interface CanReviewResponse {
+  can_review: boolean;
+  reason?: string;
+  review_type?: string;
+  reviewee?: {
+    id: number;
+    username: string;
+    profile_picture_url?: string;
+  };
+  existing_review?: Review;
+}
 
 const TaskDetail = () => {
   const navigate = useNavigate();
@@ -20,6 +53,15 @@ const TaskDetail = () => {
   const [messageLoading, setMessageLoading] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [showApplicationForm, setShowApplicationForm] = useState(false);
+  
+  // Review state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -32,7 +74,14 @@ const TaskDetail = () => {
     if (task && user?.id === task.creator_id && task.status === 'open') {
       fetchApplications();
     }
-  }, [task, user]);
+    // Fetch reviews for completed tasks
+    if (task && task.status === 'completed') {
+      fetchReviews();
+      if (isAuthenticated) {
+        checkCanReview();
+      }
+    }
+  }, [task, user, isAuthenticated]);
 
   const fetchTask = async () => {
     try {
@@ -56,6 +105,47 @@ const TaskDetail = () => {
       console.error('Error fetching applications:', error);
     } finally {
       setApplicationsLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const response = await apiClient.get(`/api/reviews/task/${id}`);
+      setReviews(response.data.reviews || []);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const checkCanReview = async () => {
+    try {
+      const response = await apiClient.get(`/api/reviews/task/${id}/can-review`);
+      setCanReview(response.data);
+    } catch (error) {
+      console.error('Error checking review status:', error);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!canReview?.can_review) return;
+
+    try {
+      setReviewLoading(true);
+      await apiClient.post(`/api/reviews/task/${id}`, {
+        rating: reviewRating,
+        content: reviewContent
+      });
+      toast.success('Review submitted successfully!');
+      setShowReviewForm(false);
+      setReviewContent('');
+      setReviewRating(5);
+      fetchReviews();
+      checkCanReview();
+    } catch (error: any) {
+      console.error('Error submitting review:', error);
+      toast.error(error?.response?.data?.error || 'Failed to submit review');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -164,7 +254,7 @@ const TaskDetail = () => {
     try {
       setActionLoading(true);
       await confirmTaskCompletion(Number(id));
-      toast.success('Task completed! Thank you for using our service.');
+      toast.success('Task completed! You can now leave a review.');
       fetchTask();
     } catch (error: any) {
       console.error('Error confirming task:', error);
@@ -270,19 +360,208 @@ const TaskDetail = () => {
     );
   };
 
-  const renderStars = (rating: number | undefined) => {
-    if (!rating) return null;
+  const renderStars = (rating: number | undefined, interactive = false) => {
+    if (rating === undefined && !interactive) return null;
+    const displayRating = interactive ? (hoverRating || reviewRating) : (rating || 0);
+    
     return (
       <div className="flex items-center">
         {[1, 2, 3, 4, 5].map(star => (
-          <span 
-            key={star} 
-            className={`text-sm ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+          <button
+            key={star}
+            type="button"
+            disabled={!interactive}
+            onClick={() => interactive && setReviewRating(star)}
+            onMouseEnter={() => interactive && setHoverRating(star)}
+            onMouseLeave={() => interactive && setHoverRating(0)}
+            className={`text-2xl ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'} ${
+              star <= displayRating ? 'text-yellow-400' : 'text-gray-300'
+            }`}
           >
             ★
-          </span>
+          </button>
         ))}
-        <span className="text-xs text-gray-500 ml-1">({rating.toFixed(1)})</span>
+        {!interactive && rating && <span className="text-sm text-gray-500 ml-2">({rating.toFixed(1)})</span>}
+      </div>
+    );
+  };
+
+  const renderReviewSection = () => {
+    if (task?.status !== 'completed') return null;
+
+    const isCreator = user?.id === task.creator_id;
+    const isWorker = user?.id === task.assigned_to_id;
+    const isInvolved = isCreator || isWorker;
+
+    return (
+      <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          ⭐ Reviews
+          {reviews.length > 0 && (
+            <span className="text-sm font-normal text-gray-500">({reviews.length})</span>
+          )}
+        </h2>
+
+        {/* Leave Review Section */}
+        {canReview?.can_review && (
+          <div className="mb-6">
+            {!showReviewForm ? (
+              <button
+                onClick={() => setShowReviewForm(true)}
+                className="w-full bg-yellow-50 border-2 border-yellow-200 border-dashed rounded-lg p-4 text-center hover:bg-yellow-100 transition-colors"
+              >
+                <span className="text-2xl mb-2 block">⭐</span>
+                <span className="font-medium text-yellow-700">
+                  Leave a review for {canReview.reviewee?.username}
+                </span>
+                <p className="text-sm text-yellow-600 mt-1">
+                  {canReview.review_type === 'client_review' 
+                    ? 'Rate how the helper performed on this task'
+                    : 'Rate your experience with the task creator'}
+                </p>
+              </button>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-3">
+                  Review for {canReview.reviewee?.username}
+                </h3>
+                
+                {/* Star Rating */}
+                <div className="mb-4">
+                  <label className="block text-sm text-gray-600 mb-2">Rating</label>
+                  {renderStars(reviewRating, true)}
+                  <p className="text-sm text-gray-500 mt-1">
+                    {reviewRating === 1 && 'Poor'}
+                    {reviewRating === 2 && 'Fair'}
+                    {reviewRating === 3 && 'Good'}
+                    {reviewRating === 4 && 'Very Good'}
+                    {reviewRating === 5 && 'Excellent'}
+                  </p>
+                </div>
+
+                {/* Comment */}
+                <div className="mb-4">
+                  <label className="block text-sm text-gray-600 mb-2">Comment (optional)</label>
+                  <textarea
+                    value={reviewContent}
+                    onChange={(e) => setReviewContent(e.target.value)}
+                    placeholder="Share your experience..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px]"
+                  />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={reviewLoading}
+                    className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-medium"
+                  >
+                    {reviewLoading ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowReviewForm(false);
+                      setReviewContent('');
+                      setReviewRating(5);
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Already reviewed message */}
+        {canReview && !canReview.can_review && canReview.existing_review && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-700 flex items-center gap-2">
+              <span>✅</span> You've already reviewed this task
+            </p>
+          </div>
+        )}
+
+        {/* Reviews List */}
+        {reviews.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <span className="text-4xl mb-2 block">💬</span>
+            <p className="text-gray-500">No reviews yet</p>
+            {isInvolved && task.status === 'completed' && (
+              <p className="text-sm text-gray-400 mt-1">Be the first to leave a review!</p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div key={review.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  {/* Reviewer Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {review.reviewer?.profile_picture_url ? (
+                      <img
+                        src={review.reviewer.profile_picture_url}
+                        alt={review.reviewer.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-500 text-sm">
+                        {review.reviewer?.username?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div>
+                        <Link
+                          to={`/users/${review.reviewer_id}`}
+                          className="font-medium text-gray-900 hover:text-blue-600"
+                        >
+                          {review.reviewer?.username || 'Unknown'}
+                        </Link>
+                        <span className="text-gray-400 mx-2">→</span>
+                        <Link
+                          to={`/users/${review.reviewed_user_id}`}
+                          className="text-gray-600 hover:text-blue-600"
+                        >
+                          {review.reviewed_user?.username || 'Unknown'}
+                        </Link>
+                        <span className="text-xs text-gray-400 ml-2">
+                          ({review.review_type === 'client_review' ? 'as helper' : 'as client'})
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <span
+                            key={star}
+                            className={`text-sm ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {review.content && (
+                      <p className="text-gray-700 mt-2">{review.content}</p>
+                    )}
+
+                    <p className="text-xs text-gray-400 mt-2">
+                      {new Date(review.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -668,6 +947,9 @@ const TaskDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        {renderReviewSection()}
 
         {task.latitude && task.longitude && (
           <div className="mt-6 bg-white rounded-lg shadow-md p-6">
