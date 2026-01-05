@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
 import { listingsApi, type Listing } from '../api/listings';
 import { reviewsApi } from '../api/reviews';
-import { getImageUrl } from '../api/uploads';
+import { getImageUrl, uploadImage } from '../api/uploads';
 import { Task, getMyTasks, getCreatedTasks, cancelTask, confirmTaskCompletion } from '../api/tasks';
 
 interface UserProfile {
@@ -39,6 +39,23 @@ interface Review {
   created_at: string;
 }
 
+// Pre-made avatar options using DiceBear API
+const AVATAR_STYLES = [
+  { id: 'avataaars', name: 'Cartoon' },
+  { id: 'bottts', name: 'Robot' },
+  { id: 'fun-emoji', name: 'Emoji' },
+  { id: 'lorelei', name: 'Artistic' },
+  { id: 'micah', name: 'Simple' },
+  { id: 'notionists', name: 'Minimalist' },
+  { id: 'personas', name: 'Person' },
+  { id: 'adventurer', name: 'Adventure' },
+];
+
+// Generate avatar URL from DiceBear
+const generateAvatarUrl = (style: string, seed: string) => {
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+};
+
 const Profile = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, setAuth, token } = useAuthStore();
@@ -57,6 +74,13 @@ const Profile = () => {
   const [taskSubTab, setTaskSubTab] = useState<'assigned' | 'created'>('assigned');
   const [editingReview, setEditingReview] = useState<number | null>(null);
   const [reviewEditData, setReviewEditData] = useState<{ rating: number; content: string }>({ rating: 5, content: '' });
+  
+  // Avatar picker state
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [selectedAvatarStyle, setSelectedAvatarStyle] = useState('avataaars');
+  const [avatarSeed, setAvatarSeed] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -77,6 +101,13 @@ const Profile = () => {
     fetchMyListings();
     fetchTasks();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    // Set initial avatar seed from username
+    if (profile?.username) {
+      setAvatarSeed(profile.username);
+    }
+  }, [profile?.username]);
 
   const fetchProfile = async () => {
     try {
@@ -229,6 +260,49 @@ const Profile = () => {
     }));
   };
 
+  // Avatar functions
+  const handleSelectGeneratedAvatar = () => {
+    const avatarUrl = generateAvatarUrl(selectedAvatarStyle, avatarSeed);
+    setFormData(prev => ({ ...prev, avatar_url: avatarUrl }));
+    setShowAvatarPicker(false);
+  };
+
+  const handleRandomizeSeed = () => {
+    const randomSeed = Math.random().toString(36).substring(2, 10);
+    setAvatarSeed(randomSeed);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const result = await uploadImage(file);
+      const imageUrl = getImageUrl(result.filename);
+      setFormData(prev => ({ ...prev, avatar_url: imageUrl }));
+      setShowAvatarPicker(false);
+      toast.success('Avatar uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center">
@@ -318,6 +392,7 @@ const Profile = () => {
   });
 
   const totalTasks = myTasks.length + createdTasks.length;
+  const currentAvatarUrl = formData.avatar_url || profile.avatar_url || profile.profile_picture_url;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -328,9 +403,9 @@ const Profile = () => {
             {/* Avatar */}
             <div className="relative">
               <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                {profile.avatar_url || profile.profile_picture_url ? (
+                {currentAvatarUrl ? (
                   <img 
-                    src={profile.avatar_url || profile.profile_picture_url} 
+                    src={currentAvatarUrl} 
                     alt={profile.username}
                     className="w-full h-full object-cover"
                   />
@@ -346,6 +421,14 @@ const Profile = () => {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
+              )}
+              {editing && (
+                <button
+                  onClick={() => setShowAvatarPicker(true)}
+                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 transition-colors shadow-md"
+                >
+                  📷 Change
+                </button>
               )}
             </div>
 
@@ -422,6 +505,114 @@ const Profile = () => {
             )}
           </div>
         </div>
+
+        {/* Avatar Picker Modal */}
+        {showAvatarPicker && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAvatarPicker(false)}>
+            <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Choose Your Avatar</h3>
+                <button onClick={() => setShowAvatarPicker(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+              </div>
+
+              {/* Upload Custom Photo */}
+              <div className="mb-6">
+                <h4 className="font-medium text-gray-700 mb-3">📷 Upload Your Photo</h4>
+                <div className="flex items-center gap-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="flex-1 border-2 border-dashed border-gray-300 rounded-lg py-8 px-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  >
+                    {uploadingAvatar ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                        <span>Uploading...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-4xl mb-2">📁</div>
+                        <p className="text-gray-600">Click to upload an image</p>
+                        <p className="text-xs text-gray-400 mt-1">Max 5MB, JPG/PNG</p>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-medium text-gray-700 mb-3">🎨 Or Choose a Generated Avatar</h4>
+                
+                {/* Style Selection */}
+                <div className="mb-4">
+                  <label className="block text-sm text-gray-600 mb-2">Avatar Style</label>
+                  <div className="flex flex-wrap gap-2">
+                    {AVATAR_STYLES.map(style => (
+                      <button
+                        key={style.id}
+                        onClick={() => setSelectedAvatarStyle(style.id)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedAvatarStyle === style.id
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {style.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Seed Input */}
+                <div className="mb-4">
+                  <label className="block text-sm text-gray-600 mb-2">Seed (customize your avatar)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={avatarSeed}
+                      onChange={(e) => setAvatarSeed(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter any text..."
+                    />
+                    <button
+                      onClick={handleRandomizeSeed}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      🎲 Random
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500 mb-2">Preview</p>
+                    <img
+                      src={generateAvatarUrl(selectedAvatarStyle, avatarSeed)}
+                      alt="Avatar Preview"
+                      className="w-24 h-24 rounded-full border-4 border-white shadow-md"
+                    />
+                  </div>
+                </div>
+
+                {/* Select Button */}
+                <button
+                  onClick={handleSelectGeneratedAvatar}
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                >
+                  ✅ Use This Avatar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
@@ -544,19 +735,6 @@ const Profile = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profile Picture URL</label>
-                  <input
-                    type="url"
-                    name="avatar_url"
-                    value={formData.avatar_url}
-                    onChange={handleChange}
-                    placeholder="https://example.com/my-photo.jpg"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Enter a URL to your profile picture</p>
                 </div>
               </div>
             ) : (
