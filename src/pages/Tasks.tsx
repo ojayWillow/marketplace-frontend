@@ -138,6 +138,11 @@ const Tasks = () => {
   const [applications, setApplications] = useState<TaskApplication[]>([]);
   const [loadingApplications, setLoadingApplications] = useState(false);
   
+  // Application form modal state
+  const [applyingToTask, setApplyingToTask] = useState<Task | null>(null);
+  const [applicationMessage, setApplicationMessage] = useState('');
+  const [submittingApplication, setSubmittingApplication] = useState(false);
+  
   const hasFetchedRef = useRef(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -354,24 +359,34 @@ const Tasks = () => {
     iconAnchor: [10, 10]
   });
 
-  const handleApplyTask = async (taskId: number) => {
+  // Open the application form modal
+  const handleOpenApplyModal = (task: Task) => {
     if (!isAuthenticated) {
       toast.warning('Please login to apply');
       navigate('/login');
       return;
     }
+    setApplyingToTask(task);
+    setApplicationMessage('');
+  };
 
+  // Submit the application with message
+  const handleSubmitApplication = async () => {
+    if (!applyingToTask) return;
+    
     try {
-      setApplyingTask(taskId);
-      await applyToTask(taskId);
+      setSubmittingApplication(true);
+      await applyToTask(applyingToTask.id, applicationMessage || undefined);
       toast.success('Application submitted! The task owner will review your application.');
+      setApplyingToTask(null);
+      setApplicationMessage('');
       hasFetchedRef.current = false;
       await fetchTasks(true);
     } catch (error: any) {
       console.error('Error applying to task:', error);
       toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
     } finally {
-      setApplyingTask(null);
+      setSubmittingApplication(false);
     }
   };
 
@@ -716,7 +731,7 @@ const Tasks = () => {
                     viewMode={activeTab === 'available' ? 'available' : isMyPostedTask ? 'posted' : 'accepted'}
                     processingTask={processingTask} 
                     applyingTask={applyingTask}
-                    onApply={handleApplyTask} 
+                    onApply={handleOpenApplyModal} 
                     onMarkDone={handleMarkDone} 
                     onConfirm={handleConfirmCompletion} 
                     onDispute={handleDispute}
@@ -731,6 +746,49 @@ const Tasks = () => {
             </div>
           )}
         </div>
+
+        {/* Application Form Modal */}
+        {applyingToTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setApplyingToTask(null)}>
+            <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Your Application</h3>
+              
+              <div className="mb-4">
+                <textarea
+                  value={applicationMessage}
+                  onChange={(e) => setApplicationMessage(e.target.value)}
+                  placeholder="Introduce yourself and explain why you're a good fit for this task (optional)..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSubmitApplication}
+                  disabled={submittingApplication}
+                  className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                >
+                  {submittingApplication ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>✅ Submit Application</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setApplyingToTask(null)}
+                  disabled={submittingApplication}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Enhanced Application Modal */}
         {viewingApplications && (
@@ -887,7 +945,7 @@ interface TaskCardProps {
   viewMode: 'available' | 'accepted' | 'posted';
   processingTask: number | null;
   applyingTask: number | null;
-  onApply: (taskId: number) => void;
+  onApply: (task: Task) => void;
   onMarkDone: (taskId: number) => void;
   onConfirm: (taskId: number) => void;
   onDispute: (taskId: number) => void;
@@ -927,7 +985,7 @@ const TaskCard = ({ task, viewMode, processingTask, applyingTask, onApply, onMar
           
           {/* Available Tasks - Apply button */}
           {viewMode === 'available' && (
-            <button onClick={(e) => { e.preventDefault(); onApply(task.id); }} disabled={applyingTask === task.id}
+            <button onClick={(e) => { e.preventDefault(); onApply(task); }} disabled={applyingTask === task.id}
               className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
               {applyingTask === task.id ? 'Applying...' : 'Apply'}
             </button>
