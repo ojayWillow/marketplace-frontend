@@ -739,49 +739,52 @@ const TaskDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* HERO HEADER - Matching Offering style */}
+      {/* HEADER - Compact like Offering page */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto px-4 py-5">
           {/* Back button */}
-          <Link to="/tasks" className="inline-flex items-center text-blue-100 hover:text-white mb-4 transition-colors">
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link to="/tasks" className="inline-flex items-center text-blue-200 hover:text-white text-sm mb-3 transition-colors">
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Jobs
           </Link>
 
-          {/* Category badge */}
-          <div className="mb-3">
-            <span className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium">
-              <span>{getCategoryIcon(task.category)}</span>
-              {getCategoryLabel(task.category)}
-            </span>
-          </div>
-
-          {/* Title */}
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">{task.title}</h1>
-
-          {/* Status badges row */}
-          <div className="flex flex-wrap items-center gap-2">
-            {getStatusBadge(task.status)}
-            {getPriorityBadge(task.priority || 'normal')}
-            {task.is_urgent && (
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">⚡ Urgent</span>
-            )}
-            {showApplications && pendingApplications.length > 0 && (
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-white text-blue-600">
-                📩 {pendingApplications.length} application{pendingApplications.length !== 1 ? 's' : ''}
+          {/* Header content row */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              {/* Category badge */}
+              <span className="inline-flex items-center gap-1.5 bg-white/20 text-white px-2.5 py-1 rounded-full text-sm font-medium mb-2">
+                <span>{getCategoryIcon(task.category)}</span>
+                {getCategoryLabel(task.category)}
               </span>
+
+              {/* Title */}
+              <h1 className="text-xl md:text-2xl font-bold text-white mb-2">{task.title}</h1>
+
+              {/* Status badges row */}
+              <div className="flex flex-wrap items-center gap-2">
+                {getStatusBadge(task.status)}
+                {getPriorityBadge(task.priority || 'normal')}
+                {task.is_urgent && (
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">⚡ Urgent</span>
+                )}
+                {showApplications && pendingApplications.length > 0 && (
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-white text-blue-600">
+                    📩 {pendingApplications.length} application{pendingApplications.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Budget - Right side */}
+            {task.budget && (
+              <div className="text-right flex-shrink-0">
+                <p className="text-blue-200 text-xs uppercase tracking-wide">Budget</p>
+                <p className="text-2xl md:text-3xl font-bold text-white">€{task.budget}</p>
+              </div>
             )}
           </div>
-
-          {/* Budget display - top right on desktop */}
-          {task.budget && (
-            <div className="mt-4 md:absolute md:top-6 md:right-4 text-right">
-              <p className="text-blue-200 text-sm">Budget</p>
-              <p className="text-3xl font-bold text-white">€{task.budget}</p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -789,9 +792,9 @@ const TaskDetail = () => {
         {/* Main Content Card */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Posted by section */}
-          <div className="p-6 border-b flex items-center justify-between">
+          <div className="p-5 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
                 {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
               </div>
               <div>
@@ -805,7 +808,7 @@ const TaskDetail = () => {
               <button
                 onClick={handleMessageCreator}
                 disabled={messageLoading}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium flex items-center gap-2"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium flex items-center gap-2 text-sm"
               >
                 <span>💬</span> Contact
               </button>
@@ -813,18 +816,18 @@ const TaskDetail = () => {
           </div>
 
           {/* About this job */}
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">About this job</h2>
+          <div className="p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-2">About this job</h2>
             <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
           {/* Details Grid */}
           {(task.deadline || task.assigned_to_name) && (
-            <div className="px-6 pb-6">
+            <div className="px-5 pb-5">
               {task.deadline && (
-                <div className="mb-4">
-                  <h3 className="text-md font-semibold text-gray-900 mb-2">Deadline</h3>
-                  <p className="text-gray-600 flex items-center gap-2">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Deadline</h3>
+                  <p className="text-gray-600 flex items-center gap-2 text-sm">
                     <span>📅</span>
                     {new Date(task.deadline).toLocaleDateString('en-US', {
                       weekday: 'long',
@@ -837,9 +840,9 @@ const TaskDetail = () => {
               )}
               
               {task.assigned_to_name && (
-                <div className="mb-4">
-                  <h3 className="text-md font-semibold text-gray-900 mb-2">Assigned to</h3>
-                  <Link to={`/users/${task.assigned_to_id}`} className="text-blue-600 hover:text-blue-700 flex items-center gap-2">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Assigned to</h3>
+                  <Link to={`/users/${task.assigned_to_id}`} className="text-blue-600 hover:text-blue-700 flex items-center gap-2 text-sm">
                     <span>🛠️</span> {task.assigned_to_name}
                   </Link>
                 </div>
@@ -849,8 +852,8 @@ const TaskDetail = () => {
 
           {/* Applications Section for Task Owner */}
           {showApplications && (
-            <div className="border-t p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="border-t p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 📩 Applications
                 {pendingApplications.length > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
@@ -860,15 +863,15 @@ const TaskDetail = () => {
               </h2>
 
               {applicationsLoading ? (
-                <div className="text-center py-8 text-gray-500">Loading applications...</div>
+                <div className="text-center py-6 text-gray-500">Loading applications...</div>
               ) : applications.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <div className="text-4xl mb-2">📭</div>
-                  <p className="text-gray-500">No applications yet</p>
-                  <p className="text-sm text-gray-400 mt-1">When someone applies, you'll see them here</p>
+                <div className="text-center py-6 bg-gray-50 rounded-lg">
+                  <div className="text-3xl mb-2">📭</div>
+                  <p className="text-gray-500 text-sm">No applications yet</p>
+                  <p className="text-xs text-gray-400 mt-1">When someone applies, you'll see them here</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {applications.map(application => (
                     <div 
                       key={application.id} 
@@ -882,7 +885,7 @@ const TaskDetail = () => {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3 flex-1">
-                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                             {application.applicant_avatar ? (
                               <img 
                                 src={application.applicant_avatar} 
@@ -890,7 +893,7 @@ const TaskDetail = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-xl text-gray-400">
+                              <span className="text-lg text-gray-400">
                                 {application.applicant_name?.charAt(0).toUpperCase()}
                               </span>
                             )}
@@ -929,7 +932,7 @@ const TaskDetail = () => {
                             </div>
 
                             {application.message && (
-                              <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                              <div className="mt-2 p-2 bg-white rounded border border-gray-200">
                                 <p className="text-xs text-gray-500 mb-1">Message:</p>
                                 <p className="text-sm text-gray-700">{application.message}</p>
                               </div>
@@ -946,7 +949,7 @@ const TaskDetail = () => {
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 min-w-[100px]">
+                        <div className="flex flex-col gap-2 min-w-[90px]">
                           {application.status === 'pending' && (
                             <>
                               <button
@@ -989,12 +992,12 @@ const TaskDetail = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="border-t p-6">
+          <div className="border-t p-5">
             <div className="flex flex-col gap-3">
               {canApply && (
                 <>
                   {!showApplicationForm ? (
-                    <button onClick={() => setShowApplicationForm(true)} className="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium text-lg">
+                    <button onClick={() => setShowApplicationForm(true)} className="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
                       📝 Apply for This Job
                     </button>
                   ) : (
@@ -1052,22 +1055,22 @@ const TaskDetail = () => {
 
               {/* Status messages */}
               {isCreator && task.status === 'assigned' && (
-                <div className="flex items-center text-yellow-600 bg-yellow-50 px-4 py-3 rounded-lg">
+                <div className="flex items-center text-yellow-600 bg-yellow-50 px-4 py-3 rounded-lg text-sm">
                   <span className="mr-2">⏳</span> Waiting for worker to complete this task
                 </div>
               )}
               {isAssigned && task.status === 'pending_confirmation' && (
-                <div className="flex items-center text-purple-600 bg-purple-50 px-4 py-3 rounded-lg">
+                <div className="flex items-center text-purple-600 bg-purple-50 px-4 py-3 rounded-lg text-sm">
                   <span className="mr-2">⏳</span> Waiting for creator to confirm completion
                 </div>
               )}
               {task.status === 'completed' && (
-                <div className="flex items-center text-green-600 bg-green-50 px-4 py-3 rounded-lg">
+                <div className="flex items-center text-green-600 bg-green-50 px-4 py-3 rounded-lg text-sm">
                   <span className="mr-2">✅</span> This task has been completed
                 </div>
               )}
               {task.status === 'cancelled' && (
-                <div className="flex items-center text-gray-600 bg-gray-50 px-4 py-3 rounded-lg">
+                <div className="flex items-center text-gray-600 bg-gray-50 px-4 py-3 rounded-lg text-sm">
                   <span className="mr-2">❌</span> This task has been cancelled
                 </div>
               )}
@@ -1084,15 +1087,15 @@ const TaskDetail = () => {
         {/* Location Section with Map */}
         {task.latitude && task.longitude && (
           <div className="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6 pb-3">
-              <h2 className="text-lg font-semibold text-gray-900 mb-1">🗺️ Location</h2>
-              <p className="text-gray-600 flex items-center gap-2">
+            <div className="p-5 pb-3">
+              <h2 className="text-base font-semibold text-gray-900 mb-1">🗺️ Location</h2>
+              <p className="text-gray-600 text-sm flex items-center gap-2">
                 <span className="text-red-500">📍</span>
                 {task.location}
                 <span className="text-blue-500">• {task.service_radius || 25}km service radius</span>
               </p>
             </div>
-            <div className="h-64">
+            <div className="h-56">
               <MapContainer 
                 center={[task.latitude, task.longitude]} 
                 zoom={13} 
@@ -1113,15 +1116,15 @@ const TaskDetail = () => {
                 </Marker>
               </MapContainer>
             </div>
-            <div className="p-4 bg-gray-50 border-t text-center">
-              <p className="text-sm text-gray-500 mb-2">
+            <div className="p-3 bg-gray-50 border-t text-center">
+              <p className="text-xs text-gray-500 mb-1">
                 Lat: {task.latitude.toFixed(4)}, Lng: {task.longitude.toFixed(4)}
               </p>
               <a 
                 href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
               >
                 Open in Google Maps →
               </a>
@@ -1131,25 +1134,25 @@ const TaskDetail = () => {
 
         {/* Bottom Stats Bar - Matching Offering style */}
         <div className="mt-6 bg-white rounded-lg shadow-md p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3">
-              <div className="text-2xl mb-1">💰</div>
-              <p className="text-xs text-gray-500 mb-1">Budget</p>
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-xl mb-1">💰</div>
+              <p className="text-xs text-gray-500">Price</p>
               <p className="font-bold text-gray-900">€{task.budget || 0}</p>
             </div>
-            <div className="p-3">
-              <div className="text-2xl mb-1">📁</div>
-              <p className="text-xs text-gray-500 mb-1">Category</p>
+            <div>
+              <div className="text-xl mb-1">📁</div>
+              <p className="text-xs text-gray-500">Type</p>
               <p className="font-bold text-gray-900">{getCategoryLabel(task.category)}</p>
             </div>
-            <div className="p-3">
-              <div className="text-2xl mb-1">📍</div>
-              <p className="text-xs text-gray-500 mb-1">Range</p>
+            <div>
+              <div className="text-xl mb-1">📍</div>
+              <p className="text-xs text-gray-500">Range</p>
               <p className="font-bold text-gray-900">{task.service_radius || 25}km</p>
             </div>
-            <div className="p-3">
-              <div className="text-2xl mb-1">📅</div>
-              <p className="text-xs text-gray-500 mb-1">Posted</p>
+            <div>
+              <div className="text-xl mb-1">📅</div>
+              <p className="text-xs text-gray-500">Posted</p>
               <p className="font-bold text-gray-900">
                 {task.created_at && new Date(task.created_at).toLocaleDateString('en-GB')}
               </p>
@@ -1163,14 +1166,14 @@ const TaskDetail = () => {
             <button
               onClick={handleMessageCreator}
               disabled={messageLoading}
-              className="flex-1 bg-blue-500 text-white px-6 py-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium text-lg flex items-center justify-center gap-2"
+              className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium flex items-center justify-center gap-2"
             >
               <span>💬</span> Contact {task.creator_name}
             </button>
           )}
           <Link
             to={`/users/${task.creator_id}`}
-            className="flex-1 bg-white border-2 border-gray-200 text-gray-700 px-6 py-4 rounded-lg hover:bg-gray-50 font-medium text-lg flex items-center justify-center gap-2"
+            className="flex-1 bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 font-medium flex items-center justify-center gap-2"
           >
             <span>👤</span> View Profile
           </Link>
