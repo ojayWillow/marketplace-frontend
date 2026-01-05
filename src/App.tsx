@@ -12,6 +12,7 @@ import Tasks from './pages/Tasks'
 import TaskDetail from './pages/TaskDetail'
 import CreateTask from './pages/CreateTask'
 import EditTask from './pages/EditTask'
+import CreateOffering from './pages/CreateOffering'
 import Profile from './pages/Profile'
 import UserProfile from './pages/UserProfile'
 import Messages from './pages/Messages'
@@ -43,6 +44,15 @@ function App() {
           element={
             <ProtectedRoute>
               <EditTask />
+            </ProtectedRoute>
+          }
+        />
+        {/* Offerings routes */}
+        <Route
+          path="offerings/create"
+          element={
+            <ProtectedRoute>
+              <CreateOffering />
             </ProtectedRoute>
           }
         />
