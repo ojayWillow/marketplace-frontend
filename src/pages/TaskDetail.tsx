@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getTask, Task, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
+import { getTask, Task, TaskApplication, applyToTask, getTaskApplications, acceptApplication, rejectApplication, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
 import { startConversation } from '../api/messages';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
@@ -11,8 +11,12 @@ const TaskDetail = () => {
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
   const [task, setTask] = useState<Task | null>(null);
+  const [applications, setApplications] = useState<TaskApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [messageLoading, setMessageLoading] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [showApplicationForm, setShowApplicationForm] = useState(false);
@@ -22,6 +26,13 @@ const TaskDetail = () => {
       fetchTask();
     }
   }, [id]);
+
+  useEffect(() => {
+    // Fetch applications when task is loaded and user is the creator
+    if (task && user?.id === task.creator_id && task.status === 'open') {
+      fetchApplications();
+    }
+  }, [task, user]);
 
   const fetchTask = async () => {
     try {
@@ -33,6 +44,18 @@ const TaskDetail = () => {
       toast.error('Failed to load task');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      setApplicationsLoading(true);
+      const response = await getTaskApplications(Number(id));
+      setApplications(response.applications || []);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    } finally {
+      setApplicationsLoading(false);
     }
   };
 
@@ -53,6 +76,18 @@ const TaskDetail = () => {
       toast.error(error?.response?.data?.error || 'Failed to start conversation');
     } finally {
       setMessageLoading(false);
+    }
+  };
+
+  const handleMessageApplicant = async (applicantId: number) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const { conversation } = await startConversation(applicantId, undefined, task?.id);
+      navigate(`/messages/${conversation.id}`);
+    } catch (error: any) {
+      console.error('Error starting conversation:', error);
+      toast.error(error?.response?.data?.error || 'Failed to start conversation');
     }
   };
 
@@ -77,6 +112,37 @@ const TaskDetail = () => {
       toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleAcceptApplication = async (applicationId: number) => {
+    try {
+      setAcceptingId(applicationId);
+      await acceptApplication(Number(id), applicationId);
+      toast.success('🎉 Application accepted! The task has been assigned.');
+      fetchTask();
+      fetchApplications();
+    } catch (error: any) {
+      console.error('Error accepting application:', error);
+      toast.error(error?.response?.data?.error || 'Failed to accept application');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  const handleRejectApplication = async (applicationId: number) => {
+    if (!window.confirm('Are you sure you want to reject this application?')) return;
+
+    try {
+      setRejectingId(applicationId);
+      await rejectApplication(Number(id), applicationId);
+      toast.success('Application rejected');
+      fetchApplications();
+    } catch (error: any) {
+      console.error('Error rejecting application:', error);
+      toast.error(error?.response?.data?.error || 'Failed to reject application');
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -204,6 +270,23 @@ const TaskDetail = () => {
     );
   };
 
+  const renderStars = (rating: number | undefined) => {
+    if (!rating) return null;
+    return (
+      <div className="flex items-center">
+        {[1, 2, 3, 4, 5].map(star => (
+          <span 
+            key={star} 
+            className={`text-sm ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+          >
+            ★
+          </span>
+        ))}
+        <span className="text-xs text-gray-500 ml-1">({rating.toFixed(1)})</span>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -239,6 +322,8 @@ const TaskDetail = () => {
   const canCancel = isCreator && task.status === 'open';
   const canEdit = isCreator && task.status === 'open';
   const canMessageCreator = isAuthenticated && !isCreator && task.creator_id;
+  const showApplications = isCreator && task.status === 'open';
+  const pendingApplications = applications.filter(a => a.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -266,6 +351,11 @@ const TaskDetail = () => {
                   {getPriorityBadge(task.priority || 'normal')}
                   {task.is_urgent && (
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">⚡ Urgent</span>
+                  )}
+                  {showApplications && pendingApplications.length > 0 && (
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
+                      📩 {pendingApplications.length} application{pendingApplications.length !== 1 ? 's' : ''}
+                    </span>
                   )}
                 </div>
               </div>
@@ -339,6 +429,158 @@ const TaskDetail = () => {
                 </div>
               )}
             </div>
+
+            {/* Applications Section for Task Owner */}
+            {showApplications && (
+              <div className="border-t pt-6 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  📩 Applications
+                  {pendingApplications.length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      {pendingApplications.length} pending
+                    </span>
+                  )}
+                </h2>
+
+                {applicationsLoading ? (
+                  <div className="text-center py-8 text-gray-500">Loading applications...</div>
+                ) : applications.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <div className="text-4xl mb-2">📭</div>
+                    <p className="text-gray-500">No applications yet</p>
+                    <p className="text-sm text-gray-400 mt-1">When someone applies, you'll see them here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {applications.map(application => (
+                      <div 
+                        key={application.id} 
+                        className={`border rounded-lg p-4 ${
+                          application.status === 'pending' 
+                            ? 'border-blue-200 bg-blue-50' 
+                            : application.status === 'accepted'
+                            ? 'border-green-200 bg-green-50'
+                            : 'border-gray-200 bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1">
+                            {/* Avatar */}
+                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {application.applicant_avatar ? (
+                                <img 
+                                  src={application.applicant_avatar} 
+                                  alt={application.applicant_name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xl text-gray-400">
+                                  {application.applicant_name?.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Applicant Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Link 
+                                  to={`/users/${application.applicant_id}`}
+                                  className="font-medium text-gray-900 hover:text-blue-600"
+                                >
+                                  {application.applicant_name}
+                                </Link>
+                                {application.status === 'pending' && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                    ⏳ Pending
+                                  </span>
+                                )}
+                                {application.status === 'accepted' && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                    ✅ Accepted
+                                  </span>
+                                )}
+                                {application.status === 'rejected' && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    ❌ Rejected
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Rating & Stats */}
+                              <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                                {renderStars(application.applicant_rating)}
+                                {application.applicant_completed_tasks !== undefined && (
+                                  <span>{application.applicant_completed_tasks} tasks completed</span>
+                                )}
+                              </div>
+
+                              {/* Bio */}
+                              {application.applicant_bio && (
+                                <p className="text-sm text-gray-600 mt-2 line-clamp-2">{application.applicant_bio}</p>
+                              )}
+
+                              {/* Application Message */}
+                              {application.message && (
+                                <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-1">Message from applicant:</p>
+                                  <p className="text-sm text-gray-700">{application.message}</p>
+                                </div>
+                              )}
+
+                              {/* Applied Date */}
+                              <p className="text-xs text-gray-400 mt-2">
+                                Applied {new Date(application.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-col gap-2 min-w-[100px]">
+                            {application.status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => handleAcceptApplication(application.id)}
+                                  disabled={acceptingId === application.id}
+                                  className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium"
+                                >
+                                  {acceptingId === application.id ? '...' : '✓ Accept'}
+                                </button>
+                                <button
+                                  onClick={() => handleRejectApplication(application.id)}
+                                  disabled={rejectingId === application.id}
+                                  className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:bg-gray-100"
+                                >
+                                  {rejectingId === application.id ? '...' : 'Reject'}
+                                </button>
+                                <button
+                                  onClick={() => handleMessageApplicant(application.applicant_id)}
+                                  className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                                >
+                                  💬 Message
+                                </button>
+                              </>
+                            )}
+                            {application.status === 'accepted' && (
+                              <button
+                                onClick={() => handleMessageApplicant(application.applicant_id)}
+                                className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                              >
+                                💬 Message
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="border-t pt-6">
               <div className="flex flex-col gap-3">
