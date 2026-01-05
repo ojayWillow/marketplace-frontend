@@ -10,25 +10,29 @@ export interface ToastProps {
   onClose: (id: string) => void
 }
 
-const typeStyles: Record<ToastType, { bg: string; icon: string; iconBg: string }> = {
+const typeStyles: Record<ToastType, { bg: string; icon: string; iconBg: string; border: string }> = {
   success: {
-    bg: 'bg-green-50 border-green-200',
-    iconBg: 'bg-green-100 text-green-600',
+    bg: 'bg-green-50',
+    border: 'border-green-300',
+    iconBg: 'bg-green-500 text-white',
     icon: '✓',
   },
   error: {
-    bg: 'bg-red-50 border-red-200',
-    iconBg: 'bg-red-100 text-red-600',
+    bg: 'bg-red-50',
+    border: 'border-red-300',
+    iconBg: 'bg-red-500 text-white',
     icon: '✗',
   },
   warning: {
-    bg: 'bg-yellow-50 border-yellow-200',
-    iconBg: 'bg-yellow-100 text-yellow-600',
+    bg: 'bg-amber-50',
+    border: 'border-amber-300',
+    iconBg: 'bg-amber-500 text-white',
     icon: '⚠',
   },
   info: {
-    bg: 'bg-blue-50 border-blue-200',
-    iconBg: 'bg-blue-100 text-blue-600',
+    bg: 'bg-blue-50',
+    border: 'border-blue-300',
+    iconBg: 'bg-blue-500 text-white',
     icon: 'ℹ',
   },
 }
@@ -53,17 +57,20 @@ export default function Toast({ id, message, type, duration = 4000, onClose }: T
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${
+      className={`flex items-center gap-3 px-4 py-4 rounded-xl border-2 shadow-xl ${
         styles.bg
-      } ${isExiting ? 'animate-slide-out' : 'animate-slide-in'}`}
+      } ${styles.border} ${
+        isExiting ? 'animate-slide-out' : 'animate-slide-in'
+      }`}
     >
-      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${styles.iconBg}`}>
+      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0 ${styles.iconBg}`}>
         {styles.icon}
       </span>
-      <p className="flex-1 text-gray-800 text-sm">{message}</p>
+      <p className="flex-1 text-gray-800 font-medium">{message}</p>
       <button
         onClick={handleClose}
-        className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+        className="text-gray-400 hover:text-gray-600 text-xl font-bold flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+        aria-label="Close notification"
       >
         ×
       </button>
