@@ -4,6 +4,7 @@ import { createOffering } from '../api/offerings';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
+import { CATEGORIES, CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
 
 const CreateOffering = () => {
   const navigate = useNavigate();
@@ -25,23 +26,6 @@ const CreateOffering = () => {
     experience: '',
     service_radius: '25'
   });
-
-  const categories = [
-    { value: 'pet-care', label: '🐕 Pet Care' },
-    { value: 'moving', label: '📦 Moving' },
-    { value: 'shopping', label: '🛒 Shopping' },
-    { value: 'cleaning', label: '🧹 Cleaning' },
-    { value: 'delivery', label: '📤 Delivery' },
-    { value: 'outdoor', label: '🌿 Outdoor / Gardening' },
-    { value: 'babysitting', label: '👶 Babysitting' },
-    { value: 'car-wash', label: '🚗 Car Wash' },
-    { value: 'assembly', label: '🔧 Furniture Assembly' },
-    { value: 'plumbing', label: '🚰 Plumbing' },
-    { value: 'repair', label: '🛠️ Repair' },
-    { value: 'tutoring', label: '📚 Tutoring' },
-    { value: 'tech-help', label: '💻 Tech Help' },
-    { value: 'other', label: '💼 Other' },
-  ];
 
   const priceTypes = [
     { value: 'hourly', label: 'Per Hour', description: 'Charge by the hour (e.g., €15/hr)' },
@@ -149,6 +133,9 @@ const CreateOffering = () => {
     setAddressSuggestions([]);
   };
 
+  // Get selected category info
+  const selectedCategory = getCategoryByValue(formData.category);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
@@ -195,7 +182,7 @@ const CreateOffering = () => {
               />
             </div>
 
-            {/* Category */}
+            {/* Category - Grouped */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                 Category *
@@ -208,12 +195,25 @@ const CreateOffering = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
+                {CATEGORY_GROUPS.map(group => (
+                  <optgroup key={group.name} label={group.name}>
+                    {group.categories.map(catValue => {
+                      const cat = getCategoryByValue(catValue);
+                      if (!cat) return null;
+                      return (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.icon} {cat.label}
+                        </option>
+                      );
+                    })}
+                  </optgroup>
                 ))}
               </select>
+              {selectedCategory && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {selectedCategory.icon} {selectedCategory.description}
+                </p>
+              )}
             </div>
 
             {/* Price and Price Type */}
@@ -351,10 +351,18 @@ const CreateOffering = () => {
               />
             </div>
 
-            {/* Info Box */}
+            {/* Matching hint */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h3 className="font-medium text-amber-800 mb-2">💡 Tips for a great offering</h3>
-              <ul className="text-sm text-amber-700 space-y-1">
+              <h3 className="font-medium text-amber-800 mb-2">💡 Get matched with jobs</h3>
+              <p className="text-sm text-amber-700">
+                People posting <strong>{selectedCategory?.label || 'this type of'}</strong> jobs in your area will be able to find you and request your services!
+              </p>
+            </div>
+
+            {/* Tips */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h3 className="font-medium text-gray-800 mb-2">✨ Tips for a great offering</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Use a clear, specific title that describes your service</li>
                 <li>• Be detailed in your description - what's included?</li>
                 <li>• Set a competitive price based on your experience</li>
