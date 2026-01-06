@@ -70,7 +70,7 @@ const formatTimeAgo = (dateString: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
   
-  if (diffMins < 1) return 'now';
+  if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins}m`;
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
@@ -214,7 +214,7 @@ const createOfferingIcon = () => divIcon({
 });
 
 // =====================================================
-// ULTRA-COMPACT MAP POPUP - Spark curiosity
+// CLEAN MAP POPUP - Bubble badges, not full-width header
 // =====================================================
 const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
   const navigate = useNavigate();
@@ -224,8 +224,11 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   const categoryIcon = getCategoryIcon(task.category);
   const categoryLabel = getCategoryLabel(task.category);
   
-  // Truncate location to just first part
+  // Truncate location
   const shortLocation = task.location?.split(',').slice(0, 2).join(', ') || 'Nearby';
+  
+  // Simulated applicants count
+  const applicantsCount = task.applications_count || 0;
   
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -234,68 +237,70 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   };
   
   return (
-    <div className="job-popup" style={{ width: '220px' }}>
-      {/* Compact Header - Category + Distance */}
-      <div 
-        className="flex items-center justify-between px-2.5 py-1.5 -mx-3 -mt-3 mb-2"
-        style={{ 
-          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-          marginLeft: '-13px',
-          marginRight: '-13px',
-          marginTop: '-13px',
-          borderRadius: '4px 4px 0 0'
-        }}
-      >
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm">{categoryIcon}</span>
-          <span className="text-white font-medium text-xs">{categoryLabel}</span>
-        </div>
-        <span className="text-white/90 text-xs">📍 {formatDistance(distance)}</span>
-      </div>
-      
-      {/* Title + Price on same visual level */}
-      <div className="mb-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2 flex-1">
-            {task.title}
-          </h3>
-          <span className="text-lg font-bold text-green-600 flex-shrink-0">
-            €{budget}
-          </span>
-        </div>
-      </div>
-      
-      {/* Compact metadata row */}
-      <div className="flex items-center gap-3 text-xs text-gray-500 mb-2 pb-2 border-b border-gray-100">
-        <span className="flex items-center gap-1">
-          <span>📍</span>
-          <span className="truncate max-w-[100px]">{shortLocation}</span>
+    <div className="job-popup" style={{ width: '240px' }}>
+      {/* Top row: Category bubble + Distance */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+          <span>{categoryIcon}</span>
+          <span>{categoryLabel}</span>
         </span>
-        <span>•</span>
-        <span>{task.created_at ? formatTimeAgo(task.created_at) : 'new'}</span>
+        <span className="text-xs text-gray-500">📍 {formatDistance(distance)}</span>
       </div>
       
-      {/* Posted by - tiny */}
-      <div className="text-xs text-gray-400 mb-2">
-        👤 {task.creator_name || 'Anonymous'}
+      {/* Price - prominent */}
+      <div className="text-center mb-2">
+        <span className="text-2xl font-bold text-green-600">€{budget}</span>
       </div>
       
-      {/* Action Buttons - Primary + Save */}
-      <div className="flex gap-1.5">
+      {/* Title */}
+      <h3 className="font-semibold text-gray-900 text-sm leading-tight text-center mb-3 line-clamp-2">
+        {task.title}
+      </h3>
+      
+      {/* Labeled Info Grid */}
+      <div className="grid grid-cols-3 gap-1 mb-3 py-2 bg-gray-50 rounded-lg text-center">
+        <div>
+          <div className="text-[10px] text-gray-400 uppercase">Distance</div>
+          <div className="text-xs font-semibold text-gray-700">{formatDistance(distance)}</div>
+        </div>
+        <div className="border-x border-gray-200">
+          <div className="text-[10px] text-gray-400 uppercase">Posted</div>
+          <div className="text-xs font-semibold text-gray-700">{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-400 uppercase">Applicants</div>
+          <div className="text-xs font-semibold text-gray-700">{applicantsCount}</div>
+        </div>
+      </div>
+      
+      {/* Location */}
+      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+        <span>📍</span>
+        <span className="truncate">{shortLocation}</span>
+      </div>
+      
+      {/* Posted by */}
+      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
+        <span>👤</span>
+        <span>{task.creator_name || 'Anonymous'}</span>
+      </div>
+      
+      {/* Dual CTAs */}
+      <div className="flex gap-2">
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             navigate(`/tasks/${task.id}`);
           }}
-          className="flex-1 py-1.5 px-2 rounded-md text-xs font-semibold text-white bg-green-500 hover:bg-green-600 transition-all"
+          className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-green-500 hover:bg-green-600 transition-all"
         >
           View & Apply →
         </button>
         <button
           onClick={handleSave}
-          className="px-2 py-1.5 rounded-md text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
-          title="Save"
+          className="px-3 py-2 rounded-lg text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
+          title="Save for later"
         >
           🔖
         </button>
@@ -312,49 +317,40 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
   const categoryLabel = getCategoryLabel(offering.category);
   
   return (
-    <div className="offering-popup" style={{ width: '200px' }}>
-      {/* Header */}
-      <div 
-        className="flex items-center justify-between px-2.5 py-1.5 -mx-3 -mt-3 mb-2"
-        style={{ 
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          marginLeft: '-13px',
-          marginRight: '-13px',
-          marginTop: '-13px',
-          borderRadius: '4px 4px 0 0'
-        }}
-      >
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm">{categoryIcon}</span>
-          <span className="text-white font-medium text-xs">{categoryLabel}</span>
-        </div>
-        <span className="text-white/90 text-xs">{formatDistance(distance)}</span>
+    <div className="offering-popup" style={{ width: '220px' }}>
+      {/* Top row: Category bubble + Distance */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+          <span>{categoryIcon}</span>
+          <span>{categoryLabel}</span>
+        </span>
+        <span className="text-xs text-gray-500">📍 {formatDistance(distance)}</span>
       </div>
       
-      {/* Provider info */}
-      <div className="flex items-center gap-2 mb-2">
+      {/* Provider info + Price */}
+      <div className="flex items-center gap-2 mb-3">
         {offering.creator_avatar ? (
-          <img src={offering.creator_avatar} alt={offering.creator_name} className="w-8 h-8 rounded-full object-cover border border-amber-200" />
+          <img src={offering.creator_avatar} alt={offering.creator_name} className="w-10 h-10 rounded-full object-cover border border-amber-200" />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-sm font-bold">
             {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-gray-900 text-xs truncate">{offering.creator_name}</div>
+          <div className="font-semibold text-gray-900 text-sm truncate">{offering.creator_name}</div>
           {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
             <div className="flex items-center gap-1 text-xs">
               <StarRating rating={offering.creator_rating} />
             </div>
           )}
         </div>
-        <div className="text-base font-bold text-green-600">
+        <div className="text-lg font-bold text-green-600">
           €{offering.price || 0}
         </div>
       </div>
       
       {/* Title */}
-      <h3 className="font-semibold text-gray-900 text-xs mb-2 line-clamp-1">{offering.title}</h3>
+      <h3 className="font-semibold text-gray-900 text-xs mb-3 line-clamp-2">{offering.title}</h3>
       
       {/* Action Button */}
       <button
@@ -363,7 +359,7 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
           e.stopPropagation();
           navigate(`/offerings/${offering.id}`);
         }}
-        className="w-full py-1.5 px-3 rounded-md text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
+        className="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
       >
         View Profile →
       </button>
