@@ -5,9 +5,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useToastStore } from '../../stores/toastStore';
 import { useToggleFavorite } from '../../hooks/useFavorites';
 import { FavoriteItemType, checkFavorites } from '../../api/favorites';
-import toast from 'react-hot-toast';
 
 interface FavoriteButtonProps {
   itemType: FavoriteItemType;
@@ -28,6 +28,7 @@ export default function FavoriteButton({
 }: FavoriteButtonProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const toast = useToastStore();
   const toggleFavorite = useToggleFavorite();
   const [isFavorited, setIsFavorited] = useState(initialFavorited ?? false);
   const [isLoading, setIsLoading] = useState(false);
