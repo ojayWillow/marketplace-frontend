@@ -74,22 +74,41 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close dropdowns on Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setNotificationDropdownOpen(false);
+        setProfileDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const totalNotifications = notifications.unreadMessages + notifications.pendingApplications + notifications.pendingConfirmation;
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-      isActive
+    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
         ? 'bg-primary-100 text-primary-700'
         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
     }`
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <header 
+      className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50"
+      role="banner"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2"
+            aria-label={`${t('common.appName')} - ${t('common.home')}`}
+          >
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center" aria-hidden="true">
               <span className="text-white font-bold text-lg">M</span>
             </div>
             <span className="font-bold text-xl text-gray-900">
@@ -98,7 +117,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex items-center space-x-1" aria-label="Main navigation">
             <NavLink to="/" end className={navLinkClass}>
               {t('common.home')}
             </NavLink>
@@ -124,16 +143,21 @@ export default function Header() {
                       setProfileDropdownOpen(false);
                     }}
                     className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-                    title="Notifications"
+                    aria-label={`Notifications${totalNotifications > 0 ? `, ${totalNotifications} unread` : ''}`}
+                    aria-expanded={notificationDropdownOpen}
+                    aria-haspopup="true"
                   >
                     {/* Bell Icon */}
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                     
-                    {/* Notification Badge - Always visible when there are notifications */}
+                    {/* Notification Badge */}
                     {totalNotifications > 0 && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shadow-sm">
+                      <span 
+                        className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shadow-sm"
+                        aria-hidden="true"
+                      >
                         {totalNotifications > 99 ? '99+' : totalNotifications}
                       </span>
                     )}
@@ -141,20 +165,25 @@ export default function Header() {
 
                   {/* Notification Dropdown */}
                   {notificationDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <div 
+                      className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                      role="menu"
+                      aria-label="Notifications"
+                    >
                       <div className="px-4 py-2 border-b border-gray-100">
                         <h3 className="font-semibold text-gray-900">Notifications</h3>
                       </div>
                       
                       {totalNotifications === 0 ? (
                         <div className="px-4 py-6 text-center text-gray-500">
-                          <span className="text-3xl mb-2 block">✨</span>
+                          <span className="text-3xl mb-2 block" aria-hidden="true">✨</span>
                           <p className="font-medium">You're all caught up!</p>
                           <p className="text-sm mt-1">New notifications will appear here</p>
                           <Link 
                             to="/tasks" 
                             className="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700"
                             onClick={() => setNotificationDropdownOpen(false)}
+                            role="menuitem"
                           >
                             Browse tasks to help others →
                           </Link>
@@ -167,8 +196,9 @@ export default function Header() {
                               to="/messages"
                               onClick={() => setNotificationDropdownOpen(false)}
                               className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors"
+                              role="menuitem"
                             >
-                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600" aria-hidden="true">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                 </svg>
@@ -179,7 +209,7 @@ export default function Header() {
                                 </p>
                                 <p className="text-xs text-gray-500">Click to view your messages</p>
                               </div>
-                              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                              <span className="w-2 h-2 bg-blue-500 rounded-full" aria-hidden="true"></span>
                             </Link>
                           )}
                           
@@ -189,8 +219,9 @@ export default function Header() {
                               to="/profile?tab=tasks&subtab=created"
                               onClick={() => setNotificationDropdownOpen(false)}
                               className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors"
+                              role="menuitem"
                             >
-                              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600" aria-hidden="true">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -201,7 +232,7 @@ export default function Header() {
                                 </p>
                                 <p className="text-xs text-gray-500">People want to help with your tasks</p>
                               </div>
-                              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                              <span className="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></span>
                             </Link>
                           )}
                           
@@ -211,8 +242,9 @@ export default function Header() {
                               to="/profile?tab=tasks&subtab=created&created_filter=in_progress"
                               onClick={() => setNotificationDropdownOpen(false)}
                               className="flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 transition-colors"
+                              role="menuitem"
                             >
-                              <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                              <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600" aria-hidden="true">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -223,7 +255,7 @@ export default function Header() {
                                 </p>
                                 <p className="text-xs text-gray-500">Workers marked these as done</p>
                               </div>
-                              <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                              <span className="w-2 h-2 bg-yellow-500 rounded-full" aria-hidden="true"></span>
                             </Link>
                           )}
                         </div>
@@ -235,6 +267,7 @@ export default function Header() {
                           to="/profile?tab=tasks"
                           onClick={() => setNotificationDropdownOpen(false)}
                           className="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
+                          role="menuitem"
                         >
                           View all activity →
                         </Link>
@@ -247,13 +280,16 @@ export default function Header() {
                 <Link
                   to="/messages"
                   className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Messages"
+                  aria-label={`Messages${notifications.unreadMessages > 0 ? `, ${notifications.unreadMessages} unread` : ''}`}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                   {notifications.unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-blue-500 rounded-full">
+                    <span 
+                      className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-blue-500 rounded-full"
+                      aria-hidden="true"
+                    >
                       {notifications.unreadMessages > 9 ? '9+' : notifications.unreadMessages}
                     </span>
                   )}
@@ -267,6 +303,9 @@ export default function Header() {
                       setNotificationDropdownOpen(false);
                     }}
                     className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="User menu"
+                    aria-expanded={profileDropdownOpen}
+                    aria-haspopup="true"
                   >
                     {user?.avatar_url || user?.profile_picture_url ? (
                       <img 
@@ -275,20 +314,24 @@ export default function Header() {
                         className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center ring-2 ring-gray-200">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center ring-2 ring-gray-200" aria-hidden="true">
                         <span className="text-gray-500 text-sm font-medium">
                           {user?.username?.charAt(0).toUpperCase()}
                         </span>
                       </div>
                     )}
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
 
                   {/* Profile Dropdown Menu */}
                   {profileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <div 
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                      role="menu"
+                      aria-label="User menu"
+                    >
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">{user?.username}</p>
@@ -296,13 +339,14 @@ export default function Header() {
                       </div>
                       
                       {/* Menu Items */}
-                      <div className="py-1">
+                      <div className="py-1" role="none">
                         <Link
                           to="/profile"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                           My Profile
@@ -312,8 +356,9 @@ export default function Header() {
                           to="/profile?tab=tasks"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                           </svg>
                           My Tasks
@@ -328,8 +373,9 @@ export default function Header() {
                           to="/profile?tab=listings"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                           </svg>
                           My Listings
@@ -339,8 +385,9 @@ export default function Header() {
                           to="/messages"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                           </svg>
                           Messages
@@ -353,13 +400,14 @@ export default function Header() {
                       </div>
                       
                       {/* Quick Actions */}
-                      <div className="border-t border-gray-100 py-1">
+                      <div className="border-t border-gray-100 py-1" role="none">
                         <Link
                           to="/tasks/create"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                           Post a Task
@@ -369,8 +417,9 @@ export default function Header() {
                           to="/listings/create"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                           Create Listing
@@ -378,15 +427,16 @@ export default function Header() {
                       </div>
                       
                       {/* Logout */}
-                      <div className="border-t border-gray-100 py-1">
+                      <div className="border-t border-gray-100 py-1" role="none">
                         <button
                           onClick={() => {
                             setProfileDropdownOpen(false);
                             logout();
                           }}
                           className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                          role="menuitem"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                           </svg>
                           {t('common.logout')}
@@ -415,11 +465,12 @@ export default function Header() {
               <Link
                 to="/profile?tab=tasks"
                 className="relative p-2 text-gray-600"
+                aria-label={`Notifications, ${totalNotifications} unread`}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full" aria-hidden="true">
                   {totalNotifications > 9 ? '9+' : totalNotifications}
                 </span>
               </Link>
@@ -428,12 +479,16 @@ export default function Header() {
             <button
               className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 {mobileMenuOpen ? (
                   <path
@@ -457,7 +512,12 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div 
+            id="mobile-menu"
+            className="md:hidden py-4 border-t border-gray-200"
+            role="navigation"
+            aria-label="Mobile navigation"
+          >
             <nav className="flex flex-col space-y-2">
               <NavLink
                 to="/"
@@ -487,7 +547,7 @@ export default function Header() {
                   className={navLinkClass}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  💬 Messages
+                  <span aria-hidden="true">💬</span> Messages
                   {notifications.unreadMessages > 0 && (
                     <span className="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">
                       {notifications.unreadMessages}
@@ -505,9 +565,9 @@ export default function Header() {
                   <>
                     {/* Mobile Notifications Summary */}
                     {totalNotifications > 0 && (
-                      <div className="px-3 py-2 mb-2 bg-blue-50 rounded-lg">
+                      <div className="px-3 py-2 mb-2 bg-blue-50 rounded-lg" role="status" aria-live="polite">
                         <p className="text-sm font-medium text-blue-700">
-                          🔔 You have {totalNotifications} notification{totalNotifications !== 1 ? 's' : ''}
+                          <span aria-hidden="true">🔔</span> You have {totalNotifications} notification{totalNotifications !== 1 ? 's' : ''}
                         </p>
                         <div className="mt-1 text-xs text-blue-600 space-y-1">
                           {notifications.unreadMessages > 0 && (
@@ -535,7 +595,7 @@ export default function Header() {
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center" aria-hidden="true">
                           <span className="text-gray-500 text-sm">
                             {user?.username?.charAt(0).toUpperCase()}
                           </span>
