@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { createOffering } from '../api/offerings';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
@@ -7,6 +8,7 @@ import { useToastStore } from '../stores/toastStore';
 import { CATEGORIES, CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
 
 const CreateOffering = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
@@ -28,15 +30,15 @@ const CreateOffering = () => {
   });
 
   const priceTypes = [
-    { value: 'hourly', label: 'Per Hour', description: 'Charge by the hour (e.g., €15/hr)' },
-    { value: 'fixed', label: 'Fixed Price', description: 'Set price for the whole service' },
-    { value: 'negotiable', label: 'Negotiable', description: 'Price depends on the job' },
+    { value: 'hourly', label: t('offerings.priceTypes.hourly', 'Per Hour'), description: t('createOffering.priceTypeHourlyDesc', 'Charge by the hour (e.g., €15/hr)') },
+    { value: 'fixed', label: t('offerings.priceTypes.fixed', 'Fixed Price'), description: t('createOffering.priceTypeFixedDesc', 'Set price for the whole service') },
+    { value: 'negotiable', label: t('offerings.priceTypes.negotiable', 'Negotiable'), description: t('createOffering.priceTypeNegotiableDesc', 'Price depends on the job') },
   ];
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.warning('Please login to create an offering');
+      toast.warning(t('offerings.loginToOffer', 'Please login to create an offering'));
       navigate('/login');
     }
   }, [isAuthenticated]);
@@ -67,23 +69,23 @@ const CreateOffering = () => {
     e.preventDefault();
     
     if (!user?.id) {
-      toast.error('You must be logged in to create an offering');
+      toast.error(t('createOffering.loginRequired', 'You must be logged in to create an offering'));
       navigate('/login');
       return;
     }
     
     if (!formData.title.trim()) {
-      toast.error('Please enter a title for your offering');
+      toast.error(t('createOffering.titleRequired', 'Please enter a title for your offering'));
       return;
     }
     
     if (!formData.description.trim()) {
-      toast.error('Please describe your service');
+      toast.error(t('createOffering.descriptionRequired', 'Please describe your service'));
       return;
     }
     
     if (!formData.location.trim()) {
-      toast.error('Please enter your service area');
+      toast.error(t('createOffering.locationRequired', 'Please enter your service area'));
       return;
     }
     
@@ -105,11 +107,11 @@ const CreateOffering = () => {
       };
 
       await createOffering(offeringData);
-      toast.success('Your offering is now live! People can find and contact you.');
+      toast.success(t('createOffering.success', 'Your offering is now live! People can find and contact you.'));
       navigate('/tasks');
     } catch (error: any) {
       console.error('Error creating offering:', error);
-      toast.error(error?.response?.data?.error || 'Failed to create offering. Please try again.');
+      toast.error(error?.response?.data?.error || t('createOffering.error', 'Failed to create offering. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -142,15 +144,15 @@ const CreateOffering = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-3xl">👋</span>
-            <h1 className="text-3xl font-bold text-gray-900">Create Service Offering</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('createOffering.title', 'Create Service Offering')}</h1>
           </div>
-          <p className="text-gray-600 mb-6">Advertise your skills and get hired by people nearby</p>
+          <p className="text-gray-600 mb-6">{t('createOffering.subtitle', 'Advertise your skills and get hired by people nearby')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Service Title *
+                {t('createOffering.offeringTitle', 'Service Title')} *
               </label>
               <input
                 type="text"
@@ -159,16 +161,16 @@ const CreateOffering = () => {
                 required
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="e.g., Professional House Cleaning, Dog Walking Service, Handyman"
+                placeholder={t('createOffering.offeringTitlePlaceholder', 'e.g., Professional House Cleaning, Dog Walking Service, Handyman')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">Make it clear and descriptive</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createOffering.titleHint', 'Make it clear and descriptive')}</p>
             </div>
 
             {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
+                {t('createOffering.description', 'Description')} *
               </label>
               <textarea
                 id="description"
@@ -177,7 +179,7 @@ const CreateOffering = () => {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Describe your service in detail. What do you offer? What makes you stand out?"
+                placeholder={t('createOffering.descriptionPlaceholder', 'Describe your service in detail. What do you offer? What makes you stand out?')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
             </div>
@@ -185,7 +187,7 @@ const CreateOffering = () => {
             {/* Category - Grouped */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category *
+                {t('createOffering.category', 'Category')} *
               </label>
               <select
                 id="category"
@@ -220,7 +222,7 @@ const CreateOffering = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                  Price (EUR)
+                  {t('createOffering.price', 'Price (EUR)')}
                 </label>
                 <input
                   type="number"
@@ -230,13 +232,13 @@ const CreateOffering = () => {
                   min="0"
                   value={formData.price}
                   onChange={handleChange}
-                  placeholder="e.g., 20.00"
+                  placeholder={t('createOffering.pricePlaceholder', 'e.g., 20.00')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
               <div>
                 <label htmlFor="price_type" className="block text-sm font-medium text-gray-700 mb-2">
-                  Price Type
+                  {t('createOffering.priceType', 'Price Type')}
                 </label>
                 <select
                   id="price_type"
@@ -260,7 +262,7 @@ const CreateOffering = () => {
             {/* Location with Geocoding */}
             <div className="relative">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Service Area * {searchingAddress && <span className="text-amber-500 text-xs">(searching...)</span>}
+                {t('createOffering.location', 'Service Area')} * {searchingAddress && <span className="text-amber-500 text-xs">({t('common.loading', 'searching...')})</span>}
               </label>
               <input
                 type="text"
@@ -269,7 +271,7 @@ const CreateOffering = () => {
                 required
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="e.g., Riga, Centrs or your neighborhood"
+                placeholder={t('createOffering.locationPlaceholder', 'e.g., Riga, Centrs or your neighborhood')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 autoComplete="off"
               />
@@ -292,7 +294,7 @@ const CreateOffering = () => {
               
               {formData.location && (
                 <p className="text-xs text-gray-500 mt-1">
-                  📍 Coordinates: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                  📍 {t('createOffering.coordinates', 'Coordinates')}: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
                 </p>
               )}
             </div>
@@ -300,7 +302,7 @@ const CreateOffering = () => {
             {/* Service Radius */}
             <div>
               <label htmlFor="service_radius" className="block text-sm font-medium text-gray-700 mb-2">
-                How far will you travel? (km)
+                {t('createOffering.serviceRadius', 'How far will you travel?')} (km)
               </label>
               <select
                 id="service_radius"
@@ -309,19 +311,19 @@ const CreateOffering = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
-                <option value="5">5 km - Nearby only</option>
-                <option value="10">10 km - Local area</option>
-                <option value="25">25 km - City-wide</option>
-                <option value="50">50 km - Regional</option>
-                <option value="100">100 km - Will travel far</option>
+                <option value="5">5 km - {t('createOffering.radiusNearby', 'Nearby only')}</option>
+                <option value="10">10 km - {t('createOffering.radiusLocal', 'Local area')}</option>
+                <option value="25">25 km - {t('createOffering.radiusCity', 'City-wide')}</option>
+                <option value="50">50 km - {t('createOffering.radiusRegional', 'Regional')}</option>
+                <option value="100">100 km - {t('createOffering.radiusFar', 'Will travel far')}</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">Maximum distance you're willing to travel for a job</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createOffering.serviceRadiusHint', 'Maximum distance you\'re willing to travel for a job')}</p>
             </div>
 
             {/* Availability */}
             <div>
               <label htmlFor="availability" className="block text-sm font-medium text-gray-700 mb-2">
-                Availability (Optional)
+                {t('createOffering.availability', 'Availability')} ({t('common.optional', 'Optional')})
               </label>
               <input
                 type="text"
@@ -329,16 +331,16 @@ const CreateOffering = () => {
                 name="availability"
                 value={formData.availability}
                 onChange={handleChange}
-                placeholder="e.g., Weekdays 9-17, Evenings and weekends, Flexible"
+                placeholder={t('createOffering.availabilityPlaceholder', 'e.g., Weekdays 9-17, Evenings and weekends, Flexible')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">When are you available to work?</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createOffering.availabilityHint', 'When are you available to work?')}</p>
             </div>
 
             {/* Experience */}
             <div>
               <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
-                Experience (Optional)
+                {t('createOffering.experience', 'Experience')} ({t('common.optional', 'Optional')})
               </label>
               <textarea
                 id="experience"
@@ -346,27 +348,27 @@ const CreateOffering = () => {
                 value={formData.experience}
                 onChange={handleChange}
                 rows={3}
-                placeholder="Tell potential clients about your experience, qualifications, or any relevant background..."
+                placeholder={t('createOffering.experiencePlaceholder', 'Tell potential clients about your experience, qualifications, or any relevant background...')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
             </div>
 
             {/* Matching hint */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h3 className="font-medium text-amber-800 mb-2">💡 Get matched with jobs</h3>
+              <h3 className="font-medium text-amber-800 mb-2">💡 {t('createOffering.matchingTitle', 'Get matched with jobs')}</h3>
               <p className="text-sm text-amber-700">
-                People posting <strong>{selectedCategory?.label || 'this type of'}</strong> jobs in your area will be able to find you and request your services!
+                {t('createOffering.matchingHint', 'People posting {{category}} jobs in your area will be able to find you and request your services!', { category: selectedCategory?.label || t('common.this', 'this type of') })}
               </p>
             </div>
 
             {/* Tips */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h3 className="font-medium text-gray-800 mb-2">✨ Tips for a great offering</h3>
+              <h3 className="font-medium text-gray-800 mb-2">✨ {t('createOffering.tipsTitle', 'Tips for a great offering')}</h3>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Use a clear, specific title that describes your service</li>
-                <li>• Be detailed in your description - what's included?</li>
-                <li>• Set a competitive price based on your experience</li>
-                <li>• Respond quickly when people contact you</li>
+                <li>• {t('createOffering.tip1', 'Use a clear, specific title that describes your service')}</li>
+                <li>• {t('createOffering.tip2', 'Be detailed in your description - what\'s included?')}</li>
+                <li>• {t('createOffering.tip3', 'Set a competitive price based on your experience')}</li>
+                <li>• {t('createOffering.tip4', 'Respond quickly when people contact you')}</li>
               </ul>
             </div>
 
@@ -377,14 +379,14 @@ const CreateOffering = () => {
                 disabled={loading}
                 className="flex-1 bg-amber-500 text-white py-3 px-6 rounded-lg hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? 'Creating...' : 'Publish Offering'}
+                {loading ? t('createOffering.creating', 'Creating...') : t('createOffering.createButton', 'Publish Offering')}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/tasks')}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
             </div>
           </form>
