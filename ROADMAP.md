@@ -1,8 +1,8 @@
 # Marketplace Frontend - Development Roadmap
 
-**Last Updated**: January 5, 2026, 7:00 AM EET
-> **Current Phase**: Phase 4 & 5 Complete - Moving to Phase 6 ✅  
-> **Status**: Core Features Complete - Polishing Phase 🎉
+**Last Updated**: January 6, 2026, 5:05 PM EET
+> **Current Phase**: Phase 5 Complete + New Features ✅  
+> **Status**: Core Features Complete - Active Development 🎉
 
 ---
 
@@ -10,9 +10,10 @@
 
 **Goal**: Build a React-based web UI for the Latvian Marketplace platform
 
-**Two Segments**:
+**Three Segments**:
 1. **Buy/Sell Classifieds** (Priority 1) - like ss.lv
-2. **Quick Help Services** (Priority 2) - task marketplace with map
+2. **Quick Help Jobs** (Priority 2) - task marketplace with map (find jobs)
+3. **Service Offerings** (Priority 3) - advertise your skills (offer services) **NEW!**
 
 **Languages**: Latvian 🇱🇻 | Russian 🇷🇺 | English 🇬🇧
 
@@ -151,7 +152,7 @@
 - [x] 5.4 Show tasks as markers on map
 - [x] 5.5 Create Task Detail page (inline/popup)
 - [x] 5.6 Create New Task page (`/tasks/create`) - protected
-- [x] 5.7 Create "Accept Task" functionality
+- [x] 5.7 Create "Apply for Task" functionality
 - [x] 5.8 Create "My Tasks" tab (assigned to me)
 - [x] 5.9 Create "My Posted Tasks" tab (tasks I created)
 - [x] 5.10 Task creator can confirm/dispute completion
@@ -170,12 +171,43 @@
 - `GET /api/tasks/:id` ✅
 - `POST /api/tasks` ✅
 - `PUT /api/tasks/:id` ✅
-- `POST /api/tasks/:id/accept` ✅
+- `POST /api/tasks/:id/apply` ✅
+- `POST /api/tasks/:id/accept-application` ✅
 - `POST /api/tasks/:id/done` ✅
 - `POST /api/tasks/:id/confirm` ✅
 - `POST /api/tasks/:id/dispute` ✅
 - `GET /api/tasks/my` ✅
 - `GET /api/tasks/created` ✅
+
+---
+
+## ✅ Phase 5.5: Service Offerings (NEW - COMPLETED)
+
+**Goal**: Users can advertise their skills and services
+
+### Tasks:
+- [x] 5.5.1 Create Offering model and API integration
+- [x] 5.5.2 Create Offerings browse in Tasks page (combined view)
+- [x] 5.5.3 Create Offering Card component with provider info
+- [x] 5.5.4 Three-tab interface: All | Jobs | Offerings
+- [x] 5.5.5 Create New Offering page (`/offerings/create`)
+- [x] 5.5.6 Create Offering Detail page (`/offerings/:id`)
+- [x] 5.5.7 Location-based offering search
+- [x] 5.5.8 Category filtering for offerings
+- [x] 5.5.9 Price types: hourly, fixed, negotiable
+- [x] 5.5.10 Provider rating display on cards
+- [x] 5.5.11 "My Offerings" in profile tabs
+- [x] 5.5.12 Matching store - highlight jobs matching user's offerings
+
+**Status**: ✅ 100% Complete
+
+### API Endpoints Used:
+- `GET /api/offerings` ✅
+- `GET /api/offerings/:id` ✅
+- `POST /api/offerings` ✅
+- `PUT /api/offerings/:id` ✅
+- `DELETE /api/offerings/:id` ✅
+- `GET /api/offerings/my` ✅
 
 ---
 
@@ -194,8 +226,11 @@
 - [ ] 6.8 Performance optimization (lazy loading)
 - [ ] 6.9 Accessibility audit (a11y)
 - [ ] 6.10 Cross-browser testing
+- [x] 6.11 Map price labels (show € amount instead of emoji) **NEW!**
+- [x] 6.12 Color-coded markers by budget tier **NEW!**
+- [x] 6.13 Map legend with marker explanations **NEW!**
 
-**Status**: ⚠️ 40% Complete
+**Status**: ⚠️ 55% Complete
 
 ---
 
@@ -214,6 +249,7 @@
 - [ ] 7.8 Analytics integration
 - [ ] 7.9 PWA support (offline, installable)
 - [ ] 7.10 Payment integration (Stripe)
+- [ ] 7.11 Offerings on map (premium feature)
 
 **Status**: ⬜ 5% Complete
 
@@ -228,14 +264,15 @@
 | 3. Buy/Sell Classifieds | ✅ Complete | 100% |
 | 4. Reviews & Trust | ✅ Complete | 100% |
 | 5. Quick Help Services | ✅ Complete | 100% |
-| 6. Polish & UX | ⚠️ Partial | 40% |
+| 5.5 Service Offerings | ✅ Complete | 100% |
+| 6. Polish & UX | ⚠️ Partial | 55% |
 | 7. Advanced Features | ⬜ Started | 5% |
 
-**Overall MVP Status: ~88% Complete** 🎉
+**Overall MVP Status: ~92% Complete** 🎉
 
 ---
 
-## What's Fully Working (January 4, 2026)
+## What's Fully Working (January 6, 2026)
 
 ### Authentication ✅
 - User registration with validation
@@ -257,21 +294,35 @@
 - Seller rating display with stars on cards
 - Seller profiles clickable from listings
 
-### Quick Help (Tasks) ✅
-- Browse tasks on interactive Leaflet map
-- Location-based task discovery with radius
+### Quick Help (Jobs) ✅
+- Browse jobs on interactive Leaflet map
+- **Price labels on map markers** (€25, €45, €100) - NEW!
+- **Color-coded by budget tier** (green/blue/purple-gold) - NEW!
+- Location-based job discovery with radius
 - Manual location setting (search + click anywhere)
 - Address autocomplete (Latvia-focused, Nominatim)
-- Create tasks with location picker
-- Edit tasks before acceptance
-- Accept tasks as worker
-- Mark tasks as done (worker)
+- Create jobs with location picker
+- Edit jobs before acceptance
+- Apply for jobs as worker
+- Mark jobs as done (worker)
 - Confirm/dispute completion (creator)
-- Three-tab interface (Available/My Tasks/My Posted)
-- Task counts in tab labels
-- Google Maps navigation to task locations
-- Complete task status workflow with badges
-- Task detail modal with full information
+- Three-tab interface (All/Jobs/Offerings)
+- Job counts in tab labels
+- Google Maps navigation to job locations
+- Complete job status workflow with badges
+- Job detail modal with full information
+- **Matching notification** - shows jobs that match your offerings!
+
+### Service Offerings ✅ (NEW!)
+- Browse offerings in combined Tasks view
+- Create offerings with price, category, location
+- Price types: hourly, fixed, negotiable
+- Provider info with avatar and rating
+- Category-based filtering
+- Location-based search
+- Edit/delete own offerings
+- "My Offerings" tab in profile
+- Offerings list (not on map - future premium feature)
 
 ### Reviews ✅
 - View reviews on user profiles
@@ -291,35 +342,55 @@
 - Smooth animations and transitions
 - Mobile-responsive design
 - Consistent styling across pages
+- Blue theme for Jobs, Orange theme for Offerings
+- Map legend with marker explanations
 
 ---
 
-## Recent Session (January 4, 2026, 8:00 PM)
+## Recent Sessions (January 5-6, 2026)
 
-### ✅ What We Completed:
+### January 6, 2026 - Map Price Labels & Polish
 
-**Phase 4: Reviews & User Trust - FULLY COMPLETE**
-1. ✅ Fixed user profile API endpoints (`/api/auth/users/:id`)
-2. ✅ Fixed review submission endpoint (JWT_SECRET_KEY consistency)
-3. ✅ Added "Leave Review" button on public profiles
-4. ✅ Created review submission modal with validation
-5. ✅ Reviews now fully functional - create, edit, delete
-6. ✅ Fixed CORS configuration for Vite port 5173
-7. ✅ Public user profiles working perfectly
-8. ✅ Star ratings showing correctly everywhere
+**✅ What We Completed:**
 
-### 🐛 Bugs Fixed:
-- CORS errors (backend now allows port 5173)
-- API endpoint mismatch (`/api/auth/users` vs `/api/users`)
-- JWT secret key mismatch between auth and reviews routes
-- Review content field mapping
-- Token validation across all protected endpoints
+1. **Price Labels on Map Markers**
+   - Replaced 💰 emoji with actual price labels (€25, €45, etc.)
+   - Color-coded by budget tier:
+     - 🟢 Green (≤€25) - Quick tasks
+     - 🔵 Blue (≤€75) - Medium jobs
+     - 🟣 Purple-Gold gradient (>€75) - Premium jobs with glow
+   - Clean pill-shaped badge design
+   - Updated map legend to explain color coding
 
-### 🎯 Current Status:
-- **All Core Features**: ✅ Working
-- **Reviews System**: ✅ Complete
-- **User Profiles**: ✅ Complete
-- **MVP**: 88% Complete
+2. **UI Color Theming**
+   - Jobs: Blue theme throughout
+   - Offerings: Orange/Amber theme
+   - Consistent color application in tabs, badges, cards
+
+3. **Job Card Updates**
+   - Price color now matches map marker colors
+   - Premium badge for high-value jobs
+
+### January 5, 2026 - Service Offerings Feature
+
+**✅ What We Completed:**
+
+1. **Service Offerings System**
+   - Full CRUD for offerings (create, read, update, delete)
+   - Combined Jobs + Offerings view on Tasks page
+   - Three-tab interface: All | Jobs | Offerings
+   - Offering cards with provider info, rating, price
+   - Create/Edit offering pages
+   - Offering detail page with contact info
+
+2. **Matching Store**
+   - Tracks user's offering categories
+   - Highlights jobs that match user's services
+   - Banner notification: "X jobs match your offerings!"
+
+3. **Profile Integration**
+   - "My Offerings" tab in profile
+   - Offerings management (edit/delete)
 
 ---
 
@@ -333,7 +404,7 @@
 
 ### Medium Priority
 5. **Messaging system** - Real-time chat between users
-6. **Favorites/Watchlist** - Save listings/tasks
+6. **Favorites/Watchlist** - Save listings/tasks/offerings
 7. **PWA support** - Service workers, offline mode
 8. **Advanced filters** - Price range, date posted, etc.
 
@@ -342,6 +413,7 @@
 10. **Admin dashboard** - Content moderation
 11. **Analytics** - Google Analytics integration
 12. **Real-time notifications** - WebSocket for updates
+13. **Premium offerings on map** - Boosted visibility
 
 ---
 
@@ -373,7 +445,10 @@ python wsgi.py
 
 ## Documentation Status
 
-✅ **Up to date** - Last updated: January 5, 2026, 7:00 AM EET
+✅ **Up to date** - Last updated: January 6, 2026, 5:05 PM EET
 
-**Note**: Task application system fully implemented - workers can now apply for tasks instead of direct acceptance. All core features complete.
-**Note**: Taking a break to review and plan next steps. All core features are working and tested locally. Ready to proceed with Polish & UX improvements when resuming development.
+**Recent Changes:**
+- Added Phase 5.5: Service Offerings (complete)
+- Updated Phase 6 with map UI improvements
+- Added map price labels feature
+- Updated progress to 92%
