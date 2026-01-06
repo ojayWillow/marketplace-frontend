@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, Task as APITask } from '../api/tasks';
 import { getOfferings, Offering } from '../api/offerings';
@@ -61,8 +62,8 @@ const formatDistance = (km: number): string => {
   }
 };
 
-// Format time ago - compact
-const formatTimeAgo = (dateString: string): string => {
+// Format time ago - compact (needs t function passed in for full i18n)
+const formatTimeAgo = (dateString: string, t?: (key: string, fallback: string) => string): string => {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -70,7 +71,7 @@ const formatTimeAgo = (dateString: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
   
-  if (diffMins < 1) return 'Just now';
+  if (diffMins < 1) return t ? t('tasks.time.justNow', 'Just now') : 'Just now';
   if (diffMins < 60) return `${diffMins}m`;
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
@@ -240,6 +241,7 @@ const createOfferingIcon = () => divIcon({
 // CLEAN MAP POPUP - Blue theme for jobs
 // =====================================================
 const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToastStore();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
@@ -248,7 +250,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   const categoryLabel = getCategoryLabel(task.category);
   
   // Truncate location
-  const shortLocation = task.location?.split(',').slice(0, 2).join(', ') || 'Nearby';
+  const shortLocation = task.location?.split(',').slice(0, 2).join(', ') || t('tasks.nearby', 'Nearby');
   
   // Simulated applicants count
   const applicantsCount = task.applications_count || 0;
@@ -256,7 +258,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toast.success('Saved!');
+    toast.success(t('tasks.saved', 'Saved!'));
   };
   
   return (
@@ -283,15 +285,15 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
       {/* Labeled Info Grid */}
       <div className="grid grid-cols-3 gap-1 mb-3 py-2 bg-gray-50 rounded-lg text-center">
         <div>
-          <div className="text-[10px] text-gray-400 uppercase">Distance</div>
+          <div className="text-[10px] text-gray-400 uppercase">{t('tasks.distance', 'Distance')}</div>
           <div className="text-xs font-semibold text-gray-700">{formatDistance(distance)}</div>
         </div>
         <div className="border-x border-gray-200">
-          <div className="text-[10px] text-gray-400 uppercase">Posted</div>
-          <div className="text-xs font-semibold text-gray-700">{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</div>
+          <div className="text-[10px] text-gray-400 uppercase">{t('tasks.posted', 'Posted')}</div>
+          <div className="text-xs font-semibold text-gray-700">{task.created_at ? formatTimeAgo(task.created_at, t) : t('tasks.new', 'New')}</div>
         </div>
         <div>
-          <div className="text-[10px] text-gray-400 uppercase">Applicants</div>
+          <div className="text-[10px] text-gray-400 uppercase">{t('tasks.applicants', 'Applicants')}</div>
           <div className="text-xs font-semibold text-gray-700">{applicantsCount}</div>
         </div>
       </div>
@@ -305,7 +307,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
       {/* Posted by */}
       <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
         <span>👤</span>
-        <span>{task.creator_name || 'Anonymous'}</span>
+        <span>{task.creator_name || t('tasks.anonymous', 'Anonymous')}</span>
       </div>
       
       {/* Dual CTAs - Blue for jobs */}
@@ -318,12 +320,12 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
           }}
           className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-all"
         >
-          View & Apply →
+          {t('tasks.viewAndApply', 'View & Apply')} →
         </button>
         <button
           onClick={handleSave}
           className="px-3 py-2 rounded-lg text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
-          title="Save for later"
+          title={t('tasks.saveForLater', 'Save for later')}
         >
           🔖
         </button>
@@ -334,6 +336,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
 
 // Compact Offering Popup - Orange theme
 const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
   const categoryIcon = getCategoryIcon(offering.category);
@@ -384,7 +387,7 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
         }}
         className="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
       >
-        View Profile →
+        {t('offerings.viewProfile', 'View Profile')} →
       </button>
     </div>
   );
@@ -408,6 +411,7 @@ const MapMarkers = ({
   onLocationSelect: (lat: number, lng: number) => void;
   showOfferingsOnMap: boolean;
 }) => {
+  const { t } = useTranslation();
   // Memoize the user location icon
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
   const offeringIcon = useMemo(() => createOfferingIcon(), []);
@@ -424,7 +428,7 @@ const MapMarkers = ({
       <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
         <Popup>
           <div className="p-1 text-center" style={{ width: '100px' }}>
-            <p className="font-medium text-gray-900 text-sm">📍 You</p>
+            <p className="font-medium text-gray-900 text-sm">📍 {t('map.you', 'You')}</p>
           </div>
         </Popup>
       </Marker>
@@ -467,6 +471,7 @@ const MapMarkers = ({
 };
 
 const Tasks = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
@@ -488,7 +493,7 @@ const Tasks = () => {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
-  const [locationName, setLocationName] = useState('Riga, Latvia');
+  const [locationName, setLocationName] = useState(t('tasks.defaultLocation', 'Riga, Latvia'));
   const [searchRadius, setSearchRadius] = useState(25);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -526,7 +531,7 @@ const Tasks = () => {
   const skipLocationDetection = () => {
     setLocationLoading(false);
     setLocationGranted(true);
-    setLocationName('Riga, Latvia');
+    setLocationName(t('tasks.defaultLocation', 'Riga, Latvia'));
     if (locationTimeoutRef.current) {
       clearTimeout(locationTimeoutRef.current);
     }
@@ -551,7 +556,7 @@ const Tasks = () => {
           setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           setLocationGranted(true);
           setLocationLoading(false);
-          setLocationName('Your location');
+          setLocationName(t('tasks.yourLocation', 'Your location'));
           if (locationTimeoutRef.current) {
             clearTimeout(locationTimeoutRef.current);
           }
@@ -560,7 +565,7 @@ const Tasks = () => {
           console.log('Geolocation error:', error);
           setLocationGranted(true);
           setLocationLoading(false);
-          setLocationName('Riga, Latvia');
+          setLocationName(t('tasks.defaultLocation', 'Riga, Latvia'));
         },
         { timeout: 5000, enableHighAccuracy: false }
       );
@@ -579,7 +584,7 @@ const Tasks = () => {
   const handleLocationSelect = (lat: number, lng: number, name?: string) => {
     setUserLocation({ lat, lng });
     setManualLocationSet(true);
-    setLocationName(name || 'Selected location');
+    setLocationName(name || t('tasks.selectedLocation', 'Selected location'));
     hasFetchedRef.current = false;
     fetchData(true);
     setShowLocationModal(false);
@@ -634,7 +639,7 @@ const Tasks = () => {
 
   const resetToAutoLocation = () => {
     setManualLocationSet(false);
-    setLocationName('Your location');
+    setLocationName(t('tasks.yourLocation', 'Your location'));
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
@@ -692,7 +697,7 @@ const Tasks = () => {
       hasEverLoadedRef.current = true; // Mark that we've loaded at least once
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load data. Please try again later.');
+      setError(t('tasks.errorLoad', 'Failed to load data. Please try again later.'));
     }
     
     setInitialLoading(false);
@@ -742,8 +747,8 @@ const Tasks = () => {
             <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center text-2xl">📍</div>
           </div>
-          <div className="text-xl font-bold text-gray-900 mb-2">Finding your location...</div>
-          <div className="text-gray-600 mb-4">This helps show nearby jobs and services</div>
+          <div className="text-xl font-bold text-gray-900 mb-2">{t('tasks.findingLocation', 'Finding your location...')}</div>
+          <div className="text-gray-600 mb-4">{t('tasks.locationHelp', 'This helps show nearby jobs and services')}</div>
           <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
             <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
           </div>
@@ -751,7 +756,7 @@ const Tasks = () => {
             onClick={skipLocationDetection}
             className="text-blue-600 hover:text-blue-700 font-medium underline"
           >
-            Skip → Use Riga as default
+            {t('tasks.skipLocation', 'Skip → Use Riga as default')}
           </button>
         </div>
       </div>
@@ -764,8 +769,8 @@ const Tasks = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
-          <div className="text-xl font-bold text-gray-900 mb-2">💰 Finding opportunities...</div>
-          <div className="text-gray-600">Searching within {searchRadius}km of {locationName}</div>
+          <div className="text-xl font-bold text-gray-900 mb-2">💰 {t('tasks.findingOpportunities', 'Finding opportunities...')}</div>
+          <div className="text-gray-600">{t('tasks.searchingWithin', 'Searching within {{radius}}km of {{location}}', { radius: searchRadius, location: locationName })}</div>
         </div>
       </div>
     );
@@ -776,10 +781,10 @@ const Tasks = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center bg-white p-8 rounded-xl shadow-lg">
           <div className="text-5xl mb-4">⚠️</div>
-          <div className="text-2xl font-bold text-red-600 mb-2">Oops!</div>
+          <div className="text-2xl font-bold text-red-600 mb-2">{t('tasks.errorTitle', 'Oops!')}</div>
           <div className="text-gray-600 mb-4">{error}</div>
           <button onClick={() => { hasFetchedRef.current = false; fetchData(true); }} className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">
-            Try Again
+            {t('tasks.tryAgain', 'Try Again')}
           </button>
         </div>
       </div>
@@ -813,24 +818,24 @@ const Tasks = () => {
       <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
-            <p className="text-gray-600">Find jobs nearby and earn money 💰</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('tasks.title', 'Quick Help')}</h1>
+            <p className="text-gray-600">{t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             {isAuthenticated ? (
               <>
                 {/* Post a Job - BLUE */}
                 <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
-                  <span>💰</span> Post a Job
+                  <span>💰</span> {t('tasks.postJob', 'Post a Job')}
                 </button>
                 {/* Offer Service - ORANGE */}
                 <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
-                  <span>👋</span> Offer Service
+                  <span>👋</span> {t('tasks.offerService', 'Offer Service')}
                 </button>
               </>
             ) : (
               <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                Login to Post Jobs or Offer Services
+                {t('tasks.loginToPost', 'Login to Post Jobs or Offer Services')}
               </button>
             )}
           </div>
@@ -843,15 +848,15 @@ const Tasks = () => {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">✨</span>
                 <div>
-                  <p className="font-semibold">{matchingJobsCount} job{matchingJobsCount !== 1 ? 's' : ''} match your offerings!</p>
-                  <p className="text-blue-100 text-sm">Based on your services: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
+                  <p className="font-semibold">{t('tasks.matchingJobs', '{{count}} job(s) match your offerings!', { count: matchingJobsCount })}</p>
+                  <p className="text-blue-100 text-sm">{t('tasks.basedOnServices', 'Based on your services')}: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setActiveTab('jobs')}
                 className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap"
               >
-                View Matching Jobs →
+                {t('tasks.viewMatchingJobs', 'View Matching Jobs')} →
               </button>
             </div>
           </div>
@@ -861,7 +866,7 @@ const Tasks = () => {
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('tasks.searchPlaceholder', 'Search jobs or offerings...')} className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
@@ -877,7 +882,7 @@ const Tasks = () => {
                 <option value={100}>100 km</option>
               </select>
               <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                ⚙️ Filters
+                ⚙️ {t('tasks.filters', 'Filters')}
               </button>
             </div>
           </div>
@@ -885,8 +890,8 @@ const Tasks = () => {
           {showLocationModal && (
             <div className="mt-3 p-3 bg-red-50 border-t border-red-200 rounded-lg" ref={suggestionsRef}>
               <div className="mb-2">
-                <input type="text" value={addressSearch} onChange={(e) => handleAddressInputChange(e.target.value)} placeholder="Search address or city..." className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500" />
-                {searchingAddress && <span className="text-sm text-red-600">Searching...</span>}
+                <input type="text" value={addressSearch} onChange={(e) => handleAddressInputChange(e.target.value)} placeholder={t('tasks.searchAddress', 'Search address or city...')} className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                {searchingAddress && <span className="text-sm text-red-600">{t('common.loading', 'Searching...')}</span>}
               </div>
               {showSuggestions && suggestions.length > 0 && (
                 <div className="max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg">
@@ -898,7 +903,7 @@ const Tasks = () => {
                 </div>
               )}
               {manualLocationSet && (
-                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-red-600 hover:underline">Reset to auto-detect</button>
+                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-red-600 hover:underline">{t('tasks.resetLocation', 'Reset to auto-detect')}</button>
               )}
             </div>
           )}
@@ -906,7 +911,7 @@ const Tasks = () => {
           {showFilters && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('tasks.category', 'Category')}</label>
                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                   {CATEGORY_OPTIONS.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
                 </select>
@@ -918,25 +923,25 @@ const Tasks = () => {
         {/* THREE TABS: All, Jobs, Offerings - Blue + Orange */}
         <div className="mb-4 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
           <button onClick={() => setActiveTab('all')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
-            🌐 All ({filteredTasks.length + filteredOfferings.length})
+            🌐 {t('common.all', 'All')} ({filteredTasks.length + filteredOfferings.length})
           </button>
           <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
-            💰 Jobs ({filteredTasks.length})
+            💰 {t('common.jobs', 'Jobs')} ({filteredTasks.length})
             {isAuthenticated && matchingJobsCount > 0 && activeTab !== 'jobs' && (
               <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                {matchingJobsCount} match
+                {matchingJobsCount} {t('tasks.match', 'match')}
               </span>
             )}
           </button>
           <button onClick={() => setActiveTab('offerings')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
-            👋 Offerings ({filteredOfferings.length})
+            👋 {t('common.offerings', 'Offerings')} ({filteredOfferings.length})
           </button>
           
           {/* Refreshing indicator */}
           {refreshing && (
             <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
               <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-              <span>Updating...</span>
+              <span>{t('tasks.updating', 'Updating...')}</span>
             </div>
           )}
         </div>
@@ -945,26 +950,26 @@ const Tasks = () => {
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           {/* Map Legend - Shows marker meanings */}
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-semibold text-gray-700">Map:</span>
+            <span className="font-semibold text-gray-700">{t('map.legend', 'Map')}:</span>
             
             {/* User location */}
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
-              <span className="text-gray-600">You</span>
+              <span className="text-gray-600">{t('map.you', 'You')}</span>
             </div>
             
             {/* Price color coding */}
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold">€25</span>
-              <span className="text-gray-500 text-xs">Quick tasks</span>
+              <span className="text-gray-500 text-xs">{t('map.quickTasks', 'Quick tasks')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-blue-500 text-white rounded-full text-xs font-bold">€50</span>
-              <span className="text-gray-500 text-xs">Medium</span>
+              <span className="text-gray-500 text-xs">{t('map.mediumJobs', 'Medium')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)' }}>€100+</span>
-              <span className="text-gray-500 text-xs">Premium ✨</span>
+              <span className="text-gray-500 text-xs">{t('map.premiumJobs', 'Premium')} ✨</span>
             </div>
           </div>
           <div style={{ height: '350px' }}>
@@ -993,13 +998,13 @@ const Tasks = () => {
           {filteredTasks.length > 0 && (
             <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex flex-wrap items-center gap-4 text-sm">
               <span className="font-medium text-blue-700">
-                💰 {mapTasks.length} job{mapTasks.length !== 1 ? 's' : ''} on map
+                💰 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}
               </span>
               {maxBudget > 0 && (
-                <span className="text-green-600">Top payout: €{maxBudget}</span>
+                <span className="text-green-600">{t('tasks.topPayout', 'Top payout')}: €{maxBudget}</span>
               )}
               {hasHighValueJobs && (
-                <span className="text-purple-600 font-medium">✨ Premium jobs available!</span>
+                <span className="text-purple-600 font-medium">✨ {t('tasks.premiumAvailable', 'Premium jobs available!')}</span>
               )}
             </div>
           )}
@@ -1008,31 +1013,31 @@ const Tasks = () => {
         {/* CONTENT AREA */}
         <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-            {activeTab === 'all' && 'Jobs & Offerings'}
-            {activeTab === 'jobs' && '💰 Available Jobs'}
-            {activeTab === 'offerings' && '👋 Service Offerings'}
-            {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
+            {activeTab === 'all' && t('tasks.jobsAndOfferings', 'Jobs & Offerings')}
+            {activeTab === 'jobs' && <>💰 {t('tasks.availableJobs', 'Available Jobs')}</>}
+            {activeTab === 'offerings' && <>👋 {t('offerings.title', 'Service Offerings')}</>}
+            {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• {t('tasks.searching', 'Searching')}: "{searchQuery}"</span>}
           </h2>
           
           {/* Jobs Section (shown in 'all' and 'jobs' tabs) */}
           {(activeTab === 'all' || activeTab === 'jobs') && (
             <div className="mb-8">
-              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💰 Jobs <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
+              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💰 {t('common.jobs', 'Jobs')} <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
               
               {filteredTasks.length === 0 ? (
                 <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
                   <div className="text-5xl mb-4">💰</div>
-                  <p className="text-gray-900 font-semibold text-lg mb-2">No jobs posted nearby yet</p>
+                  <p className="text-gray-900 font-semibold text-lg mb-2">{t('tasks.noJobsNearby', 'No jobs posted nearby yet')}</p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.
+                    {t('tasks.beFirstToPost', 'Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.')}
                   </p>
                   {isAuthenticated ? (
                     <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                      💰 Post Your First Job
+                      💰 {t('tasks.postFirstJob', 'Post Your First Job')}
                     </button>
                   ) : (
                     <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                      Login to Post a Job
+                      {t('tasks.loginToPostJob', 'Login to Post a Job')}
                     </button>
                   )}
                 </div>
@@ -1054,29 +1059,29 @@ const Tasks = () => {
           {/* Offerings Section (shown in 'all' and 'offerings' tabs) */}
           {(activeTab === 'all' || activeTab === 'offerings') && (
             <div>
-              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">👋 Offerings <span className="text-sm font-normal text-gray-500">({filteredOfferings.length})</span></h3>}
+              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">👋 {t('common.offerings', 'Offerings')} <span className="text-sm font-normal text-gray-500">({filteredOfferings.length})</span></h3>}
               
               {/* Info banner about offerings not on map */}
               {activeTab === 'offerings' && filteredOfferings.length > 0 && (
                 <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-                  <span className="font-medium">💡 Tip:</span> Offerings are shown in the list below. Want your offering to appear on the map? Premium features coming soon!
+                  <span className="font-medium">💡 {t('tasks.tip', 'Tip')}:</span> {t('offerings.premiumTip', 'Offerings are shown in the list below. Want your offering to appear on the map? Premium features coming soon!')}
                 </div>
               )}
               
               {filteredOfferings.length === 0 ? (
                 <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
                   <div className="text-5xl mb-4">👋</div>
-                  <p className="text-gray-900 font-semibold text-lg mb-2">No service providers in your area yet</p>
+                  <p className="text-gray-900 font-semibold text-lg mb-2">{t('offerings.noOfferingsNearby', 'No service providers in your area yet')}</p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    Are you skilled at something? Advertise your services here and get hired by people nearby!
+                    {t('offerings.beFirstToOffer', 'Are you skilled at something? Advertise your services here and get hired by people nearby!')}
                   </p>
                   {isAuthenticated ? (
                     <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
-                      👋 Offer Your Services
+                      👋 {t('offerings.offerYourServices', 'Offer Your Services')}
                     </button>
                   ) : (
                     <button onClick={() => navigate('/login')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
-                      Login to Offer Services
+                      {t('offerings.loginToOffer', 'Login to Offer Services')}
                     </button>
                   )}
                 </div>
@@ -1096,11 +1101,11 @@ const Tasks = () => {
           <div className="mt-6 bg-gradient-to-r from-blue-500 to-amber-500 rounded-lg p-6 text-white">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
-                <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
-                <p className="text-white/90">View your posted jobs, offerings, and applications in your profile page.</p>
+                <h3 className="text-xl font-bold mb-1">{t('profile.manageActivity', 'Manage Your Activity')}</h3>
+                <p className="text-white/90">{t('profile.manageActivityDesc', 'View your posted jobs, offerings, and applications in your profile page.')}</p>
               </div>
               <Link to="/profile?tab=tasks" className="bg-white text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors whitespace-nowrap">
-                Go to My Tasks →
+                {t('profile.goToMyTasks', 'Go to My Tasks')} →
               </Link>
             </div>
           </div>
@@ -1112,6 +1117,7 @@ const Tasks = () => {
 
 // Job Card Component with matching indicator and budget display - Blue theme
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
+  const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   const budget = task.budget || task.reward || 0;
   const isHighValue = budget > 75;
@@ -1130,14 +1136,14 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
       {/* High value badge */}
       {isHighValue && (
         <div className="flex items-center gap-2 mb-2 text-purple-700">
-          <span className="px-2 py-0.5 bg-gradient-to-r from-purple-200 to-amber-200 rounded text-xs font-semibold">✨ Premium opportunity!</span>
+          <span className="px-2 py-0.5 bg-gradient-to-r from-purple-200 to-amber-200 rounded text-xs font-semibold">✨ {t('offerings.premiumOpportunity', 'Premium opportunity!')}</span>
         </div>
       )}
       
       {/* Matching badge */}
       {isMatching && !isHighValue && (
         <div className="flex items-center gap-2 mb-2 text-blue-700">
-          <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold">✨ Matches your offering</span>
+          <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold">✨ {t('offerings.matchesYourOffering', 'Matches your offering')}</span>
         </div>
       )}
       
@@ -1153,7 +1159,7 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
           </div>
           {task.creator_name && (
-            <p className="text-xs text-gray-500 mt-2">Posted by {task.creator_name}</p>
+            <p className="text-xs text-gray-500 mt-2">{t('tasks.postedBy', 'Posted by')} {task.creator_name}</p>
           )}
         </div>
         <div className="text-right flex-shrink-0">
@@ -1165,7 +1171,7 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
           }`}>
             €{budget}
           </div>
-          {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 Premium</div>}
+          {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
         </div>
       </div>
     </Link>
@@ -1174,6 +1180,7 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
 
 // Offering Card Component - Orange theme
 const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
+  const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
   
   return (
@@ -1193,7 +1200,7 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
         {/* Info */}
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{offering.title}</h4>
-          <p className="text-xs text-gray-500 mb-1">by {offering.creator_name}</p>
+          <p className="text-xs text-gray-500 mb-1">{t('offerings.provider', 'by')} {offering.creator_name}</p>
           
           {/* Rating */}
           {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
@@ -1206,9 +1213,9 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
           {/* Price - GREEN (money color) */}
           <div className="text-base sm:text-lg font-bold text-green-600 mb-2">
             €{offering.price || 0}
-            {offering.price_type === 'hourly' && '/hr'}
-            {offering.price_type === 'fixed' && ' fixed'}
-            {offering.price_type === 'negotiable' && ' (neg)'}
+            {offering.price_type === 'hourly' && t('common.perHour', '/hr')}
+            {offering.price_type === 'fixed' && ` ${t('common.fixed', 'fixed')}`}
+            {offering.price_type === 'negotiable' && ` (${t('common.negotiable', 'neg')})`}
           </div>
           
           {/* Category & Distance - Orange badge */}
