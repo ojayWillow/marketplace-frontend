@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E40AF"/>
+      <stop offset="50%" style="stop-color:#3B82F6"/>
+      <stop offset="100%" style="stop-color:#6366F1"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#A78BFA"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="white" opacity="0.05"/>
+  <circle cx="1100" cy="530" r="250" fill="white" opacity="0.05"/>
+  <circle cx="900" cy="100" r="150" fill="white" opacity="0.03"/>
+  
+  <!-- Logo icon (shopping bag with pin) -->
+  <g transform="translate(150, 180)">
+    <!-- Bag body -->
+    <path d="M0 60 L0 200 C0 215 12 227 27 227 L165 227 C180 227 192 215 192 200 L192 60 Z" 
+          fill="white" opacity="0.95"/>
+    <!-- Bag handles -->
+    <path d="M40 60 L40 30 C40 13 54 0 71 0 L121 0 C138 0 152 13 152 30 L152 60" 
+          fill="none" stroke="white" stroke-width="16" stroke-linecap="round" opacity="0.95"/>
+    <!-- Location pin -->
+    <path d="M96 80 C70 80 49 101 49 127 C49 165 96 210 96 210 C96 210 143 165 143 127 C143 101 122 80 96 80 Z" 
+          fill="url(#accent)"/>
+    <circle cx="96" cy="127" r="15" fill="white"/>
+  </g>
+  
+  <!-- Main text -->
+  <text x="400" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="120" font-weight="800" fill="white">
+    Tirgus
+  </text>
+  
+  <!-- Tagline -->
+  <text x="400" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="white" opacity="0.9">
+    Latvijas Tirgus
+  </text>
+  
+  <!-- Features -->
+  <g transform="translate(400, 420)" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="white" opacity="0.8">
+    <text x="0" y="0">• Pirkt un Pārdot</text>
+    <text x="250" y="0">• Ātrā Palīdzība</text>
+    <text x="500" y="0">• Pakalpojumi</text>
+  </g>
+  
+  <!-- Bottom tagline -->
+  <text x="400" y="530" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="white" opacity="0.6">
+    tirgus.lv
+  </text>
+</svg>
