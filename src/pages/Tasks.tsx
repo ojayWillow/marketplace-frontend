@@ -50,6 +50,33 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 };
 
+// Format distance for display
+const formatDistance = (km: number): string => {
+  if (km < 1) {
+    return `${Math.round(km * 1000)}m away`;
+  } else if (km < 10) {
+    return `${km.toFixed(1)}km away`;
+  } else {
+    return `${Math.round(km)}km away`;
+  }
+};
+
+// Format time ago
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
+
 // Function to add offset to overlapping markers
 const addMarkerOffsets = (tasks: Task[]): Task[] => {
   const coordMap = new Map<string, Task[]>();
@@ -186,6 +213,164 @@ const createOfferingIcon = () => divIcon({
   iconAnchor: [12, 12]
 });
 
+// =====================================================
+// ENHANCED MAP POPUP COMPONENT
+// =====================================================
+const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
+  const navigate = useNavigate();
+  const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
+  const budget = task.budget || task.reward || 0;
+  const isHighValue = budget > 100;
+  const categoryIcon = getCategoryIcon(task.category);
+  const categoryLabel = getCategoryLabel(task.category);
+  
+  return (
+    <div className="job-popup" style={{ minWidth: '260px', maxWidth: '300px' }}>
+      {/* Header with gradient */}
+      <div 
+        className="px-3 py-2 -mx-0 -mt-0 rounded-t-lg mb-2"
+        style={{ 
+          background: isHighValue 
+            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+            : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+          margin: '-13px -13px 10px -13px'
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-white text-xs font-medium px-2 py-0.5 bg-white/20 rounded-full">
+            {categoryIcon} {categoryLabel}
+          </span>
+          <span className="text-white/90 text-xs">
+            📍 {formatDistance(distance)}
+          </span>
+        </div>
+      </div>
+      
+      {/* Budget - Prominent */}
+      <div className="text-center mb-2">
+        <div className={`text-3xl font-bold ${isHighValue ? 'text-green-600' : 'text-green-600'}`}>
+          €{budget}
+        </div>
+        {isHighValue && (
+          <div className="text-xs text-green-500 font-medium">✨ High-value opportunity!</div>
+        )}
+      </div>
+      
+      {/* Title */}
+      <h3 className="font-bold text-gray-900 text-base mb-1 line-clamp-2">
+        {task.title}
+      </h3>
+      
+      {/* Description */}
+      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        {task.description}
+      </p>
+      
+      {/* Location */}
+      <div className="flex items-start gap-2 text-sm text-gray-500 mb-3 bg-gray-50 rounded-lg p-2">
+        <span className="text-base">📍</span>
+        <span className="line-clamp-2">{task.location}</span>
+      </div>
+      
+      {/* Footer - Posted info */}
+      <div className="flex items-center justify-between text-xs text-gray-400 mb-3 pb-2 border-b border-gray-100">
+        <span>
+          👤 {task.creator_name || 'Anonymous'}
+        </span>
+        <span>
+          🕐 {task.created_at ? formatTimeAgo(task.created_at) : 'Recently'}
+        </span>
+      </div>
+      
+      {/* Action Button */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(`/tasks/${task.id}`);
+        }}
+        className={`w-full py-2.5 px-4 rounded-lg font-semibold text-white transition-all ${
+          isHighValue 
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-200' 
+            : 'bg-green-500 hover:bg-green-600'
+        }`}
+      >
+        View Details & Apply →
+      </button>
+    </div>
+  );
+};
+
+// Enhanced Offering Popup
+const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
+  const navigate = useNavigate();
+  const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
+  const categoryIcon = getCategoryIcon(offering.category);
+  const categoryLabel = getCategoryLabel(offering.category);
+  
+  return (
+    <div className="offering-popup" style={{ minWidth: '240px', maxWidth: '280px' }}>
+      {/* Header with gradient */}
+      <div 
+        className="px-3 py-2 rounded-t-lg mb-2"
+        style={{ 
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          margin: '-13px -13px 10px -13px'
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-white text-xs font-medium px-2 py-0.5 bg-white/20 rounded-full">
+            {categoryIcon} {categoryLabel}
+          </span>
+          <span className="text-white/90 text-xs">
+            📍 {formatDistance(distance)}
+          </span>
+        </div>
+      </div>
+      
+      {/* Provider info */}
+      <div className="flex items-center gap-3 mb-3">
+        {offering.creator_avatar ? (
+          <img src={offering.creator_avatar} alt={offering.creator_name} className="w-10 h-10 rounded-full object-cover border-2 border-amber-200" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold">
+            {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
+          </div>
+        )}
+        <div>
+          <div className="font-semibold text-gray-900">{offering.creator_name}</div>
+          {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
+            <div className="flex items-center gap-1 text-xs">
+              <StarRating rating={offering.creator_rating} />
+              <span className="text-gray-500">({offering.creator_review_count || 0})</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Title & Price */}
+      <h3 className="font-bold text-gray-900 text-sm mb-1">{offering.title}</h3>
+      <div className="text-lg font-bold text-green-600 mb-3">
+        €{offering.price || 0}
+        {offering.price_type === 'hourly' && <span className="text-sm font-normal">/hr</span>}
+        {offering.price_type === 'negotiable' && <span className="text-sm font-normal text-gray-500"> (negotiable)</span>}
+      </div>
+      
+      {/* Action Button */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(`/offerings/${offering.id}`);
+        }}
+        className="w-full py-2 px-4 rounded-lg font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
+      >
+        View Profile →
+      </button>
+    </div>
+  );
+};
+
 // Memoized Map Markers Component - updates without re-creating the map
 const MapMarkers = ({ 
   tasks, 
@@ -219,10 +404,11 @@ const MapMarkers = ({
       {/* User Location Marker - Red pin */}
       <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
         <Popup>
-          <div className="p-2">
-            <p className="font-bold">📍 Your Location</p>
+          <div className="p-2 text-center">
+            <div className="text-2xl mb-1">📍</div>
+            <p className="font-bold text-gray-900">You are here</p>
             {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
-            <p className="text-xs text-gray-500">{manualLocationSet ? '(Manually set)' : '(Auto-detected)'}</p>
+            <p className="text-xs text-gray-400 mt-1">{manualLocationSet ? 'Manually set' : 'Auto-detected'}</p>
           </div>
         </Popup>
       </Marker>
@@ -242,25 +428,7 @@ const MapMarkers = ({
             icon={jobIcon}
           >
             <Popup>
-              <div className="p-2">
-                <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-green-600 hover:text-green-800 hover:underline">
-                  {task.title}
-                </Link>
-                <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-green-600 font-bold text-lg">€{budget}</span>
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                    {task.category}
-                  </span>
-                </div>
-                {budget > 100 && (
-                  <div className="text-xs text-green-600 font-medium mb-2">✨ High-value opportunity!</div>
-                )}
-                <div className="text-xs text-gray-500 mb-2">
-                  📍 {task.location}
-                </div>
-                <Link to={`/tasks/${task.id}`} className="text-xs text-green-500 hover:text-green-700">View Details →</Link>
-              </div>
+              <JobMapPopup task={task} userLocation={userLocation} />
             </Popup>
           </Marker>
         );
@@ -274,19 +442,7 @@ const MapMarkers = ({
           icon={offeringIcon}
         >
           <Popup>
-            <div className="p-2">
-              <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
-              <p className="text-sm text-gray-600 mb-2">{offering.description.substring(0, 100)}...</p>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-green-600 font-bold">
-                  €{offering.price || 0}
-                  {offering.price_type === 'hourly' && '/hr'}
-                  {offering.price_type === 'negotiable' && ' (negotiable)'}
-                </span>
-                <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">{offering.category}</span>
-              </div>
-              <Link to={`/offerings/${offering.id}`} className="text-xs text-amber-500 hover:text-amber-700">View Details →</Link>
-            </div>
+            <OfferingMapPopup offering={offering} userLocation={userLocation} />
           </Popup>
         </Marker>
       ))}
