@@ -79,30 +79,93 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
+// =====================================================
+// CUSTOM MARKER ICON FACTORIES
+// =====================================================
+
+// User Location Icon - Red pin marker (distinct from money markers)
+const createUserLocationIcon = () => divIcon({
+  className: 'user-location-icon',
+  html: `
+    <div class="user-location-pin">
+      <div class="user-location-inner"></div>
+    </div>
+  `,
+  iconSize: [30, 36],
+  iconAnchor: [15, 36],
+});
+
+// Job Icon Factory - 💰 sized by budget
+// Budget thresholds: ≤25 (small), ≤50 (medium), ≤100 (large), >100 (XL + glow)
+const getJobIconForBudget = (budget: number = 0) => {
+  let size = 28;
+  let fontSize = 14;
+  let extraClass = '';
+
+  if (budget <= 25) {
+    size = 28;
+    fontSize = 14;
+  } else if (budget <= 50) {
+    size = 34;
+    fontSize = 17;
+  } else if (budget <= 100) {
+    size = 42;
+    fontSize = 21;
+  } else {
+    // €100+ = XL with glow animation
+    size = 50;
+    fontSize = 25;
+    extraClass = ' job-icon--xl';
+  }
+
+  return divIcon({
+    className: `job-money-icon${extraClass}`,
+    html: `
+      <div class="job-money-pin" style="width:${size}px;height:${size}px;">
+        <span class="job-money-emoji" style="font-size:${fontSize}px;">💰</span>
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
+// Offering Icon - Orange/Amber (only shown when premium/boosted - for now hidden from map)
+const createOfferingIcon = () => divIcon({
+  className: 'custom-offering-icon',
+  html: '<div class="offering-pin"><span style="font-size:12px;">👋</span></div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
+
 // Memoized Map Markers Component - updates without re-creating the map
 const MapMarkers = ({ 
   tasks, 
   offerings, 
   userLocation, 
-  userLocationIcon, 
-  offeringLocationIcon,
   locationName,
   manualLocationSet,
-  onLocationSelect
+  onLocationSelect,
+  showOfferingsOnMap
 }: {
   tasks: Task[];
   offerings: Offering[];
   userLocation: { lat: number; lng: number };
-  userLocationIcon: L.DivIcon;
-  offeringLocationIcon: L.DivIcon;
   locationName: string;
   manualLocationSet: boolean;
   onLocationSelect: (lat: number, lng: number) => void;
+  showOfferingsOnMap: boolean;
 }) => {
+  // Memoize the user location icon
+  const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
+  const offeringIcon = useMemo(() => createOfferingIcon(), []);
+
   return (
     <>
       <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
       <LocationPicker onLocationSelect={onLocationSelect} />
+      
+      {/* User Location Marker - Red pin */}
       <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
         <Popup>
           <div className="p-2">
@@ -112,25 +175,47 @@ const MapMarkers = ({
           </div>
         </Popup>
       </Marker>
-      {/* Task markers (blue) */}
-      {tasks.map((task) => (
-        <Marker key={`task-${task.id}`} position={[task.latitude, task.longitude]}>
-          <Popup>
-            <div className="p-2">
-              <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
-              <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
-                <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">{task.category}</span>
+      
+      {/* Job/Task markers - 💰 Money bags sized by budget */}
+      {tasks.map((task) => {
+        const budget = task.budget || task.reward || 0;
+        const jobIcon = getJobIconForBudget(budget);
+        
+        return (
+          <Marker 
+            key={`task-${task.id}`} 
+            position={[task.latitude, task.longitude]}
+            icon={jobIcon}
+          >
+            <Popup>
+              <div className="p-2">
+                <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-green-600 hover:text-green-800 hover:underline">
+                  {task.title}
+                </Link>
+                <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-green-600 font-bold text-lg">€{budget}</span>
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                    {task.category}
+                  </span>
+                </div>
+                {budget > 100 && (
+                  <div className="text-xs text-green-600 font-medium mb-2">✨ High-value opportunity!</div>
+                )}
+                <Link to={`/tasks/${task.id}`} className="text-xs text-green-500 hover:text-green-700">View Details →</Link>
               </div>
-              <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-      {/* Offering markers (amber/orange) */}
-      {offerings.map((offering) => (
-        <Marker key={`offering-${offering.id}`} position={[offering.latitude, offering.longitude]} icon={offeringLocationIcon}>
+            </Popup>
+          </Marker>
+        );
+      })}
+      
+      {/* Offering markers - Only shown if showOfferingsOnMap is true (future premium feature) */}
+      {showOfferingsOnMap && offerings.map((offering) => (
+        <Marker 
+          key={`offering-${offering.id}`} 
+          position={[offering.latitude, offering.longitude]} 
+          icon={offeringIcon}
+        >
           <Popup>
             <div className="p-2">
               <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
@@ -182,26 +267,14 @@ const Tasks = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   
+  // For now, offerings are NOT shown on map (future premium feature)
+  const showOfferingsOnMap = false;
+  
   const hasFetchedRef = useRef(false);
   const hasEverLoadedRef = useRef(false); // Track if we've ever loaded data
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Memoize icons so they don't cause re-renders
-  const userLocationIcon = useMemo(() => divIcon({
-    className: 'custom-user-icon',
-    html: '<div style="background: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
-  }), []);
-
-  const offeringLocationIcon = useMemo(() => divIcon({
-    className: 'custom-offering-icon',
-    html: '<div style="background: #f59e0b; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
-  }), []);
 
   // Load user's offerings for matching (when logged in)
   useEffect(() => {
@@ -461,8 +534,8 @@ const Tasks = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
-          <div className="text-xl font-bold text-gray-900 mb-2">Finding opportunities...</div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent mb-4"></div>
+          <div className="text-xl font-bold text-gray-900 mb-2">💰 Finding money opportunities...</div>
           <div className="text-gray-600">Searching within {searchRadius}km of {locationName}</div>
         </div>
       </div>
@@ -493,13 +566,18 @@ const Tasks = () => {
     : 0;
 
   // Get map markers based on active tab
+  // Note: Offerings are NOT shown on map for now (kept in list only)
   const getMapMarkers = () => {
     if (activeTab === 'jobs') return { tasks: filteredTasks, offerings: [] };
-    if (activeTab === 'offerings') return { tasks: [], offerings: filteredOfferings };
-    return { tasks: filteredTasks, offerings: filteredOfferings };
+    if (activeTab === 'offerings') return { tasks: [], offerings: showOfferingsOnMap ? filteredOfferings : [] };
+    return { tasks: filteredTasks, offerings: showOfferingsOnMap ? filteredOfferings : [] };
   };
 
   const { tasks: mapTasks, offerings: mapOfferings } = getMapMarkers();
+  
+  // Calculate budget stats for legend
+  const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
+  const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 100);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -507,20 +585,20 @@ const Tasks = () => {
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Help</h1>
-            <p className="text-gray-600">Find help or offer your services nearby</p>
+            <p className="text-gray-600">Find jobs nearby and earn money 💰</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             {isAuthenticated ? (
               <>
-                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
-                  <span>📝</span> Post a Job
+                <button onClick={() => navigate('/tasks/create')} className="bg-green-500 text-white px-5 py-2.5 rounded-lg hover:bg-green-600 font-medium transition-colors flex items-center gap-2">
+                  <span>💰</span> Post a Job
                 </button>
                 <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
                   <span>👋</span> Offer Service
                 </button>
               </>
             ) : (
-              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+              <button onClick={() => navigate('/login')} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">
                 Login to Post Jobs or Offer Services
               </button>
             )}
@@ -552,44 +630,44 @@ const Tasks = () => {
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-              <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors flex-1 sm:flex-initial justify-center">
+              <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 sm:flex-initial justify-center">
                 <span>📍</span>
                 <span className="text-sm text-gray-700 truncate max-w-[120px]">{manualLocationSet && locationName ? locationName.split(',')[0] : locationName}</span>
               </button>
-              <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
+              <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
                 <option value={5}>5 km</option>
                 <option value={10}>10 km</option>
                 <option value={25}>25 km</option>
                 <option value={50}>50 km</option>
                 <option value={100}>100 km</option>
               </select>
-              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                 ⚙️ Filters
               </button>
             </div>
           </div>
           
           {showLocationModal && (
-            <div className="mt-3 p-3 bg-blue-50 border-t border-blue-200 rounded-lg" ref={suggestionsRef}>
+            <div className="mt-3 p-3 bg-red-50 border-t border-red-200 rounded-lg" ref={suggestionsRef}>
               <div className="mb-2">
-                <input type="text" value={addressSearch} onChange={(e) => handleAddressInputChange(e.target.value)} placeholder="Search address or city..." className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-                {searchingAddress && <span className="text-sm text-blue-600">Searching...</span>}
+                <input type="text" value={addressSearch} onChange={(e) => handleAddressInputChange(e.target.value)} placeholder="Search address or city..." className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                {searchingAddress && <span className="text-sm text-red-600">Searching...</span>}
               </div>
               {showSuggestions && suggestions.length > 0 && (
                 <div className="max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg">
                   {suggestions.map((suggestion, index) => (
-                    <button key={index} onClick={() => selectSuggestion(suggestion)} className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0">
+                    <button key={index} onClick={() => selectSuggestion(suggestion)} className="w-full px-3 py-2 text-left hover:bg-red-50 border-b last:border-b-0">
                       <span className="text-sm">{suggestion.display_name}</span>
                     </button>
                   ))}
                 </div>
               )}
               {manualLocationSet && (
-                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-blue-600 hover:underline">Reset to auto-detect</button>
+                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-red-600 hover:underline">Reset to auto-detect</button>
               )}
             </div>
           )}
@@ -598,7 +676,7 @@ const Tasks = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                   {CATEGORY_OPTIONS.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
                 </select>
               </div>
@@ -608,13 +686,13 @@ const Tasks = () => {
 
         {/* THREE TABS: All, Jobs, Offerings */}
         <div className="mb-4 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
-          <button onClick={() => setActiveTab('all')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+          <button onClick={() => setActiveTab('all')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             🌐 All ({filteredTasks.length + filteredOfferings.length})
           </button>
-          <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
-            💼 Jobs ({filteredTasks.length})
+          <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+            💰 Jobs ({filteredTasks.length})
             {isAuthenticated && matchingJobsCount > 0 && activeTab !== 'jobs' && (
-              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+              <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                 {matchingJobsCount} match
               </span>
             )}
@@ -626,7 +704,7 @@ const Tasks = () => {
           {/* Refreshing indicator */}
           {refreshing && (
             <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
-              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
               <span>Updating...</span>
             </div>
           )}
@@ -634,25 +712,34 @@ const Tasks = () => {
 
         {/* MAP with integrated legend */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          {/* Map Legend - Always visible above map */}
-          <div className="px-4 py-2 bg-gray-50 border-b flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-medium text-gray-700">Map Legend:</span>
+          {/* Map Legend - Shows marker meanings */}
+          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-green-50 border-b flex flex-wrap items-center gap-4 text-sm">
+            <span className="font-semibold text-gray-700">Map Legend:</span>
+            
+            {/* User location */}
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow"></div>
-              <span className="text-gray-600">Your location</span>
+              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
+              <span className="text-gray-600">📍 You</span>
             </div>
+            
+            {/* Job markers by size */}
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-gray-600">Jobs (blue pins)</span>
+              <span className="text-sm">💰</span>
+              <span className="text-gray-600">Jobs (size = budget)</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-              <span className="text-gray-600">Offerings (orange pins)</span>
+            
+            {/* Size examples */}
+            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
+              <span className="px-1.5 py-0.5 bg-green-100 rounded">≤25€ small</span>
+              <span className="px-1.5 py-0.5 bg-green-200 rounded">≤50€ med</span>
+              <span className="px-1.5 py-0.5 bg-green-300 rounded">≤100€ large</span>
+              <span className="px-1.5 py-0.5 bg-green-400 text-white rounded animate-pulse">&gt;100€ ✨</span>
             </div>
+            
+            {/* Matching indicator */}
             {isAuthenticated && myOfferingCategories.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">✨</span>
-                <span className="text-gray-600">Matching jobs</span>
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">✨ Your matches</span>
               </div>
             )}
           </div>
@@ -670,43 +757,57 @@ const Tasks = () => {
                 tasks={mapTasks}
                 offerings={mapOfferings}
                 userLocation={userLocation}
-                userLocationIcon={userLocationIcon}
-                offeringLocationIcon={offeringLocationIcon}
                 locationName={locationName}
                 manualLocationSet={manualLocationSet}
                 onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)}
+                showOfferingsOnMap={showOfferingsOnMap}
               />
             </MapContainer>
           </div>
+          
+          {/* Quick stats below map */}
+          {filteredTasks.length > 0 && (
+            <div className="px-4 py-2 bg-green-50 border-t border-green-100 flex flex-wrap items-center gap-4 text-sm">
+              <span className="font-medium text-green-700">
+                💰 {filteredTasks.length} job{filteredTasks.length !== 1 ? 's' : ''} on map
+              </span>
+              {maxBudget > 0 && (
+                <span className="text-green-600">Top payout: €{maxBudget}</span>
+              )}
+              {hasHighValueJobs && (
+                <span className="text-emerald-600 font-medium animate-pulse">✨ High-value jobs available!</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* CONTENT AREA */}
         <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
             {activeTab === 'all' && 'Jobs & Offerings'}
-            {activeTab === 'jobs' && 'Available Jobs'}
-            {activeTab === 'offerings' && 'Service Offerings'}
+            {activeTab === 'jobs' && '💰 Available Jobs'}
+            {activeTab === 'offerings' && '👋 Service Offerings'}
             {searchQuery && <span className="text-sm font-normal text-gray-500 ml-2">• Searching: "{searchQuery}"</span>}
           </h2>
           
           {/* Jobs Section (shown in 'all' and 'jobs' tabs) */}
           {(activeTab === 'all' || activeTab === 'jobs') && (
             <div className="mb-8">
-              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💼 Jobs <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
+              {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💰 Jobs <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
               
               {filteredTasks.length === 0 ? (
-                <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
-                  <div className="text-5xl mb-4">💼</div>
+                <div className="text-center py-12 bg-gradient-to-br from-green-50 to-white rounded-xl border-2 border-dashed border-green-200">
+                  <div className="text-5xl mb-4">💰</div>
                   <p className="text-gray-900 font-semibold text-lg mb-2">No jobs posted nearby yet</p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
                     Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.
                   </p>
                   {isAuthenticated ? (
-                    <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                      📝 Post Your First Job
+                    <button onClick={() => navigate('/tasks/create')} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">
+                      💰 Post Your First Job
                     </button>
                   ) : (
-                    <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+                    <button onClick={() => navigate('/login')} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">
                       Login to Post a Job
                     </button>
                   )}
@@ -730,6 +831,13 @@ const Tasks = () => {
           {(activeTab === 'all' || activeTab === 'offerings') && (
             <div>
               {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">👋 Offerings <span className="text-sm font-normal text-gray-500">({filteredOfferings.length})</span></h3>}
+              
+              {/* Info banner about offerings not on map */}
+              {activeTab === 'offerings' && filteredOfferings.length > 0 && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                  <span className="font-medium">💡 Tip:</span> Offerings are shown in the list below. Want your offering to appear on the map? Premium features coming soon!
+                </div>
+              )}
               
               {filteredOfferings.length === 0 ? (
                 <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
@@ -761,13 +869,13 @@ const Tasks = () => {
         
         {/* CTA for logged-in users */}
         {isAuthenticated && (
-          <div className="mt-6 bg-gradient-to-r from-blue-500 to-amber-500 rounded-lg p-6 text-white">
+          <div className="mt-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-6 text-white">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
-                <p className="text-blue-100">View your posted jobs, offerings, and applications in your profile page.</p>
+                <p className="text-green-100">View your posted jobs, offerings, and applications in your profile page.</p>
               </div>
-              <Link to="/profile?tab=tasks" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
+              <Link to="/profile?tab=tasks" className="bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors whitespace-nowrap">
                 Go to My Tasks →
               </Link>
             </div>
@@ -778,23 +886,34 @@ const Tasks = () => {
   );
 };
 
-// Job Card Component with matching indicator
+// Job Card Component with matching indicator and budget display
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
+  const budget = task.budget || task.reward || 0;
+  const isHighValue = budget > 100;
   
   return (
     <Link 
       to={`/tasks/${task.id}`} 
       className={`block border rounded-lg p-4 hover:shadow-md transition-all ${
-        isMatching 
-          ? 'border-green-300 bg-green-50 hover:border-green-400' 
-          : 'border-gray-200 hover:border-blue-300'
+        isHighValue 
+          ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 hover:border-green-500 ring-1 ring-green-200'
+          : isMatching 
+            ? 'border-emerald-300 bg-emerald-50 hover:border-emerald-400' 
+            : 'border-gray-200 hover:border-green-300'
       }`}
     >
-      {/* Matching badge */}
-      {isMatching && (
+      {/* High value badge */}
+      {isHighValue && (
         <div className="flex items-center gap-2 mb-2 text-green-700">
-          <span className="px-2 py-0.5 bg-green-200 rounded text-xs font-semibold">✨ Matches your offering</span>
+          <span className="px-2 py-0.5 bg-green-200 rounded text-xs font-semibold animate-pulse">✨ High-value opportunity!</span>
+        </div>
+      )}
+      
+      {/* Matching badge */}
+      {isMatching && !isHighValue && (
+        <div className="flex items-center gap-2 mb-2 text-emerald-700">
+          <span className="px-2 py-0.5 bg-emerald-200 rounded text-xs font-semibold">✨ Matches your offering</span>
         </div>
       )}
       
@@ -807,14 +926,17 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
+            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
           </div>
           {task.creator_name && (
             <p className="text-xs text-gray-500 mt-2">Posted by {task.creator_name}</p>
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          <div className="text-lg sm:text-xl font-bold text-green-600">€{task.budget || task.reward || 0}</div>
+          <div className={`text-xl sm:text-2xl font-bold ${isHighValue ? 'text-green-600' : 'text-green-600'}`}>
+            €{budget}
+          </div>
+          {isHighValue && <div className="text-xs text-green-500 mt-1">💰💰💰</div>}
         </div>
       </div>
     </Link>
