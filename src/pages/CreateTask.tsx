@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTask } from '../api/tasks';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
@@ -13,19 +13,23 @@ const CreateTask = () => {
   const [loading, setLoading] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
+  const [locationStatus, setLocationStatus] = useState<'none' | 'typing' | 'exact' | 'approximate'>('none');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: 'delivery',
     budget: '',
     location: '',
-    latitude: 56.9496,
-    longitude: 24.1052,
+    latitude: 0, // Start with 0 to know if coordinates were set
+    longitude: 0,
     deadlineDate: '',
     deadlineTime: '',
     difficulty: 'medium',
     is_urgent: false
   });
+
+  // Track if user selected from suggestions
+  const selectedFromSuggestions = useRef(false);
 
   const difficulties = [
     { value: 'easy', label: '🟢 Easy', description: 'Simple task, minimal effort' },
@@ -59,23 +63,76 @@ const CreateTask = () => {
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (formData.location.length > 3) {
-        try {
-          setSearchingAddress(true);
-          const results = await geocodeAddress(formData.location);
-          setAddressSuggestions(results);
-        } catch (error) {
-          console.error('Geocoding error:', error);
-          setAddressSuggestions([]);
-        } finally {
-          setSearchingAddress(false);
+        // Only search if user hasn't already selected from suggestions
+        if (!selectedFromSuggestions.current) {
+          setLocationStatus('typing');
+          try {
+            setSearchingAddress(true);
+            const results = await geocodeAddress(formData.location);
+            setAddressSuggestions(results);
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            setAddressSuggestions([]);
+          } finally {
+            setSearchingAddress(false);
+          }
         }
       } else {
         setAddressSuggestions([]);
+        if (formData.location.length === 0) {
+          setLocationStatus('none');
+        }
       }
     }, 500);
 
     return () => clearTimeout(timer);
   }, [formData.location]);
+
+  // Auto-geocode if user typed location but didn't select from suggestions
+  const ensureCoordinates = async (): Promise<boolean> => {
+    // If coordinates are already set (user selected from suggestions), we're good
+    if (formData.latitude !== 0 && formData.longitude !== 0 && selectedFromSuggestions.current) {
+      return true;
+    }
+
+    // If no location entered, fail
+    if (!formData.location.trim()) {
+      toast.error('Please enter a location');
+      return false;
+    }
+
+    // Try to geocode the typed location
+    try {
+      setSearchingAddress(true);
+      const results = await geocodeAddress(formData.location);
+      
+      if (results.length > 0) {
+        const firstResult = results[0];
+        const lat = parseFloat(firstResult.lat);
+        const lon = parseFloat(firstResult.lon);
+        
+        // Update form with geocoded coordinates
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat,
+          longitude: lon
+        }));
+        setLocationStatus('approximate');
+        
+        toast.info(`Location set to approximate area: ${firstResult.display_name.split(',').slice(0, 2).join(', ')}`);
+        return true;
+      } else {
+        toast.error('Could not find this location. Please select from the suggestions or try a different address.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Auto-geocoding error:', error);
+      toast.error('Failed to find location. Please try again.');
+      return false;
+    } finally {
+      setSearchingAddress(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +159,13 @@ const CreateTask = () => {
     }
     
     setLoading(true);
+
+    // Ensure we have valid coordinates
+    const hasValidCoords = await ensureCoordinates();
+    if (!hasValidCoords) {
+      setLoading(false);
+      return;
+    }
 
     try {
       // Combine date and time for deadline
@@ -141,6 +205,13 @@ const CreateTask = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    
+    // Reset selection flag when user manually changes location
+    if (name === 'location') {
+      selectedFromSuggestions.current = false;
+      setLocationStatus('typing');
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
@@ -148,6 +219,7 @@ const CreateTask = () => {
   };
 
   const selectAddress = (result: GeocodingResult) => {
+    selectedFromSuggestions.current = true;
     setFormData(prev => ({
       ...prev,
       location: result.display_name,
@@ -155,6 +227,7 @@ const CreateTask = () => {
       longitude: parseFloat(result.lon)
     }));
     setAddressSuggestions([]);
+    setLocationStatus('exact');
   };
 
   // Get today's date in YYYY-MM-DD format for min date
@@ -162,6 +235,39 @@ const CreateTask = () => {
 
   // Get selected category info
   const selectedCategory = getCategoryByValue(formData.category);
+
+  // Location status indicator
+  const getLocationStatusUI = () => {
+    switch (locationStatus) {
+      case 'exact':
+        return (
+          <div className="flex items-center gap-2 text-green-600 text-sm mt-1">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span>📍 Exact location set: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+          </div>
+        );
+      case 'approximate':
+        return (
+          <div className="flex items-center gap-2 text-amber-600 text-sm mt-1">
+            <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+            <span>📍 Approximate location: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+          </div>
+        );
+      case 'typing':
+        return (
+          <div className="flex items-center gap-2 text-blue-600 text-sm mt-1">
+            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+            <span>Select from suggestions below for exact location, or we'll use approximate area</span>
+          </div>
+        );
+      default:
+        return (
+          <p className="text-xs text-gray-500 mt-1">
+            Start typing and select from suggestions for exact location
+          </p>
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -244,21 +350,35 @@ const CreateTask = () => {
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 Location * {searchingAddress && <span className="text-blue-500 text-xs">(searching...)</span>}
               </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                required
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="e.g., Riga, Centrs or Brivibas iela 1, Riga"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                autoComplete="off"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  required
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="e.g., Teika, Riga or Brivibas iela 1, Riga"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    locationStatus === 'exact' 
+                      ? 'border-green-300 bg-green-50' 
+                      : locationStatus === 'approximate'
+                        ? 'border-amber-300 bg-amber-50'
+                        : 'border-gray-300'
+                  }`}
+                  autoComplete="off"
+                />
+                {locationStatus === 'exact' && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">✓</span>
+                )}
+              </div>
               
               {/* Address Suggestions Dropdown */}
               {addressSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="px-3 py-2 bg-blue-50 border-b text-xs text-blue-700">
+                    👆 Select for exact location on map
+                  </div>
                   {addressSuggestions.map((result, index) => (
                     <button
                       key={index}
@@ -272,11 +392,8 @@ const CreateTask = () => {
                 </div>
               )}
               
-              {formData.location && (
-                <p className="text-xs text-gray-500 mt-1">
-                  📍 Coordinates: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
-                </p>
-              )}
+              {/* Location status indicator */}
+              {getLocationStatusUI()}
             </div>
 
             {/* Budget */}
@@ -377,6 +494,17 @@ const CreateTask = () => {
               </label>
             </div>
 
+            {/* Location warning if approximate */}
+            {locationStatus === 'typing' && formData.location.length > 3 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h3 className="font-medium text-amber-800 mb-2">📍 Location tip</h3>
+                <p className="text-sm text-amber-700">
+                  For better visibility on the map, select a specific address from the suggestions above. 
+                  If you proceed without selecting, we'll use the general area which may be less precise.
+                </p>
+              </div>
+            )}
+
             {/* Matching hint */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h3 className="font-medium text-blue-800 mb-2">💡 Get matched with helpers</h3>
@@ -389,10 +517,10 @@ const CreateTask = () => {
             <div className="flex gap-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || searchingAddress}
                 className="flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? 'Creating...' : 'Create Task'}
+                {loading ? 'Creating...' : searchingAddress ? 'Finding location...' : 'Create Task'}
               </button>
               <button
                 type="button"
