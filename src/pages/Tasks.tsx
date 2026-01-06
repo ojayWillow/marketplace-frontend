@@ -1075,15 +1075,15 @@ const Tasks = () => {
           )}
         </div>
         
-        {/* CTA for logged-in users - Blue theme */}
+        {/* CTA for logged-in users - BLUE to ORANGE gradient (for both Jobs + Offerings) */}
         {isAuthenticated && (
-          <div className="mt-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+          <div className="mt-6 bg-gradient-to-r from-blue-500 to-amber-500 rounded-lg p-6 text-white">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
-                <p className="text-blue-100">View your posted jobs, offerings, and applications in your profile page.</p>
+                <p className="text-white/90">View your posted jobs, offerings, and applications in your profile page.</p>
               </div>
-              <Link to="/profile?tab=tasks" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
+              <Link to="/profile?tab=tasks" className="bg-white text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors whitespace-nowrap">
                 Go to My Tasks →
               </Link>
             </div>
