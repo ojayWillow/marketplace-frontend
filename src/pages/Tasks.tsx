@@ -470,6 +470,9 @@ const MapMarkers = ({
   );
 };
 
+// Location type enum to track what kind of location we have
+type LocationType = 'auto' | 'default' | 'manual';
+
 const Tasks = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -488,12 +491,12 @@ const Tasks = () => {
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default: Riga
   const [locationGranted, setLocationGranted] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
-  const [manualLocationSet, setManualLocationSet] = useState(false);
+  const [locationType, setLocationType] = useState<LocationType>('default'); // Track location type instead of name
+  const [manualLocationName, setManualLocationName] = useState<string | null>(null); // Only for manually selected locations
   const [addressSearch, setAddressSearch] = useState('');
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
-  const [locationName, setLocationName] = useState(t('tasks.defaultLocation', 'Riga, Latvia'));
   const [searchRadius, setSearchRadius] = useState(25);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -509,6 +512,22 @@ const Tasks = () => {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Compute display location name based on type (always translated)
+  const getLocationDisplayName = () => {
+    switch (locationType) {
+      case 'auto':
+        return t('tasks.yourLocation', 'Your location');
+      case 'manual':
+        return manualLocationName || t('tasks.selectedLocation', 'Selected location');
+      case 'default':
+      default:
+        return t('tasks.defaultLocation', 'Riga, Latvia');
+    }
+  };
+
+  const locationName = getLocationDisplayName();
+  const manualLocationSet = locationType === 'manual';
 
   // Load user's offerings for matching (when logged in)
   useEffect(() => {
@@ -531,7 +550,7 @@ const Tasks = () => {
   const skipLocationDetection = () => {
     setLocationLoading(false);
     setLocationGranted(true);
-    setLocationName(t('tasks.defaultLocation', 'Riga, Latvia'));
+    setLocationType('default');
     if (locationTimeoutRef.current) {
       clearTimeout(locationTimeoutRef.current);
     }
@@ -556,7 +575,7 @@ const Tasks = () => {
           setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           setLocationGranted(true);
           setLocationLoading(false);
-          setLocationName(t('tasks.yourLocation', 'Your location'));
+          setLocationType('auto');
           if (locationTimeoutRef.current) {
             clearTimeout(locationTimeoutRef.current);
           }
@@ -565,7 +584,7 @@ const Tasks = () => {
           console.log('Geolocation error:', error);
           setLocationGranted(true);
           setLocationLoading(false);
-          setLocationName(t('tasks.defaultLocation', 'Riga, Latvia'));
+          setLocationType('default');
         },
         { timeout: 5000, enableHighAccuracy: false }
       );
@@ -583,8 +602,8 @@ const Tasks = () => {
 
   const handleLocationSelect = (lat: number, lng: number, name?: string) => {
     setUserLocation({ lat, lng });
-    setManualLocationSet(true);
-    setLocationName(name || t('tasks.selectedLocation', 'Selected location'));
+    setLocationType('manual');
+    setManualLocationName(name || null);
     hasFetchedRef.current = false;
     fetchData(true);
     setShowLocationModal(false);
@@ -638,8 +657,8 @@ const Tasks = () => {
   };
 
   const resetToAutoLocation = () => {
-    setManualLocationSet(false);
-    setLocationName(t('tasks.yourLocation', 'Your location'));
+    setLocationType('auto');
+    setManualLocationName(null);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
@@ -872,7 +891,7 @@ const Tasks = () => {
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
               <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 sm:flex-initial justify-center">
                 <span>📍</span>
-                <span className="text-sm text-gray-700 truncate max-w-[120px]">{manualLocationSet && locationName ? locationName.split(',')[0] : locationName}</span>
+                <span className="text-sm text-gray-700 truncate max-w-[120px]">{manualLocationSet && manualLocationName ? manualLocationName.split(',')[0] : locationName}</span>
               </button>
               <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
                 <option value={5}>5 km</option>
