@@ -158,7 +158,7 @@ const StarRating = ({ rating }: { rating: number }) => {
 // CUSTOM MARKER ICON FACTORIES
 // =====================================================
 
-// User Location Icon - Red pin marker (distinct from money markers)
+// User Location Icon - Red pin marker (distinct from price markers)
 const createUserLocationIcon = () => divIcon({
   className: 'user-location-icon',
   html: `
@@ -170,38 +170,61 @@ const createUserLocationIcon = () => divIcon({
   iconAnchor: [15, 36],
 });
 
-// Job Icon Factory - 💰 sized by budget
-// Budget thresholds: ≤25 (small), ≤50 (medium), ≤100 (large), >100 (XL + glow)
-const getJobIconForBudget = (budget: number = 0) => {
-  let size = 28;
-  let fontSize = 14;
+// Job Price Label Icon - Shows actual price with color coding
+// Budget thresholds: ≤25€ (green), ≤75€ (blue), >75€ (purple/gold with glow)
+const getJobPriceIcon = (budget: number = 0) => {
+  let bgColor = '#22c55e'; // green-500 for quick tasks
+  let textColor = 'white';
   let extraClass = '';
-
+  let shadow = '0 2px 4px rgba(0,0,0,0.2)';
+  
   if (budget <= 25) {
-    size = 28;
-    fontSize = 14;
-  } else if (budget <= 50) {
-    size = 34;
-    fontSize = 17;
-  } else if (budget <= 100) {
-    size = 42;
-    fontSize = 21;
+    bgColor = '#22c55e'; // green - quick easy money
+  } else if (budget <= 75) {
+    bgColor = '#3b82f6'; // blue - medium jobs
   } else {
-    // €100+ = XL with glow animation
-    size = 50;
-    fontSize = 25;
-    extraClass = ' job-icon--xl';
+    bgColor = 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)'; // purple to gold - premium
+    extraClass = ' job-price--premium';
+    shadow = '0 2px 8px rgba(139, 92, 246, 0.5), 0 0 12px rgba(217, 119, 6, 0.3)';
   }
+  
+  // Format price display
+  const priceText = budget >= 1000 ? `€${(budget/1000).toFixed(1)}k` : `€${budget}`;
+  const isLongPrice = priceText.length > 4;
+  const fontSize = isLongPrice ? '11px' : '12px';
+  const padding = isLongPrice ? '2px 6px' : '2px 8px';
+  
+  const bgStyle = bgColor.includes('gradient') 
+    ? `background: ${bgColor};` 
+    : `background-color: ${bgColor};`;
 
   return divIcon({
-    className: `job-money-icon${extraClass}`,
+    className: `job-price-icon${extraClass}`,
     html: `
-      <div class="job-money-pin" style="width:${size}px;height:${size}px;">
-        <span class="job-money-emoji" style="font-size:${fontSize}px;">💰</span>
+      <div class="job-price-marker" style="
+        ${bgStyle}
+        color: ${textColor};
+        font-size: ${fontSize};
+        font-weight: 700;
+        padding: ${padding};
+        border-radius: 12px;
+        white-space: nowrap;
+        box-shadow: ${shadow};
+        border: 2px solid white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 24px;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+      ">
+        ${priceText}
       </div>
     `,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [50, 28],
+    iconAnchor: [25, 14],
   });
 };
 
@@ -406,10 +429,10 @@ const MapMarkers = ({
         </Popup>
       </Marker>
       
-      {/* Job/Task markers - 💰 Money bags sized by budget */}
+      {/* Job/Task markers - Price labels */}
       {tasksWithOffsets.map((task) => {
         const budget = task.budget || task.reward || 0;
-        const jobIcon = getJobIconForBudget(budget);
+        const jobIcon = getJobPriceIcon(budget);
         // Use display coordinates (with offset if overlapping) or fall back to original
         const displayLat = task.displayLatitude || task.latitude;
         const displayLng = task.displayLongitude || task.longitude;
@@ -783,7 +806,7 @@ const Tasks = () => {
   
   // Calculate budget stats for legend
   const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
-  const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 100);
+  const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 75);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -918,38 +941,31 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* MAP with integrated legend - Blue theme */}
+        {/* MAP with integrated legend - Updated for price labels */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           {/* Map Legend - Shows marker meanings */}
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-semibold text-gray-700">Map Legend:</span>
+            <span className="font-semibold text-gray-700">Map:</span>
             
             {/* User location */}
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
-              <span className="text-gray-600">📍 You</span>
+              <span className="text-gray-600">You</span>
             </div>
             
-            {/* Job markers by size */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm">💰</span>
-              <span className="text-gray-600">Jobs (size = budget)</span>
+            {/* Price color coding */}
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold">€25</span>
+              <span className="text-gray-500 text-xs">Quick tasks</span>
             </div>
-            
-            {/* Size examples - Blue theme */}
-            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-              <span className="px-1.5 py-0.5 bg-blue-100 rounded">≤25€ small</span>
-              <span className="px-1.5 py-0.5 bg-blue-200 rounded">≤50€ med</span>
-              <span className="px-1.5 py-0.5 bg-blue-300 rounded">≤100€ large</span>
-              <span className="px-1.5 py-0.5 bg-blue-400 text-white rounded animate-pulse">&gt;100€ ✨</span>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-blue-500 text-white rounded-full text-xs font-bold">€50</span>
+              <span className="text-gray-500 text-xs">Medium</span>
             </div>
-            
-            {/* Matching indicator */}
-            {isAuthenticated && myOfferingCategories.length > 0 && (
-              <div className="flex items-center gap-1.5 ml-auto">
-                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">✨ Your matches</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)' }}>€100+</span>
+              <span className="text-gray-500 text-xs">Premium ✨</span>
+            </div>
           </div>
           <div style={{ height: '350px' }}>
             <MapContainer 
@@ -983,7 +999,7 @@ const Tasks = () => {
                 <span className="text-green-600">Top payout: €{maxBudget}</span>
               )}
               {hasHighValueJobs && (
-                <span className="text-blue-600 font-medium animate-pulse">✨ High-value jobs available!</span>
+                <span className="text-purple-600 font-medium">✨ Premium jobs available!</span>
               )}
             </div>
           )}
@@ -1098,14 +1114,14 @@ const Tasks = () => {
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   const budget = task.budget || task.reward || 0;
-  const isHighValue = budget > 100;
+  const isHighValue = budget > 75;
   
   return (
     <Link 
       to={`/tasks/${task.id}`} 
       className={`block border rounded-lg p-4 hover:shadow-md transition-all ${
         isHighValue 
-          ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 hover:border-blue-500 ring-1 ring-blue-200'
+          ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-amber-50 hover:border-purple-400 ring-1 ring-purple-200'
           : isMatching 
             ? 'border-blue-300 bg-blue-50 hover:border-blue-400' 
             : 'border-gray-200 hover:border-blue-300'
@@ -1113,8 +1129,8 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
     >
       {/* High value badge */}
       {isHighValue && (
-        <div className="flex items-center gap-2 mb-2 text-blue-700">
-          <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold animate-pulse">✨ High-value opportunity!</span>
+        <div className="flex items-center gap-2 mb-2 text-purple-700">
+          <span className="px-2 py-0.5 bg-gradient-to-r from-purple-200 to-amber-200 rounded text-xs font-semibold">✨ Premium opportunity!</span>
         </div>
       )}
       
@@ -1141,11 +1157,15 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          {/* Price stays GREEN (money color) */}
-          <div className={`text-xl sm:text-2xl font-bold text-green-600`}>
+          {/* Price - color coded like map */}
+          <div className={`text-xl sm:text-2xl font-bold ${
+            budget <= 25 ? 'text-green-600' : 
+            budget <= 75 ? 'text-blue-600' : 
+            'text-purple-600'
+          }`}>
             €{budget}
           </div>
-          {isHighValue && <div className="text-xs text-green-500 mt-1">💰💰💰</div>}
+          {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 Premium</div>}
         </div>
       </div>
     </Link>
