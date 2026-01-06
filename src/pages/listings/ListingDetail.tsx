@@ -6,15 +6,18 @@ import { useAuthStore } from '../../stores/authStore'
 import { getImageUrl } from '../../api/uploads'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import ErrorMessage from '../../components/ui/ErrorMessage'
+import apiClient from '../../api/client'
+import toast from 'react-hot-toast'
 
 export default function ListingDetail() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const { data: listing, isLoading, isError } = useListing(Number(id))
   const deleteListing = useDeleteListing()
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [isStartingConversation, setIsStartingConversation] = useState(false)
 
   const isOwner = user && listing && user.id === listing.user_id
 
@@ -25,6 +28,37 @@ export default function ListingDetail() {
     if (window.confirm('Are you sure you want to delete this listing?')) {
       await deleteListing.mutateAsync(Number(id))
       navigate('/listings')
+    }
+  }
+
+  const handleMessageSeller = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to message the seller')
+      navigate('/login')
+      return
+    }
+
+    if (!listing?.seller_info?.id) {
+      toast.error('Unable to contact seller')
+      return
+    }
+
+    setIsStartingConversation(true)
+    try {
+      // Create or get existing conversation with the seller
+      const response = await apiClient.post('/api/messages/conversations', {
+        user_id: listing.seller_info.id,
+        message: `Hi! I'm interested in your listing: "${listing.title}"`
+      })
+
+      const conversationId = response.data.conversation.id
+      navigate(`/messages/${conversationId}`)
+      toast.success('Conversation started!')
+    } catch (error) {
+      console.error('Error starting conversation:', error)
+      toast.error('Failed to start conversation. Please try again.')
+    } finally {
+      setIsStartingConversation(false)
     }
   }
 
@@ -330,23 +364,44 @@ export default function ListingDetail() {
               </p>
             )}
             
-            {/* Contact Button */}
+            {/* Contact Buttons */}
             {!isOwner && (
               <div className="space-y-3">
-                {listing.contact_info ? (
+                {/* Message Seller Button - Always show */}
+                <button
+                  onClick={handleMessageSeller}
+                  disabled={isStartingConversation}
+                  className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white text-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400"
+                >
+                  {isStartingConversation ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Starting chat...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                      <span>Message Seller</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Phone contact if available */}
+                {listing.contact_info && (
                   <a
                     href={`tel:${listing.contact_info}`}
-                    className="block w-full bg-blue-600 text-white text-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="flex items-center justify-center gap-2 w-full bg-green-600 text-white text-center px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
                   >
-                    📞 Contact Seller
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span>Call Seller</span>
                   </a>
-                ) : (
-                  <button
-                    className="block w-full bg-blue-600 text-white text-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    onClick={() => alert('Messaging feature coming soon!')}
-                  >
-                    💬 Message Seller
-                  </button>
                 )}
                 
                 <Link
