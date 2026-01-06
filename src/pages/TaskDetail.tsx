@@ -385,15 +385,24 @@ const TaskDetail = () => {
     );
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const styles: Record<string, string> = {
-      'low': 'bg-white/20 text-white',
-      'normal': 'bg-white/20 text-white',
-      'high': 'bg-red-500 text-white',
+  // Difficulty badge - matches "How hard is this task?" from create form
+  // Maps: easy, medium, hard (stored as priority: low, normal, high in DB)
+  const getDifficultyBadge = (priority: string) => {
+    // Map old priority values to new difficulty labels
+    const difficultyMap: Record<string, { label: string; icon: string; style: string }> = {
+      'low': { label: 'Easy', icon: '🟢', style: 'bg-green-500/20 text-white' },
+      'easy': { label: 'Easy', icon: '🟢', style: 'bg-green-500/20 text-white' },
+      'normal': { label: 'Medium', icon: '🟡', style: 'bg-yellow-500/20 text-white' },
+      'medium': { label: 'Medium', icon: '🟡', style: 'bg-yellow-500/20 text-white' },
+      'high': { label: 'Hard', icon: '🔴', style: 'bg-red-500/20 text-white' },
+      'hard': { label: 'Hard', icon: '🔴', style: 'bg-red-500/20 text-white' },
     };
+    
+    const difficulty = difficultyMap[priority?.toLowerCase()] || difficultyMap['normal'];
+    
     return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${styles[priority] || 'bg-white/20 text-white'}`}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
+      <span className={`px-2 py-0.5 rounded text-xs font-medium ${difficulty.style}`}>
+        {difficulty.icon} {difficulty.label}
       </span>
     );
   };
@@ -766,7 +775,7 @@ const TaskDetail = () => {
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-1.5">
                 {getStatusBadge(task.status)}
-                {getPriorityBadge(task.priority || 'normal')}
+                {getDifficultyBadge(task.priority || 'normal')}
                 {task.is_urgent && (
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500">⚡ Urgent</span>
                 )}
