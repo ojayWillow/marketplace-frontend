@@ -10,6 +10,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { useMatchingStore } from '../stores/matchingStore';
 import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
+import FavoriteButton from '../components/ui/FavoriteButton';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -243,7 +244,6 @@ const createOfferingIcon = () => divIcon({
 const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const toast = useToastStore();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   const budget = task.budget || task.reward || 0;
   const categoryIcon = getCategoryIcon(task.category);
@@ -254,12 +254,6 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   
   // Simulated applicants count
   const applicantsCount = task.applications_count || 0;
-  
-  const handleSave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toast.success(t('tasks.saved', 'Saved!'));
-  };
   
   return (
     <div className="job-popup" style={{ width: '240px' }}>
@@ -322,13 +316,12 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
         >
           {t('tasks.viewAndApply', 'View & Apply')} →
         </button>
-        <button
-          onClick={handleSave}
-          className="px-3 py-2 rounded-lg text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
-          title={t('tasks.saveForLater', 'Save for later')}
-        >
-          🔖
-        </button>
+        <FavoriteButton
+          itemType="task"
+          itemId={task.id}
+          size="sm"
+          className="!rounded-lg"
+        />
       </div>
     </div>
   );
@@ -379,16 +372,24 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
       <h3 className="font-semibold text-gray-900 text-xs mb-3 line-clamp-2">{offering.title}</h3>
       
       {/* Action Button - Orange */}
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          navigate(`/offerings/${offering.id}`);
-        }}
-        className="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
-      >
-        {t('offerings.viewProfile', 'View Profile')} →
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(`/offerings/${offering.id}`);
+          }}
+          className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
+        >
+          {t('offerings.viewProfile', 'View Profile')} →
+        </button>
+        <FavoriteButton
+          itemType="offering"
+          itemId={offering.id}
+          size="sm"
+          className="!rounded-lg"
+        />
+      </div>
     </div>
   );
 };
@@ -1134,7 +1135,7 @@ const Tasks = () => {
   );
 };
 
-// Job Card Component with matching indicator and budget display - Blue theme
+// Job Card Component with matching indicator, budget display, and favorite button - Blue theme
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
@@ -1142,109 +1143,128 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
   const isHighValue = budget > 75;
   
   return (
-    <Link 
-      to={`/tasks/${task.id}`} 
-      className={`block border rounded-lg p-4 hover:shadow-md transition-all ${
-        isHighValue 
-          ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-amber-50 hover:border-purple-400 ring-1 ring-purple-200'
-          : isMatching 
-            ? 'border-blue-300 bg-blue-50 hover:border-blue-400' 
-            : 'border-gray-200 hover:border-blue-300'
-      }`}
-    >
-      {/* High value badge */}
-      {isHighValue && (
-        <div className="flex items-center gap-2 mb-2 text-purple-700">
-          <span className="px-2 py-0.5 bg-gradient-to-r from-purple-200 to-amber-200 rounded text-xs font-semibold">✨ {t('offerings.premiumOpportunity', 'Premium opportunity!')}</span>
-        </div>
-      )}
-      
-      {/* Matching badge */}
-      {isMatching && !isHighValue && (
-        <div className="flex items-center gap-2 mb-2 text-blue-700">
-          <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold">✨ {t('offerings.matchesYourOffering', 'Matches your offering')}</span>
-        </div>
-      )}
-      
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl sm:text-2xl flex-shrink-0">{task.icon}</span>
-            <h4 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{task.title}</h4>
-          </div>
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
-          </div>
-          {task.creator_name && (
-            <p className="text-xs text-gray-500 mt-2">{t('tasks.postedBy', 'Posted by')} {task.creator_name}</p>
-          )}
-        </div>
-        <div className="text-right flex-shrink-0">
-          {/* Price - color coded like map */}
-          <div className={`text-xl sm:text-2xl font-bold ${
-            budget <= 25 ? 'text-green-600' : 
-            budget <= 75 ? 'text-blue-600' : 
-            'text-purple-600'
-          }`}>
-            €{budget}
-          </div>
-          {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
-        </div>
+    <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
+      isHighValue 
+        ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-amber-50 hover:border-purple-400 ring-1 ring-purple-200'
+        : isMatching 
+          ? 'border-blue-300 bg-blue-50 hover:border-blue-400' 
+          : 'border-gray-200 hover:border-blue-300'
+    }`}>
+      {/* Favorite Button - positioned top right */}
+      <div className="absolute top-2 right-2 z-10">
+        <FavoriteButton
+          itemType="task"
+          itemId={task.id}
+          size="sm"
+        />
       </div>
-    </Link>
+      
+      <Link to={`/tasks/${task.id}`} className="block">
+        {/* High value badge */}
+        {isHighValue && (
+          <div className="flex items-center gap-2 mb-2 text-purple-700">
+            <span className="px-2 py-0.5 bg-gradient-to-r from-purple-200 to-amber-200 rounded text-xs font-semibold">✨ {t('offerings.premiumOpportunity', 'Premium opportunity!')}</span>
+          </div>
+        )}
+        
+        {/* Matching badge */}
+        {isMatching && !isHighValue && (
+          <div className="flex items-center gap-2 mb-2 text-blue-700">
+            <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold">✨ {t('offerings.matchesYourOffering', 'Matches your offering')}</span>
+          </div>
+        )}
+        
+        <div className="flex items-start justify-between gap-3 pr-8">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl sm:text-2xl flex-shrink-0">{task.icon}</span>
+              <h4 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{task.title}</h4>
+            </div>
+            <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
+            </div>
+            {task.creator_name && (
+              <p className="text-xs text-gray-500 mt-2">{t('tasks.postedBy', 'Posted by')} {task.creator_name}</p>
+            )}
+          </div>
+          <div className="text-right flex-shrink-0">
+            {/* Price - color coded like map */}
+            <div className={`text-xl sm:text-2xl font-bold ${
+              budget <= 25 ? 'text-green-600' : 
+              budget <= 75 ? 'text-blue-600' : 
+              'text-purple-600'
+            }`}>
+              €{budget}
+            </div>
+            {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
+          </div>
+        </div>
+      </Link>
+    </div>
   );
 };
 
-// Offering Card Component - Orange theme
+// Offering Card Component with favorite button - Orange theme
 const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
   
   return (
-    <Link to={`/offerings/${offering.id}`} className="block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-amber-300 transition-all">
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div className="flex-shrink-0">
-          {offering.creator_avatar ? (
-            <img src={offering.creator_avatar} alt={offering.creator_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-amber-200" />
-          ) : (
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg sm:text-xl font-bold">
-              {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
-        </div>
-        
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{offering.title}</h4>
-          <p className="text-xs text-gray-500 mb-1">{t('offerings.provider', 'by')} {offering.creator_name}</p>
-          
-          {/* Rating */}
-          {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
-            <div className="flex items-center gap-1 mb-2">
-              <StarRating rating={offering.creator_rating} />
-              <span className="text-xs sm:text-sm text-gray-500">({offering.creator_review_count || 0})</span>
-            </div>
-          )}
-          
-          {/* Price - GREEN (money color) */}
-          <div className="text-base sm:text-lg font-bold text-green-600 mb-2">
-            €{offering.price || 0}
-            {offering.price_type === 'hourly' && t('common.perHour', '/hr')}
-            {offering.price_type === 'fixed' && ` ${t('common.fixed', 'fixed')}`}
-            {offering.price_type === 'negotiable' && ` (${t('common.negotiable', 'neg')})`}
-          </div>
-          
-          {/* Category & Distance - Orange badge */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{getCategoryLabel(offering.category)}</span>
-            <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
-          </div>
-        </div>
+    <div className="relative block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-amber-300 transition-all">
+      {/* Favorite Button - positioned top right */}
+      <div className="absolute top-2 right-2 z-10">
+        <FavoriteButton
+          itemType="offering"
+          itemId={offering.id}
+          size="sm"
+        />
       </div>
-    </Link>
+      
+      <Link to={`/offerings/${offering.id}`} className="block">
+        <div className="flex items-start gap-3 pr-8">
+          {/* Avatar */}
+          <div className="flex-shrink-0">
+            {offering.creator_avatar ? (
+              <img src={offering.creator_avatar} alt={offering.creator_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-amber-200" />
+            ) : (
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg sm:text-xl font-bold">
+                {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+            )}
+          </div>
+          
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{offering.title}</h4>
+            <p className="text-xs text-gray-500 mb-1">{t('offerings.provider', 'by')} {offering.creator_name}</p>
+            
+            {/* Rating */}
+            {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
+              <div className="flex items-center gap-1 mb-2">
+                <StarRating rating={offering.creator_rating} />
+                <span className="text-xs sm:text-sm text-gray-500">({offering.creator_review_count || 0})</span>
+              </div>
+            )}
+            
+            {/* Price - GREEN (money color) */}
+            <div className="text-base sm:text-lg font-bold text-green-600 mb-2">
+              €{offering.price || 0}
+              {offering.price_type === 'hourly' && t('common.perHour', '/hr')}
+              {offering.price_type === 'fixed' && ` ${t('common.fixed', 'fixed')}`}
+              {offering.price_type === 'negotiable' && ` (${t('common.negotiable', 'neg')})`}
+            </div>
+            
+            {/* Category & Distance - Orange badge */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{getCategoryLabel(offering.category)}</span>
+              <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </div>
   );
 };
 
