@@ -26,6 +26,9 @@ L.Icon.Default.mergeOptions({
 // Extend API Task with UI-specific properties
 interface Task extends APITask {
   icon?: string;
+  // Added for map offset handling
+  displayLatitude?: number;
+  displayLongitude?: number;
 }
 
 interface AddressSuggestion {
@@ -45,6 +48,51 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+};
+
+// Function to add offset to overlapping markers
+const addMarkerOffsets = (tasks: Task[]): Task[] => {
+  const coordMap = new Map<string, Task[]>();
+  
+  // Group tasks by their coordinates (rounded to 4 decimal places for grouping nearby points)
+  tasks.forEach(task => {
+    const key = `${task.latitude.toFixed(4)},${task.longitude.toFixed(4)}`;
+    if (!coordMap.has(key)) {
+      coordMap.set(key, []);
+    }
+    coordMap.get(key)!.push(task);
+  });
+  
+  // Apply offsets to overlapping markers
+  const result: Task[] = [];
+  coordMap.forEach((groupedTasks, key) => {
+    if (groupedTasks.length === 1) {
+      // Single task at this location, no offset needed
+      result.push({
+        ...groupedTasks[0],
+        displayLatitude: groupedTasks[0].latitude,
+        displayLongitude: groupedTasks[0].longitude
+      });
+    } else {
+      // Multiple tasks at same location - spread them in a circle
+      const offsetDistance = 0.0008; // Approximately 80-90 meters
+      const angleStep = (2 * Math.PI) / groupedTasks.length;
+      
+      groupedTasks.forEach((task, index) => {
+        const angle = angleStep * index;
+        const latOffset = offsetDistance * Math.cos(angle);
+        const lonOffset = offsetDistance * Math.sin(angle);
+        
+        result.push({
+          ...task,
+          displayLatitude: task.latitude + latOffset,
+          displayLongitude: task.longitude + lonOffset
+        });
+      });
+    }
+  });
+  
+  return result;
 };
 
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
@@ -160,6 +208,9 @@ const MapMarkers = ({
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
   const offeringIcon = useMemo(() => createOfferingIcon(), []);
 
+  // Apply offsets to tasks with overlapping coordinates
+  const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
+
   return (
     <>
       <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
@@ -177,14 +228,17 @@ const MapMarkers = ({
       </Marker>
       
       {/* Job/Task markers - 💰 Money bags sized by budget */}
-      {tasks.map((task) => {
+      {tasksWithOffsets.map((task) => {
         const budget = task.budget || task.reward || 0;
         const jobIcon = getJobIconForBudget(budget);
+        // Use display coordinates (with offset if overlapping) or fall back to original
+        const displayLat = task.displayLatitude || task.latitude;
+        const displayLng = task.displayLongitude || task.longitude;
         
         return (
           <Marker 
             key={`task-${task.id}`} 
-            position={[task.latitude, task.longitude]}
+            position={[displayLat, displayLng]}
             icon={jobIcon}
           >
             <Popup>
@@ -202,6 +256,9 @@ const MapMarkers = ({
                 {budget > 100 && (
                   <div className="text-xs text-green-600 font-medium mb-2">✨ High-value opportunity!</div>
                 )}
+                <div className="text-xs text-gray-500 mb-2">
+                  📍 {task.location}
+                </div>
                 <Link to={`/tasks/${task.id}`} className="text-xs text-green-500 hover:text-green-700">View Details →</Link>
               </div>
             </Popup>
@@ -769,7 +826,7 @@ const Tasks = () => {
           {filteredTasks.length > 0 && (
             <div className="px-4 py-2 bg-green-50 border-t border-green-100 flex flex-wrap items-center gap-4 text-sm">
               <span className="font-medium text-green-700">
-                💰 {filteredTasks.length} job{filteredTasks.length !== 1 ? 's' : ''} on map
+                💰 {mapTasks.length} job{mapTasks.length !== 1 ? 's' : ''} on map
               </span>
               {maxBudget > 0 && (
                 <span className="text-green-600">Top payout: €{maxBudget}</span>
