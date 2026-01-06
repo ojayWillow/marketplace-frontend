@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
@@ -79,6 +79,79 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
+// Memoized Map Markers Component - updates without re-creating the map
+const MapMarkers = ({ 
+  tasks, 
+  offerings, 
+  userLocation, 
+  userLocationIcon, 
+  offeringLocationIcon,
+  locationName,
+  manualLocationSet,
+  onLocationSelect
+}: {
+  tasks: Task[];
+  offerings: Offering[];
+  userLocation: { lat: number; lng: number };
+  userLocationIcon: L.DivIcon;
+  offeringLocationIcon: L.DivIcon;
+  locationName: string;
+  manualLocationSet: boolean;
+  onLocationSelect: (lat: number, lng: number) => void;
+}) => {
+  return (
+    <>
+      <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
+      <LocationPicker onLocationSelect={onLocationSelect} />
+      <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+        <Popup>
+          <div className="p-2">
+            <p className="font-bold">📍 Your Location</p>
+            {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
+            <p className="text-xs text-gray-500">{manualLocationSet ? '(Manually set)' : '(Auto-detected)'}</p>
+          </div>
+        </Popup>
+      </Marker>
+      {/* Task markers (blue) */}
+      {tasks.map((task) => (
+        <Marker key={`task-${task.id}`} position={[task.latitude, task.longitude]}>
+          <Popup>
+            <div className="p-2">
+              <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
+              <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
+                <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">{task.category}</span>
+              </div>
+              <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+      {/* Offering markers (amber/orange) */}
+      {offerings.map((offering) => (
+        <Marker key={`offering-${offering.id}`} position={[offering.latitude, offering.longitude]} icon={offeringLocationIcon}>
+          <Popup>
+            <div className="p-2">
+              <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
+              <p className="text-sm text-gray-600 mb-2">{offering.description.substring(0, 100)}...</p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-600 font-bold">
+                  €{offering.price || 0}
+                  {offering.price_type === 'hourly' && '/hr'}
+                  {offering.price_type === 'negotiable' && ' (negotiable)'}
+                </span>
+                <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">{offering.category}</span>
+              </div>
+              <Link to={`/offerings/${offering.id}`} className="text-xs text-amber-500 hover:text-amber-700">View Details →</Link>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+};
+
 const Tasks = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
@@ -90,7 +163,8 @@ const Tasks = () => {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [offerings, setOfferings] = useState<Offering[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true); // Only for first load
+  const [refreshing, setRefreshing] = useState(false); // For filter changes (doesn't hide content)
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default: Riga
   const [locationGranted, setLocationGranted] = useState(false);
@@ -112,6 +186,21 @@ const Tasks = () => {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Memoize icons so they don't cause re-renders
+  const userLocationIcon = useMemo(() => divIcon({
+    className: 'custom-user-icon',
+    html: '<div style="background: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  }), []);
+
+  const offeringLocationIcon = useMemo(() => divIcon({
+    className: 'custom-offering-icon',
+    html: '<div style="background: #f59e0b; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  }), []);
 
   // Load user's offerings for matching (when logged in)
   useEffect(() => {
@@ -255,7 +344,12 @@ const Tasks = () => {
   const fetchData = async (forceRefresh = false) => {
     if (hasFetchedRef.current && !forceRefresh) return;
     
-    setLoading(true);
+    // Use refreshing state for subsequent fetches (doesn't hide content)
+    if (hasFetchedRef.current) {
+      setRefreshing(true);
+    } else {
+      setInitialLoading(true);
+    }
     setError(null);
     
     try {
@@ -296,7 +390,8 @@ const Tasks = () => {
       setError('Failed to load data. Please try again later.');
     }
     
-    setLoading(false);
+    setInitialLoading(false);
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -309,20 +404,6 @@ const Tasks = () => {
       fetchData(true);
     }
   }, [selectedCategory]);
-  
-  const userLocationIcon = divIcon({
-    className: 'custom-user-icon',
-    html: '<div style="background: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
-  });
-
-  const offeringLocationIcon = divIcon({
-    className: 'custom-offering-icon',
-    html: '<div style="background: #f59e0b; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
-  });
 
   const filterTasks = (taskList: Task[]) => {
     return taskList.filter(task => {
@@ -372,7 +453,7 @@ const Tasks = () => {
     );
   }
 
-  if (loading && !hasFetchedRef.current) {
+  if (initialLoading && !hasFetchedRef.current) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -537,6 +618,14 @@ const Tasks = () => {
           <button onClick={() => setActiveTab('offerings')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             👋 Offerings ({filteredOfferings.length})
           </button>
+          
+          {/* Refreshing indicator */}
+          {refreshing && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              <span>Updating...</span>
+            </div>
+          )}
         </div>
 
         {/* MAP with integrated legend */}
@@ -564,55 +653,25 @@ const Tasks = () => {
             )}
           </div>
           <div style={{ height: '350px' }}>
-            <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
-              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
-              <LocationPicker onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)} />
-              <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
-                <Popup>
-                  <div className="p-2">
-                    <p className="font-bold">📍 Your Location</p>
-                    {locationName && <p className="text-sm text-gray-600">{locationName}</p>}
-                    <p className="text-xs text-gray-500">{manualLocationSet ? '(Manually set)' : '(Auto-detected)'}</p>
-                  </div>
-                </Popup>
-              </Marker>
-              {/* Task markers (blue) */}
-              {mapTasks.map((task) => (
-                <Marker key={`task-${task.id}`} position={[task.latitude, task.longitude]}>
-                  <Popup>
-                    <div className="p-2">
-                      <Link to={`/tasks/${task.id}`} className="font-bold text-lg mb-1 text-blue-600 hover:text-blue-800 hover:underline">{task.title}</Link>
-                      <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}...</p>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-green-600 font-bold">€{task.budget || task.reward || 0}</span>
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">{task.category}</span>
-                      </div>
-                      <Link to={`/tasks/${task.id}`} className="text-xs text-blue-500 hover:text-blue-700">View Details →</Link>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-              {/* Offering markers (amber/orange) */}
-              {mapOfferings.map((offering) => (
-                <Marker key={`offering-${offering.id}`} position={[offering.latitude, offering.longitude]} icon={offeringLocationIcon}>
-                  <Popup>
-                    <div className="p-2">
-                      <Link to={`/offerings/${offering.id}`} className="font-bold text-lg mb-1 text-amber-600 hover:text-amber-800 hover:underline">{offering.title}</Link>
-                      <p className="text-sm text-gray-600 mb-2">{offering.description.substring(0, 100)}...</p>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-green-600 font-bold">
-                          €{offering.price || 0}
-                          {offering.price_type === 'hourly' && '/hr'}
-                          {offering.price_type === 'negotiable' && ' (negotiable)'}
-                        </span>
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">{offering.category}</span>
-                      </div>
-                      <Link to={`/offerings/${offering.id}`} className="text-xs text-amber-500 hover:text-amber-700">View Details →</Link>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+            <MapContainer 
+              center={[userLocation.lat, userLocation.lng]} 
+              zoom={13} 
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer 
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+              />
+              <MapMarkers
+                tasks={mapTasks}
+                offerings={mapOfferings}
+                userLocation={userLocation}
+                userLocationIcon={userLocationIcon}
+                offeringLocationIcon={offeringLocationIcon}
+                locationName={locationName}
+                manualLocationSet={manualLocationSet}
+                onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)}
+              />
             </MapContainer>
           </div>
         </div>
