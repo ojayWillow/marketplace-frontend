@@ -2,13 +2,98 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===========================================
+   ACCESSIBILITY UTILITIES
+   =========================================== */
+
+/* Screen reader only - visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip to content link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #1d4ed8;
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Reduced motion - respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus visible - only show focus ring on keyboard navigation */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Enhanced focus for buttons and links */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 3px;
+  }
+  
+  .btn-primary {
+    border: 2px solid currentColor;
+  }
+}
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    /* Smooth scrolling with reduced motion fallback */
+    scroll-behavior: smooth;
   }
   
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
+  }
+  
+  /* Improve text readability */
+  p, li {
+    line-height: 1.6;
   }
 }
 
