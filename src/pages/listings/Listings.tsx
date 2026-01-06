@@ -7,6 +7,7 @@ import { getImageUrl } from '../../api/uploads'
 import { CATEGORIES } from './constants'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import ErrorMessage from '../../components/ui/ErrorMessage'
+import FavoriteButton from '../../components/ui/FavoriteButton'
 
 // Category icons mapping
 const categoryIcons: Record<string, string> = {
@@ -257,73 +258,83 @@ export default function Listings() {
                 const firstImage = images[0]
                 
                 return (
-                  <Link
+                  <div
                     key={listing.id}
-                    to={`/listings/${listing.id}`}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 group"
+                    className="relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 group"
                   >
-                    {/* Image */}
-                    <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
-                      {firstImage ? (
-                        <img
-                          src={getImageUrl(firstImage)}
-                          alt={listing.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      
-                      {/* Price Badge */}
-                      <div className="absolute bottom-2 right-2 bg-white/95 px-3 py-1 rounded-full font-bold text-blue-600">
-                        €{Number(listing.price).toLocaleString()}
-                      </div>
+                    {/* Favorite Button - positioned top right */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <FavoriteButton
+                        itemType="listing"
+                        itemId={listing.id}
+                        size="sm"
+                      />
                     </div>
                     
-                    {/* Content */}
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600">
-                        {listing.title}
-                      </h3>
-                      
-                      {listing.location && (
-                        <div className="flex items-center text-gray-500 text-sm mb-2">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          {listing.location}
+                    <Link to={`/listings/${listing.id}`}>
+                      {/* Image */}
+                      <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
+                        {firstImage ? (
+                          <img
+                            src={getImageUrl(firstImage)}
+                            alt={listing.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                        
+                        {/* Price Badge */}
+                        <div className="absolute bottom-2 left-2 bg-white/95 px-3 py-1 rounded-full font-bold text-blue-600">
+                          €{Number(listing.price).toLocaleString()}
                         </div>
-                      )}
-                      
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {listing.description}
-                      </p>
-                      
-                      <div className="text-xs text-gray-400 mt-3">
-                        {new Date(listing.created_at).toLocaleDateString()}
                       </div>
-                    </div>
-                  </Link>
+                      
+                      {/* Content */}
+                      <div className="p-4">
+                        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600">
+                          {listing.title}
+                        </h3>
+                        
+                        {listing.location && (
+                          <div className="flex items-center text-gray-500 text-sm mb-2">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            {listing.location}
+                          </div>
+                        )}
+                        
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {listing.description}
+                        </p>
+                        
+                        <div className="text-xs text-gray-400 mt-3">
+                          {new Date(listing.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
                 )
               })}
             </div>
