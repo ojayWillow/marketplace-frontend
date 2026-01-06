@@ -183,6 +183,7 @@ const Tasks = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   
   const hasFetchedRef = useRef(false);
+  const hasEverLoadedRef = useRef(false); // Track if we've ever loaded data
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -344,11 +345,12 @@ const Tasks = () => {
   const fetchData = async (forceRefresh = false) => {
     if (hasFetchedRef.current && !forceRefresh) return;
     
-    // Use refreshing state for subsequent fetches (doesn't hide content)
-    if (hasFetchedRef.current) {
-      setRefreshing(true);
-    } else {
+    // Only show full-page loading on first ever load
+    // After that, show small refreshing indicator
+    if (!hasEverLoadedRef.current) {
       setInitialLoading(true);
+    } else {
+      setRefreshing(true);
     }
     setError(null);
     
@@ -385,6 +387,7 @@ const Tasks = () => {
       }
       
       hasFetchedRef.current = true;
+      hasEverLoadedRef.current = true; // Mark that we've loaded at least once
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load data. Please try again later.');
@@ -399,7 +402,7 @@ const Tasks = () => {
   }, [locationGranted]);
 
   useEffect(() => {
-    if (locationGranted) {
+    if (locationGranted && hasEverLoadedRef.current) {
       hasFetchedRef.current = false;
       fetchData(true);
     }
@@ -453,7 +456,8 @@ const Tasks = () => {
     );
   }
 
-  if (initialLoading && !hasFetchedRef.current) {
+  // Only show full-page loading on very first load
+  if (initialLoading && !hasEverLoadedRef.current) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
