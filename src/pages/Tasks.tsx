@@ -214,7 +214,7 @@ const createOfferingIcon = () => divIcon({
 });
 
 // =====================================================
-// CLEAN MAP POPUP - Bubble badges, not full-width header
+// CLEAN MAP POPUP - Blue theme for jobs
 // =====================================================
 const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
   const navigate = useNavigate();
@@ -238,16 +238,16 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   
   return (
     <div className="job-popup" style={{ width: '240px' }}>
-      {/* Top row: Category bubble + Distance */}
+      {/* Top row: Category bubble (blue) + Distance */}
       <div className="flex items-center justify-between mb-3">
-        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
           <span>{categoryIcon}</span>
           <span>{categoryLabel}</span>
         </span>
         <span className="text-xs text-gray-500">📍 {formatDistance(distance)}</span>
       </div>
       
-      {/* Price - prominent */}
+      {/* Price - prominent (green for money) */}
       <div className="text-center mb-2">
         <span className="text-2xl font-bold text-green-600">€{budget}</span>
       </div>
@@ -285,7 +285,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
         <span>{task.creator_name || 'Anonymous'}</span>
       </div>
       
-      {/* Dual CTAs */}
+      {/* Dual CTAs - Blue for jobs */}
       <div className="flex gap-2">
         <button
           onClick={(e) => {
@@ -293,7 +293,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
             e.stopPropagation();
             navigate(`/tasks/${task.id}`);
           }}
-          className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-green-500 hover:bg-green-600 transition-all"
+          className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-all"
         >
           View & Apply →
         </button>
@@ -309,7 +309,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   );
 };
 
-// Compact Offering Popup
+// Compact Offering Popup - Orange theme
 const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
   const navigate = useNavigate();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
@@ -318,7 +318,7 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
   
   return (
     <div className="offering-popup" style={{ width: '220px' }}>
-      {/* Top row: Category bubble + Distance */}
+      {/* Top row: Category bubble (orange) + Distance */}
       <div className="flex items-center justify-between mb-3">
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
           <span>{categoryIcon}</span>
@@ -352,7 +352,7 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
       {/* Title */}
       <h3 className="font-semibold text-gray-900 text-xs mb-3 line-clamp-2">{offering.title}</h3>
       
-      {/* Action Button */}
+      {/* Action Button - Orange */}
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -709,7 +709,7 @@ const Tasks = () => {
     });
   };
 
-  // Improved loading state with skip option
+  // Improved loading state with skip option - Blue theme
   if (locationLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -735,13 +735,13 @@ const Tasks = () => {
     );
   }
 
-  // Only show full-page loading on very first load
+  // Only show full-page loading on very first load - Blue theme
   if (initialLoading && !hasEverLoadedRef.current) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent mb-4"></div>
-          <div className="text-xl font-bold text-gray-900 mb-2">💰 Finding money opportunities...</div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <div className="text-xl font-bold text-gray-900 mb-2">💰 Finding opportunities...</div>
           <div className="text-gray-600">Searching within {searchRadius}km of {locationName}</div>
         </div>
       </div>
@@ -796,35 +796,37 @@ const Tasks = () => {
           <div className="flex gap-3 flex-wrap">
             {isAuthenticated ? (
               <>
-                <button onClick={() => navigate('/tasks/create')} className="bg-green-500 text-white px-5 py-2.5 rounded-lg hover:bg-green-600 font-medium transition-colors flex items-center gap-2">
+                {/* Post a Job - BLUE */}
+                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
                   <span>💰</span> Post a Job
                 </button>
+                {/* Offer Service - ORANGE */}
                 <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
                   <span>👋</span> Offer Service
                 </button>
               </>
             ) : (
-              <button onClick={() => navigate('/login')} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">
+              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
                 Login to Post Jobs or Offer Services
               </button>
             )}
           </div>
         </div>
 
-        {/* Matching notification banner */}
+        {/* Matching notification banner - Blue theme */}
         {isAuthenticated && matchingJobsCount > 0 && myOfferingCategories.length > 0 && (
-          <div className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-4 text-white shadow-md">
+          <div className="mb-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-md">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">✨</span>
                 <div>
                   <p className="font-semibold">{matchingJobsCount} job{matchingJobsCount !== 1 ? 's' : ''} match your offerings!</p>
-                  <p className="text-green-100 text-sm">Based on your services: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
+                  <p className="text-blue-100 text-sm">Based on your services: {myOfferingCategories.map(c => getCategoryLabel(c)).join(', ')}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setActiveTab('jobs')}
-                className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition-colors whitespace-nowrap"
+                className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap"
               >
                 View Matching Jobs →
               </button>
@@ -836,7 +838,7 @@ const Tasks = () => {
         <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search jobs or offerings..." className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
@@ -844,14 +846,14 @@ const Tasks = () => {
                 <span>📍</span>
                 <span className="text-sm text-gray-700 truncate max-w-[120px]">{manualLocationSet && locationName ? locationName.split(',')[0] : locationName}</span>
               </button>
-              <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+              <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
                 <option value={5}>5 km</option>
                 <option value={10}>10 km</option>
                 <option value={25}>25 km</option>
                 <option value={50}>50 km</option>
                 <option value={100}>100 km</option>
               </select>
-              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                 ⚙️ Filters
               </button>
             </div>
@@ -882,7 +884,7 @@ const Tasks = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                   {CATEGORY_OPTIONS.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
                 </select>
               </div>
@@ -890,15 +892,15 @@ const Tasks = () => {
           )}
         </div>
 
-        {/* THREE TABS: All, Jobs, Offerings */}
+        {/* THREE TABS: All, Jobs, Offerings - Blue + Orange */}
         <div className="mb-4 flex gap-2 flex-wrap relative" style={{ zIndex: 1 }}>
-          <button onClick={() => setActiveTab('all')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+          <button onClick={() => setActiveTab('all')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             🌐 All ({filteredTasks.length + filteredOfferings.length})
           </button>
-          <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
+          <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💰 Jobs ({filteredTasks.length})
             {isAuthenticated && matchingJobsCount > 0 && activeTab !== 'jobs' && (
-              <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                 {matchingJobsCount} match
               </span>
             )}
@@ -910,16 +912,16 @@ const Tasks = () => {
           {/* Refreshing indicator */}
           {refreshing && (
             <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
-              <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
+              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
               <span>Updating...</span>
             </div>
           )}
         </div>
 
-        {/* MAP with integrated legend */}
+        {/* MAP with integrated legend - Blue theme */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           {/* Map Legend - Shows marker meanings */}
-          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-green-50 border-b flex flex-wrap items-center gap-4 text-sm">
+          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
             <span className="font-semibold text-gray-700">Map Legend:</span>
             
             {/* User location */}
@@ -934,18 +936,18 @@ const Tasks = () => {
               <span className="text-gray-600">Jobs (size = budget)</span>
             </div>
             
-            {/* Size examples */}
+            {/* Size examples - Blue theme */}
             <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-              <span className="px-1.5 py-0.5 bg-green-100 rounded">≤25€ small</span>
-              <span className="px-1.5 py-0.5 bg-green-200 rounded">≤50€ med</span>
-              <span className="px-1.5 py-0.5 bg-green-300 rounded">≤100€ large</span>
-              <span className="px-1.5 py-0.5 bg-green-400 text-white rounded animate-pulse">&gt;100€ ✨</span>
+              <span className="px-1.5 py-0.5 bg-blue-100 rounded">≤25€ small</span>
+              <span className="px-1.5 py-0.5 bg-blue-200 rounded">≤50€ med</span>
+              <span className="px-1.5 py-0.5 bg-blue-300 rounded">≤100€ large</span>
+              <span className="px-1.5 py-0.5 bg-blue-400 text-white rounded animate-pulse">&gt;100€ ✨</span>
             </div>
             
             {/* Matching indicator */}
             {isAuthenticated && myOfferingCategories.length > 0 && (
               <div className="flex items-center gap-1.5 ml-auto">
-                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">✨ Your matches</span>
+                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">✨ Your matches</span>
               </div>
             )}
           </div>
@@ -971,17 +973,17 @@ const Tasks = () => {
             </MapContainer>
           </div>
           
-          {/* Quick stats below map */}
+          {/* Quick stats below map - Blue theme */}
           {filteredTasks.length > 0 && (
-            <div className="px-4 py-2 bg-green-50 border-t border-green-100 flex flex-wrap items-center gap-4 text-sm">
-              <span className="font-medium text-green-700">
+            <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex flex-wrap items-center gap-4 text-sm">
+              <span className="font-medium text-blue-700">
                 💰 {mapTasks.length} job{mapTasks.length !== 1 ? 's' : ''} on map
               </span>
               {maxBudget > 0 && (
                 <span className="text-green-600">Top payout: €{maxBudget}</span>
               )}
               {hasHighValueJobs && (
-                <span className="text-emerald-600 font-medium animate-pulse">✨ High-value jobs available!</span>
+                <span className="text-blue-600 font-medium animate-pulse">✨ High-value jobs available!</span>
               )}
             </div>
           )}
@@ -1002,18 +1004,18 @@ const Tasks = () => {
               {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💰 Jobs <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
               
               {filteredTasks.length === 0 ? (
-                <div className="text-center py-12 bg-gradient-to-br from-green-50 to-white rounded-xl border-2 border-dashed border-green-200">
+                <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
                   <div className="text-5xl mb-4">💰</div>
                   <p className="text-gray-900 font-semibold text-lg mb-2">No jobs posted nearby yet</p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
                     Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.
                   </p>
                   {isAuthenticated ? (
-                    <button onClick={() => navigate('/tasks/create')} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">
+                    <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
                       💰 Post Your First Job
                     </button>
                   ) : (
-                    <button onClick={() => navigate('/login')} className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">
+                    <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
                       Login to Post a Job
                     </button>
                   )}
@@ -1073,15 +1075,15 @@ const Tasks = () => {
           )}
         </div>
         
-        {/* CTA for logged-in users */}
+        {/* CTA for logged-in users - Blue theme */}
         {isAuthenticated && (
-          <div className="mt-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-6 text-white">
+          <div className="mt-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold mb-1">Manage Your Activity</h3>
-                <p className="text-green-100">View your posted jobs, offerings, and applications in your profile page.</p>
+                <p className="text-blue-100">View your posted jobs, offerings, and applications in your profile page.</p>
               </div>
-              <Link to="/profile?tab=tasks" className="bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors whitespace-nowrap">
+              <Link to="/profile?tab=tasks" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors whitespace-nowrap">
                 Go to My Tasks →
               </Link>
             </div>
@@ -1092,7 +1094,7 @@ const Tasks = () => {
   );
 };
 
-// Job Card Component with matching indicator and budget display
+// Job Card Component with matching indicator and budget display - Blue theme
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   const budget = task.budget || task.reward || 0;
@@ -1103,23 +1105,23 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
       to={`/tasks/${task.id}`} 
       className={`block border rounded-lg p-4 hover:shadow-md transition-all ${
         isHighValue 
-          ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 hover:border-green-500 ring-1 ring-green-200'
+          ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 hover:border-blue-500 ring-1 ring-blue-200'
           : isMatching 
-            ? 'border-emerald-300 bg-emerald-50 hover:border-emerald-400' 
-            : 'border-gray-200 hover:border-green-300'
+            ? 'border-blue-300 bg-blue-50 hover:border-blue-400' 
+            : 'border-gray-200 hover:border-blue-300'
       }`}
     >
       {/* High value badge */}
       {isHighValue && (
-        <div className="flex items-center gap-2 mb-2 text-green-700">
-          <span className="px-2 py-0.5 bg-green-200 rounded text-xs font-semibold animate-pulse">✨ High-value opportunity!</span>
+        <div className="flex items-center gap-2 mb-2 text-blue-700">
+          <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold animate-pulse">✨ High-value opportunity!</span>
         </div>
       )}
       
       {/* Matching badge */}
       {isMatching && !isHighValue && (
-        <div className="flex items-center gap-2 mb-2 text-emerald-700">
-          <span className="px-2 py-0.5 bg-emerald-200 rounded text-xs font-semibold">✨ Matches your offering</span>
+        <div className="flex items-center gap-2 mb-2 text-blue-700">
+          <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold">✨ Matches your offering</span>
         </div>
       )}
       
@@ -1132,14 +1134,15 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
-            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
           </div>
           {task.creator_name && (
             <p className="text-xs text-gray-500 mt-2">Posted by {task.creator_name}</p>
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          <div className={`text-xl sm:text-2xl font-bold ${isHighValue ? 'text-green-600' : 'text-green-600'}`}>
+          {/* Price stays GREEN (money color) */}
+          <div className={`text-xl sm:text-2xl font-bold text-green-600`}>
             €{budget}
           </div>
           {isHighValue && <div className="text-xs text-green-500 mt-1">💰💰💰</div>}
@@ -1149,7 +1152,7 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
   );
 };
 
-// Offering Card Component
+// Offering Card Component - Orange theme
 const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
   
@@ -1180,7 +1183,7 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
             </div>
           )}
           
-          {/* Price */}
+          {/* Price - GREEN (money color) */}
           <div className="text-base sm:text-lg font-bold text-green-600 mb-2">
             €{offering.price || 0}
             {offering.price_type === 'hourly' && '/hr'}
@@ -1188,7 +1191,7 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
             {offering.price_type === 'negotiable' && ' (neg)'}
           </div>
           
-          {/* Category & Distance */}
+          {/* Category & Distance - Orange badge */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{getCategoryLabel(offering.category)}</span>
             <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
