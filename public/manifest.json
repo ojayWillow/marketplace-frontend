@@ -1,0 +1,44 @@
+{
+  "name": "Tirgus - Latvijas Tirgus",
+  "short_name": "Tirgus",
+  "description": "Latvijas tiešsaistes tirgus vieta. Pērciet un pārdodiet preces, atrodiet darbus tuvumā vai piedāvājiet savus pakalpojumus.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "lang": "lv",
+  "categories": ["shopping", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Sludinājumi",
+      "short_name": "Sludinājumi",
+      "description": "Pārlūkot sludinājumus",
+      "url": "/listings",
+      "icons": []
+    },
+    {
+      "name": "Ātrā Palīdzība",
+      "short_name": "Darbi",
+      "description": "Atrast darbus vai piedāvāt pakalpojumus",
+      "url": "/tasks",
+      "icons": []
+    }
+  ]
+}
