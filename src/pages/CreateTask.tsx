@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { createTask } from '../api/tasks';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
@@ -7,6 +8,7 @@ import { useToastStore } from '../stores/toastStore';
 import { CATEGORIES, CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
 
 const CreateTask = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
@@ -32,9 +34,9 @@ const CreateTask = () => {
   const selectedFromSuggestions = useRef(false);
 
   const difficulties = [
-    { value: 'easy', label: '🟢 Easy', description: 'Simple task, minimal effort' },
-    { value: 'medium', label: '🟡 Medium', description: 'Moderate effort required' },
-    { value: 'hard', label: '🔴 Hard', description: 'Challenging, requires skill or strength' },
+    { value: 'easy', label: t('createTask.difficultyEasy', '🟢 Easy'), description: t('createTask.difficultyEasyDesc', 'Simple task, minimal effort') },
+    { value: 'medium', label: t('createTask.difficultyMedium', '🟡 Medium'), description: t('createTask.difficultyMediumDesc', 'Moderate effort required') },
+    { value: 'hard', label: t('createTask.difficultyHard', '🔴 Hard'), description: t('createTask.difficultyHardDesc', 'Challenging, requires skill or strength') },
   ];
 
   // Generate time options in 15-minute intervals
@@ -54,7 +56,7 @@ const CreateTask = () => {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.warning('Please login to create a task');
+      toast.warning(t('tasks.pleaseLogin', 'Please login to create a task'));
       navigate('/login');
     }
   }, [isAuthenticated]);
@@ -97,7 +99,7 @@ const CreateTask = () => {
 
     // If no location entered, fail
     if (!formData.location.trim()) {
-      toast.error('Please enter a location');
+      toast.error(t('createTask.locationRequired', 'Please enter a location'));
       return false;
     }
 
@@ -119,15 +121,15 @@ const CreateTask = () => {
         }));
         setLocationStatus('approximate');
         
-        toast.info(`Location set to approximate area: ${firstResult.display_name.split(',').slice(0, 2).join(', ')}`);
+        toast.info(t('createTask.locationApproximate', 'Location set to approximate area: {{area}}', { area: firstResult.display_name.split(',').slice(0, 2).join(', ') }));
         return true;
       } else {
-        toast.error('Could not find this location. Please select from the suggestions or try a different address.');
+        toast.error(t('createTask.locationNotFound', 'Could not find this location. Please select from the suggestions or try a different address.'));
         return false;
       }
     } catch (error) {
       console.error('Auto-geocoding error:', error);
-      toast.error('Failed to find location. Please try again.');
+      toast.error(t('createTask.locationError', 'Failed to find location. Please try again.'));
       return false;
     } finally {
       setSearchingAddress(false);
@@ -138,23 +140,23 @@ const CreateTask = () => {
     e.preventDefault();
     
     if (!user?.id) {
-      toast.error('You must be logged in to create a task');
+      toast.error(t('createTask.loginRequired', 'You must be logged in to create a task'));
       navigate('/login');
       return;
     }
     
     if (!formData.title.trim()) {
-      toast.error('Please enter a task title');
+      toast.error(t('createTask.titleRequired', 'Please enter a task title'));
       return;
     }
     
     if (!formData.description.trim()) {
-      toast.error('Please enter a task description');
+      toast.error(t('createTask.descriptionRequired', 'Please enter a task description'));
       return;
     }
     
     if (!formData.location.trim()) {
-      toast.error('Please enter a location');
+      toast.error(t('createTask.locationRequired', 'Please enter a location'));
       return;
     }
     
@@ -193,11 +195,11 @@ const CreateTask = () => {
       };
 
       await createTask(taskData);
-      toast.success('Task created successfully! It will now appear in Quick Help.');
+      toast.success(t('createTask.success', 'Task created successfully! It will now appear in Quick Help.'));
       navigate('/tasks');
     } catch (error: any) {
       console.error('Error creating task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to create task. Please try again.');
+      toast.error(error?.response?.data?.error || t('createTask.error', 'Failed to create task. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -243,27 +245,27 @@ const CreateTask = () => {
         return (
           <div className="flex items-center gap-2 text-green-600 text-sm mt-1">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>📍 Exact location set: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+            <span>📍 {t('createTask.locationExact', 'Exact location set')}: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
           </div>
         );
       case 'approximate':
         return (
           <div className="flex items-center gap-2 text-amber-600 text-sm mt-1">
             <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-            <span>📍 Approximate location: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+            <span>📍 {t('createTask.locationApproximateLabel', 'Approximate location')}: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
           </div>
         );
       case 'typing':
         return (
           <div className="flex items-center gap-2 text-blue-600 text-sm mt-1">
             <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-            <span>Select from suggestions below for exact location, or we'll use approximate area</span>
+            <span>{t('createTask.locationSelectHint', 'Select from suggestions below for exact location, or we\'ll use approximate area')}</span>
           </div>
         );
       default:
         return (
           <p className="text-xs text-gray-500 mt-1">
-            Start typing and select from suggestions for exact location
+            {t('createTask.locationTypeHint', 'Start typing and select from suggestions for exact location')}
           </p>
         );
     }
@@ -273,14 +275,14 @@ const CreateTask = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Quick Help Job</h1>
-          <p className="text-gray-600 mb-6">Post a task and get help from people nearby</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('createTask.title', 'Create Quick Help Job')}</h1>
+          <p className="text-gray-600 mb-6">{t('createTask.subtitle', 'Post a task and get help from people nearby')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Task Title *
+                {t('createTask.taskTitle', 'Task Title')} *
               </label>
               <input
                 type="text"
@@ -289,7 +291,7 @@ const CreateTask = () => {
                 required
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="e.g., Need help moving furniture"
+                placeholder={t('createTask.taskTitlePlaceholder', 'e.g., Need help moving furniture')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -297,7 +299,7 @@ const CreateTask = () => {
             {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
+                {t('createTask.description', 'Description')} *
               </label>
               <textarea
                 id="description"
@@ -306,7 +308,7 @@ const CreateTask = () => {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Provide details about what help you need..."
+                placeholder={t('createTask.descriptionPlaceholder', 'Provide details about what help you need...')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -314,7 +316,7 @@ const CreateTask = () => {
             {/* Category - Grouped */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category *
+                {t('createTask.category', 'Category')} *
               </label>
               <select
                 id="category"
@@ -348,7 +350,7 @@ const CreateTask = () => {
             {/* Location with Geocoding */}
             <div className="relative">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location * {searchingAddress && <span className="text-blue-500 text-xs">(searching...)</span>}
+                {t('createTask.location', 'Location')} * {searchingAddress && <span className="text-blue-500 text-xs">({t('common.loading', 'searching...')})</span>}
               </label>
               <div className="relative">
                 <input
@@ -358,7 +360,7 @@ const CreateTask = () => {
                   required
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="e.g., Teika, Riga or Brivibas iela 1, Riga"
+                  placeholder={t('createTask.locationPlaceholder', 'e.g., Teika, Riga or Brivibas iela 1, Riga')}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     locationStatus === 'exact' 
                       ? 'border-green-300 bg-green-50' 
@@ -377,7 +379,7 @@ const CreateTask = () => {
               {addressSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   <div className="px-3 py-2 bg-blue-50 border-b text-xs text-blue-700">
-                    👆 Select for exact location on map
+                    👆 {t('createTask.selectForExact', 'Select for exact location on map')}
                   </div>
                   {addressSuggestions.map((result, index) => (
                     <button
@@ -399,7 +401,7 @@ const CreateTask = () => {
             {/* Budget */}
             <div>
               <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
-                Budget (EUR) *
+                {t('createTask.budget', 'Budget (EUR)')} *
               </label>
               <input
                 type="number"
@@ -410,20 +412,20 @@ const CreateTask = () => {
                 required
                 value={formData.budget}
                 onChange={handleChange}
-                placeholder="e.g., 25.00"
+                placeholder={t('createTask.budgetPlaceholder', 'e.g., 25.00')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">How much are you willing to pay for this task?</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createTask.budgetHint', 'How much are you willing to pay for this task?')}</p>
             </div>
 
             {/* Deadline - Split into Date and Time */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Deadline (Optional)
+                {t('createTask.deadline', 'Deadline')} ({t('common.optional', 'Optional')})
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="deadlineDate" className="block text-xs text-gray-500 mb-1">Date</label>
+                  <label htmlFor="deadlineDate" className="block text-xs text-gray-500 mb-1">{t('createTask.date', 'Date')}</label>
                   <input
                     type="date"
                     id="deadlineDate"
@@ -435,7 +437,7 @@ const CreateTask = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="deadlineTime" className="block text-xs text-gray-500 mb-1">Time</label>
+                  <label htmlFor="deadlineTime" className="block text-xs text-gray-500 mb-1">{t('createTask.time', 'Time')}</label>
                   <select
                     id="deadlineTime"
                     name="deadlineTime"
@@ -444,7 +446,7 @@ const CreateTask = () => {
                     disabled={!formData.deadlineDate}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
                   >
-                    <option value="">Any time</option>
+                    <option value="">{t('createTask.anyTime', 'Any time')}</option>
                     {timeOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
@@ -453,13 +455,13 @@ const CreateTask = () => {
                   </select>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">When do you need this task completed by?</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createTask.deadlineHint', 'When do you need this task completed by?')}</p>
             </div>
 
             {/* Difficulty (was Priority) */}
             <div>
               <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
-                How hard is this task?
+                {t('createTask.difficulty', 'How hard is this task?')}
               </label>
               <select
                 id="difficulty"
@@ -490,26 +492,25 @@ const CreateTask = () => {
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <label htmlFor="is_urgent" className="ml-2 text-sm text-gray-700">
-                This is an urgent task
+                {t('createTask.urgent', 'This is an urgent task')}
               </label>
             </div>
 
             {/* Location warning if approximate */}
             {locationStatus === 'typing' && formData.location.length > 3 && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <h3 className="font-medium text-amber-800 mb-2">📍 Location tip</h3>
+                <h3 className="font-medium text-amber-800 mb-2">📍 {t('createTask.locationTipTitle', 'Location tip')}</h3>
                 <p className="text-sm text-amber-700">
-                  For better visibility on the map, select a specific address from the suggestions above. 
-                  If you proceed without selecting, we'll use the general area which may be less precise.
+                  {t('createTask.locationTip', 'For better visibility on the map, select a specific address from the suggestions above. If you proceed without selecting, we\'ll use the general area which may be less precise.')}
                 </p>
               </div>
             )}
 
             {/* Matching hint */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-800 mb-2">💡 Get matched with helpers</h3>
+              <h3 className="font-medium text-blue-800 mb-2">💡 {t('createTask.matchingTitle', 'Get matched with helpers')}</h3>
               <p className="text-sm text-blue-700">
-                People offering <strong>{selectedCategory?.label || 'this type of'}</strong> services in your area will see your job and can apply to help you!
+                {t('createTask.matchingHint', 'People offering {{category}} services in your area will see your job and can apply to help you!', { category: selectedCategory?.label || t('common.this', 'this type of') })}
               </p>
             </div>
 
@@ -520,14 +521,14 @@ const CreateTask = () => {
                 disabled={loading || searchingAddress}
                 className="flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? 'Creating...' : searchingAddress ? 'Finding location...' : 'Create Task'}
+                {loading ? t('createTask.creating', 'Creating...') : searchingAddress ? t('createTask.findingLocation', 'Finding location...') : t('createTask.createButton', 'Create Task')}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/tasks')}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
             </div>
           </form>
