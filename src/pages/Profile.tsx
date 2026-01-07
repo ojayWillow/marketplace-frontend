@@ -496,6 +496,12 @@ const Profile = () => {
   const tasksCompletedAsCreator = createdTasks.filter(t => t.status === 'completed').length;
   const totalTasksCompleted = tasksCompletedAsWorker + tasksCompletedAsCreator;
 
+  // Check if user has content for each tab
+  const hasListings = myListings.length > 0;
+  const hasOfferings = myOfferings.length > 0;
+  const hasTasks = createdTasks.length > 0 || myApplications.length > 0;
+  const hasReviews = reviews.length > 0;
+
   // Helper to get full avatar URL (handles both relative and absolute URLs)
   const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
     if (!url) return undefined;
@@ -505,15 +511,18 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading profile...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 flex items-center justify-center">
         <div className="text-xl text-red-600">Failed to load profile</div>
       </div>
     );
@@ -527,121 +536,163 @@ const Profile = () => {
   const currentAvatarUrl = getAvatarDisplayUrl(formData.avatar_url || profile.avatar_url || profile.profile_picture_url);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            {/* Avatar */}
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                {currentAvatarUrl ? (
-                  <img 
-                    src={currentAvatarUrl} 
-                    alt={profile.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-5xl text-gray-400">
-                    {profile.username.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              {profile.is_verified && (
-                <div className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-1">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
-              {editing && (
-                <button
-                  onClick={() => setShowAvatarPicker(true)}
-                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 transition-colors shadow-md"
-                >
-                  📷 Change
-                </button>
-              )}
-            </div>
-
-            {/* User Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">{profile.username}</h1>
-                {profile.is_verified && (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                    Verified
-                  </span>
-                )}
-              </div>
-              
-              {(profile.first_name || profile.last_name) && (
-                <p className="text-gray-600 mb-1">
-                  {profile.first_name} {profile.last_name}
-                </p>
-              )}
-              
-              {(profile.city || profile.country) && (
-                <p className="text-gray-500 text-sm mb-2">
-                  📍 {[profile.city, profile.country].filter(Boolean).join(', ')}
-                </p>
-              )}
-              
-              <p className="text-gray-400 text-sm">Member since {memberSince}</p>
-            </div>
-
-            {/* Stats */}
-            <div className="flex gap-6 text-center">
-              <div>
-                <div className="flex items-center justify-center gap-1">
-                  {renderStars(profile.average_rating || 0)}
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {profile.average_rating?.toFixed(1) || '0.0'} ({profile.reviews_count || 0} reviews)
-                </p>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {profile.tasks_completed || totalTasksCompleted}
-                </div>
-                <p className="text-sm text-gray-500">Tasks Done</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 py-8">
+      <div className="max-w-5xl mx-auto px-4">
+        {/* Profile Header Card - Redesigned */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+          {/* Banner */}
+          <div className="h-32 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 relative">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIgMS44LTQgNC00czQgMS44IDQgNC0xLjggNC00IDQtNC0xLjgtNC00em0wLTE3YzAtMi4yIDEuOC00IDQtNHM0IDEuOCA0IDQtMS44IDQtNCA0LTQtMS44LTQtNHptLTE3IDBjMC0yLjIgMS44LTQgNC00czQgMS44IDQgNC0xLjggNC00IDQtNC0xLjgtNC00em0wIDE3YzAtMi4yIDEuOC00IDQtNHM0IDEuOCA0IDQtMS44IDQtNCA0LTQtMS44LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30"></div>
           </div>
-
-          {/* Edit Button */}
-          <div className="mt-6 flex justify-end">
-            {!editing ? (
-              <button
-                onClick={() => setEditing(true)}
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-              >
-                Edit Profile
-              </button>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setEditing(false)}
-                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:bg-gray-400"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
+          
+          <div className="px-6 pb-6">
+            {/* Avatar - overlapping banner */}
+            <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-16 relative z-10">
+              <div className="relative">
+                <div className="w-32 h-32 rounded-2xl bg-white p-1 shadow-lg">
+                  <div className="w-full h-full rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden">
+                    {currentAvatarUrl ? (
+                      <img 
+                        src={currentAvatarUrl} 
+                        alt={profile.username}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      <span className="text-5xl text-gray-400 font-bold">
+                        {profile.username.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {profile.is_verified && (
+                  <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+                {editing && (
+                  <button
+                    onClick={() => setShowAvatarPicker(true)}
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 transition-colors shadow-md flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Change
+                  </button>
+                )}
               </div>
-            )}
+
+              {/* User Info */}
+              <div className="flex-1 pt-4 md:pt-0 md:pb-2">
+                <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold text-gray-900">{profile.username}</h1>
+                  <div className="flex items-center gap-2">
+                    {profile.is_verified && (
+                      <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Verified
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {(profile.first_name || profile.last_name) && (
+                  <p className="text-gray-600 font-medium">
+                    {profile.first_name} {profile.last_name}
+                  </p>
+                )}
+                
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
+                  {(profile.city || profile.country) && (
+                    <span className="flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {[profile.city, profile.country].filter(Boolean).join(', ')}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Joined {memberSince}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats Cards */}
+              <div className="flex gap-3 pt-4 md:pt-0">
+                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-3 text-center min-w-[90px] border border-amber-100">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <span className="text-yellow-500 text-lg">★</span>
+                    <span className="text-xl font-bold text-gray-900">{profile.average_rating?.toFixed(1) || '0.0'}</span>
+                  </div>
+                  <p className="text-xs text-gray-500">{profile.reviews_count || 0} reviews</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 text-center min-w-[90px] border border-green-100">
+                  <div className="text-xl font-bold text-green-600 mb-1">
+                    {profile.tasks_completed || totalTasksCompleted}
+                  </div>
+                  <p className="text-xs text-gray-500">Tasks Done</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit Button */}
+            <div className="mt-6 flex justify-end">
+              {!editing ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Profile
+                </button>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2.5 rounded-xl hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Avatar Picker Modal */}
         {showAvatarPicker && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAvatarPicker(false)}>
-            <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Choose Your Avatar</h3>
                 <button onClick={() => setShowAvatarPicker(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
@@ -661,7 +712,7 @@ const Profile = () => {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingAvatar}
-                    className="flex-1 border-2 border-dashed border-gray-300 rounded-lg py-8 px-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                    className="flex-1 border-2 border-dashed border-gray-300 rounded-xl py-8 px-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
                   >
                     {uploadingAvatar ? (
                       <div className="flex items-center justify-center gap-2">
@@ -723,13 +774,13 @@ const Profile = () => {
                 </div>
 
                 {/* Preview */}
-                <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-xl">
                   <div className="text-center">
                     <p className="text-sm text-gray-500 mb-2">Preview</p>
                     <img
                       src={generateAvatarUrl(selectedAvatarStyle, avatarSeed)}
                       alt="Avatar Preview"
-                      className="w-24 h-24 rounded-full border-4 border-white shadow-md"
+                      className="w-24 h-24 rounded-xl border-4 border-white shadow-md"
                     />
                   </div>
                 </div>
@@ -737,7 +788,7 @@ const Profile = () => {
                 {/* Select Button */}
                 <button
                   onClick={handleSelectGeneratedAvatar}
-                  className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
                 >
                   ✅ Use This Avatar
                 </button>
@@ -746,69 +797,156 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Tabs */}
+        {/* Quick Actions - Colorful Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Link
+            to="/tasks/create"
+            className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg group"
+          >
+            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📋</div>
+            <p className="font-semibold">Post a Job</p>
+            <p className="text-blue-100 text-xs mt-1">Get help with tasks</p>
+          </Link>
+          
+          <Link
+            to="/offerings/create"
+            className="bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-xl p-4 hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg group"
+          >
+            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">👋</div>
+            <p className="font-semibold">Offer Service</p>
+            <p className="text-amber-100 text-xs mt-1">Advertise your skills</p>
+          </Link>
+          
+          <Link
+            to="/listings/create"
+            className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-xl p-4 hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg group"
+          >
+            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🏷️</div>
+            <p className="font-semibold">Sell Item</p>
+            <p className="text-purple-100 text-xs mt-1">List in marketplace</p>
+          </Link>
+          
+          <Link
+            to="/favorites"
+            className="bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-xl p-4 hover:from-pink-600 hover:to-rose-600 transition-all shadow-md hover:shadow-lg group"
+          >
+            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">❤️</div>
+            <p className="font-semibold">Favorites</p>
+            <p className="text-pink-100 text-xs mt-1">Saved items</p>
+          </Link>
+        </div>
+
+        {/* Dynamic Tabs - Only show tabs with content + About */}
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setActiveTab('about')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
               activeTab === 'about'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
             }`}
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
             About
           </button>
-          <button
-            onClick={() => setActiveTab('listings')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'listings'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            My Listings ({myListings.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('offerings')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'offerings'
-                ? 'bg-amber-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            👋 My Offerings ({myOfferings.length})
-          </button>
+          
+          {/* Always show Tasks tab - it's the main activity hub */}
           <button
             onClick={() => setActiveTab('tasks')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors relative ${
+            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 relative ${
               activeTab === 'tasks'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
             }`}
           >
-            My Tasks
+            <span>📋</span>
+            My Jobs
+            {hasTasks && (
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                activeTab === 'tasks' ? 'bg-white/20' : 'bg-blue-100 text-blue-600'
+              }`}>
+                {myTasksCount + myJobsCount}
+              </span>
+            )}
             {(totalPendingApplicationsOnMyTasks + pendingAppsCount) > 0 && (
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold shadow-md">
                 {totalPendingApplicationsOnMyTasks + pendingAppsCount}
               </span>
             )}
           </button>
+          
+          {/* Show Offerings tab only if user has offerings OR always allow creating */}
           <button
-            onClick={() => setActiveTab('reviews')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'reviews'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+            onClick={() => setActiveTab('offerings')}
+            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+              activeTab === 'offerings'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
             }`}
           >
-            Reviews ({reviews.length})
+            <span>👋</span>
+            My Services
+            {hasOfferings && (
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                activeTab === 'offerings' ? 'bg-white/20' : 'bg-amber-100 text-amber-600'
+              }`}>
+                {myOfferings.length}
+              </span>
+            )}
           </button>
+          
+          {/* Show Listings tab only if user has listings OR always allow creating */}
+          <button
+            onClick={() => setActiveTab('listings')}
+            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+              activeTab === 'listings'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <span>🏷️</span>
+            My Listings
+            {hasListings && (
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                activeTab === 'listings' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
+              }`}>
+                {myListings.length}
+              </span>
+            )}
+          </button>
+          
+          {/* Show Reviews tab only if user has reviews */}
+          {hasReviews && (
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'reviews'
+                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-md'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+              }`}
+            >
+              <span>⭐</span>
+              Reviews
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                activeTab === 'reviews' ? 'bg-white/20' : 'bg-yellow-100 text-yellow-600'
+              }`}>
+                {reviews.length}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* About Tab */}
         {activeTab === 'about' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              About Me
+            </h2>
             
             {editing ? (
               <div className="space-y-4">
@@ -820,7 +958,7 @@ const Profile = () => {
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
                   <div>
@@ -830,7 +968,7 @@ const Profile = () => {
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
@@ -843,7 +981,7 @@ const Profile = () => {
                     onChange={handleChange}
                     rows={4}
                     placeholder="Tell others about yourself..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                   />
                 </div>
                 
@@ -855,7 +993,7 @@ const Profile = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+371 20000000"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 
@@ -868,7 +1006,7 @@ const Profile = () => {
                       value={formData.city}
                       onChange={handleChange}
                       placeholder="Riga"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
                   <div>
@@ -879,30 +1017,54 @@ const Profile = () => {
                       value={formData.country}
                       onChange={handleChange}
                       placeholder="Latvia"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {profile.bio ? (
-                  <p className="text-gray-700">{profile.bio}</p>
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-4">
+                    <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+                  </div>
                 ) : (
-                  <p className="text-gray-400 italic">No bio yet. Click "Edit Profile" to add one!</p>
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-6 text-center">
+                    <div className="text-4xl mb-2">✏️</div>
+                    <p className="text-gray-500">No bio yet. Click "Edit Profile" to tell others about yourself!</p>
+                  </div>
                 )}
                 
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-gray-500">Email:</span>
-                      <span className="ml-2 text-gray-700">{profile.email}</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Contact Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Email</p>
+                        <p className="text-gray-900 font-medium">{profile.email}</p>
+                      </div>
                     </div>
                     {profile.phone && (
-                      <div>
-                        <span className="text-gray-500">Phone:</span>
-                        <span className="ml-2 text-gray-700">{profile.phone}</span>
+                      <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Phone</p>
+                          <p className="text-gray-900 font-medium">{profile.phone}</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -912,30 +1074,42 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Listings Tab (Marketplace items for sale) */}
+        {/* Listings Tab */}
         {activeTab === 'listings' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">My Listings</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span>🏷️</span>
+                My Listings
+              </h2>
               <Link
                 to="/listings/create"
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md flex items-center gap-2"
               >
-                + Create Listing
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New Listing
               </Link>
             </div>
             
             {listingsLoading ? (
-              <div className="text-center py-8 text-gray-600">Loading listings...</div>
-            ) : myListings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">📝</div>
-                <p className="text-gray-900 font-medium mb-2">No listings yet</p>
-                <p className="text-gray-500 mb-4">Start selling by creating your first listing!</p>
+                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading listings...</p>
+              </div>
+            ) : myListings.length === 0 ? (
+              <div className="text-center py-12 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl">
+                <div className="text-6xl mb-4">🏷️</div>
+                <p className="text-gray-900 font-semibold mb-2">No listings yet</p>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">Have something to sell? Create your first listing and reach buyers in your area!</p>
                 <Link
                   to="/listings/create"
-                  className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
                   Create Your First Listing
                 </Link>
               </div>
@@ -946,15 +1120,15 @@ const Profile = () => {
                   const firstImage = images[0];
                   
                   return (
-                    <div key={listing.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={listing.id} className="border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-all bg-white group">
                       <div className="flex">
                         {/* Image */}
-                        <div className="w-32 h-32 bg-gray-100 flex-shrink-0">
+                        <div className="w-32 h-32 bg-gray-100 flex-shrink-0 relative overflow-hidden">
                           {firstImage ? (
                             <img
                               src={getImageUrl(firstImage)}
                               alt={listing.title}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -966,26 +1140,29 @@ const Profile = () => {
                         </div>
                         
                         {/* Content */}
-                        <div className="flex-1 p-3 flex flex-col">
+                        <div className="flex-1 p-4 flex flex-col">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-medium text-gray-900 line-clamp-1">{listing.title}</h3>
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(listing.status)}`}>
+                            <h3 className="font-semibold text-gray-900 line-clamp-1">{listing.title}</h3>
+                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(listing.status)}`}>
                               {listing.status}
                             </span>
                           </div>
                           
-                          <p className="text-blue-600 font-semibold mt-1">
+                          <p className="text-lg font-bold text-purple-600 mt-1">
                             €{Number(listing.price).toLocaleString()}
                           </p>
                           
-                          <p className="text-gray-500 text-sm mt-1 line-clamp-1">
+                          <p className="text-gray-500 text-sm mt-1 line-clamp-1 flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            </svg>
                             {listing.location || 'No location'}
                           </p>
                           
                           <div className="flex gap-2 mt-auto pt-2">
                             <Link
                               to={`/listings/${listing.id}`}
-                              className="text-sm text-blue-600 hover:text-blue-700"
+                              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                             >
                               View
                             </Link>
@@ -1012,40 +1189,52 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Offerings Tab (Service offerings) */}
+        {/* Offerings Tab */}
         {activeTab === 'offerings' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">My Service Offerings</h2>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span>👋</span>
+                  My Services
+                </h2>
                 <p className="text-sm text-gray-500">Services you offer to help others</p>
               </div>
               <Link
                 to="/offerings/create"
-                className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-md flex items-center gap-2"
               >
-                + Create Offering
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New Service
               </Link>
             </div>
             
             {offeringsLoading ? (
-              <div className="text-center py-8 text-gray-600">Loading offerings...</div>
-            ) : myOfferings.length === 0 ? (
               <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading services...</p>
+              </div>
+            ) : myOfferings.length === 0 ? (
+              <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
                 <div className="text-6xl mb-4">👋</div>
-                <p className="text-gray-900 font-medium mb-2">No service offerings yet</p>
-                <p className="text-gray-500 mb-4">Create an offering to advertise your skills and get hired!</p>
+                <p className="text-gray-900 font-semibold mb-2">No services yet</p>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">Got skills? Create a service offering and let people know how you can help them!</p>
                 <Link
                   to="/offerings/create"
-                  className="inline-block bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition-colors"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-md"
                 >
-                  Create Your First Offering
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Your First Service
                 </Link>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {myOfferings.map(offering => (
-                  <div key={offering.id} className="border border-amber-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-amber-50/30">
+                  <div key={offering.id} className="border border-amber-100 rounded-xl p-4 hover:shadow-lg transition-all bg-gradient-to-br from-amber-50/50 to-orange-50/50 group">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -1053,28 +1242,30 @@ const Profile = () => {
                           <div>
                             <Link 
                               to={`/offerings/${offering.id}`}
-                              className="font-semibold text-gray-900 hover:text-amber-600"
+                              className="font-semibold text-gray-900 hover:text-amber-600 transition-colors"
                             >
                               {offering.title}
                             </Link>
-                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(offering.status)}`}>
+                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(offering.status)}`}>
                               {offering.status}
                             </span>
                           </div>
                         </div>
                         
-                        <p className="text-gray-600 text-sm line-clamp-2 mb-2">{offering.description}</p>
+                        <p className="text-gray-600 text-sm line-clamp-2 mb-3">{offering.description}</p>
                         
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-green-600 font-bold">
+                          <span className="text-green-600 font-bold text-lg">
                             €{offering.price || 0}
-                            {offering.price_type === 'hourly' && '/hr'}
+                            {offering.price_type === 'hourly' && <span className="text-xs font-normal">/hr</span>}
                           </span>
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium">
                             {getCategoryLabel(offering.category)}
                           </span>
                           {offering.location && (
-                            <span className="text-gray-500 text-xs">📍 {offering.location.split(',')[0]}</span>
+                            <span className="text-gray-500 text-xs flex items-center gap-1">
+                              📍 {offering.location.split(',')[0]}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1082,7 +1273,7 @@ const Profile = () => {
                       <div className="flex flex-col gap-2 min-w-[90px]">
                         <Link
                           to={`/offerings/${offering.id}`}
-                          className="px-3 py-1.5 text-sm bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-center"
+                          className="px-3 py-1.5 text-sm bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-center font-medium"
                         >
                           View
                         </Link>
@@ -1104,42 +1295,47 @@ const Profile = () => {
                 ))}
               </div>
             )}
-            
-            {/* Info box */}
-            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h4 className="font-medium text-amber-800 mb-2">💡 Tip: Get discovered!</h4>
-              <p className="text-sm text-amber-700">
-                Your offerings appear in the Quick Help section when people search for services you provide. 
-                Make sure to add a detailed description and set your service area to attract more clients!
-              </p>
-            </div>
           </div>
         )}
 
         {/* Tasks Tab */}
         {activeTab === 'tasks' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">My Tasks</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span>📋</span>
+                My Jobs
+              </h2>
               <Link
                 to="/tasks/create"
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md flex items-center gap-2"
               >
-                + Create Task
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Post Job
               </Link>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg w-fit">
+            {/* View Mode Toggle - Styled like Quick Help */}
+            <div className="flex gap-2 mb-4 p-1.5 bg-gray-100 rounded-xl w-fit">
               <button
                 onClick={() => setTaskViewMode('my-tasks')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors relative ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative flex items-center gap-2 ${
                   taskViewMode === 'my-tasks'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                📋 Tasks I Posted ({myTasksCount})
+                <span>📋</span>
+                Jobs I Posted
+                {myTasksCount > 0 && (
+                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                    taskViewMode === 'my-tasks' ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {myTasksCount}
+                  </span>
+                )}
                 {totalPendingApplicationsOnMyTasks > 0 && (
                   <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs rounded-full bg-green-500 text-white font-bold">
                     {totalPendingApplicationsOnMyTasks}
@@ -1148,86 +1344,104 @@ const Profile = () => {
               </button>
               <button
                 onClick={() => setTaskViewMode('my-jobs')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors relative ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                   taskViewMode === 'my-jobs'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                🛠️ Jobs I'm Doing ({myJobsCount})
+                <span>🛠️</span>
+                Jobs I'm Doing
+                {myJobsCount > 0 && (
+                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                    taskViewMode === 'my-jobs' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {myJobsCount}
+                  </span>
+                )}
               </button>
             </div>
 
             {/* Pending Applications Alert */}
             {taskViewMode === 'my-tasks' && pendingAppsCount > 0 && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  ⏳ You have <strong>{pendingAppsCount} pending application{pendingAppsCount !== 1 ? 's' : ''}</strong> on other people's tasks.
-                  <Link to="/tasks" className="ml-2 text-yellow-700 underline hover:no-underline">Browse tasks →</Link>
-                </p>
+              <div className="mb-4 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl flex items-center gap-3">
+                <span className="text-2xl">⏳</span>
+                <div className="flex-1">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    You have <strong>{pendingAppsCount} pending application{pendingAppsCount !== 1 ? 's' : ''}</strong> on other people's tasks.
+                  </p>
+                </div>
+                <Link to="/tasks" className="text-yellow-700 text-sm font-medium hover:underline">
+                  Browse tasks →
+                </Link>
               </div>
             )}
 
             {/* Status Filter */}
             <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setTaskStatusFilter('all')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  taskStatusFilter === 'all'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setTaskStatusFilter('active')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  taskStatusFilter === 'active'
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                🔄 Active
-              </button>
-              <button
-                onClick={() => setTaskStatusFilter('completed')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  taskStatusFilter === 'completed'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                ✅ Completed
-              </button>
+              {[
+                { value: 'all', label: 'All', icon: '📊' },
+                { value: 'active', label: 'Active', icon: '🔄' },
+                { value: 'completed', label: 'Completed', icon: '✅' },
+              ].map(filter => (
+                <button
+                  key={filter.value}
+                  onClick={() => setTaskStatusFilter(filter.value as TaskStatusFilter)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    taskStatusFilter === filter.value
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>{filter.icon}</span>
+                  {filter.label}
+                </button>
+              ))}
             </div>
 
             {tasksLoading || applicationsLoading ? (
-              <div className="text-center py-8 text-gray-600">Loading...</div>
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading...</p>
+              </div>
             ) : (
               <>
                 {getDisplayTasks().length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
                     <div className="text-6xl mb-4">{taskViewMode === 'my-tasks' ? '📋' : '🛠️'}</div>
-                    <p className="text-gray-900 font-medium mb-2">
+                    <p className="text-gray-900 font-semibold mb-2">
                       {taskViewMode === 'my-tasks' 
-                        ? 'No tasks posted yet' 
+                        ? 'No jobs posted yet' 
                         : 'No jobs yet'}
                     </p>
-                    <p className="text-gray-500 mb-4">
+                    <p className="text-gray-500 mb-6 max-w-md mx-auto">
                       {taskViewMode === 'my-tasks'
-                        ? 'Need help with something? Post a task and get helpers!'
-                        : 'Apply to tasks to start earning!'}
+                        ? 'Need help with something? Post a job and get helpers in your area!'
+                        : 'Apply to jobs to start earning money helping others!'}
                     </p>
                     <Link
                       to={taskViewMode === 'my-tasks' ? '/tasks/create' : '/tasks'}
-                      className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
                     >
-                      {taskViewMode === 'my-tasks' ? 'Post Your First Task' : 'Browse Available Tasks'}
+                      {taskViewMode === 'my-tasks' ? (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Post Your First Job
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Browse Available Jobs
+                        </>
+                      )}
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {taskViewMode === 'my-tasks' ? (
                       // Tasks I created
                       getDisplayTasks().map(task => {
@@ -1236,15 +1450,15 @@ const Profile = () => {
                         return (
                           <div 
                             key={task.id} 
-                            className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
-                              hasApplications ? 'border-green-400 bg-green-50/30 ring-2 ring-green-200' : ''
+                            className={`border rounded-xl p-4 hover:shadow-md transition-all ${
+                              hasApplications ? 'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 ring-2 ring-green-200' : 'border-gray-100 bg-white'
                             }`}
                           >
                             {/* Application Alert Banner */}
                             {hasApplications && (
                               <Link 
                                 to={`/tasks/${task.id}`}
-                                className="flex items-center justify-between bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-lg mb-3 hover:from-green-600 hover:to-green-700 transition-all shadow-md"
+                                className="flex items-center justify-between bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-xl mb-3 hover:from-green-600 hover:to-emerald-600 transition-all shadow-md"
                               >
                                 <div className="flex items-center gap-2">
                                   <span className="text-2xl">📩</span>
@@ -1267,20 +1481,25 @@ const Profile = () => {
                                   <span className="text-xl">{getCategoryIcon(task.category)}</span>
                                   <Link 
                                     to={`/tasks/${task.id}`}
-                                    className="font-medium text-gray-900 hover:text-blue-600"
+                                    className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                                   >
                                     {task.title}
                                   </Link>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
                                     {task.status.replace('_', ' ')}
                                   </span>
                                 </div>
                                 <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
                                 <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {task.location}</span>
-                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
+                                  <span className="flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    </svg>
+                                    {task.location}
+                                  </span>
+                                  {task.budget && <span className="text-green-600 font-bold">€{task.budget}</span>}
                                   {task.status === 'completed' && task.completed_at && (
-                                    <span className="text-blue-600">
+                                    <span className="text-blue-600 flex items-center gap-1">
                                       ✅ Completed {new Date(task.completed_at).toLocaleDateString()}
                                     </span>
                                   )}
@@ -1291,7 +1510,7 @@ const Profile = () => {
                                 {task.status === 'pending_confirmation' && (
                                   <button
                                     onClick={() => handleConfirmTask(task.id)}
-                                    className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                    className="px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium"
                                   >
                                     ✓ Confirm Done
                                   </button>
@@ -1306,7 +1525,7 @@ const Profile = () => {
                                     </Link>
                                     <button
                                       onClick={() => handleCancelTask(task.id)}
-                                      className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                      className="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                                     >
                                       Cancel
                                     </button>
@@ -1314,7 +1533,7 @@ const Profile = () => {
                                 )}
                                 <Link
                                   to={`/tasks/${task.id}`}
-                                  className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                                  className="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-center font-medium"
                                 >
                                   View
                                 </Link>
@@ -1334,9 +1553,9 @@ const Profile = () => {
                         if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
                         
                         return (
-                          <div key={application.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div key={application.id} className="border border-green-200 rounded-xl p-4 hover:shadow-md transition-all bg-gradient-to-r from-green-50/50 to-emerald-50/50">
                             {/* Success Banner for accepted jobs */}
-                            <div className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg mb-3">
+                            <div className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-xl mb-3">
                               <span className="text-2xl">🎉</span>
                               <div>
                                 <span className="font-bold">You got the job!</span>
@@ -1354,20 +1573,25 @@ const Profile = () => {
                                   <span className="text-xl">{getCategoryIcon(task.category)}</span>
                                   <Link 
                                     to={`/tasks/${task.id}`}
-                                    className="font-medium text-gray-900 hover:text-blue-600"
+                                    className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                                   >
                                     {task.title}
                                   </Link>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClass(task.status)}`}>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
                                     {task.status.replace('_', ' ')}
                                   </span>
                                 </div>
                                 <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
                                 <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {task.location}</span>
-                                  {task.budget && <span className="text-green-600 font-medium">€{task.budget}</span>}
+                                  <span className="flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    </svg>
+                                    {task.location}
+                                  </span>
+                                  {task.budget && <span className="text-green-600 font-bold">€{task.budget}</span>}
                                   {task.status === 'completed' && task.completed_at && (
-                                    <span className="text-blue-600">
+                                    <span className="text-blue-600 flex items-center gap-1">
                                       ✅ Completed {new Date(task.completed_at).toLocaleDateString()}
                                     </span>
                                   )}
@@ -1380,7 +1604,7 @@ const Profile = () => {
                               <div className="flex flex-col gap-2 min-w-[120px]">
                                 <Link
                                   to={`/tasks/${task.id}`}
-                                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center"
+                                  className="px-3 py-1.5 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all text-center font-medium"
                                 >
                                   View Task
                                 </Link>
@@ -1399,19 +1623,22 @@ const Profile = () => {
 
         {/* Reviews Tab */}
         {activeTab === 'reviews' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Reviews</h2>
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span>⭐</span>
+              Reviews
+            </h2>
             
             {reviews.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl">
                 <div className="text-6xl mb-4">⭐</div>
-                <p className="text-gray-900 font-medium mb-2">No reviews yet</p>
+                <p className="text-gray-900 font-semibold mb-2">No reviews yet</p>
                 <p className="text-gray-500">Complete tasks to receive reviews from others!</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {reviews.map(review => (
-                  <div key={review.id} className="border-b pb-4 last:border-b-0">
+                  <div key={review.id} className="bg-gradient-to-br from-gray-50 to-yellow-50/30 rounded-xl p-4">
                     {editingReview === review.id ? (
                       // Edit mode
                       <div className="space-y-3">
@@ -1427,7 +1654,7 @@ const Profile = () => {
                             value={reviewEditData.content}
                             onChange={(e) => setReviewEditData(prev => ({ ...prev, content: e.target.value }))}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -1448,11 +1675,11 @@ const Profile = () => {
                     ) : (
                       // View mode
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
                           {review.reviewer_avatar ? (
                             <img src={review.reviewer_avatar} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
-                            <span className="text-gray-500">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
+                            <span className="text-gray-500 font-medium">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
                           )}
                         </div>
                         <div className="flex-1">
@@ -1465,7 +1692,7 @@ const Profile = () => {
                           ) : (
                             <p className="text-gray-400 italic text-sm">No comment provided</p>
                           )}
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-gray-400 mt-2">
                             {new Date(review.created_at).toLocaleDateString()}
                           </p>
                         </div>
