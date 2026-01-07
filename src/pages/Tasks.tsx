@@ -141,7 +141,7 @@ const MapController = ({ lat, lng, radius }: { lat: number; lng: number; radius:
     // 0 = All Latvia, use zoom 7 and center on Latvia
     // Otherwise zoom based on radius
     if (radius === 0) {
-      // Center on Latvia (approximately)
+      // Center on Latvia (approximately) but still show user's location area
       map.setView([56.8796, 24.6032], 7);
     } else {
       // Zoom levels: 5km=13, 10km=12, 25km=11, 50km=10, 100km=9
@@ -445,16 +445,15 @@ const MapMarkers = ({
       <MapController lat={userLocation.lat} lng={userLocation.lng} radius={searchRadius} />
       <LocationPicker onLocationSelect={onLocationSelect} />
       
-      {/* User Location Marker - Red pin (only show if not viewing all) */}
-      {searchRadius !== 0 && (
-        <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
-          <Popup>
-            <div className="p-1 text-center" style={{ width: '100px' }}>
-              <p className="font-medium text-gray-900 text-sm">📍 {t('map.you', 'You')}</p>
-            </div>
-          </Popup>
-        </Marker>
-      )}
+      {/* User Location Marker - Red pin - ALWAYS visible so users can see distances */}
+      <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+        <Popup>
+          <div className="p-1 text-center" style={{ width: '120px' }}>
+            <p className="font-medium text-gray-900 text-sm">📍 {t('map.you', 'You')}</p>
+            <p className="text-xs text-gray-500">{t('map.yourLocation', 'Your location')}</p>
+          </div>
+        </Popup>
+      </Marker>
       
       {/* Job/Task markers - Price labels */}
       {tasksWithOffsets.map((task) => {
@@ -929,10 +928,7 @@ const Tasks = () => {
               <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 sm:flex-initial justify-center">
                 <span>📍</span>
                 <span className="text-sm text-gray-700 truncate max-w-[120px]">
-                  {searchRadius === 0 
-                    ? t('tasks.selectLocation', 'Select location')
-                    : (manualLocationSet && manualLocationName ? manualLocationName.split(',')[0] : locationName)
-                  }
+                  {manualLocationSet && manualLocationName ? manualLocationName.split(',')[0] : locationName}
                 </span>
               </button>
               <select 
@@ -1018,19 +1014,17 @@ const Tasks = () => {
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
             <span className="font-semibold text-gray-700">{t('map.legend', 'Map')}:</span>
             
-            {/* User location - only show when not viewing all */}
-            {searchRadius !== 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
-                <span className="text-gray-600">{t('map.you', 'You')}</span>
-              </div>
-            )}
+            {/* User location - always visible */}
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
+              <span className="text-gray-600">{t('map.you', 'You')}</span>
+            </div>
             
             {/* Viewing all indicator */}
             {searchRadius === 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg">🇱🇻</span>
-                <span className="text-gray-600 font-medium">{t('tasks.viewingAllLatvia', 'Viewing all of Latvia')}</span>
+              <div className="flex items-center gap-1.5 bg-blue-100 px-2 py-1 rounded-full">
+                <span className="text-sm">🇱🇻</span>
+                <span className="text-blue-700 font-medium text-xs">{t('tasks.viewingAllLatvia', 'Viewing all of Latvia')}</span>
               </div>
             )}
             
