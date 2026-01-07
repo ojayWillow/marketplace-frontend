@@ -135,6 +135,18 @@ export default function Header() {
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
+                {/* Favorites Link */}
+                <Link
+                  to="/favorites"
+                  className="p-2 text-gray-600 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="My Favorites"
+                  title="My Favorites"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </Link>
+
                 {/* Notification Bell */}
                 <div className="relative" ref={notificationDropdownRef}>
                   <button
@@ -353,6 +365,18 @@ export default function Header() {
                         </Link>
                         
                         <Link
+                          to="/favorites"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          role="menuitem"
+                        >
+                          <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                          My Favorites
+                        </Link>
+                        
+                        <Link
                           to="/profile?tab=tasks"
                           onClick={() => setProfileDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -542,18 +566,27 @@ export default function Header() {
                 {t('common.quickHelp')}
               </NavLink>
               {isAuthenticated && (
-                <NavLink
-                  to="/messages"
-                  className={navLinkClass}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span aria-hidden="true">💬</span> Messages
-                  {notifications.unreadMessages > 0 && (
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">
-                      {notifications.unreadMessages}
-                    </span>
-                  )}
-                </NavLink>
+                <>
+                  <NavLink
+                    to="/favorites"
+                    className={navLinkClass}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-red-500" aria-hidden="true">❤️</span> My Favorites
+                  </NavLink>
+                  <NavLink
+                    to="/messages"
+                    className={navLinkClass}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span aria-hidden="true">💬</span> Messages
+                    {notifications.unreadMessages > 0 && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">
+                        {notifications.unreadMessages}
+                      </span>
+                    )}
+                  </NavLink>
+                </>
               )}
             </nav>
             
