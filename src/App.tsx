@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 
 // Loading spinner component
 const PageLoader = () => (
@@ -36,94 +37,99 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 
 function App() {
   return (
-    <Suspense fallback={<Layout><PageLoader /></Layout>}>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
-          <Route path="listings" element={<Listings />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="tasks/:id" element={<TaskDetail />} />
-          {/* Alias for /tasks */}
-          <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
-          <Route
-            path="tasks/create"
-            element={
-              <ProtectedRoute>
-                <CreateTask />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="tasks/:id/edit"
-            element={
-              <ProtectedRoute>
-                <EditTask />
-              </ProtectedRoute>
-            }
-          />
-          {/* Offerings routes */}
-          <Route path="offerings/:id" element={<OfferingDetail />} />
-          <Route
-            path="offerings/create"
-            element={
-              <ProtectedRoute>
-                <CreateOffering />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="listings/:id" element={<ListingDetail />} />
-          <Route
-            path="listings/create"
-            element={
-              <ProtectedRoute>
-                <CreateListing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="listings/:id/edit"
-            element={
-              <ProtectedRoute>
-                <EditListing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          {/* Favorites */}
-          <Route path="favorites" element={<Favorites />} />
-          {/* Messaging */}
-          <Route
-            path="messages"
-            element={
-              <ProtectedRoute>
-                <Messages />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="messages/:id"
-            element={
-              <ProtectedRoute>
-                <Conversation />
-              </ProtectedRoute>
-            }
-          />
-          {/* Public user profile */}
-          <Route path="users/:id" element={<UserProfile />} />
-          {/* 404 catch-all route - must be last */}
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <>
+      <Suspense fallback={<Layout><PageLoader /></Layout>}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+            <Route path="listings" element={<Listings />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="tasks/:id" element={<TaskDetail />} />
+            {/* Alias for /tasks */}
+            <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
+            <Route
+              path="tasks/create"
+              element={
+                <ProtectedRoute>
+                  <CreateTask />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="tasks/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditTask />
+                </ProtectedRoute>
+              }
+            />
+            {/* Offerings routes */}
+            <Route path="offerings/:id" element={<OfferingDetail />} />
+            <Route
+              path="offerings/create"
+              element={
+                <ProtectedRoute>
+                  <CreateOffering />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="listings/:id" element={<ListingDetail />} />
+            <Route
+              path="listings/create"
+              element={
+                <ProtectedRoute>
+                  <CreateListing />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="listings/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditListing />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            {/* Favorites */}
+            <Route path="favorites" element={<Favorites />} />
+            {/* Messaging */}
+            <Route
+              path="messages"
+              element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="messages/:id"
+              element={
+                <ProtectedRoute>
+                  <Conversation />
+                </ProtectedRoute>
+              }
+            />
+            {/* Public user profile */}
+            <Route path="users/:id" element={<UserProfile />} />
+            {/* 404 catch-all route - must be last */}
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
+      
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
+    </>
   )
 }
 
