@@ -1,15 +1,166 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.svg'],
+      manifest: {
+        name: 'Tirgus - Latvijas Tirgus',
+        short_name: 'Tirgus',
+        description: 'Latvijas tiešsaistes tirgus vieta. Pērciet un pārdodiet preces, atrodiet darbus tuvumā vai piedāvājiet savus pakalpojumus.',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#3B82F6',
+        orientation: 'portrait-primary',
+        lang: 'lv',
+        categories: ['shopping', 'business', 'lifestyle'],
+        icons: [
+          {
+            src: '/android-chrome-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/android-chrome-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/android-chrome-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Sludinājumi',
+            short_name: 'Sludinājumi',
+            description: 'Pārlūkot sludinājumus',
+            url: '/listings',
+            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Ātrā Palīdzība',
+            short_name: 'Darbi',
+            description: 'Atrast darbus vai piedāvāt pakalpojumus',
+            url: '/tasks',
+            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'dicebear-avatars',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/listings.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'listings-api',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/tasks.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'tasks-api',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/offerings.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'offerings-api',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/uploads\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'uploaded-images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
+      },
+      devOptions: {
+        enabled: true
+      }
+    })
+  ],
   server: {
     port: 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-            },
       },
+    },
   },
 })
