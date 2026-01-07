@@ -7,7 +7,7 @@ import { listingsApi, type Listing } from '../api/listings';
 import { reviewsApi } from '../api/reviews';
 import { getImageUrl, uploadImage } from '../api/uploads';
 import { Task, TaskApplication, getCreatedTasks, getMyApplications, cancelTask, confirmTaskCompletion } from '../api/tasks';
-import { getMyOfferings, deleteOffering, Offering } from '../api/offerings';
+import { getMyOfferings, deleteOffering, Offering, getOfferings } from '../api/offerings';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 
 interface UserProfile {
@@ -42,6 +42,11 @@ interface Review {
   created_at: string;
 }
 
+// Match count for tasks
+interface TaskMatchCounts {
+  [taskId: number]: number;
+}
+
 // Pre-made avatar options using DiceBear API
 const AVATAR_STYLES = [
   { id: 'avataaars', name: 'Cartoon' },
@@ -74,6 +79,8 @@ const Profile = () => {
   const [myOfferings, setMyOfferings] = useState<Offering[]>([]);
   const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
   const [myApplications, setMyApplications] = useState<TaskApplication[]>([]);
+  const [taskMatchCounts, setTaskMatchCounts] = useState<TaskMatchCounts>({});
+  const [expandedMatchHint, setExpandedMatchHint] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [offeringsLoading, setOfferingsLoading] = useState(false);
@@ -151,6 +158,13 @@ const Profile = () => {
     }
   }, [profile?.username]);
 
+  // Fetch match counts when tasks are loaded
+  useEffect(() => {
+    if (createdTasks.length > 0 && user?.id) {
+      fetchMatchCountsForTasks();
+    }
+  }, [createdTasks, user?.id]);
+
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -224,6 +238,36 @@ const Profile = () => {
     } finally {
       setApplicationsLoading(false);
     }
+  };
+
+  // Fetch match counts for open tasks
+  const fetchMatchCountsForTasks = async () => {
+    const openTasks = createdTasks.filter(t => t.status === 'open' && t.latitude && t.longitude);
+    if (openTasks.length === 0) return;
+
+    const counts: TaskMatchCounts = {};
+    
+    // Fetch in parallel for all open tasks
+    await Promise.all(openTasks.map(async (task) => {
+      try {
+        const response = await getOfferings({
+          category: task.category,
+          latitude: task.latitude!,
+          longitude: task.longitude!,
+          radius: 50,
+          status: 'active',
+          per_page: 10
+        });
+        // Filter out own offerings
+        const filtered = (response.offerings || []).filter(o => o.creator_id !== user?.id);
+        counts[task.id] = filtered.length;
+      } catch (error) {
+        console.error(`Error fetching matches for task ${task.id}:`, error);
+        counts[task.id] = 0;
+      }
+    }));
+
+    setTaskMatchCounts(counts);
   };
 
   const handleDeleteListing = async (listingId: number) => {
@@ -488,6 +532,9 @@ const Profile = () => {
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
     return sum + (task.pending_applications_count || 0);
   }, 0);
+
+  // Count tasks with matches
+  const tasksWithMatches = Object.entries(taskMatchCounts).filter(([_, count]) => count > 0).length;
 
   // Tasks completed count (for profile stats)
   const tasksCompletedAsWorker = myApplications.filter(app => 
@@ -1127,6 +1174,18 @@ const Profile = () => {
               ))}
             </div>
 
+            {/* Matches Summary Banner - only show if there are matches and viewing "Jobs I Posted" */}
+            {taskViewMode === 'my-tasks' && tasksWithMatches > 0 && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <span className="text-lg">✨</span>
+                  <p className="text-sm">
+                    <span className="font-medium">{tasksWithMatches} of your jobs</span> have potential helpers nearby
+                  </p>
+                </div>
+              </div>
+            )}
+
             {tasksLoading || applicationsLoading ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -1149,12 +1208,17 @@ const Profile = () => {
                 {taskViewMode === 'my-tasks' ? (
                   getDisplayTasks().map(task => {
                     const hasApplications = task.status === 'open' && (task.pending_applications_count || 0) > 0;
+                    const matchCount = taskMatchCounts[task.id] || 0;
+                    const hasMatches = task.status === 'open' && matchCount > 0;
+                    const isExpanded = expandedMatchHint === task.id;
                     
                     return (
                       <div 
                         key={task.id} 
                         className={`p-4 border rounded-lg transition-colors ${
-                          hasApplications ? 'border-green-300 bg-green-50' : 'border-gray-100 hover:bg-gray-50'
+                          hasApplications ? 'border-green-300 bg-green-50' : 
+                          hasMatches ? 'border-amber-200 bg-amber-50/30' :
+                          'border-gray-100 hover:bg-gray-50'
                         }`}
                       >
                         {hasApplications && (
@@ -1169,7 +1233,7 @@ const Profile = () => {
                         
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span>{getCategoryIcon(task.category)}</span>
                               <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
                                 {task.title}
@@ -1177,12 +1241,34 @@ const Profile = () => {
                               <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
                                 {task.status.replace('_', ' ')}
                               </span>
+                              {/* Subtle match badge */}
+                              {hasMatches && !hasApplications && (
+                                <button
+                                  onClick={() => setExpandedMatchHint(isExpanded ? null : task.id)}
+                                  className="px-2 py-0.5 text-xs rounded-full font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center gap-1"
+                                >
+                                  ✨ {matchCount}
+                                </button>
+                              )}
                             </div>
                             <p className="text-gray-600 text-sm line-clamp-1">{task.description}</p>
                             <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
                               <span>📍 {task.location}</span>
                               {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
                             </div>
+                            
+                            {/* Expandable match hint */}
+                            {isExpanded && hasMatches && (
+                              <Link
+                                to={`/tasks/${task.id}`}
+                                className="mt-3 flex items-center justify-between p-2.5 bg-amber-100 rounded-lg text-sm text-amber-800 hover:bg-amber-200 transition-colors"
+                              >
+                                <span>
+                                  💡 {matchCount} helper{matchCount !== 1 ? 's' : ''} offering <strong>{getCategoryLabel(task.category)}</strong> nearby
+                                </span>
+                                <span className="font-medium">View matches →</span>
+                              </Link>
+                            )}
                           </div>
                           <div className="flex flex-col gap-1">
                             {task.status === 'pending_confirmation' && (
