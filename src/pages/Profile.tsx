@@ -511,9 +511,9 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
@@ -522,7 +522,7 @@ const Profile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-xl text-red-600">Failed to load profile</div>
       </div>
     );
@@ -536,421 +536,302 @@ const Profile = () => {
   const currentAvatarUrl = getAvatarDisplayUrl(formData.avatar_url || profile.avatar_url || profile.profile_picture_url);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 py-8">
-      <div className="max-w-5xl mx-auto px-4">
-        {/* Profile Header Card - Redesigned */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-          {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 relative">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIgMS44LTQgNC00czQgMS44IDQgNC0xLjggNC00IDQtNC0xLjgtNC00em0wLTE3YzAtMi4yIDEuOC00IDQtNHM0IDEuOCA0IDQtMS44IDQtNCA0LTQtMS44LTQtNHptLTE3IDBjMC0yLjIgMS44LTQgNC00czQgMS44IDQgNC0xLjggNC00IDQtNC0xLjgtNC00em0wIDE3YzAtMi4yIDEuOC00IDQtNHM0IDEuOCA0IDQtMS44IDQtNCA0LTQtMS44LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30"></div>
-          </div>
-          
-          <div className="px-6 pb-6">
-            {/* Avatar - overlapping banner */}
-            <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-16 relative z-10">
-              <div className="relative">
-                <div className="w-32 h-32 rounded-2xl bg-white p-1 shadow-lg">
-                  <div className="w-full h-full rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden">
-                    {currentAvatarUrl ? (
-                      <img 
-                        src={currentAvatarUrl} 
-                        alt={profile.username}
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      <span className="text-5xl text-gray-400 font-bold">
-                        {profile.username.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {profile.is_verified && (
-                  <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-                {editing && (
-                  <button
-                    onClick={() => setShowAvatarPicker(true)}
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 transition-colors shadow-md flex items-center gap-1"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Change
-                  </button>
-                )}
-              </div>
-
-              {/* User Info */}
-              <div className="flex-1 pt-4 md:pt-0 md:pb-2">
-                <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile.username}</h1>
-                  <div className="flex items-center gap-2">
-                    {profile.is_verified && (
-                      <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Verified
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {(profile.first_name || profile.last_name) && (
-                  <p className="text-gray-600 font-medium">
-                    {profile.first_name} {profile.last_name}
-                  </p>
-                )}
-                
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
-                  {(profile.city || profile.country) && (
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {[profile.city, profile.country].filter(Boolean).join(', ')}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Joined {memberSince}
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Profile Header - Clean & Simple */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-6">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ring-4 ring-gray-50">
+                {currentAvatarUrl ? (
+                  <img 
+                    src={currentAvatarUrl} 
+                    alt={profile.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-4xl text-gray-400 font-semibold">
+                    {profile.username.charAt(0).toUpperCase()}
                   </span>
+                )}
+              </div>
+              {profile.is_verified && (
+                <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1 shadow border-2 border-white">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 </div>
+              )}
+              {editing && (
+                <button
+                  onClick={() => setShowAvatarPicker(true)}
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded-full text-xs hover:bg-gray-700 transition-colors"
+                >
+                  Change
+                </button>
+              )}
+            </div>
+
+            {/* User Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h1 className="text-xl font-bold text-gray-900">{profile.username}</h1>
+                {profile.is_verified && (
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full font-medium">
+                    ✓ Verified
+                  </span>
+                )}
+              </div>
+              
+              {(profile.first_name || profile.last_name) && (
+                <p className="text-gray-600">{profile.first_name} {profile.last_name}</p>
+              )}
+              
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                {(profile.city || profile.country) && (
+                  <span className="flex items-center gap-1">
+                    📍 {[profile.city, profile.country].filter(Boolean).join(', ')}
+                  </span>
+                )}
+                <span>Member since {memberSince}</span>
               </div>
 
-              {/* Stats Cards */}
-              <div className="flex gap-3 pt-4 md:pt-0">
-                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-3 text-center min-w-[90px] border border-amber-100">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="text-yellow-500 text-lg">★</span>
-                    <span className="text-xl font-bold text-gray-900">{profile.average_rating?.toFixed(1) || '0.0'}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">{profile.reviews_count || 0} reviews</p>
+              {/* Stats inline */}
+              <div className="flex items-center gap-4 mt-3">
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-500">★</span>
+                  <span className="font-semibold text-gray-900">{profile.average_rating?.toFixed(1) || '0.0'}</span>
+                  <span className="text-gray-400 text-sm">({profile.reviews_count || 0})</span>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 text-center min-w-[90px] border border-green-100">
-                  <div className="text-xl font-bold text-green-600 mb-1">
-                    {profile.tasks_completed || totalTasksCompleted}
-                  </div>
-                  <p className="text-xs text-gray-500">Tasks Done</p>
+                <div className="text-gray-300">|</div>
+                <div className="flex items-center gap-1">
+                  <span className="text-green-500 font-semibold">{profile.tasks_completed || totalTasksCompleted}</span>
+                  <span className="text-gray-500 text-sm">tasks done</span>
                 </div>
               </div>
             </div>
 
             {/* Edit Button */}
-            <div className="mt-6 flex justify-end">
+            <div className="flex-shrink-0">
               {!editing ? (
                 <button
                   onClick={() => setEditing(true)}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
                   Edit Profile
                 </button>
               ) : (
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button
                     onClick={() => setEditing(false)}
-                    className="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2.5 rounded-xl hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
                   >
-                    {saving ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Save Changes
-                      </>
-                    )}
+                    {saving ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               )}
             </div>
           </div>
+
+          {/* Quick Actions - Small Inline Pills */}
+          <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-100">
+            <Link
+              to="/tasks/create"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition-colors"
+            >
+              📋 Post Job
+            </Link>
+            <Link
+              to="/offerings/create"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium hover:bg-amber-100 transition-colors"
+            >
+              👋 Offer Service
+            </Link>
+            <Link
+              to="/listings/create"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-100 transition-colors"
+            >
+              🏷️ Sell Item
+            </Link>
+            <Link
+              to="/favorites"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 text-pink-700 rounded-full text-sm font-medium hover:bg-pink-100 transition-colors"
+            >
+              ❤️ Favorites
+            </Link>
+          </div>
         </div>
 
         {/* Avatar Picker Modal */}
         {showAvatarPicker && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAvatarPicker(false)}>
-            <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Choose Your Avatar</h3>
-                <button onClick={() => setShowAvatarPicker(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAvatarPicker(false)}>
+            <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Choose Avatar</h3>
+                <button onClick={() => setShowAvatarPicker(false)} className="text-gray-400 hover:text-gray-600">✕</button>
               </div>
 
               {/* Upload Custom Photo */}
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-3">📷 Upload Your Photo</h4>
-                <div className="flex items-center gap-4">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                    className="flex-1 border-2 border-dashed border-gray-300 rounded-xl py-8 px-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                  >
-                    {uploadingAvatar ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                        <span>Uploading...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="text-4xl mb-2">📁</div>
-                        <p className="text-gray-600">Click to upload an image</p>
-                        <p className="text-xs text-gray-400 mt-1">Max 5MB, JPG/PNG</p>
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className="mb-5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="w-full border-2 border-dashed border-gray-200 rounded-lg py-6 px-4 text-center hover:border-blue-300 hover:bg-blue-50/50 transition-colors disabled:opacity-50"
+                >
+                  {uploadingAvatar ? (
+                    <span className="text-gray-500">Uploading...</span>
+                  ) : (
+                    <>
+                      <div className="text-2xl mb-1">📷</div>
+                      <p className="text-gray-600 text-sm">Upload photo</p>
+                    </>
+                  )}
+                </button>
               </div>
 
-              <div className="border-t pt-6">
-                <h4 className="font-medium text-gray-700 mb-3">🎨 Or Choose a Generated Avatar</h4>
+              <div className="border-t pt-5">
+                <p className="text-sm text-gray-500 mb-3">Or generate an avatar</p>
                 
                 {/* Style Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-2">Avatar Style</label>
-                  <div className="flex flex-wrap gap-2">
-                    {AVATAR_STYLES.map(style => (
-                      <button
-                        key={style.id}
-                        onClick={() => setSelectedAvatarStyle(style.id)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          selectedAvatarStyle === style.id
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {style.name}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {AVATAR_STYLES.map(style => (
+                    <button
+                      key={style.id}
+                      onClick={() => setSelectedAvatarStyle(style.id)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        selectedAvatarStyle === style.id
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {style.name}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Seed Input */}
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-2">Seed (customize your avatar)</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={avatarSeed}
-                      onChange={(e) => setAvatarSeed(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter any text..."
-                    />
-                    <button
-                      onClick={handleRandomizeSeed}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      🎲 Random
-                    </button>
-                  </div>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={avatarSeed}
+                    onChange={(e) => setAvatarSeed(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Type anything..."
+                  />
+                  <button
+                    onClick={handleRandomizeSeed}
+                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm"
+                  >
+                    🎲
+                  </button>
                 </div>
 
                 {/* Preview */}
-                <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-xl">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-2">Preview</p>
-                    <img
-                      src={generateAvatarUrl(selectedAvatarStyle, avatarSeed)}
-                      alt="Avatar Preview"
-                      className="w-24 h-24 rounded-xl border-4 border-white shadow-md"
-                    />
-                  </div>
+                <div className="flex justify-center mb-4">
+                  <img
+                    src={generateAvatarUrl(selectedAvatarStyle, avatarSeed)}
+                    alt="Preview"
+                    className="w-20 h-20 rounded-full border-4 border-gray-100"
+                  />
                 </div>
 
-                {/* Select Button */}
                 <button
                   onClick={handleSelectGeneratedAvatar}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
+                  className="w-full bg-gray-900 text-white py-2.5 rounded-lg font-medium hover:bg-gray-800 transition-colors text-sm"
                 >
-                  ✅ Use This Avatar
+                  Use This Avatar
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Quick Actions - Colorful Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Link
-            to="/tasks/create"
-            className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg group"
-          >
-            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📋</div>
-            <p className="font-semibold">Post a Job</p>
-            <p className="text-blue-100 text-xs mt-1">Get help with tasks</p>
-          </Link>
-          
-          <Link
-            to="/offerings/create"
-            className="bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-xl p-4 hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg group"
-          >
-            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">👋</div>
-            <p className="font-semibold">Offer Service</p>
-            <p className="text-amber-100 text-xs mt-1">Advertise your skills</p>
-          </Link>
-          
-          <Link
-            to="/listings/create"
-            className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-xl p-4 hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg group"
-          >
-            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🏷️</div>
-            <p className="font-semibold">Sell Item</p>
-            <p className="text-purple-100 text-xs mt-1">List in marketplace</p>
-          </Link>
-          
-          <Link
-            to="/favorites"
-            className="bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-xl p-4 hover:from-pink-600 hover:to-rose-600 transition-all shadow-md hover:shadow-lg group"
-          >
-            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">❤️</div>
-            <p className="font-semibold">Favorites</p>
-            <p className="text-pink-100 text-xs mt-1">Saved items</p>
-          </Link>
-        </div>
-
-        {/* Dynamic Tabs - Only show tabs with content + About */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        {/* Tabs */}
+        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
           <button
             onClick={() => setActiveTab('about')}
-            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'about'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
             About
           </button>
           
-          {/* Always show Tasks tab - it's the main activity hub */}
           <button
             onClick={() => setActiveTab('tasks')}
-            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 relative ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all relative ${
               activeTab === 'tasks'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <span>📋</span>
-            My Jobs
-            {hasTasks && (
-              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                activeTab === 'tasks' ? 'bg-white/20' : 'bg-blue-100 text-blue-600'
-              }`}>
-                {myTasksCount + myJobsCount}
-              </span>
-            )}
+            Jobs {hasTasks && <span className="text-gray-400">({myTasksCount + myJobsCount})</span>}
             {(totalPendingApplicationsOnMyTasks + pendingAppsCount) > 0 && (
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold shadow-md">
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
                 {totalPendingApplicationsOnMyTasks + pendingAppsCount}
               </span>
             )}
           </button>
           
-          {/* Show Offerings tab only if user has offerings OR always allow creating */}
           <button
             onClick={() => setActiveTab('offerings')}
-            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'offerings'
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <span>👋</span>
-            My Services
-            {hasOfferings && (
-              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                activeTab === 'offerings' ? 'bg-white/20' : 'bg-amber-100 text-amber-600'
-              }`}>
-                {myOfferings.length}
-              </span>
-            )}
+            Services {hasOfferings && <span className="text-gray-400">({myOfferings.length})</span>}
           </button>
           
-          {/* Show Listings tab only if user has listings OR always allow creating */}
           <button
             onClick={() => setActiveTab('listings')}
-            className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'listings'
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <span>🏷️</span>
-            My Listings
-            {hasListings && (
-              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                activeTab === 'listings' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
-              }`}>
-                {myListings.length}
-              </span>
-            )}
+            Listings {hasListings && <span className="text-gray-400">({myListings.length})</span>}
           </button>
           
-          {/* Show Reviews tab only if user has reviews */}
           {hasReviews && (
             <button
               onClick={() => setActiveTab('reviews')}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'reviews'
-                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <span>⭐</span>
-              Reviews
-              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                activeTab === 'reviews' ? 'bg-white/20' : 'bg-yellow-100 text-yellow-600'
-              }`}>
-                {reviews.length}
-              </span>
+              Reviews ({reviews.length})
             </button>
           )}
         </div>
 
         {/* About Tab */}
         {activeTab === 'about' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              About Me
-            </h2>
-            
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             {editing ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                     <input
@@ -958,7 +839,7 @@ const Profile = () => {
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -968,7 +849,7 @@ const Profile = () => {
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -979,9 +860,9 @@ const Profile = () => {
                     name="bio"
                     value={formData.bio}
                     onChange={handleChange}
-                    rows={4}
+                    rows={3}
                     placeholder="Tell others about yourself..."
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
                 </div>
                 
@@ -993,11 +874,11 @@ const Profile = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+371 20000000"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input
@@ -1006,7 +887,7 @@ const Profile = () => {
                       value={formData.city}
                       onChange={handleChange}
                       placeholder="Riga"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -1017,54 +898,35 @@ const Profile = () => {
                       value={formData.country}
                       onChange={handleChange}
                       placeholder="Latvia"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {profile.bio ? (
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-4">
-                    <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">About</h3>
+                    <p className="text-gray-700">{profile.bio}</p>
                   </div>
                 ) : (
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-6 text-center">
-                    <div className="text-4xl mb-2">✏️</div>
-                    <p className="text-gray-500">No bio yet. Click "Edit Profile" to tell others about yourself!</p>
+                  <div className="text-center py-6 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500 text-sm">No bio yet. Click "Edit Profile" to add one!</p>
                   </div>
                 )}
                 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Contact Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Email</p>
-                        <p className="text-gray-900 font-medium">{profile.email}</p>
-                      </div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-3">Contact</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-gray-400">📧</span>
+                      <span className="text-gray-700">{profile.email}</span>
                     </div>
                     {profile.phone && (
-                      <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Phone</p>
-                          <p className="text-gray-900 font-medium">{profile.phone}</p>
-                        </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-gray-400">📱</span>
+                        <span className="text-gray-700">{profile.phone}</span>
                       </div>
                     )}
                   </div>
@@ -1076,109 +938,61 @@ const Profile = () => {
 
         {/* Listings Tab */}
         {activeTab === 'listings' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <span>🏷️</span>
-                My Listings
-              </h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-gray-900">My Listings</h2>
               <Link
                 to="/listings/create"
-                className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md flex items-center gap-2"
+                className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                New Listing
+                + New Listing
               </Link>
             </div>
             
             {listingsLoading ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading listings...</p>
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
             ) : myListings.length === 0 ? (
-              <div className="text-center py-12 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl">
-                <div className="text-6xl mb-4">🏷️</div>
-                <p className="text-gray-900 font-semibold mb-2">No listings yet</p>
-                <p className="text-gray-500 mb-6 max-w-md mx-auto">Have something to sell? Create your first listing and reach buyers in your area!</p>
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">🏷️</div>
+                <p className="text-gray-500 mb-4">No listings yet</p>
                 <Link
                   to="/listings/create"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md"
+                  className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium text-sm"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Create Your First Listing
+                  Create your first listing →
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
                 {myListings.map(listing => {
                   const images = listing.images ? listing.images.split(',').filter(Boolean) : [];
                   const firstImage = images[0];
                   
                   return (
-                    <div key={listing.id} className="border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-all bg-white group">
-                      <div className="flex">
-                        {/* Image */}
-                        <div className="w-32 h-32 bg-gray-100 flex-shrink-0 relative overflow-hidden">
-                          {firstImage ? (
-                            <img
-                              src={getImageUrl(firstImage)}
-                              alt={listing.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          )}
+                    <div key={listing.id} className="flex gap-4 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                        {firstImage ? (
+                          <img src={getImageUrl(firstImage)} alt={listing.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">🖼</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <Link to={`/listings/${listing.id}`} className="font-medium text-gray-900 hover:text-purple-600 truncate">
+                            {listing.title}
+                          </Link>
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${getStatusBadgeClass(listing.status)}`}>
+                            {listing.status}
+                          </span>
                         </div>
-                        
-                        {/* Content */}
-                        <div className="flex-1 p-4 flex flex-col">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-semibold text-gray-900 line-clamp-1">{listing.title}</h3>
-                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(listing.status)}`}>
-                              {listing.status}
-                            </span>
-                          </div>
-                          
-                          <p className="text-lg font-bold text-purple-600 mt-1">
-                            €{Number(listing.price).toLocaleString()}
-                          </p>
-                          
-                          <p className="text-gray-500 text-sm mt-1 line-clamp-1 flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            </svg>
-                            {listing.location || 'No location'}
-                          </p>
-                          
-                          <div className="flex gap-2 mt-auto pt-2">
-                            <Link
-                              to={`/listings/${listing.id}`}
-                              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                              View
-                            </Link>
-                            <Link
-                              to={`/listings/${listing.id}/edit`}
-                              className="text-sm text-gray-600 hover:text-gray-700"
-                            >
-                              Edit
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteListing(listing.id)}
-                              className="text-sm text-red-600 hover:text-red-700"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                        <p className="text-purple-600 font-semibold">€{Number(listing.price).toLocaleString()}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <Link to={`/listings/${listing.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                          <Link to={`/listings/${listing.id}/edit`} className="text-xs text-gray-500 hover:underline">Edit</Link>
+                          <button onClick={() => handleDeleteListing(listing.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                         </div>
                       </div>
                     </div>
@@ -1191,104 +1005,60 @@ const Profile = () => {
 
         {/* Offerings Tab */}
         {activeTab === 'offerings' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span>👋</span>
-                  My Services
-                </h2>
-                <p className="text-sm text-gray-500">Services you offer to help others</p>
-              </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-gray-900">My Services</h2>
               <Link
                 to="/offerings/create"
-                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-md flex items-center gap-2"
+                className="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                New Service
+                + New Service
               </Link>
             </div>
             
             {offeringsLoading ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading services...</p>
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
             ) : myOfferings.length === 0 ? (
-              <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                <div className="text-6xl mb-4">👋</div>
-                <p className="text-gray-900 font-semibold mb-2">No services yet</p>
-                <p className="text-gray-500 mb-6 max-w-md mx-auto">Got skills? Create a service offering and let people know how you can help them!</p>
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">👋</div>
+                <p className="text-gray-500 mb-4">No services yet</p>
                 <Link
                   to="/offerings/create"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-md"
+                  className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 font-medium text-sm"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Create Your First Service
+                  Create your first service →
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
                 {myOfferings.map(offering => (
-                  <div key={offering.id} className="border border-amber-100 rounded-xl p-4 hover:shadow-lg transition-all bg-gradient-to-br from-amber-50/50 to-orange-50/50 group">
+                  <div key={offering.id} className="p-4 border border-gray-100 rounded-lg hover:bg-amber-50/50 transition-colors">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">{getCategoryIcon(offering.category)}</span>
-                          <div>
-                            <Link 
-                              to={`/offerings/${offering.id}`}
-                              className="font-semibold text-gray-900 hover:text-amber-600 transition-colors"
-                            >
-                              {offering.title}
-                            </Link>
-                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(offering.status)}`}>
-                              {offering.status}
-                            </span>
-                          </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span>{getCategoryIcon(offering.category)}</span>
+                          <Link to={`/offerings/${offering.id}`} className="font-medium text-gray-900 hover:text-amber-600">
+                            {offering.title}
+                          </Link>
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(offering.status)}`}>
+                            {offering.status}
+                          </span>
                         </div>
-                        
-                        <p className="text-gray-600 text-sm line-clamp-2 mb-3">{offering.description}</p>
-                        
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-green-600 font-bold text-lg">
-                            €{offering.price || 0}
-                            {offering.price_type === 'hourly' && <span className="text-xs font-normal">/hr</span>}
+                        <p className="text-gray-600 text-sm line-clamp-1">{offering.description}</p>
+                        <div className="flex items-center gap-3 mt-2 text-sm">
+                          <span className="text-green-600 font-semibold">
+                            €{offering.price || 0}{offering.price_type === 'hourly' && '/hr'}
                           </span>
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium">
-                            {getCategoryLabel(offering.category)}
-                          </span>
-                          {offering.location && (
-                            <span className="text-gray-500 text-xs flex items-center gap-1">
-                              📍 {offering.location.split(',')[0]}
-                            </span>
-                          )}
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-500">{getCategoryLabel(offering.category)}</span>
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col gap-2 min-w-[90px]">
-                        <Link
-                          to={`/offerings/${offering.id}`}
-                          className="px-3 py-1.5 text-sm bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-center font-medium"
-                        >
-                          View
-                        </Link>
-                        <Link
-                          to={`/offerings/${offering.id}/edit`}
-                          className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteOffering(offering.id)}
-                          className="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                        >
-                          Delete
-                        </button>
+                      <div className="flex gap-2">
+                        <Link to={`/offerings/${offering.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                        <Link to={`/offerings/${offering.id}/edit`} className="text-xs text-gray-500 hover:underline">Edit</Link>
+                        <button onClick={() => handleDeleteOffering(offering.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                       </div>
                     </div>
                   </div>
@@ -1300,350 +1070,209 @@ const Profile = () => {
 
         {/* Tasks Tab */}
         {activeTab === 'tasks' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <span>📋</span>
-                My Jobs
-              </h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-gray-900">My Jobs</h2>
               <Link
                 to="/tasks/create"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md flex items-center gap-2"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Post Job
+                + Post Job
               </Link>
             </div>
 
-            {/* View Mode Toggle - Styled like Quick Help */}
-            <div className="flex gap-2 mb-4 p-1.5 bg-gray-100 rounded-xl w-fit">
+            {/* View Toggle */}
+            <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
               <button
                 onClick={() => setTaskViewMode('my-tasks')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative flex items-center gap-2 ${
-                  taskViewMode === 'my-tasks'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
+                  taskViewMode === 'my-tasks' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
                 }`}
               >
-                <span>📋</span>
                 Jobs I Posted
-                {myTasksCount > 0 && (
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                    taskViewMode === 'my-tasks' ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {myTasksCount}
-                  </span>
-                )}
                 {totalPendingApplicationsOnMyTasks > 0 && (
-                  <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs rounded-full bg-green-500 text-white font-bold">
+                  <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-green-500 text-white font-bold">
                     {totalPendingApplicationsOnMyTasks}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setTaskViewMode('my-jobs')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  taskViewMode === 'my-jobs'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  taskViewMode === 'my-jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
                 }`}
               >
-                <span>🛠️</span>
                 Jobs I'm Doing
-                {myJobsCount > 0 && (
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                    taskViewMode === 'my-jobs' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {myJobsCount}
-                  </span>
-                )}
               </button>
             </div>
 
-            {/* Pending Applications Alert */}
-            {taskViewMode === 'my-tasks' && pendingAppsCount > 0 && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl flex items-center gap-3">
-                <span className="text-2xl">⏳</span>
-                <div className="flex-1">
-                  <p className="text-sm text-yellow-800 font-medium">
-                    You have <strong>{pendingAppsCount} pending application{pendingAppsCount !== 1 ? 's' : ''}</strong> on other people's tasks.
-                  </p>
-                </div>
-                <Link to="/tasks" className="text-yellow-700 text-sm font-medium hover:underline">
-                  Browse tasks →
-                </Link>
-              </div>
-            )}
-
             {/* Status Filter */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-1 mb-4">
               {[
-                { value: 'all', label: 'All', icon: '📊' },
-                { value: 'active', label: 'Active', icon: '🔄' },
-                { value: 'completed', label: 'Completed', icon: '✅' },
+                { value: 'all', label: 'All' },
+                { value: 'active', label: 'Active' },
+                { value: 'completed', label: 'Done' },
               ].map(filter => (
                 <button
                   key={filter.value}
                   onClick={() => setTaskStatusFilter(filter.value as TaskStatusFilter)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                     taskStatusFilter === filter.value
                       ? 'bg-gray-900 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  <span>{filter.icon}</span>
                   {filter.label}
                 </button>
               ))}
             </div>
 
             {tasksLoading || applicationsLoading ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading...</p>
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : getDisplayTasks().length === 0 ? (
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">{taskViewMode === 'my-tasks' ? '📋' : '🛠️'}</div>
+                <p className="text-gray-500 mb-4">
+                  {taskViewMode === 'my-tasks' ? 'No jobs posted yet' : 'No jobs yet'}
+                </p>
+                <Link
+                  to={taskViewMode === 'my-tasks' ? '/tasks/create' : '/tasks'}
+                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  {taskViewMode === 'my-tasks' ? 'Post your first job →' : 'Browse available jobs →'}
+                </Link>
               </div>
             ) : (
-              <>
-                {getDisplayTasks().length === 0 ? (
-                  <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-                    <div className="text-6xl mb-4">{taskViewMode === 'my-tasks' ? '📋' : '🛠️'}</div>
-                    <p className="text-gray-900 font-semibold mb-2">
-                      {taskViewMode === 'my-tasks' 
-                        ? 'No jobs posted yet' 
-                        : 'No jobs yet'}
-                    </p>
-                    <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                      {taskViewMode === 'my-tasks'
-                        ? 'Need help with something? Post a job and get helpers in your area!'
-                        : 'Apply to jobs to start earning money helping others!'}
-                    </p>
-                    <Link
-                      to={taskViewMode === 'my-tasks' ? '/tasks/create' : '/tasks'}
-                      className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
-                    >
-                      {taskViewMode === 'my-tasks' ? (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Post Your First Job
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                          Browse Available Jobs
-                        </>
-                      )}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {taskViewMode === 'my-tasks' ? (
-                      // Tasks I created
-                      getDisplayTasks().map(task => {
-                        const hasApplications = task.status === 'open' && (task.pending_applications_count || 0) > 0;
-                        
-                        return (
-                          <div 
-                            key={task.id} 
-                            className={`border rounded-xl p-4 hover:shadow-md transition-all ${
-                              hasApplications ? 'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 ring-2 ring-green-200' : 'border-gray-100 bg-white'
-                            }`}
+              <div className="space-y-3">
+                {taskViewMode === 'my-tasks' ? (
+                  getDisplayTasks().map(task => {
+                    const hasApplications = task.status === 'open' && (task.pending_applications_count || 0) > 0;
+                    
+                    return (
+                      <div 
+                        key={task.id} 
+                        className={`p-4 border rounded-lg transition-colors ${
+                          hasApplications ? 'border-green-300 bg-green-50' : 'border-gray-100 hover:bg-gray-50'
+                        }`}
+                      >
+                        {hasApplications && (
+                          <Link 
+                            to={`/tasks/${task.id}`}
+                            className="flex items-center justify-between bg-green-500 text-white p-2.5 rounded-lg mb-3 text-sm"
                           >
-                            {/* Application Alert Banner */}
-                            {hasApplications && (
-                              <Link 
-                                to={`/tasks/${task.id}`}
-                                className="flex items-center justify-between bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-xl mb-3 hover:from-green-600 hover:to-emerald-600 transition-all shadow-md"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-2xl">📩</span>
-                                  <div>
-                                    <span className="font-bold text-lg">
-                                      {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}!
-                                    </span>
-                                    <p className="text-green-100 text-sm">Review and choose a helper</p>
-                                  </div>
-                                </div>
-                                <span className="bg-white text-green-600 px-4 py-2 rounded-lg font-bold text-sm">
-                                  Review →
-                                </span>
+                            <span>📩 {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}!</span>
+                            <span className="font-medium">Review →</span>
+                          </Link>
+                        )}
+                        
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span>{getCategoryIcon(task.category)}</span>
+                              <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                                {task.title}
                               </Link>
+                              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
+                                {task.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-sm line-clamp-1">{task.description}</p>
+                            <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+                              <span>📍 {task.location}</span>
+                              {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {task.status === 'pending_confirmation' && (
+                              <button
+                                onClick={() => handleConfirmTask(task.id)}
+                                className="px-2.5 py-1 text-xs bg-green-500 text-white rounded-md hover:bg-green-600"
+                              >
+                                ✓ Confirm
+                              </button>
                             )}
-                            
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
-                                  <Link 
-                                    to={`/tasks/${task.id}`}
-                                    className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                                  >
-                                    {task.title}
-                                  </Link>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                                    {task.status.replace('_', ' ')}
-                                  </span>
-                                </div>
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    </svg>
-                                    {task.location}
-                                  </span>
-                                  {task.budget && <span className="text-green-600 font-bold">€{task.budget}</span>}
-                                  {task.status === 'completed' && task.completed_at && (
-                                    <span className="text-blue-600 flex items-center gap-1">
-                                      ✅ Completed {new Date(task.completed_at).toLocaleDateString()}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="flex flex-col gap-2 min-w-[120px]">
-                                {task.status === 'pending_confirmation' && (
-                                  <button
-                                    onClick={() => handleConfirmTask(task.id)}
-                                    className="px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium"
-                                  >
-                                    ✓ Confirm Done
-                                  </button>
-                                )}
-                                {task.status === 'open' && !hasApplications && (
-                                  <>
-                                    <Link
-                                      to={`/tasks/${task.id}/edit`}
-                                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
-                                    >
-                                      ✏️ Edit
-                                    </Link>
-                                    <button
-                                      onClick={() => handleCancelTask(task.id)}
-                                      className="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </>
-                                )}
-                                <Link
-                                  to={`/tasks/${task.id}`}
-                                  className="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-center font-medium"
-                                >
-                                  View
-                                </Link>
-                              </div>
-                            </div>
+                            <Link to={`/tasks/${task.id}`} className="text-xs text-blue-600 hover:underline text-center">View</Link>
+                            {task.status === 'open' && !hasApplications && (
+                              <>
+                                <Link to={`/tasks/${task.id}/edit`} className="text-xs text-gray-500 hover:underline text-center">Edit</Link>
+                                <button onClick={() => handleCancelTask(task.id)} className="text-xs text-red-500 hover:underline">Cancel</button>
+                              </>
+                            )}
                           </div>
-                        );
-                      })
-                    ) : (
-                      // Jobs I'm working on
-                      myApplications.filter(app => app.status === 'accepted').map(application => {
-                        const task = application.task;
-                        if (!task) return null;
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  myApplications.filter(app => app.status === 'accepted').map(application => {
+                    const task = application.task;
+                    if (!task) return null;
+                    
+                    if (taskStatusFilter === 'active' && !['assigned', 'in_progress', 'pending_confirmation'].includes(task.status)) return null;
+                    if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
+                    
+                    return (
+                      <div key={application.id} className="p-4 border border-green-200 rounded-lg bg-green-50/50">
+                        <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
+                          <span>🎉</span>
+                          <span className="font-medium">
+                            {task.status === 'completed' ? 'Completed!' : 'You\'re assigned'}
+                          </span>
+                        </div>
                         
-                        // Apply status filter
-                        if (taskStatusFilter === 'active' && !['assigned', 'in_progress', 'pending_confirmation'].includes(task.status)) return null;
-                        if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
-                        
-                        return (
-                          <div key={application.id} className="border border-green-200 rounded-xl p-4 hover:shadow-md transition-all bg-gradient-to-r from-green-50/50 to-emerald-50/50">
-                            {/* Success Banner for accepted jobs */}
-                            <div className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-xl mb-3">
-                              <span className="text-2xl">🎉</span>
-                              <div>
-                                <span className="font-bold">You got the job!</span>
-                                <p className="text-green-100 text-sm">
-                                  {task.status === 'completed' 
-                                    ? 'Task completed successfully' 
-                                    : 'You\'re assigned to this task'}
-                                </p>
-                              </div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span>{getCategoryIcon(task.category)}</span>
+                              <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                                {task.title}
+                              </Link>
+                              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
+                                {task.status.replace('_', ' ')}
+                              </span>
                             </div>
-                            
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-xl">{getCategoryIcon(task.category)}</span>
-                                  <Link 
-                                    to={`/tasks/${task.id}`}
-                                    className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                                  >
-                                    {task.title}
-                                  </Link>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                                    {task.status.replace('_', ' ')}
-                                  </span>
-                                </div>
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-2">{task.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    </svg>
-                                    {task.location}
-                                  </span>
-                                  {task.budget && <span className="text-green-600 font-bold">€{task.budget}</span>}
-                                  {task.status === 'completed' && task.completed_at && (
-                                    <span className="text-blue-600 flex items-center gap-1">
-                                      ✅ Completed {new Date(task.completed_at).toLocaleDateString()}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2">
-                                  Posted by {task.creator_name || 'Unknown'}
-                                </p>
-                              </div>
-                              
-                              <div className="flex flex-col gap-2 min-w-[120px]">
-                                <Link
-                                  to={`/tasks/${task.id}`}
-                                  className="px-3 py-1.5 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all text-center font-medium"
-                                >
-                                  View Task
-                                </Link>
-                              </div>
+                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                              <span>📍 {task.location}</span>
+                              {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
                             </div>
+                            <p className="text-xs text-gray-400 mt-1">Posted by {task.creator_name || 'Unknown'}</p>
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
+                          <Link
+                            to={`/tasks/${task.id}`}
+                            className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          >
+                            View
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
-              </>
+              </div>
             )}
           </div>
         )}
 
         {/* Reviews Tab */}
         {activeTab === 'reviews' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <span>⭐</span>
-              Reviews
-            </h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="font-semibold text-gray-900 mb-4">Reviews</h2>
             
             {reviews.length === 0 ? (
-              <div className="text-center py-12 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl">
-                <div className="text-6xl mb-4">⭐</div>
-                <p className="text-gray-900 font-semibold mb-2">No reviews yet</p>
-                <p className="text-gray-500">Complete tasks to receive reviews from others!</p>
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">⭐</div>
+                <p className="text-gray-500">No reviews yet</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {reviews.map(review => (
-                  <div key={review.id} className="bg-gradient-to-br from-gray-50 to-yellow-50/30 rounded-xl p-4">
+                  <div key={review.id} className="p-4 bg-gray-50 rounded-lg">
                     {editingReview === review.id ? (
-                      // Edit mode
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
                           {renderEditableStars(reviewEditData.rating, (rating) => 
                             setReviewEditData(prev => ({ ...prev, rating }))
                           )}
@@ -1653,63 +1282,40 @@ const Profile = () => {
                           <textarea
                             value={reviewEditData.content}
                             onChange={(e) => setReviewEditData(prev => ({ ...prev, content: e.target.value }))}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
                           />
                         </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleSaveReview(review.id)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingReview(null)}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                          >
-                            Cancel
-                          </button>
+                          <button onClick={() => handleSaveReview(review.id)} className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm">Save</button>
+                          <button onClick={() => setEditingReview(null)} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm">Cancel</button>
                         </div>
                       </div>
                     ) : (
-                      // View mode
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
                           {review.reviewer_avatar ? (
                             <img src={review.reviewer_avatar} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
-                            <span className="text-gray-500 font-medium">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
+                            <span className="text-gray-500 text-sm font-medium">{review.reviewer_name?.charAt(0).toUpperCase()}</span>
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">{review.reviewer_name}</span>
+                            <span className="font-medium text-gray-900 text-sm">{review.reviewer_name}</span>
                             {renderStars(review.rating)}
                           </div>
                           {review.content ? (
-                            <p className="text-gray-600">{review.content}</p>
+                            <p className="text-gray-600 text-sm">{review.content}</p>
                           ) : (
-                            <p className="text-gray-400 italic text-sm">No comment provided</p>
+                            <p className="text-gray-400 text-sm italic">No comment</p>
                           )}
-                          <p className="text-xs text-gray-400 mt-2">
-                            {new Date(review.created_at).toLocaleDateString()}
-                          </p>
+                          <p className="text-xs text-gray-400 mt-1">{new Date(review.created_at).toLocaleDateString()}</p>
                         </div>
                         {user && review.reviewer_id === user.id && (
                           <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditReview(review)}
-                              className="text-sm text-blue-600 hover:text-blue-700"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReview(review.id)}
-                              className="text-sm text-red-600 hover:text-red-700"
-                            >
-                              Delete
-                            </button>
+                            <button onClick={() => handleEditReview(review)} className="text-xs text-blue-600 hover:underline">Edit</button>
+                            <button onClick={() => handleDeleteReview(review.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                           </div>
                         )}
                       </div>
