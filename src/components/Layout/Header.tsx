@@ -97,7 +97,7 @@ export default function Header() {
 
   return (
     <header 
-      className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50"
+      className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-[9999]"
       role="banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -178,7 +178,7 @@ export default function Header() {
                   {/* Notification Dropdown */}
                   {notificationDropdownOpen && (
                     <div 
-                      className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                      className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]"
                       role="menu"
                       aria-label="Notifications"
                     >
@@ -340,7 +340,7 @@ export default function Header() {
                   {/* Profile Dropdown Menu */}
                   {profileDropdownOpen && (
                     <div 
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]"
                       role="menu"
                       aria-label="User menu"
                     >
