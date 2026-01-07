@@ -631,11 +631,12 @@ const Tasks = () => {
     setShowLocationModal(false);
   };
 
+  // FIX: Pass the new radius directly to fetchData to avoid async state race condition
   const handleRadiusChange = (newRadius: number) => {
     setSearchRadius(newRadius);
     localStorage.setItem('taskSearchRadius', newRadius.toString());
     hasFetchedRef.current = false;
-    fetchData(true);
+    fetchData(true, newRadius); // Pass radius directly instead of relying on state
   };
 
   const searchAddressSuggestions = async (query: string) => {
@@ -690,7 +691,8 @@ const Tasks = () => {
     }
   };
 
-  const fetchData = async (forceRefresh = false) => {
+  // FIX: Accept optional radiusOverride to use instead of state (avoids async state bug)
+  const fetchData = async (forceRefresh = false, radiusOverride?: number) => {
     if (hasFetchedRef.current && !forceRefresh) return;
     
     // Only show full-page loading on first ever load
@@ -703,8 +705,11 @@ const Tasks = () => {
     setError(null);
     
     try {
+      // Use radiusOverride if provided, otherwise fall back to state
+      // This fixes the async state race condition when changing radius
+      const baseRadius = radiusOverride ?? searchRadius;
       // Use 500km radius when "All" is selected (covers all of Latvia)
-      const effectiveRadius = searchRadius === 0 ? 500 : searchRadius;
+      const effectiveRadius = baseRadius === 0 ? 500 : baseRadius;
       
       // Fetch available tasks (jobs)
       const tasksResponse = await getTasks({
