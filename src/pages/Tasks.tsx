@@ -133,11 +133,29 @@ const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, 
   return null;
 };
 
-const MapRecenter = ({ lat, lng }: { lat: number; lng: number }) => {
+// Map component that handles recentering and zoom based on radius
+const MapController = ({ lat, lng, radius }: { lat: number; lng: number; radius: number }) => {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], 13);
-  }, [lat, lng, map]);
+    // Calculate zoom level based on radius
+    // 0 = All Latvia, use zoom 7 and center on Latvia
+    // Otherwise zoom based on radius
+    if (radius === 0) {
+      // Center on Latvia (approximately)
+      map.setView([56.8796, 24.6032], 7);
+    } else {
+      // Zoom levels: 5km=13, 10km=12, 25km=11, 50km=10, 100km=9
+      let zoom = 13;
+      if (radius <= 5) zoom = 13;
+      else if (radius <= 10) zoom = 12;
+      else if (radius <= 25) zoom = 11;
+      else if (radius <= 50) zoom = 10;
+      else if (radius <= 100) zoom = 9;
+      else zoom = 8;
+      
+      map.setView([lat, lng], zoom);
+    }
+  }, [lat, lng, radius, map]);
   return null;
 };
 
@@ -402,7 +420,8 @@ const MapMarkers = ({
   locationName,
   manualLocationSet,
   onLocationSelect,
-  showOfferingsOnMap
+  showOfferingsOnMap,
+  searchRadius
 }: {
   tasks: Task[];
   offerings: Offering[];
@@ -411,6 +430,7 @@ const MapMarkers = ({
   manualLocationSet: boolean;
   onLocationSelect: (lat: number, lng: number) => void;
   showOfferingsOnMap: boolean;
+  searchRadius: number;
 }) => {
   const { t } = useTranslation();
   // Memoize the user location icon
@@ -422,17 +442,19 @@ const MapMarkers = ({
 
   return (
     <>
-      <MapRecenter lat={userLocation.lat} lng={userLocation.lng} />
+      <MapController lat={userLocation.lat} lng={userLocation.lng} radius={searchRadius} />
       <LocationPicker onLocationSelect={onLocationSelect} />
       
-      {/* User Location Marker - Red pin */}
-      <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
-        <Popup>
-          <div className="p-1 text-center" style={{ width: '100px' }}>
-            <p className="font-medium text-gray-900 text-sm">📍 {t('map.you', 'You')}</p>
-          </div>
-        </Popup>
-      </Marker>
+      {/* User Location Marker - Red pin (only show if not viewing all) */}
+      {searchRadius !== 0 && (
+        <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+          <Popup>
+            <div className="p-1 text-center" style={{ width: '100px' }}>
+              <p className="font-medium text-gray-900 text-sm">📍 {t('map.you', 'You')}</p>
+            </div>
+          </Popup>
+        </Marker>
+      )}
       
       {/* Job/Task markers - Price labels */}
       {tasksWithOffsets.map((task) => {
@@ -682,11 +704,14 @@ const Tasks = () => {
     setError(null);
     
     try {
+      // Use 500km radius when "All" is selected (covers all of Latvia)
+      const effectiveRadius = searchRadius === 0 ? 500 : searchRadius;
+      
       // Fetch available tasks (jobs)
       const tasksResponse = await getTasks({
         latitude: userLocation.lat,
         longitude: userLocation.lng,
-        radius: searchRadius,
+        radius: effectiveRadius,
         status: 'open',
         category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
@@ -703,7 +728,7 @@ const Tasks = () => {
         const offeringsResponse = await getOfferings({
           latitude: userLocation.lat,
           longitude: userLocation.lng,
-          radius: searchRadius,
+          radius: effectiveRadius,
           status: 'active',
           category: selectedCategory !== 'all' ? selectedCategory : undefined
         });
@@ -790,7 +815,12 @@ const Tasks = () => {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
           <div className="text-xl font-bold text-gray-900 mb-2">💰 {t('tasks.findingOpportunities', 'Finding opportunities...')}</div>
-          <div className="text-gray-600">{t('tasks.searchingWithin', 'Searching within {{radius}}km of {{location}}', { radius: searchRadius, location: locationName })}</div>
+          <div className="text-gray-600">
+            {searchRadius === 0 
+              ? t('tasks.searchingAllLatvia', 'Searching all of Latvia')
+              : t('tasks.searchingWithin', 'Searching within {{radius}}km of {{location}}', { radius: searchRadius, location: locationName })
+            }
+          </div>
         </div>
       </div>
     );
@@ -832,6 +862,12 @@ const Tasks = () => {
   // Calculate budget stats for legend
   const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
   const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 75);
+
+  // Get radius display text
+  const getRadiusDisplayText = () => {
+    if (searchRadius === 0) return t('tasks.allLatvia', 'Visa Latvija');
+    return `${searchRadius} km`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -892,14 +928,24 @@ const Tasks = () => {
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
               <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 sm:flex-initial justify-center">
                 <span>📍</span>
-                <span className="text-sm text-gray-700 truncate max-w-[120px]">{manualLocationSet && manualLocationName ? manualLocationName.split(',')[0] : locationName}</span>
+                <span className="text-sm text-gray-700 truncate max-w-[120px]">
+                  {searchRadius === 0 
+                    ? t('tasks.selectLocation', 'Select location')
+                    : (manualLocationSet && manualLocationName ? manualLocationName.split(',')[0] : locationName)
+                  }
+                </span>
               </button>
-              <select value={searchRadius} onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
+              <select 
+                value={searchRadius} 
+                onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} 
+                className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+              >
                 <option value={5}>5 km</option>
                 <option value={10}>10 km</option>
                 <option value={25}>25 km</option>
                 <option value={50}>50 km</option>
                 <option value={100}>100 km</option>
+                <option value={0}>🇱🇻 {t('tasks.allLatvia', 'Visa Latvija')}</option>
               </select>
               <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                 ⚙️ {t('tasks.filters', 'Filters')}
@@ -972,11 +1018,21 @@ const Tasks = () => {
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
             <span className="font-semibold text-gray-700">{t('map.legend', 'Map')}:</span>
             
-            {/* User location */}
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
-              <span className="text-gray-600">{t('map.you', 'You')}</span>
-            </div>
+            {/* User location - only show when not viewing all */}
+            {searchRadius !== 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
+                <span className="text-gray-600">{t('map.you', 'You')}</span>
+              </div>
+            )}
+            
+            {/* Viewing all indicator */}
+            {searchRadius === 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🇱🇻</span>
+                <span className="text-gray-600 font-medium">{t('tasks.viewingAllLatvia', 'Viewing all of Latvia')}</span>
+              </div>
+            )}
             
             {/* Price color coding */}
             <div className="flex items-center gap-2">
@@ -1010,6 +1066,7 @@ const Tasks = () => {
                 manualLocationSet={manualLocationSet}
                 onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)}
                 showOfferingsOnMap={showOfferingsOnMap}
+                searchRadius={searchRadius}
               />
             </MapContainer>
           </div>
@@ -1047,7 +1104,12 @@ const Tasks = () => {
               {filteredTasks.length === 0 ? (
                 <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
                   <div className="text-5xl mb-4">💰</div>
-                  <p className="text-gray-900 font-semibold text-lg mb-2">{t('tasks.noJobsNearby', 'No jobs posted nearby yet')}</p>
+                  <p className="text-gray-900 font-semibold text-lg mb-2">
+                    {searchRadius === 0 
+                      ? t('tasks.noJobsInLatvia', 'No jobs posted in Latvia yet')
+                      : t('tasks.noJobsNearby', 'No jobs posted nearby yet')
+                    }
+                  </p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
                     {t('tasks.beFirstToPost', 'Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.')}
                   </p>
@@ -1091,7 +1153,12 @@ const Tasks = () => {
               {filteredOfferings.length === 0 ? (
                 <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
                   <div className="text-5xl mb-4">👋</div>
-                  <p className="text-gray-900 font-semibold text-lg mb-2">{t('offerings.noOfferingsNearby', 'No service providers in your area yet')}</p>
+                  <p className="text-gray-900 font-semibold text-lg mb-2">
+                    {searchRadius === 0
+                      ? t('offerings.noOfferingsInLatvia', 'No service providers in Latvia yet')
+                      : t('offerings.noOfferingsNearby', 'No service providers in your area yet')
+                    }
+                  </p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
                     {t('offerings.beFirstToOffer', 'Are you skilled at something? Advertise your services here and get hired by people nearby!')}
                   </p>
