@@ -7,11 +7,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFavorites, useRemoveFavorite } from '../hooks/useFavorites';
 import { useAuthStore } from '../stores/authStore';
+import { useToastStore } from '../stores/toastStore';
 import { FavoriteItemType, Favorite } from '../api/favorites';
 import { getImageUrl } from '../api/uploads';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import toast from 'react-hot-toast';
 
 type FilterType = 'all' | FavoriteItemType;
 
@@ -19,6 +19,7 @@ export default function Favorites() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const toast = useToastStore();
   const [filter, setFilter] = useState<FilterType>('all');
   
   const { data, isLoading, isError } = useFavorites(
