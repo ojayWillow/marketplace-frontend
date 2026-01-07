@@ -17,6 +17,7 @@ const PageLoader = () => (
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
+const TwoFactorVerify = lazy(() => import('./pages/auth/TwoFactorVerify'))
 const Listings = lazy(() => import('./pages/listings/Listings'))
 const ListingDetail = lazy(() => import('./pages/listings/ListingDetail'))
 const CreateListing = lazy(() => import('./pages/listings/CreateListing'))
@@ -32,6 +33,7 @@ const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Conversation = lazy(() => import('./pages/Conversation'))
 const Favorites = lazy(() => import('./pages/Favorites'))
+const SecuritySettings = lazy(() => import('./pages/SecuritySettings'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function App() {
@@ -42,6 +44,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
+          <Route path="2fa-verify" element={<TwoFactorVerify />} />
           <Route path="listings" element={<Listings />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="tasks/:id" element={<TaskDetail />} />
@@ -95,6 +98,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          {/* Security Settings */}
+          <Route
+            path="security"
+            element={
+              <ProtectedRoute>
+                <SecuritySettings />
               </ProtectedRoute>
             }
           />
