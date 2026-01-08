@@ -112,12 +112,23 @@ const MapController = ({
     }
   }, [lat, lng, radius, map, recenterTrigger]);
   
-  // Pan to selected task
+  // Pan to selected task - center it in the VISIBLE part of the map (above the preview card)
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
-      map.setView([taskLat, taskLng], 14, { animate: true });
+      
+      // Offset the center point upward so the marker appears in the visible area above the preview card
+      // The preview card takes roughly 40% of the map area, so we need to shift up
+      const mapSize = map.getSize();
+      const offsetY = mapSize.y * 0.15; // Shift center up by 15% of map height
+      
+      map.setView([taskLat, taskLng], 15, { animate: true });
+      
+      // After the view is set, pan slightly to account for the preview card
+      setTimeout(() => {
+        map.panBy([0, offsetY], { animate: true });
+      }, 300);
     }
   }, [selectedTask, map]);
   
@@ -179,34 +190,36 @@ const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
   }
   
   // Make selected marker larger and more prominent
-  const scale = isSelected ? 'transform: scale(1.3);' : '';
-  const selectedShadow = isSelected ? '0 4px 12px rgba(0,0,0,0.4)' : shadow;
+  const scale = isSelected ? 'transform: scale(1.4);' : '';
+  const selectedShadow = isSelected ? '0 4px 16px rgba(0,0,0,0.5)' : shadow;
+  const zIndex = isSelected ? 'z-index: 1000;' : '';
   
   const priceText = budget >= 1000 ? `&euro;${(budget/1000).toFixed(1)}k` : `&euro;${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
 
   return divIcon({
-    className: 'job-price-icon',
+    className: `job-price-icon ${isSelected ? 'selected-marker' : ''}`,
     html: `<div style="
       ${bgStyle}
       color: white;
-      font-size: 12px;
+      font-size: ${isSelected ? '14px' : '12px'};
       font-weight: 700;
-      padding: 4px 10px;
+      padding: ${isSelected ? '6px 12px' : '4px 10px'};
       border-radius: 14px;
       white-space: nowrap;
       box-shadow: ${selectedShadow};
-      border: 2px solid white;
+      border: ${isSelected ? '3px' : '2px'} solid white;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 40px;
       ${scale}
-      transition: transform 0.2s ease;
+      ${zIndex}
+      transition: all 0.2s ease;
     ">${priceText}</div>`,
-    iconSize: [60, 32],
-    iconAnchor: [30, 16],
+    iconSize: isSelected ? [70, 40] : [60, 32],
+    iconAnchor: isSelected ? [35, 20] : [30, 16],
   });
 };
 
@@ -261,12 +274,14 @@ const JobPreviewCard = ({
   task, 
   userLocation, 
   onViewDetails, 
-  onClose 
+  onClose,
+  onCreatorClick 
 }: { 
   task: Task; 
   userLocation: { lat: number; lng: number };
   onViewDetails: () => void;
   onClose: () => void;
+  onCreatorClick: () => void;
 }) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
@@ -277,24 +292,26 @@ const JobPreviewCard = ({
   
   return (
     <div className="absolute bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
-      {/* Close button */}
-      <button 
-        onClick={onClose}
-        className="absolute top-3 right-3 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 z-10"
-      >
-        ✕
-      </button>
-      
       <div className="p-4">
-        {/* Category + Distance row */}
+        {/* Top row: Category on left, Distance in CENTER, X button on right */}
         <div className="flex items-center justify-between mb-3">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
             <span>{categoryIcon}</span>
             <span>{categoryLabel}</span>
           </span>
-          <span className="text-sm text-gray-500 flex items-center gap-1">
+          
+          {/* Distance - Centered */}
+          <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
             📍 {formatDistance(distance)}
           </span>
+          
+          {/* Close button */}
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"
+          >
+            ✕
+          </button>
         </div>
         
         {/* Price - BIG and prominent */}
@@ -343,11 +360,15 @@ const JobPreviewCard = ({
           <span className="truncate">{task.location?.split(',').slice(0, 2).join(', ') || 'Nearby'}</span>
         </div>
         
-        {/* Posted by */}
-        <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+        {/* Posted by - CLICKABLE */}
+        <button 
+          onClick={onCreatorClick}
+          className="flex items-center gap-2 text-sm text-blue-600 mb-4 hover:underline active:opacity-70"
+        >
           <span>👤</span>
-          <span>{task.creator_name || 'Anonymous'}</span>
-        </div>
+          <span className="font-medium">{task.creator_name || 'Anonymous'}</span>
+          <span className="text-gray-400">→</span>
+        </button>
         
         {/* Action buttons */}
         <div className="flex gap-3">
@@ -485,6 +506,7 @@ const MobileTasksView = () => {
   // Handle marker click on map
   const handleMarkerClick = (task: Task) => {
     setSelectedTask(task);
+    setSheetPosition('collapsed');
   };
 
   // Close preview and go back to list
@@ -497,6 +519,13 @@ const MobileTasksView = () => {
   const handleViewDetails = () => {
     if (selectedTask) {
       navigate(`/tasks/${selectedTask.id}`);
+    }
+  };
+
+  // Go to creator profile
+  const handleCreatorClick = () => {
+    if (selectedTask?.creator_id) {
+      navigate(`/profile/${selectedTask.creator_id}`);
     }
   };
 
@@ -564,6 +593,13 @@ const MobileTasksView = () => {
           flex-direction: column;
           background: #f3f4f6;
           z-index: 9999;
+        }
+        /* Make selected markers appear on top */
+        .selected-marker {
+          z-index: 1000 !important;
+        }
+        .leaflet-marker-icon.selected-marker {
+          z-index: 1000 !important;
         }
       `}</style>
 
@@ -669,6 +705,7 @@ const MobileTasksView = () => {
                   eventHandlers={{
                     click: () => handleMarkerClick(task)
                   }}
+                  zIndexOffset={isSelected ? 1000 : 0}
                 />
               );
             })}
@@ -711,6 +748,7 @@ const MobileTasksView = () => {
               userLocation={userLocation}
               onViewDetails={handleViewDetails}
               onClose={handleClosePreview}
+              onCreatorClick={handleCreatorClick}
             />
           )}
         </div>
