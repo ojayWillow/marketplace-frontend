@@ -11,6 +11,8 @@ import { useToastStore } from '../stores/toastStore';
 import { useMatchingStore } from '../stores/matchingStore';
 import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
 import FavoriteButton from '../components/ui/FavoriteButton';
+import { useIsMobile } from '../hooks/useIsMobile';
+import MobileTasksView from '../components/MobileTasksView';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -495,7 +497,23 @@ const MapMarkers = ({
 // Location type enum to track what kind of location we have
 type LocationType = 'auto' | 'default' | 'manual';
 
+// =====================================================
+// MAIN TASKS COMPONENT WITH MOBILE/DESKTOP SWITCH
+// =====================================================
 const Tasks = () => {
+  const isMobile = useIsMobile();
+  
+  // On mobile devices, render the dedicated mobile view
+  if (isMobile) {
+    return <MobileTasksView />;
+  }
+  
+  // On desktop/tablet, render the full desktop experience
+  return <DesktopTasksView />;
+};
+
+// Desktop Tasks View (original implementation)
+const DesktopTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
