@@ -112,23 +112,18 @@ const MapController = ({
     }
   }, [lat, lng, radius, map, recenterTrigger]);
   
-  // Pan to selected task - center it in the VISIBLE part of the map (above the preview card)
+  // Pan to selected task - FIXED: Zoom out more, offset upward to show marker above preview card
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
       
-      // Offset the center point upward so the marker appears in the visible area above the preview card
-      // The preview card takes roughly 40% of the map area, so we need to shift up
-      const mapSize = map.getSize();
-      const offsetY = mapSize.y * 0.15; // Shift center up by 15% of map height
+      // Calculate offset: move the center point DOWN so the marker appears in upper part of visible map
+      // The preview card covers roughly bottom 50% of the map, so we offset latitude upward
+      const latOffset = 0.003; // Offset to push marker up into visible area
       
-      map.setView([taskLat, taskLng], 15, { animate: true });
-      
-      // After the view is set, pan slightly to account for the preview card
-      setTimeout(() => {
-        map.panBy([0, offsetY], { animate: true });
-      }, 300);
+      // Use zoom level 14 - not too close, shows context around the job location
+      map.setView([taskLat + latOffset, taskLng], 14, { animate: true, duration: 0.5 });
     }
   }, [selectedTask, map]);
   
@@ -177,22 +172,24 @@ const createUserLocationIcon = () => divIcon({
   iconAnchor: [12, 12],
 });
 
-// Job price icon - use HTML entity for euro
+// Job price icon - LARGER and more visible
 const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
   let bgColor = '#22c55e';
-  let shadow = '0 2px 4px rgba(0,0,0,0.2)';
+  let shadow = '0 2px 6px rgba(0,0,0,0.3)';
   
   if (budget <= 25) bgColor = '#22c55e';
   else if (budget <= 75) bgColor = '#3b82f6';
   else {
     bgColor = 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)';
-    shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
+    shadow = '0 2px 10px rgba(139, 92, 246, 0.6)';
   }
   
-  // Make selected marker larger and more prominent
-  const scale = isSelected ? 'transform: scale(1.4);' : '';
-  const selectedShadow = isSelected ? '0 4px 16px rgba(0,0,0,0.5)' : shadow;
-  const zIndex = isSelected ? 'z-index: 1000;' : '';
+  // Make selected marker even larger and more prominent
+  const scale = isSelected ? 1.5 : 1;
+  const fontSize = isSelected ? 16 : 14;
+  const padding = isSelected ? '8px 14px' : '6px 12px';
+  const borderWidth = isSelected ? 3 : 2;
+  const selectedShadow = isSelected ? '0 4px 20px rgba(0,0,0,0.5)' : shadow;
   
   const priceText = budget >= 1000 ? `&euro;${(budget/1000).toFixed(1)}k` : `&euro;${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
@@ -202,24 +199,23 @@ const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
     html: `<div style="
       ${bgStyle}
       color: white;
-      font-size: ${isSelected ? '14px' : '12px'};
+      font-size: ${fontSize}px;
       font-weight: 700;
-      padding: ${isSelected ? '6px 12px' : '4px 10px'};
-      border-radius: 14px;
+      padding: ${padding};
+      border-radius: 16px;
       white-space: nowrap;
       box-shadow: ${selectedShadow};
-      border: ${isSelected ? '3px' : '2px'} solid white;
+      border: ${borderWidth}px solid white;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 40px;
-      ${scale}
-      ${zIndex}
+      min-width: 50px;
+      transform: scale(${scale});
       transition: all 0.2s ease;
     ">${priceText}</div>`,
-    iconSize: isSelected ? [70, 40] : [60, 32],
-    iconAnchor: isSelected ? [35, 20] : [30, 16],
+    iconSize: isSelected ? [80, 44] : [65, 36],
+    iconAnchor: isSelected ? [40, 22] : [32, 18],
   });
 };
 
@@ -362,7 +358,10 @@ const JobPreviewCard = ({
         
         {/* Posted by - CLICKABLE */}
         <button 
-          onClick={onCreatorClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreatorClick();
+          }}
           className="flex items-center gap-2 text-sm text-blue-600 mb-4 hover:underline active:opacity-70"
         >
           <span>👤</span>
@@ -522,10 +521,20 @@ const MobileTasksView = () => {
     }
   };
 
-  // Go to creator profile
+  // Go to creator profile - FIXED: use creator_id properly
   const handleCreatorClick = () => {
-    if (selectedTask?.creator_id) {
-      navigate(`/profile/${selectedTask.creator_id}`);
+    if (selectedTask) {
+      // Try different possible field names for creator ID
+      const creatorId = selectedTask.creator_id || selectedTask.user_id || selectedTask.created_by;
+      if (creatorId) {
+        navigate(`/profile/${creatorId}`);
+      } else {
+        // Fallback: try to find by username if we have it
+        const creatorName = selectedTask.creator_name;
+        if (creatorName) {
+          navigate(`/profile/${creatorName}`);
+        }
+      }
     }
   };
 
