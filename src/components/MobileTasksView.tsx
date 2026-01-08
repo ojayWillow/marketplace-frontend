@@ -82,9 +82,22 @@ const addMarkerOffsets = (tasks: Task[]): Task[] => {
 };
 
 // Map controller for zoom/center
-const MapController = ({ lat, lng, radius, recenterTrigger }: { lat: number; lng: number; radius: number; recenterTrigger: number }) => {
+const MapController = ({ 
+  lat, 
+  lng, 
+  radius, 
+  recenterTrigger,
+  selectedTask 
+}: { 
+  lat: number; 
+  lng: number; 
+  radius: number; 
+  recenterTrigger: number;
+  selectedTask: Task | null;
+}) => {
   const map = useMap();
   
+  // Handle radius changes and recenter
   useEffect(() => {
     if (radius === 0) {
       map.setView([56.8796, 24.6032], 7);
@@ -98,6 +111,15 @@ const MapController = ({ lat, lng, radius, recenterTrigger }: { lat: number; lng
       map.setView([lat, lng], zoom);
     }
   }, [lat, lng, radius, map, recenterTrigger]);
+  
+  // Pan to selected task
+  useEffect(() => {
+    if (selectedTask) {
+      const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
+      const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
+      map.setView([taskLat, taskLng], 14, { animate: true });
+    }
+  }, [selectedTask, map]);
   
   // Handle map resize when container changes
   useEffect(() => {
@@ -145,7 +167,7 @@ const createUserLocationIcon = () => divIcon({
 });
 
 // Job price icon - use HTML entity for euro
-const getJobPriceIcon = (budget: number = 0) => {
+const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 4px rgba(0,0,0,0.2)';
   
@@ -155,6 +177,10 @@ const getJobPriceIcon = (budget: number = 0) => {
     bgColor = 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)';
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
   }
+  
+  // Make selected marker larger and more prominent
+  const scale = isSelected ? 'transform: scale(1.3);' : '';
+  const selectedShadow = isSelected ? '0 4px 12px rgba(0,0,0,0.4)' : shadow;
   
   const priceText = budget >= 1000 ? `&euro;${(budget/1000).toFixed(1)}k` : `&euro;${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
@@ -169,24 +195,27 @@ const getJobPriceIcon = (budget: number = 0) => {
       padding: 4px 10px;
       border-radius: 14px;
       white-space: nowrap;
-      box-shadow: ${shadow};
+      box-shadow: ${selectedShadow};
       border: 2px solid white;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 40px;
+      ${scale}
+      transition: transform 0.2s ease;
     ">${priceText}</div>`,
     iconSize: [60, 32],
     iconAnchor: [30, 16],
   });
 };
 
-// Mobile Job Card - Compact
-const MobileJobCard = ({ task, userLocation, onClick }: { 
+// Mobile Job Card - Compact (for list)
+const MobileJobCard = ({ task, userLocation, onClick, isSelected }: { 
   task: Task; 
   userLocation: { lat: number; lng: number };
   onClick?: () => void;
+  isSelected?: boolean;
 }) => {
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   const budget = task.budget || task.reward || 0;
@@ -194,9 +223,13 @@ const MobileJobCard = ({ task, userLocation, onClick }: {
   return (
     <div 
       onClick={onClick}
-      className="flex items-center gap-3 p-3 bg-white border-b border-gray-100 active:bg-gray-50 cursor-pointer"
+      className={`flex items-center gap-3 p-3 border-b border-gray-100 active:bg-gray-50 cursor-pointer transition-colors ${
+        isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'bg-white'
+      }`}
     >
-      <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-xl flex-shrink-0">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
+        isSelected ? 'bg-blue-100' : 'bg-blue-50'
+      }`}>
         {task.icon || '📋'}
       </div>
       
@@ -223,6 +256,119 @@ const MobileJobCard = ({ task, userLocation, onClick }: {
   );
 };
 
+// Job Preview Card - Shows when job is selected (like the desktop popup)
+const JobPreviewCard = ({ 
+  task, 
+  userLocation, 
+  onViewDetails, 
+  onClose 
+}: { 
+  task: Task; 
+  userLocation: { lat: number; lng: number };
+  onViewDetails: () => void;
+  onClose: () => void;
+}) => {
+  const { t } = useTranslation();
+  const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
+  const budget = task.budget || task.reward || 0;
+  const categoryIcon = getCategoryIcon(task.category);
+  const categoryLabel = getCategoryLabel(task.category);
+  const applicantsCount = task.applications_count || 0;
+  
+  return (
+    <div className="absolute bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
+      {/* Close button */}
+      <button 
+        onClick={onClose}
+        className="absolute top-3 right-3 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 z-10"
+      >
+        ✕
+      </button>
+      
+      <div className="p-4">
+        {/* Category + Distance row */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+            <span>{categoryIcon}</span>
+            <span>{categoryLabel}</span>
+          </span>
+          <span className="text-sm text-gray-500 flex items-center gap-1">
+            📍 {formatDistance(distance)}
+          </span>
+        </div>
+        
+        {/* Price - BIG and prominent */}
+        <div className="text-center mb-2">
+          <span className={`text-3xl font-bold ${
+            budget <= 25 ? 'text-green-600' : 
+            budget <= 75 ? 'text-blue-600' : 
+            'text-purple-600'
+          }`}>
+            €{budget}
+          </span>
+        </div>
+        
+        {/* Title */}
+        <h3 className="font-bold text-gray-900 text-lg text-center mb-3 line-clamp-2">
+          {task.title}
+        </h3>
+        
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 mb-4 py-2 bg-gray-50 rounded-xl text-center">
+          <div>
+            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+              {t('tasks.distance', 'ATTĀLUMS')}
+            </div>
+            <div className="text-sm font-bold text-gray-700">{formatDistance(distance)}</div>
+          </div>
+          <div className="border-x border-gray-200">
+            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+              {t('tasks.posted', 'PUBLICĒTS')}
+            </div>
+            <div className="text-sm font-bold text-gray-700">
+              {task.created_at ? formatTimeAgo(task.created_at) : 'New'}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+              {t('tasks.applicants', 'PIETEIKUMI')}
+            </div>
+            <div className="text-sm font-bold text-gray-700">{applicantsCount}</div>
+          </div>
+        </div>
+        
+        {/* Location */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+          <span>📍</span>
+          <span className="truncate">{task.location?.split(',').slice(0, 2).join(', ') || 'Nearby'}</span>
+        </div>
+        
+        {/* Posted by */}
+        <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+          <span>👤</span>
+          <span>{task.creator_name || 'Anonymous'}</span>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onViewDetails}
+            className="flex-1 py-3 px-4 rounded-xl text-base font-bold text-white bg-blue-500 hover:bg-blue-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          >
+            {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
+          </button>
+          <FavoriteButton
+            itemType="task"
+            itemId={task.id}
+            size="md"
+            className="!rounded-xl !w-12 !h-12"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Mobile View Component - Google Maps Style
 const MobileTasksView = () => {
   const { t } = useTranslation();
@@ -236,6 +382,9 @@ const MobileTasksView = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
+  
+  // Selected job for preview
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   // Sheet state - use percentage of viewport height
   const [sheetPosition, setSheetPosition] = useState<'collapsed' | 'half' | 'full'>('half');
@@ -323,7 +472,32 @@ const MobileTasksView = () => {
 
   // Recenter map to user location
   const handleRecenter = () => {
+    setSelectedTask(null);
     setRecenterTrigger(prev => prev + 1);
+  };
+
+  // Handle job selection from list
+  const handleJobSelect = (task: Task) => {
+    setSelectedTask(task);
+    setSheetPosition('collapsed'); // Collapse sheet to show map
+  };
+
+  // Handle marker click on map
+  const handleMarkerClick = (task: Task) => {
+    setSelectedTask(task);
+  };
+
+  // Close preview and go back to list
+  const handleClosePreview = () => {
+    setSelectedTask(null);
+    setSheetPosition('half');
+  };
+
+  // Go to job details
+  const handleViewDetails = () => {
+    if (selectedTask) {
+      navigate(`/tasks/${selectedTask.id}`);
+    }
   };
 
   // Sheet drag handlers
@@ -363,9 +537,6 @@ const MobileTasksView = () => {
     ...CATEGORY_OPTIONS.slice(1, 10)
   ];
 
-  // Calculate top bar height (search + categories)
-  const topBarHeight = 110; // Approximate height of search bar + categories
-
   return (
     <>
       {/* Global styles */}
@@ -373,6 +544,13 @@ const MobileTasksView = () => {
         @keyframes pulse {
           0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
           100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -450,9 +628,7 @@ const MobileTasksView = () => {
         {/* ============================================ */}
         <div 
           className="flex-1 relative"
-          style={{ 
-            minHeight: '200px',
-          }}
+          style={{ minHeight: '200px' }}
         >
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
@@ -469,6 +645,7 @@ const MobileTasksView = () => {
               lng={userLocation.lng} 
               radius={searchRadius} 
               recenterTrigger={recenterTrigger}
+              selectedTask={selectedTask}
             />
             
             {/* User Location */}
@@ -483,59 +660,59 @@ const MobileTasksView = () => {
             {/* Job Markers */}
             {tasksWithOffsets.map((task) => {
               const budget = task.budget || task.reward || 0;
+              const isSelected = selectedTask?.id === task.id;
               return (
                 <Marker
                   key={task.id}
                   position={[task.displayLatitude || task.latitude, task.displayLongitude || task.longitude]}
-                  icon={getJobPriceIcon(budget)}
+                  icon={getJobPriceIcon(budget, isSelected)}
                   eventHandlers={{
-                    click: () => navigate(`/tasks/${task.id}`)
+                    click: () => handleMarkerClick(task)
                   }}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[180px]">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-1">{task.title}</h3>
-                      <p className="text-green-600 font-bold text-lg mb-2">€{budget}</p>
-                      <button
-                        onClick={() => navigate(`/tasks/${task.id}`)}
-                        className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
+                />
               );
             })}
           </MapContainer>
 
           {/* Floating Buttons - Above sheet */}
-          <div 
-            className="absolute left-0 right-0 flex justify-between px-4 z-[1000]"
-            style={{ bottom: '16px' }}
-          >
-            {/* Post Job FAB */}
-            {isAuthenticated && (
-              <button
-                onClick={() => navigate('/tasks/create')}
-                className="w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
-              >
-                +
-              </button>
-            )}
-            {!isAuthenticated && <div />}
-            
-            {/* Recenter Button */}
-            <button
-              onClick={handleRecenter}
-              className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+          {!selectedTask && (
+            <div 
+              className="absolute left-0 right-0 flex justify-between px-4 z-[1000]"
+              style={{ bottom: '16px' }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
-              </svg>
-            </button>
-          </div>
+              {/* Post Job FAB */}
+              {isAuthenticated && (
+                <button
+                  onClick={() => navigate('/tasks/create')}
+                  className="w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
+                >
+                  +
+                </button>
+              )}
+              {!isAuthenticated && <div />}
+              
+              {/* Recenter Button */}
+              <button
+                onClick={handleRecenter}
+                className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Job Preview Card - Shows when job is selected */}
+          {selectedTask && (
+            <JobPreviewCard
+              task={selectedTask}
+              userLocation={userLocation}
+              onViewDetails={handleViewDetails}
+              onClose={handleClosePreview}
+            />
+          )}
         </div>
 
         {/* ============================================ */}
@@ -595,7 +772,8 @@ const MobileTasksView = () => {
                     key={task.id}
                     task={task}
                     userLocation={userLocation}
-                    onClick={() => navigate(`/tasks/${task.id}`)}
+                    onClick={() => handleJobSelect(task)}
+                    isSelected={selectedTask?.id === task.id}
                   />
                 ))}
                 <div className="h-8" />
