@@ -87,13 +87,15 @@ const MapController = ({
   lng, 
   radius, 
   recenterTrigger,
-  selectedTask 
+  selectedTask,
+  previewCardHeight
 }: { 
   lat: number; 
   lng: number; 
   radius: number; 
   recenterTrigger: number;
   selectedTask: Task | null;
+  previewCardHeight: number;
 }) => {
   const map = useMap();
   
@@ -112,22 +114,28 @@ const MapController = ({
     }
   }, [lat, lng, radius, map, recenterTrigger]);
   
-  // Pan to selected task - Position marker in the UPPER portion of visible map
-  // The preview card covers roughly 60% of the map area from bottom
-  // So we need to offset the center significantly downward (which moves the marker UP visually)
+  // Pan to selected task - Position marker ABOVE the preview card
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
       
-      // Large offset to push marker into upper visible area
-      // At zoom 13, 0.008 degrees ≈ moves marker significantly up
-      const latOffset = 0.008;
+      // First, set view to the task location at zoom 14
+      map.setView([taskLat, taskLng], 14, { animate: false });
       
-      // Zoom 13 shows good area context, marker will be clearly visible
-      map.setView([taskLat + latOffset, taskLng], 13, { animate: true, duration: 0.5 });
+      // Then pan down so the marker appears in upper portion of visible map
+      // The preview card is ~350px tall, we want marker to be ~80px from top of map
+      // So we need to pan the map DOWN by (mapHeight/2 - 80) pixels
+      // This moves the CENTER down, which moves the MARKER up visually
+      setTimeout(() => {
+        const mapHeight = map.getSize().y;
+        const targetMarkerY = 60; // Where we want marker to appear (pixels from top)
+        const panDownBy = (mapHeight / 2) - targetMarkerY - (previewCardHeight / 2);
+        
+        map.panBy([0, -panDownBy], { animate: true, duration: 0.3 });
+      }, 50);
     }
-  }, [selectedTask, map]);
+  }, [selectedTask, map, previewCardHeight]);
   
   // Handle map resize when container changes
   useEffect(() => {
@@ -405,6 +413,9 @@ const MobileTasksView = () => {
   // Selected job for preview
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
+  // Preview card height (approximate, used for map offset calculation)
+  const previewCardHeight = 350;
+  
   // Sheet state - use percentage of viewport height
   const [sheetPosition, setSheetPosition] = useState<'collapsed' | 'half' | 'full'>('half');
   const [isDragging, setIsDragging] = useState(false);
@@ -520,7 +531,7 @@ const MobileTasksView = () => {
     }
   };
 
-  // Go to creator profile - FIXED: correct route is /users/:id
+  // Go to creator profile - correct route is /users/:id
   const handleCreatorClick = () => {
     if (selectedTask) {
       // Try different possible field names for creator ID
@@ -684,6 +695,7 @@ const MobileTasksView = () => {
               radius={searchRadius} 
               recenterTrigger={recenterTrigger}
               selectedTask={selectedTask}
+              previewCardHeight={previewCardHeight}
             />
             
             {/* User Location */}
