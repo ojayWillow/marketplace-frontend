@@ -393,7 +393,7 @@ const JobPreviewCard = ({
   );
 };
 
-// Create Choice Modal Component - NEW
+// Create Choice Modal Component
 const CreateChoiceModal = ({
   isOpen,
   onClose,
@@ -477,7 +477,14 @@ const CreateChoiceModal = ({
   );
 };
 
-// Slide-out Menu Component - UPDATED with both create options
+// Language options for the switcher
+const LANGUAGE_OPTIONS = [
+  { code: 'lv', flag: '🇱🇻', label: 'Latviešu' },
+  { code: 'ru', flag: '🇷🇺', label: 'Русский' },
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+];
+
+// Slide-out Menu Component - WITH LANGUAGE SWITCHER
 const SlideOutMenu = ({ 
   isOpen, 
   onClose, 
@@ -493,7 +500,8 @@ const SlideOutMenu = ({
   onLogout: () => void;
   navigate: (path: string) => void;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   
   // Main menu items
   const menuItems = isAuthenticated ? [
@@ -522,6 +530,11 @@ const SlideOutMenu = ({
     onClose();
   };
 
+  const handleLanguageChange = (langCode: string) => {
+    i18n.changeLanguage(langCode);
+    // Language is automatically saved to localStorage by i18next
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -534,12 +547,12 @@ const SlideOutMenu = ({
       
       {/* Menu Panel */}
       <div 
-        className={`fixed top-0 left-0 bottom-0 w-72 bg-white z-[10001] shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 bottom-0 w-72 bg-white z-[10001] shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="bg-blue-500 p-6 pt-12">
+        <div className="bg-blue-500 p-6 pt-12 flex-shrink-0">
           {isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl">
@@ -564,15 +577,15 @@ const SlideOutMenu = ({
                 👋
               </div>
               <div>
-                <h3 className="font-bold text-white text-lg">Welcome!</h3>
-                <p className="text-white/70 text-sm">Sign in to get started</p>
+                <h3 className="font-bold text-white text-lg">{t('menu.welcome', 'Welcome!')}</h3>
+                <p className="text-white/70 text-sm">{t('menu.signInPrompt', 'Sign in to get started')}</p>
               </div>
             </div>
           )}
         </div>
         
-        {/* Menu Items */}
-        <div className="py-2">
+        {/* Menu Items - Scrollable */}
+        <div className="flex-1 overflow-y-auto py-2">
           {menuItems.map((item, index) => (
             <button
               key={index}
@@ -621,6 +634,34 @@ const SlideOutMenu = ({
           )}
         </div>
         
+        {/* Language Switcher - Fixed at bottom */}
+        <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50 p-4">
+          <div className="px-2 pb-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              {t('menu.language', 'Language')}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            {LANGUAGE_OPTIONS.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all ${
+                  currentLanguage === lang.code || currentLanguage.startsWith(lang.code)
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                <span className="text-2xl">{lang.flag}</span>
+                <span className="text-xs font-medium">{lang.label}</span>
+                {(currentLanguage === lang.code || currentLanguage.startsWith(lang.code)) && (
+                  <span className="text-[10px]">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+        
         {/* Close button */}
         <button
           onClick={onClose}
@@ -650,7 +691,7 @@ const MobileTasksView = () => {
   // Menu state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  // Create modal state - NEW
+  // Create modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Selected job for preview - when set, job list is hidden
@@ -791,7 +832,7 @@ const MobileTasksView = () => {
     }
   };
 
-  // Handle create button click - NEW: Opens modal instead of direct navigation
+  // Handle create button click - Opens modal instead of direct navigation
   const handleCreateClick = () => {
     if (isAuthenticated) {
       setShowCreateModal(true);
@@ -896,7 +937,7 @@ const MobileTasksView = () => {
         navigate={navigate}
       />
 
-      {/* Create Choice Modal - NEW */}
+      {/* Create Choice Modal */}
       <CreateChoiceModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -930,7 +971,7 @@ const MobileTasksView = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search jobs..."
+                  placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
                   className="w-full bg-gray-100 rounded-full px-4 py-2.5 pl-10 text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
@@ -947,7 +988,7 @@ const MobileTasksView = () => {
                 <option value={10}>10km</option>
                 <option value={25}>25km</option>
                 <option value={50}>50km</option>
-                <option value={0}>🇱🇻 All</option>
+                <option value={0}>🇱🇻 {t('tasks.allLatvia', 'All')}</option>
               </select>
             </div>
           </div>
@@ -999,7 +1040,7 @@ const MobileTasksView = () => {
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
               <Popup>
                 <div className="text-center p-2">
-                  <p className="font-semibold text-blue-600">📍 You are here</p>
+                  <p className="font-semibold text-blue-600">📍 {t('tasks.youAreHere', 'You are here')}</p>
                 </div>
               </Popup>
             </Marker>
@@ -1074,13 +1115,13 @@ const MobileTasksView = () => {
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
               
-              {/* Header Row: Job count on left, Single "+" button on right - UPDATED */}
+              {/* Header Row: Job count on left, Single "+" button on right */}
               <div className="flex items-center justify-between w-full px-4">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                 </span>
                 
-                {/* Single "+" Create Button - NEW */}
+                {/* Single "+" Create Button */}
                 <button
                   type="button"
                   onClick={handleCreateClick}
