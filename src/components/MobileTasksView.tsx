@@ -87,15 +87,13 @@ const MapController = ({
   lng, 
   radius, 
   recenterTrigger,
-  selectedTask,
-  previewCardHeight
+  selectedTask
 }: { 
   lat: number; 
   lng: number; 
   radius: number; 
   recenterTrigger: number;
   selectedTask: Task | null;
-  previewCardHeight: number;
 }) => {
   const map = useMap();
   
@@ -114,28 +112,33 @@ const MapController = ({
     }
   }, [lat, lng, radius, map, recenterTrigger]);
   
-  // Pan to selected task - Position marker ABOVE the preview card
+  // Pan to selected task - Position marker in upper portion of map
+  // Since job list is now hidden, we have more space - position marker in upper third
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
       
-      // First, set view to the task location at zoom 14
+      // First set view centered on task
       map.setView([taskLat, taskLng], 14, { animate: false });
       
-      // Then pan down so the marker appears in upper portion of visible map
-      // The preview card is ~350px tall, we want marker to be ~80px from top of map
-      // So we need to pan the map DOWN by (mapHeight/2 - 80) pixels
-      // This moves the CENTER down, which moves the MARKER up visually
+      // Invalidate size since layout changed (job list hidden)
+      map.invalidateSize();
+      
+      // Pan to position marker in upper portion of visible map
+      // Preview card is ~350px, we want marker roughly 1/3 from top of remaining space
       setTimeout(() => {
         const mapHeight = map.getSize().y;
-        const targetMarkerY = 60; // Where we want marker to appear (pixels from top)
-        const panDownBy = (mapHeight / 2) - targetMarkerY - (previewCardHeight / 2);
+        const previewCardHeight = 350;
+        const visibleMapHeight = mapHeight - previewCardHeight;
+        const targetY = visibleMapHeight * 0.4; // 40% from top of visible area
+        const currentCenterY = mapHeight / 2;
+        const panAmount = currentCenterY - targetY - (previewCardHeight / 2);
         
-        map.panBy([0, -panDownBy], { animate: true, duration: 0.3 });
-      }, 50);
+        map.panBy([0, panAmount], { animate: true, duration: 0.3 });
+      }, 100);
     }
-  }, [selectedTask, map, previewCardHeight]);
+  }, [selectedTask, map]);
   
   // Handle map resize when container changes
   useEffect(() => {
@@ -182,7 +185,7 @@ const createUserLocationIcon = () => divIcon({
   iconAnchor: [12, 12],
 });
 
-// Job price icon - Normal size, good visibility
+// Job price icon
 const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 6px rgba(0,0,0,0.3)';
@@ -194,7 +197,6 @@ const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
     shadow = '0 2px 10px rgba(139, 92, 246, 0.6)';
   }
   
-  // Selected marker slightly larger
   const fontSize = isSelected ? 14 : 12;
   const padding = isSelected ? '5px 11px' : '4px 10px';
   const borderWidth = isSelected ? 3 : 2;
@@ -272,7 +274,7 @@ const MobileJobCard = ({ task, userLocation, onClick, isSelected }: {
   );
 };
 
-// Job Preview Card - Shows when job is selected (like the desktop popup)
+// Job Preview Card - Shows when job is selected
 const JobPreviewCard = ({ 
   task, 
   userLocation, 
@@ -294,7 +296,7 @@ const JobPreviewCard = ({
   const applicantsCount = task.applications_count || 0;
   
   return (
-    <div className="absolute bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
+    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
       <div className="p-4">
         {/* Top row: Category on left, Distance in CENTER, X button on right */}
         <div className="flex items-center justify-between mb-3">
@@ -392,11 +394,14 @@ const JobPreviewCard = ({
           />
         </div>
       </div>
+      
+      {/* Safe area padding for phones with home indicator */}
+      <div className="h-6 bg-white" />
     </div>
   );
 };
 
-// Main Mobile View Component - Google Maps Style
+// Main Mobile View Component
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -410,25 +415,21 @@ const MobileTasksView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   
-  // Selected job for preview
+  // Selected job for preview - when set, job list is hidden
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // Preview card height (approximate, used for map offset calculation)
-  const previewCardHeight = 350;
-  
-  // Sheet state - use percentage of viewport height
+  // Sheet state for job list (only used when no job is selected)
   const [sheetPosition, setSheetPosition] = useState<'collapsed' | 'half' | 'full'>('half');
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
-  const startPositionRef = useRef<'collapsed' | 'half' | 'full'>('half');
   
-  // Calculate heights based on viewport
+  // Calculate sheet height (only matters when job list is visible)
   const getSheetHeight = () => {
     const vh = window.innerHeight;
     switch (sheetPosition) {
-      case 'collapsed': return 100; // Just header visible
-      case 'half': return Math.round(vh * 0.4); // 40% of screen
-      case 'full': return Math.round(vh * 0.85); // 85% of screen
+      case 'collapsed': return 100;
+      case 'half': return Math.round(vh * 0.4);
+      case 'full': return Math.round(vh * 0.85);
       default: return Math.round(vh * 0.4);
     }
   };
@@ -506,22 +507,21 @@ const MobileTasksView = () => {
     setRecenterTrigger(prev => prev + 1);
   };
 
-  // Handle job selection from list
+  // Handle job selection from list - HIDE the job list
   const handleJobSelect = (task: Task) => {
     setSelectedTask(task);
-    setSheetPosition('collapsed'); // Collapse sheet to show map
+    // Job list will be hidden automatically via conditional rendering
   };
 
   // Handle marker click on map
   const handleMarkerClick = (task: Task) => {
     setSelectedTask(task);
-    setSheetPosition('collapsed');
   };
 
-  // Close preview and go back to list
+  // Close preview and SHOW job list again
   const handleClosePreview = () => {
     setSelectedTask(null);
-    setSheetPosition('half');
+    setSheetPosition('half'); // Restore to half position
   };
 
   // Go to job details
@@ -531,10 +531,9 @@ const MobileTasksView = () => {
     }
   };
 
-  // Go to creator profile - correct route is /users/:id
+  // Go to creator profile
   const handleCreatorClick = () => {
     if (selectedTask) {
-      // Try different possible field names for creator ID
       const creatorId = selectedTask.creator_id || selectedTask.user_id || selectedTask.created_by;
       if (creatorId) {
         navigate(`/users/${creatorId}`);
@@ -546,12 +545,10 @@ const MobileTasksView = () => {
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
     startYRef.current = e.touches[0].clientY;
-    startPositionRef.current = sheetPosition;
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    // Just track movement, actual position change happens on end
+  const handleTouchMove = () => {
+    // Track movement
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -560,20 +557,18 @@ const MobileTasksView = () => {
     
     const endY = e.changedTouches[0].clientY;
     const deltaY = startYRef.current - endY;
-    const threshold = 50; // pixels needed to trigger state change
+    const threshold = 50;
     
     if (deltaY > threshold) {
-      // Swiped UP - expand
       if (sheetPosition === 'collapsed') setSheetPosition('half');
       else if (sheetPosition === 'half') setSheetPosition('full');
     } else if (deltaY < -threshold) {
-      // Swiped DOWN - collapse
       if (sheetPosition === 'full') setSheetPosition('half');
       else if (sheetPosition === 'half') setSheetPosition('collapsed');
     }
   };
 
-  // Category pills for horizontal scroll
+  // Category pills
   const categories = [
     { value: 'all', icon: '🌐', label: 'All' },
     ...CATEGORY_OPTIONS.slice(1, 10)
@@ -607,7 +602,6 @@ const MobileTasksView = () => {
           background: #f3f4f6;
           z-index: 9999;
         }
-        /* Make selected markers appear on top */
         .selected-marker {
           z-index: 1000 !important;
         }
@@ -618,7 +612,7 @@ const MobileTasksView = () => {
 
       <div className="mobile-tasks-container">
         {/* ============================================ */}
-        {/* TOP BAR - Search + Filters (FIXED) */}
+        {/* TOP BAR - Search + Filters (Always visible) */}
         {/* ============================================ */}
         <div className="bg-white shadow-md z-50 flex-shrink-0">
           {/* Search Bar */}
@@ -635,7 +629,6 @@ const MobileTasksView = () => {
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               </div>
               
-              {/* Radius dropdown */}
               <select
                 value={searchRadius}
                 onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
@@ -651,7 +644,7 @@ const MobileTasksView = () => {
             </div>
           </div>
           
-          {/* Category Pills - Horizontal Scroll */}
+          {/* Category Pills */}
           <div className="px-3 pb-3">
             <div className="flex gap-2 overflow-x-auto hide-scrollbar">
               {categories.map(cat => (
@@ -673,12 +666,9 @@ const MobileTasksView = () => {
         </div>
 
         {/* ============================================ */}
-        {/* MAP AREA - Takes remaining space above sheet */}
+        {/* MAP AREA - Expands when job is selected */}
         {/* ============================================ */}
-        <div 
-          className="flex-1 relative"
-          style={{ minHeight: '200px' }}
-        >
+        <div className="flex-1 relative" style={{ minHeight: '200px' }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
@@ -695,7 +685,6 @@ const MobileTasksView = () => {
               radius={searchRadius} 
               recenterTrigger={recenterTrigger}
               selectedTask={selectedTask}
-              previewCardHeight={previewCardHeight}
             />
             
             {/* User Location */}
@@ -725,13 +714,12 @@ const MobileTasksView = () => {
             })}
           </MapContainer>
 
-          {/* Floating Buttons - Above sheet */}
+          {/* Floating Buttons - Only show when job list is visible (no job selected) */}
           {!selectedTask && (
             <div 
               className="absolute left-0 right-0 flex justify-between px-4 z-[1000]"
               style={{ bottom: '16px' }}
             >
-              {/* Post Job FAB */}
               {isAuthenticated && (
                 <button
                   onClick={() => navigate('/tasks/create')}
@@ -742,7 +730,6 @@ const MobileTasksView = () => {
               )}
               {!isAuthenticated && <div />}
               
-              {/* Recenter Button */}
               <button
                 onClick={handleRecenter}
                 className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
@@ -755,7 +742,7 @@ const MobileTasksView = () => {
             </div>
           )}
 
-          {/* Job Preview Card - Shows when job is selected */}
+          {/* Job Preview Card - Shows when a job is selected */}
           {selectedTask && (
             <JobPreviewCard
               task={selectedTask}
@@ -768,71 +755,71 @@ const MobileTasksView = () => {
         </div>
 
         {/* ============================================ */}
-        {/* BOTTOM SHEET - Jobs List */}
+        {/* BOTTOM SHEET - Job List (HIDDEN when job selected) */}
         {/* ============================================ */}
-        <div
-          className="bg-white rounded-t-3xl shadow-2xl flex-shrink-0 flex flex-col"
-          style={{
-            height: `${sheetHeight}px`,
-            transition: isDragging ? 'none' : 'height 0.3s ease-out',
-            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
-          }}
-        >
-          {/* Drag Handle Area */}
+        {!selectedTask && (
           <div
-            className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{ touchAction: 'none' }}
+            className="bg-white rounded-t-3xl shadow-2xl flex-shrink-0 flex flex-col"
+            style={{
+              height: `${sheetHeight}px`,
+              transition: isDragging ? 'none' : 'height 0.3s ease-out',
+              boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+            }}
           >
-            {/* Visible drag handle bar */}
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
-            
-            {/* Job count header */}
-            <div className="flex items-center justify-between w-full px-4">
-              <span className="text-base font-bold text-gray-800">
-                💰 {filteredTasks.length} jobs nearby
-              </span>
-              {sheetPosition === 'collapsed' && (
-                <span className="text-xs text-gray-400 flex items-center gap-1">
-                  <span>↑</span> Swipe up for jobs
+            {/* Drag Handle Area */}
+            <div
+              className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ touchAction: 'none' }}
+            >
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
+              
+              <div className="flex items-center justify-between w-full px-4">
+                <span className="text-base font-bold text-gray-800">
+                  💰 {filteredTasks.length} jobs nearby
                 </span>
+                {sheetPosition === 'collapsed' && (
+                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                    <span>↑</span> Swipe up for jobs
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Jobs List - Scrollable */}
+            <div 
+              className="flex-1 overflow-y-auto overscroll-contain"
+              style={{ touchAction: 'pan-y' }}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+                </div>
+              ) : filteredTasks.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <div className="text-3xl mb-2">📋</div>
+                  <h3 className="font-semibold text-gray-900 mb-1">No jobs found</h3>
+                  <p className="text-sm text-gray-500">Try a different category or increase radius</p>
+                </div>
+              ) : (
+                <div>
+                  {filteredTasks.map((task) => (
+                    <MobileJobCard
+                      key={task.id}
+                      task={task}
+                      userLocation={userLocation}
+                      onClick={() => handleJobSelect(task)}
+                      isSelected={selectedTask?.id === task.id}
+                    />
+                  ))}
+                  <div className="h-8" />
+                </div>
               )}
             </div>
           </div>
-
-          {/* Jobs List - Scrollable */}
-          <div 
-            className="flex-1 overflow-y-auto overscroll-contain"
-            style={{ touchAction: 'pan-y' }}
-          >
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
-              </div>
-            ) : filteredTasks.length === 0 ? (
-              <div className="text-center py-8 px-4">
-                <div className="text-3xl mb-2">📋</div>
-                <h3 className="font-semibold text-gray-900 mb-1">No jobs found</h3>
-                <p className="text-sm text-gray-500">Try a different category or increase radius</p>
-              </div>
-            ) : (
-              <div>
-                {filteredTasks.map((task) => (
-                  <MobileJobCard
-                    key={task.id}
-                    task={task}
-                    userLocation={userLocation}
-                    onClick={() => handleJobSelect(task)}
-                    isSelected={selectedTask?.id === task.id}
-                  />
-                ))}
-                <div className="h-8" />
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </>
   );
