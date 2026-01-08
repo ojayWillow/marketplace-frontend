@@ -144,7 +144,7 @@ const createUserLocationIcon = () => divIcon({
   iconAnchor: [12, 12],
 });
 
-// Job price icon - use actual € symbol
+// Job price icon - use HTML entity for euro
 const getJobPriceIcon = (budget: number = 0) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 4px rgba(0,0,0,0.2)';
@@ -156,7 +156,6 @@ const getJobPriceIcon = (budget: number = 0) => {
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
   }
   
-  // Use HTML entity for euro symbol
   const priceText = budget >= 1000 ? `&euro;${(budget/1000).toFixed(1)}k` : `&euro;${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
 
@@ -362,7 +361,7 @@ const MobileTasksView = () => {
   ];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gray-100" style={{ paddingTop: '0px' }}>
+    <div className="fixed inset-0 flex flex-col bg-gray-100">
       {/* CSS for animations */}
       <style>{`
         @keyframes pulse {
@@ -376,9 +375,9 @@ const MobileTasksView = () => {
       {/* ============================================ */}
       {/* TOP BAR - Search + Filters */}
       {/* ============================================ */}
-      <div className="bg-white shadow-md z-40 safe-area-top">
+      <div className="bg-white shadow-md z-40 flex-shrink-0">
         {/* Search Bar */}
-        <div className="p-3 pb-2">
+        <div className="p-3 pb-2 pt-safe">
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <input
@@ -429,15 +428,9 @@ const MobileTasksView = () => {
       </div>
 
       {/* ============================================ */}
-      {/* MAP - Fills remaining space */}
+      {/* MAP AREA - Fills remaining space */}
       {/* ============================================ */}
-      <div 
-        className="flex-1 relative"
-        style={{ 
-          marginBottom: `${sheetHeight}px`,
-          transition: isDragging ? 'none' : 'margin-bottom 0.25s ease-out'
-        }}
-      >
+      <div className="flex-1 relative overflow-hidden">
         <MapContainer
           center={[userLocation.lat, userLocation.lng]}
           zoom={13}
@@ -492,36 +485,48 @@ const MobileTasksView = () => {
             );
           })}
         </MapContainer>
-
-        {/* Recenter Button */}
-        <button
-          onClick={handleRecenter}
-          className="absolute z-30 w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
-          style={{ bottom: '20px', right: '16px' }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
-          </svg>
-        </button>
-
-        {/* Post Job FAB */}
-        {isAuthenticated && (
-          <button
-            onClick={() => navigate('/tasks/create')}
-            className="absolute z-30 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
-            style={{ bottom: '20px', left: '16px' }}
-          >
-            +
-          </button>
-        )}
       </div>
+
+      {/* ============================================ */}
+      {/* FLOATING BUTTONS - Always above sheet */}
+      {/* ============================================ */}
+      
+      {/* Recenter Button */}
+      <button
+        onClick={handleRecenter}
+        className="fixed z-50 w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+        style={{ 
+          bottom: `${sheetHeight + 16}px`, 
+          right: '16px',
+          transition: isDragging ? 'none' : 'bottom 0.25s ease-out'
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
+        </svg>
+      </button>
+
+      {/* Post Job FAB */}
+      {isAuthenticated && (
+        <button
+          onClick={() => navigate('/tasks/create')}
+          className="fixed z-50 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
+          style={{ 
+            bottom: `${sheetHeight + 16}px`, 
+            left: '16px',
+            transition: isDragging ? 'none' : 'bottom 0.25s ease-out'
+          }}
+        >
+          +
+        </button>
+      )}
 
       {/* ============================================ */}
       {/* BOTTOM SHEET - Jobs List */}
       {/* ============================================ */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50"
+        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-40"
         style={{
           height: `${sheetHeight}px`,
           transition: isDragging ? 'none' : 'height 0.25s ease-out',
