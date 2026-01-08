@@ -234,17 +234,27 @@ const MobileTasksView = () => {
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [searchRadius, setSearchRadius] = useState(25);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sheetHeight, setSheetHeight] = useState(300); // pixels from bottom
-  const [isDragging, setIsDragging] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   
+  // Sheet state - use percentage of viewport height
+  const [sheetPosition, setSheetPosition] = useState<'collapsed' | 'half' | 'full'>('half');
+  const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
-  const startHeightRef = useRef(0);
+  const startPositionRef = useRef<'collapsed' | 'half' | 'full'>('half');
   
-  // Sheet height constraints
-  const minSheetHeight = 90;
-  const maxSheetHeight = typeof window !== 'undefined' ? window.innerHeight * 0.85 : 600;
+  // Calculate heights based on viewport
+  const getSheetHeight = () => {
+    const vh = window.innerHeight;
+    switch (sheetPosition) {
+      case 'collapsed': return 100; // Just header visible
+      case 'half': return Math.round(vh * 0.4); // 40% of screen
+      case 'full': return Math.round(vh * 0.85); // 85% of screen
+      default: return Math.round(vh * 0.4);
+    }
+  };
+  
+  const sheetHeight = getSheetHeight();
 
   // Get user location
   useEffect(() => {
@@ -317,41 +327,34 @@ const MobileTasksView = () => {
   };
 
   // Sheet drag handlers
-  const handleDragStart = (clientY: number) => {
-    setIsDragging(true);
-    startYRef.current = clientY;
-    startHeightRef.current = sheetHeight;
-  };
-
-  const handleDragMove = (clientY: number) => {
-    if (!isDragging) return;
-    const deltaY = startYRef.current - clientY;
-    const newHeight = Math.min(Math.max(startHeightRef.current + deltaY, minSheetHeight), maxSheetHeight);
-    setSheetHeight(newHeight);
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    // Snap to nearest position
-    if (sheetHeight < 150) {
-      setSheetHeight(minSheetHeight);
-    } else if (sheetHeight < 450) {
-      setSheetHeight(300);
-    } else {
-      setSheetHeight(maxSheetHeight);
-    }
-  };
-
   const handleTouchStart = (e: React.TouchEvent) => {
-    handleDragStart(e.touches[0].clientY);
+    setIsDragging(true);
+    startYRef.current = e.touches[0].clientY;
+    startPositionRef.current = sheetPosition;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    handleDragMove(e.touches[0].clientY);
+    if (!isDragging) return;
+    // Just track movement, actual position change happens on end
   };
 
-  const handleTouchEnd = () => {
-    handleDragEnd();
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    const endY = e.changedTouches[0].clientY;
+    const deltaY = startYRef.current - endY;
+    const threshold = 50; // pixels needed to trigger state change
+    
+    if (deltaY > threshold) {
+      // Swiped UP - expand
+      if (sheetPosition === 'collapsed') setSheetPosition('half');
+      else if (sheetPosition === 'half') setSheetPosition('full');
+    } else if (deltaY < -threshold) {
+      // Swiped DOWN - collapse
+      if (sheetPosition === 'full') setSheetPosition('half');
+      else if (sheetPosition === 'half') setSheetPosition('collapsed');
+    }
   };
 
   // Category pills for horizontal scroll
@@ -360,9 +363,12 @@ const MobileTasksView = () => {
     ...CATEGORY_OPTIONS.slice(1, 10)
   ];
 
+  // Calculate top bar height (search + categories)
+  const topBarHeight = 110; // Approximate height of search bar + categories
+
   return (
-    <div className="fixed inset-0 flex flex-col bg-gray-100">
-      {/* CSS for animations */}
+    <>
+      {/* Global styles */}
       <style>{`
         @keyframes pulse {
           0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
@@ -370,227 +376,235 @@ const MobileTasksView = () => {
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .mobile-tasks-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          background: #f3f4f6;
+          z-index: 9999;
+        }
       `}</style>
 
-      {/* ============================================ */}
-      {/* TOP BAR - Search + Filters */}
-      {/* ============================================ */}
-      <div className="bg-white shadow-md z-40 flex-shrink-0">
-        {/* Search Bar */}
-        <div className="p-3 pb-2 pt-safe">
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search jobs..."
-                className="w-full bg-gray-100 rounded-full px-4 py-2.5 pl-10 text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-            </div>
-            
-            {/* Radius dropdown */}
-            <select
-              value={searchRadius}
-              onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-              className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500"
-              style={{ minWidth: '75px' }}
-            >
-              <option value={5}>5km</option>
-              <option value={10}>10km</option>
-              <option value={25}>25km</option>
-              <option value={50}>50km</option>
-              <option value={0}>🇱🇻 All</option>
-            </select>
-          </div>
-        </div>
-        
-        {/* Category Pills - Horizontal Scroll */}
-        <div className="px-3 pb-3">
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-            {categories.map(cat => (
-              <button
-                key={cat.value}
-                onClick={() => setSelectedCategory(cat.value)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  selectedCategory === cat.value
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                <span>{cat.icon}</span>
-                <span>{cat.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================ */}
-      {/* MAP AREA - Fills remaining space */}
-      {/* ============================================ */}
-      <div className="flex-1 relative overflow-hidden">
-        <MapContainer
-          center={[userLocation.lat, userLocation.lng]}
-          zoom={13}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
-        >
-          <TileLayer
-            attribution='&copy; OpenStreetMap'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <MapController 
-            lat={userLocation.lat} 
-            lng={userLocation.lng} 
-            radius={searchRadius} 
-            recenterTrigger={recenterTrigger}
-          />
-          
-          {/* User Location */}
-          <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
-            <Popup>
-              <div className="text-center p-2">
-                <p className="font-semibold text-blue-600">📍 You are here</p>
+      <div className="mobile-tasks-container">
+        {/* ============================================ */}
+        {/* TOP BAR - Search + Filters (FIXED) */}
+        {/* ============================================ */}
+        <div className="bg-white shadow-md z-50 flex-shrink-0">
+          {/* Search Bar */}
+          <div className="p-3 pb-2">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search jobs..."
+                  className="w-full bg-gray-100 rounded-full px-4 py-2.5 pl-10 text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               </div>
-            </Popup>
-          </Marker>
-          
-          {/* Job Markers */}
-          {tasksWithOffsets.map((task) => {
-            const budget = task.budget || task.reward || 0;
-            return (
-              <Marker
-                key={task.id}
-                position={[task.displayLatitude || task.latitude, task.displayLongitude || task.longitude]}
-                icon={getJobPriceIcon(budget)}
-                eventHandlers={{
-                  click: () => navigate(`/tasks/${task.id}`)
-                }}
+              
+              {/* Radius dropdown */}
+              <select
+                value={searchRadius}
+                onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
+                className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500"
+                style={{ minWidth: '75px' }}
               >
-                <Popup>
-                  <div className="p-2 min-w-[180px]">
-                    <h3 className="font-semibold text-gray-900 text-sm mb-1">{task.title}</h3>
-                    <p className="text-green-600 font-bold text-lg mb-2">€{budget}</p>
-                    <button
-                      onClick={() => navigate(`/tasks/${task.id}`)}
-                      className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
-      </div>
+                <option value={5}>5km</option>
+                <option value={10}>10km</option>
+                <option value={25}>25km</option>
+                <option value={50}>50km</option>
+                <option value={0}>🇱🇻 All</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* Category Pills - Horizontal Scroll */}
+          <div className="px-3 pb-3">
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+              {categories.map(cat => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    selectedCategory === cat.value
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
-      {/* ============================================ */}
-      {/* FLOATING BUTTONS - Always above sheet */}
-      {/* ============================================ */}
-      
-      {/* Recenter Button */}
-      <button
-        onClick={handleRecenter}
-        className="fixed z-50 w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
-        style={{ 
-          bottom: `${sheetHeight + 16}px`, 
-          right: '16px',
-          transition: isDragging ? 'none' : 'bottom 0.25s ease-out'
-        }}
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
-        </svg>
-      </button>
-
-      {/* Post Job FAB */}
-      {isAuthenticated && (
-        <button
-          onClick={() => navigate('/tasks/create')}
-          className="fixed z-50 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
+        {/* ============================================ */}
+        {/* MAP AREA - Takes remaining space above sheet */}
+        {/* ============================================ */}
+        <div 
+          className="flex-1 relative"
           style={{ 
-            bottom: `${sheetHeight + 16}px`, 
-            left: '16px',
-            transition: isDragging ? 'none' : 'bottom 0.25s ease-out'
+            minHeight: '200px',
           }}
         >
-          +
-        </button>
-      )}
+          <MapContainer
+            center={[userLocation.lat, userLocation.lng]}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+            zoomControl={false}
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <MapController 
+              lat={userLocation.lat} 
+              lng={userLocation.lng} 
+              radius={searchRadius} 
+              recenterTrigger={recenterTrigger}
+            />
+            
+            {/* User Location */}
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+              <Popup>
+                <div className="text-center p-2">
+                  <p className="font-semibold text-blue-600">📍 You are here</p>
+                </div>
+              </Popup>
+            </Marker>
+            
+            {/* Job Markers */}
+            {tasksWithOffsets.map((task) => {
+              const budget = task.budget || task.reward || 0;
+              return (
+                <Marker
+                  key={task.id}
+                  position={[task.displayLatitude || task.latitude, task.displayLongitude || task.longitude]}
+                  icon={getJobPriceIcon(budget)}
+                  eventHandlers={{
+                    click: () => navigate(`/tasks/${task.id}`)
+                  }}
+                >
+                  <Popup>
+                    <div className="p-2 min-w-[180px]">
+                      <h3 className="font-semibold text-gray-900 text-sm mb-1">{task.title}</h3>
+                      <p className="text-green-600 font-bold text-lg mb-2">€{budget}</p>
+                      <button
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                        className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
 
-      {/* ============================================ */}
-      {/* BOTTOM SHEET - Jobs List */}
-      {/* ============================================ */}
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-40"
-        style={{
-          height: `${sheetHeight}px`,
-          transition: isDragging ? 'none' : 'height 0.25s ease-out',
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
-        }}
-      >
-        {/* Drag Handle Area */}
+          {/* Floating Buttons - Above sheet */}
+          <div 
+            className="absolute left-0 right-0 flex justify-between px-4 z-[1000]"
+            style={{ bottom: '16px' }}
+          >
+            {/* Post Job FAB */}
+            {isAuthenticated && (
+              <button
+                onClick={() => navigate('/tasks/create')}
+                className="w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
+              >
+                +
+              </button>
+            )}
+            {!isAuthenticated && <div />}
+            
+            {/* Recenter Button */}
+            <button
+              onClick={handleRecenter}
+              className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* ============================================ */}
+        {/* BOTTOM SHEET - Jobs List */}
+        {/* ============================================ */}
         <div
-          className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          style={{ touchAction: 'none' }}
+          className="bg-white rounded-t-3xl shadow-2xl flex-shrink-0 flex flex-col"
+          style={{
+            height: `${sheetHeight}px`,
+            transition: isDragging ? 'none' : 'height 0.3s ease-out',
+            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+          }}
         >
-          {/* Visible drag handle bar */}
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
-          
-          {/* Job count header */}
-          <div className="flex items-center justify-between w-full px-4">
-            <span className="text-base font-bold text-gray-800">
-              💰 {filteredTasks.length} jobs nearby
-            </span>
-            {sheetHeight <= minSheetHeight + 20 && (
-              <span className="text-xs text-gray-400 flex items-center gap-1">
-                <span>↑</span> Swipe up for jobs
+          {/* Drag Handle Area */}
+          <div
+            className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{ touchAction: 'none' }}
+          >
+            {/* Visible drag handle bar */}
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
+            
+            {/* Job count header */}
+            <div className="flex items-center justify-between w-full px-4">
+              <span className="text-base font-bold text-gray-800">
+                💰 {filteredTasks.length} jobs nearby
               </span>
+              {sheetPosition === 'collapsed' && (
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <span>↑</span> Swipe up for jobs
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Jobs List - Scrollable */}
+          <div 
+            className="flex-1 overflow-y-auto overscroll-contain"
+            style={{ touchAction: 'pan-y' }}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+              </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <div className="text-3xl mb-2">📋</div>
+                <h3 className="font-semibold text-gray-900 mb-1">No jobs found</h3>
+                <p className="text-sm text-gray-500">Try a different category or increase radius</p>
+              </div>
+            ) : (
+              <div>
+                {filteredTasks.map((task) => (
+                  <MobileJobCard
+                    key={task.id}
+                    task={task}
+                    userLocation={userLocation}
+                    onClick={() => navigate(`/tasks/${task.id}`)}
+                  />
+                ))}
+                <div className="h-8" />
+              </div>
             )}
           </div>
         </div>
-
-        {/* Jobs List - Scrollable */}
-        <div 
-          className="overflow-y-auto overscroll-contain"
-          style={{ 
-            height: `calc(100% - 70px)`,
-            touchAction: 'pan-y'
-          }}
-        >
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <div className="text-3xl mb-2">📋</div>
-              <h3 className="font-semibold text-gray-900 mb-1">No jobs found</h3>
-              <p className="text-sm text-gray-500">Try a different category or increase radius</p>
-            </div>
-          ) : (
-            <div>
-              {filteredTasks.map((task) => (
-                <MobileJobCard
-                  key={task.id}
-                  task={task}
-                  userLocation={userLocation}
-                  onClick={() => navigate(`/tasks/${task.id}`)}
-                />
-              ))}
-              <div className="h-8" />
-            </div>
-          )}
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 
