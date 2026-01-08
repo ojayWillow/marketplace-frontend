@@ -1,8 +1,31 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const Layout = () => {
+  const location = useLocation();
+  const isMobile = useIsMobile();
+  
+  // Check if we're on the Tasks page (Quick Help) on mobile
+  // These pages get a fullscreen mobile experience without header/footer
+  const isFullscreenMobilePage = isMobile && (
+    location.pathname === '/tasks' || 
+    location.pathname === '/quick-help'
+  );
+
+  // For fullscreen mobile pages, render without header/footer/padding
+  if (isFullscreenMobilePage) {
+    return (
+      <div className="min-h-screen">
+        <main id="main-content" tabIndex={-1}>
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
+  // Normal layout with header and footer
   return (
     <div className="min-h-screen flex flex-col">
       {/* Skip to main content link for keyboard users */}
