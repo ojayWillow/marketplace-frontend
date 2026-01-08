@@ -393,7 +393,91 @@ const JobPreviewCard = ({
   );
 };
 
-// Slide-out Menu Component
+// Create Choice Modal Component - NEW
+const CreateChoiceModal = ({
+  isOpen,
+  onClose,
+  onPostJob,
+  onOfferService
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onPostJob: () => void;
+  onOfferService: () => void;
+}) => {
+  const { t } = useTranslation();
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/40">
+      <div 
+        className="w-full max-w-sm mx-4 rounded-2xl bg-white p-5 shadow-lg animate-slideUp"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-3 text-lg font-semibold text-gray-900">
+          {t('createModal.title', 'What would you like to do?')}
+        </h2>
+        <p className="mb-4 text-sm text-gray-600">
+          {t('createModal.description', 'Choose if you need help or if you want to offer your services.')}
+        </p>
+
+        <div className="space-y-3">
+          {/* Post a Job Button */}
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onPostJob();
+            }}
+            className="flex w-full items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-left text-white hover:bg-blue-700 active:scale-[0.98] transition-all"
+          >
+            <span className="text-xl">📋</span>
+            <div>
+              <div className="text-sm font-semibold">
+                {t('createModal.postJob', 'Post a Job')}
+              </div>
+              <div className="text-xs text-blue-100">
+                {t('createModal.postJobDesc', 'I need help with something')}
+              </div>
+            </div>
+          </button>
+
+          {/* Offer a Service Button */}
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOfferService();
+            }}
+            className="flex w-full items-center gap-3 rounded-xl bg-amber-500 px-4 py-3 text-left text-white hover:bg-amber-600 active:scale-[0.98] transition-all"
+          >
+            <span className="text-xl">🛠️</span>
+            <div>
+              <div className="text-sm font-semibold">
+                {t('createModal.offerService', 'Offer a Service')}
+              </div>
+              <div className="text-xs text-amber-100">
+                {t('createModal.offerServiceDesc', 'I can help other people')}
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Cancel Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+        >
+          {t('common.cancel', 'Cancel')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Slide-out Menu Component - UPDATED with both create options
 const SlideOutMenu = ({ 
   isOpen, 
   onClose, 
@@ -411,16 +495,22 @@ const SlideOutMenu = ({
 }) => {
   const { t } = useTranslation();
   
+  // Main menu items
   const menuItems = isAuthenticated ? [
     { icon: '👤', label: t('menu.profile', 'My Profile'), path: '/profile' },
     { icon: '📋', label: t('menu.myJobs', 'My Jobs'), path: '/profile?tab=tasks' },
     { icon: '❤️', label: t('menu.favorites', 'Favorites'), path: '/favorites' },
     { icon: '💬', label: t('menu.messages', 'Messages'), path: '/messages' },
-    { icon: '➕', label: t('menu.postJob', 'Post a Job'), path: '/tasks/create' },
   ] : [
     { icon: '🔑', label: t('menu.login', 'Login'), path: '/login' },
     { icon: '📝', label: t('menu.register', 'Register'), path: '/register' },
   ];
+
+  // Create options - separate section
+  const createOptions = isAuthenticated ? [
+    { icon: '📋', label: t('menu.postJob', 'Post a Job'), path: '/tasks/create', color: 'text-blue-600', bgHover: 'hover:bg-blue-50' },
+    { icon: '🛠️', label: t('menu.offerService', 'Offer a Service'), path: '/offerings/create', color: 'text-amber-600', bgHover: 'hover:bg-amber-50' },
+  ] : [];
 
   const handleItemClick = (path: string) => {
     navigate(path);
@@ -494,7 +584,29 @@ const SlideOutMenu = ({
             </button>
           ))}
           
-          {/* Divider */}
+          {/* Create Options Section - Only for authenticated users */}
+          {isAuthenticated && createOptions.length > 0 && (
+            <>
+              <div className="h-px bg-gray-200 my-2 mx-6" />
+              <div className="px-6 py-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                  {t('menu.createSection', 'Create')}
+                </span>
+              </div>
+              {createOptions.map((item, index) => (
+                <button
+                  key={`create-${index}`}
+                  onClick={() => handleItemClick(item.path)}
+                  className={`w-full flex items-center gap-4 px-6 py-4 ${item.bgHover} active:bg-gray-100 transition-colors`}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  <span className={`font-medium ${item.color}`}>{item.label}</span>
+                </button>
+              ))}
+            </>
+          )}
+          
+          {/* Logout */}
           {isAuthenticated && (
             <>
               <div className="h-px bg-gray-200 my-2 mx-6" />
@@ -537,6 +649,9 @@ const MobileTasksView = () => {
   
   // Menu state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Create modal state - NEW
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Selected job for preview - when set, job list is hidden
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -676,22 +791,23 @@ const MobileTasksView = () => {
     }
   };
 
-  // Handle create job click
-  const handleCreateJob = () => {
+  // Handle create button click - NEW: Opens modal instead of direct navigation
+  const handleCreateClick = () => {
     if (isAuthenticated) {
-      navigate('/tasks/create');
+      setShowCreateModal(true);
     } else {
       navigate('/login');
     }
   };
 
-  // Handle create offering click
-  const handleCreateOffering = () => {
-    if (isAuthenticated) {
-      navigate('/offerings/create');
-    } else {
-      navigate('/login');
-    }
+  // Handle post job from modal
+  const handlePostJob = () => {
+    navigate('/tasks/create');
+  };
+
+  // Handle offer service from modal
+  const handleOfferService = () => {
+    navigate('/offerings/create');
   };
 
   // Sheet drag handlers
@@ -778,6 +894,14 @@ const MobileTasksView = () => {
         user={user}
         onLogout={logout}
         navigate={navigate}
+      />
+
+      {/* Create Choice Modal - NEW */}
+      <CreateChoiceModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onPostJob={handlePostJob}
+        onOfferService={handleOfferService}
       />
 
       <div className="mobile-tasks-container">
@@ -950,37 +1074,26 @@ const MobileTasksView = () => {
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
               
-              {/* Header Row: Job count on left, Create buttons on right */}
+              {/* Header Row: Job count on left, Single "+" button on right - UPDATED */}
               <div className="flex items-center justify-between w-full px-4">
                 <span className="text-base font-bold text-gray-800">
-                  💰 {filteredTasks.length} jobs nearby
+                  💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                 </span>
                 
-                {/* Create Buttons with Icons */}
-                <div className="flex items-center gap-2">
-                  {/* 📋 for creating a Job (need help) */}
-                  <button
-                    onClick={handleCreateJob}
-                    className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
-                    title="Post a Job"
-                  >
-                    <span className="text-lg">📋</span>
-                  </button>
-                  
-                  {/* 🛠️ for creating an Offering (I can help) */}
-                  <button
-                    onClick={handleCreateOffering}
-                    className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
-                    title="Post an Offering"
-                  >
-                    <span className="text-lg">🛠️</span>
-                  </button>
-                </div>
+                {/* Single "+" Create Button - NEW */}
+                <button
+                  type="button"
+                  onClick={handleCreateClick}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
+                  aria-label={t('tasks.createJobOrService', 'Create job or service')}
+                >
+                  <span className="text-xl leading-none font-bold">+</span>
+                </button>
               </div>
               
               {sheetPosition === 'collapsed' && (
                 <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                  <span>↑</span> Swipe up for jobs
+                  <span>↑</span> {t('tasks.swipeUpForJobs', 'Swipe up for jobs')}
                 </span>
               )}
             </div>
@@ -997,8 +1110,8 @@ const MobileTasksView = () => {
               ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-8 px-4">
                   <div className="text-3xl mb-2">📋</div>
-                  <h3 className="font-semibold text-gray-900 mb-1">No jobs found</h3>
-                  <p className="text-sm text-gray-500">Try a different category or increase radius</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">{t('tasks.noJobsFound', 'No jobs found')}</h3>
+                  <p className="text-sm text-gray-500">{t('tasks.tryDifferentCategory', 'Try a different category or increase radius')}</p>
                 </div>
               ) : (
                 <div>
