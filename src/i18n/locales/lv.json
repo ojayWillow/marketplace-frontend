@@ -68,6 +68,31 @@
     "registerError": "Reģistrācijas kļūda",
     "logoutSuccess": "Veiksmīgi izgājāt no sistēmas"
   },
+  "menu": {
+    "welcome": "Sveicināti!",
+    "signInPrompt": "Ieejiet, lai sāktu",
+    "profile": "Mans profils",
+    "myJobs": "Mani darbi",
+    "favorites": "Izlase",
+    "messages": "Ziņas",
+    "settings": "Iestatījumi",
+    "help": "Palīdzība",
+    "login": "Ieiet",
+    "register": "Reģistrēties",
+    "logout": "Iziet",
+    "createSection": "IZVEIDOT",
+    "postJob": "Publicēt darbu",
+    "offerService": "Piedāvāt pakalpojumu",
+    "language": "Valoda"
+  },
+  "createModal": {
+    "title": "Ko vēlaties darīt?",
+    "description": "Izvēlieties, vai jums vajadzīga palīdzība vai vēlaties piedāvāt savus pakalpojumus.",
+    "postJob": "Publicēt darbu",
+    "postJobDesc": "Man vajadzīga palīdzība ar kaut ko",
+    "offerService": "Piedāvāt pakalpojumu",
+    "offerServiceDesc": "Es varu palīdzēt citiem cilvēkiem"
+  },
   "listings": {
     "title": "Sludinājumi",
     "createNew": "Pievienot sludinājumu",
@@ -115,6 +140,7 @@
     "noTasksAccepted": "Jūs vēl neesat pieņēmis nevienu darbu.",
     "noTasksPosted": "Jūs vēl neesat publicējis nevienu darbu.",
     "noJobsNearby": "Tuvumā vēl nav publicētu darbu",
+    "noJobsFound": "Nav atrasts neviens darbs",
     "beFirstToPost": "Esiet pirmais, kas publicē darbu savā apkārtnē! Vajadzīga palīdzība ar pārvākšanos, uzkopšanu vai kādu citu uzdevumu? Publicējiet šeit.",
     "postFirstJob": "Publicēt savu pirmo darbu",
     "loginToPost": "Ieejiet, lai publicētu darbus vai piedāvātu pakalpojumus",
@@ -165,6 +191,7 @@
     "topPayout": "Augstākā samaksa",
     "premiumAvailable": "Pieejami premium darbi!",
     "jobsOnMap": "{{count}} darbs(-i) kartē",
+    "jobsNearby": "darbi tuvumā",
     "findingLocation": "Meklējam jūsu atrašanās vietu...",
     "locationHelp": "Tas palīdz parādīt tuvumā esošos darbus un pakalpojumus",
     "skipLocation": "Izlaist → Izmantot Rīgu kā noklusējumu",
@@ -175,7 +202,8 @@
     "errorTitle": "Ups!",
     "errorLoad": "Neizdevās ielādēt datus. Lūdzu, mēģiniet vēlreiz vēlāk.",
     "tryAgain": "Mēģināt vēlreiz",
-    "searchPlaceholder": "Meklēt darbus vai piedāvājumus...",
+    "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palieliniet rādiusu",
+    "searchPlaceholder": "Meklēt darbus...",
     "filters": "Filtri",
     "searchAddress": "Meklēt adresi vai pilsētu...",
     "category": "Kategorija",
@@ -193,6 +221,10 @@
     "saveForLater": "Saglabāt vēlākam",
     "postedBy": "Publicēja",
     "tip": "Padoms",
+    "youAreHere": "Jūs esat šeit",
+    "allLatvia": "Visa Latvija",
+    "createJobOrService": "Izveidot darbu vai pakalpojumu",
+    "swipeUpForJobs": "Velciet uz augšu, lai redzētu darbus",
     "time": {
       "justNow": "Tikko"
     },
