@@ -676,6 +676,24 @@ const MobileTasksView = () => {
     }
   };
 
+  // Handle create job click
+  const handleCreateJob = () => {
+    if (isAuthenticated) {
+      navigate('/tasks/create');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  // Handle create offering click
+  const handleCreateOffering = () => {
+    if (isAuthenticated) {
+      navigate('/offerings/create');
+    } else {
+      navigate('/login');
+    }
+  };
+
   // Sheet drag handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
@@ -880,22 +898,12 @@ const MobileTasksView = () => {
             })}
           </MapContainer>
 
-          {/* Floating Buttons - Only show when job list is visible (no job selected) */}
+          {/* Floating Recenter Button - Only on map, right side */}
           {!selectedTask && showJobList && (
             <div 
-              className="absolute left-0 right-0 flex justify-between px-4 z-[1000]"
+              className="absolute right-4 z-[1000]"
               style={{ bottom: '16px' }}
             >
-              {isAuthenticated && (
-                <button
-                  onClick={() => navigate('/tasks/create')}
-                  className="w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
-                >
-                  +
-                </button>
-              )}
-              {!isAuthenticated && <div />}
-              
               <button
                 onClick={handleRecenter}
                 className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
@@ -942,16 +950,39 @@ const MobileTasksView = () => {
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
               
+              {/* Header Row: Job count on left, Create buttons on right */}
               <div className="flex items-center justify-between w-full px-4">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} jobs nearby
                 </span>
-                {sheetPosition === 'collapsed' && (
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <span>↑</span> Swipe up for jobs
-                  </span>
-                )}
+                
+                {/* Create Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Blue + for Jobs */}
+                  <button
+                    onClick={handleCreateJob}
+                    className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md active:scale-95 transition-transform"
+                    title="Post a Job"
+                  >
+                    +
+                  </button>
+                  
+                  {/* Orange + for Offerings */}
+                  <button
+                    onClick={handleCreateOffering}
+                    className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md active:scale-95 transition-transform"
+                    title="Post an Offering"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
+              
+              {sheetPosition === 'collapsed' && (
+                <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                  <span>↑</span> Swipe up for jobs
+                </span>
+              )}
             </div>
 
             {/* Jobs List - Scrollable */}
