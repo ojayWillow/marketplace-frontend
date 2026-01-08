@@ -50,6 +50,29 @@
     "optional": "Neobligāts",
     "this": "šāda veida"
   },
+  "menu": {
+    "profile": "Mans profils",
+    "myJobs": "Mani darbi",
+    "favorites": "Izlase",
+    "messages": "Ziņas",
+    "login": "Ieiet",
+    "register": "Reģistrēties",
+    "logout": "Iziet",
+    "postJob": "Publicēt darbu",
+    "offerService": "Piedāvāt pakalpojumu",
+    "createSection": "Izveidot",
+    "welcome": "Laipni lūgti!",
+    "signInPrompt": "Ieejiet, lai sāktu",
+    "language": "Valoda"
+  },
+  "createModal": {
+    "title": "Ko jūs vēlētos darīt?",
+    "description": "Izvēlieties, vai jums nepieciešama palīdzība, vai vēlaties piedāvāt savus pakalpojumus.",
+    "postJob": "Publicēt darbu",
+    "postJobDesc": "Man nepieciešama palīdzība ar kaut ko",
+    "offerService": "Piedāvāt pakalpojumu",
+    "offerServiceDesc": "Es varu palīdzēt citiem cilvēkiem"
+  },
   "auth": {
     "email": "E-pasts",
     "password": "Parole",
@@ -175,7 +198,7 @@
     "errorTitle": "Ups!",
     "errorLoad": "Neizdevās ielādēt datus. Lūdzu, mēģiniet vēlreiz vēlāk.",
     "tryAgain": "Mēģināt vēlreiz",
-    "searchPlaceholder": "Meklēt darbus vai piedāvājumus...",
+    "searchPlaceholder": "Meklēt darbus...",
     "filters": "Filtri",
     "searchAddress": "Meklēt adresi vai pilsētu...",
     "category": "Kategorija",
@@ -193,6 +216,13 @@
     "saveForLater": "Saglabāt vēlākam",
     "postedBy": "Publicēja",
     "tip": "Padoms",
+    "jobsNearby": "darbi tuvumā",
+    "allLatvia": "Visa Latvija",
+    "youAreHere": "Jūs esat šeit",
+    "swipeUpForJobs": "Velciet augšup, lai redzētu darbus",
+    "noJobsFound": "Nav atrasti darbi",
+    "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palieliniet rādiusu",
+    "createJobOrService": "Izveidot darbu vai pakalpojumu",
     "time": {
       "justNow": "Tikko"
     },
