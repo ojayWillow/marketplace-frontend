@@ -1,13 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { divIcon } from 'leaflet';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, Task as APITask } from '../api/tasks';
-import { getOfferings, Offering } from '../api/offerings';
 import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
 import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
 import FavoriteButton from './ui/FavoriteButton';
 import BottomSheet from './ui/BottomSheet';
@@ -103,22 +101,41 @@ const MapController = ({ lat, lng, radius }: { lat: number; lng: number; radius:
   return null;
 };
 
-// User location icon
+// User location icon - Blue pulsing dot
 const createUserLocationIcon = () => divIcon({
   className: 'user-location-icon',
-  html: `<div style="
-    width: 20px;
-    height: 20px;
-    background: #3b82f6;
-    border: 3px solid white;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(59,130,246,0.5);
-  "></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
+  html: `
+    <div style="position: relative; width: 24px; height: 24px;">
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 24px;
+        height: 24px;
+        background: rgba(59, 130, 246, 0.2);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      "></div>
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 14px;
+        height: 14px;
+        background: #3b82f6;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.5);
+      "></div>
+    </div>
+  `,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
 });
 
-// Job price icon
+// Job price icon - Fixed euro symbol
 const getJobPriceIcon = (budget: number = 0) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 4px rgba(0,0,0,0.2)';
@@ -130,7 +147,8 @@ const getJobPriceIcon = (budget: number = 0) => {
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
   }
   
-  const priceText = budget >= 1000 ? `\u20AC${(budget/1000).toFixed(1)}k` : `\u20AC${budget}`;
+  // Use actual euro symbol, not unicode escape
+  const priceText = budget >= 1000 ? `€${(budget/1000).toFixed(1)}k` : `€${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
 
   return divIcon({
@@ -138,21 +156,25 @@ const getJobPriceIcon = (budget: number = 0) => {
     html: `<div style="
       ${bgStyle}
       color: white;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 12px;
+      padding: 4px 10px;
+      border-radius: 14px;
       white-space: nowrap;
       box-shadow: ${shadow};
       border: 2px solid white;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
     ">${priceText}</div>`,
-    iconSize: [50, 28],
-    iconAnchor: [25, 14],
+    iconSize: [60, 32],
+    iconAnchor: [30, 16],
   });
 };
 
-// Mobile Job Card - Compact design
+// Mobile Job Card - Compact design with proper euro symbol
 const MobileJobCard = ({ task, userLocation, onClick }: { 
   task: Task; 
   userLocation: { lat: number; lng: number };
@@ -181,14 +203,14 @@ const MobileJobCard = ({ task, userLocation, onClick }: {
         </div>
       </div>
       
-      {/* Price */}
+      {/* Price - Using actual euro symbol */}
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <span className={`text-lg font-bold ${
           budget <= 25 ? 'text-green-600' : 
           budget <= 75 ? 'text-blue-600' : 
           'text-purple-600'
         }`}>
-          \u20AC{budget}
+          €{budget}
         </span>
         <FavoriteButton itemType="task" itemId={task.id} size="sm" />
       </div>
@@ -204,13 +226,12 @@ const MobileTasksView = () => {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [searchRadius, setSearchRadius] = useState(25);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('mid');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   
   const mapRef = useRef<any>(null);
 
@@ -224,7 +245,7 @@ const MobileTasksView = () => {
         (position) => {
           setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
-        () => {}, // Use default Riga location on error
+        () => {},
         { timeout: 5000, enableHighAccuracy: false }
       );
     }
@@ -251,7 +272,7 @@ const MobileTasksView = () => {
         
         setTasks(tasksWithIcons);
       } catch (err) {
-        setError('Failed to load jobs');
+        console.error('Failed to load jobs', err);
       }
       setLoading(false);
     };
@@ -263,33 +284,57 @@ const MobileTasksView = () => {
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
-  // Handle task selection from list
-  const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
-    setSheetPosition('min'); // Collapse sheet to show map
-    // Could also center map on task here
-  };
-
   // Handle radius change
   const handleRadiusChange = (newRadius: number) => {
     setSearchRadius(newRadius);
     localStorage.setItem('taskSearchRadius', newRadius.toString());
   };
 
+  // Toggle fullscreen map
+  const toggleMapFullscreen = () => {
+    if (isMapFullscreen) {
+      setIsMapFullscreen(false);
+      setSheetPosition('mid');
+    } else {
+      setIsMapFullscreen(true);
+      setSheetPosition('min');
+    }
+  };
+
   // Calculate map height based on sheet position
   const getMapHeight = () => {
+    if (isMapFullscreen) return 'calc(100vh - 70px)';
     switch (sheetPosition) {
-      case 'min': return 'calc(100vh - 60px)';
-      case 'mid': return 'calc(100vh - 300px)';
-      case 'max': return '15vh';
-      default: return 'calc(100vh - 300px)';
+      case 'min': return 'calc(100vh - 80px)';
+      case 'mid': return '45vh';
+      case 'max': return '20vh';
+      default: return '45vh';
+    }
+  };
+
+  // Handle sheet position change
+  const handleSheetChange = (position: 'min' | 'mid' | 'max') => {
+    setSheetPosition(position);
+    if (position !== 'min') {
+      setIsMapFullscreen(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-gray-100 overflow-hidden">
+      {/* CSS for pulse animation */}
+      <style>{`
+        @keyframes pulse {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+        .leaflet-container {
+          touch-action: pan-x pan-y;
+        }
+      `}</style>
+
       {/* Top Bar - Floating over map */}
-      <div className="absolute top-0 left-0 right-0 z-40 p-3 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-40 p-3 pointer-events-none safe-area-top">
         <div className="flex gap-2 pointer-events-auto">
           {/* Search/Filter Button */}
           <button
@@ -304,7 +349,8 @@ const MobileTasksView = () => {
           <select
             value={searchRadius}
             onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-            className="bg-white rounded-full px-3 py-2.5 shadow-lg text-sm font-medium text-gray-700 border-0"
+            className="bg-white rounded-full px-3 py-2.5 shadow-lg text-sm font-medium text-gray-700 border-0 appearance-none"
+            style={{ minWidth: '80px' }}
           >
             <option value={5}>5km</option>
             <option value={10}>10km</option>
@@ -319,7 +365,20 @@ const MobileTasksView = () => {
           <div className="mt-2 bg-white rounded-2xl shadow-lg p-4 pointer-events-auto">
             <h3 className="font-semibold text-gray-900 mb-3">Category</h3>
             <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.slice(0, 8).map(cat => (
+              <button
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setShowFilters(false);
+                }}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                🌐 All
+              </button>
+              {CATEGORY_OPTIONS.slice(1, 9).map(cat => (
                 <button
                   key={cat.value}
                   onClick={() => {
@@ -340,9 +399,9 @@ const MobileTasksView = () => {
         )}
       </div>
 
-      {/* Map - Resizes based on sheet position */}
+      {/* Map Container - With touch handling */}
       <div 
-        className="transition-all duration-300 ease-out"
+        className="transition-all duration-300 ease-out relative"
         style={{ height: getMapHeight() }}
       >
         <MapContainer
@@ -351,6 +410,10 @@ const MobileTasksView = () => {
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
           ref={mapRef}
+          // Prevent map from capturing all touch events
+          dragging={true}
+          touchZoom={true}
+          scrollWheelZoom={true}
         >
           <TileLayer
             attribution='&copy; OpenStreetMap'
@@ -358,11 +421,12 @@ const MobileTasksView = () => {
           />
           <MapController lat={userLocation.lat} lng={userLocation.lng} radius={searchRadius} />
           
-          {/* User Location */}
+          {/* User Location - Blue pulsing dot */}
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
             <Popup>
-              <div className="text-center p-1">
-                <p className="font-medium">📍 You</p>
+              <div className="text-center p-2">
+                <p className="font-semibold text-blue-600">📍 You are here</p>
+                <p className="text-xs text-gray-500 mt-1">Your current location</p>
               </div>
             </Popup>
           </Marker>
@@ -377,15 +441,14 @@ const MobileTasksView = () => {
                 icon={getJobPriceIcon(budget)}
                 eventHandlers={{
                   click: () => {
-                    setSelectedTask(task);
-                    setSheetPosition('mid');
+                    navigate(`/tasks/${task.id}`);
                   }
                 }}
               >
                 <Popup>
                   <div className="p-2 min-w-[200px]">
                     <h3 className="font-semibold text-gray-900 mb-1">{task.title}</h3>
-                    <p className="text-green-600 font-bold text-lg mb-2">\u20AC{budget}</p>
+                    <p className="text-green-600 font-bold text-lg mb-2">€{budget}</p>
                     <button
                       onClick={() => navigate(`/tasks/${task.id}`)}
                       className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium"
@@ -398,79 +461,134 @@ const MobileTasksView = () => {
             );
           })}
         </MapContainer>
+
+        {/* Fullscreen Toggle Button */}
+        <button
+          onClick={toggleMapFullscreen}
+          className="absolute bottom-4 right-4 z-30 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 active:bg-gray-100"
+        >
+          {isMapFullscreen ? (
+            <span className="text-lg">↙</span>
+          ) : (
+            <span className="text-lg">⛶</span>
+          )}
+        </button>
+
+        {/* Recenter Button */}
+        <button
+          onClick={() => {
+            if (mapRef.current) {
+              mapRef.current.setView([userLocation.lat, userLocation.lng], 13);
+            }
+          }}
+          className="absolute bottom-4 left-4 z-30 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-blue-500 active:bg-gray-100"
+        >
+          <span className="text-lg">◎</span>
+        </button>
       </div>
 
       {/* Floating Action Button - Post Job */}
-      {isAuthenticated && sheetPosition !== 'max' && (
+      {isAuthenticated && !isMapFullscreen && (
         <button
           onClick={() => navigate('/tasks/create')}
-          className="absolute bottom-72 right-4 z-40 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-blue-600 active:scale-95 transition-all"
-          style={{ bottom: sheetPosition === 'min' ? '80px' : '320px' }}
+          className="absolute z-40 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-blue-600 active:scale-95 transition-all"
+          style={{ 
+            bottom: sheetPosition === 'min' ? '100px' : sheetPosition === 'mid' ? '340px' : '75%',
+            right: '16px',
+            transition: 'bottom 0.3s ease-out'
+          }}
         >
           +
         </button>
       )}
 
-      {/* Bottom Sheet */}
-      <BottomSheet
-        snapPosition={sheetPosition}
-        onSnapChange={setSheetPosition}
-        minHeight={60}
-        midHeight={300}
-        maxHeightPercent={85}
-        header={
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-gray-900">
-                💰 {tasks.length} Jobs Nearby
-              </h2>
-              <p className="text-xs text-gray-500">
-                {searchRadius === 0 ? 'All of Latvia' : `Within ${searchRadius}km`}
-              </p>
+      {/* Bottom Sheet - Only show when not fullscreen */}
+      {!isMapFullscreen && (
+        <BottomSheet
+          snapPosition={sheetPosition}
+          onSnapChange={handleSheetChange}
+          minHeight={70}
+          midHeight={320}
+          maxHeightPercent={80}
+          header={
+            <div className="flex items-center justify-between py-1">
+              <div>
+                <h2 className="font-bold text-gray-900 text-lg">
+                  💰 {tasks.length} Jobs Nearby
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {searchRadius === 0 ? 'All of Latvia' : `Within ${searchRadius}km`}
+                  {selectedCategory !== 'all' && ` • ${getCategoryLabel(selectedCategory)}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedCategory !== 'all' && (
+                  <button
+                    onClick={() => setSelectedCategory('all')}
+                    className="text-xs text-blue-600 font-medium px-2 py-1 bg-blue-50 rounded-full"
+                  >
+                    ✕ Clear
+                  </button>
+                )}
+              </div>
             </div>
-            {selectedCategory !== 'all' && (
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className="text-xs text-blue-600 font-medium"
-              >
-                Clear filter
-              </button>
+          }
+        >
+          {/* Job List */}
+          <div 
+            className="overflow-y-auto overscroll-contain"
+            style={{ 
+              height: 'calc(100% - 20px)',
+              touchAction: 'pan-y'
+            }}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <div className="text-4xl mb-3">💼</div>
+                <h3 className="font-semibold text-gray-900 mb-1">No jobs nearby</h3>
+                <p className="text-sm text-gray-500 mb-4">Try increasing your search radius</p>
+                {isAuthenticated && (
+                  <button
+                    onClick={() => navigate('/tasks/create')}
+                    className="bg-blue-500 text-white px-6 py-2.5 rounded-full font-medium text-sm"
+                  >
+                    Post a Job
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div>
+                {tasks.map((task) => (
+                  <MobileJobCard
+                    key={task.id}
+                    task={task}
+                    userLocation={userLocation}
+                    onClick={() => navigate(`/tasks/${task.id}`)}
+                  />
+                ))}
+                {/* Bottom padding for safe area */}
+                <div className="h-20" />
+              </div>
             )}
           </div>
-        }
-      >
-        {/* Job List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="text-center py-12 px-4">
-            <div className="text-4xl mb-3">💼</div>
-            <h3 className="font-semibold text-gray-900 mb-1">No jobs nearby</h3>
-            <p className="text-sm text-gray-500 mb-4">Try increasing your search radius</p>
-            {isAuthenticated && (
-              <button
-                onClick={() => navigate('/tasks/create')}
-                className="bg-blue-500 text-white px-6 py-2.5 rounded-full font-medium text-sm"
-              >
-                Post a Job
-              </button>
-            )}
-          </div>
-        ) : (
-          <div>
-            {tasks.map((task) => (
-              <MobileJobCard
-                key={task.id}
-                task={task}
-                userLocation={userLocation}
-                onClick={() => navigate(`/tasks/${task.id}`)}
-              />
-            ))}
-          </div>
-        )}
-      </BottomSheet>
+        </BottomSheet>
+      )}
+
+      {/* Fullscreen mode hint */}
+      {isMapFullscreen && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+          <button
+            onClick={toggleMapFullscreen}
+            className="bg-white px-4 py-2 rounded-full shadow-lg text-sm font-medium text-gray-700 flex items-center gap-2"
+          >
+            <span>↑</span> Show jobs list
+          </button>
+        </div>
+      )}
     </div>
   );
 };
