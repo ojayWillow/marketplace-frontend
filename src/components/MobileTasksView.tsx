@@ -112,31 +112,34 @@ const MapController = ({
     }
   }, [lat, lng, radius, map, recenterTrigger]);
   
-  // Pan to selected task - Position marker in upper portion of map
-  // Since job list is now hidden, we have more space - position marker in upper third
+  // Pan to selected task - Position marker in UPPER portion of map
+  // The preview card takes ~400px from bottom, so we need marker to be in top ~30% of map
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
       
-      // First set view centered on task
-      map.setView([taskLat, taskLng], 14, { animate: false });
-      
-      // Invalidate size since layout changed (job list hidden)
+      // Invalidate size first since layout changed
       map.invalidateSize();
       
-      // Pan to position marker in upper portion of visible map
-      // Preview card is ~350px, we want marker roughly 1/3 from top of remaining space
+      // Set view centered on task at zoom 14
+      map.setView([taskLat, taskLng], 14, { animate: false });
+      
+      // After a short delay, pan UP significantly so marker is in top portion
       setTimeout(() => {
-        const mapHeight = map.getSize().y;
-        const previewCardHeight = 350;
-        const visibleMapHeight = mapHeight - previewCardHeight;
-        const targetY = visibleMapHeight * 0.4; // 40% from top of visible area
-        const currentCenterY = mapHeight / 2;
-        const panAmount = currentCenterY - targetY - (previewCardHeight / 2);
+        const mapContainer = map.getContainer();
+        const mapHeight = mapContainer.offsetHeight;
         
-        map.panBy([0, panAmount], { animate: true, duration: 0.3 });
-      }, 100);
+        // Preview card is ~400px. We want marker at roughly 25% from top of total map height
+        // Current center is at 50%. We need to move center DOWN so marker goes UP.
+        // Pan by positive Y = moves map down = marker appears higher
+        const previewCardHeight = 400;
+        const desiredMarkerPosition = mapHeight * 0.25; // 25% from top
+        const currentMarkerPosition = mapHeight * 0.5; // center (50%)
+        const panAmount = currentMarkerPosition - desiredMarkerPosition;
+        
+        map.panBy([0, panAmount], { animate: true, duration: 0.4 });
+      }, 150);
     }
   }, [selectedTask, map]);
   
@@ -418,6 +421,9 @@ const MobileTasksView = () => {
   // Selected job for preview - when set, job list is hidden
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
+  // Track if job list should animate in
+  const [showJobList, setShowJobList] = useState(true);
+  
   // Sheet state for job list (only used when no job is selected)
   const [sheetPosition, setSheetPosition] = useState<'collapsed' | 'half' | 'full'>('half');
   const [isDragging, setIsDragging] = useState(false);
@@ -504,24 +510,35 @@ const MobileTasksView = () => {
   // Recenter map to user location
   const handleRecenter = () => {
     setSelectedTask(null);
+    setShowJobList(true);
     setRecenterTrigger(prev => prev + 1);
   };
 
   // Handle job selection from list - HIDE the job list
   const handleJobSelect = (task: Task) => {
-    setSelectedTask(task);
-    // Job list will be hidden automatically via conditional rendering
+    setShowJobList(false);
+    // Small delay to let list animate out, then show preview
+    setTimeout(() => {
+      setSelectedTask(task);
+    }, 50);
   };
 
   // Handle marker click on map
   const handleMarkerClick = (task: Task) => {
-    setSelectedTask(task);
+    setShowJobList(false);
+    setTimeout(() => {
+      setSelectedTask(task);
+    }, 50);
   };
 
-  // Close preview and SHOW job list again
+  // Close preview and SHOW job list again with animation
   const handleClosePreview = () => {
     setSelectedTask(null);
-    setSheetPosition('half'); // Restore to half position
+    // Small delay then show job list with animation
+    setTimeout(() => {
+      setShowJobList(true);
+      setSheetPosition('half');
+    }, 100);
   };
 
   // Go to job details
@@ -586,8 +603,15 @@ const MobileTasksView = () => {
           from { transform: translateY(100%); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
+        @keyframes slideDown {
+          from { transform: translateY(0); opacity: 1; }
+          to { transform: translateY(100%); opacity: 0; }
+        }
         .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
+          animation: slideUp 0.3s ease-out forwards;
+        }
+        .animate-slideDown {
+          animation: slideDown 0.2s ease-in forwards;
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -715,7 +739,7 @@ const MobileTasksView = () => {
           </MapContainer>
 
           {/* Floating Buttons - Only show when job list is visible (no job selected) */}
-          {!selectedTask && (
+          {!selectedTask && showJobList && (
             <div 
               className="absolute left-0 right-0 flex justify-between px-4 z-[1000]"
               style={{ bottom: '16px' }}
@@ -757,9 +781,9 @@ const MobileTasksView = () => {
         {/* ============================================ */}
         {/* BOTTOM SHEET - Job List (HIDDEN when job selected) */}
         {/* ============================================ */}
-        {!selectedTask && (
+        {!selectedTask && showJobList && (
           <div
-            className="bg-white rounded-t-3xl shadow-2xl flex-shrink-0 flex flex-col"
+            className="bg-white rounded-t-3xl shadow-2xl flex-shrink-0 flex flex-col animate-slideUp"
             style={{
               height: `${sheetHeight}px`,
               transition: isDragging ? 'none' : 'height 0.3s ease-out',
