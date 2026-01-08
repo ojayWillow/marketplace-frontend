@@ -259,6 +259,26 @@
       "negotiable": "Negotiable"
     }
   },
+  "createModal": {
+    "title": "What would you like to do?",
+    "description": "Choose an option to get started",
+    "postJob": "Post a Job",
+    "postJobDesc": "I need help with something",
+    "offerService": "Offer a Service",
+    "offerServiceDesc": "I can help other people"
+  },
+  "menu": {
+    "createSection": "CREATE",
+    "postJob": "Post a Job",
+    "offerService": "Offer a Service",
+    "myProfile": "My Profile",
+    "myJobs": "My Jobs",
+    "favorites": "Favorites",
+    "messages": "Messages",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout"
+  },
   "createOffering": {
     "title": "Create Service Offering",
     "subtitle": "Advertise your skills and get hired by people nearby",
