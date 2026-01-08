@@ -50,29 +50,6 @@
     "optional": "Neobligāts",
     "this": "šāda veida"
   },
-  "menu": {
-    "profile": "Mans profils",
-    "myJobs": "Mani darbi",
-    "favorites": "Izlase",
-    "messages": "Ziņas",
-    "login": "Ieiet",
-    "register": "Reģistrēties",
-    "logout": "Iziet",
-    "createSection": "Izveidot",
-    "postJob": "Publicēt darbu",
-    "offerService": "Piedāvāt pakalpojumu",
-    "language": "Valoda",
-    "welcome": "Laipni lūgti!",
-    "signInPrompt": "Ieejiet, lai sāktu"
-  },
-  "createModal": {
-    "title": "Ko vēlaties darīt?",
-    "description": "Izvēlieties, vai jums nepieciešama palīdzība vai vēlaties piedāvāt savus pakalpojumus.",
-    "postJob": "Publicēt darbu",
-    "postJobDesc": "Man nepieciešama palīdzība ar kaut ko",
-    "offerService": "Piedāvāt pakalpojumu",
-    "offerServiceDesc": "Es varu palīdzēt citiem cilvēkiem"
-  },
   "auth": {
     "email": "E-pasts",
     "password": "Parole",
@@ -90,6 +67,31 @@
     "loginError": "Nepareizs e-pasts vai parole",
     "registerError": "Reģistrācijas kļūda",
     "logoutSuccess": "Veiksmīgi izgājāt no sistēmas"
+  },
+  "menu": {
+    "profile": "Mans profils",
+    "myJobs": "Mani darbi",
+    "favorites": "Izlase",
+    "messages": "Ziņas",
+    "login": "Ieiet",
+    "register": "Reģistrēties",
+    "createSection": "Izveidot",
+    "postJob": "Publicēt darbu",
+    "offerService": "Piedāvāt pakalpojumu",
+    "logout": "Iziet",
+    "welcome": "Laipni lūgti!",
+    "signInPrompt": "Ieejiet, lai sāktu",
+    "language": "Valoda",
+    "settings": "Iestatījumi",
+    "help": "Palīdzība"
+  },
+  "createModal": {
+    "title": "Ko vēlaties darīt?",
+    "description": "Izvēlieties, vai jums vajadzīga palīdzība vai vēlaties piedāvāt savus pakalpojumus.",
+    "postJob": "Publicēt darbu",
+    "postJobDesc": "Man vajadzīga palīdzība ar kaut ko",
+    "offerService": "Piedāvāt pakalpojumu",
+    "offerServiceDesc": "Es varu palīdzēt citiem cilvēkiem"
   },
   "listings": {
     "title": "Sludinājumi",
@@ -138,13 +140,6 @@
     "noTasksAccepted": "Jūs vēl neesat pieņēmis nevienu darbu.",
     "noTasksPosted": "Jūs vēl neesat publicējis nevienu darbu.",
     "noJobsNearby": "Tuvumā vēl nav publicētu darbu",
-    "noJobsFound": "Darbi nav atrasti",
-    "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palieliniet rādiusu",
-    "jobsNearby": "darbi tuvumā",
-    "swipeUpForJobs": "Velciet uz augšu, lai skatītu darbus",
-    "createJobOrService": "Izveidot darbu vai pakalpojumu",
-    "youAreHere": "Jūs esat šeit",
-    "allLatvia": "Visa Latvija",
     "beFirstToPost": "Esiet pirmais, kas publicē darbu savā apkārtnē! Vajadzīga palīdzība ar pārvākšanos, uzkopšanu vai kādu citu uzdevumu? Publicējiet šeit.",
     "postFirstJob": "Publicēt savu pirmo darbu",
     "loginToPost": "Ieejiet, lai publicētu darbus vai piedāvātu pakalpojumus",
@@ -223,6 +218,13 @@
     "saveForLater": "Saglabāt vēlākam",
     "postedBy": "Publicēja",
     "tip": "Padoms",
+    "jobsNearby": "darbi tuvumā",
+    "allLatvia": "Visa LV",
+    "youAreHere": "Jūs esat šeit",
+    "createJobOrService": "Izveidot darbu vai pakalpojumu",
+    "swipeUpForJobs": "Velciet uz augšu, lai redzētu darbus",
+    "noJobsFound": "Nav atrasts neviens darbs",
+    "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palieliniet rādiusu",
     "time": {
       "justNow": "Tikko"
     },
