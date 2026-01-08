@@ -113,29 +113,19 @@ const MapController = ({
   }, [lat, lng, radius, map, recenterTrigger]);
   
   // Pan to selected task - Position marker in UPPER portion of map
-  // The preview card takes ~400px from bottom, so we need marker to be in top ~30% of map
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
       
-      // Invalidate size first since layout changed
       map.invalidateSize();
-      
-      // Set view centered on task at zoom 14
       map.setView([taskLat, taskLng], 14, { animate: false });
       
-      // After a short delay, pan UP significantly so marker is in top portion
       setTimeout(() => {
         const mapContainer = map.getContainer();
         const mapHeight = mapContainer.offsetHeight;
-        
-        // Preview card is ~400px. We want marker at roughly 25% from top of total map height
-        // Current center is at 50%. We need to move center DOWN so marker goes UP.
-        // Pan by positive Y = moves map down = marker appears higher
-        const previewCardHeight = 400;
-        const desiredMarkerPosition = mapHeight * 0.25; // 25% from top
-        const currentMarkerPosition = mapHeight * 0.5; // center (50%)
+        const desiredMarkerPosition = mapHeight * 0.25;
+        const currentMarkerPosition = mapHeight * 0.5;
         const panAmount = currentMarkerPosition - desiredMarkerPosition;
         
         map.panBy([0, panAmount], { animate: true, duration: 0.4 });
@@ -143,7 +133,6 @@ const MapController = ({
     }
   }, [selectedTask, map]);
   
-  // Handle map resize when container changes
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
@@ -404,11 +393,139 @@ const JobPreviewCard = ({
   );
 };
 
+// Slide-out Menu Component
+const SlideOutMenu = ({ 
+  isOpen, 
+  onClose, 
+  isAuthenticated,
+  user,
+  onLogout,
+  navigate
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+  isAuthenticated: boolean;
+  user: any;
+  onLogout: () => void;
+  navigate: (path: string) => void;
+}) => {
+  const { t } = useTranslation();
+  
+  const menuItems = isAuthenticated ? [
+    { icon: '👤', label: t('menu.profile', 'My Profile'), path: '/profile' },
+    { icon: '📋', label: t('menu.myJobs', 'My Jobs'), path: '/profile?tab=tasks' },
+    { icon: '❤️', label: t('menu.favorites', 'Favorites'), path: '/favorites' },
+    { icon: '💬', label: t('menu.messages', 'Messages'), path: '/messages' },
+    { icon: '➕', label: t('menu.postJob', 'Post a Job'), path: '/tasks/create' },
+  ] : [
+    { icon: '🔑', label: t('menu.login', 'Login'), path: '/login' },
+    { icon: '📝', label: t('menu.register', 'Register'), path: '/register' },
+  ];
+
+  const handleItemClick = (path: string) => {
+    navigate(path);
+    onClose();
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    onClose();
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/50 z-[10000] transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+      
+      {/* Menu Panel */}
+      <div 
+        className={`fixed top-0 left-0 bottom-0 w-72 bg-white z-[10001] shadow-2xl transition-transform duration-300 ease-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="bg-blue-500 p-6 pt-12">
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl">
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  '👤'
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-white text-lg truncate">
+                  {user.name || user.username || 'User'}
+                </h3>
+                <p className="text-white/70 text-sm truncate">
+                  {user.email || ''}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl">
+                👋
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">Welcome!</h3>
+                <p className="text-white/70 text-sm">Sign in to get started</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Menu Items */}
+        <div className="py-2">
+          {menuItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => handleItemClick(item.path)}
+              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="font-medium text-gray-700">{item.label}</span>
+            </button>
+          ))}
+          
+          {/* Divider */}
+          {isAuthenticated && (
+            <>
+              <div className="h-px bg-gray-200 my-2 mx-6" />
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-4 px-6 py-4 hover:bg-red-50 active:bg-red-100 transition-colors"
+              >
+                <span className="text-xl">🚪</span>
+                <span className="font-medium text-red-600">{t('menu.logout', 'Logout')}</span>
+              </button>
+            </>
+          )}
+        </div>
+        
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30"
+        >
+          ✕
+        </button>
+      </div>
+    </>
+  );
+};
+
 // Main Mobile View Component
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -417,6 +534,9 @@ const MobileTasksView = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
+  
+  // Menu state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Selected job for preview - when set, job list is hidden
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -517,7 +637,6 @@ const MobileTasksView = () => {
   // Handle job selection from list - HIDE the job list
   const handleJobSelect = (task: Task) => {
     setShowJobList(false);
-    // Small delay to let list animate out, then show preview
     setTimeout(() => {
       setSelectedTask(task);
     }, 50);
@@ -534,7 +653,6 @@ const MobileTasksView = () => {
   // Close preview and SHOW job list again with animation
   const handleClosePreview = () => {
     setSelectedTask(null);
-    // Small delay then show job list with animation
     setTimeout(() => {
       setShowJobList(true);
       setSheetPosition('half');
@@ -634,14 +752,37 @@ const MobileTasksView = () => {
         }
       `}</style>
 
+      {/* Slide-out Menu */}
+      <SlideOutMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onLogout={logout}
+        navigate={navigate}
+      />
+
       <div className="mobile-tasks-container">
         {/* ============================================ */}
-        {/* TOP BAR - Search + Filters (Always visible) */}
+        {/* TOP BAR - Menu + Search + Radius */}
         {/* ============================================ */}
         <div className="bg-white shadow-md z-50 flex-shrink-0">
-          {/* Search Bar */}
+          {/* Search Bar Row */}
           <div className="p-3 pb-2">
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {/* Hamburger Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 active:bg-gray-200"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+              
+              {/* Search Input - Takes remaining space */}
               <div className="flex-1 relative">
                 <input
                   type="text"
@@ -653,11 +794,12 @@ const MobileTasksView = () => {
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               </div>
               
+              {/* Radius Selector */}
               <select
                 value={searchRadius}
                 onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500"
-                style={{ minWidth: '75px' }}
+                className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+                style={{ minWidth: '70px' }}
               >
                 <option value={5}>5km</option>
                 <option value={10}>10km</option>
