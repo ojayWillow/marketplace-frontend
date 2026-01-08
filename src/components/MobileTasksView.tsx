@@ -956,24 +956,24 @@ const MobileTasksView = () => {
                   💰 {filteredTasks.length} jobs nearby
                 </span>
                 
-                {/* Create Buttons */}
+                {/* Create Buttons with Icons */}
                 <div className="flex items-center gap-2">
-                  {/* Blue + for Jobs */}
+                  {/* 📋 for creating a Job (need help) */}
                   <button
                     onClick={handleCreateJob}
-                    className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md active:scale-95 transition-transform"
+                    className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
                     title="Post a Job"
                   >
-                    +
+                    <span className="text-lg">📋</span>
                   </button>
                   
-                  {/* Orange + for Offerings */}
+                  {/* 🛠️ for creating an Offering (I can help) */}
                   <button
                     onClick={handleCreateOffering}
-                    className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md active:scale-95 transition-transform"
+                    className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
                     title="Post an Offering"
                   >
-                    +
+                    <span className="text-lg">🛠️</span>
                   </button>
                 </div>
               </div>
