@@ -112,18 +112,20 @@ const MapController = ({
     }
   }, [lat, lng, radius, map, recenterTrigger]);
   
-  // Pan to selected task - FIXED: Zoom out more, offset upward to show marker above preview card
+  // Pan to selected task - Position marker in the UPPER portion of visible map
+  // The preview card covers roughly 60% of the map area from bottom
+  // So we need to offset the center significantly downward (which moves the marker UP visually)
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
       
-      // Calculate offset: move the center point DOWN so the marker appears in upper part of visible map
-      // The preview card covers roughly bottom 50% of the map, so we offset latitude upward
-      const latOffset = 0.003; // Offset to push marker up into visible area
+      // Large offset to push marker into upper visible area
+      // At zoom 13, 0.008 degrees ≈ moves marker significantly up
+      const latOffset = 0.008;
       
-      // Use zoom level 14 - not too close, shows context around the job location
-      map.setView([taskLat + latOffset, taskLng], 14, { animate: true, duration: 0.5 });
+      // Zoom 13 shows good area context, marker will be clearly visible
+      map.setView([taskLat + latOffset, taskLng], 13, { animate: true, duration: 0.5 });
     }
   }, [selectedTask, map]);
   
@@ -172,7 +174,7 @@ const createUserLocationIcon = () => divIcon({
   iconAnchor: [12, 12],
 });
 
-// Job price icon - LARGER and more visible
+// Job price icon - Normal size, good visibility
 const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 6px rgba(0,0,0,0.3)';
@@ -184,12 +186,11 @@ const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
     shadow = '0 2px 10px rgba(139, 92, 246, 0.6)';
   }
   
-  // Make selected marker even larger and more prominent
-  const scale = isSelected ? 1.5 : 1;
-  const fontSize = isSelected ? 16 : 14;
-  const padding = isSelected ? '8px 14px' : '6px 12px';
+  // Selected marker slightly larger
+  const fontSize = isSelected ? 14 : 12;
+  const padding = isSelected ? '5px 11px' : '4px 10px';
   const borderWidth = isSelected ? 3 : 2;
-  const selectedShadow = isSelected ? '0 4px 20px rgba(0,0,0,0.5)' : shadow;
+  const selectedShadow = isSelected ? '0 4px 16px rgba(0,0,0,0.4)' : shadow;
   
   const priceText = budget >= 1000 ? `&euro;${(budget/1000).toFixed(1)}k` : `&euro;${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
@@ -202,7 +203,7 @@ const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
       font-size: ${fontSize}px;
       font-weight: 700;
       padding: ${padding};
-      border-radius: 16px;
+      border-radius: 14px;
       white-space: nowrap;
       box-shadow: ${selectedShadow};
       border: ${borderWidth}px solid white;
@@ -210,12 +211,10 @@ const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 50px;
-      transform: scale(${scale});
-      transition: all 0.2s ease;
+      min-width: 44px;
     ">${priceText}</div>`,
-    iconSize: isSelected ? [80, 44] : [65, 36],
-    iconAnchor: isSelected ? [40, 22] : [32, 18],
+    iconSize: isSelected ? [65, 36] : [55, 30],
+    iconAnchor: isSelected ? [32, 18] : [27, 15],
   });
 };
 
@@ -521,19 +520,13 @@ const MobileTasksView = () => {
     }
   };
 
-  // Go to creator profile - FIXED: use creator_id properly
+  // Go to creator profile - FIXED: correct route is /users/:id
   const handleCreatorClick = () => {
     if (selectedTask) {
       // Try different possible field names for creator ID
       const creatorId = selectedTask.creator_id || selectedTask.user_id || selectedTask.created_by;
       if (creatorId) {
-        navigate(`/profile/${creatorId}`);
-      } else {
-        // Fallback: try to find by username if we have it
-        const creatorName = selectedTask.creator_name;
-        if (creatorName) {
-          navigate(`/profile/${creatorName}`);
-        }
+        navigate(`/users/${creatorId}`);
       }
     }
   };
