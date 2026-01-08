@@ -101,9 +101,10 @@ const MapController = ({ lat, lng, radius, recenterTrigger }: { lat: number; lng
   
   // Handle map resize when container changes
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       map.invalidateSize();
-    }, 300);
+    }, 100);
+    return () => clearTimeout(timer);
   });
   
   return null;
@@ -143,7 +144,7 @@ const createUserLocationIcon = () => divIcon({
   iconAnchor: [12, 12],
 });
 
-// Job price icon
+// Job price icon - use actual € symbol
 const getJobPriceIcon = (budget: number = 0) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 4px rgba(0,0,0,0.2)';
@@ -155,7 +156,8 @@ const getJobPriceIcon = (budget: number = 0) => {
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
   }
   
-  const priceText = budget >= 1000 ? `\u20AC${(budget/1000).toFixed(1)}k` : `\u20AC${budget}`;
+  // Use HTML entity for euro symbol
+  const priceText = budget >= 1000 ? `&euro;${(budget/1000).toFixed(1)}k` : `&euro;${budget}`;
   const bgStyle = bgColor.includes('gradient') ? `background: ${bgColor};` : `background-color: ${bgColor};`;
 
   return divIcon({
@@ -196,14 +198,14 @@ const MobileJobCard = ({ task, userLocation, onClick }: {
       className="flex items-center gap-3 p-3 bg-white border-b border-gray-100 active:bg-gray-50 cursor-pointer"
     >
       <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-xl flex-shrink-0">
-        {task.icon || '\ud83d\udcbc'}
+        {task.icon || '📋'}
       </div>
       
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-gray-900 text-sm truncate">{task.title}</h3>
         <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-          <span>\ud83d\udccd {formatDistance(distance)}</span>
-          <span>\u2022</span>
+          <span>📍 {formatDistance(distance)}</span>
+          <span>•</span>
           <span>{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</span>
         </div>
       </div>
@@ -214,7 +216,7 @@ const MobileJobCard = ({ task, userLocation, onClick }: {
           budget <= 75 ? 'text-blue-600' : 
           'text-purple-600'
         }`}>
-          \u20AC{budget}
+          €{budget}
         </span>
         <FavoriteButton itemType="task" itemId={task.id} size="sm" />
       </div>
@@ -233,17 +235,16 @@ const MobileTasksView = () => {
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [searchRadius, setSearchRadius] = useState(25);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sheetHeight, setSheetHeight] = useState(320); // pixels from bottom
+  const [sheetHeight, setSheetHeight] = useState(300); // pixels from bottom
   const [isDragging, setIsDragging] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   
-  const sheetRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
   
   // Sheet height constraints
-  const minSheetHeight = 100;
+  const minSheetHeight = 90;
   const maxSheetHeight = typeof window !== 'undefined' ? window.innerHeight * 0.85 : 600;
 
   // Get user location
@@ -333,10 +334,10 @@ const MobileTasksView = () => {
   const handleDragEnd = () => {
     setIsDragging(false);
     // Snap to nearest position
-    if (sheetHeight < 180) {
+    if (sheetHeight < 150) {
       setSheetHeight(minSheetHeight);
-    } else if (sheetHeight < 400) {
-      setSheetHeight(320);
+    } else if (sheetHeight < 450) {
+      setSheetHeight(300);
     } else {
       setSheetHeight(maxSheetHeight);
     }
@@ -354,17 +355,14 @@ const MobileTasksView = () => {
     handleDragEnd();
   };
 
-  // Calculate map height - fills remaining space above sheet
-  const mapHeight = `calc(100vh - ${sheetHeight}px)`;
-
   // Category pills for horizontal scroll
   const categories = [
-    { value: 'all', icon: '\ud83c\udf10', label: 'All' },
-    ...CATEGORY_OPTIONS.slice(1, 12)
+    { value: 'all', icon: '🌐', label: 'All' },
+    ...CATEGORY_OPTIONS.slice(1, 10)
   ];
 
   return (
-    <div className="fixed inset-0 bg-gray-100 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-gray-100" style={{ paddingTop: '0px' }}>
       {/* CSS for animations */}
       <style>{`
         @keyframes pulse {
@@ -376,9 +374,9 @@ const MobileTasksView = () => {
       `}</style>
 
       {/* ============================================ */}
-      {/* TOP BAR - Search + Filters (Google Style) */}
+      {/* TOP BAR - Search + Filters */}
       {/* ============================================ */}
-      <div className="absolute top-0 left-0 right-0 z-40 safe-area-top">
+      <div className="bg-white shadow-md z-40 safe-area-top">
         {/* Search Bar */}
         <div className="p-3 pb-2">
           <div className="flex gap-2">
@@ -388,23 +386,23 @@ const MobileTasksView = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search jobs..."
-                className="w-full bg-white rounded-full px-4 py-2.5 pl-10 shadow-lg text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full bg-gray-100 rounded-full px-4 py-2.5 pl-10 text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">\ud83d\udd0d</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             
             {/* Radius dropdown */}
             <select
               value={searchRadius}
               onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-              className="bg-white rounded-full px-3 py-2.5 shadow-lg text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500"
+              className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500"
               style={{ minWidth: '75px' }}
             >
               <option value={5}>5km</option>
               <option value={10}>10km</option>
               <option value={25}>25km</option>
               <option value={50}>50km</option>
-              <option value={0}>\ud83c\uddf1\ud83c\uddfb All</option>
+              <option value={0}>🇱🇻 All</option>
             </select>
           </div>
         </div>
@@ -416,10 +414,10 @@ const MobileTasksView = () => {
               <button
                 key={cat.value}
                 onClick={() => setSelectedCategory(cat.value)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                   selectedCategory === cat.value
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'bg-white text-gray-700'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700'
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -431,13 +429,13 @@ const MobileTasksView = () => {
       </div>
 
       {/* ============================================ */}
-      {/* MAP - Fills space above sheet */}
+      {/* MAP - Fills remaining space */}
       {/* ============================================ */}
       <div 
-        className="absolute top-0 left-0 right-0 transition-all duration-200"
+        className="flex-1 relative"
         style={{ 
-          height: mapHeight,
-          transition: isDragging ? 'none' : 'height 0.2s ease-out'
+          marginBottom: `${sheetHeight}px`,
+          transition: isDragging ? 'none' : 'margin-bottom 0.25s ease-out'
         }}
       >
         <MapContainer
@@ -461,7 +459,7 @@ const MobileTasksView = () => {
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
             <Popup>
               <div className="text-center p-2">
-                <p className="font-semibold text-blue-600">\ud83d\udccd You are here</p>
+                <p className="font-semibold text-blue-600">📍 You are here</p>
               </div>
             </Popup>
           </Marker>
@@ -481,7 +479,7 @@ const MobileTasksView = () => {
                 <Popup>
                   <div className="p-2 min-w-[180px]">
                     <h3 className="font-semibold text-gray-900 text-sm mb-1">{task.title}</h3>
-                    <p className="text-green-600 font-bold text-lg mb-2">\u20AC{budget}</p>
+                    <p className="text-green-600 font-bold text-lg mb-2">€{budget}</p>
                     <button
                       onClick={() => navigate(`/tasks/${task.id}`)}
                       className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium"
@@ -495,7 +493,7 @@ const MobileTasksView = () => {
           })}
         </MapContainer>
 
-        {/* Recenter Button - Bottom right of map */}
+        {/* Recenter Button */}
         <button
           onClick={handleRecenter}
           className="absolute z-30 w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
@@ -506,21 +504,31 @@ const MobileTasksView = () => {
             <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/>
           </svg>
         </button>
+
+        {/* Post Job FAB */}
+        {isAuthenticated && (
+          <button
+            onClick={() => navigate('/tasks/create')}
+            className="absolute z-30 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
+            style={{ bottom: '20px', left: '16px' }}
+          >
+            +
+          </button>
+        )}
       </div>
 
       {/* ============================================ */}
       {/* BOTTOM SHEET - Jobs List */}
       {/* ============================================ */}
       <div
-        ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50"
+        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50"
         style={{
           height: `${sheetHeight}px`,
-          transition: isDragging ? 'none' : 'height 0.2s ease-out',
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)',
+          transition: isDragging ? 'none' : 'height 0.25s ease-out',
+          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
         }}
       >
-        {/* Drag Handle */}
+        {/* Drag Handle Area */}
         <div
           className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
           onTouchStart={handleTouchStart}
@@ -528,24 +536,27 @@ const MobileTasksView = () => {
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'none' }}
         >
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          {/* Visible drag handle bar */}
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
           
-          {/* Job count + hint */}
-          <div className="flex items-center justify-between w-full px-4 mt-2">
-            <span className="text-sm font-semibold text-gray-700">
-              \ud83d\udcb0 {filteredTasks.length} jobs nearby
+          {/* Job count header */}
+          <div className="flex items-center justify-between w-full px-4">
+            <span className="text-base font-bold text-gray-800">
+              💰 {filteredTasks.length} jobs nearby
             </span>
-            {sheetHeight < 150 && (
-              <span className="text-xs text-gray-400">\u2191 Swipe up</span>
+            {sheetHeight <= minSheetHeight + 20 && (
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <span>↑</span> Swipe up for jobs
+              </span>
             )}
           </div>
         </div>
 
-        {/* Jobs List */}
+        {/* Jobs List - Scrollable */}
         <div 
           className="overflow-y-auto overscroll-contain"
           style={{ 
-            height: `calc(100% - 60px)`,
+            height: `calc(100% - 70px)`,
             touchAction: 'pan-y'
           }}
         >
@@ -555,7 +566,7 @@ const MobileTasksView = () => {
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <div className="text-3xl mb-2">\ud83d\udcbc</div>
+              <div className="text-3xl mb-2">📋</div>
               <h3 className="font-semibold text-gray-900 mb-1">No jobs found</h3>
               <p className="text-sm text-gray-500">Try a different category or increase radius</p>
             </div>
@@ -569,28 +580,11 @@ const MobileTasksView = () => {
                   onClick={() => navigate(`/tasks/${task.id}`)}
                 />
               ))}
-              <div className="h-20" />
+              <div className="h-8" />
             </div>
           )}
         </div>
       </div>
-
-      {/* ============================================ */}
-      {/* FLOATING ACTION BUTTON - Post Job */}
-      {/* ============================================ */}
-      {isAuthenticated && (
-        <button
-          onClick={() => navigate('/tasks/create')}
-          className="absolute z-40 w-14 h-14 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white text-3xl font-light active:scale-95 transition-transform"
-          style={{ 
-            bottom: `${sheetHeight + 16}px`,
-            right: '16px',
-            transition: isDragging ? 'none' : 'bottom 0.2s ease-out'
-          }}
-        >
-          +
-        </button>
-      )}
     </div>
   );
 };
