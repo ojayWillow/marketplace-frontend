@@ -27,6 +27,10 @@ export interface Offering {
   created_at?: string;
   updated_at?: string;
   distance?: number;
+  // Boost/Premium fields
+  is_boosted?: boolean;
+  is_boost_active?: boolean;
+  boost_expires_at?: string;
 }
 
 export interface GetOfferingsParams {
@@ -37,6 +41,7 @@ export interface GetOfferingsParams {
   latitude?: number;
   longitude?: number;
   radius?: number;
+  boosted_only?: boolean;
 }
 
 export interface GetOfferingsResponse {
@@ -45,11 +50,28 @@ export interface GetOfferingsResponse {
   page: number;
 }
 
+export interface BoostOfferingResponse {
+  message: string;
+  offering: Offering;
+  boost_duration_hours: number;
+  boost_expires_at: string;
+}
+
 /**
  * Get all offerings with optional filtering and geolocation
  */
 export const getOfferings = async (params: GetOfferingsParams = {}): Promise<GetOfferingsResponse> => {
   const response = await apiClient.get('/api/offerings', { params });
+  return response.data;
+};
+
+/**
+ * Get only boosted offerings (for map display)
+ */
+export const getBoostedOfferings = async (params: Omit<GetOfferingsParams, 'boosted_only'> = {}): Promise<GetOfferingsResponse> => {
+  const response = await apiClient.get('/api/offerings', { 
+    params: { ...params, boosted_only: true } 
+  });
   return response.data;
 };
 
@@ -101,11 +123,22 @@ export const pauseOffering = async (offeringId: number): Promise<Offering> => {
 };
 
 /**
- * Activate/resume an offering
+ * Activate/resume an offering (without boost)
  */
 export const activateOffering = async (offeringId: number): Promise<Offering> => {
   const response = await apiClient.post(`/api/offerings/${offeringId}/activate`);
   return response.data.offering;
+};
+
+/**
+ * Boost an offering to show on the map (24-hour free trial)
+ * Boosted offerings appear as pins on the Quick Help map
+ */
+export const boostOffering = async (offeringId: number, durationHours: number = 24): Promise<BoostOfferingResponse> => {
+  const response = await apiClient.post(`/api/offerings/${offeringId}/boost`, {
+    duration_hours: durationHours
+  });
+  return response.data;
 };
 
 /**
