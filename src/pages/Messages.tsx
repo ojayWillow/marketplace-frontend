@@ -80,10 +80,10 @@ export default function Messages() {
               <Link
                 key={conv.id}
                 to={`/messages/${conv.id}`}
-                className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
               >
-                {/* Avatar with Online Status */}
-                <div className="flex-shrink-0 relative">
+                {/* Avatar - clean, no overlay */}
+                <div className="flex-shrink-0">
                   {conv.other_participant?.avatar_url ? (
                     <img
                       src={getImageUrl(conv.other_participant.avatar_url)}
@@ -95,34 +95,27 @@ export default function Messages() {
                       {conv.other_participant?.username?.charAt(0).toUpperCase() || '?'}
                     </div>
                   )}
-                  {/* Online Status Badge */}
-                  {conv.other_participant?.online_status && (
-                    <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
-                      <OnlineStatus
-                        status={conv.other_participant.online_status as 'online' | 'recently' | 'inactive'}
-                        lastSeenDisplay={conv.other_participant.last_seen_display}
-                        size="sm"
-                      />
-                    </div>
-                  )}
                 </div>
+
+                {/* Online Status Icon - between avatar and content */}
+                {conv.other_participant?.online_status && (
+                  <div className="flex-shrink-0">
+                    <OnlineStatus
+                      status={conv.other_participant.online_status as 'online' | 'recently' | 'inactive'}
+                      lastSeenDisplay={conv.other_participant.last_seen_display}
+                      size="md"
+                    />
+                  </div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium text-gray-900 truncate">
-                        {conv.other_participant?.first_name && conv.other_participant?.last_name
-                          ? `${conv.other_participant.first_name} ${conv.other_participant.last_name}`
-                          : conv.other_participant?.username || 'Unknown'}
-                      </span>
-                      {/* Inline online indicator for online users */}
-                      {conv.other_participant?.online_status === 'online' && (
-                        <span className="text-xs text-green-600 font-medium">
-                          {t('messages.online', 'online')}
-                        </span>
-                      )}
-                    </div>
+                    <span className="font-medium text-gray-900 truncate">
+                      {conv.other_participant?.first_name && conv.other_participant?.last_name
+                        ? `${conv.other_participant.first_name} ${conv.other_participant.last_name}`
+                        : conv.other_participant?.username || 'Unknown'}
+                    </span>
                     {conv.last_message && (
                       <span className="text-xs text-gray-500 flex-shrink-0">
                         {formatTime(conv.last_message.created_at)}
