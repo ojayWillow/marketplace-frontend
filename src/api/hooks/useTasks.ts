@@ -76,7 +76,7 @@ export const useApplyToTask = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ taskId, message, proposedPrice }: { taskId: number; message: string; proposedPrice?: number }) => 
+    mutationFn: ({ taskId, message, proposedPrice }: { taskId: number; message?: string; proposedPrice?: number }) => 
       applyToTask(taskId, message, proposedPrice),
     onSuccess: (_, variables) => {
       // Invalidate specific task to update application status
@@ -90,7 +90,8 @@ export const useWithdrawApplication = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: withdrawApplication,
+    mutationFn: ({ taskId, applicationId }: { taskId: number; applicationId: number }) => 
+      withdrawApplication(taskId, applicationId),
     onSuccess: () => {
       // Invalidate all task queries since we don't know which task
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
