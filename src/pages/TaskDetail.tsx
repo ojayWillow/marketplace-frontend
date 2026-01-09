@@ -9,6 +9,8 @@ import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import apiClient from '../api/client';
+import ShareButton from '../components/ui/ShareButton';
+import SEOHead from '../components/ui/SEOHead';
 
 // Fix Leaflet default icon issue
 import L from 'leaflet';
@@ -727,8 +729,20 @@ const TaskDetail = () => {
   const showApplications = isCreator && task.status === 'open';
   const pendingApplications = applications.filter(a => a.status === 'pending');
 
+  // Build SEO description
+  const seoDescription = `${getCategoryLabel(task.category)} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* SEO Meta Tags */}
+      <SEOHead
+        title={task.title}
+        description={seoDescription}
+        url={`/tasks/${task.id}`}
+        type="article"
+        price={task.budget}
+      />
+
       <div className="max-w-3xl mx-auto px-4 py-4">
         {/* Back link */}
         <Link to="/tasks" className="inline-flex items-center text-gray-500 hover:text-gray-700 text-sm mb-4">
@@ -741,7 +755,7 @@ const TaskDetail = () => {
         {/* Main Card - Clean White Design */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           
-          {/* User Row - TOP with View Profile */}
+          {/* User Row - TOP with View Profile and Share */}
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
@@ -752,12 +766,20 @@ const TaskDetail = () => {
                 <p className="text-sm text-gray-500">☆☆☆☆☆ 0.0 (0 reviews)</p>
               </div>
             </div>
-            <Link 
-              to={`/users/${task.creator_id}`}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 font-medium text-sm flex items-center gap-2"
-            >
-              View Profile
-            </Link>
+            <div className="flex items-center gap-2">
+              <ShareButton
+                url={`/tasks/${task.id}`}
+                title={task.title}
+                description={`${getCategoryLabel(task.category)} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}`}
+                size="sm"
+              />
+              <Link 
+                to={`/users/${task.creator_id}`}
+                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 font-medium text-sm flex items-center gap-2"
+              >
+                View Profile
+              </Link>
+            </div>
           </div>
 
           {/* Title Section */}
