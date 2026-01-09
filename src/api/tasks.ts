@@ -61,12 +61,13 @@ export interface TaskApplication {
   applicant_bio?: string;
   applicant_city?: string;
   message?: string;
+  proposed_price?: number;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   task?: Task;
 }
 
-export interface GetTasksParams {
+export interface TasksParams {
   page?: number;
   per_page?: number;
   status?: string;
@@ -75,6 +76,8 @@ export interface GetTasksParams {
   longitude?: number;
   radius?: number;
 }
+
+export interface GetTasksParams extends TasksParams {}
 
 export interface GetHelpersParams {
   page?: number;
@@ -105,7 +108,7 @@ export interface GetApplicationsResponse {
 /**
  * Get all tasks with optional filtering and geolocation
  */
-export const getTasks = async (params: GetTasksParams = {}): Promise<GetTasksResponse> => {
+export const getTasks = async (params: TasksParams = {}): Promise<GetTasksResponse> => {
   const response = await apiClient.get('/api/tasks', { params });
   return response.data;
 };
@@ -162,10 +165,32 @@ export const updateTask = async (taskId: number, taskData: Partial<Task>): Promi
 
 /**
  * Apply to a task
+ * @param taskId - Task ID to apply to
+ * @param message - Optional message to include with application
+ * @param proposedPrice - Optional proposed price for the task
  */
-export const applyToTask = async (taskId: number, message?: string): Promise<TaskApplication> => {
-  const response = await apiClient.post(`/api/tasks/${taskId}/apply`, { message });
+export const applyToTask = async (
+  taskId: number, 
+  message?: string,
+  proposedPrice?: number
+): Promise<TaskApplication> => {
+  const response = await apiClient.post(`/api/tasks/${taskId}/apply`, { 
+    message,
+    proposed_price: proposedPrice 
+  });
   return response.data.application;
+};
+
+/**
+ * Withdraw an application
+ * @param taskId - Task ID
+ * @param applicationId - Application ID to withdraw
+ */
+export const withdrawApplication = async (
+  taskId: number,
+  applicationId: number
+): Promise<void> => {
+  await apiClient.delete(`/api/tasks/${taskId}/applications/${applicationId}`);
 };
 
 /**
