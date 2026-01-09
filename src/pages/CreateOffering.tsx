@@ -128,7 +128,7 @@ const CreateOffering = () => {
     try {
       await activateOffering(createdOfferingId);
       setIsActivated(true);
-      toast.success('🎉 Your service is now live for 24 hours!');
+      toast.success('🗺️ Your service is now on the map!');
     } catch (error: any) {
       console.error('Error activating offering:', error);
       // Even if it fails, the offering might already be active
@@ -422,29 +422,29 @@ const CreateOffering = () => {
             {/* Success Header */}
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">{isActivated ? '🚀' : '✅'}</span>
+                <span className="text-3xl">{isActivated ? '🗺️' : '✅'}</span>
               </div>
               <h2 className="text-xl font-bold text-gray-900">
-                {isActivated ? 'You\'re Live!' : 'Service Created!'}
+                {isActivated ? 'You\'re on the Map!' : 'Service Published!'}
               </h2>
               <p className="text-gray-600 mt-1">
                 {isActivated 
-                  ? 'Your offering is now visible to everyone for 24 hours. Get ready for inquiries!' 
-                  : 'Your offering has been saved. Activate it to start getting inquiries.'}
+                  ? 'Your offering now appears on the map for extra visibility. People nearby can easily find you!' 
+                  : 'Your offering is live and visible in the services list.'}
               </p>
             </div>
 
-            {/* Free Trial Activation */}
+            {/* Free Trial for Map Visibility */}
             {!isActivated && (
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 mb-6">
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">⚡</span>
+                    <span className="text-2xl">🗺️</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 mb-1">Try it Free for 24 Hours</h3>
+                    <h3 className="font-bold text-gray-900 mb-1">Get on the Map – Free for 24h</h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      See how it works! Your service will be visible on the map and in search results. No payment needed.
+                      Boost your visibility! Appear on the map so people can find you when browsing their area.
                     </p>
                     <button
                       onClick={handleActivateTrial}
@@ -458,7 +458,7 @@ const CreateOffering = () => {
                         </>
                       ) : (
                         <>
-                          🎁 Activate Free Trial
+                          📍 Show Me on the Map
                         </>
                       )}
                     </button>
@@ -467,23 +467,24 @@ const CreateOffering = () => {
               </div>
             )}
 
-            {/* What happens next - different based on activation */}
+            {/* Status info */}
             {isActivated ? (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-green-800 mb-2">✨ What happens now:</h4>
+                <h4 className="font-medium text-green-800 mb-2">✨ Extra visibility active:</h4>
                 <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Your service appears in search results</li>
-                  <li>• People nearby can find and contact you</li>
-                  <li>• You'll be matched with relevant job posts</li>
-                  <li>• After 24h, you can extend or upgrade</li>
+                  <li>• Your pin appears on the map</li>
+                  <li>• People browsing nearby will see you</li>
+                  <li>• Active for 24 hours</li>
                 </ul>
               </div>
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">💡 Without activation:</h4>
-                <p className="text-sm text-gray-600">
-                  Your offering is saved but won't appear in search results. You can activate it anytime from your profile.
-                </p>
+                <h4 className="font-medium text-gray-700 mb-2">✅ Already included:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Visible in the services list</li>
+                  <li>• People can search and find you</li>
+                  <li>• You can apply to matching jobs</li>
+                </ul>
               </div>
             )}
 
