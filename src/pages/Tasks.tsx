@@ -252,47 +252,36 @@ const getJobPriceIcon = (budget: number = 0) => {
   });
 };
 
-// Boosted Offering Price Icon - Orange/Amber with price per hour
-const getBoostedOfferingIcon = (price: number = 0, priceType: string = 'hourly') => {
-  // Format price display
-  let priceText = `€${price}`;
-  if (priceType === 'hourly') {
-    priceText = `€${price}/h`;
-  } else if (priceType === 'negotiable') {
-    priceText = price > 0 ? `~€${price}` : '💬';
-  }
-  
-  const isLongPrice = priceText.length > 5;
-  const fontSize = isLongPrice ? '10px' : '11px';
-  const padding = isLongPrice ? '2px 5px' : '2px 7px';
+// Boosted Offering Icon - Shows category emoji in orange bubble
+const getBoostedOfferingIcon = (category: string = 'other') => {
+  // Get the category icon emoji
+  const categoryEmoji = getCategoryIcon(category);
 
   return divIcon({
-    className: 'offering-price-icon',
+    className: 'offering-category-icon',
     html: `
-      <div class="offering-price-marker" style="
+      <div class="offering-category-marker" style="
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         color: white;
-        font-size: ${fontSize};
-        font-weight: 700;
-        padding: ${padding};
-        border-radius: 12px;
+        font-size: 16px;
+        padding: 6px;
+        border-radius: 50%;
         white-space: nowrap;
         box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
         border: 2px solid white;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 40px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
         cursor: pointer;
         transition: transform 0.15s ease;
       ">
-        👋 ${priceText}
+        ${categoryEmoji}
       </div>
     `,
-    iconSize: [60, 28],
-    iconAnchor: [30, 14],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 };
 
@@ -521,9 +510,9 @@ const MapMarkers = ({
         );
       })}
       
-      {/* Boosted Offering markers - Orange price labels with wave emoji */}
+      {/* Boosted Offering markers - Category emoji in orange bubble */}
       {boostedOfferings.map((offering) => {
-        const offeringIcon = getBoostedOfferingIcon(offering.price || 0, offering.price_type);
+        const offeringIcon = getBoostedOfferingIcon(offering.category);
         
         return (
           <Marker 
@@ -1169,9 +1158,9 @@ const DesktopTasksView = () => {
               <span className="text-gray-500 text-xs">{t('map.premiumJobs', 'Premium')} ✨</span>
             </div>
             
-            {/* Boosted offerings indicator */}
+            {/* Boosted offerings indicator - now shows category icon example */}
             <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
-              <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>👋 €20/h</span>
+              <span className="w-6 h-6 flex items-center justify-center text-white rounded-full text-sm" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>🧹</span>
               <span className="text-gray-500 text-xs">{t('map.boostedOfferings', 'Boosted services')}</span>
             </div>
           </div>
