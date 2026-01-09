@@ -1,21 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getTask, Task } from '../api/tasks';
+import { useTask } from '../api/hooks';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import apiClient from '../api/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const EditTask = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  // React Query for loading task
+  const { data: task, isLoading: loading, error } = useTask(Number(id));
+  
   const [saving, setSaving] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
-  const [task, setTask] = useState<Task | null>(null);
+  const [formInitialized, setFormInitialized] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -38,58 +43,54 @@ const EditTask = () => {
     { value: 'outdoor', label: '🌿 Outdoor', icon: '🌿' },
   ];
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       toast.warning('Please login to edit tasks');
       navigate('/login');
-      return;
     }
-    
-    if (id) {
-      fetchTask();
-    }
-  }, [id, isAuthenticated]);
+  }, [isAuthenticated]);
 
-  const fetchTask = async () => {
-    try {
-      setLoading(true);
-      const taskData = await getTask(Number(id));
-      setTask(taskData);
-      
+  // Initialize form when task loads
+  useEffect(() => {
+    if (task && !formInitialized) {
       // Check if user owns this task
-      if (taskData.creator_id !== user?.id) {
+      if (task.creator_id !== user?.id) {
         toast.error('You can only edit your own tasks');
         navigate('/tasks');
         return;
       }
       
       // Check if task can be edited (only open tasks)
-      if (taskData.status !== 'open') {
+      if (task.status !== 'open') {
         toast.error('Only open tasks can be edited');
         navigate('/tasks');
         return;
       }
       
       setFormData({
-        title: taskData.title || '',
-        description: taskData.description || '',
-        category: taskData.category || 'delivery',
-        budget: taskData.budget?.toString() || '',
-        location: taskData.location || '',
-        latitude: taskData.latitude || 56.9496,
-        longitude: taskData.longitude || 24.1052,
-        deadline: taskData.deadline ? taskData.deadline.slice(0, 16) : '',
-        priority: taskData.priority || 'normal',
-        is_urgent: taskData.is_urgent || false
+        title: task.title || '',
+        description: task.description || '',
+        category: task.category || 'delivery',
+        budget: task.budget?.toString() || '',
+        location: task.location || '',
+        latitude: task.latitude || 56.9496,
+        longitude: task.longitude || 24.1052,
+        deadline: task.deadline ? task.deadline.slice(0, 16) : '',
+        priority: task.priority || 'normal',
+        is_urgent: task.is_urgent || false
       });
-    } catch (error) {
-      console.error('Error fetching task:', error);
+      setFormInitialized(true);
+    }
+  }, [task, formInitialized, user?.id]);
+
+  // Handle error
+  useEffect(() => {
+    if (error) {
       toast.error('Failed to load task');
       navigate('/tasks');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error]);
 
   // Debounced geocoding search
   useEffect(() => {
@@ -153,6 +154,10 @@ const EditTask = () => {
       };
 
       await apiClient.put(`/api/tasks/${id}`, updateData);
+      
+      // Invalidate cache to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['task', Number(id)] });
+      
       toast.success('Task updated successfully!');
       navigate('/tasks');
     } catch (error: any) {
