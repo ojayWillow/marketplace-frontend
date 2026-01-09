@@ -106,7 +106,7 @@ const CompactFilterBar = ({
     }
   };
 
-  // Get category label
+  // Get category label for the pill button
   const getCategoryLabel = () => {
     if (filters.category === 'all') {
       return t('filters.allCategories', 'All');
@@ -315,25 +315,17 @@ const CompactFilterBar = ({
             />
             {openDropdown === 'category' && (
               <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px] max-h-[300px] overflow-y-auto">
-                <button
-                  onClick={() => {
-                    updateFilter('category', 'all');
-                    setOpenDropdown(null);
-                  }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg
-                    ${filters.category === 'all' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
-                  `}
-                >
-                  🌐 {t('filters.allCategories', 'All Categories')}
-                </button>
-                {categoryOptions.map((cat) => (
+                {/* Loop through all categoryOptions - includes 'all' from constants */}
+                {categoryOptions.map((cat, index) => (
                   <button
                     key={cat.value}
                     onClick={() => {
                       updateFilter('category', cat.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 last:rounded-b-lg
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50
+                      ${index === 0 ? 'rounded-t-lg' : ''}
+                      ${index === categoryOptions.length - 1 ? 'rounded-b-lg' : ''}
                       ${filters.category === cat.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
                     `}
                   >
