@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getOffering, Offering } from '../api/offerings';
+import { getOffering, boostOffering, Offering } from '../api/offerings';
 import { getTasks, Task } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
@@ -39,6 +39,7 @@ const OfferingDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contacting, setContacting] = useState(false);
+  const [boosting, setBoosting] = useState(false);
   
   // Matching jobs state
   const [matchingJobs, setMatchingJobs] = useState<Task[]>([]);
@@ -121,12 +122,42 @@ const OfferingDetail = () => {
     }
   };
 
+  const handleBoost = async () => {
+    if (!offering) return;
+    
+    try {
+      setBoosting(true);
+      const response = await boostOffering(offering.id);
+      toast.success(response.message || 'Offering boosted! It will now appear on the map.');
+      // Refresh offering data to show updated boost status
+      await fetchOffering();
+    } catch (err: any) {
+      console.error('Error boosting offering:', err);
+      toast.error(err?.response?.data?.error || 'Failed to boost offering');
+    } finally {
+      setBoosting(false);
+    }
+  };
+
   const offeringIcon = divIcon({
     className: 'custom-offering-icon',
     html: '<div style="background: #f59e0b; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
     iconSize: [24, 24],
     iconAnchor: [12, 12]
   });
+
+  // Calculate boost time remaining
+  const getBoostTimeRemaining = () => {
+    if (!offering?.boost_expires_at) return null;
+    const expiresAt = new Date(offering.boost_expires_at);
+    const now = new Date();
+    const diffMs = expiresAt.getTime() - now.getTime();
+    if (diffMs <= 0) return null;
+    
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
 
   // Render Matching Jobs Section
   const renderMatchingJobs = () => {
@@ -249,6 +280,7 @@ const OfferingDetail = () => {
   const categoryIcon = getCategoryIcon(offering.category);
   const categoryLabel = getCategoryLabel(offering.category);
   const isOwner = user?.id === offering.creator_id;
+  const boostTimeRemaining = getBoostTimeRemaining();
 
   // Build SEO description
   const seoDescription = `${categoryLabel} service by ${offering.creator_name} - €${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}${offering.location ? ` in ${offering.location}` : ''}. ${offering.description?.substring(0, 100)}...`;
@@ -352,6 +384,51 @@ const OfferingDetail = () => {
                 </span>
               )}
             </div>
+
+            {/* Boost Section - Only for owners */}
+            {isOwner && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h3 className="font-semibold text-amber-800 flex items-center gap-2">
+                      🚀 Boost Your Visibility
+                    </h3>
+                    {offering.is_boost_active && boostTimeRemaining ? (
+                      <p className="text-sm text-green-700 mt-1">
+                        ✅ <strong>Boost active!</strong> Your offering is visible on the map. 
+                        <span className="ml-1">⏱️ {boostTimeRemaining} remaining</span>
+                      </p>
+                    ) : (
+                      <p className="text-sm text-amber-700 mt-1">
+                        Show your offering on the Quick Help map so customers can find you easily!
+                      </p>
+                    )}
+                  </div>
+                  {offering.is_boost_active && boostTimeRemaining ? (
+                    <div className="flex items-center gap-2">
+                      <span className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium text-sm">
+                        🔥 Boosted
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleBoost}
+                      disabled={boosting}
+                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-md disabled:opacity-50"
+                    >
+                      {boosting ? (
+                        <span className="flex items-center gap-2">
+                          <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                          Activating...
+                        </span>
+                      ) : (
+                        '🚀 Activate 24h Free Trial'
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Description */}
             <div className="mb-6">
