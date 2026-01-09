@@ -11,7 +11,8 @@ import { useToastStore } from '../stores/toastStore';
 import { useMatchingStore } from '../stores/matchingStore';
 import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
 import FavoriteButton from '../components/ui/FavoriteButton';
-import AdvancedFilters, { FilterValues, filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
+import CompactFilterBar, { CompactFilterValues } from '../components/ui/CompactFilterBar';
+import { filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
 import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
 
@@ -499,7 +500,7 @@ const MapMarkers = ({
 type LocationType = 'auto' | 'default' | 'manual';
 
 // Default filter values
-const DEFAULT_FILTERS: FilterValues = {
+const DEFAULT_FILTERS: CompactFilterValues = {
   minPrice: 0,
   maxPrice: 500,
   distance: 25,
@@ -548,8 +549,8 @@ const DesktopTasksView = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   
-  // Advanced Filters state
-  const [advancedFilters, setAdvancedFilters] = useState<FilterValues>(() => {
+  // Compact Filters state
+  const [filters, setFilters] = useState<CompactFilterValues>(() => {
     // Load saved filters from localStorage
     const saved = localStorage.getItem('taskAdvancedFilters');
     if (saved) {
@@ -567,11 +568,10 @@ const DesktopTasksView = () => {
     return DEFAULT_FILTERS;
   });
   
-  // Derive searchRadius from advancedFilters for backward compatibility
-  const searchRadius = advancedFilters.distance;
+  // Derive searchRadius from filters for backward compatibility
+  const searchRadius = filters.distance;
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   
   // For now, offerings are NOT shown on map (future premium feature)
@@ -610,6 +610,7 @@ const DesktopTasksView = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+        setShowLocationModal(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -674,24 +675,22 @@ const DesktopTasksView = () => {
     setShowLocationModal(false);
   };
 
-  // Handle advanced filters change
-  const handleAdvancedFiltersChange = (newFilters: FilterValues) => {
-    setAdvancedFilters(newFilters);
+  // Handle filters change
+  const handleFiltersChange = (newFilters: CompactFilterValues) => {
+    const distanceChanged = newFilters.distance !== filters.distance;
+    const categoryChanged = newFilters.category !== filters.category;
+    
+    setFilters(newFilters);
     // Save to localStorage
     localStorage.setItem('taskAdvancedFilters', JSON.stringify(newFilters));
     // Also save radius for legacy compatibility
     localStorage.setItem('taskSearchRadius', newFilters.distance.toString());
     
     // If distance or category changed, refetch from API
-    if (newFilters.distance !== advancedFilters.distance || newFilters.category !== advancedFilters.category) {
+    if (distanceChanged || categoryChanged) {
       hasFetchedRef.current = false;
       fetchData(true, newFilters.distance, newFilters.category);
     }
-  };
-
-  // Legacy radius handler - now updates advanced filters
-  const handleRadiusChange = (newRadius: number) => {
-    handleAdvancedFiltersChange({ ...advancedFilters, distance: newRadius });
   };
 
   const searchAddressSuggestions = async (query: string) => {
@@ -762,7 +761,7 @@ const DesktopTasksView = () => {
     try {
       // Use overrides if provided, otherwise fall back to state
       const baseRadius = radiusOverride ?? searchRadius;
-      const selectedCategory = categoryOverride ?? advancedFilters.category;
+      const selectedCategory = categoryOverride ?? filters.category;
       // Use 500km radius when "All" is selected (covers all of Latvia)
       const effectiveRadius = baseRadius === 0 ? 500 : baseRadius;
       
@@ -812,15 +811,7 @@ const DesktopTasksView = () => {
     if (locationGranted) fetchData();
   }, [locationGranted]);
 
-  // Refetch when category changes in advanced filters
-  useEffect(() => {
-    if (locationGranted && hasEverLoadedRef.current) {
-      hasFetchedRef.current = false;
-      fetchData(true);
-    }
-  }, [advancedFilters.category]);
-
-  // Apply all filters: search query + advanced filters (price, date)
+  // Apply all filters: search query + filters (price, date)
   const filterTasks = (taskList: Task[]) => {
     let filtered = taskList;
     
@@ -835,10 +826,10 @@ const DesktopTasksView = () => {
     });
     
     // Apply price filter
-    filtered = filterByPrice(filtered, advancedFilters.minPrice, advancedFilters.maxPrice, 500);
+    filtered = filterByPrice(filtered, filters.minPrice, filters.maxPrice, 500);
     
     // Apply date filter
-    filtered = filterByDate(filtered, advancedFilters.datePosted);
+    filtered = filterByDate(filtered, filters.datePosted);
     
     return filtered;
   };
@@ -857,10 +848,10 @@ const DesktopTasksView = () => {
     });
     
     // Apply price filter
-    filtered = filterByPrice(filtered, advancedFilters.minPrice, advancedFilters.maxPrice, 500);
+    filtered = filterByPrice(filtered, filters.minPrice, filters.maxPrice, 500);
     
     // Apply date filter
-    filtered = filterByDate(filtered, advancedFilters.datePosted);
+    filtered = filterByDate(filtered, filters.datePosted);
     
     return filtered;
   };
@@ -946,11 +937,12 @@ const DesktopTasksView = () => {
   const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
   const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 75);
 
-  // Check if advanced filters are active (beyond defaults)
-  const hasActiveAdvancedFilters = 
-    advancedFilters.minPrice > 0 || 
-    advancedFilters.maxPrice < 500 || 
-    advancedFilters.datePosted !== 'all';
+  // Check if filters are active (beyond defaults)
+  const hasActiveFilters = 
+    filters.minPrice > 0 || 
+    filters.maxPrice < 500 || 
+    filters.datePosted !== 'all' ||
+    filters.category !== 'all';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1001,76 +993,61 @@ const DesktopTasksView = () => {
           </div>
         )}
 
-        {/* SEARCH BAR */}
-        <div className="mb-4 bg-white rounded-lg shadow-md p-4" style={{ zIndex: 1000 }}>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('tasks.searchPlaceholder', 'Search jobs or offerings...')} className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-            </div>
-            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-              <button onClick={() => setShowLocationModal(!showLocationModal)} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 sm:flex-initial justify-center">
-                <span>📍</span>
-                <span className="text-sm text-gray-700 truncate max-w-[120px]">
-                  {manualLocationSet && manualLocationName ? manualLocationName.split(',')[0] : locationName}
-                </span>
-              </button>
-              <select 
-                value={searchRadius} 
-                onChange={(e) => handleRadiusChange(parseInt(e.target.value, 10))} 
-                className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={5}>5 km</option>
-                <option value={10}>10 km</option>
-                <option value={25}>25 km</option>
-                <option value={50}>50 km</option>
-                <option value={100}>100 km</option>
-                <option value={0}>🇱🇻 {t('tasks.allLatvia', 'Visa Latvija')}</option>
-              </select>
-              <button 
-                onClick={() => setShowFilters(!showFilters)} 
-                className={`px-4 py-2 rounded-lg border transition-colors relative ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-              >
-                ⚙️ {t('tasks.filters', 'Filters')}
-                {hasActiveAdvancedFilters && !showFilters && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>
-                )}
-              </button>
-            </div>
-          </div>
+        {/* COMPACT FILTER BAR */}
+        <div className="mb-4 relative" style={{ zIndex: 1000 }}>
+          <CompactFilterBar
+            filters={filters}
+            onChange={handleFiltersChange}
+            onSearchChange={setSearchQuery}
+            searchQuery={searchQuery}
+            locationName={locationName}
+            onLocationClick={() => setShowLocationModal(!showLocationModal)}
+            maxPriceLimit={500}
+            categoryOptions={CATEGORY_OPTIONS}
+            variant={activeTab === 'offerings' ? 'offerings' : 'jobs'}
+          />
           
+          {/* Location Search Modal */}
           {showLocationModal && (
-            <div className="mt-3 p-3 bg-red-50 border-t border-red-200 rounded-lg" ref={suggestionsRef}>
-              <div className="mb-2">
-                <input type="text" value={addressSearch} onChange={(e) => handleAddressInputChange(e.target.value)} placeholder={t('tasks.searchAddress', 'Search address or city...')} className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500" />
-                {searchingAddress && <span className="text-sm text-red-600">{t('common.loading', 'Searching...')}</span>}
+            <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-50" ref={suggestionsRef}>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">📍 {t('tasks.changeLocation', 'Change Location')}</label>
+                <input 
+                  type="text" 
+                  value={addressSearch} 
+                  onChange={(e) => handleAddressInputChange(e.target.value)} 
+                  placeholder={t('tasks.searchAddress', 'Search address or city...')} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  autoFocus
+                />
+                {searchingAddress && <span className="text-sm text-gray-500 mt-1">{t('common.loading', 'Searching...')}</span>}
               </div>
               {showSuggestions && suggestions.length > 0 && (
-                <div className="max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg">
+                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                   {suggestions.map((suggestion, index) => (
-                    <button key={index} onClick={() => selectSuggestion(suggestion)} className="w-full px-3 py-2 text-left hover:bg-red-50 border-b last:border-b-0">
-                      <span className="text-sm">{suggestion.display_name}</span>
+                    <button 
+                      key={index} 
+                      onClick={() => selectSuggestion(suggestion)} 
+                      className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0 text-sm"
+                    >
+                      {suggestion.display_name}
                     </button>
                   ))}
                 </div>
               )}
-              {manualLocationSet && (
-                <button onClick={resetToAutoLocation} className="mt-2 text-sm text-red-600 hover:underline">{t('tasks.resetLocation', 'Reset to auto-detect')}</button>
-              )}
-            </div>
-          )}
-          
-          {/* Advanced Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <AdvancedFilters
-                filters={advancedFilters}
-                onChange={handleAdvancedFiltersChange}
-                maxPriceLimit={500}
-                showCategory={true}
-                categoryOptions={CATEGORY_OPTIONS}
-                variant={activeTab === 'offerings' ? 'offerings' : 'jobs'}
-              />
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+                {manualLocationSet && (
+                  <button onClick={resetToAutoLocation} className="text-sm text-blue-600 hover:underline">
+                    {t('tasks.resetLocation', 'Reset to auto-detect')}
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowLocationModal(false)} 
+                  className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+                >
+                  {t('common.close', 'Close')}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1192,7 +1169,7 @@ const DesktopTasksView = () => {
                 <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
                   <div className="text-5xl mb-4">💰</div>
                   <p className="text-gray-900 font-semibold text-lg mb-2">
-                    {hasActiveAdvancedFilters
+                    {hasActiveFilters
                       ? t('tasks.noJobsMatchingFilters', 'No jobs match your filters')
                       : searchRadius === 0 
                         ? t('tasks.noJobsInLatvia', 'No jobs posted in Latvia yet')
@@ -1200,14 +1177,14 @@ const DesktopTasksView = () => {
                     }
                   </p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    {hasActiveAdvancedFilters
+                    {hasActiveFilters
                       ? t('tasks.tryAdjustingFilters', 'Try adjusting your price range or date filters to see more results.')
                       : t('tasks.beFirstToPost', 'Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.')
                     }
                   </p>
-                  {hasActiveAdvancedFilters ? (
+                  {hasActiveFilters ? (
                     <button 
-                      onClick={() => handleAdvancedFiltersChange(DEFAULT_FILTERS)} 
+                      onClick={() => handleFiltersChange(DEFAULT_FILTERS)} 
                       className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors"
                     >
                       {t('filters.clearFilters', 'Clear Filters')}
@@ -1253,7 +1230,7 @@ const DesktopTasksView = () => {
                 <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
                   <div className="text-5xl mb-4">👋</div>
                   <p className="text-gray-900 font-semibold text-lg mb-2">
-                    {hasActiveAdvancedFilters
+                    {hasActiveFilters
                       ? t('offerings.noOfferingsMatchingFilters', 'No offerings match your filters')
                       : searchRadius === 0
                         ? t('offerings.noOfferingsInLatvia', 'No service providers in Latvia yet')
@@ -1261,14 +1238,14 @@ const DesktopTasksView = () => {
                     }
                   </p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    {hasActiveAdvancedFilters
+                    {hasActiveFilters
                       ? t('offerings.tryAdjustingFilters', 'Try adjusting your price range or date filters to see more results.')
                       : t('offerings.beFirstToOffer', 'Are you skilled at something? Advertise your services here and get hired by people nearby!')
                     }
                   </p>
-                  {hasActiveAdvancedFilters ? (
+                  {hasActiveFilters ? (
                     <button 
-                      onClick={() => handleAdvancedFiltersChange(DEFAULT_FILTERS)} 
+                      onClick={() => handleFiltersChange(DEFAULT_FILTERS)} 
                       className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors"
                     >
                       {t('filters.clearFilters', 'Clear Filters')}
