@@ -3,9 +3,10 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright E2E Test Configuration
  * 
- * Run tests: npx playwright test
- * Run with UI: npx playwright test --ui
- * Run specific file: npx playwright test e2e/auth.spec.ts
+ * BEFORE RUNNING TESTS:
+ * 1. Start backend: cd marketplace-backend && python wsgi.py
+ * 2. Start frontend: npm run dev
+ * 3. Run tests: npm run test:e2e
  */
 export default defineConfig({
   testDir: './e2e',
@@ -14,6 +15,12 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  
+  /* Increased timeout for slower operations */
+  timeout: 60000,
+  expect: {
+    timeout: 10000,
+  },
   
   use: {
     /* Base URL for the frontend */
@@ -54,11 +61,9 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  /* 
+   * Removed webServer auto-start - run servers manually:
+   * 1. Backend: python wsgi.py (port 5000)
+   * 2. Frontend: npm run dev (port 5173)
+   */
 });
