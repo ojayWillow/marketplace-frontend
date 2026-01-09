@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getPublicUser, getUserReviews, PublicUser, UserReview } from '../api/users'
+import { useUserProfile, useUserReviews, useStartConversation } from '../api/hooks'
+import { UserReview } from '../api/users'
 import { getImageUrl } from '../api/uploads'
-import { startConversation } from '../api/messages'
 import { useAuthStore } from '../stores/authStore'
 import { useToastStore } from '../stores/toastStore'
 import apiClient from '../api/client'
+import { useQueryClient } from '@tanstack/react-query'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ErrorMessage from '../components/ui/ErrorMessage'
 
@@ -16,41 +17,22 @@ export default function UserProfile() {
   const navigate = useNavigate()
   const { user: currentUser } = useAuthStore()
   const toast = useToastStore()
-  const [user, setUser] = useState<PublicUser | null>(null)
-  const [reviews, setReviews] = useState<UserReview[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  
+  // React Query hooks
+  const { data: user, isLoading: userLoading, error: userError } = useUserProfile(Number(id))
+  const { data: reviewsData, isLoading: reviewsLoading } = useUserReviews(Number(id))
+  const reviews = reviewsData?.reviews || []
+  
+  const startConversationMutation = useStartConversation()
+  
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [reviewData, setReviewData] = useState({ rating: 5, content: '' })
   const [submittingReview, setSubmittingReview] = useState(false)
-  const [startingConversation, setStartingConversation] = useState(false)
 
   const isOwnProfile = currentUser && user && currentUser.id === user.id
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!id) return
-      
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const [userData, reviewsData] = await Promise.all([
-          getPublicUser(Number(id)),
-          getUserReviews(Number(id))
-        ])
-        
-        setUser(userData)
-        setReviews(reviewsData.reviews)
-      } catch (err: any) {
-        setError(err?.response?.data?.error || 'Failed to load user profile')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUserData()
-  }, [id])
+  const loading = userLoading || reviewsLoading
+  const error = userError ? (userError as any)?.response?.data?.error || 'Failed to load user profile' : null
 
   const handleStartConversation = async () => {
     if (!currentUser) {
@@ -61,15 +43,14 @@ export default function UserProfile() {
 
     if (!id) return
 
-    try {
-      setStartingConversation(true)
-      const { conversation } = await startConversation(Number(id))
-      navigate(`/messages/${conversation.id}`)
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'Failed to start conversation')
-    } finally {
-      setStartingConversation(false)
-    }
+    startConversationMutation.mutate(Number(id), {
+      onSuccess: (data) => {
+        navigate(`/messages/${data.conversation.id}`)
+      },
+      onError: (err: any) => {
+        toast.error(err?.response?.data?.error || 'Failed to start conversation')
+      }
+    })
   }
 
   const handleSubmitReview = async (e: React.FormEvent) => {
@@ -87,33 +68,19 @@ export default function UserProfile() {
 
     try {
       setSubmittingReview(true)
-      const response = await apiClient.post('/api/reviews', {
+      await apiClient.post('/api/reviews', {
         reviewed_user_id: Number(id),
         rating: reviewData.rating,
         content: reviewData.content
       })
 
-      // Add new review to list
-      const newReview: UserReview = {
-        id: response.data.id,
-        rating: reviewData.rating,
-        content: reviewData.content,
-        reviewer_id: currentUser.id,
-        reviewer_name: currentUser.username,
-        reviewer_avatar: currentUser.avatar_url || currentUser.profile_picture_url,
-        created_at: new Date().toISOString()
-      }
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['user-reviews', Number(id)] })
+      queryClient.invalidateQueries({ queryKey: ['user-profile', Number(id)] })
       
-      setReviews(prev => [newReview, ...prev])
       setShowReviewModal(false)
       setReviewData({ rating: 5, content: '' })
       toast.success('Review submitted successfully!')
-      
-      // Refresh user data to update rating
-      if (id) {
-        const userData = await getPublicUser(Number(id))
-        setUser(userData)
-      }
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Failed to submit review')
     } finally {
@@ -268,10 +235,10 @@ export default function UserProfile() {
             <div className="mt-6 pt-6 border-t grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={handleStartConversation}
-                disabled={startingConversation}
+                disabled={startConversationMutation.isPending}
                 className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 flex items-center justify-center gap-2"
               >
-                💬 {startingConversation ? 'Loading...' : 'Message'}
+                💬 {startConversationMutation.isPending ? 'Loading...' : 'Message'}
               </button>
               <button
                 onClick={() => setShowReviewModal(true)}
