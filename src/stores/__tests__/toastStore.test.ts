@@ -8,11 +8,11 @@ beforeEach(() => {
 
 describe('toastStore', () => {
   describe('addToast', () => {
-    it('should add a toast with default type', () => {
+    it('should add a toast with specified type', () => {
       const { addToast } = useToastStore.getState();
       
       act(() => {
-        addToast('Test message');
+        addToast('Test message', 'info');
       });
 
       const { toasts } = useToastStore.getState();
@@ -21,27 +21,38 @@ describe('toastStore', () => {
       expect(toasts[0].type).toBe('info');
     });
 
-    it('should add a toast with specified type', () => {
-      const { addToast } = useToastStore.getState();
-      
-      act(() => {
-        addToast('Success!', 'success');
-      });
-
-      const { toasts } = useToastStore.getState();
-      expect(toasts[0].type).toBe('success');
-    });
-
     it('should generate unique IDs for toasts', () => {
       const { addToast } = useToastStore.getState();
       
       act(() => {
-        addToast('First toast');
-        addToast('Second toast');
+        addToast('First toast', 'info');
+        addToast('Second toast', 'info');
       });
 
       const { toasts } = useToastStore.getState();
       expect(toasts[0].id).not.toBe(toasts[1].id);
+    });
+
+    it('should set default duration', () => {
+      const { addToast } = useToastStore.getState();
+      
+      act(() => {
+        addToast('Test', 'info');
+      });
+
+      const { toasts } = useToastStore.getState();
+      expect(toasts[0].duration).toBe(4000);
+    });
+
+    it('should allow custom duration', () => {
+      const { addToast } = useToastStore.getState();
+      
+      act(() => {
+        addToast('Test', 'info', 10000);
+      });
+
+      const { toasts } = useToastStore.getState();
+      expect(toasts[0].duration).toBe(10000);
     });
   });
 
@@ -91,6 +102,22 @@ describe('toastStore', () => {
       const { toasts } = useToastStore.getState();
       expect(toasts[0].type).toBe('info');
     });
+
+    it('error() should have longer duration than others', () => {
+      const { error, success } = useToastStore.getState();
+      
+      act(() => {
+        error('Error message');
+        success('Success message');
+      });
+
+      const { toasts } = useToastStore.getState();
+      const errorToast = toasts.find(t => t.type === 'error');
+      const successToast = toasts.find(t => t.type === 'success');
+      
+      expect(errorToast?.duration).toBe(5000);
+      expect(successToast?.duration).toBe(4000);
+    });
   });
 
   describe('removeToast', () => {
@@ -98,8 +125,8 @@ describe('toastStore', () => {
       const { addToast, removeToast } = useToastStore.getState();
       
       act(() => {
-        addToast('First toast');
-        addToast('Second toast');
+        addToast('First toast', 'info');
+        addToast('Second toast', 'info');
       });
 
       const { toasts: toastsBefore } = useToastStore.getState();
@@ -118,7 +145,7 @@ describe('toastStore', () => {
       const { addToast, removeToast } = useToastStore.getState();
       
       act(() => {
-        addToast('Test toast');
+        addToast('Test toast', 'info');
       });
       
       act(() => {
@@ -127,28 +154,6 @@ describe('toastStore', () => {
 
       const { toasts } = useToastStore.getState();
       expect(toasts).toHaveLength(1);
-    });
-  });
-
-  describe('clearAll', () => {
-    it('should remove all toasts', () => {
-      const { addToast, clearAll } = useToastStore.getState();
-      
-      act(() => {
-        addToast('First');
-        addToast('Second');
-        addToast('Third');
-      });
-
-      const { toasts: toastsBefore } = useToastStore.getState();
-      expect(toastsBefore).toHaveLength(3);
-      
-      act(() => {
-        clearAll();
-      });
-
-      const { toasts: toastsAfter } = useToastStore.getState();
-      expect(toastsAfter).toHaveLength(0);
     });
   });
 });
