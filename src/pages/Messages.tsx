@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { getConversations, Conversation } from '../api/messages';
 import { getImageUrl } from '../api/uploads';
+import OnlineStatus from '../components/ui/OnlineStatus';
 
 export default function Messages() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -38,7 +41,7 @@ export default function Messages() {
     if (diffDays === 0) {
       return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays === 1) {
-      return 'Yesterday';
+      return t('messages.yesterday', 'Yesterday');
     } else if (diffDays < 7) {
       return date.toLocaleDateString('en-US', { weekday: 'short' });
     }
@@ -56,17 +59,19 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">💬 Messages</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          💬 {t('messages.title', 'Messages')}
+        </h1>
 
         {conversations.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <div className="text-6xl mb-4">📭</div>
-            <p className="text-gray-500 mb-4">No conversations yet</p>
+            <p className="text-gray-500 mb-4">{t('messages.noConversations', 'No conversations yet')}</p>
             <Link
               to="/tasks"
               className="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
             >
-              Browse Tasks
+              {t('messages.browseTasks', 'Browse Tasks')}
             </Link>
           </div>
         ) : (
@@ -77,8 +82,8 @@ export default function Messages() {
                 to={`/messages/${conv.id}`}
                 className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
               >
-                {/* Avatar */}
-                <div className="flex-shrink-0">
+                {/* Avatar with Online Status */}
+                <div className="flex-shrink-0 relative">
                   {conv.other_participant?.avatar_url ? (
                     <img
                       src={getImageUrl(conv.other_participant.avatar_url)}
@@ -90,16 +95,34 @@ export default function Messages() {
                       {conv.other_participant?.username?.charAt(0).toUpperCase() || '?'}
                     </div>
                   )}
+                  {/* Online Status Badge */}
+                  {conv.other_participant?.online_status && (
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
+                      <OnlineStatus
+                        status={conv.other_participant.online_status as 'online' | 'recently' | 'inactive'}
+                        lastSeenDisplay={conv.other_participant.last_seen_display}
+                        size="sm"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-gray-900 truncate">
-                      {conv.other_participant?.first_name && conv.other_participant?.last_name
-                        ? `${conv.other_participant.first_name} ${conv.other_participant.last_name}`
-                        : conv.other_participant?.username || 'Unknown'}
-                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-medium text-gray-900 truncate">
+                        {conv.other_participant?.first_name && conv.other_participant?.last_name
+                          ? `${conv.other_participant.first_name} ${conv.other_participant.last_name}`
+                          : conv.other_participant?.username || 'Unknown'}
+                      </span>
+                      {/* Inline online indicator for online users */}
+                      {conv.other_participant?.online_status === 'online' && (
+                        <span className="text-xs text-green-600 font-medium">
+                          {t('messages.online', 'online')}
+                        </span>
+                      )}
+                    </div>
                     {conv.last_message && (
                       <span className="text-xs text-gray-500 flex-shrink-0">
                         {formatTime(conv.last_message.created_at)}
@@ -107,7 +130,7 @@ export default function Messages() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 truncate">
-                    {conv.last_message?.content || 'No messages yet'}
+                    {conv.last_message?.content || t('messages.noMessagesYet', 'No messages yet')}
                   </p>
                 </div>
 
