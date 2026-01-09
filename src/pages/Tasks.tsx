@@ -196,11 +196,13 @@ const createUserLocationIcon = () => divIcon({
 
 // Job Price Label Icon - Shows actual price with color coding
 // Budget thresholds: ≤25€ (green), ≤75€ (blue), >75€ (purple/gold with glow)
-const getJobPriceIcon = (budget: number = 0) => {
+// Urgent jobs get a red pulsing border
+const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
   let bgColor = '#22c55e'; // green-500 for quick tasks
   let textColor = 'white';
   let extraClass = '';
   let shadow = '0 2px 4px rgba(0,0,0,0.2)';
+  let border = '2px solid white';
   
   if (budget <= 25) {
     bgColor = '#22c55e'; // green - quick easy money
@@ -210,6 +212,13 @@ const getJobPriceIcon = (budget: number = 0) => {
     bgColor = 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)'; // purple to gold - premium
     extraClass = ' job-price--premium';
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5), 0 0 12px rgba(217, 119, 6, 0.3)';
+  }
+  
+  // Urgent jobs get red border and pulse effect
+  if (isUrgent) {
+    border = '3px solid #ef4444';
+    shadow = '0 0 0 2px rgba(239, 68, 68, 0.4), ' + shadow;
+    extraClass += ' job-price--urgent';
   }
   
   // Format price display
@@ -225,7 +234,7 @@ const getJobPriceIcon = (budget: number = 0) => {
   return divIcon({
     className: `job-price-icon${extraClass}`,
     html: `
-      <div class="job-price-marker" style="
+      <div class="job-price-marker${isUrgent ? ' animate-pulse' : ''}" style="
         ${bgStyle}
         color: ${textColor};
         font-size: ${fontSize};
@@ -234,7 +243,7 @@ const getJobPriceIcon = (budget: number = 0) => {
         border-radius: 12px;
         white-space: nowrap;
         box-shadow: ${shadow};
-        border: 2px solid white;
+        border: ${border};
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         display: inline-flex;
         align-items: center;
@@ -244,7 +253,7 @@ const getJobPriceIcon = (budget: number = 0) => {
         cursor: pointer;
         transition: transform 0.15s ease;
       ">
-        ${priceText}
+        ${isUrgent ? '⚡' : ''}${priceText}
       </div>
     `,
     iconSize: [50, 28],
@@ -304,6 +313,13 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   
   return (
     <div className="job-popup" style={{ width: '240px' }}>
+      {/* Urgent badge if applicable */}
+      {task.is_urgent && (
+        <div className="mb-2 px-2 py-1 bg-red-100 border border-red-200 rounded-lg text-center">
+          <span className="text-red-700 font-semibold text-xs">⚡ {t('tasks.urgentJob', 'URGENT - Needs help ASAP!')}</span>
+        </div>
+      )}
+      
       {/* Top row: Category bubble (blue) + Distance */}
       <div className="flex items-center justify-between mb-3">
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
@@ -492,7 +508,7 @@ const MapMarkers = ({
       {/* Job/Task markers - Price labels */}
       {tasksWithOffsets.map((task) => {
         const budget = task.budget || task.reward || 0;
-        const jobIcon = getJobPriceIcon(budget);
+        const jobIcon = getJobPriceIcon(budget, task.is_urgent);
         // Use display coordinates (with offset if overlapping) or fall back to original
         const displayLat = task.displayLatitude || task.latitude;
         const displayLng = task.displayLongitude || task.longitude;
@@ -877,6 +893,15 @@ const DesktopTasksView = () => {
     // Apply date filter
     filtered = filterByDate(filtered, filters.datePosted);
     
+    // Sort: urgent jobs first, then by date
+    filtered = filtered.sort((a, b) => {
+      // Urgent jobs come first
+      if (a.is_urgent && !b.is_urgent) return -1;
+      if (!a.is_urgent && b.is_urgent) return 1;
+      // Then sort by created_at (newest first)
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+    
     return filtered;
   };
 
@@ -968,6 +993,9 @@ const DesktopTasksView = () => {
   const matchingJobsCount = isAuthenticated 
     ? filteredTasks.filter(t => isJobMatchingMyOfferings(t.category)).length 
     : 0;
+  
+  // Count urgent jobs
+  const urgentJobsCount = filteredTasks.filter(t => t.is_urgent).length;
 
   // Get map markers based on active tab
   // Boosted offerings are shown on map when viewing 'all' or 'offerings' tab
@@ -1017,6 +1045,27 @@ const DesktopTasksView = () => {
             )}
           </div>
         </div>
+
+        {/* Urgent jobs banner - show if there are urgent jobs */}
+        {urgentJobsCount > 0 && (
+          <div className="mb-4 bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-4 text-white shadow-md">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⚡</span>
+                <div>
+                  <p className="font-semibold">{t('tasks.urgentJobsAvailable', '{{count}} urgent job(s) need help ASAP!', { count: urgentJobsCount })}</p>
+                  <p className="text-red-100 text-sm">{t('tasks.urgentJobsDesc', 'These jobs are time-sensitive and need immediate attention')}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setActiveTab('jobs')}
+                className="bg-white text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-50 transition-colors whitespace-nowrap"
+              >
+                {t('tasks.viewUrgentJobs', 'View Urgent Jobs')} →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Matching notification banner - Blue theme */}
         {isAuthenticated && matchingJobsCount > 0 && myOfferingCategories.length > 0 && (
@@ -1105,7 +1154,12 @@ const DesktopTasksView = () => {
           </button>
           <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💰 {t('common.jobs', 'Jobs')} ({filteredTasks.length})
-            {isAuthenticated && matchingJobsCount > 0 && activeTab !== 'jobs' && (
+            {urgentJobsCount > 0 && activeTab !== 'jobs' && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                {urgentJobsCount} ⚡
+              </span>
+            )}
+            {isAuthenticated && matchingJobsCount > 0 && urgentJobsCount === 0 && activeTab !== 'jobs' && (
               <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                 {matchingJobsCount} {t('tasks.match', 'match')}
               </span>
@@ -1141,6 +1195,14 @@ const DesktopTasksView = () => {
               <div className="flex items-center gap-1.5 bg-blue-100 px-2 py-1 rounded-full">
                 <span className="text-sm">🇱🇻</span>
                 <span className="text-blue-700 font-medium text-xs">{t('tasks.viewingAllLatvia', 'Viewing all of Latvia')}</span>
+              </div>
+            )}
+            
+            {/* Urgent jobs indicator */}
+            {urgentJobsCount > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-red-500 text-white rounded-full text-xs font-bold border-2 border-red-300">⚡€</span>
+                <span className="text-red-600 text-xs font-medium">{t('map.urgentJobs', 'Urgent')}</span>
               </div>
             )}
             
@@ -1192,6 +1254,11 @@ const DesktopTasksView = () => {
               <span className="font-medium text-blue-700">
                 💰 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}
               </span>
+              {urgentJobsCount > 0 && (
+                <span className="font-medium text-red-600">
+                  ⚡ {t('tasks.urgentOnMap', '{{count}} urgent', { count: urgentJobsCount })}
+                </span>
+              )}
               {mapBoostedOfferings.length > 0 && (
                 <span className="font-medium text-amber-700">
                   👋 {t('offerings.boostedOnMap', '{{count}} boosted service(s)', { count: mapBoostedOfferings.length })}
@@ -1349,20 +1416,23 @@ const DesktopTasksView = () => {
   );
 };
 
-// Job Card Component with matching indicator, budget display, and favorite button - Blue theme
+// Job Card Component with matching indicator, budget display, favorite button, and URGENT styling - Blue theme
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
   const budget = task.budget || task.reward || 0;
   const isHighValue = budget > 75;
+  const isUrgent = task.is_urgent;
   
   return (
     <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
-      isHighValue 
-        ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-amber-50 hover:border-purple-400 ring-1 ring-purple-200'
-        : isMatching 
-          ? 'border-blue-300 bg-blue-50 hover:border-blue-400' 
-          : 'border-gray-200 hover:border-blue-300'
+      isUrgent
+        ? 'border-red-400 bg-gradient-to-br from-red-50 to-orange-50 hover:border-red-500 ring-2 ring-red-200'
+        : isHighValue 
+          ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-amber-50 hover:border-purple-400 ring-1 ring-purple-200'
+          : isMatching 
+            ? 'border-blue-300 bg-blue-50 hover:border-blue-400' 
+            : 'border-gray-200 hover:border-blue-300'
     }`}>
       {/* Favorite Button - positioned top right */}
       <div className="absolute top-2 right-2 z-10">
@@ -1374,15 +1444,25 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
       </div>
       
       <Link to={`/tasks/${task.id}`} className="block">
+        {/* Urgent badge - TOP PRIORITY */}
+        {isUrgent && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-1 bg-red-500 text-white rounded-lg text-xs font-bold animate-pulse flex items-center gap-1">
+              ⚡ {t('tasks.urgent', 'URGENT')}
+            </span>
+            <span className="text-red-600 text-xs font-medium">{t('tasks.needsHelpASAP', 'Needs help ASAP!')}</span>
+          </div>
+        )}
+        
         {/* High value badge */}
-        {isHighValue && (
+        {isHighValue && !isUrgent && (
           <div className="flex items-center gap-2 mb-2 text-purple-700">
             <span className="px-2 py-0.5 bg-gradient-to-r from-purple-200 to-amber-200 rounded text-xs font-semibold">✨ {t('offerings.premiumOpportunity', 'Premium opportunity!')}</span>
           </div>
         )}
         
         {/* Matching badge */}
-        {isMatching && !isHighValue && (
+        {isMatching && !isHighValue && !isUrgent && (
           <div className="flex items-center gap-2 mb-2 text-blue-700">
             <span className="px-2 py-0.5 bg-blue-200 rounded text-xs font-semibold">✨ {t('offerings.matchesYourOffering', 'Matches your offering')}</span>
           </div>
@@ -1398,21 +1478,26 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
+              {isUrgent && (
+                <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">⚡ {t('tasks.urgent', 'Urgent')}</span>
+              )}
             </div>
             {task.creator_name && (
               <p className="text-xs text-gray-500 mt-2">{t('tasks.postedBy', 'Posted by')} {task.creator_name}</p>
             )}
           </div>
           <div className="text-right flex-shrink-0">
-            {/* Price - color coded like map */}
+            {/* Price - color coded like map, red border if urgent */}
             <div className={`text-xl sm:text-2xl font-bold ${
+              isUrgent ? 'text-red-600' :
               budget <= 25 ? 'text-green-600' : 
               budget <= 75 ? 'text-blue-600' : 
               'text-purple-600'
             }`}>
-              €{budget}
+              {isUrgent && '⚡'}€{budget}
             </div>
-            {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
+            {isHighValue && !isUrgent && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
+            {isUrgent && <div className="text-xs text-red-500 mt-1 font-medium">{t('tasks.actFast', 'Act fast!')}</div>}
           </div>
         </div>
       </Link>
