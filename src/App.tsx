@@ -35,6 +35,16 @@ const Conversation = lazy(() => import('./pages/Conversation'))
 const Favorites = lazy(() => import('./pages/Favorites'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
+// Admin pages
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminJobs = lazy(() => import('./pages/admin/AdminJobs'))
+const AdminOfferings = lazy(() => import('./pages/admin/AdminOfferings'))
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'))
+const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+
 function App() {
   return (
     <>
@@ -123,6 +133,24 @@ function App() {
             <Route path="users/:id" element={<UserProfile />} />
             {/* 404 catch-all route - must be last */}
             <Route path="*" element={<NotFound />} />
+          </Route>
+
+          {/* Admin Panel - Separate layout */}
+          <Route
+            path="/admin"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <AdminLayout />
+              </Suspense>
+            }
+          >
+            <Route index element={<AdminOverview />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="jobs" element={<AdminJobs />} />
+            <Route path="offerings" element={<AdminOfferings />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>
       </Suspense>
