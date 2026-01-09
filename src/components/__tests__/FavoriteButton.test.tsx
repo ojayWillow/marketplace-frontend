@@ -2,13 +2,12 @@ import { render, screen, fireEvent, waitFor } from '../../test/utils';
 import FavoriteButton from '../FavoriteButton';
 import { useAuthStore } from '../../stores/authStore';
 import * as favoritesHooks from '../../hooks/useFavorites';
-import { vi } from 'vitest';
 
 // Mock the favorites hooks
-vi.mock('../../hooks/useFavorites', () => ({
-  useCheckFavorite: vi.fn(),
-  useAddFavorite: vi.fn(),
-  useRemoveFavoriteByItem: vi.fn(),
+jest.mock('../../hooks/useFavorites', () => ({
+  useCheckFavorite: jest.fn(),
+  useAddFavorite: jest.fn(),
+  useRemoveFavoriteByItem: jest.fn(),
 }));
 
 // Reset auth store before each test
@@ -18,7 +17,7 @@ beforeEach(() => {
     token: null,
     isAuthenticated: false,
   });
-  vi.clearAllMocks();
+  jest.clearAllMocks();
 });
 
 describe('FavoriteButton', () => {
@@ -39,16 +38,16 @@ describe('FavoriteButton', () => {
 
   describe('when user is not authenticated', () => {
     beforeEach(() => {
-      (favoritesHooks.useCheckFavorite as any).mockReturnValue({
+      (favoritesHooks.useCheckFavorite as jest.Mock).mockReturnValue({
         data: undefined,
         isLoading: false,
       });
-      (favoritesHooks.useAddFavorite as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useAddFavorite as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
-      (favoritesHooks.useRemoveFavoriteByItem as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useRemoveFavoriteByItem as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
     });
@@ -76,16 +75,16 @@ describe('FavoriteButton', () => {
     });
 
     it('should show filled heart when item is favorited', () => {
-      (favoritesHooks.useCheckFavorite as any).mockReturnValue({
+      (favoritesHooks.useCheckFavorite as jest.Mock).mockReturnValue({
         data: { is_favorited: true },
         isLoading: false,
       });
-      (favoritesHooks.useAddFavorite as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useAddFavorite as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
-      (favoritesHooks.useRemoveFavoriteByItem as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useRemoveFavoriteByItem as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
 
@@ -95,18 +94,18 @@ describe('FavoriteButton', () => {
     });
 
     it('should call addFavorite when clicking unfavorited item', async () => {
-      const addFavoriteMock = vi.fn().mockResolvedValue({});
+      const addFavoriteMock = jest.fn().mockResolvedValue({});
       
-      (favoritesHooks.useCheckFavorite as any).mockReturnValue({
+      (favoritesHooks.useCheckFavorite as jest.Mock).mockReturnValue({
         data: { is_favorited: false },
         isLoading: false,
       });
-      (favoritesHooks.useAddFavorite as any).mockReturnValue({
+      (favoritesHooks.useAddFavorite as jest.Mock).mockReturnValue({
         mutateAsync: addFavoriteMock,
         isPending: false,
       });
-      (favoritesHooks.useRemoveFavoriteByItem as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useRemoveFavoriteByItem as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
 
@@ -123,17 +122,17 @@ describe('FavoriteButton', () => {
     });
 
     it('should call removeFavorite when clicking favorited item', async () => {
-      const removeFavoriteMock = vi.fn().mockResolvedValue({});
+      const removeFavoriteMock = jest.fn().mockResolvedValue({});
       
-      (favoritesHooks.useCheckFavorite as any).mockReturnValue({
+      (favoritesHooks.useCheckFavorite as jest.Mock).mockReturnValue({
         data: { is_favorited: true },
         isLoading: false,
       });
-      (favoritesHooks.useAddFavorite as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useAddFavorite as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
-      (favoritesHooks.useRemoveFavoriteByItem as any).mockReturnValue({
+      (favoritesHooks.useRemoveFavoriteByItem as jest.Mock).mockReturnValue({
         mutateAsync: removeFavoriteMock,
         isPending: false,
       });
@@ -153,16 +152,16 @@ describe('FavoriteButton', () => {
 
   describe('loading state', () => {
     it('should be disabled while loading check', () => {
-      (favoritesHooks.useCheckFavorite as any).mockReturnValue({
+      (favoritesHooks.useCheckFavorite as jest.Mock).mockReturnValue({
         data: undefined,
         isLoading: true,
       });
-      (favoritesHooks.useAddFavorite as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useAddFavorite as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
-      (favoritesHooks.useRemoveFavoriteByItem as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useRemoveFavoriteByItem as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
 
@@ -176,16 +175,16 @@ describe('FavoriteButton', () => {
 
   describe('size variants', () => {
     beforeEach(() => {
-      (favoritesHooks.useCheckFavorite as any).mockReturnValue({
+      (favoritesHooks.useCheckFavorite as jest.Mock).mockReturnValue({
         data: undefined,
         isLoading: false,
       });
-      (favoritesHooks.useAddFavorite as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useAddFavorite as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
-      (favoritesHooks.useRemoveFavoriteByItem as any).mockReturnValue({
-        mutateAsync: vi.fn(),
+      (favoritesHooks.useRemoveFavoriteByItem as jest.Mock).mockReturnValue({
+        mutateAsync: jest.fn(),
         isPending: false,
       });
     });

@@ -1,9 +1,7 @@
-import { vi } from 'vitest';
-
-export const useNavigate = vi.fn(() => vi.fn());
-export const useParams = vi.fn(() => ({}));
-export const useLocation = vi.fn(() => ({ pathname: '/', search: '', hash: '', state: null }));
-export const useSearchParams = vi.fn(() => [new URLSearchParams(), vi.fn()]);
+export const useNavigate = jest.fn(() => jest.fn());
+export const useParams = jest.fn(() => ({}));
+export const useLocation = jest.fn(() => ({ pathname: '/', search: '', hash: '', state: null }));
+export const useSearchParams = jest.fn(() => [new URLSearchParams(), jest.fn()]);
 export const Link = ({ children, to, ...props }: { children: React.ReactNode; to: string; [key: string]: any }) => (
   <a href={to} {...props}>{children}</a>
 );
