@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { getConversation, getMessages, sendMessage, markAllRead, Conversation as ConvType, Message } from '../api/messages';
 import { getImageUrl } from '../api/uploads';
+import OnlineStatus from '../components/ui/OnlineStatus';
 
 export default function Conversation() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
@@ -43,7 +46,7 @@ export default function Conversation() {
       await markAllRead(Number(id));
     } catch (error) {
       console.error('Error fetching conversation:', error);
-      toast.error('Failed to load conversation');
+      toast.error(t('messages.errorLoading', 'Failed to load conversation'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +67,7 @@ export default function Conversation() {
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error(t('messages.errorSending', 'Failed to send message'));
     } finally {
       setSending(false);
     }
@@ -85,6 +88,24 @@ export default function Conversation() {
     });
   };
 
+  // Get online status text
+  const getOnlineStatusText = (status: string, lastSeenDisplay?: string | null) => {
+    switch (status) {
+      case 'online':
+        return t('messages.onlineNow', 'Online');
+      case 'recently':
+        return lastSeenDisplay 
+          ? t('messages.lastSeen', 'Last seen {{time}}', { time: lastSeenDisplay })
+          : t('messages.recentlyActive', 'Recently active');
+      case 'inactive':
+        return lastSeenDisplay
+          ? t('messages.lastSeen', 'Last seen {{time}}', { time: lastSeenDisplay })
+          : t('messages.inactive', 'Inactive');
+      default:
+        return '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[500px] bg-gray-50 flex items-center justify-center">
@@ -97,9 +118,9 @@ export default function Conversation() {
     return (
       <div className="min-h-[500px] bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-500 mb-4">Conversation not found</p>
+          <p className="text-gray-500 mb-4">{t('messages.notFound', 'Conversation not found')}</p>
           <Link to="/messages" className="text-blue-500 hover:text-blue-600">
-            ← Back to Messages
+            ← {t('messages.backToMessages', 'Back to Messages')}
           </Link>
         </div>
       </div>
@@ -107,6 +128,7 @@ export default function Conversation() {
   }
 
   const otherUser = conversation.other_participant;
+  const onlineStatus = otherUser?.online_status as 'online' | 'recently' | 'inactive' | undefined;
 
   return (
     <div className="bg-gray-100 py-4">
@@ -121,24 +143,53 @@ export default function Conversation() {
             </Link>
             
             <Link to={`/users/${otherUser?.id}`} className="flex items-center gap-3 flex-1">
-              {otherUser?.avatar_url ? (
-                <img
-                  src={getImageUrl(otherUser.avatar_url)}
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                  {otherUser?.username?.charAt(0).toUpperCase() || '?'}
-                </div>
-              )}
+              {/* Avatar with online status */}
+              <div className="relative">
+                {otherUser?.avatar_url ? (
+                  <img
+                    src={getImageUrl(otherUser.avatar_url)}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                    {otherUser?.username?.charAt(0).toUpperCase() || '?'}
+                  </div>
+                )}
+                {/* Online status badge on avatar */}
+                {onlineStatus && (
+                  <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
+                    <OnlineStatus
+                      status={onlineStatus}
+                      lastSeenDisplay={otherUser?.last_seen_display}
+                      size="sm"
+                      showTooltip={false}
+                    />
+                  </div>
+                )}
+              </div>
+              
               <div>
                 <p className="font-medium text-gray-900">
                   {otherUser?.first_name && otherUser?.last_name
                     ? `${otherUser.first_name} ${otherUser.last_name}`
                     : otherUser?.username || 'Unknown'}
                 </p>
-                <p className="text-xs text-gray-500">@{otherUser?.username}</p>
+                {/* Online status text */}
+                {onlineStatus && (
+                  <p className={`text-xs flex items-center gap-1 ${
+                    onlineStatus === 'online' 
+                      ? 'text-green-600' 
+                      : onlineStatus === 'inactive'
+                        ? 'text-amber-600'
+                        : 'text-gray-500'
+                  }`}>
+                    {onlineStatus === 'online' && (
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    )}
+                    {getOnlineStatusText(onlineStatus, otherUser?.last_seen_display)}
+                  </p>
+                )}
               </div>
             </Link>
           </div>
@@ -147,7 +198,7 @@ export default function Conversation() {
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
-                No messages yet. Send the first message!
+                {t('messages.sendFirst', 'No messages yet. Send the first message!')}
               </div>
             ) : (
               <>
@@ -192,7 +243,7 @@ export default function Conversation() {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
+                placeholder={t('messages.typeMessage', 'Type a message...')}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 disabled={sending}
                 autoFocus
@@ -202,7 +253,7 @@ export default function Conversation() {
                 disabled={!newMessage.trim() || sending}
                 className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm"
               >
-                {sending ? '...' : 'Send'}
+                {sending ? '...' : t('messages.send', 'Send')}
               </button>
             </form>
           </div>
