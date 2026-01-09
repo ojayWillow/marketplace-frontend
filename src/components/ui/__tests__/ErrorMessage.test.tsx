@@ -1,4 +1,5 @@
-import { render, screen } from '../../../test/utils';
+import React from 'react';
+import { render, screen } from '@testing-library/react';
 import ErrorMessage from '../ErrorMessage';
 
 // Mock i18next
