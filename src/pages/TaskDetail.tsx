@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useQueryClient } from '@tanstack/react-query';
 import 'leaflet/dist/leaflet.css';
-import { getTask, Task, TaskApplication, applyToTask, getTaskApplications, acceptApplication, rejectApplication, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
+import { Task, TaskApplication, getTaskApplications, acceptApplication, rejectApplication, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
 import { getOfferings, Offering } from '../api/offerings';
 import { startConversation } from '../api/messages';
+import { useTask, useApplyToTask, taskKeys } from '../api/hooks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
@@ -62,9 +64,13 @@ const TaskDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
-  const [task, setTask] = useState<Task | null>(null);
+  const queryClient = useQueryClient();
+  
+  // React Query for task data
+  const { data: task, isLoading: loading, refetch: refetchTask } = useTask(Number(id));
+  const applyMutation = useApplyToTask();
+  
   const [applications, setApplications] = useState<TaskApplication[]>([]);
-  const [loading, setLoading] = useState(true);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
@@ -87,12 +93,6 @@ const TaskDetail = () => {
   const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
-    if (id) {
-      fetchTask();
-    }
-  }, [id]);
-
-  useEffect(() => {
     if (task && user?.id === task.creator_id && task.status === 'open') {
       fetchApplications();
       fetchRecommendedHelpers();
@@ -104,19 +104,6 @@ const TaskDetail = () => {
       }
     }
   }, [task, user, isAuthenticated]);
-
-  const fetchTask = async () => {
-    try {
-      setLoading(true);
-      const taskData = await getTask(Number(id));
-      setTask(taskData);
-    } catch (error) {
-      console.error('Error fetching task:', error);
-      toast.error('Failed to load task');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchApplications = async () => {
     try {
@@ -252,21 +239,23 @@ const TaskDetail = () => {
       return;
     }
 
-    try {
-      setActionLoading(true);
-      await applyToTask(Number(id), applicationMessage);
-      toast.success('✅ Application submitted! The task owner will review your application.');
-      setShowApplicationForm(false);
-      setApplicationMessage('');
-      setTimeout(() => {
-        navigate('/tasks');
-      }, 2000);
-    } catch (error: any) {
-      console.error('Error applying to task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
-    } finally {
-      setActionLoading(false);
-    }
+    applyMutation.mutate(
+      { taskId: Number(id), message: applicationMessage },
+      {
+        onSuccess: () => {
+          toast.success('✅ Application submitted! The task owner will review your application.');
+          setShowApplicationForm(false);
+          setApplicationMessage('');
+          setTimeout(() => {
+            navigate('/tasks');
+          }, 2000);
+        },
+        onError: (error: any) => {
+          console.error('Error applying to task:', error);
+          toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
+        }
+      }
+    );
   };
 
   const handleAcceptApplication = async (applicationId: number) => {
@@ -274,7 +263,7 @@ const TaskDetail = () => {
       setAcceptingId(applicationId);
       await acceptApplication(Number(id), applicationId);
       toast.success('🎉 Application accepted! The task has been assigned.');
-      fetchTask();
+      refetchTask();
       fetchApplications();
     } catch (error: any) {
       console.error('Error accepting application:', error);
@@ -305,7 +294,7 @@ const TaskDetail = () => {
       setActionLoading(true);
       await markTaskDone(Number(id));
       toast.success('Task marked as done! Waiting for creator confirmation.');
-      fetchTask();
+      refetchTask();
     } catch (error: any) {
       console.error('Error marking task done:', error);
       toast.error(error?.response?.data?.error || 'Failed to mark task as done');
@@ -319,7 +308,7 @@ const TaskDetail = () => {
       setActionLoading(true);
       await confirmTaskCompletion(Number(id));
       toast.success('Task completed! You can now leave a review.');
-      fetchTask();
+      refetchTask();
     } catch (error: any) {
       console.error('Error confirming task:', error);
       toast.error(error?.response?.data?.error || 'Failed to confirm task');
@@ -336,7 +325,7 @@ const TaskDetail = () => {
       setActionLoading(true);
       await disputeTask(Number(id), reason);
       toast.warning('Task has been disputed. Please resolve with the worker.');
-      fetchTask();
+      refetchTask();
     } catch (error: any) {
       console.error('Error disputing task:', error);
       toast.error(error?.response?.data?.error || 'Failed to dispute task');
@@ -352,7 +341,7 @@ const TaskDetail = () => {
       setActionLoading(true);
       await cancelTask(Number(id));
       toast.success('Task cancelled.');
-      fetchTask();
+      refetchTask();
     } catch (error: any) {
       console.error('Error cancelling task:', error);
       toast.error(error?.response?.data?.error || 'Failed to cancel task');
@@ -922,8 +911,8 @@ const TaskDetail = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <textarea value={applicationMessage} onChange={(e) => setApplicationMessage(e.target.value)} placeholder="Introduce yourself..." className="w-full px-3 py-2 border rounded-lg mb-2 text-sm min-h-[80px]" />
                   <div className="flex gap-2">
-                    <button onClick={handleApplyTask} disabled={actionLoading} className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium text-sm">
-                      {actionLoading ? 'Submitting...' : 'Submit Application'}
+                    <button onClick={handleApplyTask} disabled={applyMutation.isPending} className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium text-sm">
+                      {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
                     </button>
                     <button onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }} className="px-4 py-2 bg-gray-200 rounded-lg text-sm">
                       Cancel
