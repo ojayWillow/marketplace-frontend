@@ -90,6 +90,9 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [editingReview, setEditingReview] = useState<number | null>(null);
   const [reviewEditData, setReviewEditData] = useState<{ rating: number; content: string }>({ rating: 5, content: '' });
+  const [showMapTipDismissed, setShowMapTipDismissed] = useState(() => {
+    return localStorage.getItem('mapTipDismissed') === 'true';
+  });
   
   // Read state from URL params with defaults
   const activeTab = (searchParams.get('tab') as ActiveTab) || 'about';
@@ -433,6 +436,11 @@ const Profile = () => {
     } finally {
       setUploadingAvatar(false);
     }
+  };
+
+  const handleDismissMapTip = () => {
+    setShowMapTipDismissed(true);
+    localStorage.setItem('mapTipDismissed', 'true');
   };
 
   const renderStars = (rating: number) => {
@@ -1062,6 +1070,27 @@ const Profile = () => {
                 + New Service
               </Link>
             </div>
+
+            {/* Soft Map Visibility Tip - Dismissable */}
+            {hasOfferings && !showMapTipDismissed && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <span className="text-lg flex-shrink-0">💡</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-blue-800">
+                      <span className="font-medium">Pro tip:</span> Your services can appear on the map for people searching nearby. 
+                      Map visibility is a premium feature coming soon!
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleDismissMapTip}
+                    className="text-blue-400 hover:text-blue-600 text-sm flex-shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
             
             {offeringsLoading ? (
               <div className="text-center py-8">
