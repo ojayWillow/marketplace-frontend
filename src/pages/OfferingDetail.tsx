@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getOffering, boostOffering, Offering } from '../api/offerings';
+import { Offering } from '../api/offerings';
 import { getTasks, Task } from '../api/tasks';
+import { useOffering, useBoostOffering } from '../api/hooks';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
@@ -35,21 +36,15 @@ const OfferingDetail = () => {
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
   
-  const [offering, setOffering] = useState<Offering | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // React Query for offering data
+  const { data: offering, isLoading: loading, error: queryError, refetch } = useOffering(Number(id));
+  const boostMutation = useBoostOffering();
+  
   const [contacting, setContacting] = useState(false);
-  const [boosting, setBoosting] = useState(false);
   
   // Matching jobs state
   const [matchingJobs, setMatchingJobs] = useState<Task[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
-
-  useEffect(() => {
-    if (id) {
-      fetchOffering();
-    }
-  }, [id]);
 
   useEffect(() => {
     // Fetch matching jobs when offering is loaded and user is the owner
@@ -57,20 +52,6 @@ const OfferingDetail = () => {
       fetchMatchingJobs();
     }
   }, [offering, user]);
-
-  const fetchOffering = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getOffering(parseInt(id!, 10));
-      setOffering(data);
-    } catch (err: any) {
-      console.error('Error fetching offering:', err);
-      setError(err?.response?.data?.error || 'Failed to load offering');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchMatchingJobs = async () => {
     if (!offering || !offering.latitude || !offering.longitude) return;
@@ -125,18 +106,15 @@ const OfferingDetail = () => {
   const handleBoost = async () => {
     if (!offering) return;
     
-    try {
-      setBoosting(true);
-      const response = await boostOffering(offering.id);
-      toast.success(response.message || 'Offering boosted! It will now appear on the map.');
-      // Refresh offering data to show updated boost status
-      await fetchOffering();
-    } catch (err: any) {
-      console.error('Error boosting offering:', err);
-      toast.error(err?.response?.data?.error || 'Failed to boost offering');
-    } finally {
-      setBoosting(false);
-    }
+    boostMutation.mutate(offering.id, {
+      onSuccess: (response) => {
+        toast.success(response.message || 'Offering boosted! It will now appear on the map.');
+      },
+      onError: (err: any) => {
+        console.error('Error boosting offering:', err);
+        toast.error(err?.response?.data?.error || 'Failed to boost offering');
+      }
+    });
   };
 
   const offeringIcon = divIcon({
@@ -262,13 +240,13 @@ const OfferingDetail = () => {
     );
   }
 
-  if (error || !offering) {
+  if (queryError || !offering) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😕</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Offering Not Found</h2>
-          <p className="text-gray-600 mb-4">{error || 'This offering may have been removed or is no longer available.'}</p>
+          <p className="text-gray-600 mb-4">This offering may have been removed or is no longer available.</p>
           <Link to="/tasks" className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition-colors">
             Browse All Offerings
           </Link>
@@ -413,10 +391,10 @@ const OfferingDetail = () => {
                   ) : (
                     <button
                       onClick={handleBoost}
-                      disabled={boosting}
+                      disabled={boostMutation.isPending}
                       className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-md disabled:opacity-50"
                     >
-                      {boosting ? (
+                      {boostMutation.isPending ? (
                         <span className="flex items-center gap-2">
                           <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
                           Activating...
