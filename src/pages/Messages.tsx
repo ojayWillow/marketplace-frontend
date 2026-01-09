@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
-import { getConversations, Conversation } from '../api/messages';
+import { useConversations } from '../api/hooks';
 import { getImageUrl } from '../api/uploads';
 import OnlineStatus from '../components/ui/OnlineStatus';
 
@@ -10,28 +10,16 @@ export default function Messages() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // React Query for conversations - auto-refetches every minute
+  const { data, isLoading: loading } = useConversations({ enabled: isAuthenticated });
+  const conversations = data?.conversations || [];
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
-      return;
     }
-    fetchConversations();
   }, [isAuthenticated]);
-
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      const data = await getConversations();
-      setConversations(data.conversations);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
