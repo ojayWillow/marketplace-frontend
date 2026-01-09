@@ -23,8 +23,8 @@ export default defineConfig({
   },
   
   use: {
-    /* Base URL for the frontend */
-    baseURL: 'http://localhost:5173',
+    /* Base URL for the frontend - Vite default port */
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     
     /* Collect trace on failure */
     trace: 'on-first-retry',
@@ -64,6 +64,6 @@ export default defineConfig({
   /* 
    * Removed webServer auto-start - run servers manually:
    * 1. Backend: python wsgi.py (port 5000)
-   * 2. Frontend: npm run dev (port 5173)
+   * 2. Frontend: npm run dev (port 3000)
    */
 });
