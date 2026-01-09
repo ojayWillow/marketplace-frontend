@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createOffering, activateOffering } from '../api/offerings';
+import { createOffering, boostOffering } from '../api/offerings';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
@@ -126,17 +126,21 @@ const CreateOffering = () => {
     
     setActivating(true);
     try {
-      await activateOffering(createdOfferingId);
+      await boostOffering(createdOfferingId);
       setIsBoosted(true);
-      toast.success('🚀 Boost activated! Your service is now featured.');
+      toast.success('🚀 Boost activated! Your service is now visible on the map.');
     } catch (error: any) {
       console.error('Error boosting offering:', error);
-      // Even if it fails, show success for UX
-      setIsBoosted(true);
-      toast.info('Boost is being activated...');
+      toast.error(error?.response?.data?.error || 'Failed to activate boost. Please try again.');
     } finally {
       setActivating(false);
     }
+  };
+
+  const handleViewOnMap = () => {
+    setShowSuccessModal(false);
+    // Navigate to Quick Help with offerings tab selected
+    navigate('/tasks?tab=offerings');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -429,7 +433,7 @@ const CreateOffering = () => {
               </h2>
               <p className="text-gray-600 mt-1">
                 {isBoosted 
-                  ? 'Your service is now featured with maximum visibility for 24 hours.' 
+                  ? 'Your service is now visible on the Quick Help map!' 
                   : 'Your offering is now live in the services list.'}
               </p>
             </div>
@@ -447,8 +451,8 @@ const CreateOffering = () => {
                       Get more visibility:
                     </p>
                     <ul className="text-sm text-gray-700 mb-3 space-y-1">
-                      <li>📍 <strong>Appear on the map</strong></li>
-                      <li>⬆️ <strong>Rank higher</strong> in the list</li>
+                      <li>📍 <strong>Appear on the map</strong> in Quick Help</li>
+                      <li>⬆️ <strong>Rank higher</strong> in search results</li>
                     </ul>
                     <button
                       onClick={handleBoostTrial}
@@ -476,9 +480,9 @@ const CreateOffering = () => {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                 <h4 className="font-medium text-green-800 mb-2">🚀 Boost active for 24 hours:</h4>
                 <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Your pin is visible on the map</li>
-                  <li>• You appear higher in search results</li>
-                  <li>• Maximum exposure to nearby clients</li>
+                  <li>✓ Your pin is visible on the map</li>
+                  <li>✓ You appear higher in search results</li>
+                  <li>✓ Maximum exposure to nearby clients</li>
                 </ul>
               </div>
             ) : (
@@ -494,15 +498,24 @@ const CreateOffering = () => {
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  navigate(createdOfferingId ? `/offerings/${createdOfferingId}` : '/profile?tab=offerings');
-                }}
-                className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
-              >
-                View My Offering
-              </button>
+              {isBoosted ? (
+                <button
+                  onClick={handleViewOnMap}
+                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 font-semibold flex items-center justify-center gap-2"
+                >
+                  📍 View on Map
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    navigate(createdOfferingId ? `/offerings/${createdOfferingId}` : '/profile?tab=offerings');
+                  }}
+                  className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
+                >
+                  View My Offering
+                </button>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={() => {
