@@ -196,7 +196,7 @@ const createUserLocationIcon = () => divIcon({
 
 // Job Price Label Icon - Shows actual price with color coding
 // Budget thresholds: ≤25€ (green), ≤75€ (blue), >75€ (purple/gold with glow)
-// Urgent jobs get a red pulsing border
+// Urgent jobs get a red border (no animation - simplified)
 const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
   let bgColor = '#22c55e'; // green-500 for quick tasks
   let textColor = 'white';
@@ -214,14 +214,14 @@ const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5), 0 0 12px rgba(217, 119, 6, 0.3)';
   }
   
-  // Urgent jobs get red border and pulse effect
+  // Urgent jobs get red border only (no pulse/blink animation)
   if (isUrgent) {
     border = '3px solid #ef4444';
-    shadow = '0 0 0 2px rgba(239, 68, 68, 0.4), ' + shadow;
+    shadow = '0 0 0 2px rgba(239, 68, 68, 0.3), ' + shadow;
     extraClass += ' job-price--urgent';
   }
   
-  // Format price display
+  // Format price display (no ⚡ emoji for urgent - simplified)
   const priceText = budget >= 1000 ? `€${(budget/1000).toFixed(1)}k` : `€${budget}`;
   const isLongPrice = priceText.length > 4;
   const fontSize = isLongPrice ? '11px' : '12px';
@@ -234,7 +234,7 @@ const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
   return divIcon({
     className: `job-price-icon${extraClass}`,
     html: `
-      <div class="job-price-marker${isUrgent ? ' animate-pulse' : ''}" style="
+      <div class="job-price-marker" style="
         ${bgStyle}
         color: ${textColor};
         font-size: ${fontSize};
@@ -253,7 +253,7 @@ const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
         cursor: pointer;
         transition: transform 0.15s ease;
       ">
-        ${isUrgent ? '⚡' : ''}${priceText}
+        ${priceText}
       </div>
     `,
     iconSize: [50, 28],
@@ -313,10 +313,10 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
   
   return (
     <div className="job-popup" style={{ width: '240px' }}>
-      {/* Urgent badge if applicable */}
+      {/* Urgent badge if applicable - simplified, no extra text */}
       {task.is_urgent && (
         <div className="mb-2 px-2 py-1 bg-red-100 border border-red-200 rounded-lg text-center">
-          <span className="text-red-700 font-semibold text-xs">⚡ {t('tasks.urgentJob', 'URGENT - Needs help ASAP!')}</span>
+          <span className="text-red-700 font-semibold text-xs">⚡ {t('tasks.urgent', 'URGENT')}</span>
         </div>
       )}
       
@@ -1046,7 +1046,7 @@ const DesktopTasksView = () => {
           </div>
         </div>
 
-        {/* Urgent jobs banner - show if there are urgent jobs */}
+        {/* Urgent jobs banner - show if there are urgent jobs (KEPT - this is the main notification) */}
         {urgentJobsCount > 0 && (
           <div className="mb-4 bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-4 text-white shadow-md">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -1155,7 +1155,7 @@ const DesktopTasksView = () => {
           <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💰 {t('common.jobs', 'Jobs')} ({filteredTasks.length})
             {urgentJobsCount > 0 && activeTab !== 'jobs' && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                 {urgentJobsCount} ⚡
               </span>
             )}
@@ -1198,10 +1198,10 @@ const DesktopTasksView = () => {
               </div>
             )}
             
-            {/* Urgent jobs indicator */}
+            {/* Urgent jobs indicator - simplified, no blinking */}
             {urgentJobsCount > 0 && (
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-red-500 text-white rounded-full text-xs font-bold border-2 border-red-300">⚡€</span>
+                <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold border-2 border-red-400">€</span>
                 <span className="text-red-600 text-xs font-medium">{t('map.urgentJobs', 'Urgent')}</span>
               </div>
             )}
@@ -1416,7 +1416,9 @@ const DesktopTasksView = () => {
   );
 };
 
-// Job Card Component with matching indicator, budget display, favorite button, and URGENT styling - Blue theme
+// Job Card Component - SIMPLIFIED urgent styling
+// Removed: animate-pulse, "Needs help ASAP!" text, ⚡ in price, "Act fast!" text
+// Kept: red border, small "Urgent" badge
 const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation: { lat: number; lng: number }; isMatching?: boolean }) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
@@ -1427,7 +1429,7 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
   return (
     <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
       isUrgent
-        ? 'border-red-400 bg-gradient-to-br from-red-50 to-orange-50 hover:border-red-500 ring-2 ring-red-200'
+        ? 'border-red-400 bg-gradient-to-br from-red-50 to-orange-50 hover:border-red-500'
         : isHighValue 
           ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-amber-50 hover:border-purple-400 ring-1 ring-purple-200'
           : isMatching 
@@ -1444,13 +1446,12 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
       </div>
       
       <Link to={`/tasks/${task.id}`} className="block">
-        {/* Urgent badge - TOP PRIORITY */}
+        {/* Urgent badge - simplified: just a small badge, no extra text */}
         {isUrgent && (
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-1 bg-red-500 text-white rounded-lg text-xs font-bold animate-pulse flex items-center gap-1">
-              ⚡ {t('tasks.urgent', 'URGENT')}
+            <span className="px-2 py-1 bg-red-500 text-white rounded-lg text-xs font-bold flex items-center gap-1">
+              ⚡ {t('tasks.urgent', 'Urgent')}
             </span>
-            <span className="text-red-600 text-xs font-medium">{t('tasks.needsHelpASAP', 'Needs help ASAP!')}</span>
           </div>
         )}
         
@@ -1479,7 +1480,7 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
               <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
               {isUrgent && (
-                <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">⚡ {t('tasks.urgent', 'Urgent')}</span>
+                <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">{t('tasks.urgent', 'Urgent')}</span>
               )}
             </div>
             {task.creator_name && (
@@ -1487,17 +1488,15 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
             )}
           </div>
           <div className="text-right flex-shrink-0">
-            {/* Price - color coded like map, red border if urgent */}
+            {/* Price - color coded like map, simplified (no ⚡ emoji) */}
             <div className={`text-xl sm:text-2xl font-bold ${
-              isUrgent ? 'text-red-600' :
               budget <= 25 ? 'text-green-600' : 
               budget <= 75 ? 'text-blue-600' : 
               'text-purple-600'
             }`}>
-              {isUrgent && '⚡'}€{budget}
+              €{budget}
             </div>
-            {isHighValue && !isUrgent && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
-            {isUrgent && <div className="text-xs text-red-500 mt-1 font-medium">{t('tasks.actFast', 'Act fast!')}</div>}
+            {isHighValue && <div className="text-xs text-amber-500 mt-1">💎 {t('map.premium', 'Premium')}</div>}
           </div>
         </div>
       </Link>
