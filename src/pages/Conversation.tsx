@@ -143,8 +143,8 @@ export default function Conversation() {
             </Link>
             
             <Link to={`/users/${otherUser?.id}`} className="flex items-center gap-3 flex-1">
-              {/* Avatar with online status */}
-              <div className="relative">
+              {/* Avatar - clean, no overlay */}
+              <div className="flex-shrink-0">
                 {otherUser?.avatar_url ? (
                   <img
                     src={getImageUrl(otherUser.avatar_url)}
@@ -156,19 +156,21 @@ export default function Conversation() {
                     {otherUser?.username?.charAt(0).toUpperCase() || '?'}
                   </div>
                 )}
-                {/* Online status badge on avatar */}
-                {onlineStatus && (
-                  <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
-                    <OnlineStatus
-                      status={onlineStatus}
-                      lastSeenDisplay={otherUser?.last_seen_display}
-                      size="sm"
-                      showTooltip={false}
-                    />
-                  </div>
-                )}
               </div>
               
+              {/* Online status icon - between avatar and name */}
+              {onlineStatus && (
+                <div className="flex-shrink-0">
+                  <OnlineStatus
+                    status={onlineStatus}
+                    lastSeenDisplay={otherUser?.last_seen_display}
+                    size="md"
+                    showTooltip={false}
+                  />
+                </div>
+              )}
+              
+              {/* Name and status text */}
               <div>
                 <p className="font-medium text-gray-900">
                   {otherUser?.first_name && otherUser?.last_name
@@ -177,16 +179,13 @@ export default function Conversation() {
                 </p>
                 {/* Online status text */}
                 {onlineStatus && (
-                  <p className={`text-xs flex items-center gap-1 ${
+                  <p className={`text-xs ${
                     onlineStatus === 'online' 
                       ? 'text-green-600' 
                       : onlineStatus === 'inactive'
                         ? 'text-amber-600'
                         : 'text-gray-500'
                   }`}>
-                    {onlineStatus === 'online' && (
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    )}
                     {getOnlineStatusText(onlineStatus, otherUser?.last_seen_display)}
                   </p>
                 )}
