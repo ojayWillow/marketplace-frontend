@@ -15,6 +15,8 @@ const CreateOffering = () => {
   const [loading, setLoading] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdOfferingId, setCreatedOfferingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -106,9 +108,9 @@ const CreateOffering = () => {
         service_radius: parseFloat(formData.service_radius) || 25
       };
 
-      await createOffering(offeringData);
-      toast.success(t('createOffering.success', 'Your offering is now live! People can find and contact you.'));
-      navigate('/tasks');
+      const response = await createOffering(offeringData);
+      setCreatedOfferingId(response.offering?.id || response.id || null);
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Error creating offering:', error);
       toast.error(error?.response?.data?.error || t('createOffering.error', 'Failed to create offering. Please try again.'));
@@ -392,6 +394,65 @@ const CreateOffering = () => {
           </form>
         </div>
       </div>
+
+      {/* Success Modal with Map Tip */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            {/* Success Header */}
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🎉</span>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Service Published!</h2>
+              <p className="text-gray-600 mt-1">Your offering is now live. People can find and contact you.</p>
+            </div>
+
+            {/* Soft Map Tip */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">💡</span>
+                <div>
+                  <p className="text-sm text-blue-800">
+                    <span className="font-medium">Tip:</span> You can boost your visibility by appearing on the map. Manage this anytime from your profile.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate(createdOfferingId ? `/offerings/${createdOfferingId}` : '/profile?tab=offerings');
+                }}
+                className="w-full py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium"
+              >
+                View My Offering
+              </button>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate('/profile?tab=offerings');
+                }}
+                className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+              >
+                Go to My Services
+              </button>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate('/tasks');
+                }}
+                className="w-full py-2 text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Browse Jobs
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
