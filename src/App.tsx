@@ -38,6 +38,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 // Admin pages
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'))
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminJobs = lazy(() => import('./pages/admin/AdminJobs'))
 const AdminOfferings = lazy(() => import('./pages/admin/AdminOfferings'))
@@ -145,6 +146,7 @@ function App() {
             }
           >
             <Route index element={<AdminOverview />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="jobs" element={<AdminJobs />} />
             <Route path="offerings" element={<AdminOfferings />} />
