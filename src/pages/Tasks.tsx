@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 import { getTasks, Task as APITask } from '../api/tasks';
-import { getOfferings, Offering } from '../api/offerings';
+import { getOfferings, getBoostedOfferings, Offering } from '../api/offerings';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { useMatchingStore } from '../stores/matchingStore';
@@ -252,13 +252,49 @@ const getJobPriceIcon = (budget: number = 0) => {
   });
 };
 
-// Offering Icon - Orange/Amber (only shown when premium/boosted - for now hidden from map)
-const createOfferingIcon = () => divIcon({
-  className: 'custom-offering-icon',
-  html: '<div class="offering-pin"><span style="font-size:12px;">👋</span></div>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12]
-});
+// Boosted Offering Price Icon - Orange/Amber with price per hour
+const getBoostedOfferingIcon = (price: number = 0, priceType: string = 'hourly') => {
+  // Format price display
+  let priceText = `€${price}`;
+  if (priceType === 'hourly') {
+    priceText = `€${price}/h`;
+  } else if (priceType === 'negotiable') {
+    priceText = price > 0 ? `~€${price}` : '💬';
+  }
+  
+  const isLongPrice = priceText.length > 5;
+  const fontSize = isLongPrice ? '10px' : '11px';
+  const padding = isLongPrice ? '2px 5px' : '2px 7px';
+
+  return divIcon({
+    className: 'offering-price-icon',
+    html: `
+      <div class="offering-price-marker" style="
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        font-size: ${fontSize};
+        font-weight: 700;
+        padding: ${padding};
+        border-radius: 12px;
+        white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+        border: 2px solid white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 24px;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+      ">
+        👋 ${priceText}
+      </div>
+    `,
+    iconSize: [60, 28],
+    iconAnchor: [30, 14],
+  });
+};
 
 // =====================================================
 // CLEAN MAP POPUP - Blue theme for jobs
@@ -359,13 +395,20 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
   
   return (
     <div className="offering-popup" style={{ width: '220px' }}>
-      {/* Top row: Category bubble (orange) + Distance */}
+      {/* Boosted badge */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+          🔥 {t('offerings.boosted', 'Boosted')}
+        </span>
+        <span className="text-xs text-gray-500">📍 {formatDistance(distance)}</span>
+      </div>
+      
+      {/* Top row: Category bubble (orange) */}
       <div className="flex items-center justify-between mb-3">
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
           <span>{categoryIcon}</span>
           <span>{categoryLabel}</span>
         </span>
-        <span className="text-xs text-gray-500">📍 {formatDistance(distance)}</span>
       </div>
       
       {/* Provider info + Price */}
@@ -387,6 +430,7 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
         </div>
         <div className="text-lg font-bold text-green-600">
           €{offering.price || 0}
+          {offering.price_type === 'hourly' && <span className="text-xs font-normal">/h</span>}
         </div>
       </div>
       
@@ -419,27 +463,24 @@ const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; user
 // Memoized Map Markers Component - updates without re-creating the map
 const MapMarkers = ({ 
   tasks, 
-  offerings, 
+  boostedOfferings, 
   userLocation, 
   locationName,
   manualLocationSet,
   onLocationSelect,
-  showOfferingsOnMap,
   searchRadius
 }: {
   tasks: Task[];
-  offerings: Offering[];
+  boostedOfferings: Offering[];
   userLocation: { lat: number; lng: number };
   locationName: string;
   manualLocationSet: boolean;
   onLocationSelect: (lat: number, lng: number) => void;
-  showOfferingsOnMap: boolean;
   searchRadius: number;
 }) => {
   const { t } = useTranslation();
   // Memoize the user location icon
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
-  const offeringIcon = useMemo(() => createOfferingIcon(), []);
 
   // Apply offsets to tasks with overlapping coordinates
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
@@ -480,18 +521,22 @@ const MapMarkers = ({
         );
       })}
       
-      {/* Offering markers - Only shown if showOfferingsOnMap is true (future premium feature) */}
-      {showOfferingsOnMap && offerings.map((offering) => (
-        <Marker 
-          key={`offering-${offering.id}`} 
-          position={[offering.latitude, offering.longitude]} 
-          icon={offeringIcon}
-        >
-          <Popup>
-            <OfferingMapPopup offering={offering} userLocation={userLocation} />
-          </Popup>
-        </Marker>
-      ))}
+      {/* Boosted Offering markers - Orange price labels with wave emoji */}
+      {boostedOfferings.map((offering) => {
+        const offeringIcon = getBoostedOfferingIcon(offering.price || 0, offering.price_type);
+        
+        return (
+          <Marker 
+            key={`offering-${offering.id}`} 
+            position={[offering.latitude, offering.longitude]} 
+            icon={offeringIcon}
+          >
+            <Popup>
+              <OfferingMapPopup offering={offering} userLocation={userLocation} />
+            </Popup>
+          </Marker>
+        );
+      })}
     </>
   );
 };
@@ -536,6 +581,7 @@ const DesktopTasksView = () => {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [offerings, setOfferings] = useState<Offering[]>([]);
+  const [boostedOfferings, setBoostedOfferings] = useState<Offering[]>([]); // Separate state for map markers
   const [initialLoading, setInitialLoading] = useState(true); // Only for first load
   const [refreshing, setRefreshing] = useState(false); // For filter changes (doesn't hide content)
   const [error, setError] = useState<string | null>(null);
@@ -573,9 +619,6 @@ const DesktopTasksView = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
-  
-  // For now, offerings are NOT shown on map (future premium feature)
-  const showOfferingsOnMap = false;
   
   const hasFetchedRef = useRef(false);
   const hasEverLoadedRef = useRef(false); // Track if we've ever loaded data
@@ -781,7 +824,7 @@ const DesktopTasksView = () => {
       
       setTasks(tasksWithIcons);
       
-      // Fetch offerings
+      // Fetch all offerings (for the list)
       try {
         const offeringsResponse = await getOfferings({
           latitude: userLocation.lat,
@@ -794,6 +837,20 @@ const DesktopTasksView = () => {
       } catch (err) {
         console.log('Offerings API not available yet');
         setOfferings([]);
+      }
+      
+      // Fetch boosted offerings specifically for the map
+      try {
+        const boostedResponse = await getBoostedOfferings({
+          latitude: userLocation.lat,
+          longitude: userLocation.lng,
+          radius: effectiveRadius,
+          category: selectedCategory !== 'all' ? selectedCategory : undefined
+        });
+        setBoostedOfferings(boostedResponse.offerings || []);
+      } catch (err) {
+        console.log('Boosted offerings API not available yet');
+        setBoostedOfferings([]);
       }
       
       hasFetchedRef.current = true;
@@ -924,14 +981,14 @@ const DesktopTasksView = () => {
     : 0;
 
   // Get map markers based on active tab
-  // Note: Offerings are NOT shown on map for now (kept in list only)
+  // Boosted offerings are shown on map when viewing 'all' or 'offerings' tab
   const getMapMarkers = () => {
-    if (activeTab === 'jobs') return { tasks: filteredTasks, offerings: [] };
-    if (activeTab === 'offerings') return { tasks: [], offerings: showOfferingsOnMap ? filteredOfferings : [] };
-    return { tasks: filteredTasks, offerings: showOfferingsOnMap ? filteredOfferings : [] };
+    if (activeTab === 'jobs') return { tasks: filteredTasks, boostedOfferings: [] };
+    if (activeTab === 'offerings') return { tasks: [], boostedOfferings: boostedOfferings };
+    return { tasks: filteredTasks, boostedOfferings: boostedOfferings };
   };
 
-  const { tasks: mapTasks, offerings: mapOfferings } = getMapMarkers();
+  const { tasks: mapTasks, boostedOfferings: mapBoostedOfferings } = getMapMarkers();
   
   // Calculate budget stats for legend
   const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
@@ -1098,7 +1155,7 @@ const DesktopTasksView = () => {
               </div>
             )}
             
-            {/* Price color coding */}
+            {/* Price color coding for jobs */}
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold">€25</span>
               <span className="text-gray-500 text-xs">{t('map.quickTasks', 'Quick tasks')}</span>
@@ -1110,6 +1167,12 @@ const DesktopTasksView = () => {
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)' }}>€100+</span>
               <span className="text-gray-500 text-xs">{t('map.premiumJobs', 'Premium')} ✨</span>
+            </div>
+            
+            {/* Boosted offerings indicator */}
+            <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
+              <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>👋 €20/h</span>
+              <span className="text-gray-500 text-xs">{t('map.boostedOfferings', 'Boosted services')}</span>
             </div>
           </div>
           <div style={{ height: '350px' }}>
@@ -1124,23 +1187,27 @@ const DesktopTasksView = () => {
               />
               <MapMarkers
                 tasks={mapTasks}
-                offerings={mapOfferings}
+                boostedOfferings={mapBoostedOfferings}
                 userLocation={userLocation}
                 locationName={locationName}
                 manualLocationSet={manualLocationSet}
                 onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)}
-                showOfferingsOnMap={showOfferingsOnMap}
                 searchRadius={searchRadius}
               />
             </MapContainer>
           </div>
           
           {/* Quick stats below map - Blue theme */}
-          {filteredTasks.length > 0 && (
+          {(filteredTasks.length > 0 || mapBoostedOfferings.length > 0) && (
             <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex flex-wrap items-center gap-4 text-sm">
               <span className="font-medium text-blue-700">
                 💰 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}
               </span>
+              {mapBoostedOfferings.length > 0 && (
+                <span className="font-medium text-amber-700">
+                  👋 {t('offerings.boostedOnMap', '{{count}} boosted service(s)', { count: mapBoostedOfferings.length })}
+                </span>
+              )}
               {maxBudget > 0 && (
                 <span className="text-green-600">{t('tasks.topPayout', 'Top payout')}: €{maxBudget}</span>
               )}
@@ -1219,10 +1286,13 @@ const DesktopTasksView = () => {
             <div>
               {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">👋 {t('common.offerings', 'Offerings')} <span className="text-sm font-normal text-gray-500">({filteredOfferings.length})</span></h3>}
               
-              {/* Info banner about offerings not on map */}
+              {/* Info banner about boosted offerings on map */}
               {activeTab === 'offerings' && filteredOfferings.length > 0 && (
                 <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-                  <span className="font-medium">💡 {t('tasks.tip', 'Tip')}:</span> {t('offerings.premiumTip', 'Offerings are shown in the list below. Want your offering to appear on the map? Premium features coming soon!')}
+                  <span className="font-medium">💡 {t('tasks.tip', 'Tip')}:</span> {t('offerings.boostTip', 'Boost your offering to appear on the map! Go to your offering page and click "Activate 24h Free Trial" to get started.')}
+                  {boostedOfferings.length > 0 && (
+                    <span className="ml-2 font-semibold">🔥 {t('offerings.currentlyBoosted', '{{count}} offering(s) currently boosted and visible on map.', { count: boostedOfferings.length })}</span>
+                  )}
                 </div>
               )}
               
@@ -1365,9 +1435,14 @@ const JobCard = ({ task, userLocation, isMatching }: { task: Task; userLocation:
 const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
+  const isBoosted = offering.is_boost_active;
   
   return (
-    <div className="relative block border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-amber-300 transition-all">
+    <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
+      isBoosted 
+        ? 'border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 hover:border-amber-400 ring-1 ring-amber-200'
+        : 'border-gray-200 hover:border-amber-300'
+    }`}>
       {/* Favorite Button - positioned top right */}
       <div className="absolute top-2 right-2 z-10">
         <FavoriteButton
@@ -1378,6 +1453,13 @@ const OfferingCard = ({ offering, userLocation }: { offering: Offering; userLoca
       </div>
       
       <Link to={`/offerings/${offering.id}`} className="block">
+        {/* Boosted badge */}
+        {isBoosted && (
+          <div className="flex items-center gap-2 mb-2 text-amber-700">
+            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-200 to-orange-200 rounded text-xs font-semibold">🔥 {t('offerings.boostedOnMap', 'Boosted - Visible on map!')}</span>
+          </div>
+        )}
+        
         <div className="flex items-start gap-3 pr-8">
           {/* Avatar */}
           <div className="flex-shrink-0">
