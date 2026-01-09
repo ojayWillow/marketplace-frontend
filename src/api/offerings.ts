@@ -3,6 +3,14 @@
  * Offerings are services that users advertise (e.g., "Plumber - €20/hr", "Dog walking service")
  */
 import apiClient from './client';
+import i18n from '../i18n';
+
+/**
+ * Get current language code from i18n
+ */
+const getCurrentLanguage = (): string => {
+  return i18n.language?.substring(0, 2) || 'lv';
+};
 
 export interface Offering {
   id: number;
@@ -42,6 +50,7 @@ export interface GetOfferingsParams {
   longitude?: number;
   radius?: number;
   boosted_only?: boolean;
+  lang?: string; // Language for translation
 }
 
 export interface GetOfferingsResponse {
@@ -58,36 +67,48 @@ export interface BoostOfferingResponse {
 }
 
 /**
- * Get all offerings with optional filtering and geolocation
+ * Get all offerings with optional filtering, geolocation, and translation
+ * Automatically includes current language for translation
  */
 export const getOfferings = async (params: GetOfferingsParams = {}): Promise<GetOfferingsResponse> => {
-  const response = await apiClient.get('/api/offerings', { params });
+  const paramsWithLang = {
+    ...params,
+    lang: params.lang || getCurrentLanguage(),
+  };
+  const response = await apiClient.get('/api/offerings', { params: paramsWithLang });
   return response.data;
 };
 
 /**
  * Get only boosted offerings (for map display)
+ * Automatically includes current language for translation
  */
 export const getBoostedOfferings = async (params: Omit<GetOfferingsParams, 'boosted_only'> = {}): Promise<GetOfferingsResponse> => {
   const response = await apiClient.get('/api/offerings', { 
-    params: { ...params, boosted_only: true } 
+    params: { ...params, boosted_only: true, lang: getCurrentLanguage() } 
   });
   return response.data;
 };
 
 /**
  * Get offerings created by current user
+ * Automatically includes current language for translation
  */
 export const getMyOfferings = async (): Promise<GetOfferingsResponse> => {
-  const response = await apiClient.get('/api/offerings/my');
+  const response = await apiClient.get('/api/offerings/my', {
+    params: { lang: getCurrentLanguage() }
+  });
   return response.data;
 };
 
 /**
  * Get a single offering by ID
+ * Automatically includes current language for translation
  */
 export const getOffering = async (offeringId: number): Promise<Offering> => {
-  const response = await apiClient.get(`/api/offerings/${offeringId}`);
+  const response = await apiClient.get(`/api/offerings/${offeringId}`, {
+    params: { lang: getCurrentLanguage() }
+  });
   return response.data;
 };
 
