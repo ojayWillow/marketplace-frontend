@@ -19,6 +19,12 @@ const navItems: NavItem[] = [
   { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ];
 
+// Admin emails - add your email here to get admin access
+const ADMIN_EMAILS = [
+  'admin@tirgus.lv',
+  'og.vitols@gmail.com',
+];
+
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,8 +37,9 @@ const AdminLayout = () => {
       navigate('/login');
       return;
     }
-    // Check for admin role - adjust based on your backend
-    if (user && !(user as any).is_admin && user.email !== 'admin@tirgus.lv') {
+    // Check for admin role
+    const isAdmin = (user as any)?.is_admin || ADMIN_EMAILS.includes(user?.email || '');
+    if (!isAdmin) {
       navigate('/');
     }
   }, [isAuthenticated, user, navigate]);
