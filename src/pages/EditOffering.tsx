@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getOffering, updateOffering, Offering } from '../api/offerings';
+import { useOffering } from '../api/hooks';
+import { updateOffering } from '../api/offerings';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
+import { useQueryClient } from '@tanstack/react-query';
 
 const EditOffering = () => {
   const { t } = useTranslation();
@@ -13,11 +15,15 @@ const EditOffering = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  // React Query for loading offering
+  const { data: offering, isLoading: loading, error } = useOffering(Number(id));
+  
   const [saving, setSaving] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
-  const [offering, setOffering] = useState<Offering | null>(null);
+  const [formInitialized, setFormInitialized] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -49,49 +55,44 @@ const EditOffering = () => {
     if (!isAuthenticated) {
       toast.warning(t('offerings.loginToEdit', 'Please login to edit offerings'));
       navigate('/login');
-      return;
     }
-    
-    if (id) {
-      fetchOffering();
-    }
-  }, [id, isAuthenticated]);
+  }, [isAuthenticated]);
 
-  const fetchOffering = async () => {
-    try {
-      setLoading(true);
-      const offeringData = await getOffering(Number(id));
-      setOffering(offeringData);
-      
+  // Initialize form when offering loads
+  useEffect(() => {
+    if (offering && !formInitialized) {
       // Check if user owns this offering
-      if (offeringData.creator_id !== user?.id) {
+      if (offering.creator_id !== user?.id) {
         toast.error(t('editOffering.notOwner', 'You can only edit your own offerings'));
         navigate('/profile?tab=offerings');
         return;
       }
       
       setFormData({
-        title: offeringData.title || '',
-        description: offeringData.description || '',
-        category: offeringData.category || 'cleaning',
-        price: offeringData.price?.toString() || '',
-        price_type: offeringData.price_type || 'hourly',
-        location: offeringData.location || '',
-        latitude: offeringData.latitude || 56.9496,
-        longitude: offeringData.longitude || 24.1052,
-        availability: offeringData.availability || '',
-        experience: offeringData.experience || '',
+        title: offering.title || '',
+        description: offering.description || '',
+        category: offering.category || 'cleaning',
+        price: offering.price?.toString() || '',
+        price_type: offering.price_type || 'hourly',
+        location: offering.location || '',
+        latitude: offering.latitude || 56.9496,
+        longitude: offering.longitude || 24.1052,
+        availability: offering.availability || '',
+        experience: offering.experience || '',
         service_radius: '25', // Default, not stored in current API
-        status: offeringData.status || 'active'
+        status: offering.status || 'active'
       });
-    } catch (error) {
-      console.error('Error fetching offering:', error);
+      setFormInitialized(true);
+    }
+  }, [offering, formInitialized, user?.id]);
+
+  // Handle error
+  useEffect(() => {
+    if (error) {
       toast.error(t('editOffering.loadError', 'Failed to load offering'));
       navigate('/profile?tab=offerings');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error]);
 
   // Debounced geocoding search
   useEffect(() => {
@@ -156,6 +157,10 @@ const EditOffering = () => {
       };
 
       await updateOffering(Number(id), updateData);
+      
+      // Invalidate cache to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['offering', Number(id)] });
+      
       toast.success(t('editOffering.success', 'Offering updated successfully!'));
       navigate('/profile?tab=offerings');
     } catch (error: any) {
