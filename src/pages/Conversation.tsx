@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import { getConversation, getMessages, sendMessage, markAllRead, Conversation as ConvType, Message } from '../api/messages';
+import { getConversation, Conversation as ConvType } from '../api/messages';
+import { useMessages, useSendMessage, useMarkAsRead } from '../api/hooks';
 import { getImageUrl } from '../api/uploads';
 import OnlineStatus from '../components/ui/OnlineStatus';
 
@@ -14,11 +15,16 @@ export default function Conversation() {
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
   const [conversation, setConversation] = useState<ConvType | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [convLoading, setConvLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // React Query for messages - auto-refetches every 30 seconds
+  const { data: msgData, isLoading: messagesLoading } = useMessages(Number(id), { enabled: isAuthenticated && !!id });
+  const messages = msgData?.messages || [];
+  
+  const sendMutation = useSendMessage();
+  const markReadMutation = useMarkAsRead();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,29 +32,31 @@ export default function Conversation() {
       return;
     }
     if (id) {
-      fetchData();
+      fetchConversation();
     }
   }, [isAuthenticated, id]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  // Mark as read when messages load
+  useEffect(() => {
+    if (id && messages.length > 0) {
+      markReadMutation.mutate(Number(id));
+    }
+  }, [id, messages.length]);
 
-  const fetchData = async () => {
+  const fetchConversation = async () => {
     try {
-      setLoading(true);
-      const [convData, msgData] = await Promise.all([
-        getConversation(Number(id)),
-        getMessages(Number(id))
-      ]);
+      setConvLoading(true);
+      const convData = await getConversation(Number(id));
       setConversation(convData);
-      setMessages(msgData.messages);
-      await markAllRead(Number(id));
     } catch (error) {
       console.error('Error fetching conversation:', error);
       toast.error(t('messages.errorLoading', 'Failed to load conversation'));
     } finally {
-      setLoading(false);
+      setConvLoading(false);
     }
   };
 
@@ -58,19 +66,21 @@ export default function Conversation() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() || sendMutation.isPending || !conversation?.other_participant?.id) return;
 
-    try {
-      setSending(true);
-      const msg = await sendMessage(Number(id), newMessage.trim());
-      setMessages(prev => [...prev, msg]);
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error(t('messages.errorSending', 'Failed to send message'));
-    } finally {
-      setSending(false);
-    }
+    const messageContent = newMessage.trim();
+    setNewMessage('');
+    
+    sendMutation.mutate(
+      { recipientId: conversation.other_participant.id, content: messageContent },
+      {
+        onError: (error) => {
+          console.error('Error sending message:', error);
+          toast.error(t('messages.errorSending', 'Failed to send message'));
+          setNewMessage(messageContent); // Restore message on error
+        }
+      }
+    );
   };
 
   const formatTime = (dateString: string) => {
@@ -105,6 +115,8 @@ export default function Conversation() {
         return '';
     }
   };
+
+  const loading = convLoading || messagesLoading;
 
   if (loading) {
     return (
@@ -244,15 +256,15 @@ export default function Conversation() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder={t('messages.typeMessage', 'Type a message...')}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                disabled={sending}
+                disabled={sendMutation.isPending}
                 autoFocus
               />
               <button
                 type="submit"
-                disabled={!newMessage.trim() || sending}
+                disabled={!newMessage.trim() || sendMutation.isPending}
                 className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm"
               >
-                {sending ? '...' : t('messages.send', 'Send')}
+                {sendMutation.isPending ? '...' : t('messages.send', 'Send')}
               </button>
             </form>
           </div>
