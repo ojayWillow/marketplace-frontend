@@ -4,9 +4,15 @@ import { useTranslation } from 'react-i18next';
 export interface CompactFilterValues {
   minPrice: number;
   maxPrice: number;
-  distance: number; // 0 = all Latvia
-  datePosted: 'all' | 'today' | 'week' | 'month';
+  distance: number;
+  datePosted: string;
   category: string;
+}
+
+interface CategoryOption {
+  value: string;
+  label: string;
+  icon?: string;
 }
 
 interface CompactFilterBarProps {
@@ -17,151 +23,11 @@ interface CompactFilterBarProps {
   locationName: string;
   onLocationClick: () => void;
   maxPriceLimit?: number;
-  categoryOptions?: { value: string; label: string; icon?: string }[];
+  categoryOptions?: CategoryOption[];
   variant?: 'jobs' | 'offerings';
 }
 
-// Dropdown wrapper component
-const FilterDropdown = ({ 
-  trigger, 
-  children, 
-  isOpen, 
-  onToggle,
-  align = 'left'
-}: { 
-  trigger: React.ReactNode; 
-  children: React.ReactNode; 
-  isOpen: boolean;
-  onToggle: () => void;
-  align?: 'left' | 'right' | 'center';
-}) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        if (isOpen) onToggle();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, onToggle]);
-
-  const alignClasses = {
-    left: 'left-0',
-    right: 'right-0',
-    center: 'left-1/2 -translate-x-1/2'
-  };
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <div onClick={onToggle}>{trigger}</div>
-      {isOpen && (
-        <div className={`absolute top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 ${alignClasses[align]}`}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Budget Range Slider Popover
-const BudgetPopover = ({ 
-  minPrice, 
-  maxPrice, 
-  maxLimit,
-  onChange,
-  onClose,
-  accentColor = 'blue'
-}: { 
-  minPrice: number; 
-  maxPrice: number;
-  maxLimit: number;
-  onChange: (min: number, max: number) => void;
-  onClose: () => void;
-  accentColor?: 'blue' | 'amber';
-}) => {
-  const { t } = useTranslation();
-  const [localMin, setLocalMin] = useState(minPrice);
-  const [localMax, setLocalMax] = useState(maxPrice);
-
-  const handleApply = () => {
-    onChange(localMin, localMax);
-    onClose();
-  };
-
-  const presets = [
-    { label: t('filters.any', 'Any'), min: 0, max: maxLimit },
-    { label: '€0-25', min: 0, max: 25 },
-    { label: '€25-50', min: 25, max: 50 },
-    { label: '€50-100', min: 50, max: 100 },
-    { label: '€100+', min: 100, max: maxLimit },
-  ];
-
-  const colorClasses = accentColor === 'amber' 
-    ? 'bg-amber-500 hover:bg-amber-600' 
-    : 'bg-blue-500 hover:bg-blue-600';
-
-  return (
-    <div className="p-4 w-64">
-      <div className="text-sm font-medium text-gray-700 mb-3">💰 {t('filters.budget', 'Budget')}</div>
-      
-      {/* Quick presets */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {presets.map((preset) => (
-          <button
-            key={preset.label}
-            onClick={() => { setLocalMin(preset.min); setLocalMax(preset.max); }}
-            className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-              localMin === preset.min && localMax === preset.max
-                ? `${colorClasses} text-white border-transparent`
-                : 'border-gray-300 text-gray-600 hover:border-gray-400'
-            }`}
-          >
-            {preset.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Range inputs */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="flex-1">
-          <label className="text-xs text-gray-500">{t('filters.min', 'Min')}</label>
-          <input
-            type="number"
-            value={localMin}
-            onChange={(e) => setLocalMin(Math.max(0, parseInt(e.target.value) || 0))}
-            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-            min={0}
-            max={localMax}
-          />
-        </div>
-        <span className="text-gray-400 mt-4">–</span>
-        <div className="flex-1">
-          <label className="text-xs text-gray-500">{t('filters.max', 'Max')}</label>
-          <input
-            type="number"
-            value={localMax}
-            onChange={(e) => setLocalMax(Math.min(maxLimit, parseInt(e.target.value) || maxLimit))}
-            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-            min={localMin}
-            max={maxLimit}
-          />
-        </div>
-      </div>
-
-      {/* Apply button */}
-      <button
-        onClick={handleApply}
-        className={`w-full py-2 rounded-lg text-white text-sm font-medium ${colorClasses}`}
-      >
-        {t('filters.apply', 'Apply')}
-      </button>
-    </div>
-  );
-};
-
-export default function CompactFilterBar({
+const CompactFilterBar = ({
   filters,
   onChange,
   onSearchChange,
@@ -171,43 +37,50 @@ export default function CompactFilterBar({
   maxPriceLimit = 500,
   categoryOptions = [],
   variant = 'jobs'
-}: CompactFilterBarProps) {
+}: CompactFilterBarProps) => {
   const { t } = useTranslation();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const accentColor = variant === 'offerings' ? 'amber' : 'blue';
-  const accentClasses = variant === 'offerings'
-    ? 'bg-amber-500 text-white'
-    : 'bg-blue-500 text-white';
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const toggleDropdown = (name: string) => {
-    setOpenDropdown(openDropdown === name ? null : name);
+  const updateFilter = (key: keyof CompactFilterValues, value: any) => {
+    onChange({ ...filters, [key]: value });
   };
 
-  const distanceOptions = [
-    { value: 5, label: '5 km' },
-    { value: 10, label: '10 km' },
-    { value: 25, label: '25 km' },
-    { value: 50, label: '50 km' },
-    { value: 100, label: '100 km' },
-    { value: 0, label: `🇱🇻 ${t('tasks.allLatvia', 'All Latvia')}` },
-  ];
+  // Check if any filters are active (not default)
+  const hasActiveFilters = 
+    filters.minPrice > 0 || 
+    filters.maxPrice < maxPriceLimit || 
+    filters.datePosted !== 'all' ||
+    filters.category !== 'all';
 
-  const dateOptions = [
-    { value: 'all', label: t('filters.anyTime', 'Any time'), short: t('filters.any', 'Any') },
-    { value: 'today', label: t('filters.today', 'Today'), short: t('filters.today', 'Today') },
-    { value: 'week', label: t('filters.thisWeek', 'This week'), short: t('filters.week', 'Week') },
-    { value: 'month', label: t('filters.thisMonth', 'This month'), short: t('filters.month', 'Month') },
-  ];
+  const clearAllFilters = () => {
+    onChange({
+      minPrice: 0,
+      maxPrice: maxPriceLimit,
+      distance: filters.distance, // Keep distance
+      datePosted: 'all',
+      category: 'all'
+    });
+  };
 
-  // Format budget display
-  const getBudgetLabel = () => {
+  // Format price display for the pill
+  const getPriceLabel = () => {
     if (filters.minPrice === 0 && filters.maxPrice >= maxPriceLimit) {
-      return t('filters.any', 'Any');
+      return t('filters.anyPrice', 'Any');
     }
     if (filters.minPrice === 0) {
-      return `€0-${filters.maxPrice}`;
+      return `≤€${filters.maxPrice}`;
     }
     if (filters.maxPrice >= maxPriceLimit) {
       return `€${filters.minPrice}+`;
@@ -217,196 +90,275 @@ export default function CompactFilterBar({
 
   // Format distance display
   const getDistanceLabel = () => {
-    if (filters.distance === 0) return '🇱🇻';
+    if (filters.distance === 0) {
+      return '🇱🇻 LV';
+    }
     return `${filters.distance}km`;
   };
 
   // Format date display
   const getDateLabel = () => {
-    const option = dateOptions.find(o => o.value === filters.datePosted);
-    return option?.short || t('filters.any', 'Any');
-  };
-
-  // Format category display
-  const getCategoryLabel = () => {
-    if (filters.category === 'all') return t('filters.all', 'All');
-    const option = categoryOptions.find(o => o.value === filters.category);
-    return option?.icon || '🏷️';
-  };
-
-  // Check if filter is active (non-default)
-  const isActive = (filter: string) => {
-    switch (filter) {
-      case 'budget': return filters.minPrice > 0 || filters.maxPrice < maxPriceLimit;
-      case 'distance': return filters.distance !== 25;
-      case 'date': return filters.datePosted !== 'all';
-      case 'category': return filters.category !== 'all';
-      default: return false;
+    switch (filters.datePosted) {
+      case 'today': return t('filters.today', 'Today');
+      case 'week': return t('filters.thisWeek', 'Week');
+      case 'month': return t('filters.thisMonth', 'Month');
+      default: return t('filters.allTime', 'All');
     }
   };
 
-  const pillBaseClass = "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer border";
-  const pillDefaultClass = "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50";
-  const pillActiveClass = variant === 'offerings' 
-    ? "bg-amber-50 border-amber-300 text-amber-700"
-    : "bg-blue-50 border-blue-300 text-blue-700";
+  // Get category label
+  const getCategoryLabel = () => {
+    if (filters.category === 'all') {
+      return t('filters.allCategories', 'All');
+    }
+    const cat = categoryOptions.find(c => c.value === filters.category);
+    return cat ? `${cat.icon || ''} ${cat.label}`.trim() : filters.category;
+  };
+
+  const accentColor = variant === 'offerings' ? 'amber' : 'blue';
+
+  // Pill button component
+  const FilterPill = ({ 
+    label, 
+    icon, 
+    isActive, 
+    onClick, 
+    dropdown 
+  }: { 
+    label: string; 
+    icon: string; 
+    isActive?: boolean; 
+    onClick: () => void;
+    dropdown?: string;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`
+        inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+        border transition-all whitespace-nowrap
+        ${isActive 
+          ? `bg-${accentColor}-100 border-${accentColor}-300 text-${accentColor}-700` 
+          : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+        }
+        ${openDropdown === dropdown ? 'ring-2 ring-' + accentColor + '-200' : ''}
+      `}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+      {dropdown && <span className="text-gray-400 text-xs">▼</span>}
+    </button>
+  );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Search Input - expands on focus */}
-        <div className={`relative transition-all duration-200 ${searchFocused ? 'flex-1 min-w-[200px]' : 'w-40'}`}>
+    <div className="bg-white rounded-lg shadow-md p-4" ref={dropdownRef}>
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search Input - takes available space */}
+        <div className="relative flex-1 min-w-[200px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder={t('tasks.search', 'Search...')}
-            className="w-full px-3 py-2 pl-9 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={t('tasks.searchPlaceholder', 'Search jobs or offerings...')}
+            className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg 
+                       focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                       text-sm"
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         </div>
 
-        {/* Location Button */}
-        <button
-          onClick={onLocationClick}
-          className={`${pillBaseClass} ${pillDefaultClass} bg-red-50 border-red-200 text-red-700 hover:bg-red-100`}
-        >
-          <span>📍</span>
-          <span className="max-w-[80px] truncate">{locationName.split(',')[0]}</span>
-        </button>
-
-        {/* Distance Dropdown */}
-        <FilterDropdown
-          isOpen={openDropdown === 'distance'}
-          onToggle={() => toggleDropdown('distance')}
-          trigger={
-            <div className={`${pillBaseClass} ${isActive('distance') ? pillActiveClass : pillDefaultClass}`}>
-              <span>📏</span>
-              <span>{getDistanceLabel()}</span>
-              <span className="text-gray-400 text-xs">▼</span>
-            </div>
-          }
-        >
-          <div className="py-1 min-w-[140px]">
-            {distanceOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onChange({ ...filters, distance: option.value });
-                  setOpenDropdown(null);
-                }}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                  filters.distance === option.value ? accentClasses : 'text-gray-700'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </FilterDropdown>
-
-        {/* Budget Dropdown */}
-        <FilterDropdown
-          isOpen={openDropdown === 'budget'}
-          onToggle={() => toggleDropdown('budget')}
-          trigger={
-            <div className={`${pillBaseClass} ${isActive('budget') ? pillActiveClass : pillDefaultClass}`}>
-              <span>💰</span>
-              <span>{getBudgetLabel()}</span>
-              <span className="text-gray-400 text-xs">▼</span>
-            </div>
-          }
-        >
-          <BudgetPopover
-            minPrice={filters.minPrice}
-            maxPrice={filters.maxPrice}
-            maxLimit={maxPriceLimit}
-            onChange={(min, max) => onChange({ ...filters, minPrice: min, maxPrice: max })}
-            onClose={() => setOpenDropdown(null)}
-            accentColor={accentColor}
+        {/* Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Location Pill */}
+          <FilterPill
+            icon="📍"
+            label={locationName.length > 15 ? locationName.substring(0, 15) + '...' : locationName}
+            onClick={onLocationClick}
+            isActive={false}
           />
-        </FilterDropdown>
 
-        {/* Date Dropdown */}
-        <FilterDropdown
-          isOpen={openDropdown === 'date'}
-          onToggle={() => toggleDropdown('date')}
-          trigger={
-            <div className={`${pillBaseClass} ${isActive('date') ? pillActiveClass : pillDefaultClass}`}>
-              <span>📅</span>
-              <span>{getDateLabel()}</span>
-              <span className="text-gray-400 text-xs">▼</span>
-            </div>
-          }
-        >
-          <div className="py-1 min-w-[140px]">
-            {dateOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onChange({ ...filters, datePosted: option.value as any });
-                  setOpenDropdown(null);
-                }}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                  filters.datePosted === option.value ? accentClasses : 'text-gray-700'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+          {/* Distance Dropdown */}
+          <div className="relative">
+            <FilterPill
+              icon="📏"
+              label={getDistanceLabel()}
+              onClick={() => setOpenDropdown(openDropdown === 'distance' ? null : 'distance')}
+              dropdown="distance"
+              isActive={filters.distance !== 25}
+            />
+            {openDropdown === 'distance' && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
+                {[5, 10, 25, 50, 100, 0].map((km) => (
+                  <button
+                    key={km}
+                    onClick={() => {
+                      updateFilter('distance', km);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg
+                      ${filters.distance === km ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    `}
+                  >
+                    {km === 0 ? '🇱🇻 ' + t('tasks.allLatvia', 'All Latvia') : `${km} km`}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        </FilterDropdown>
 
-        {/* Category Dropdown */}
-        <FilterDropdown
-          isOpen={openDropdown === 'category'}
-          onToggle={() => toggleDropdown('category')}
-          align="right"
-          trigger={
-            <div className={`${pillBaseClass} ${isActive('category') ? pillActiveClass : pillDefaultClass}`}>
-              <span>🏷️</span>
-              <span>{getCategoryLabel()}</span>
-              <span className="text-gray-400 text-xs">▼</span>
-            </div>
-          }
-        >
-          <div className="py-1 min-w-[180px] max-h-[300px] overflow-y-auto">
-            {categoryOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onChange({ ...filters, category: option.value });
-                  setOpenDropdown(null);
-                }}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                  filters.category === option.value ? accentClasses : 'text-gray-700'
-                }`}
-              >
-                {option.icon && <span>{option.icon}</span>}
-                <span>{option.label}</span>
-              </button>
-            ))}
+          {/* Price Dropdown */}
+          <div className="relative">
+            <FilterPill
+              icon="💰"
+              label={getPriceLabel()}
+              onClick={() => setOpenDropdown(openDropdown === 'price' ? null : 'price')}
+              dropdown="price"
+              isActive={filters.minPrice > 0 || filters.maxPrice < maxPriceLimit}
+            />
+            {openDropdown === 'price' && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4 min-w-[240px]">
+                <div className="text-sm font-medium text-gray-700 mb-3">{t('filters.priceRange', 'Price Range')}</div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">{t('filters.min', 'Min')}</label>
+                    <input
+                      type="number"
+                      value={filters.minPrice}
+                      onChange={(e) => updateFilter('minPrice', Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm"
+                      min={0}
+                      max={filters.maxPrice}
+                    />
+                  </div>
+                  <span className="text-gray-400 mt-5">—</span>
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">{t('filters.max', 'Max')}</label>
+                    <input
+                      type="number"
+                      value={filters.maxPrice}
+                      onChange={(e) => updateFilter('maxPrice', Math.min(maxPriceLimit, parseInt(e.target.value) || maxPriceLimit))}
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm"
+                      min={filters.minPrice}
+                      max={maxPriceLimit}
+                    />
+                  </div>
+                </div>
+                {/* Quick presets */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: t('filters.any', 'Any'), min: 0, max: maxPriceLimit },
+                    { label: '≤€25', min: 0, max: 25 },
+                    { label: '€25-75', min: 25, max: 75 },
+                    { label: '€75+', min: 75, max: maxPriceLimit },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      onClick={() => {
+                        onChange({ ...filters, minPrice: preset.min, maxPrice: preset.max });
+                      }}
+                      className={`px-2 py-1 rounded text-xs border transition-colors
+                        ${filters.minPrice === preset.min && filters.maxPrice === preset.max
+                          ? 'bg-blue-100 border-blue-300 text-blue-700'
+                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </FilterDropdown>
 
-        {/* Clear Filters - only show when filters active */}
-        {(isActive('budget') || isActive('date') || isActive('category')) && (
-          <button
-            onClick={() => onChange({
-              minPrice: 0,
-              maxPrice: maxPriceLimit,
-              distance: filters.distance, // Keep distance
-              datePosted: 'all',
-              category: 'all'
-            })}
-            className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 underline"
-          >
-            {t('filters.clear', 'Clear')}
-          </button>
-        )}
+          {/* Date Posted Dropdown */}
+          <div className="relative">
+            <FilterPill
+              icon="📅"
+              label={getDateLabel()}
+              onClick={() => setOpenDropdown(openDropdown === 'date' ? null : 'date')}
+              dropdown="date"
+              isActive={filters.datePosted !== 'all'}
+            />
+            {openDropdown === 'date' && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
+                {[
+                  { value: 'all', label: t('filters.allTime', 'All time') },
+                  { value: 'today', label: t('filters.today', 'Today') },
+                  { value: 'week', label: t('filters.thisWeek', 'This week') },
+                  { value: 'month', label: t('filters.thisMonth', 'This month') },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      updateFilter('datePosted', option.value);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg
+                      ${filters.datePosted === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    `}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Category Dropdown */}
+          <div className="relative">
+            <FilterPill
+              icon="🏷️"
+              label={getCategoryLabel()}
+              onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
+              dropdown="category"
+              isActive={filters.category !== 'all'}
+            />
+            {openDropdown === 'category' && (
+              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px] max-h-[300px] overflow-y-auto">
+                <button
+                  onClick={() => {
+                    updateFilter('category', 'all');
+                    setOpenDropdown(null);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg
+                    ${filters.category === 'all' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                  `}
+                >
+                  🌐 {t('filters.allCategories', 'All Categories')}
+                </button>
+                {categoryOptions.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => {
+                      updateFilter('category', cat.value);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 last:rounded-b-lg
+                      ${filters.category === cat.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    `}
+                  >
+                    {cat.icon} {cat.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Clear Filters - only show when filters are active */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium
+                         text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+            >
+              <span>✕</span>
+              <span>{t('filters.clear', 'Clear')}</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default CompactFilterBar;
