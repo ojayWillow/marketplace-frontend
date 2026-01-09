@@ -31,6 +31,14 @@ export {
   messageKeys 
 } from './useMessages';
 
+// User hooks
+export {
+  useUserProfile,
+  useUserReviews,
+  useStartConversation,
+  userKeys
+} from './useUsers';
+
 // Re-export existing hooks
 export * from './useAuth';
 export * from './useListings';
