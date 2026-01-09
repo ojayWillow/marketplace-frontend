@@ -11,6 +11,7 @@ import { useToastStore } from '../stores/toastStore';
 import { useMatchingStore } from '../stores/matchingStore';
 import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
 import FavoriteButton from '../components/ui/FavoriteButton';
+import AdvancedFilters, { FilterValues, filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
 import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
 
@@ -497,6 +498,15 @@ const MapMarkers = ({
 // Location type enum to track what kind of location we have
 type LocationType = 'auto' | 'default' | 'manual';
 
+// Default filter values
+const DEFAULT_FILTERS: FilterValues = {
+  minPrice: 0,
+  maxPrice: 500,
+  distance: 25,
+  datePosted: 'all',
+  category: 'all'
+};
+
 // =====================================================
 // MAIN TASKS COMPONENT WITH MOBILE/DESKTOP SWITCH
 // =====================================================
@@ -537,10 +547,30 @@ const DesktopTasksView = () => {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
-  const [searchRadius, setSearchRadius] = useState(25);
+  
+  // Advanced Filters state
+  const [advancedFilters, setAdvancedFilters] = useState<FilterValues>(() => {
+    // Load saved filters from localStorage
+    const saved = localStorage.getItem('taskAdvancedFilters');
+    if (saved) {
+      try {
+        return { ...DEFAULT_FILTERS, ...JSON.parse(saved) };
+      } catch {
+        return DEFAULT_FILTERS;
+      }
+    }
+    // Check for legacy radius setting
+    const savedRadius = localStorage.getItem('taskSearchRadius');
+    if (savedRadius) {
+      return { ...DEFAULT_FILTERS, distance: parseInt(savedRadius, 10) };
+    }
+    return DEFAULT_FILTERS;
+  });
+  
+  // Derive searchRadius from advancedFilters for backward compatibility
+  const searchRadius = advancedFilters.distance;
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   
@@ -597,11 +627,6 @@ const DesktopTasksView = () => {
   };
 
   useEffect(() => {
-    const savedRadius = localStorage.getItem('taskSearchRadius');
-    if (savedRadius) {
-      setSearchRadius(parseInt(savedRadius, 10));
-    }
-
     // Set a timeout to auto-skip after 5 seconds
     locationTimeoutRef.current = setTimeout(() => {
       if (locationLoading) {
@@ -649,12 +674,24 @@ const DesktopTasksView = () => {
     setShowLocationModal(false);
   };
 
-  // FIX: Pass the new radius directly to fetchData to avoid async state race condition
+  // Handle advanced filters change
+  const handleAdvancedFiltersChange = (newFilters: FilterValues) => {
+    setAdvancedFilters(newFilters);
+    // Save to localStorage
+    localStorage.setItem('taskAdvancedFilters', JSON.stringify(newFilters));
+    // Also save radius for legacy compatibility
+    localStorage.setItem('taskSearchRadius', newFilters.distance.toString());
+    
+    // If distance or category changed, refetch from API
+    if (newFilters.distance !== advancedFilters.distance || newFilters.category !== advancedFilters.category) {
+      hasFetchedRef.current = false;
+      fetchData(true, newFilters.distance, newFilters.category);
+    }
+  };
+
+  // Legacy radius handler - now updates advanced filters
   const handleRadiusChange = (newRadius: number) => {
-    setSearchRadius(newRadius);
-    localStorage.setItem('taskSearchRadius', newRadius.toString());
-    hasFetchedRef.current = false;
-    fetchData(true, newRadius); // Pass radius directly instead of relying on state
+    handleAdvancedFiltersChange({ ...advancedFilters, distance: newRadius });
   };
 
   const searchAddressSuggestions = async (query: string) => {
@@ -709,8 +746,8 @@ const DesktopTasksView = () => {
     }
   };
 
-  // FIX: Accept optional radiusOverride to use instead of state (avoids async state bug)
-  const fetchData = async (forceRefresh = false, radiusOverride?: number) => {
+  // FIX: Accept optional radiusOverride and categoryOverride to use instead of state (avoids async state bug)
+  const fetchData = async (forceRefresh = false, radiusOverride?: number, categoryOverride?: string) => {
     if (hasFetchedRef.current && !forceRefresh) return;
     
     // Only show full-page loading on first ever load
@@ -723,9 +760,9 @@ const DesktopTasksView = () => {
     setError(null);
     
     try {
-      // Use radiusOverride if provided, otherwise fall back to state
-      // This fixes the async state race condition when changing radius
+      // Use overrides if provided, otherwise fall back to state
       const baseRadius = radiusOverride ?? searchRadius;
+      const selectedCategory = categoryOverride ?? advancedFilters.category;
       // Use 500km radius when "All" is selected (covers all of Latvia)
       const effectiveRadius = baseRadius === 0 ? 500 : baseRadius;
       
@@ -775,15 +812,20 @@ const DesktopTasksView = () => {
     if (locationGranted) fetchData();
   }, [locationGranted]);
 
+  // Refetch when category changes in advanced filters
   useEffect(() => {
     if (locationGranted && hasEverLoadedRef.current) {
       hasFetchedRef.current = false;
       fetchData(true);
     }
-  }, [selectedCategory]);
+  }, [advancedFilters.category]);
 
+  // Apply all filters: search query + advanced filters (price, date)
   const filterTasks = (taskList: Task[]) => {
-    return taskList.filter(task => {
+    let filtered = taskList;
+    
+    // Text search filter
+    filtered = filtered.filter(task => {
       const matchesSearch = searchQuery === '' || 
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -791,10 +833,21 @@ const DesktopTasksView = () => {
       
       return matchesSearch;
     });
+    
+    // Apply price filter
+    filtered = filterByPrice(filtered, advancedFilters.minPrice, advancedFilters.maxPrice, 500);
+    
+    // Apply date filter
+    filtered = filterByDate(filtered, advancedFilters.datePosted);
+    
+    return filtered;
   };
 
   const filterOfferings = (offeringList: Offering[]) => {
-    return offeringList.filter(offering => {
+    let filtered = offeringList;
+    
+    // Text search filter
+    filtered = filtered.filter(offering => {
       const matchesSearch = searchQuery === '' || 
         offering.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         offering.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -802,6 +855,14 @@ const DesktopTasksView = () => {
       
       return matchesSearch;
     });
+    
+    // Apply price filter
+    filtered = filterByPrice(filtered, advancedFilters.minPrice, advancedFilters.maxPrice, 500);
+    
+    // Apply date filter
+    filtered = filterByDate(filtered, advancedFilters.datePosted);
+    
+    return filtered;
   };
 
   // Improved loading state with skip option - Blue theme
@@ -885,11 +946,11 @@ const DesktopTasksView = () => {
   const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
   const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 75);
 
-  // Get radius display text
-  const getRadiusDisplayText = () => {
-    if (searchRadius === 0) return t('tasks.allLatvia', 'Visa Latvija');
-    return `${searchRadius} km`;
-  };
+  // Check if advanced filters are active (beyond defaults)
+  const hasActiveAdvancedFilters = 
+    advancedFilters.minPrice > 0 || 
+    advancedFilters.maxPrice < 500 || 
+    advancedFilters.datePosted !== 'all';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -966,8 +1027,14 @@ const DesktopTasksView = () => {
                 <option value={100}>100 km</option>
                 <option value={0}>🇱🇻 {t('tasks.allLatvia', 'Visa Latvija')}</option>
               </select>
-              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-2 rounded-lg border transition-colors ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+              <button 
+                onClick={() => setShowFilters(!showFilters)} 
+                className={`px-4 py-2 rounded-lg border transition-colors relative ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              >
                 ⚙️ {t('tasks.filters', 'Filters')}
+                {hasActiveAdvancedFilters && !showFilters && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>
+                )}
               </button>
             </div>
           </div>
@@ -993,14 +1060,17 @@ const DesktopTasksView = () => {
             </div>
           )}
           
+          {/* Advanced Filters Panel */}
           {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('tasks.category', 'Category')}</label>
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  {CATEGORY_OPTIONS.map(cat => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
-                </select>
-              </div>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <AdvancedFilters
+                filters={advancedFilters}
+                onChange={handleAdvancedFiltersChange}
+                maxPriceLimit={500}
+                showCategory={true}
+                categoryOptions={CATEGORY_OPTIONS}
+                variant={activeTab === 'offerings' ? 'offerings' : 'jobs'}
+              />
             </div>
           )}
         </div>
@@ -1122,15 +1192,27 @@ const DesktopTasksView = () => {
                 <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
                   <div className="text-5xl mb-4">💰</div>
                   <p className="text-gray-900 font-semibold text-lg mb-2">
-                    {searchRadius === 0 
-                      ? t('tasks.noJobsInLatvia', 'No jobs posted in Latvia yet')
-                      : t('tasks.noJobsNearby', 'No jobs posted nearby yet')
+                    {hasActiveAdvancedFilters
+                      ? t('tasks.noJobsMatchingFilters', 'No jobs match your filters')
+                      : searchRadius === 0 
+                        ? t('tasks.noJobsInLatvia', 'No jobs posted in Latvia yet')
+                        : t('tasks.noJobsNearby', 'No jobs posted nearby yet')
                     }
                   </p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    {t('tasks.beFirstToPost', 'Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.')}
+                    {hasActiveAdvancedFilters
+                      ? t('tasks.tryAdjustingFilters', 'Try adjusting your price range or date filters to see more results.')
+                      : t('tasks.beFirstToPost', 'Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.')
+                    }
                   </p>
-                  {isAuthenticated ? (
+                  {hasActiveAdvancedFilters ? (
+                    <button 
+                      onClick={() => handleAdvancedFiltersChange(DEFAULT_FILTERS)} 
+                      className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors"
+                    >
+                      {t('filters.clearFilters', 'Clear Filters')}
+                    </button>
+                  ) : isAuthenticated ? (
                     <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
                       💰 {t('tasks.postFirstJob', 'Post Your First Job')}
                     </button>
@@ -1171,15 +1253,27 @@ const DesktopTasksView = () => {
                 <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
                   <div className="text-5xl mb-4">👋</div>
                   <p className="text-gray-900 font-semibold text-lg mb-2">
-                    {searchRadius === 0
-                      ? t('offerings.noOfferingsInLatvia', 'No service providers in Latvia yet')
-                      : t('offerings.noOfferingsNearby', 'No service providers in your area yet')
+                    {hasActiveAdvancedFilters
+                      ? t('offerings.noOfferingsMatchingFilters', 'No offerings match your filters')
+                      : searchRadius === 0
+                        ? t('offerings.noOfferingsInLatvia', 'No service providers in Latvia yet')
+                        : t('offerings.noOfferingsNearby', 'No service providers in your area yet')
                     }
                   </p>
                   <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    {t('offerings.beFirstToOffer', 'Are you skilled at something? Advertise your services here and get hired by people nearby!')}
+                    {hasActiveAdvancedFilters
+                      ? t('offerings.tryAdjustingFilters', 'Try adjusting your price range or date filters to see more results.')
+                      : t('offerings.beFirstToOffer', 'Are you skilled at something? Advertise your services here and get hired by people nearby!')
+                    }
                   </p>
-                  {isAuthenticated ? (
+                  {hasActiveAdvancedFilters ? (
+                    <button 
+                      onClick={() => handleAdvancedFiltersChange(DEFAULT_FILTERS)} 
+                      className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors"
+                    >
+                      {t('filters.clearFilters', 'Clear Filters')}
+                    </button>
+                  ) : isAuthenticated ? (
                     <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
                       👋 {t('offerings.offerYourServices', 'Offer Your Services')}
                     </button>
