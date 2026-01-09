@@ -288,7 +288,7 @@ const CreateOffering = () => {
             {/* Location with Geocoding */}
             <div className="relative">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('createOffering.location', 'Service Area')} * {searchingAddress && <span className="text-amber-500 text-xs">({t('common.loading', 'searching...')})</span>}
+                {t('createOffering.location', 'Your Location')} * {searchingAddress && <span className="text-amber-500 text-xs">({t('common.loading', 'searching...')})</span>}
               </label>
               <input
                 type="text"
@@ -297,7 +297,7 @@ const CreateOffering = () => {
                 required
                 value={formData.location}
                 onChange={handleChange}
-                placeholder={t('createOffering.locationPlaceholder', 'e.g., Riga, Centrs or your neighborhood')}
+                placeholder={t('createOffering.locationPlaceholder', 'Where do you offer this service?')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 autoComplete="off"
               />
@@ -328,7 +328,7 @@ const CreateOffering = () => {
             {/* Service Radius */}
             <div>
               <label htmlFor="service_radius" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('createOffering.serviceRadius', 'How far will you travel?')} (km)
+                {t('createOffering.serviceRadius', 'How far will you travel?')}
               </label>
               <select
                 id="service_radius"
@@ -337,13 +337,13 @@ const CreateOffering = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
-                <option value="5">5 km - {t('createOffering.radiusNearby', 'Nearby only')}</option>
-                <option value="10">10 km - {t('createOffering.radiusLocal', 'Local area')}</option>
-                <option value="25">25 km - {t('createOffering.radiusCity', 'City-wide')}</option>
-                <option value="50">50 km - {t('createOffering.radiusRegional', 'Regional')}</option>
-                <option value="100">100 km - {t('createOffering.radiusFar', 'Will travel far')}</option>
+                <option value="5">{t('createOffering.radiusNearby', 'Up to 5 km (Nearby only)')}</option>
+                <option value="10">{t('createOffering.radiusLocal', 'Up to 10 km (Local area)')}</option>
+                <option value="25">{t('createOffering.radiusCity', 'Up to 25 km (Whole city)')}</option>
+                <option value="50">{t('createOffering.radiusRegional', 'Up to 50 km (Regional)')}</option>
+                <option value="100">{t('createOffering.radiusFar', 'Up to 100 km (Will travel far)')}</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">{t('createOffering.serviceRadiusHint', 'Maximum distance you\'re willing to travel for a job')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createOffering.serviceRadiusHint', 'Maximum distance you\'re willing to travel to work')}</p>
             </div>
 
             {/* Availability */}
@@ -360,7 +360,7 @@ const CreateOffering = () => {
                 placeholder={t('createOffering.availabilityPlaceholder', 'e.g., Weekdays 9-17, Evenings and weekends, Flexible')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">{t('createOffering.availabilityHint', 'When are you available to work?')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('createOffering.availabilityHint', 'When are you available for work?')}</p>
             </div>
 
             {/* Experience */}
@@ -381,9 +381,9 @@ const CreateOffering = () => {
 
             {/* Matching hint */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h3 className="font-medium text-amber-800 mb-2">💡 {t('createOffering.matchingTitle', 'Get matched with jobs')}</h3>
+              <h3 className="font-medium text-amber-800 mb-2">💡 {t('createOffering.matchingTitle', 'Get connected with jobs')}</h3>
               <p className="text-sm text-amber-700">
-                {t('createOffering.matchingHint', 'People posting {{category}} jobs in your area will be able to find you and request your services!', { category: selectedCategory?.label || t('common.this', 'this type of') })}
+                {t('createOffering.matchingHint', 'People who post {{category}} jobs in your area will be able to find you and request your services!', { category: selectedCategory?.label || t('common.this', 'this type of') })}
               </p>
             </div>
 
@@ -392,7 +392,7 @@ const CreateOffering = () => {
               <h3 className="font-medium text-gray-800 mb-2">✨ {t('createOffering.tipsTitle', 'Tips for a great offering')}</h3>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• {t('createOffering.tip1', 'Use a clear, specific title that describes your service')}</li>
-                <li>• {t('createOffering.tip2', 'Be detailed in your description - what\'s included?')}</li>
+                <li>• {t('createOffering.tip2', 'Be detailed in the description - what\'s included?')}</li>
                 <li>• {t('createOffering.tip3', 'Set a competitive price based on your experience')}</li>
                 <li>• {t('createOffering.tip4', 'Respond quickly when people contact you')}</li>
               </ul>
@@ -405,7 +405,7 @@ const CreateOffering = () => {
                 disabled={loading}
                 className="flex-1 bg-amber-500 text-white py-3 px-6 rounded-lg hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? t('createOffering.creating', 'Creating...') : t('createOffering.createButton', 'Publish Offering')}
+                {loading ? t('createOffering.creating', 'Creating...') : t('createOffering.createButton', 'Create Offering')}
               </button>
               <button
                 type="button"
