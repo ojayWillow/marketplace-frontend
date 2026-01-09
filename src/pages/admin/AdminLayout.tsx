@@ -11,6 +11,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: '/admin', label: 'Overview', icon: '📊' },
+  { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
   { path: '/admin/users', label: 'Users', icon: '👥' },
   { path: '/admin/jobs', label: 'Jobs', icon: '💼' },
   { path: '/admin/offerings', label: 'Offerings', icon: '🛠️' },
