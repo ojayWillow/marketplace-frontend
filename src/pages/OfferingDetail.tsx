@@ -9,6 +9,8 @@ import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import apiClient from '../api/client';
+import ShareButton from '../components/ui/ShareButton';
+import SEOHead from '../components/ui/SEOHead';
 
 // Helper function to render star rating
 const StarRating = ({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) => {
@@ -248,8 +250,20 @@ const OfferingDetail = () => {
   const categoryLabel = getCategoryLabel(offering.category);
   const isOwner = user?.id === offering.creator_id;
 
+  // Build SEO description
+  const seoDescription = `${categoryLabel} service by ${offering.creator_name} - €${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}${offering.location ? ` in ${offering.location}` : ''}. ${offering.description?.substring(0, 100)}...`;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {/* SEO Meta Tags */}
+      <SEOHead
+        title={offering.title}
+        description={seoDescription}
+        url={`/offerings/${offering.id}`}
+        type="product"
+        price={offering.price}
+      />
+
       <div className="max-w-4xl mx-auto px-4">
         {/* Back Button */}
         <Link to="/tasks" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
@@ -270,7 +284,7 @@ const OfferingDetail = () => {
                   <h1 className="text-2xl md:text-3xl font-bold mt-2">{offering.title}</h1>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end gap-2">
                 <div className="text-3xl font-bold">
                   €{offering.price || 0}
                   {offering.price_type === 'hourly' && <span className="text-lg">/hr</span>}
@@ -281,6 +295,14 @@ const OfferingDetail = () => {
                 {offering.price_type === 'fixed' && (
                   <span className="text-amber-100 text-sm">Fixed price</span>
                 )}
+                {/* Share Button */}
+                <ShareButton
+                  url={`/offerings/${offering.id}`}
+                  title={offering.title}
+                  description={`${categoryLabel} service - €${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}${offering.location ? ` in ${offering.location}` : ''}`}
+                  size="sm"
+                  className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
+                />
               </div>
             </div>
           </div>
