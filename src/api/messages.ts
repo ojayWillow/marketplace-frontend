@@ -96,23 +96,48 @@ export const getMessages = async (
 
 /**
  * Send a message in a conversation
+ * @param recipientIdOrConversationId - Either recipient user ID (to start/continue conversation) or conversation ID
+ * @param content - Message content
+ * @param taskId - Optional task ID to associate with conversation
+ * @param offeringId - Optional offering ID to associate with conversation
  */
 export const sendMessage = async (
-  conversationId: number,
-  content: string
+  recipientIdOrConversationId: number,
+  content: string,
+  taskId?: number,
+  offeringId?: number
 ): Promise<Message> => {
+  // If taskId or offeringId is provided, it's a new conversation with recipient
+  if (taskId || offeringId) {
+    const response = await apiClient.post('/api/messages/conversations', {
+      user_id: recipientIdOrConversationId,
+      message: content,
+      task_id: taskId,
+      offering_id: offeringId
+    });
+    return response.data.conversation?.last_message || response.data;
+  }
+  
+  // Otherwise, send to existing conversation
   const response = await apiClient.post(
-    `/api/messages/conversations/${conversationId}/messages`,
+    `/api/messages/conversations/${recipientIdOrConversationId}/messages`,
     { content }
   );
   return response.data.message;
 };
 
 /**
- * Mark all messages in a conversation as read
+ * Mark messages in a conversation as read
+ */
+export const markAsRead = async (conversationId: number): Promise<void> => {
+  await apiClient.put(`/api/messages/conversations/${conversationId}/read-all`);
+};
+
+/**
+ * Mark all messages in a conversation as read (alias for markAsRead)
  */
 export const markAllRead = async (conversationId: number): Promise<void> => {
-  await apiClient.put(`/api/messages/conversations/${conversationId}/read-all`);
+  await markAsRead(conversationId);
 };
 
 /**
