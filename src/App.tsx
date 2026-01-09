@@ -27,6 +27,7 @@ const TaskDetail = lazy(() => import('./pages/TaskDetail'))
 const CreateTask = lazy(() => import('./pages/CreateTask'))
 const EditTask = lazy(() => import('./pages/EditTask'))
 const CreateOffering = lazy(() => import('./pages/CreateOffering'))
+const EditOffering = lazy(() => import('./pages/EditOffering'))
 const OfferingDetail = lazy(() => import('./pages/OfferingDetail'))
 const Profile = lazy(() => import('./pages/Profile'))
 const UserProfile = lazy(() => import('./pages/UserProfile'))
@@ -84,6 +85,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CreateOffering />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="offerings/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditOffering />
                 </ProtectedRoute>
               }
             />
