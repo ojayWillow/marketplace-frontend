@@ -514,6 +514,17 @@ const CreateTask = () => {
               </p>
             </div>
 
+            {/* How it works */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-medium text-blue-800 mb-2">💡 {t('createTask.howItWorksTitle', 'How it works')}</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• {t('createTask.howItWorks1', 'Post your job and wait for applicants')}</li>
+                <li>• {t('createTask.howItWorks2', 'Review profiles and pick a helper')}</li>
+                <li>• {t('createTask.howItWorks3', 'Agree on details and get it done')}</li>
+                <li>• {t('createTask.howItWorks4', 'Pay when you\'re satisfied')}</li>
+              </ul>
+            </div>
+
             {/* Buttons */}
             <div className="flex gap-4">
               <button
