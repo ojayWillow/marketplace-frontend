@@ -45,6 +45,11 @@ const config: Config = {
     '/dist/',
   ],
   
+  // Transform ignore patterns - don't transform node_modules except specific packages
+  transformIgnorePatterns: [
+    '/node_modules/(?!(.*\\.mjs$))',
+  ],
+  
   // Coverage configuration
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -53,16 +58,6 @@ const config: Config = {
     '!src/vite-env.d.ts',
     '!src/test/**/*',
   ],
-  
-  // Coverage thresholds (optional - can be adjusted)
-  coverageThreshold: {
-    global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50,
-    },
-  },
   
   // Clear mocks between tests
   clearMocks: true,

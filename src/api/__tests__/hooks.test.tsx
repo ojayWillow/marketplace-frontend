@@ -1,3 +1,4 @@
+import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTask, useOffering } from '../hooks';
@@ -77,7 +78,7 @@ describe('API Hooks', () => {
     });
 
     it('should not fetch when taskId is undefined', async () => {
-      const { result } = renderHook(() => useTask(undefined as any), {
+      const { result } = renderHook(() => useTask(undefined as unknown as number), {
         wrapper: createWrapper(),
       });
 
