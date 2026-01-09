@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createOffering, activateOffering } from '../api/offerings';
+import { createOffering } from '../api/offerings';
 import { geocodeAddress, GeocodingResult } from '../api/geocoding';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
@@ -17,8 +17,6 @@ const CreateOffering = () => {
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdOfferingId, setCreatedOfferingId] = useState<number | null>(null);
-  const [activating, setActivating] = useState(false);
-  const [isActivated, setIsActivated] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -118,24 +116,6 @@ const CreateOffering = () => {
       toast.error(error?.response?.data?.error || t('createOffering.error', 'Failed to create offering. Please try again.'));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleActivateTrial = async () => {
-    if (!createdOfferingId) return;
-    
-    setActivating(true);
-    try {
-      await activateOffering(createdOfferingId);
-      setIsActivated(true);
-      toast.success('🗺️ Your service is now on the map!');
-    } catch (error: any) {
-      console.error('Error activating offering:', error);
-      // Even if it fails, the offering might already be active
-      setIsActivated(true);
-      toast.info('Your service is being activated...');
-    } finally {
-      setActivating(false);
     }
   };
 
@@ -415,78 +395,30 @@ const CreateOffering = () => {
         </div>
       </div>
 
-      {/* Success Modal with Free Trial */}
+      {/* Simple Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full my-8">
             {/* Success Header */}
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">{isActivated ? '🗺️' : '✅'}</span>
+                <span className="text-3xl">🎉</span>
               </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {isActivated ? 'You\'re on the Map!' : 'Service Published!'}
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">Service Published!</h2>
               <p className="text-gray-600 mt-1">
-                {isActivated 
-                  ? 'Your offering now appears on the map for extra visibility. People nearby can easily find you!' 
-                  : 'Your offering is live and visible in the services list.'}
+                Your offering is now live. People can find you and get in touch!
               </p>
             </div>
 
-            {/* Free Trial for Map Visibility */}
-            {!isActivated && (
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🗺️</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 mb-1">Get on the Map – Free for 24h</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Boost your visibility! Appear on the map so people can find you when browsing their area.
-                    </p>
-                    <button
-                      onClick={handleActivateTrial}
-                      disabled={activating}
-                      className="w-full py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-amber-300 font-semibold transition-colors flex items-center justify-center gap-2"
-                    >
-                      {activating ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          Activating...
-                        </>
-                      ) : (
-                        <>
-                          📍 Show Me on the Map
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Status info */}
-            {isActivated ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-green-800 mb-2">✨ Extra visibility active:</h4>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Your pin appears on the map</li>
-                  <li>• People browsing nearby will see you</li>
-                  <li>• Active for 24 hours</li>
-                </ul>
-              </div>
-            ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">✅ Already included:</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Visible in the services list</li>
-                  <li>• People can search and find you</li>
-                  <li>• You can apply to matching jobs</li>
-                </ul>
-              </div>
-            )}
+            {/* What's included */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <h4 className="font-medium text-green-800 mb-2">✨ Your service is now:</h4>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• Visible in the services list</li>
+                <li>• Shown on the map in your area</li>
+                <li>• Matched with relevant job posts</li>
+              </ul>
+            </div>
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
@@ -495,7 +427,7 @@ const CreateOffering = () => {
                   setShowSuccessModal(false);
                   navigate(createdOfferingId ? `/offerings/${createdOfferingId}` : '/profile?tab=offerings');
                 }}
-                className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
+                className="w-full py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium"
               >
                 View My Offering
               </button>
