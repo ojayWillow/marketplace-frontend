@@ -62,7 +62,11 @@ const CompactFilterBar = ({
     filters.minPrice > 0 || 
     filters.maxPrice < maxPriceLimit || 
     filters.distance !== 25 ||
-    filters.category !== 'all';
+    filters.category !== 'all' ||
+    filters.datePosted !== 'all';
+
+  // Check if "more" filters are active
+  const hasMoreFiltersActive = filters.datePosted !== 'all';
 
   const clearAllFilters = () => {
     onChange({
@@ -108,26 +112,36 @@ const CompactFilterBar = ({
     return cat ? cat.label : filters.category;
   };
 
+  // Get display label for date/more filters
+  const getDateLabel = () => {
+    switch (filters.datePosted) {
+      case 'today': return t('filters.today', 'Today');
+      case 'week': return t('filters.thisWeek', 'This week');
+      case 'month': return t('filters.thisMonth', 'This month');
+      default: return t('filters.more', 'More');
+    }
+  };
+
   // Check if a specific filter is active (changed from default)
   const isRadiusActive = filters.distance !== 25;
   const isPriceActive = filters.minPrice > 0 || filters.maxPrice < maxPriceLimit;
   const isCategoryActive = filters.category !== 'all';
 
   // Shorten location name for display
-  const shortLocationName = locationName.length > 20 
-    ? locationName.substring(0, 20) + '...' 
+  const shortLocationName = locationName.length > 15 
+    ? locationName.substring(0, 15) + '...' 
     : locationName;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3" ref={dropdownRef}>
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Search Input - narrower max width */}
-        <div className="relative flex-1 min-w-[150px] max-w-[280px]">
+      <div className="flex items-center gap-3">
+        {/* Search Input - expands to fill available space */}
+        <div className="relative flex-1 min-w-[150px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t('tasks.searchPlaceholder', 'Search...')}
+            placeholder={t('tasks.searchPlaceholder', 'Search jobs or offerings...')}
             className="w-full px-4 py-2 pl-9 border border-gray-200 rounded-lg 
                        focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        text-sm bg-gray-50 focus:bg-white transition-colors"
@@ -135,22 +149,19 @@ const CompactFilterBar = ({
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
         </div>
 
-        {/* Location Context - no "Near" prefix, just location + change */}
-        <div className="flex items-center gap-1 text-sm text-gray-500">
-          <span className="font-medium text-gray-700">{shortLocationName}</span>
-          <button
-            onClick={onLocationClick}
-            className="text-blue-600 hover:text-blue-700 hover:underline text-xs ml-1"
-          >
-            {t('filters.change', 'change')}
-          </button>
-        </div>
+        {/* Right side: Location + Filters */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Location Context */}
+          <div className="flex items-center gap-1 text-sm text-gray-500 pr-2 border-r border-gray-200">
+            <span className="font-medium text-gray-700">{shortLocationName}</span>
+            <button
+              onClick={onLocationClick}
+              className="text-blue-600 hover:text-blue-700 hover:underline text-xs ml-1"
+            >
+              {t('filters.change', 'change')}
+            </button>
+          </div>
 
-        {/* Divider */}
-        <div className="hidden sm:block h-6 w-px bg-gray-200"></div>
-
-        {/* Filter Buttons - Clean text labels */}
-        <div className="flex flex-wrap items-center gap-2">
           {/* Radius Filter */}
           <div className="relative">
             <button
@@ -270,7 +281,7 @@ const CompactFilterBar = ({
             )}
           </div>
 
-          {/* Category Filter - wider dropdown */}
+          {/* Category Filter */}
           <div className="relative">
             <button
               onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
@@ -302,6 +313,51 @@ const CompactFilterBar = ({
                   >
                     {cat.icon && <span className="mr-2">{cat.icon}</span>}
                     {cat.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* More Filters (Date Posted) */}
+          <div className="relative">
+            <button
+              onClick={() => setOpenDropdown(openDropdown === 'more' ? null : 'more')}
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                flex items-center gap-1
+                ${hasMoreFiltersActive 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                }
+                ${openDropdown === 'more' ? 'ring-2 ring-blue-200' : ''}
+              `}
+            >
+              <span>{getDateLabel()}</span>
+              <span className="text-xs text-gray-400">▼</span>
+            </button>
+            {openDropdown === 'more' && (
+              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] py-1">
+                <div className="px-3 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                  {t('filters.postedWithin', 'Posted within')}
+                </div>
+                {[
+                  { value: 'all', label: t('filters.anyTime', 'Any time') },
+                  { value: 'today', label: t('filters.today', 'Today') },
+                  { value: 'week', label: t('filters.thisWeek', 'This week') },
+                  { value: 'month', label: t('filters.thisMonth', 'This month') },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      updateFilter('datePosted', option.value);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50
+                      ${filters.datePosted === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    `}
+                  >
+                    {option.label}
                   </button>
                 ))}
               </div>
