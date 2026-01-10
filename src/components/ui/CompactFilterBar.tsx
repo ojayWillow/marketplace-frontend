@@ -121,8 +121,8 @@ const CompactFilterBar = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3" ref={dropdownRef}>
       <div className="flex flex-wrap items-center gap-3">
-        {/* Search Input */}
-        <div className="relative flex-1 min-w-[180px]">
+        {/* Search Input - narrower max width */}
+        <div className="relative flex-1 min-w-[150px] max-w-[280px]">
           <input
             type="text"
             value={searchQuery}
@@ -135,9 +135,8 @@ const CompactFilterBar = ({
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
         </div>
 
-        {/* Location Context - subtle, not a prominent button */}
+        {/* Location Context - no "Near" prefix, just location + change */}
         <div className="flex items-center gap-1 text-sm text-gray-500">
-          <span className="hidden sm:inline">{t('filters.near', 'Near')}</span>
           <span className="font-medium text-gray-700">{shortLocationName}</span>
           <button
             onClick={onLocationClick}
@@ -172,9 +171,9 @@ const CompactFilterBar = ({
             {openDropdown === 'distance' && (
               <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px] py-1">
                 {[
-                  { value: 25, label: '25 km' },
                   { value: 5, label: '5 km' },
                   { value: 10, label: '10 km' },
+                  { value: 25, label: '25 km' },
                   { value: 50, label: '50 km' },
                   { value: 100, label: '100 km' },
                   { value: 0, label: t('tasks.allLatvia', 'All Latvia') },
@@ -271,7 +270,7 @@ const CompactFilterBar = ({
             )}
           </div>
 
-          {/* Category Filter */}
+          {/* Category Filter - wider dropdown */}
           <div className="relative">
             <button
               onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
@@ -289,7 +288,7 @@ const CompactFilterBar = ({
               <span className="text-xs text-gray-400">▼</span>
             </button>
             {openDropdown === 'category' && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] max-h-[280px] overflow-y-auto py-1">
+              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[280px] overflow-y-auto py-1">
                 {categoryOptions.map((cat) => (
                   <button
                     key={cat.value}
@@ -297,7 +296,7 @@ const CompactFilterBar = ({
                       updateFilter('category', cat.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 whitespace-nowrap
                       ${filters.category === cat.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
                     `}
                   >
