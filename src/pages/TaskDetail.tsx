@@ -443,7 +443,7 @@ const TaskDetail = () => {
     if (recommendedHelpers.length === 0) return null;
 
     return (
-      <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="mt-6 bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
           <div className="flex items-center gap-3">
             <span className="text-3xl">✨</span>
@@ -456,32 +456,32 @@ const TaskDetail = () => {
           </div>
         </div>
 
-        <div className="p-4">
+        <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {recommendedHelpers.map(helper => (
-              <div key={helper.id} className="border border-gray-200 rounded-lg p-4 hover:border-amber-300 hover:shadow-md transition-all">
+              <div key={helper.id} className="border border-gray-200 rounded-xl p-4 hover:border-amber-300 hover:shadow-md transition-all">
                 <div className="flex items-center gap-3 mb-3">
                   {helper.creator_avatar ? (
                     <img 
                       src={helper.creator_avatar} 
                       alt={helper.creator_name}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-amber-200"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-amber-200"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg font-bold">
                       {helper.creator_name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <Link 
                       to={`/users/${helper.creator_id}`}
-                      className="font-medium text-gray-900 hover:text-amber-600 truncate block text-sm"
+                      className="font-semibold text-gray-900 hover:text-amber-600 truncate block"
                     >
                       {helper.creator_name}
                     </Link>
                     {helper.creator_rating !== undefined && (
                       <div className="flex items-center gap-1">
-                        <span className="text-yellow-500 text-xs">
+                        <span className="text-yellow-500 text-sm">
                           {'★'.repeat(Math.floor(helper.creator_rating))}
                           {'☆'.repeat(5 - Math.floor(helper.creator_rating))}
                         </span>
@@ -493,18 +493,18 @@ const TaskDetail = () => {
 
                 <Link 
                   to={`/offerings/${helper.id}`}
-                  className="font-medium text-gray-800 hover:text-amber-600 line-clamp-1 block mb-2 text-sm"
+                  className="font-medium text-gray-800 hover:text-amber-600 line-clamp-1 block mb-2"
                 >
                   {helper.title}
                 </Link>
 
-                <div className="flex items-center justify-between text-sm mb-3">
-                  <span className="text-green-600 font-semibold">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-green-600 font-bold text-lg">
                     €{helper.price || 0}
-                    {helper.price_type === 'hourly' && '/hr'}
+                    {helper.price_type === 'hourly' && <span className="text-sm font-normal">/hr</span>}
                   </span>
                   {helper.distance && (
-                    <span className="text-gray-500 text-xs">
+                    <span className="text-gray-500 text-sm">
                       📍 {helper.distance.toFixed(1)}km
                     </span>
                   )}
@@ -512,7 +512,7 @@ const TaskDetail = () => {
 
                 <button
                   onClick={() => handleContactHelper(helper)}
-                  className="w-full bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                  className="w-full bg-amber-500 text-white py-2.5 rounded-lg hover:bg-amber-600 transition-colors font-medium"
                 >
                   💬 Contact
                 </button>
@@ -520,10 +520,10 @@ const TaskDetail = () => {
             ))}
           </div>
 
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <Link 
               to={`/tasks?tab=offerings&category=${task.category}`}
-              className="text-amber-600 hover:text-amber-700 text-sm font-medium"
+              className="text-amber-600 hover:text-amber-700 font-medium"
             >
               Browse all {getCategoryLabel(task.category)} offerings →
             </Link>
@@ -537,8 +537,8 @@ const TaskDetail = () => {
     if (task?.status !== 'completed') return null;
 
     return (
-      <div className="mt-6 bg-white rounded-xl shadow-md p-6">
-        <h2 className="font-semibold text-gray-900 text-lg mb-4 flex items-center gap-2">
+      <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
+        <h2 className="font-bold text-gray-900 text-xl mb-4 flex items-center gap-2">
           ⭐ Reviews
           {reviews.length > 0 && (
             <span className="text-sm font-normal text-gray-500">({reviews.length})</span>
@@ -546,42 +546,42 @@ const TaskDetail = () => {
         </h2>
 
         {canReview?.can_review && (
-          <div className="mb-4">
+          <div className="mb-6">
             {!showReviewForm ? (
               <button
                 onClick={() => setShowReviewForm(true)}
-                className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center hover:bg-yellow-100 transition-colors"
+                className="w-full bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 text-center hover:bg-yellow-100 transition-colors"
               >
-                <span className="font-medium text-yellow-700">
+                <span className="font-semibold text-yellow-700 text-lg">
                   ⭐ Leave a review for {canReview.reviewee?.username}
                 </span>
               </button>
             ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
+                <h3 className="font-semibold text-gray-900 text-lg mb-4">
                   Review for {canReview.reviewee?.username}
                 </h3>
                 
                 <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-2">Rating</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
                   {renderStars(reviewRating, true)}
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-2">Comment (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Comment (optional)</label>
                   <textarea
                     value={reviewContent}
                     onChange={(e) => setReviewContent(e.target.value)}
                     placeholder="Share your experience..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px]"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[120px]"
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
                     onClick={handleSubmitReview}
                     disabled={reviewLoading}
-                    className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-medium"
+                    className="flex-1 bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-semibold"
                   >
                     {reviewLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
@@ -591,7 +591,7 @@ const TaskDetail = () => {
                       setReviewContent('');
                       setReviewRating(5);
                     }}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                   >
                     Cancel
                   </button>
@@ -602,24 +602,24 @@ const TaskDetail = () => {
         )}
 
         {canReview && !canReview.can_review && canReview.existing_review && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-green-700 flex items-center gap-2 text-sm">
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-700 flex items-center gap-2">
               <span>✅</span> You've already reviewed this task
             </p>
           </div>
         )}
 
         {reviews.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <span className="text-4xl mb-2 block">💬</span>
-            <p className="text-gray-500">No reviews yet</p>
+          <div className="text-center py-10 bg-gray-50 rounded-xl">
+            <span className="text-5xl mb-3 block">💬</span>
+            <p className="text-gray-500 text-lg">No reviews yet</p>
           </div>
         ) : (
           <div className="space-y-4">
             {reviews.map((review) => (
-              <div key={review.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div key={review.id} className="border border-gray-200 rounded-xl p-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {review.reviewer?.profile_picture_url ? (
                       <img
                         src={review.reviewer.profile_picture_url}
@@ -627,7 +627,7 @@ const TaskDetail = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-gray-500 font-medium">
+                      <span className="text-gray-500 font-bold text-lg">
                         {review.reviewer?.username?.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -635,10 +635,10 @@ const TaskDetail = () => {
 
                   <div className="flex-1">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="text-sm">
+                      <div>
                         <Link
                           to={`/users/${review.reviewer_id}`}
-                          className="font-medium text-gray-900 hover:text-blue-600"
+                          className="font-semibold text-gray-900 hover:text-blue-600"
                         >
                           {review.reviewer?.username || 'Unknown'}
                         </Link>
@@ -654,7 +654,7 @@ const TaskDetail = () => {
                         {[1, 2, 3, 4, 5].map(star => (
                           <span
                             key={star}
-                            className={`text-lg ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                            className={`text-xl ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                           >
                             ★
                           </span>
@@ -663,10 +663,10 @@ const TaskDetail = () => {
                     </div>
 
                     {review.content && (
-                      <p className="text-gray-700 mt-2">{review.content}</p>
+                      <p className="text-gray-700 mt-3 text-base">{review.content}</p>
                     )}
 
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-sm text-gray-400 mt-3">
                       {new Date(review.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -738,57 +738,88 @@ const TaskDetail = () => {
 
       <div className="max-w-4xl mx-auto px-4">
         {/* Back Button */}
-        <Link to="/tasks" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
+        <Link to="/tasks" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 font-medium">
           <span className="mr-2">←</span> Back to Jobs
         </Link>
 
         {/* Main Card */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          {/* Header - Blue Gradient */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-4xl">{categoryIcon}</span>
-                <div>
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header - Blue Gradient - TALLER with better proportions */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-8 md:py-10 text-white relative">
+            {/* Share Button - Top Right */}
+            <div className="absolute top-4 right-4">
+              <ShareButton
+                url={`/tasks/${task.id}`}
+                title={task.title}
+                description={`${categoryLabel} job - €${task.budget || 0}${task.location ? ` in ${task.location}` : ''}`}
+                size="sm"
+                className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
+              />
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              {/* Left side - Category and Title */}
+              <div className="flex-1">
+                {/* Category Badge - Larger */}
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 rounded-full text-sm font-semibold mb-4">
+                  <span className="text-lg">{categoryIcon}</span>
+                  {categoryLabel}
+                </span>
+                
+                {/* Title - Much Larger */}
+                <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+                  {task.title}
+                </h1>
+                
+                {/* Status indicators row */}
+                <div className="flex flex-wrap items-center gap-2 mt-4">
                   <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
-                    {categoryLabel}
+                    {getDifficultyLabel(task.priority || 'normal')}
                   </span>
-                  <h1 className="text-2xl md:text-3xl font-bold mt-2">{task.title}</h1>
+                  <span className="text-white/60">•</span>
+                  <span className="px-3 py-1 bg-green-500/80 rounded-full text-sm font-medium">
+                    {getStatusLabel(task.status)}
+                  </span>
+                  {task.is_urgent && (
+                    <>
+                      <span className="text-white/60">•</span>
+                      <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-medium">
+                        ⚡ Urgent
+                      </span>
+                    </>
+                  )}
+                  {task.deadline && (
+                    <>
+                      <span className="text-white/60">•</span>
+                      <span className="text-sm text-white/90">
+                        Due {new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end gap-2">
-                <div className="text-3xl font-bold">
+
+              {/* Right side - Price - Clean, no background */}
+              <div className="text-right md:text-right flex-shrink-0">
+                <div className="text-4xl md:text-5xl font-bold">
                   €{task.budget || 0}
                 </div>
                 <span className="text-blue-100 text-sm">Budget</span>
-                {task.is_urgent && (
-                  <span className="px-3 py-1 bg-red-500 rounded-full text-sm font-medium">
-                    ⚡ Urgent
-                  </span>
-                )}
-                {/* Share Button */}
-                <ShareButton
-                  url={`/tasks/${task.id}`}
-                  title={task.title}
-                  description={`${categoryLabel} job - €${task.budget || 0}${task.location ? ` in ${task.location}` : ''}`}
-                  size="sm"
-                  className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
-                />
               </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6">
-            {/* Creator Info */}
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b">
+          <div className="p-6 md:p-8">
+            {/* Profile Card - Clean separation */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 pb-8 border-b border-gray-200">
               <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-md">
                   {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               </Link>
               <div className="flex-1">
-                <Link to={`/users/${task.creator_id}`} className="font-semibold text-lg text-gray-900 hover:text-blue-600">
+                <Link to={`/users/${task.creator_id}`} className="font-bold text-lg text-gray-900 hover:text-blue-600">
                   {task.creator_name || 'Unknown'}
                 </Link>
                 <div className="flex items-center gap-2 mt-1">
@@ -796,65 +827,72 @@ const TaskDetail = () => {
                   <span className="text-gray-500">0.0 (0 reviews)</span>
                 </div>
               </div>
-              {!isCreator && task.status === 'open' && (
-                <button
-                  onClick={() => setShowApplicationForm(true)}
-                  className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"
-                >
-                  ✓ Apply Now
-                </button>
-              )}
-              {isCreator && (
-                <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm">
-                  This is your job posting
-                </span>
-              )}
+              
+              {/* Action buttons in profile section */}
+              <div className="flex gap-3 flex-shrink-0">
+                {!isCreator && task.status === 'open' && (
+                  <button
+                    onClick={() => setShowApplicationForm(true)}
+                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold shadow-md"
+                  >
+                    ✓ Apply Now
+                  </button>
+                )}
+                {isCreator && canEdit && (
+                  <Link
+                    to={`/tasks/${task.id}/edit`}
+                    className="px-5 py-3 border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-semibold"
+                  >
+                    ✏️ Edit Task
+                  </Link>
+                )}
+              </div>
             </div>
 
-            {/* Details Grid - 4 columns */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            {/* Info Grid - Enhanced with better contrast */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 p-5 bg-blue-50 rounded-xl border border-blue-100">
               <div className="text-center">
-                <div className="text-2xl mb-1">💰</div>
-                <div className="text-sm text-gray-500">Budget</div>
-                <div className="font-semibold">€{task.budget || 0}</div>
+                <div className="text-3xl mb-2">💰</div>
+                <div className="text-sm text-gray-500 font-medium mb-1">Budget</div>
+                <div className="font-bold text-lg text-gray-900">€{task.budget || 0}</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl mb-1">📊</div>
-                <div className="text-sm text-gray-500">Difficulty</div>
-                <div className="font-semibold">{getDifficultyLabel(task.priority || 'normal')}</div>
+                <div className="text-3xl mb-2">📊</div>
+                <div className="text-sm text-gray-500 font-medium mb-1">Difficulty</div>
+                <div className="font-bold text-lg text-gray-900">{getDifficultyLabel(task.priority || 'normal')}</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl mb-1">📅</div>
-                <div className="text-sm text-gray-500">Deadline</div>
-                <div className="font-semibold">
+                <div className="text-3xl mb-2">📅</div>
+                <div className="text-sm text-gray-500 font-medium mb-1">Deadline</div>
+                <div className="font-bold text-lg text-gray-900">
                   {task.deadline 
                     ? new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
                     : 'Flexible'}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl mb-1">⚡</div>
-                <div className="text-sm text-gray-500">Status</div>
-                <div className="font-semibold">{getStatusLabel(task.status)}</div>
+                <div className="text-3xl mb-2">⚡</div>
+                <div className="text-sm text-gray-500 font-medium mb-1">Status</div>
+                <div className="font-bold text-lg text-gray-900">{getStatusLabel(task.status)}</div>
               </div>
             </div>
 
-            {/* Description */}
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">About this job</h2>
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {/* Description - Larger header */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">About this job</h2>
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
                 {task.description}
               </p>
             </div>
 
             {/* Assigned Worker Info */}
             {task.assigned_to_name && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🛠️</span>
+              <div className="mb-8 p-5 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl">🛠️</span>
                   <div>
-                    <p className="text-sm text-blue-600">Assigned to</p>
-                    <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-blue-800 hover:underline">
+                    <p className="text-sm text-blue-600 font-medium">Assigned to</p>
+                    <Link to={`/users/${task.assigned_to_id}`} className="font-bold text-blue-800 hover:underline text-lg">
                       {task.assigned_to_name}
                     </Link>
                   </div>
@@ -864,54 +902,54 @@ const TaskDetail = () => {
 
             {/* Applications Section */}
             {showApplications && (
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                   📩 Applications
-                  <span className="text-sm font-normal text-gray-500">({applications.length})</span>
+                  <span className="text-base font-normal text-gray-500">({applications.length})</span>
                 </h2>
 
                 {applicationsLoading ? (
-                  <div className="text-center py-6 text-gray-500">Loading applications...</div>
+                  <div className="text-center py-8 text-gray-500">Loading applications...</div>
                 ) : applications.length === 0 ? (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg">
-                    <span className="text-4xl mb-2 block">📭</span>
-                    <p className="text-gray-500">No applications yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Share your job to get more applicants!</p>
+                  <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-200">
+                    <span className="text-5xl mb-3 block">📭</span>
+                    <p className="text-gray-600 font-medium text-lg">No applications yet</p>
+                    <p className="text-gray-400 mt-1">Share your job to get more applicants!</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {applications.map(application => (
                       <div 
                         key={application.id} 
-                        className={`border rounded-lg p-4 ${
+                        className={`border-2 rounded-xl p-5 ${
                           application.status === 'pending' ? 'border-blue-200 bg-blue-50' 
                           : application.status === 'accepted' ? 'border-green-200 bg-green-50'
                           : 'border-gray-200 bg-gray-50'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {application.applicant_avatar ? (
                                 <img src={application.applicant_avatar} alt="" className="w-full h-full object-cover"/>
                               ) : (
-                                <span className="text-gray-500 font-medium">{application.applicant_name?.charAt(0).toUpperCase()}</span>
+                                <span className="text-gray-500 font-bold text-lg">{application.applicant_name?.charAt(0).toUpperCase()}</span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <Link to={`/users/${application.applicant_id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                                <Link to={`/users/${application.applicant_id}`} className="font-semibold text-gray-900 hover:text-blue-600">
                                   {application.applicant_name}
                                 </Link>
                                 {application.status === 'pending' && (
-                                  <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700">Pending</span>
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>
                                 )}
                                 {application.status === 'accepted' && (
-                                  <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">✓ Accepted</span>
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">✓ Accepted</span>
                                 )}
                               </div>
                               {application.message && (
-                                <p className="mt-2 text-sm text-gray-600 bg-white p-3 rounded-lg border">{application.message}</p>
+                                <p className="mt-3 text-gray-600 bg-white p-4 rounded-lg border">{application.message}</p>
                               )}
                             </div>
                           </div>
@@ -921,20 +959,20 @@ const TaskDetail = () => {
                                 <button 
                                   onClick={() => handleAcceptApplication(application.id)} 
                                   disabled={acceptingId === application.id} 
-                                  className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium"
+                                  className="px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold"
                                 >
                                   {acceptingId === application.id ? '...' : 'Accept'}
                                 </button>
                                 <button 
                                   onClick={() => handleRejectApplication(application.id)} 
                                   disabled={rejectingId === application.id} 
-                                  className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                                  className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                                 >
                                   Reject
                                 </button>
                                 <button 
                                   onClick={() => handleMessageApplicant(application.applicant_id)} 
-                                  className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                                  className="px-4 py-2.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
                                 >
                                   💬
                                 </button>
@@ -951,25 +989,25 @@ const TaskDetail = () => {
 
             {/* Application Form */}
             {showApplicationForm && canApply && (
-              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Apply for this job</h3>
+              <div className="mb-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                <h3 className="font-bold text-gray-900 text-lg mb-4">Apply for this job</h3>
                 <textarea
                   value={applicationMessage}
                   onChange={(e) => setApplicationMessage(e.target.value)}
                   placeholder="Introduce yourself and explain why you're a good fit for this job..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px] mb-3"
+                  className="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[140px] mb-4 text-base"
                 />
                 <div className="flex gap-3">
                   <button
                     onClick={handleApplyTask}
                     disabled={applyMutation.isPending}
-                    className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold"
+                    className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-bold text-lg"
                   >
                     {applyMutation.isPending ? 'Submitting...' : '✓ Submit Application'}
                   </button>
                   <button
                     onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    className="px-6 py-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                   >
                     Cancel
                   </button>
@@ -979,13 +1017,13 @@ const TaskDetail = () => {
 
             {/* Location Map */}
             {task.latitude && task.longitude && (
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Location</h2>
-                <div className="flex items-center gap-2 text-gray-600 mb-3">
-                  <span>📍</span>
-                  <span>{task.location || 'Location not specified'}</span>
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
+                <div className="flex items-center gap-2 text-gray-600 mb-4">
+                  <span className="text-xl">📍</span>
+                  <span className="text-base">{task.location || 'Location not specified'}</span>
                 </div>
-                <div className="h-64 rounded-lg overflow-hidden border border-gray-200">
+                <div className="h-72 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                   <MapContainer
                     center={[task.latitude, task.longitude]}
                     zoom={13}
@@ -1006,12 +1044,12 @@ const TaskDetail = () => {
                     </Marker>
                   </MapContainer>
                 </div>
-                <div className="mt-2 text-center">
+                <div className="mt-3 text-center">
                   <a 
                     href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-blue-600 hover:underline text-sm"
+                    className="text-blue-600 hover:underline font-medium"
                   >
                     Open in Google Maps →
                   </a>
@@ -1019,12 +1057,12 @@ const TaskDetail = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
+            {/* Primary Action Buttons */}
+            <div className="space-y-4">
               {canApply && !showApplicationForm && (
                 <button
                   onClick={() => setShowApplicationForm(true)}
-                  className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
+                  className="w-full bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 transition-colors font-bold text-lg shadow-md"
                 >
                   ✓ Apply for This Job
                 </button>
@@ -1034,7 +1072,7 @@ const TaskDetail = () => {
                 <button
                   onClick={handleMarkDone}
                   disabled={actionLoading}
-                  className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-lg"
+                  className="w-full bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 disabled:bg-gray-400 font-bold text-lg shadow-md"
                 >
                   {actionLoading ? 'Processing...' : '✓ Mark as Done'}
                 </button>
@@ -1044,7 +1082,7 @@ const TaskDetail = () => {
                 <button
                   onClick={handleConfirmDone}
                   disabled={actionLoading}
-                  className="flex-1 bg-green-500 text-white py-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold text-lg"
+                  className="w-full bg-green-500 text-white py-4 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-lg shadow-md"
                 >
                   {actionLoading ? 'Processing...' : '✓ Confirm Completed'}
                 </button>
@@ -1054,38 +1092,38 @@ const TaskDetail = () => {
                 <button
                   onClick={handleDispute}
                   disabled={actionLoading}
-                  className="px-6 py-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-medium"
+                  className="w-full bg-orange-500 text-white py-4 rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-lg"
                 >
                   ⚠️ Dispute
                 </button>
               )}
 
-              {canEdit && (
-                <Link
-                  to={`/tasks/${task.id}/edit`}
-                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
-                >
-                  ✏️ Edit Task
-                </Link>
-              )}
-
               {!isCreator && (
                 <Link
                   to={`/users/${task.creator_id}`}
-                  className="px-6 py-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
+                  className="block w-full py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-center"
                 >
                   👤 View Profile
                 </Link>
               )}
+
+              {!isAuthenticated && task.status === 'open' && (
+                <Link 
+                  to="/login" 
+                  className="block w-full bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 font-bold text-lg text-center shadow-md"
+                >
+                  Login to Apply
+                </Link>
+              )}
             </div>
 
-            {/* Cancel Task */}
+            {/* Cancel Task - Less prominent */}
             {canCancel && (
-              <div className="mt-4 text-center">
+              <div className="mt-6 text-center">
                 <button
                   onClick={handleCancel}
                   disabled={actionLoading}
-                  className="text-red-600 hover:text-red-700 font-medium"
+                  className="text-red-500 hover:text-red-600 font-medium"
                 >
                   Cancel Task
                 </button>
@@ -1094,34 +1132,23 @@ const TaskDetail = () => {
 
             {/* Status Messages */}
             {isCreator && task.status === 'assigned' && (
-              <div className="mt-4 text-yellow-700 bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-lg text-center">
+              <div className="mt-6 text-yellow-700 bg-yellow-50 border border-yellow-200 px-5 py-4 rounded-xl text-center font-medium">
                 ⏳ Waiting for worker to complete the task
               </div>
             )}
             {isAssigned && task.status === 'pending_confirmation' && (
-              <div className="mt-4 text-purple-700 bg-purple-50 border border-purple-200 px-4 py-3 rounded-lg text-center">
+              <div className="mt-6 text-purple-700 bg-purple-50 border border-purple-200 px-5 py-4 rounded-xl text-center font-medium">
                 ⏳ Waiting for task owner to confirm completion
               </div>
             )}
             {task.status === 'completed' && (
-              <div className="mt-4 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg text-center">
+              <div className="mt-6 text-green-700 bg-green-50 border border-green-200 px-5 py-4 rounded-xl text-center font-medium">
                 ✅ This task has been completed
               </div>
             )}
             {task.status === 'cancelled' && (
-              <div className="mt-4 text-gray-600 bg-gray-100 border border-gray-200 px-4 py-3 rounded-lg text-center">
+              <div className="mt-6 text-gray-600 bg-gray-100 border border-gray-200 px-5 py-4 rounded-xl text-center font-medium">
                 ❌ This task has been cancelled
-              </div>
-            )}
-
-            {!isAuthenticated && task.status === 'open' && (
-              <div className="mt-4">
-                <Link 
-                  to="/login" 
-                  className="block w-full bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 font-semibold text-lg text-center"
-                >
-                  Login to Apply
-                </Link>
               </div>
             )}
           </div>
@@ -1133,24 +1160,24 @@ const TaskDetail = () => {
         {/* Reviews */}
         {renderReviewSection()}
 
-        {/* How it works */}
+        {/* How it works - Light blue background */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="font-semibold text-blue-800 mb-3 text-lg">💡 How it works</h3>
-          <ul className="text-blue-700 space-y-2">
-            <li className="flex items-start gap-2">
-              <span>•</span>
+          <h3 className="font-bold text-blue-800 mb-4 text-xl">💡 How it works</h3>
+          <ul className="text-blue-700 space-y-3">
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-500">1.</span>
               <span>Apply for the job with a brief introduction</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-500">2.</span>
               <span>Task owner reviews applications and accepts the best fit</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-500">3.</span>
               <span>Complete the task and mark it as done</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
+            <li className="flex items-start gap-3">
+              <span className="font-bold text-blue-500">4.</span>
               <span>Get paid after the task owner confirms completion</span>
             </li>
           </ul>
