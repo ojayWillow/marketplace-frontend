@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { 
   getOfferings, 
   getBoostedOfferings, 
@@ -11,21 +12,25 @@ import {
 } from '../offerings';
 
 // Query keys for cache management
+// Include language in keys that return translated content
 export const offeringKeys = {
   all: ['offerings'] as const,
   lists: () => [...offeringKeys.all, 'list'] as const,
-  list: (params: OfferingsParams) => [...offeringKeys.lists(), params] as const,
-  boosted: (params?: Partial<OfferingsParams>) => [...offeringKeys.all, 'boosted', params] as const,
+  list: (params: OfferingsParams, lang: string) => [...offeringKeys.lists(), params, lang] as const,
+  boosted: (params?: Partial<OfferingsParams>, lang?: string) => [...offeringKeys.all, 'boosted', params, lang] as const,
   details: () => [...offeringKeys.all, 'detail'] as const,
-  detail: (id: number) => [...offeringKeys.details(), id] as const,
-  myOfferings: () => [...offeringKeys.all, 'my'] as const,
+  detail: (id: number, lang: string) => [...offeringKeys.details(), id, lang] as const,
+  myOfferings: (lang: string) => [...offeringKeys.all, 'my', lang] as const,
 };
 
 // Fetch offerings list with filters
 export const useOfferings = (params: OfferingsParams, options?: { enabled?: boolean }) => {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || 'lv';
+  
   return useQuery({
-    queryKey: offeringKeys.list(params),
-    queryFn: () => getOfferings(params),
+    queryKey: offeringKeys.list(params, lang),
+    queryFn: () => getOfferings({ ...params, lang }),
     staleTime: 1000 * 60 * 2, // 2 minutes
     ...options,
   });
@@ -33,9 +38,12 @@ export const useOfferings = (params: OfferingsParams, options?: { enabled?: bool
 
 // Fetch boosted offerings for map display
 export const useBoostedOfferings = (params?: Partial<OfferingsParams>, options?: { enabled?: boolean }) => {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || 'lv';
+  
   return useQuery({
-    queryKey: offeringKeys.boosted(params),
-    queryFn: () => getBoostedOfferings(params || {}),
+    queryKey: offeringKeys.boosted(params, lang),
+    queryFn: () => getBoostedOfferings({ ...params, lang }),
     staleTime: 1000 * 60 * 1, // 1 minute (boosted status can change)
     ...options,
   });
@@ -43,8 +51,11 @@ export const useBoostedOfferings = (params?: Partial<OfferingsParams>, options?:
 
 // Fetch single offering by ID
 export const useOffering = (id: number, options?: { enabled?: boolean }) => {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || 'lv';
+  
   return useQuery({
-    queryKey: offeringKeys.detail(id),
+    queryKey: offeringKeys.detail(id, lang),
     queryFn: () => getOffering(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: !!id && options?.enabled !== false,
@@ -53,8 +64,11 @@ export const useOffering = (id: number, options?: { enabled?: boolean }) => {
 
 // Fetch user's own offerings
 export const useMyOfferings = (options?: { enabled?: boolean }) => {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || 'lv';
+  
   return useQuery({
-    queryKey: offeringKeys.myOfferings(),
+    queryKey: offeringKeys.myOfferings(lang),
     queryFn: () => getMyOfferings(),
     staleTime: 1000 * 60 * 2, // 2 minutes
     ...options,
@@ -70,7 +84,7 @@ export const useCreateOffering = () => {
     onSuccess: () => {
       // Invalidate all offering lists to refetch
       queryClient.invalidateQueries({ queryKey: offeringKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: offeringKeys.myOfferings() });
+      queryClient.invalidateQueries({ queryKey: offeringKeys.all });
     },
   });
 };
@@ -83,10 +97,10 @@ export const useUpdateOffering = () => {
     mutationFn: ({ id, data }: { id: number; data: Parameters<typeof updateOffering>[1] }) => 
       updateOffering(id, data),
     onSuccess: (_, variables) => {
-      // Invalidate specific offering and lists
-      queryClient.invalidateQueries({ queryKey: offeringKeys.detail(variables.id) });
+      // Invalidate all offering queries (including all language variants)
+      queryClient.invalidateQueries({ queryKey: offeringKeys.details() });
       queryClient.invalidateQueries({ queryKey: offeringKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: offeringKeys.myOfferings() });
+      queryClient.invalidateQueries({ queryKey: offeringKeys.all });
     },
   });
 };
@@ -99,9 +113,7 @@ export const useBoostOffering = () => {
     mutationFn: boostOffering,
     onSuccess: (_, offeringId) => {
       // Invalidate boosted offerings and specific offering
-      queryClient.invalidateQueries({ queryKey: offeringKeys.boosted() });
-      queryClient.invalidateQueries({ queryKey: offeringKeys.detail(offeringId) });
-      queryClient.invalidateQueries({ queryKey: offeringKeys.myOfferings() });
+      queryClient.invalidateQueries({ queryKey: offeringKeys.all });
     },
   });
 };
