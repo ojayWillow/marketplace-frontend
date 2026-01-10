@@ -61,26 +61,37 @@ const CompactFilterBar = ({
   const hasActiveFilters = 
     filters.minPrice > 0 || 
     filters.maxPrice < maxPriceLimit || 
-    filters.datePosted !== 'all' ||
+    filters.distance !== 25 ||
     filters.category !== 'all';
 
   const clearAllFilters = () => {
     onChange({
       minPrice: 0,
       maxPrice: maxPriceLimit,
-      distance: filters.distance, // Keep distance
+      distance: 25,
       datePosted: 'all',
       category: 'all'
     });
   };
 
-  // Format price display for the pill
+  // Get display label for radius - shows value directly
+  const getRadiusLabel = () => {
+    if (filters.distance === 0) {
+      return t('tasks.allLatvia', 'All Latvia');
+    }
+    if (filters.distance === 25) {
+      return t('filters.radius', 'Radius');
+    }
+    return `${filters.distance}km`;
+  };
+
+  // Get display label for price - shows value directly
   const getPriceLabel = () => {
     if (filters.minPrice === 0 && filters.maxPrice >= maxPriceLimit) {
-      return t('filters.anyPrice', 'Any');
+      return t('filters.price', 'Price');
     }
     if (filters.minPrice === 0) {
-      return `≤€${filters.maxPrice}`;
+      return `€0-${filters.maxPrice}`;
     }
     if (filters.maxPrice >= maxPriceLimit) {
       return `€${filters.minPrice}+`;
@@ -88,157 +99,147 @@ const CompactFilterBar = ({
     return `€${filters.minPrice}-${filters.maxPrice}`;
   };
 
-  // Format distance display
-  const getDistanceLabel = () => {
-    if (filters.distance === 0) {
-      return '🇱🇻 LV';
-    }
-    return `${filters.distance}km`;
-  };
-
-  // Format date display
-  const getDateLabel = () => {
-    switch (filters.datePosted) {
-      case 'today': return t('filters.today', 'Today');
-      case 'week': return t('filters.thisWeek', 'Week');
-      case 'month': return t('filters.thisMonth', 'Month');
-      default: return t('filters.allTime', 'All');
-    }
-  };
-
-  // Get category label for the pill button
+  // Get display label for category - shows value directly
   const getCategoryLabel = () => {
     if (filters.category === 'all') {
-      return t('filters.allCategories', 'All');
+      return t('filters.category', 'Category');
     }
     const cat = categoryOptions.find(c => c.value === filters.category);
-    return cat ? `${cat.icon || ''} ${cat.label}`.trim() : filters.category;
+    return cat ? cat.label : filters.category;
   };
 
-  const accentColor = variant === 'offerings' ? 'amber' : 'blue';
+  // Check if a specific filter is active (changed from default)
+  const isRadiusActive = filters.distance !== 25;
+  const isPriceActive = filters.minPrice > 0 || filters.maxPrice < maxPriceLimit;
+  const isCategoryActive = filters.category !== 'all';
 
-  // Pill button component
-  const FilterPill = ({ 
-    label, 
-    icon, 
-    isActive, 
-    onClick, 
-    dropdown 
-  }: { 
-    label: string; 
-    icon: string; 
-    isActive?: boolean; 
-    onClick: () => void;
-    dropdown?: string;
-  }) => (
-    <button
-      onClick={onClick}
-      className={`
-        inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
-        border transition-all whitespace-nowrap
-        ${isActive 
-          ? `bg-${accentColor}-100 border-${accentColor}-300 text-${accentColor}-700` 
-          : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-        }
-        ${openDropdown === dropdown ? 'ring-2 ring-' + accentColor + '-200' : ''}
-      `}
-    >
-      <span>{icon}</span>
-      <span>{label}</span>
-      {dropdown && <span className="text-gray-400 text-xs">▼</span>}
-    </button>
-  );
+  // Shorten location name for display
+  const shortLocationName = locationName.length > 20 
+    ? locationName.substring(0, 20) + '...' 
+    : locationName;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4" ref={dropdownRef}>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3" ref={dropdownRef}>
       <div className="flex flex-wrap items-center gap-3">
-        {/* Search Input - takes available space */}
-        <div className="relative flex-1 min-w-[200px]">
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[180px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t('tasks.searchPlaceholder', 'Search jobs or offerings...')}
-            className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg 
+            placeholder={t('tasks.searchPlaceholder', 'Search...')}
+            className="w-full px-4 py-2 pl-9 border border-gray-200 rounded-lg 
                        focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                       text-sm"
+                       text-sm bg-gray-50 focus:bg-white transition-colors"
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Location Pill */}
-          <FilterPill
-            icon="📍"
-            label={locationName.length > 15 ? locationName.substring(0, 15) + '...' : locationName}
+        {/* Location Context - subtle, not a prominent button */}
+        <div className="flex items-center gap-1 text-sm text-gray-500">
+          <span className="hidden sm:inline">{t('filters.near', 'Near')}</span>
+          <span className="font-medium text-gray-700">{shortLocationName}</span>
+          <button
             onClick={onLocationClick}
-            isActive={false}
-          />
+            className="text-blue-600 hover:text-blue-700 hover:underline text-xs ml-1"
+          >
+            {t('filters.change', 'change')}
+          </button>
+        </div>
 
-          {/* Distance Dropdown */}
+        {/* Divider */}
+        <div className="hidden sm:block h-6 w-px bg-gray-200"></div>
+
+        {/* Filter Buttons - Clean text labels */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Radius Filter */}
           <div className="relative">
-            <FilterPill
-              icon="📏"
-              label={getDistanceLabel()}
+            <button
               onClick={() => setOpenDropdown(openDropdown === 'distance' ? null : 'distance')}
-              dropdown="distance"
-              isActive={filters.distance !== 25}
-            />
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                flex items-center gap-1
+                ${isRadiusActive 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                }
+                ${openDropdown === 'distance' ? 'ring-2 ring-blue-200' : ''}
+              `}
+            >
+              <span>{getRadiusLabel()}</span>
+              <span className="text-xs text-gray-400">▼</span>
+            </button>
             {openDropdown === 'distance' && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
-                {[5, 10, 25, 50, 100, 0].map((km) => (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px] py-1">
+                {[
+                  { value: 25, label: '25 km' },
+                  { value: 5, label: '5 km' },
+                  { value: 10, label: '10 km' },
+                  { value: 50, label: '50 km' },
+                  { value: 100, label: '100 km' },
+                  { value: 0, label: t('tasks.allLatvia', 'All Latvia') },
+                ].map((option) => (
                   <button
-                    key={km}
+                    key={option.value}
                     onClick={() => {
-                      updateFilter('distance', km);
+                      updateFilter('distance', option.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg
-                      ${filters.distance === km ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50
+                      ${filters.distance === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
                     `}
                   >
-                    {km === 0 ? '🇱🇻 ' + t('tasks.allLatvia', 'All Latvia') : `${km} km`}
+                    {option.label}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Price Dropdown */}
+          {/* Price Filter */}
           <div className="relative">
-            <FilterPill
-              icon="💰"
-              label={getPriceLabel()}
+            <button
               onClick={() => setOpenDropdown(openDropdown === 'price' ? null : 'price')}
-              dropdown="price"
-              isActive={filters.minPrice > 0 || filters.maxPrice < maxPriceLimit}
-            />
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                flex items-center gap-1
+                ${isPriceActive 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                }
+                ${openDropdown === 'price' ? 'ring-2 ring-blue-200' : ''}
+              `}
+            >
+              <span>{getPriceLabel()}</span>
+              <span className="text-xs text-gray-400">▼</span>
+            </button>
             {openDropdown === 'price' && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4 min-w-[240px]">
-                <div className="text-sm font-medium text-gray-700 mb-3">{t('filters.priceRange', 'Price Range')}</div>
-                <div className="flex items-center gap-3 mb-3">
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3 min-w-[220px]">
+                <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+                  {t('filters.priceRange', 'Price Range')}
+                </div>
+                <div className="flex items-center gap-2 mb-3">
                   <div className="flex-1">
-                    <label className="text-xs text-gray-500 mb-1 block">{t('filters.min', 'Min')}</label>
                     <input
                       type="number"
                       value={filters.minPrice}
                       onChange={(e) => updateFilter('minPrice', Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm"
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-center"
                       min={0}
                       max={filters.maxPrice}
+                      placeholder="Min"
                     />
                   </div>
-                  <span className="text-gray-400 mt-5">—</span>
+                  <span className="text-gray-400 text-sm">to</span>
                   <div className="flex-1">
-                    <label className="text-xs text-gray-500 mb-1 block">{t('filters.max', 'Max')}</label>
                     <input
                       type="number"
                       value={filters.maxPrice}
                       onChange={(e) => updateFilter('maxPrice', Math.min(maxPriceLimit, parseInt(e.target.value) || maxPriceLimit))}
-                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm"
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-center"
                       min={filters.minPrice}
                       max={maxPriceLimit}
+                      placeholder="Max"
                     />
                   </div>
                 </div>
@@ -246,7 +247,7 @@ const CompactFilterBar = ({
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { label: t('filters.any', 'Any'), min: 0, max: maxPriceLimit },
-                    { label: '≤€25', min: 0, max: 25 },
+                    { label: '€0-25', min: 0, max: 25 },
                     { label: '€25-75', min: 25, max: 75 },
                     { label: '€75+', min: 75, max: maxPriceLimit },
                   ].map((preset) => (
@@ -255,10 +256,10 @@ const CompactFilterBar = ({
                       onClick={() => {
                         onChange({ ...filters, minPrice: preset.min, maxPrice: preset.max });
                       }}
-                      className={`px-2 py-1 rounded text-xs border transition-colors
+                      className={`px-2 py-1 rounded text-xs transition-colors
                         ${filters.minPrice === preset.min && filters.maxPrice === preset.max
-                          ? 'bg-blue-100 border-blue-300 text-blue-700'
-                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                          ? 'bg-blue-100 text-blue-700 font-medium'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }
                       `}
                     >
@@ -270,66 +271,38 @@ const CompactFilterBar = ({
             )}
           </div>
 
-          {/* Date Posted Dropdown */}
+          {/* Category Filter */}
           <div className="relative">
-            <FilterPill
-              icon="📅"
-              label={getDateLabel()}
-              onClick={() => setOpenDropdown(openDropdown === 'date' ? null : 'date')}
-              dropdown="date"
-              isActive={filters.datePosted !== 'all'}
-            />
-            {openDropdown === 'date' && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
-                {[
-                  { value: 'all', label: t('filters.allTime', 'All time') },
-                  { value: 'today', label: t('filters.today', 'Today') },
-                  { value: 'week', label: t('filters.thisWeek', 'This week') },
-                  { value: 'month', label: t('filters.thisMonth', 'This month') },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      updateFilter('datePosted', option.value);
-                      setOpenDropdown(null);
-                    }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg
-                      ${filters.datePosted === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
-                    `}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Category Dropdown */}
-          <div className="relative">
-            <FilterPill
-              icon="🏷️"
-              label={getCategoryLabel()}
+            <button
               onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
-              dropdown="category"
-              isActive={filters.category !== 'all'}
-            />
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                flex items-center gap-1
+                ${isCategoryActive 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                }
+                ${openDropdown === 'category' ? 'ring-2 ring-blue-200' : ''}
+              `}
+            >
+              <span>{getCategoryLabel()}</span>
+              <span className="text-xs text-gray-400">▼</span>
+            </button>
             {openDropdown === 'category' && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px] max-h-[300px] overflow-y-auto">
-                {/* Loop through all categoryOptions - includes 'all' from constants */}
-                {categoryOptions.map((cat, index) => (
+              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] max-h-[280px] overflow-y-auto py-1">
+                {categoryOptions.map((cat) => (
                   <button
                     key={cat.value}
                     onClick={() => {
                       updateFilter('category', cat.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50
-                      ${index === 0 ? 'rounded-t-lg' : ''}
-                      ${index === categoryOptions.length - 1 ? 'rounded-b-lg' : ''}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50
                       ${filters.category === cat.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
                     `}
                   >
-                    {cat.icon} {cat.label}
+                    {cat.icon && <span className="mr-2">{cat.icon}</span>}
+                    {cat.label}
                   </button>
                 ))}
               </div>
@@ -340,11 +313,11 @@ const CompactFilterBar = ({
           {hasActiveFilters && (
             <button
               onClick={clearAllFilters}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium
-                         text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+              className="px-2 py-1.5 rounded-md text-sm text-gray-400 hover:text-gray-600 
+                         hover:bg-gray-100 transition-colors"
+              title={t('filters.clearAll', 'Clear all filters')}
             >
-              <span>✕</span>
-              <span>{t('filters.clear', 'Clear')}</span>
+              ✕
             </button>
           )}
         </div>
