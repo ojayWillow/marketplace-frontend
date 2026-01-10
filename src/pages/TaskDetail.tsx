@@ -34,7 +34,7 @@ const StarRating = ({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md
   const hasHalfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
   
-  const sizeClass = size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg';
+  const sizeClass = size === 'lg' ? 'text-xl' : size === 'sm' ? 'text-sm' : 'text-base';
   
   return (
     <span className={`text-yellow-500 ${sizeClass}`}>
@@ -415,7 +415,7 @@ const TaskDetail = () => {
             onClick={() => interactive && setReviewRating(star)}
             onMouseEnter={() => interactive && setHoverRating(star)}
             onMouseLeave={() => interactive && setHoverRating(0)}
-            className={`text-2xl ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'} ${
+            className={`text-xl ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'} ${
               star <= displayRating ? 'text-yellow-400' : 'text-gray-300'
             }`}
           >
@@ -433,8 +433,8 @@ const TaskDetail = () => {
     
     if (helpersLoading) {
       return (
-        <div className="mt-6 bg-white rounded-xl shadow-md p-6 text-center">
-          <div className="animate-spin h-6 w-6 border-3 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+        <div className="mt-4 bg-white rounded-xl shadow p-4 text-center">
+          <div className="animate-spin h-5 w-5 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
           <p className="text-gray-500 text-sm">Finding helpers nearby...</p>
         </div>
       );
@@ -443,76 +443,57 @@ const TaskDetail = () => {
     if (recommendedHelpers.length === 0) return null;
 
     return (
-      <div className="mt-6 bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">✨</span>
+      <div className="mt-4 bg-white rounded-xl shadow overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-white">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">✨</span>
             <div>
-              <h2 className="text-lg font-bold">Recommended Helpers</h2>
-              <p className="text-amber-100 text-sm">
-                {recommendedHelpers.length} people offering {getCategoryLabel(task.category)} services nearby
+              <h2 className="font-bold">Recommended Helpers</h2>
+              <p className="text-amber-100 text-xs">
+                {recommendedHelpers.length} offering {getCategoryLabel(task.category)} nearby
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recommendedHelpers.map(helper => (
-              <div key={helper.id} className="border border-gray-200 rounded-xl p-4 hover:border-amber-300 hover:shadow-md transition-all">
-                <div className="flex items-center gap-3 mb-3">
+        <div className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {recommendedHelpers.slice(0, 4).map(helper => (
+              <div key={helper.id} className="border border-gray-200 rounded-lg p-3 hover:border-amber-300 hover:shadow transition-all">
+                <div className="flex items-center gap-2 mb-2">
                   {helper.creator_avatar ? (
                     <img 
                       src={helper.creator_avatar} 
                       alt={helper.creator_name}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-amber-200"
+                      className="w-9 h-9 rounded-full object-cover border-2 border-amber-200"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg font-bold">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-sm">
                       {helper.creator_name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <Link 
                       to={`/users/${helper.creator_id}`}
-                      className="font-semibold text-gray-900 hover:text-amber-600 truncate block"
+                      className="font-medium text-gray-900 hover:text-amber-600 truncate block text-sm"
                     >
                       {helper.creator_name}
                     </Link>
-                    {helper.creator_rating !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-yellow-500 text-sm">
-                          {'★'.repeat(Math.floor(helper.creator_rating))}
-                          {'☆'.repeat(5 - Math.floor(helper.creator_rating))}
-                        </span>
-                        <span className="text-xs text-gray-500">({helper.creator_review_count || 0})</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500 text-xs">
+                        {'★'.repeat(Math.floor(helper.creator_rating || 0))}
+                        {'☆'.repeat(5 - Math.floor(helper.creator_rating || 0))}
+                      </span>
+                    </div>
                   </div>
-                </div>
-
-                <Link 
-                  to={`/offerings/${helper.id}`}
-                  className="font-medium text-gray-800 hover:text-amber-600 line-clamp-1 block mb-2"
-                >
-                  {helper.title}
-                </Link>
-
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-green-600 font-bold text-lg">
+                  <span className="text-green-600 font-bold text-sm">
                     €{helper.price || 0}
-                    {helper.price_type === 'hourly' && <span className="text-sm font-normal">/hr</span>}
                   </span>
-                  {helper.distance && (
-                    <span className="text-gray-500 text-sm">
-                      📍 {helper.distance.toFixed(1)}km
-                    </span>
-                  )}
                 </div>
 
                 <button
                   onClick={() => handleContactHelper(helper)}
-                  className="w-full bg-amber-500 text-white py-2.5 rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                  className="w-full bg-amber-500 text-white py-1.5 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
                 >
                   💬 Contact
                 </button>
@@ -520,14 +501,16 @@ const TaskDetail = () => {
             ))}
           </div>
 
-          <div className="mt-6 text-center">
-            <Link 
-              to={`/tasks?tab=offerings&category=${task.category}`}
-              className="text-amber-600 hover:text-amber-700 font-medium"
-            >
-              Browse all {getCategoryLabel(task.category)} offerings →
-            </Link>
-          </div>
+          {recommendedHelpers.length > 4 && (
+            <div className="mt-3 text-center">
+              <Link 
+                to={`/tasks?tab=offerings&category=${task.category}`}
+                className="text-amber-600 hover:text-amber-700 text-sm font-medium"
+              >
+                View all {recommendedHelpers.length} helpers →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -537,8 +520,8 @@ const TaskDetail = () => {
     if (task?.status !== 'completed') return null;
 
     return (
-      <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
-        <h2 className="font-bold text-gray-900 text-xl mb-4 flex items-center gap-2">
+      <div className="mt-4 bg-white rounded-xl shadow p-4">
+        <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
           ⭐ Reviews
           {reviews.length > 0 && (
             <span className="text-sm font-normal text-gray-500">({reviews.length})</span>
@@ -546,42 +529,42 @@ const TaskDetail = () => {
         </h2>
 
         {canReview?.can_review && (
-          <div className="mb-6">
+          <div className="mb-4">
             {!showReviewForm ? (
               <button
                 onClick={() => setShowReviewForm(true)}
-                className="w-full bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 text-center hover:bg-yellow-100 transition-colors"
+                className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center hover:bg-yellow-100 transition-colors"
               >
-                <span className="font-semibold text-yellow-700 text-lg">
+                <span className="font-medium text-yellow-700">
                   ⭐ Leave a review for {canReview.reviewee?.username}
                 </span>
               </button>
             ) : (
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
-                <h3 className="font-semibold text-gray-900 text-lg mb-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-3">
                   Review for {canReview.reviewee?.username}
                 </h3>
                 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                <div className="mb-3">
+                  <label className="block text-sm text-gray-600 mb-1">Rating</label>
                   {renderStars(reviewRating, true)}
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Comment (optional)</label>
+                <div className="mb-3">
+                  <label className="block text-sm text-gray-600 mb-1">Comment (optional)</label>
                   <textarea
                     value={reviewContent}
                     onChange={(e) => setReviewContent(e.target.value)}
                     placeholder="Share your experience..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[120px]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[80px] text-sm"
                   />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button
                     onClick={handleSubmitReview}
                     disabled={reviewLoading}
-                    className="flex-1 bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-semibold"
+                    className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-medium text-sm"
                   >
                     {reviewLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
@@ -591,7 +574,7 @@ const TaskDetail = () => {
                       setReviewContent('');
                       setReviewRating(5);
                     }}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                   >
                     Cancel
                   </button>
@@ -602,24 +585,24 @@ const TaskDetail = () => {
         )}
 
         {canReview && !canReview.can_review && canReview.existing_review && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-700 flex items-center gap-2">
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-green-700 flex items-center gap-2 text-sm">
               <span>✅</span> You've already reviewed this task
             </p>
           </div>
         )}
 
         {reviews.length === 0 ? (
-          <div className="text-center py-10 bg-gray-50 rounded-xl">
-            <span className="text-5xl mb-3 block">💬</span>
-            <p className="text-gray-500 text-lg">No reviews yet</p>
+          <div className="text-center py-6 bg-gray-50 rounded-lg">
+            <span className="text-3xl mb-2 block">💬</span>
+            <p className="text-gray-500 text-sm">No reviews yet</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {reviews.map((review) => (
-              <div key={review.id} className="border border-gray-200 rounded-xl p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div key={review.id} className="border border-gray-200 rounded-lg p-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {review.reviewer?.profile_picture_url ? (
                       <img
                         src={review.reviewer.profile_picture_url}
@@ -627,34 +610,25 @@ const TaskDetail = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-gray-500 font-bold text-lg">
+                      <span className="text-gray-500 font-medium text-sm">
                         {review.reviewer?.username?.charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div>
-                        <Link
-                          to={`/users/${review.reviewer_id}`}
-                          className="font-semibold text-gray-900 hover:text-blue-600"
-                        >
-                          {review.reviewer?.username || 'Unknown'}
-                        </Link>
-                        <span className="text-gray-400 mx-2">→</span>
-                        <Link
-                          to={`/users/${review.reviewed_user_id}`}
-                          className="text-gray-600 hover:text-blue-600"
-                        >
-                          {review.reviewed_user?.username || 'Unknown'}
-                        </Link>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <Link
+                        to={`/users/${review.reviewer_id}`}
+                        className="font-medium text-gray-900 hover:text-blue-600 text-sm"
+                      >
+                        {review.reviewer?.username || 'Unknown'}
+                      </Link>
                       <div className="flex items-center">
                         {[1, 2, 3, 4, 5].map(star => (
                           <span
                             key={star}
-                            className={`text-xl ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                            className={`text-sm ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                           >
                             ★
                           </span>
@@ -663,15 +637,11 @@ const TaskDetail = () => {
                     </div>
 
                     {review.content && (
-                      <p className="text-gray-700 mt-3 text-base">{review.content}</p>
+                      <p className="text-gray-700 mt-1 text-sm">{review.content}</p>
                     )}
 
-                    <p className="text-sm text-gray-400 mt-3">
-                      {new Date(review.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(review.created_at).toLocaleDateString('en-GB')}
                     </p>
                   </div>
                 </div>
@@ -687,8 +657,8 @@ const TaskDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading job...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-3"></div>
+          <p className="text-gray-600 text-sm">Loading job...</p>
         </div>
       </div>
     );
@@ -697,11 +667,11 @@ const TaskDetail = () => {
   if (!task) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">😕</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Job Not Found</h2>
-          <p className="text-gray-600 mb-4">This job may have been removed or is no longer available.</p>
-          <Link to="/tasks" className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+        <div className="text-center px-4">
+          <div className="text-5xl mb-3">😕</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Job Not Found</h2>
+          <p className="text-gray-600 mb-4 text-sm">This job may have been removed or is no longer available.</p>
+          <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
             Browse All Jobs
           </Link>
         </div>
@@ -726,7 +696,7 @@ const TaskDetail = () => {
   const seoDescription = `${categoryLabel} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-100 py-4 md:py-6">
       {/* SEO Meta Tags */}
       <SEOHead
         title={task.title}
@@ -736,163 +706,154 @@ const TaskDetail = () => {
         price={task.budget}
       />
 
-      <div className="max-w-4xl mx-auto px-4">
+      {/* Constrained width container - max 672px */}
+      <div className="max-w-2xl mx-auto px-4">
         {/* Back Button */}
-        <Link to="/tasks" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 font-medium">
-          <span className="mr-2">←</span> Back to Jobs
+        <Link to="/tasks" className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-4 text-sm">
+          <span className="mr-1">←</span> Back to Jobs
         </Link>
 
         {/* Main Card */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Header - Blue Gradient - TALLER with better proportions */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-8 md:py-10 text-white relative">
+        <div className="bg-white rounded-xl shadow overflow-hidden">
+          {/* Header - Blue Gradient - Compact */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-5 text-white relative">
             {/* Share Button - Top Right */}
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-3 right-3">
               <ShareButton
                 url={`/tasks/${task.id}`}
                 title={task.title}
-                description={`${categoryLabel} job - €${task.budget || 0}${task.location ? ` in ${task.location}` : ''}`}
+                description={`${categoryLabel} job - €${task.budget || 0}`}
                 size="sm"
                 className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
               />
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex justify-between items-start gap-4 pr-10">
               {/* Left side - Category and Title */}
-              <div className="flex-1">
-                {/* Category Badge - Larger */}
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 rounded-full text-sm font-semibold mb-4">
-                  <span className="text-lg">{categoryIcon}</span>
+              <div className="flex-1 min-w-0">
+                {/* Category Badge */}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 rounded-full text-xs font-medium mb-2">
+                  <span>{categoryIcon}</span>
                   {categoryLabel}
                 </span>
                 
-                {/* Title - Much Larger */}
-                <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+                {/* Title */}
+                <h1 className="text-xl md:text-2xl font-bold leading-tight">
                   {task.title}
                 </h1>
                 
                 {/* Status indicators row */}
-                <div className="flex flex-wrap items-center gap-2 mt-4">
-                  <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
+                <div className="flex flex-wrap items-center gap-1.5 mt-2 text-xs">
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full">
                     {getDifficultyLabel(task.priority || 'normal')}
                   </span>
-                  <span className="text-white/60">•</span>
-                  <span className="px-3 py-1 bg-green-500/80 rounded-full text-sm font-medium">
+                  <span className="text-white/40">•</span>
+                  <span className="px-2 py-0.5 bg-green-500/80 rounded-full">
                     {getStatusLabel(task.status)}
                   </span>
                   {task.is_urgent && (
                     <>
-                      <span className="text-white/60">•</span>
-                      <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-medium">
+                      <span className="text-white/40">•</span>
+                      <span className="px-2 py-0.5 bg-indigo-600 rounded-full">
                         ⚡ Urgent
-                      </span>
-                    </>
-                  )}
-                  {task.deadline && (
-                    <>
-                      <span className="text-white/60">•</span>
-                      <span className="text-sm text-white/90">
-                        Due {new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       </span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Right side - Price - Clean, no background */}
-              <div className="text-right md:text-right flex-shrink-0">
-                <div className="text-4xl md:text-5xl font-bold">
+              {/* Right side - Price */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-2xl md:text-3xl font-bold">
                   €{task.budget || 0}
                 </div>
-                <span className="text-blue-100 text-sm">Budget</span>
+                <span className="text-blue-100 text-xs">Budget</span>
               </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 md:p-8">
-            {/* Profile Card - Clean separation */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 pb-8 border-b border-gray-200">
+          <div className="p-4">
+            {/* Profile Card */}
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
               <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-md">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
                   {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               </Link>
-              <div className="flex-1">
-                <Link to={`/users/${task.creator_id}`} className="font-bold text-lg text-gray-900 hover:text-blue-600">
+              <div className="flex-1 min-w-0">
+                <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 text-sm">
                   {task.creator_name || 'Unknown'}
                 </Link>
-                <div className="flex items-center gap-2 mt-1">
-                  <StarRating rating={0} />
-                  <span className="text-gray-500">0.0 (0 reviews)</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <StarRating rating={0} size="sm" />
+                  <span className="text-gray-400 text-xs">0.0 (0)</span>
                 </div>
               </div>
               
-              {/* Action buttons in profile section */}
-              <div className="flex gap-3 flex-shrink-0">
-                {!isCreator && task.status === 'open' && (
-                  <button
-                    onClick={() => setShowApplicationForm(true)}
-                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold shadow-md"
-                  >
-                    ✓ Apply Now
-                  </button>
-                )}
-                {isCreator && canEdit && (
-                  <Link
-                    to={`/tasks/${task.id}/edit`}
-                    className="px-5 py-3 border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-semibold"
-                  >
-                    ✏️ Edit Task
-                  </Link>
-                )}
-              </div>
+              {/* Action button in profile */}
+              {!isCreator && task.status === 'open' && (
+                <button
+                  onClick={() => setShowApplicationForm(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+                >
+                  Apply Now
+                </button>
+              )}
+              {isCreator && canEdit && (
+                <Link
+                  to={`/tasks/${task.id}/edit`}
+                  className="px-3 py-2 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium text-sm"
+                >
+                  ✏️ Edit
+                </Link>
+              )}
             </div>
 
-            {/* Info Grid - Enhanced with better contrast */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 p-5 bg-blue-50 rounded-xl border border-blue-100">
+            {/* Info Grid - Compact */}
+            <div className="grid grid-cols-4 gap-2 mb-4 p-3 bg-blue-50 rounded-lg">
               <div className="text-center">
-                <div className="text-3xl mb-2">💰</div>
-                <div className="text-sm text-gray-500 font-medium mb-1">Budget</div>
-                <div className="font-bold text-lg text-gray-900">€{task.budget || 0}</div>
+                <div className="text-xl mb-0.5">💰</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wide">Budget</div>
+                <div className="font-bold text-sm text-gray-900">€{task.budget || 0}</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl mb-2">📊</div>
-                <div className="text-sm text-gray-500 font-medium mb-1">Difficulty</div>
-                <div className="font-bold text-lg text-gray-900">{getDifficultyLabel(task.priority || 'normal')}</div>
+                <div className="text-xl mb-0.5">📊</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wide">Difficulty</div>
+                <div className="font-bold text-sm text-gray-900">{getDifficultyLabel(task.priority || 'normal')}</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl mb-2">📅</div>
-                <div className="text-sm text-gray-500 font-medium mb-1">Deadline</div>
-                <div className="font-bold text-lg text-gray-900">
+                <div className="text-xl mb-0.5">📅</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wide">Deadline</div>
+                <div className="font-bold text-sm text-gray-900">
                   {task.deadline 
                     ? new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
                     : 'Flexible'}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl mb-2">⚡</div>
-                <div className="text-sm text-gray-500 font-medium mb-1">Status</div>
-                <div className="font-bold text-lg text-gray-900">{getStatusLabel(task.status)}</div>
+                <div className="text-xl mb-0.5">⚡</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wide">Status</div>
+                <div className="font-bold text-sm text-gray-900">{getStatusLabel(task.status)}</div>
               </div>
             </div>
 
-            {/* Description - Larger header */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">About this job</h2>
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
+            {/* Description */}
+            <div className="mb-4">
+              <h2 className="font-bold text-gray-900 mb-2">About this job</h2>
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
                 {task.description}
               </p>
             </div>
 
             {/* Assigned Worker Info */}
             {task.assigned_to_name && (
-              <div className="mb-8 p-5 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl">🛠️</span>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🛠️</span>
                   <div>
-                    <p className="text-sm text-blue-600 font-medium">Assigned to</p>
-                    <Link to={`/users/${task.assigned_to_id}`} className="font-bold text-blue-800 hover:underline text-lg">
+                    <p className="text-xs text-blue-600">Assigned to</p>
+                    <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-blue-800 hover:underline text-sm">
                       {task.assigned_to_name}
                     </Link>
                   </div>
@@ -902,83 +863,80 @@ const TaskDetail = () => {
 
             {/* Applications Section */}
             {showApplications && (
-              <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="mb-4">
+                <h2 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
                   📩 Applications
-                  <span className="text-base font-normal text-gray-500">({applications.length})</span>
+                  <span className="text-sm font-normal text-gray-500">({applications.length})</span>
                 </h2>
 
                 {applicationsLoading ? (
-                  <div className="text-center py-8 text-gray-500">Loading applications...</div>
+                  <div className="text-center py-4 text-gray-500 text-sm">Loading...</div>
                 ) : applications.length === 0 ? (
-                  <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-200">
-                    <span className="text-5xl mb-3 block">📭</span>
-                    <p className="text-gray-600 font-medium text-lg">No applications yet</p>
-                    <p className="text-gray-400 mt-1">Share your job to get more applicants!</p>
+                  <div className="text-center py-6 bg-gray-50 rounded-lg">
+                    <span className="text-3xl mb-2 block">📭</span>
+                    <p className="text-gray-500 text-sm">No applications yet</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {applications.map(application => (
                       <div 
                         key={application.id} 
-                        className={`border-2 rounded-xl p-5 ${
+                        className={`border rounded-lg p-3 ${
                           application.status === 'pending' ? 'border-blue-200 bg-blue-50' 
                           : application.status === 'accepted' ? 'border-green-200 bg-green-50'
                           : 'border-gray-200 bg-gray-50'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-4 flex-1 min-w-0">
-                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {application.applicant_avatar ? (
                                 <img src={application.applicant_avatar} alt="" className="w-full h-full object-cover"/>
                               ) : (
-                                <span className="text-gray-500 font-bold text-lg">{application.applicant_name?.charAt(0).toUpperCase()}</span>
+                                <span className="text-gray-500 font-medium text-xs">{application.applicant_name?.charAt(0).toUpperCase()}</span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Link to={`/users/${application.applicant_id}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Link to={`/users/${application.applicant_id}`} className="font-medium text-gray-900 hover:text-blue-600 text-sm">
                                   {application.applicant_name}
                                 </Link>
                                 {application.status === 'pending' && (
-                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-700">Pending</span>
                                 )}
                                 {application.status === 'accepted' && (
-                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">✓ Accepted</span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">✓ Accepted</span>
                                 )}
                               </div>
                               {application.message && (
-                                <p className="mt-3 text-gray-600 bg-white p-4 rounded-lg border">{application.message}</p>
+                                <p className="mt-1.5 text-xs text-gray-600 bg-white p-2 rounded border">{application.message}</p>
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-2 flex-shrink-0">
-                            {application.status === 'pending' && (
-                              <>
-                                <button 
-                                  onClick={() => handleAcceptApplication(application.id)} 
-                                  disabled={acceptingId === application.id} 
-                                  className="px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold"
-                                >
-                                  {acceptingId === application.id ? '...' : 'Accept'}
-                                </button>
-                                <button 
-                                  onClick={() => handleRejectApplication(application.id)} 
-                                  disabled={rejectingId === application.id} 
-                                  className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
-                                >
-                                  Reject
-                                </button>
-                                <button 
-                                  onClick={() => handleMessageApplicant(application.applicant_id)} 
-                                  className="px-4 py-2.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-                                >
-                                  💬
-                                </button>
-                              </>
-                            )}
-                          </div>
+                          {application.status === 'pending' && (
+                            <div className="flex gap-1 flex-shrink-0">
+                              <button 
+                                onClick={() => handleAcceptApplication(application.id)} 
+                                disabled={acceptingId === application.id} 
+                                className="px-2.5 py-1.5 bg-green-500 text-white rounded text-xs hover:bg-green-600 disabled:bg-gray-400 font-medium"
+                              >
+                                {acceptingId === application.id ? '...' : 'Accept'}
+                              </button>
+                              <button 
+                                onClick={() => handleRejectApplication(application.id)} 
+                                disabled={rejectingId === application.id} 
+                                className="px-2.5 py-1.5 bg-gray-200 text-gray-600 rounded text-xs hover:bg-gray-300"
+                              >
+                                ✕
+                              </button>
+                              <button 
+                                onClick={() => handleMessageApplicant(application.applicant_id)} 
+                                className="px-2 py-1.5 bg-blue-100 text-blue-600 rounded text-xs hover:bg-blue-200"
+                              >
+                                💬
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -989,25 +947,25 @@ const TaskDetail = () => {
 
             {/* Application Form */}
             {showApplicationForm && canApply && (
-              <div className="mb-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                <h3 className="font-bold text-gray-900 text-lg mb-4">Apply for this job</h3>
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-2 text-sm">Apply for this job</h3>
                 <textarea
                   value={applicationMessage}
                   onChange={(e) => setApplicationMessage(e.target.value)}
-                  placeholder="Introduce yourself and explain why you're a good fit for this job..."
-                  className="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[140px] mb-4 text-base"
+                  placeholder="Introduce yourself briefly..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3"
                 />
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button
                     onClick={handleApplyTask}
                     disabled={applyMutation.isPending}
-                    className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-bold text-lg"
+                    className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
                   >
                     {applyMutation.isPending ? 'Submitting...' : '✓ Submit Application'}
                   </button>
                   <button
                     onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }}
-                    className="px-6 py-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                    className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                   >
                     Cancel
                   </button>
@@ -1017,13 +975,13 @@ const TaskDetail = () => {
 
             {/* Location Map */}
             {task.latitude && task.longitude && (
-              <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-                <div className="flex items-center gap-2 text-gray-600 mb-4">
-                  <span className="text-xl">📍</span>
-                  <span className="text-base">{task.location || 'Location not specified'}</span>
-                </div>
-                <div className="h-72 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+              <div className="mb-4">
+                <h2 className="font-bold text-gray-900 mb-2">Location</h2>
+                <p className="text-gray-600 text-sm mb-2 flex items-center gap-1">
+                  <span>📍</span>
+                  {task.location || 'Location not specified'}
+                </p>
+                <div className="h-48 rounded-lg overflow-hidden border border-gray-200">
                   <MapContainer
                     center={[task.latitude, task.longitude]}
                     zoom={13}
@@ -1037,32 +995,29 @@ const TaskDetail = () => {
                     <Marker position={[task.latitude, task.longitude]} icon={taskIcon}>
                       <Popup>
                         <div className="text-center">
-                          <p className="font-semibold">{task.title}</p>
-                          <p className="text-sm text-gray-500">Job location</p>
+                          <p className="font-semibold text-sm">{task.title}</p>
                         </div>
                       </Popup>
                     </Marker>
                   </MapContainer>
                 </div>
-                <div className="mt-3 text-center">
-                  <a 
-                    href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-blue-600 hover:underline font-medium"
-                  >
-                    Open in Google Maps →
-                  </a>
-                </div>
+                <a 
+                  href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-600 hover:underline text-xs mt-1 inline-block"
+                >
+                  Open in Google Maps →
+                </a>
               </div>
             )}
 
             {/* Primary Action Buttons */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               {canApply && !showApplicationForm && (
                 <button
                   onClick={() => setShowApplicationForm(true)}
-                  className="w-full bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 transition-colors font-bold text-lg shadow-md"
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold"
                 >
                   ✓ Apply for This Job
                 </button>
@@ -1072,7 +1027,7 @@ const TaskDetail = () => {
                 <button
                   onClick={handleMarkDone}
                   disabled={actionLoading}
-                  className="w-full bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 disabled:bg-gray-400 font-bold text-lg shadow-md"
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold"
                 >
                   {actionLoading ? 'Processing...' : '✓ Mark as Done'}
                 </button>
@@ -1082,7 +1037,7 @@ const TaskDetail = () => {
                 <button
                   onClick={handleConfirmDone}
                   disabled={actionLoading}
-                  className="w-full bg-green-500 text-white py-4 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-lg shadow-md"
+                  className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold"
                 >
                   {actionLoading ? 'Processing...' : '✓ Confirm Completed'}
                 </button>
@@ -1092,7 +1047,7 @@ const TaskDetail = () => {
                 <button
                   onClick={handleDispute}
                   disabled={actionLoading}
-                  className="w-full bg-orange-500 text-white py-4 rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-lg"
+                  className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-semibold"
                 >
                   ⚠️ Dispute
                 </button>
@@ -1101,7 +1056,7 @@ const TaskDetail = () => {
               {!isCreator && (
                 <Link
                   to={`/users/${task.creator_id}`}
-                  className="block w-full py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-center"
+                  className="block w-full py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center text-sm"
                 >
                   👤 View Profile
                 </Link>
@@ -1110,20 +1065,20 @@ const TaskDetail = () => {
               {!isAuthenticated && task.status === 'open' && (
                 <Link 
                   to="/login" 
-                  className="block w-full bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 font-bold text-lg text-center shadow-md"
+                  className="block w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 font-semibold text-center"
                 >
                   Login to Apply
                 </Link>
               )}
             </div>
 
-            {/* Cancel Task - Less prominent */}
+            {/* Cancel Task */}
             {canCancel && (
-              <div className="mt-6 text-center">
+              <div className="mt-3 text-center">
                 <button
                   onClick={handleCancel}
                   disabled={actionLoading}
-                  className="text-red-500 hover:text-red-600 font-medium"
+                  className="text-red-500 hover:text-red-600 text-sm"
                 >
                   Cancel Task
                 </button>
@@ -1132,23 +1087,23 @@ const TaskDetail = () => {
 
             {/* Status Messages */}
             {isCreator && task.status === 'assigned' && (
-              <div className="mt-6 text-yellow-700 bg-yellow-50 border border-yellow-200 px-5 py-4 rounded-xl text-center font-medium">
-                ⏳ Waiting for worker to complete the task
+              <div className="mt-4 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2 rounded-lg text-center text-sm">
+                ⏳ Waiting for worker to complete
               </div>
             )}
             {isAssigned && task.status === 'pending_confirmation' && (
-              <div className="mt-6 text-purple-700 bg-purple-50 border border-purple-200 px-5 py-4 rounded-xl text-center font-medium">
-                ⏳ Waiting for task owner to confirm completion
+              <div className="mt-4 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2 rounded-lg text-center text-sm">
+                ⏳ Waiting for confirmation
               </div>
             )}
             {task.status === 'completed' && (
-              <div className="mt-6 text-green-700 bg-green-50 border border-green-200 px-5 py-4 rounded-xl text-center font-medium">
-                ✅ This task has been completed
+              <div className="mt-4 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg text-center text-sm">
+                ✅ Task completed
               </div>
             )}
             {task.status === 'cancelled' && (
-              <div className="mt-6 text-gray-600 bg-gray-100 border border-gray-200 px-5 py-4 rounded-xl text-center font-medium">
-                ❌ This task has been cancelled
+              <div className="mt-4 text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2 rounded-lg text-center text-sm">
+                ❌ Task cancelled
               </div>
             )}
           </div>
@@ -1160,27 +1115,27 @@ const TaskDetail = () => {
         {/* Reviews */}
         {renderReviewSection()}
 
-        {/* How it works - Light blue background */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="font-bold text-blue-800 mb-4 text-xl">💡 How it works</h3>
-          <ul className="text-blue-700 space-y-3">
-            <li className="flex items-start gap-3">
+        {/* How it works - Compact */}
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <h3 className="font-bold text-blue-800 mb-2">💡 How it works</h3>
+          <ol className="text-blue-700 text-sm space-y-1">
+            <li className="flex items-start gap-2">
               <span className="font-bold text-blue-500">1.</span>
-              <span>Apply for the job with a brief introduction</span>
+              <span>Apply with a brief introduction</span>
             </li>
-            <li className="flex items-start gap-3">
+            <li className="flex items-start gap-2">
               <span className="font-bold text-blue-500">2.</span>
-              <span>Task owner reviews applications and accepts the best fit</span>
+              <span>Owner reviews and accepts</span>
             </li>
-            <li className="flex items-start gap-3">
+            <li className="flex items-start gap-2">
               <span className="font-bold text-blue-500">3.</span>
-              <span>Complete the task and mark it as done</span>
+              <span>Complete and mark done</span>
             </li>
-            <li className="flex items-start gap-3">
+            <li className="flex items-start gap-2">
               <span className="font-bold text-blue-500">4.</span>
-              <span>Get paid after the task owner confirms completion</span>
+              <span>Get paid after confirmation</span>
             </li>
-          </ul>
+          </ol>
         </div>
       </div>
     </div>
