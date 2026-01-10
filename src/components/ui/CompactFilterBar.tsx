@@ -65,8 +65,11 @@ const CompactFilterBar = ({
     filters.category !== 'all' ||
     filters.datePosted !== 'all';
 
-  // Check if "more" filters are active
-  const hasMoreFiltersActive = filters.datePosted !== 'all';
+  // Check if specific filters are changed from default
+  const isRadiusActive = filters.distance !== 25;
+  const isPriceActive = filters.minPrice > 0 || filters.maxPrice < maxPriceLimit;
+  const isCategoryActive = filters.category !== 'all';
+  const isPostedActive = filters.datePosted !== 'all';
 
   const clearAllFilters = () => {
     onChange({
@@ -78,54 +81,50 @@ const CompactFilterBar = ({
     });
   };
 
-  // Get display label for radius - shows value directly
+  // Get display label for radius - always shows "Radius: [value]"
   const getRadiusLabel = () => {
+    const prefix = t('filters.radius', 'Radius');
     if (filters.distance === 0) {
-      return t('tasks.allLatvia', 'All Latvia');
+      return `${prefix}: ${t('tasks.allLatvia', 'All Latvia')}`;
     }
-    if (filters.distance === 25) {
-      return t('filters.radius', 'Radius');
-    }
-    return `${filters.distance}km`;
+    return `${prefix}: ${filters.distance}km`;
   };
 
-  // Get display label for price - shows value directly
+  // Get display label for price
   const getPriceLabel = () => {
+    const prefix = t('filters.price', 'Price');
     if (filters.minPrice === 0 && filters.maxPrice >= maxPriceLimit) {
-      return t('filters.price', 'Price');
+      return prefix;
     }
     if (filters.minPrice === 0) {
-      return `€0-${filters.maxPrice}`;
+      return `${prefix}: €0-${filters.maxPrice}`;
     }
     if (filters.maxPrice >= maxPriceLimit) {
-      return `€${filters.minPrice}+`;
+      return `${prefix}: €${filters.minPrice}+`;
     }
-    return `€${filters.minPrice}-${filters.maxPrice}`;
+    return `${prefix}: €${filters.minPrice}-${filters.maxPrice}`;
   };
 
-  // Get display label for category - shows value directly
+  // Get display label for category
   const getCategoryLabel = () => {
+    const prefix = t('filters.category', 'Category');
     if (filters.category === 'all') {
-      return t('filters.category', 'Category');
+      return prefix;
     }
     const cat = categoryOptions.find(c => c.value === filters.category);
-    return cat ? cat.label : filters.category;
+    return `${prefix}: ${cat ? cat.label : filters.category}`;
   };
 
-  // Get display label for date/more filters
-  const getDateLabel = () => {
+  // Get display label for posted date
+  const getPostedLabel = () => {
+    const prefix = t('filters.posted', 'Posted');
     switch (filters.datePosted) {
-      case 'today': return t('filters.today', 'Today');
-      case 'week': return t('filters.thisWeek', 'This week');
-      case 'month': return t('filters.thisMonth', 'This month');
-      default: return t('filters.more', 'More');
+      case 'today': return `${prefix}: ${t('filters.today', 'Today')}`;
+      case 'week': return `${prefix}: ${t('filters.thisWeek', 'This week')}`;
+      case 'month': return `${prefix}: ${t('filters.thisMonth', 'This month')}`;
+      default: return prefix;
     }
   };
-
-  // Check if a specific filter is active (changed from default)
-  const isRadiusActive = filters.distance !== 25;
-  const isPriceActive = filters.minPrice > 0 || filters.maxPrice < maxPriceLimit;
-  const isCategoryActive = filters.category !== 'all';
 
   // Shorten location name for display
   const shortLocationName = locationName.length > 15 
@@ -319,28 +318,25 @@ const CompactFilterBar = ({
             )}
           </div>
 
-          {/* More Filters (Date Posted) */}
+          {/* Posted Filter (renamed from More) */}
           <div className="relative">
             <button
-              onClick={() => setOpenDropdown(openDropdown === 'more' ? null : 'more')}
+              onClick={() => setOpenDropdown(openDropdown === 'posted' ? null : 'posted')}
               className={`
                 px-3 py-1.5 rounded-md text-sm font-medium transition-all
                 flex items-center gap-1
-                ${hasMoreFiltersActive 
+                ${isPostedActive 
                   ? 'bg-blue-50 text-blue-700 border border-blue-200' 
                   : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }
-                ${openDropdown === 'more' ? 'ring-2 ring-blue-200' : ''}
+                ${openDropdown === 'posted' ? 'ring-2 ring-blue-200' : ''}
               `}
             >
-              <span>{getDateLabel()}</span>
+              <span>{getPostedLabel()}</span>
               <span className="text-xs text-gray-400">▼</span>
             </button>
-            {openDropdown === 'more' && (
+            {openDropdown === 'posted' && (
               <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] py-1">
-                <div className="px-3 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                  {t('filters.postedWithin', 'Posted within')}
-                </div>
                 {[
                   { value: 'all', label: t('filters.anyTime', 'Any time') },
                   { value: 'today', label: t('filters.today', 'Today') },
