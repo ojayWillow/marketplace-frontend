@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { divIcon } from 'leaflet';
 import { useQueryClient } from '@tanstack/react-query';
 import 'leaflet/dist/leaflet.css';
 import { Task, TaskApplication, getTaskApplications, acceptApplication, rejectApplication, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask } from '../api/tasks';
@@ -26,6 +27,23 @@ L.Icon.Default.mergeOptions({
   iconUrl,
   shadowUrl,
 });
+
+// Helper function to render star rating
+const StarRating = ({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  
+  const sizeClass = size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg';
+  
+  return (
+    <span className={`text-yellow-500 ${sizeClass}`}>
+      {'★'.repeat(fullStars)}
+      {hasHalfStar && '½'}
+      {'☆'.repeat(emptyStars)}
+    </span>
+  );
+};
 
 interface Review {
   id: number;
@@ -91,6 +109,14 @@ const TaskDetail = () => {
   const [reviewContent, setReviewContent] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+
+  // Custom marker icon for map
+  const taskIcon = divIcon({
+    className: 'custom-task-icon',
+    html: '<div style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  });
 
   useEffect(() => {
     if (task && user?.id === task.creator_id && task.status === 'open') {
@@ -350,49 +376,29 @@ const TaskDetail = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      'open': 'bg-green-100 text-green-700 border border-green-200',
-      'assigned': 'bg-yellow-100 text-yellow-700 border border-yellow-200',
-      'in_progress': 'bg-blue-100 text-blue-700 border border-blue-200',
-      'pending_confirmation': 'bg-purple-100 text-purple-700 border border-purple-200',
-      'completed': 'bg-gray-100 text-gray-700 border border-gray-200',
-      'cancelled': 'bg-red-100 text-red-700 border border-red-200',
-      'disputed': 'bg-orange-100 text-orange-700 border border-orange-200',
-    };
+  const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       'open': 'Open',
       'assigned': 'Assigned',
       'in_progress': 'In Progress',
-      'pending_confirmation': 'Pending Confirmation',
+      'pending_confirmation': 'Pending',
       'completed': 'Completed',
       'cancelled': 'Cancelled',
       'disputed': 'Disputed',
     };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
-        {labels[status] || status}
-      </span>
-    );
+    return labels[status] || status;
   };
 
-  const getDifficultyBadge = (priority: string) => {
-    const difficultyMap: Record<string, { label: string; icon: string; style: string }> = {
-      'low': { label: 'Easy', icon: '🟢', style: 'bg-green-50 text-green-700 border border-green-200' },
-      'easy': { label: 'Easy', icon: '🟢', style: 'bg-green-50 text-green-700 border border-green-200' },
-      'normal': { label: 'Medium', icon: '🟡', style: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
-      'medium': { label: 'Medium', icon: '🟡', style: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
-      'high': { label: 'Hard', icon: '🔴', style: 'bg-red-50 text-red-700 border border-red-200' },
-      'hard': { label: 'Hard', icon: '🔴', style: 'bg-red-50 text-red-700 border border-red-200' },
+  const getDifficultyLabel = (priority: string) => {
+    const map: Record<string, string> = {
+      'low': 'Easy',
+      'easy': 'Easy',
+      'normal': 'Medium',
+      'medium': 'Medium',
+      'high': 'Hard',
+      'hard': 'Hard',
     };
-    
-    const difficulty = difficultyMap[priority?.toLowerCase()] || difficultyMap['normal'];
-    
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${difficulty.style}`}>
-        {difficulty.icon} {difficulty.label}
-      </span>
-    );
+    return map[priority?.toLowerCase()] || 'Medium';
   };
 
   const renderStars = (rating: number | undefined, interactive = false) => {
@@ -421,32 +427,29 @@ const TaskDetail = () => {
     );
   };
 
-  // Render Recommended Helpers Section - ONLY if helpers exist
+  // Render Recommended Helpers Section
   const renderRecommendedHelpers = () => {
     if (!task || task.status !== 'open' || user?.id !== task.creator_id) return null;
     
-    // Don't show section at all if loading or no helpers
     if (helpersLoading) {
       return (
-        <div className="mt-4 bg-white rounded-lg shadow-sm p-6 text-center">
+        <div className="mt-6 bg-white rounded-xl shadow-md p-6 text-center">
           <div className="animate-spin h-6 w-6 border-3 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
           <p className="text-gray-500 text-sm">Finding helpers nearby...</p>
         </div>
       );
     }
     
-    // Hide entire section if no helpers found
     if (recommendedHelpers.length === 0) return null;
 
     return (
-      <div className="mt-4 bg-white rounded-lg shadow-sm overflow-hidden">
-        {/* Softer header - not overwhelming */}
-        <div className="bg-amber-50 border-b border-amber-100 p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
+      <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">✨</span>
             <div>
-              <h2 className="font-semibold text-gray-900">Recommended Helpers</h2>
-              <p className="text-amber-700 text-sm">
+              <h2 className="text-lg font-bold">Recommended Helpers</h2>
+              <p className="text-amber-100 text-sm">
                 {recommendedHelpers.length} people offering {getCategoryLabel(task.category)} services nearby
               </p>
             </div>
@@ -534,8 +537,8 @@ const TaskDetail = () => {
     if (task?.status !== 'completed') return null;
 
     return (
-      <div className="mt-4 bg-white rounded-lg shadow-sm p-4">
-        <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="mt-6 bg-white rounded-xl shadow-md p-6">
+        <h2 className="font-semibold text-gray-900 text-lg mb-4 flex items-center gap-2">
           ⭐ Reviews
           {reviews.length > 0 && (
             <span className="text-sm font-normal text-gray-500">({reviews.length})</span>
@@ -547,7 +550,7 @@ const TaskDetail = () => {
             {!showReviewForm ? (
               <button
                 onClick={() => setShowReviewForm(true)}
-                className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center hover:bg-yellow-100 transition-colors"
+                className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center hover:bg-yellow-100 transition-colors"
               >
                 <span className="font-medium text-yellow-700">
                   ⭐ Leave a review for {canReview.reviewee?.username}
@@ -570,7 +573,7 @@ const TaskDetail = () => {
                     value={reviewContent}
                     onChange={(e) => setReviewContent(e.target.value)}
                     placeholder="Share your experience..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[80px]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px]"
                   />
                 </div>
 
@@ -607,16 +610,16 @@ const TaskDetail = () => {
         )}
 
         {reviews.length === 0 ? (
-          <div className="text-center py-6 bg-gray-50 rounded-lg">
-            <span className="text-3xl mb-2 block">💬</span>
-            <p className="text-gray-500 text-sm">No reviews yet</p>
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <span className="text-4xl mb-2 block">💬</span>
+            <p className="text-gray-500">No reviews yet</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {reviews.map((review) => (
-              <div key={review.id} className="border border-gray-200 rounded-lg p-3">
+              <div key={review.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {review.reviewer?.profile_picture_url ? (
                       <img
                         src={review.reviewer.profile_picture_url}
@@ -624,7 +627,7 @@ const TaskDetail = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-gray-500 font-medium">
                         {review.reviewer?.username?.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -651,7 +654,7 @@ const TaskDetail = () => {
                         {[1, 2, 3, 4, 5].map(star => (
                           <span
                             key={star}
-                            className={`text-sm ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                            className={`text-lg ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                           >
                             ★
                           </span>
@@ -660,7 +663,7 @@ const TaskDetail = () => {
                     </div>
 
                     {review.content && (
-                      <p className="text-gray-700 mt-2 text-sm">{review.content}</p>
+                      <p className="text-gray-700 mt-2">{review.content}</p>
                     )}
 
                     <p className="text-xs text-gray-400 mt-2">
@@ -684,8 +687,8 @@ const TaskDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading task...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading job...</p>
         </div>
       </div>
     );
@@ -695,11 +698,11 @@ const TaskDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4">💭</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Task not found</h2>
-          <p className="text-gray-600 mb-4">This task may have been removed or doesn't exist.</p>
-          <Link to="/tasks" className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-            Browse Tasks
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Job Not Found</h2>
+          <p className="text-gray-600 mb-4">This job may have been removed or is no longer available.</p>
+          <Link to="/tasks" className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+            Browse All Jobs
           </Link>
         </div>
       </div>
@@ -714,15 +717,16 @@ const TaskDetail = () => {
   const canDispute = isCreator && task.status === 'pending_confirmation';
   const canCancel = isCreator && task.status === 'open';
   const canEdit = isCreator && task.status === 'open';
-  const canMessageCreator = isAuthenticated && !isCreator && task.creator_id;
   const showApplications = isCreator && task.status === 'open';
-  const pendingApplications = applications.filter(a => a.status === 'pending');
+
+  const categoryIcon = getCategoryIcon(task.category);
+  const categoryLabel = getCategoryLabel(task.category);
 
   // Build SEO description
-  const seoDescription = `${getCategoryLabel(task.category)} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
+  const seoDescription = `${categoryLabel} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50 py-8">
       {/* SEO Meta Tags */}
       <SEOHead
         title={task.title}
@@ -732,290 +736,425 @@ const TaskDetail = () => {
         price={task.budget}
       />
 
-      <div className="max-w-3xl mx-auto px-4 py-4">
-        {/* Back link */}
-        <Link to="/tasks" className="inline-flex items-center text-gray-500 hover:text-gray-700 text-sm mb-4">
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Jobs
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Back Button */}
+        <Link to="/tasks" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
+          <span className="mr-2">←</span> Back to Jobs
         </Link>
 
-        {/* Main Card - Clean White Design */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          
-          {/* User Row - TOP with View Profile and Share */}
-          <div className="p-4 border-b flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
-                {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">{task.creator_name || 'Unknown'}</p>
-                <p className="text-sm text-gray-500">☆☆☆☆☆ 0.0 (0 reviews)</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ShareButton
-                url={`/tasks/${task.id}`}
-                title={task.title}
-                description={`${getCategoryLabel(task.category)} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}`}
-                size="sm"
-              />
-              <Link 
-                to={`/users/${task.creator_id}`}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 font-medium text-sm flex items-center gap-2"
-              >
-                View Profile
-              </Link>
-            </div>
-          </div>
-
-          {/* Title Section */}
-          <div className="p-4 border-b">
-            <h1 className="text-xl font-bold text-gray-900 mb-3">
-              {getCategoryIcon(task.category)} {task.title}
-            </h1>
-            
-            {/* Inline Badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              {getStatusBadge(task.status)}
-              {getDifficultyBadge(task.priority || 'normal')}
-              {task.budget && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
-                  €{task.budget}
-                </span>
-              )}
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                📅 {task.created_at && new Date(task.created_at).toLocaleDateString('en-GB')}
-              </span>
-              {task.is_urgent && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
-                  ⚡ Urgent
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="p-4 border-b">
-            <h2 className="font-semibold text-gray-900 mb-2 text-sm">About this job</h2>
-            <p className="text-gray-700 leading-relaxed">{task.description}</p>
-          </div>
-
-          {/* Deadline / Assigned Info */}
-          {(task.deadline || task.assigned_to_name) && (
-            <div className="px-4 py-3 border-b bg-gray-50 space-y-1">
-              {task.deadline && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span>📅</span>
-                  <span className="text-gray-600">
-                    Deadline: {new Date(task.deadline).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric'
-                    })}
+        {/* Main Card */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          {/* Header - Blue Gradient */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-4xl">{categoryIcon}</span>
+                <div>
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
+                    {categoryLabel}
                   </span>
+                  <h1 className="text-2xl md:text-3xl font-bold mt-2">{task.title}</h1>
                 </div>
-              )}
-              {task.assigned_to_name && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span>🛠️</span>
-                  <span className="text-gray-600">Assigned to: </span>
-                  <Link to={`/users/${task.assigned_to_id}`} className="text-blue-600 hover:underline">
-                    {task.assigned_to_name}
-                  </Link>
+              </div>
+              <div className="text-right flex flex-col items-end gap-2">
+                <div className="text-3xl font-bold">
+                  €{task.budget || 0}
                 </div>
-              )}
+                <span className="text-blue-100 text-sm">Budget</span>
+                {task.is_urgent && (
+                  <span className="px-3 py-1 bg-red-500 rounded-full text-sm font-medium">
+                    ⚡ Urgent
+                  </span>
+                )}
+                {/* Share Button */}
+                <ShareButton
+                  url={`/tasks/${task.id}`}
+                  title={task.title}
+                  description={`${categoryLabel} job - €${task.budget || 0}${task.location ? ` in ${task.location}` : ''}`}
+                  size="sm"
+                  className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
+                />
+              </div>
             </div>
-          )}
+          </div>
 
-          {/* Applications Section - Compact */}
-          {showApplications && (
-            <div className="p-4 border-b">
-              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm">
-                📩 Applications
-                <span className="text-gray-500 font-normal">({applications.length})</span>
-              </h2>
-
-              {applicationsLoading ? (
-                <div className="text-center py-4 text-gray-500 text-sm">Loading...</div>
-              ) : applications.length === 0 ? (
-                <p className="text-gray-500 text-sm">No applications yet</p>
-              ) : (
-                <div className="space-y-2">
-                  {applications.map(application => (
-                    <div 
-                      key={application.id} 
-                      className={`border rounded-lg p-3 ${
-                        application.status === 'pending' ? 'border-blue-200 bg-blue-50' 
-                        : application.status === 'accepted' ? 'border-green-200 bg-green-50'
-                        : 'border-gray-200 bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2 flex-1 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                            {application.applicant_avatar ? (
-                              <img src={application.applicant_avatar} alt="" className="w-full h-full rounded-full object-cover"/>
-                            ) : (
-                              <span className="text-gray-400 text-xs">{application.applicant_name?.charAt(0).toUpperCase()}</span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Link to={`/users/${application.applicant_id}`} className="font-medium text-gray-900 hover:text-blue-600 text-sm">
-                                {application.applicant_name}
-                              </Link>
-                              {application.status === 'pending' && (
-                                <span className="px-1.5 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700">Pending</span>
-                              )}
-                              {application.status === 'accepted' && (
-                                <span className="px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-700">✓ Accepted</span>
-                              )}
-                            </div>
-                            {application.message && (
-                              <p className="mt-1 text-xs text-gray-600 bg-white p-2 rounded border">{application.message}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-1.5 flex-shrink-0">
-                          {application.status === 'pending' && (
-                            <>
-                              <button onClick={() => handleAcceptApplication(application.id)} disabled={acceptingId === application.id} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400 font-medium">
-                                {acceptingId === application.id ? '...' : 'Accept'}
-                              </button>
-                              <button onClick={() => handleRejectApplication(application.id)} disabled={rejectingId === application.id} className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-                                Reject
-                              </button>
-                              <button onClick={() => handleMessageApplicant(application.applicant_id)} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                                💬
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {/* Content */}
+          <div className="p-6">
+            {/* Creator Info */}
+            <div className="flex items-center gap-4 mb-6 pb-6 border-b">
+              <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                  {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="p-4 space-y-2">
-            {canApply && (
-              !showApplicationForm ? (
-                <button onClick={() => setShowApplicationForm(true)} className="w-full bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 font-medium">
-                  📝 Apply for This Job
+              </Link>
+              <div className="flex-1">
+                <Link to={`/users/${task.creator_id}`} className="font-semibold text-lg text-gray-900 hover:text-blue-600">
+                  {task.creator_name || 'Unknown'}
+                </Link>
+                <div className="flex items-center gap-2 mt-1">
+                  <StarRating rating={0} />
+                  <span className="text-gray-500">0.0 (0 reviews)</span>
+                </div>
+              </div>
+              {!isCreator && task.status === 'open' && (
+                <button
+                  onClick={() => setShowApplicationForm(true)}
+                  className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                >
+                  ✓ Apply Now
                 </button>
-              ) : (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <textarea value={applicationMessage} onChange={(e) => setApplicationMessage(e.target.value)} placeholder="Introduce yourself..." className="w-full px-3 py-2 border rounded-lg mb-2 text-sm min-h-[80px]" />
-                  <div className="flex gap-2">
-                    <button onClick={handleApplyTask} disabled={applyMutation.isPending} className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium text-sm">
-                      {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
-                    </button>
-                    <button onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }} className="px-4 py-2 bg-gray-200 rounded-lg text-sm">
-                      Cancel
-                    </button>
+              )}
+              {isCreator && (
+                <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm">
+                  This is your job posting
+                </span>
+              )}
+            </div>
+
+            {/* Details Grid - 4 columns */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl mb-1">💰</div>
+                <div className="text-sm text-gray-500">Budget</div>
+                <div className="font-semibold">€{task.budget || 0}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">📊</div>
+                <div className="text-sm text-gray-500">Difficulty</div>
+                <div className="font-semibold">{getDifficultyLabel(task.priority || 'normal')}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">📅</div>
+                <div className="text-sm text-gray-500">Deadline</div>
+                <div className="font-semibold">
+                  {task.deadline 
+                    ? new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                    : 'Flexible'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">⚡</div>
+                <div className="text-sm text-gray-500">Status</div>
+                <div className="font-semibold">{getStatusLabel(task.status)}</div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">About this job</h2>
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {task.description}
+              </p>
+            </div>
+
+            {/* Assigned Worker Info */}
+            {task.assigned_to_name && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🛠️</span>
+                  <div>
+                    <p className="text-sm text-blue-600">Assigned to</p>
+                    <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-blue-800 hover:underline">
+                      {task.assigned_to_name}
+                    </Link>
                   </div>
                 </div>
-              )
+              </div>
             )}
 
-            {canMessageCreator && (
-              <button
-                onClick={handleMessageCreator}
-                disabled={messageLoading}
-                className="w-full bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium flex items-center justify-center gap-2"
-              >
-                💬 Contact {task.creator_name}
-              </button>
+            {/* Applications Section */}
+            {showApplications && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  📩 Applications
+                  <span className="text-sm font-normal text-gray-500">({applications.length})</span>
+                </h2>
+
+                {applicationsLoading ? (
+                  <div className="text-center py-6 text-gray-500">Loading applications...</div>
+                ) : applications.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <span className="text-4xl mb-2 block">📭</span>
+                    <p className="text-gray-500">No applications yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Share your job to get more applicants!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {applications.map(application => (
+                      <div 
+                        key={application.id} 
+                        className={`border rounded-lg p-4 ${
+                          application.status === 'pending' ? 'border-blue-200 bg-blue-50' 
+                          : application.status === 'accepted' ? 'border-green-200 bg-green-50'
+                          : 'border-gray-200 bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {application.applicant_avatar ? (
+                                <img src={application.applicant_avatar} alt="" className="w-full h-full object-cover"/>
+                              ) : (
+                                <span className="text-gray-500 font-medium">{application.applicant_name?.charAt(0).toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Link to={`/users/${application.applicant_id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                                  {application.applicant_name}
+                                </Link>
+                                {application.status === 'pending' && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700">Pending</span>
+                                )}
+                                {application.status === 'accepted' && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">✓ Accepted</span>
+                                )}
+                              </div>
+                              {application.message && (
+                                <p className="mt-2 text-sm text-gray-600 bg-white p-3 rounded-lg border">{application.message}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            {application.status === 'pending' && (
+                              <>
+                                <button 
+                                  onClick={() => handleAcceptApplication(application.id)} 
+                                  disabled={acceptingId === application.id} 
+                                  className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium"
+                                >
+                                  {acceptingId === application.id ? '...' : 'Accept'}
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectApplication(application.id)} 
+                                  disabled={rejectingId === application.id} 
+                                  className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                                >
+                                  Reject
+                                </button>
+                                <button 
+                                  onClick={() => handleMessageApplicant(application.applicant_id)} 
+                                  className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                                >
+                                  💬
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
-            {canMarkDone && (
-              <button onClick={handleMarkDone} disabled={actionLoading} className="w-full bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium">
-                {actionLoading ? 'Processing...' : '✓ Mark as Done'}
-              </button>
+            {/* Application Form */}
+            {showApplicationForm && canApply && (
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3">Apply for this job</h3>
+                <textarea
+                  value={applicationMessage}
+                  onChange={(e) => setApplicationMessage(e.target.value)}
+                  placeholder="Introduce yourself and explain why you're a good fit for this job..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px] mb-3"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleApplyTask}
+                    disabled={applyMutation.isPending}
+                    className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold"
+                  >
+                    {applyMutation.isPending ? 'Submitting...' : '✓ Submit Application'}
+                  </button>
+                  <button
+                    onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
 
-            {canConfirm && (
-              <button onClick={handleConfirmDone} disabled={actionLoading} className="w-full bg-green-500 text-white py-2.5 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-medium">
-                {actionLoading ? 'Processing...' : '✓ Confirm Completed'}
-              </button>
+            {/* Location Map */}
+            {task.latitude && task.longitude && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Location</h2>
+                <div className="flex items-center gap-2 text-gray-600 mb-3">
+                  <span>📍</span>
+                  <span>{task.location || 'Location not specified'}</span>
+                </div>
+                <div className="h-64 rounded-lg overflow-hidden border border-gray-200">
+                  <MapContainer
+                    center={[task.latitude, task.longitude]}
+                    zoom={13}
+                    style={{ height: '100%', width: '100%' }}
+                    scrollWheelZoom={false}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={[task.latitude, task.longitude]} icon={taskIcon}>
+                      <Popup>
+                        <div className="text-center">
+                          <p className="font-semibold">{task.title}</p>
+                          <p className="text-sm text-gray-500">Job location</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+                <div className="mt-2 text-center">
+                  <a 
+                    href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    Open in Google Maps →
+                  </a>
+                </div>
+              </div>
             )}
 
-            {canDispute && (
-              <button onClick={handleDispute} disabled={actionLoading} className="w-full bg-orange-500 text-white py-2.5 rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-medium">
-                {actionLoading ? 'Processing...' : '⚠️ Dispute'}
-              </button>
-            )}
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              {canApply && !showApplicationForm && (
+                <button
+                  onClick={() => setShowApplicationForm(true)}
+                  className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
+                >
+                  ✓ Apply for This Job
+                </button>
+              )}
+              
+              {canMarkDone && (
+                <button
+                  onClick={handleMarkDone}
+                  disabled={actionLoading}
+                  className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-lg"
+                >
+                  {actionLoading ? 'Processing...' : '✓ Mark as Done'}
+                </button>
+              )}
 
-            {canEdit && (
-              <Link to={`/tasks/${task.id}/edit`} className="block w-full bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 font-medium text-center">
-                ✏️ Edit Task
-              </Link>
-            )}
+              {canConfirm && (
+                <button
+                  onClick={handleConfirmDone}
+                  disabled={actionLoading}
+                  className="flex-1 bg-green-500 text-white py-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold text-lg"
+                >
+                  {actionLoading ? 'Processing...' : '✓ Confirm Completed'}
+                </button>
+              )}
 
+              {canDispute && (
+                <button
+                  onClick={handleDispute}
+                  disabled={actionLoading}
+                  className="px-6 py-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-medium"
+                >
+                  ⚠️ Dispute
+                </button>
+              )}
+
+              {canEdit && (
+                <Link
+                  to={`/tasks/${task.id}/edit`}
+                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
+                >
+                  ✏️ Edit Task
+                </Link>
+              )}
+
+              {!isCreator && (
+                <Link
+                  to={`/users/${task.creator_id}`}
+                  className="px-6 py-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
+                >
+                  👤 View Profile
+                </Link>
+              )}
+            </div>
+
+            {/* Cancel Task */}
             {canCancel && (
-              <button onClick={handleCancel} disabled={actionLoading} className="w-full text-red-600 py-2 rounded-lg hover:bg-red-50 font-medium text-sm">
-                Cancel Task
-              </button>
+              <div className="mt-4 text-center">
+                <button
+                  onClick={handleCancel}
+                  disabled={actionLoading}
+                  className="text-red-600 hover:text-red-700 font-medium"
+                >
+                  Cancel Task
+                </button>
+              </div>
+            )}
+
+            {/* Status Messages */}
+            {isCreator && task.status === 'assigned' && (
+              <div className="mt-4 text-yellow-700 bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-lg text-center">
+                ⏳ Waiting for worker to complete the task
+              </div>
+            )}
+            {isAssigned && task.status === 'pending_confirmation' && (
+              <div className="mt-4 text-purple-700 bg-purple-50 border border-purple-200 px-4 py-3 rounded-lg text-center">
+                ⏳ Waiting for task owner to confirm completion
+              </div>
+            )}
+            {task.status === 'completed' && (
+              <div className="mt-4 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg text-center">
+                ✅ This task has been completed
+              </div>
+            )}
+            {task.status === 'cancelled' && (
+              <div className="mt-4 text-gray-600 bg-gray-100 border border-gray-200 px-4 py-3 rounded-lg text-center">
+                ❌ This task has been cancelled
+              </div>
             )}
 
             {!isAuthenticated && task.status === 'open' && (
-              <Link to="/login" className="block w-full bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 font-medium text-center">
-                Login to Apply
-              </Link>
-            )}
-
-            {/* Status messages */}
-            {isCreator && task.status === 'assigned' && (
-              <div className="text-yellow-700 bg-yellow-50 px-3 py-2 rounded-lg text-sm">⏳ Waiting for worker to complete</div>
-            )}
-            {isAssigned && task.status === 'pending_confirmation' && (
-              <div className="text-purple-700 bg-purple-50 px-3 py-2 rounded-lg text-sm">⏳ Waiting for confirmation</div>
-            )}
-            {task.status === 'completed' && (
-              <div className="text-green-700 bg-green-50 px-3 py-2 rounded-lg text-sm">✅ Task completed</div>
-            )}
-            {task.status === 'cancelled' && (
-              <div className="text-gray-600 bg-gray-100 px-3 py-2 rounded-lg text-sm">❌ Task cancelled</div>
+              <div className="mt-4">
+                <Link 
+                  to="/login" 
+                  className="block w-full bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 font-semibold text-lg text-center"
+                >
+                  Login to Apply
+                </Link>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Recommended Helpers - Only shows if helpers exist */}
+        {/* Recommended Helpers */}
         {renderRecommendedHelpers()}
 
         {/* Reviews */}
         {renderReviewSection()}
 
-        {/* Location */}
-        {task.latitude && task.longitude && (
-          <div className="mt-4 bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="p-4 pb-2">
-              <h2 className="font-semibold text-gray-900 mb-1 text-sm">🗺️ Location</h2>
-              <p className="text-gray-600 text-sm flex items-center gap-1">
-                <span className="text-red-500">📍</span>
-                {task.location}
-              </p>
-            </div>
-            <div className="h-40">
-              <MapContainer center={[task.latitude, task.longitude]} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-                <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <Marker position={[task.latitude, task.longitude]}>
-                  <Popup><p className="font-medium text-sm">{task.title}</p></Popup>
-                </Marker>
-              </MapContainer>
-            </div>
-            <div className="p-2 bg-gray-50 border-t text-center">
-              <p className="text-xs text-gray-500">Lat: {task.latitude.toFixed(4)}, Lng: {task.longitude.toFixed(4)}</p>
-              <a href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs">
-                Open in Google Maps →
-              </a>
-            </div>
-          </div>
-        )}
+        {/* How it works */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <h3 className="font-semibold text-blue-800 mb-3 text-lg">💡 How it works</h3>
+          <ul className="text-blue-700 space-y-2">
+            <li className="flex items-start gap-2">
+              <span>•</span>
+              <span>Apply for the job with a brief introduction</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span>•</span>
+              <span>Task owner reviews applications and accepts the best fit</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span>•</span>
+              <span>Complete the task and mark it as done</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span>•</span>
+              <span>Get paid after the task owner confirms completion</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
