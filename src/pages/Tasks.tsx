@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -126,15 +126,6 @@ const addMarkerOffsets = (tasks: Task[]): Task[] => {
   });
   
   return result;
-};
-
-const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
-  useMapEvents({
-    click: (e) => {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
 };
 
 // Map component that handles recentering and zoom based on radius
@@ -470,17 +461,11 @@ const MapMarkers = ({
   tasks, 
   boostedOfferings, 
   userLocation, 
-  locationName,
-  manualLocationSet,
-  onLocationSelect,
   searchRadius
 }: {
   tasks: Task[];
   boostedOfferings: Offering[];
   userLocation: { lat: number; lng: number };
-  locationName: string;
-  manualLocationSet: boolean;
-  onLocationSelect: (lat: number, lng: number) => void;
   searchRadius: number;
 }) => {
   const { t } = useTranslation();
@@ -493,7 +478,6 @@ const MapMarkers = ({
   return (
     <>
       <MapController lat={userLocation.lat} lng={userLocation.lng} radius={searchRadius} />
-      <LocationPicker onLocationSelect={onLocationSelect} />
       
       {/* User Location Marker - Red pin - ALWAYS visible so users can see distances */}
       <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
@@ -1240,9 +1224,6 @@ const DesktopTasksView = () => {
                 tasks={mapTasks}
                 boostedOfferings={mapBoostedOfferings}
                 userLocation={userLocation}
-                locationName={locationName}
-                manualLocationSet={manualLocationSet}
-                onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)}
                 searchRadius={searchRadius}
               />
             </MapContainer>
