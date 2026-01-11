@@ -16,6 +16,7 @@ import { filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
 import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
 import SmartEmptyState from '../components/ui/SmartEmptyState';
+import HowItWorks from '../components/ui/HowItWorks';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -432,7 +433,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
           }}
           className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-all"
         >
-          {t('tasks.viewAndApply', 'View & Apply')} →
+          {t('tasks.viewAndApply', 'View &amp; Apply')} →
         </button>
         <FavoriteButton
           itemType="task"
@@ -1163,6 +1164,9 @@ const DesktopTasksView = () => {
             )}
           </div>
         </div>
+
+        {/* HOW IT WORKS - Hybrid banner for first-time users */}
+        <HowItWorks variant="banner" />
 
         {/* Urgent jobs banner - show if there are urgent jobs (KEPT - this is the main notification) */}
         {urgentJobsCount > 0 && (
