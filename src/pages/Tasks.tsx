@@ -15,6 +15,7 @@ import CompactFilterBar, { CompactFilterValues } from '../components/ui/CompactF
 import { filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
 import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
+import SmartEmptyState from '../components/ui/SmartEmptyState';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -1002,6 +1003,24 @@ const DesktopTasksView = () => {
     filters.datePosted !== 'all' ||
     filters.category !== 'all';
 
+  // Helper functions for SmartEmptyState
+  const handleExpandRadius = (newRadius: number) => {
+    handleFiltersChange({ ...filters, distance: newRadius });
+  };
+
+  const handleClearCategory = () => {
+    handleFiltersChange({ ...filters, category: 'all' });
+  };
+
+  const handleClearFilters = () => {
+    handleFiltersChange(DEFAULT_FILTERS);
+    setSearchQuery('');
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
@@ -1270,39 +1289,23 @@ const DesktopTasksView = () => {
               {activeTab === 'all' && <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">💰 {t('common.jobs', 'Jobs')} <span className="text-sm font-normal text-gray-500">({filteredTasks.length})</span></h3>}
               
               {filteredTasks.length === 0 ? (
-                <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-white rounded-xl border-2 border-dashed border-blue-200">
-                  <div className="text-5xl mb-4">💰</div>
-                  <p className="text-gray-900 font-semibold text-lg mb-2">
-                    {hasActiveFilters
-                      ? t('tasks.noJobsMatchingFilters', 'No jobs match your filters')
-                      : searchRadius === 0 
-                        ? t('tasks.noJobsInLatvia', 'No jobs posted in Latvia yet')
-                        : t('tasks.noJobsNearby', 'No jobs posted nearby yet')
-                    }
-                  </p>
-                  <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    {hasActiveFilters
-                      ? t('tasks.tryAdjustingFilters', 'Try adjusting your price range or date filters to see more results.')
-                      : t('tasks.beFirstToPost', 'Be the first to post a job in your area! Need help with moving, cleaning, or any task? Post it here.')
-                    }
-                  </p>
-                  {hasActiveFilters ? (
-                    <button 
-                      onClick={() => handleFiltersChange(DEFAULT_FILTERS)} 
-                      className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors"
-                    >
-                      {t('filters.clearFilters', 'Clear Filters')}
-                    </button>
-                  ) : isAuthenticated ? (
-                    <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                      💰 {t('tasks.postFirstJob', 'Post Your First Job')}
-                    </button>
-                  ) : (
-                    <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                      {t('tasks.loginToPostJob', 'Login to Post a Job')}
-                    </button>
-                  )}
-                </div>
+                <SmartEmptyState
+                  type="jobs"
+                  searchRadius={searchRadius}
+                  category={filters.category}
+                  searchQuery={searchQuery}
+                  minPrice={filters.minPrice}
+                  maxPrice={filters.maxPrice}
+                  datePosted={filters.datePosted}
+                  totalUnfilteredCount={tasks.length}
+                  onExpandRadius={handleExpandRadius}
+                  onClearCategory={handleClearCategory}
+                  onClearFilters={handleClearFilters}
+                  onClearSearch={handleClearSearch}
+                  isAuthenticated={isAuthenticated}
+                  onLogin={() => navigate('/login')}
+                  onCreate={() => navigate('/tasks/create')}
+                />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {filteredTasks.map((task) => (
@@ -1334,39 +1337,23 @@ const DesktopTasksView = () => {
               )}
               
               {filteredOfferings.length === 0 ? (
-                <div className="text-center py-12 bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-dashed border-amber-200">
-                  <div className="text-5xl mb-4">👋</div>
-                  <p className="text-gray-900 font-semibold text-lg mb-2">
-                    {hasActiveFilters
-                      ? t('offerings.noOfferingsMatchingFilters', 'No offerings match your filters')
-                      : searchRadius === 0
-                        ? t('offerings.noOfferingsInLatvia', 'No service providers in Latvia yet')
-                        : t('offerings.noOfferingsNearby', 'No service providers in your area yet')
-                    }
-                  </p>
-                  <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                    {hasActiveFilters
-                      ? t('offerings.tryAdjustingFilters', 'Try adjusting your price range or date filters to see more results.')
-                      : t('offerings.beFirstToOffer', 'Are you skilled at something? Advertise your services here and get hired by people nearby!')
-                    }
-                  </p>
-                  {hasActiveFilters ? (
-                    <button 
-                      onClick={() => handleFiltersChange(DEFAULT_FILTERS)} 
-                      className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors"
-                    >
-                      {t('filters.clearFilters', 'Clear Filters')}
-                    </button>
-                  ) : isAuthenticated ? (
-                    <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
-                      👋 {t('offerings.offerYourServices', 'Offer Your Services')}
-                    </button>
-                  ) : (
-                    <button onClick={() => navigate('/login')} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 font-medium transition-colors">
-                      {t('offerings.loginToOffer', 'Login to Offer Services')}
-                    </button>
-                  )}
-                </div>
+                <SmartEmptyState
+                  type="offerings"
+                  searchRadius={searchRadius}
+                  category={filters.category}
+                  searchQuery={searchQuery}
+                  minPrice={filters.minPrice}
+                  maxPrice={filters.maxPrice}
+                  datePosted={filters.datePosted}
+                  totalUnfilteredCount={offerings.length}
+                  onExpandRadius={handleExpandRadius}
+                  onClearCategory={handleClearCategory}
+                  onClearFilters={handleClearFilters}
+                  onClearSearch={handleClearSearch}
+                  isAuthenticated={isAuthenticated}
+                  onLogin={() => navigate('/login')}
+                  onCreate={() => navigate('/offerings/create')}
+                />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredOfferings.map((offering) => (
