@@ -133,7 +133,7 @@ const addMarkerOffsets = (tasks: Task[], zoomLevel: number): Task[] => {
       });
     } else {
       // Multiple tasks at same location - spread them in a circle
-      // Sort by budget descending so highest-priced appear last (on top)
+      // Sort by budget ASCENDING so highest-priced appear LAST in array (rendered on top)
       const sortedTasks = [...groupedTasks].sort((a, b) => 
         (a.budget || a.reward || 0) - (b.budget || b.reward || 0)
       );
@@ -252,7 +252,7 @@ const createUserLocationIcon = () => divIcon({
 // Job Price Label Icon - Shows actual price with color coding
 // Budget thresholds: ≤25€ (green), ≤75€ (blue), >75€ (purple/gold with glow)
 // Urgent jobs get a red border (no animation - simplified)
-const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false, zIndex: number = 1) => {
+const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
   let bgColor = '#22c55e'; // green-500 for quick tasks
   let textColor = 'white';
   let extraClass = '';
@@ -307,8 +307,6 @@ const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false, zIndex: 
         height: 24px;
         cursor: pointer;
         transition: transform 0.15s ease;
-        position: relative;
-        z-index: ${zIndex};
       ">
         ${priceText}
       </div>
@@ -545,7 +543,14 @@ const MapMarkers = ({
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
   // Apply offsets to tasks with overlapping coordinates - now zoom-aware
-  const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks, zoomLevel), [tasks, zoomLevel]);
+  // Also sort by budget so higher-priced appear LATER in the array (rendered on top in Leaflet)
+  const tasksWithOffsets = useMemo(() => {
+    const withOffsets = addMarkerOffsets(tasks, zoomLevel);
+    // Sort by budget ascending - higher budget = rendered later = appears on top
+    return withOffsets.sort((a, b) => 
+      (a.budget || a.reward || 0) - (b.budget || b.reward || 0)
+    );
+  }, [tasks, zoomLevel]);
 
   return (
     <>
@@ -568,11 +573,13 @@ const MapMarkers = ({
       </Marker>
       
       {/* Job/Task markers - Price labels */}
-      {tasksWithOffsets.map((task, index) => {
+      {/* Higher budget = higher zIndexOffset = appears on TOP */}
+      {tasksWithOffsets.map((task) => {
         const budget = task.budget || task.reward || 0;
-        // Higher budget = higher z-index, so expensive jobs appear on top
-        const zIndex = Math.floor(budget / 10) + index;
-        const jobIcon = getJobPriceIcon(budget, task.is_urgent, zIndex);
+        // Use budget * 100 for large enough z-index difference
+        // €50 job will have zIndexOffset=5000, €30 will have 3000
+        const zIndexOffset = budget * 100;
+        const jobIcon = getJobPriceIcon(budget, task.is_urgent);
         // Use display coordinates (with offset if overlapping) or fall back to original
         const displayLat = task.displayLatitude || task.latitude;
         const displayLng = task.displayLongitude || task.longitude;
@@ -582,7 +589,7 @@ const MapMarkers = ({
             key={`task-${task.id}`} 
             position={[displayLat, displayLng]}
             icon={jobIcon}
-            zIndexOffset={zIndex * 10} // Leaflet z-index offset
+            zIndexOffset={zIndexOffset}
           >
             <Popup>
               <JobMapPopup task={task} userLocation={userLocation} />
