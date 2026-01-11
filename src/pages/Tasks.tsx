@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { Icon, divIcon } from 'leaflet';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -84,22 +84,46 @@ const formatTimeAgo = (dateString: string, t?: (key: string, fallback: string) =
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 };
 
-// Function to add offset to overlapping markers
-const addMarkerOffsets = (tasks: Task[]): Task[] => {
+// =====================================================
+// DYNAMIC MARKER OFFSET BASED ON ZOOM LEVEL
+// =====================================================
+// Returns offset distance in degrees based on current zoom level
+// At low zoom (zoomed out), markers spread wider; at high zoom, they converge
+const getOffsetDistanceForZoom = (zoom: number): number => {
+  // Zoom level mapping to offset distance (in degrees)
+  // ~0.001 degrees ≈ 111 meters at equator
+  if (zoom <= 7) return 0.025;      // ~2.8km offset when viewing all Latvia
+  if (zoom <= 8) return 0.015;      // ~1.7km offset
+  if (zoom <= 9) return 0.008;      // ~900m offset
+  if (zoom <= 10) return 0.004;     // ~450m offset
+  if (zoom <= 11) return 0.002;     // ~220m offset
+  if (zoom <= 12) return 0.001;     // ~110m offset
+  if (zoom <= 13) return 0.0006;    // ~65m offset
+  if (zoom <= 14) return 0.0003;    // ~33m offset
+  return 0.00015;                   // ~17m offset at street level
+};
+
+// Function to add offset to overlapping markers based on zoom level
+const addMarkerOffsets = (tasks: Task[], zoomLevel: number): Task[] => {
   const coordMap = new Map<string, Task[]>();
   
-  // Group tasks by their coordinates (rounded to 4 decimal places for grouping nearby points)
+  // Adjust precision based on zoom level - at low zoom, group more aggressively
+  const precision = zoomLevel <= 10 ? 2 : zoomLevel <= 12 ? 3 : 4;
+  
+  // Group tasks by their coordinates (rounded based on zoom level)
   tasks.forEach(task => {
-    const key = `${task.latitude.toFixed(4)},${task.longitude.toFixed(4)}`;
+    const key = `${task.latitude.toFixed(precision)},${task.longitude.toFixed(precision)}`;
     if (!coordMap.has(key)) {
       coordMap.set(key, []);
     }
     coordMap.get(key)!.push(task);
   });
   
+  const offsetDistance = getOffsetDistanceForZoom(zoomLevel);
+  
   // Apply offsets to overlapping markers
   const result: Task[] = [];
-  coordMap.forEach((groupedTasks, key) => {
+  coordMap.forEach((groupedTasks) => {
     if (groupedTasks.length === 1) {
       // Single task at this location, no offset needed
       result.push({
@@ -109,10 +133,14 @@ const addMarkerOffsets = (tasks: Task[]): Task[] => {
       });
     } else {
       // Multiple tasks at same location - spread them in a circle
-      const offsetDistance = 0.0008; // Approximately 80-90 meters
-      const angleStep = (2 * Math.PI) / groupedTasks.length;
+      // Sort by budget descending so highest-priced appear last (on top)
+      const sortedTasks = [...groupedTasks].sort((a, b) => 
+        (a.budget || a.reward || 0) - (b.budget || b.reward || 0)
+      );
       
-      groupedTasks.forEach((task, index) => {
+      const angleStep = (2 * Math.PI) / sortedTasks.length;
+      
+      sortedTasks.forEach((task, index) => {
         const angle = angleStep * index;
         const latOffset = offsetDistance * Math.cos(angle);
         const lonOffset = offsetDistance * Math.sin(angle);
@@ -130,8 +158,29 @@ const addMarkerOffsets = (tasks: Task[]): Task[] => {
 };
 
 // Map component that handles recentering and zoom based on radius
-const MapController = ({ lat, lng, radius }: { lat: number; lng: number; radius: number }) => {
+const MapController = ({ 
+  lat, 
+  lng, 
+  radius,
+  onZoomChange,
+  centerTrigger
+}: { 
+  lat: number; 
+  lng: number; 
+  radius: number;
+  onZoomChange: (zoom: number) => void;
+  centerTrigger: number; // Increment this to trigger re-centering
+}) => {
   const map = useMap();
+  const lastCenterTrigger = useRef(centerTrigger);
+  
+  // Track zoom changes
+  useMapEvents({
+    zoomend: () => {
+      onZoomChange(map.getZoom());
+    }
+  });
+  
   useEffect(() => {
     // Calculate zoom level based on radius
     // 0 = All Latvia, use zoom 7 and center on Latvia
@@ -151,7 +200,21 @@ const MapController = ({ lat, lng, radius }: { lat: number; lng: number; radius:
       
       map.setView([lat, lng], zoom);
     }
-  }, [lat, lng, radius, map]);
+    onZoomChange(map.getZoom());
+  }, [radius]);
+  
+  // Handle "Center on Me" button trigger
+  useEffect(() => {
+    if (centerTrigger !== lastCenterTrigger.current) {
+      lastCenterTrigger.current = centerTrigger;
+      // Animate to user location
+      const currentZoom = map.getZoom();
+      map.flyTo([lat, lng], Math.max(currentZoom, 13), {
+        duration: 0.5
+      });
+    }
+  }, [centerTrigger, lat, lng, map]);
+  
   return null;
 };
 
@@ -189,7 +252,7 @@ const createUserLocationIcon = () => divIcon({
 // Job Price Label Icon - Shows actual price with color coding
 // Budget thresholds: ≤25€ (green), ≤75€ (blue), >75€ (purple/gold with glow)
 // Urgent jobs get a red border (no animation - simplified)
-const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
+const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false, zIndex: number = 1) => {
   let bgColor = '#22c55e'; // green-500 for quick tasks
   let textColor = 'white';
   let extraClass = '';
@@ -244,6 +307,8 @@ const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
         height: 24px;
         cursor: pointer;
         transition: transform 0.15s ease;
+        position: relative;
+        z-index: ${zIndex};
       ">
         ${priceText}
       </div>
@@ -462,23 +527,35 @@ const MapMarkers = ({
   tasks, 
   boostedOfferings, 
   userLocation, 
-  searchRadius
+  searchRadius,
+  zoomLevel,
+  onZoomChange,
+  centerTrigger
 }: {
   tasks: Task[];
   boostedOfferings: Offering[];
   userLocation: { lat: number; lng: number };
   searchRadius: number;
+  zoomLevel: number;
+  onZoomChange: (zoom: number) => void;
+  centerTrigger: number;
 }) => {
   const { t } = useTranslation();
   // Memoize the user location icon
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
-  // Apply offsets to tasks with overlapping coordinates
-  const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
+  // Apply offsets to tasks with overlapping coordinates - now zoom-aware
+  const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks, zoomLevel), [tasks, zoomLevel]);
 
   return (
     <>
-      <MapController lat={userLocation.lat} lng={userLocation.lng} radius={searchRadius} />
+      <MapController 
+        lat={userLocation.lat} 
+        lng={userLocation.lng} 
+        radius={searchRadius} 
+        onZoomChange={onZoomChange}
+        centerTrigger={centerTrigger}
+      />
       
       {/* User Location Marker - Red pin - ALWAYS visible so users can see distances */}
       <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
@@ -491,9 +568,11 @@ const MapMarkers = ({
       </Marker>
       
       {/* Job/Task markers - Price labels */}
-      {tasksWithOffsets.map((task) => {
+      {tasksWithOffsets.map((task, index) => {
         const budget = task.budget || task.reward || 0;
-        const jobIcon = getJobPriceIcon(budget, task.is_urgent);
+        // Higher budget = higher z-index, so expensive jobs appear on top
+        const zIndex = Math.floor(budget / 10) + index;
+        const jobIcon = getJobPriceIcon(budget, task.is_urgent, zIndex);
         // Use display coordinates (with offset if overlapping) or fall back to original
         const displayLat = task.displayLatitude || task.latitude;
         const displayLng = task.displayLongitude || task.longitude;
@@ -503,6 +582,7 @@ const MapMarkers = ({
             key={`task-${task.id}`} 
             position={[displayLat, displayLng]}
             icon={jobIcon}
+            zIndexOffset={zIndex * 10} // Leaflet z-index offset
           >
             <Popup>
               <JobMapPopup task={task} userLocation={userLocation} />
@@ -584,6 +664,11 @@ const DesktopTasksView = () => {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
+  
+  // Map zoom level state for dynamic marker offsets
+  const [mapZoomLevel, setMapZoomLevel] = useState(13);
+  // Center on me trigger - increment to trigger re-centering
+  const [centerOnMeTrigger, setCenterOnMeTrigger] = useState(0);
   
   // Compact Filters state
   const [filters, setFilters] = useState<CompactFilterValues>(() => {
@@ -777,6 +862,29 @@ const DesktopTasksView = () => {
       });
     }
   };
+  
+  // Center on Me button handler
+  const handleCenterOnMe = useCallback(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+          setLocationType('auto');
+          setManualLocationName(null);
+          setCenterOnMeTrigger(prev => prev + 1); // Trigger map re-center
+        },
+        (error) => {
+          console.log('Geolocation error:', error);
+          // If we already have a location, just center on it
+          setCenterOnMeTrigger(prev => prev + 1);
+        },
+        { timeout: 5000, enableHighAccuracy: true }
+      );
+    } else {
+      // No geolocation, just trigger re-center on current location
+      setCenterOnMeTrigger(prev => prev + 1);
+    }
+  }, []);
 
   // FIX: Accept optional radiusOverride and categoryOverride to use instead of state (avoids async state bug)
   const fetchData = async (forceRefresh = false, radiusOverride?: number, categoryOverride?: string) => {
@@ -1103,6 +1211,7 @@ const DesktopTasksView = () => {
             maxPriceLimit={500}
             categoryOptions={CATEGORY_OPTIONS}
             variant={activeTab === 'offerings' ? 'offerings' : 'jobs'}
+            onCenterOnMe={handleCenterOnMe}
           />
           
           {/* Location Search Modal */}
@@ -1244,6 +1353,9 @@ const DesktopTasksView = () => {
                 boostedOfferings={mapBoostedOfferings}
                 userLocation={userLocation}
                 searchRadius={searchRadius}
+                zoomLevel={mapZoomLevel}
+                onZoomChange={setMapZoomLevel}
+                centerTrigger={centerOnMeTrigger}
               />
             </MapContainer>
           </div>
