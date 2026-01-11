@@ -154,31 +154,14 @@ const CompactFilterBar = ({
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Location Context with Center on Me button */}
           <div className="flex items-center gap-1 text-sm text-gray-500 pr-2 border-r border-gray-200">
-            {/* Center on Me Button */}
+            {/* Center on Me Button - Simple emoji style */}
             {onCenterOnMe && (
               <button
                 onClick={onCenterOnMe}
-                className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                className="px-1.5 py-1 rounded-md hover:bg-blue-50 transition-colors text-base"
                 title={t('map.centerOnMe', 'Center on me')}
               >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  className="w-4 h-4"
-                >
-                  {/* Crosshair/target icon */}
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="3" />
-                  <line x1="12" y1="2" x2="12" y2="6" />
-                  <line x1="12" y1="18" x2="12" y2="22" />
-                  <line x1="2" y1="12" x2="6" y2="12" />
-                  <line x1="18" y1="12" x2="22" y2="12" />
-                </svg>
+                📍
               </button>
             )}
             <span className="font-medium text-gray-700">{shortLocationName}</span>
