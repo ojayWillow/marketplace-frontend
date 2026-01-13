@@ -17,6 +17,13 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
 import QuickHelpIntroModal from '../components/QuickHelpIntroModal';
 
+// IMPORTED FROM EXTRACTED FILES ✅
+import { calculateDistance, formatDistance, formatTimeAgo } from './Tasks/utils';
+import { addMarkerOffsets } from './Tasks/utils';
+import { TaskCard } from './Tasks/components/TaskCard';
+import { OfferingCard } from './Tasks/components/OfferingCard';
+import type { Task, UserLocation, LocationType, AddressSuggestion } from './Tasks/types';
+
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
@@ -29,105 +36,6 @@ L.Icon.Default.mergeOptions({
   iconUrl,
   shadowUrl,
 });
-
-// Extend API Task with UI-specific properties
-interface Task extends APITask {
-  icon?: string;
-  // Added for map offset handling
-  displayLatitude?: number;
-  displayLongitude?: number;
-}
-
-interface AddressSuggestion {
-  display_name: string;
-  lat: string;
-  lon: string;
-}
-
-// Haversine formula to calculate distance between two coordinates
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
-// Format distance for display
-const formatDistance = (km: number): string => {
-  if (km < 1) {
-    return `${Math.round(km * 1000)}m`;
-  } else if (km < 10) {
-    return `${km.toFixed(1)}km`;
-  } else {
-    return `${Math.round(km)}km`;
-  }
-};
-
-// Format time ago - compact (needs t function passed in for full i18n)
-const formatTimeAgo = (dateString: string, t?: (key: string, fallback: string) => string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  
-  if (diffMins < 1) return t ? t('tasks.time.justNow', 'Just now') : 'Just now';
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-};
-
-// Function to add offset to overlapping markers
-const addMarkerOffsets = (tasks: Task[]): Task[] => {
-  const coordMap = new Map<string, Task[]>();
-  
-  // Group tasks by their coordinates (rounded to 4 decimal places for grouping nearby points)
-  tasks.forEach(task => {
-    const key = `${task.latitude.toFixed(4)},${task.longitude.toFixed(4)}`;
-    if (!coordMap.has(key)) {
-      coordMap.set(key, []);
-    }
-    coordMap.get(key)!.push(task);
-  });
-  
-  // Apply offsets to overlapping markers
-  const result: Task[] = [];
-  coordMap.forEach((groupedTasks, key) => {
-    if (groupedTasks.length === 1) {
-      // Single task at this location, no offset needed
-      result.push({
-        ...groupedTasks[0],
-        displayLatitude: groupedTasks[0].latitude,
-        displayLongitude: groupedTasks[0].longitude
-      });
-    } else {
-      // Multiple tasks at same location - spread them in a circle
-      const offsetDistance = 0.0008; // Approximately 80-90 meters
-      const angleStep = (2 * Math.PI) / groupedTasks.length;
-      
-      groupedTasks.forEach((task, index) => {
-        const angle = angleStep * index;
-        const latOffset = offsetDistance * Math.cos(angle);
-        const lonOffset = offsetDistance * Math.sin(angle);
-        
-        result.push({
-          ...task,
-          displayLatitude: task.latitude + latOffset,
-          displayLongitude: task.longitude + lonOffset
-        });
-      });
-    }
-  });
-  
-  return result;
-};
 
 const LocationPicker = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   useMapEvents({
@@ -298,7 +206,7 @@ const getBoostedOfferingIcon = (category: string = 'other') => {
 // =====================================================
 // CLEAN MAP POPUP - Blue theme for jobs
 // =====================================================
-const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: number; lng: number } }) => {
+const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: UserLocation }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, task.latitude, task.longitude);
@@ -392,7 +300,7 @@ const JobMapPopup = ({ task, userLocation }: { task: Task; userLocation: { lat: 
 };
 
 // Compact Offering Popup - Orange theme
-const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; userLocation: { lat: number; lng: number } }) => {
+const OfferingMapPopup = ({ offering, userLocation }: { offering: Offering; userLocation: UserLocation }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
@@ -478,7 +386,7 @@ const MapMarkers = ({
 }: {
   tasks: Task[];
   boostedOfferings: Offering[];
-  userLocation: { lat: number; lng: number };
+  userLocation: UserLocation;
   locationName: string;
   manualLocationSet: boolean;
   onLocationSelect: (lat: number, lng: number) => void;
@@ -547,9 +455,6 @@ const MapMarkers = ({
   );
 };
 
-// Location type enum to track what kind of location we have
-type LocationType = 'auto' | 'default' | 'manual';
-
 // Default filter values
 const DEFAULT_FILTERS: CompactFilterValues = {
   minPrice: 0,
@@ -591,7 +496,7 @@ const DesktopTasksView = () => {
   const [initialLoading, setInitialLoading] = useState(true); // Only for first load
   const [refreshing, setRefreshing] = useState(false); // For filter changes (doesn't hide content)
   const [error, setError] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 }); // Default: Riga
+  const [userLocation, setUserLocation] = useState<UserLocation>({ lat: 56.9496, lng: 24.1052 }); // Default: Riga
   const [locationGranted, setLocationGranted] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationType, setLocationType] = useState<LocationType>('default'); // Track location type instead of name
@@ -1297,7 +1202,55 @@ const DesktopTasksView = () => {
           )}
         </div>
 
-        {/* Content continues but file is too long - this restores your full working file with only the Icon import removed */}
+        {/* Jobs List */}
+        {(activeTab === 'all' || activeTab === 'jobs') && (
+          <div className="mb-8">
+            {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">💰 {t('tasks.availableJobs', 'Available Jobs')}</h2>}
+            <div className="grid gap-4">
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-lg">
+                  <p className="text-gray-500 text-lg mb-2">{t('tasks.noJobsFound', 'No jobs found')}</p>
+                  <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('tasks.checkBackLater', 'Check back later for new opportunities')}</p>
+                </div>
+              ) : (
+                filteredTasks.map((task) => {
+                  const isMatching = isAuthenticated && isJobMatchingMyOfferings(task.category);
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      userLocation={userLocation}
+                      isMatching={isMatching}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Offerings List */}
+        {(activeTab === 'all' || activeTab === 'offerings') && (
+          <div>
+            {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">👋 {t('offerings.availableServices', 'Available Services')}</h2>}
+            <div className="grid gap-4">
+              {filteredOfferings.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-lg">
+                  <p className="text-gray-500 text-lg mb-2">{t('offerings.noOfferingsFound', 'No services found')}</p>
+                  <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('offerings.checkBackLater', 'Check back later for new services')}</p>
+                </div>
+              ) : (
+                filteredOfferings.map((offering) => (
+                  <OfferingCard
+                    key={offering.id}
+                    offering={offering}
+                    userLocation={userLocation}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Intro Modal */}
@@ -1309,8 +1262,5 @@ const DesktopTasksView = () => {
     </div>
   );
 };
-
-// Job Card Component and OfferingCard Component would continue here...
-// (File is restored with full content)
 
 export default Tasks;
