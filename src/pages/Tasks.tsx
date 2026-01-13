@@ -15,6 +15,7 @@ import CompactFilterBar, { CompactFilterValues } from '../components/ui/CompactF
 import { filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
 import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
+import QuickHelpIntroModal from '../components/QuickHelpIntroModal';
 
 // Fix Leaflet default icon issue with Vite
 import L from 'leaflet';
@@ -600,6 +601,9 @@ const DesktopTasksView = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingAddress, setSearchingAddress] = useState(false);
   
+  // Intro modal state
+  const [showIntroModal, setShowIntroModal] = useState(false);
+  
   // Compact Filters state
   const [filters, setFilters] = useState<CompactFilterValues>(() => {
     // Load saved filters from localStorage
@@ -630,6 +634,14 @@ const DesktopTasksView = () => {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if user has seen intro modal on mount
+  useEffect(() => {
+    const hasSeenIntro = localStorage.getItem('quickHelpIntroSeen');
+    if (!hasSeenIntro) {
+      setShowIntroModal(true);
+    }
+  }, []);
 
   // Compute display location name based on type (always translated)
   const getLocationDisplayName = () => {
@@ -1022,9 +1034,20 @@ const DesktopTasksView = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('tasks.title', 'Quick Help')}</h1>
-            <p className="text-gray-600">{t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('tasks.title', 'Quick Help')}</h1>
+              <p className="text-gray-600">{t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰</p>
+            </div>
+            {/* How it works button */}
+            <button
+              onClick={() => setShowIntroModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors text-sm whitespace-nowrap"
+              title={t('quickHelp.howItWorks', 'How it works')}
+            >
+              <span>❓</span>
+              <span className="hidden sm:inline">{t('quickHelp.howItWorks', 'How it works')}</span>
+            </button>
           </div>
           <div className="flex gap-3 flex-wrap">
             {isAuthenticated ? (
@@ -1412,6 +1435,13 @@ const DesktopTasksView = () => {
           </div>
         )}
       </div>
+      
+      {/* Intro Modal */}
+      <QuickHelpIntroModal
+        isOpen={showIntroModal}
+        onClose={() => setShowIntroModal(false)}
+        showCheckboxes={!localStorage.getItem('quickHelpIntroSeen')}
+      />
     </div>
   );
 };
