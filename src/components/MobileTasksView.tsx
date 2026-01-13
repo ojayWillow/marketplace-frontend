@@ -8,6 +8,7 @@ import { getTasks, Task as APITask } from '../api/tasks';
 import { useAuthStore } from '../stores/authStore';
 import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
 import FavoriteButton from './ui/FavoriteButton';
+import QuickHelpIntroModal from './QuickHelpIntroModal';
 
 // Extend API Task with UI-specific properties
 interface Task extends APITask {
@@ -491,7 +492,8 @@ const SlideOutMenu = ({
   isAuthenticated,
   user,
   onLogout,
-  navigate
+  navigate,
+  onShowIntro
 }: { 
   isOpen: boolean; 
   onClose: () => void;
@@ -499,6 +501,7 @@ const SlideOutMenu = ({
   user: any;
   onLogout: () => void;
   navigate: (path: string) => void;
+  onShowIntro: () => void;
 }) => {
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
@@ -533,6 +536,11 @@ const SlideOutMenu = ({
   const handleLanguageChange = (langCode: string) => {
     i18n.changeLanguage(langCode);
     // Language is automatically saved to localStorage by i18next
+  };
+
+  const handleShowIntro = () => {
+    onShowIntro();
+    onClose();
   };
 
   return (
@@ -618,6 +626,16 @@ const SlideOutMenu = ({
               ))}
             </>
           )}
+
+          {/* How it Works */}
+          <div className="h-px bg-gray-200 my-2 mx-6" />
+          <button
+            onClick={handleShowIntro}
+            className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+          >
+            <span className="text-xl">❓</span>
+            <span className="font-medium text-gray-700">{t('menu.howItWorks', 'How it works')}</span>
+          </button>
           
           {/* Logout */}
           {isAuthenticated && (
@@ -693,6 +711,11 @@ const MobileTasksView = () => {
   
   // Create modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Intro modal state
+  const [showIntroModal, setShowIntroModal] = useState(() => {
+    return !localStorage.getItem('quickHelpIntroSeen');
+  });
   
   // Selected job for preview - when set, job list is hidden
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -935,6 +958,7 @@ const MobileTasksView = () => {
         user={user}
         onLogout={logout}
         navigate={navigate}
+        onShowIntro={() => setShowIntroModal(true)}
       />
 
       {/* Create Choice Modal */}
@@ -943,6 +967,12 @@ const MobileTasksView = () => {
         onClose={() => setShowCreateModal(false)}
         onPostJob={handlePostJob}
         onOfferService={handleOfferService}
+      />
+
+      {/* Quick Help Intro Modal */}
+      <QuickHelpIntroModal
+        isOpen={showIntroModal}
+        onClose={() => setShowIntroModal(false)}
       />
 
       <div className="mobile-tasks-container">
