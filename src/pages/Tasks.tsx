@@ -601,18 +601,18 @@ const DesktopTasksView = () => {
           )}
         </div>
 
-        {/* Jobs List */}
+        {/* Jobs List - FIXED: Added grid-cols for multi-column layout */}
         {(activeTab === 'all' || activeTab === 'jobs') && (
           <div className="mb-8">
             {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">💰 {t('tasks.availableJobs', 'Available Jobs')}</h2>}
-            <div className="grid gap-4">
-              {filteredTasks.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg">
-                  <p className="text-gray-500 text-lg mb-2">{t('tasks.noJobsFound', 'No jobs found')}</p>
-                  <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('tasks.checkBackLater', 'Check back later for new opportunities')}</p>
-                </div>
-              ) : (
-                filteredTasks.map((task) => {
+            {filteredTasks.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500 text-lg mb-2">{t('tasks.noJobsFound', 'No jobs found')}</p>
+                <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('tasks.checkBackLater', 'Check back later for new opportunities')}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredTasks.map((task) => {
                   const isMatching = isAuthenticated && isJobMatchingMyOfferings(task.category);
                   return (
                     <TaskCard
@@ -622,32 +622,32 @@ const DesktopTasksView = () => {
                       isMatching={isMatching}
                     />
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Offerings List */}
+        {/* Offerings List - FIXED: Added grid-cols for multi-column layout */}
         {(activeTab === 'all' || activeTab === 'offerings') && (
           <div>
             {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">👋 {t('offerings.availableServices', 'Available Services')}</h2>}
-            <div className="grid gap-4">
-              {filteredOfferings.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg">
-                  <p className="text-gray-500 text-lg mb-2">{t('offerings.noOfferingsFound', 'No services found')}</p>
-                  <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('offerings.checkBackLater', 'Check back later for new services')}</p>
-                </div>
-              ) : (
-                filteredOfferings.map((offering) => (
+            {filteredOfferings.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500 text-lg mb-2">{t('offerings.noOfferingsFound', 'No services found')}</p>
+                <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('offerings.checkBackLater', 'Check back later for new services')}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredOfferings.map((offering) => (
                   <OfferingCard
                     key={offering.id}
                     offering={offering}
                     userLocation={userLocation}
                   />
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
