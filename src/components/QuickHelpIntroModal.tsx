@@ -5,9 +5,10 @@ import { Link } from 'react-router-dom';
 interface QuickHelpIntroModalProps {
   isOpen: boolean;
   onClose: () => void;
+  showCheckboxes?: boolean; // If true, show checkboxes (first-time). If false, just show guidance
 }
 
-const QuickHelpIntroModal = ({ isOpen, onClose }: QuickHelpIntroModalProps) => {
+const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHelpIntroModalProps) => {
   const { t } = useTranslation();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
@@ -16,13 +17,19 @@ const QuickHelpIntroModal = ({ isOpen, onClose }: QuickHelpIntroModalProps) => {
   if (!isOpen) return null;
 
   const handleContinue = () => {
-    if (agreedToTerms && agreedToPrivacy) {
-      localStorage.setItem('quickHelpIntroSeen', 'true');
+    if (showCheckboxes) {
+      // First-time flow: require checkboxes
+      if (agreedToTerms && agreedToPrivacy) {
+        localStorage.setItem('quickHelpIntroSeen', 'true');
+        onClose();
+      }
+    } else {
+      // Manual viewing: just close
       onClose();
     }
   };
 
-  const canContinue = agreedToTerms && agreedToPrivacy;
+  const canContinue = showCheckboxes ? (agreedToTerms && agreedToPrivacy) : true;
 
   return (
     <>
@@ -33,7 +40,10 @@ const QuickHelpIntroModal = ({ isOpen, onClose }: QuickHelpIntroModalProps) => {
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-8 text-center rounded-t-2xl">
             <div className="text-5xl mb-3">🤝</div>
             <h2 className="text-2xl font-bold mb-2">
-              {t('quickHelp.welcome', 'Welcome to Quick Help')}
+              {showCheckboxes 
+                ? t('quickHelp.welcome', 'Welcome to Quick Help')
+                : t('quickHelp.howItWorks', 'How Quick Help Works')
+              }
             </h2>
             <p className="text-blue-100">
               {t('quickHelp.subtitle', 'Connect with your local community - get help or earn money')}
@@ -104,60 +114,64 @@ const QuickHelpIntroModal = ({ isOpen, onClose }: QuickHelpIntroModalProps) => {
               </div>
             </div>
 
-            {/* Create account notice */}
-            <div className="mb-6 p-3 bg-pink-50 border border-pink-200 rounded-lg">
-              <p className="text-sm text-pink-800 flex items-start gap-2">
-                <span className="text-lg">👤</span>
-                <span>
-                  <strong>{t('quickHelp.createAccount', 'Create a free account to apply for jobs and start earning!')}</strong>
-                  <br />
-                  <span className="text-xs text-pink-600">
-                    {t('quickHelp.browseWithoutAccount', 'You can browse jobs without an account, but you\'ll need to sign up to apply.')}
+            {/* Create account notice - Only show on first-time */}
+            {showCheckboxes && (
+              <div className="mb-6 p-3 bg-pink-50 border border-pink-200 rounded-lg">
+                <p className="text-sm text-pink-800 flex items-start gap-2">
+                  <span className="text-lg">👤</span>
+                  <span>
+                    <strong>{t('quickHelp.createAccount', 'Create a free account to apply for jobs and start earning!')}</strong>
+                    <br />
+                    <span className="text-xs text-pink-600">
+                      {t('quickHelp.browseWithoutAccount', 'You can browse jobs without an account, but you\'ll need to sign up to apply.')}
+                    </span>
                   </span>
-                </span>
-              </p>
-            </div>
+                </p>
+              </div>
+            )}
 
-            {/* Checkboxes */}
-            <div className="space-y-3 mb-6">
-              {/* Checkbox 1: Understanding */}
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                  {t('quickHelp.agreeToTerms', 'I understand how Quick Help works and will treat other users with respect, complete jobs I commit to, and pay helpers fairly for completed work.')}
-                </span>
-              </label>
+            {/* Checkboxes - Only show on first-time */}
+            {showCheckboxes && (
+              <div className="space-y-3 mb-6">
+                {/* Checkbox 1: Understanding */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                    {t('quickHelp.agreeToTerms', 'I understand how Quick Help works and will treat other users with respect, complete jobs I commit to, and pay helpers fairly for completed work.')}
+                  </span>
+                </label>
 
-              {/* Checkbox 2: Terms & Privacy */}
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={agreedToPrivacy}
-                  onChange={(e) => setAgreedToPrivacy(e.target.checked)}
-                  className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                  {t('quickHelp.agreeToPrivacy', 'I agree to the')}{' '}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowTermsModal(true);
-                    }}
-                    className="text-blue-600 hover:text-blue-700 underline font-medium"
-                  >
-                    {t('quickHelp.termsAndPrivacy', 'Terms of Service and Privacy Policy')}
-                  </button>
-                </span>
-              </label>
-            </div>
+                {/* Checkbox 2: Terms & Privacy */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={agreedToPrivacy}
+                    onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                    className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                    {t('quickHelp.agreeToPrivacy', 'I agree to the')}{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowTermsModal(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-700 underline font-medium"
+                    >
+                      {t('quickHelp.termsAndPrivacy', 'Terms of Service and Privacy Policy')}
+                    </button>
+                  </span>
+                </label>
+              </div>
+            )}
 
-            {/* Continue Button */}
+            {/* Continue/Got it Button */}
             <button
               onClick={handleContinue}
               disabled={!canContinue}
@@ -167,17 +181,23 @@ const QuickHelpIntroModal = ({ isOpen, onClose }: QuickHelpIntroModalProps) => {
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              {canContinue
-                ? t('common.continue', 'Continue')
-                : t('quickHelp.checkBoxes', 'Please check the boxes above to continue')}
+              {showCheckboxes ? (
+                canContinue
+                  ? t('common.continue', 'Continue')
+                  : t('quickHelp.checkBoxes', 'Please check the boxes above to continue')
+              ) : (
+                t('quickHelp.gotIt', 'Got it!') + ' 👍'
+              )}
             </button>
 
-            {/* Footer note */}
-            <p className="text-center text-xs text-gray-500 mt-4">
-              {t('quickHelp.alwaysAccess', 'You can always access this guide from the')}{' '}
-              <span className="font-medium">❓ {t('quickHelp.howItWorksButton', 'How it works')}</span>{' '}
-              {t('quickHelp.button', 'button')}
-            </p>
+            {/* Footer note - Only show on first-time */}
+            {showCheckboxes && (
+              <p className="text-center text-xs text-gray-500 mt-4">
+                {t('quickHelp.alwaysAccess', 'You can always access this guide from the')}{' '}
+                <span className="font-medium">❓ {t('quickHelp.howItWorksButton', 'How it works')}</span>{' '}
+                {t('quickHelp.button', 'button')}
+              </p>
+            )}
           </div>
         </div>
       </div>
