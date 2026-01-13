@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getCategoryLabel } from '@/constants/categories';
-import FavoriteButton from '@/components/ui/FavoriteButton';
-import { calculateDistance } from '@/pages/Tasks/utils/taskHelpers';
+import { getCategoryLabel } from '../../../../constants/categories';
+import FavoriteButton from '../../../../components/ui/FavoriteButton';
+import { calculateDistance } from '../../utils/taskHelpers';
 import type { TaskCardProps } from './TaskCard.types';
 
 export const TaskCard = ({ task, userLocation, isMatching }: TaskCardProps) => {

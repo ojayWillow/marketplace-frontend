@@ -1,4 +1,4 @@
-import type { Task } from '@/api/tasks';
+import type { Task } from '../../../../api/tasks';
 
 export interface UserLocation {
   lat: number;
