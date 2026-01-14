@@ -66,13 +66,14 @@ export default function Conversation() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || sendMutation.isPending || !conversation?.other_participant?.id) return;
+    if (!newMessage.trim() || sendMutation.isPending || !id) return;
 
     const messageContent = newMessage.trim();
     setNewMessage('');
     
+    // Use conversation ID (from URL param), not recipient ID
     sendMutation.mutate(
-      { recipientId: conversation.other_participant.id, content: messageContent },
+      { recipientId: Number(id), content: messageContent },
       {
         onError: (error) => {
           console.error('Error sending message:', error);
