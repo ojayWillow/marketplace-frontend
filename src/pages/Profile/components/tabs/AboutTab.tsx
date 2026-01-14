@@ -5,10 +5,11 @@ interface AboutTabProps {
   editing: boolean;
   formData: ProfileFormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  viewOnly?: boolean;
 }
 
-export const AboutTab = ({ profile, editing, formData, onChange }: AboutTabProps) => {
-  if (editing) {
+export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = false }: AboutTabProps) => {
+  if (!viewOnly && editing) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="space-y-4">
@@ -98,25 +99,41 @@ export const AboutTab = ({ profile, editing, formData, onChange }: AboutTabProps
           </div>
         ) : (
           <div className="text-center py-6 bg-gray-50 rounded-lg">
-            <p className="text-gray-500 text-sm">No bio yet. Click "Edit Profile" to add one!</p>
+            <p className="text-gray-500 text-sm">
+              {viewOnly ? 'This user hasn\'t added a bio yet.' : 'No bio yet. Click "Edit Profile" to add one!'}
+            </p>
           </div>
         )}
         
-        <div>
-          <h3 className="text-sm font-medium text-gray-500 mb-3">Contact</h3>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-gray-400">📧</span>
-              <span className="text-gray-700">{profile.email}</span>
-            </div>
-            {profile.phone && (
+        {/* Contact info - only show for own profile */}
+        {!viewOnly && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-3">Contact</h3>
+            <div className="space-y-2">
               <div className="flex items-center gap-3 text-sm">
-                <span className="text-gray-400">📱</span>
-                <span className="text-gray-700">{profile.phone}</span>
+                <span className="text-gray-400">📧</span>
+                <span className="text-gray-700">{profile.email}</span>
               </div>
-            )}
+              {profile.phone && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-400">📱</span>
+                  <span className="text-gray-700">{profile.phone}</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Location info - show for everyone if available */}
+        {(profile.city || profile.country) && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-3">Location</h3>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-gray-400">📍</span>
+              <span className="text-gray-700">{[profile.city, profile.country].filter(Boolean).join(', ')}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
