@@ -7,38 +7,52 @@ import { TabLoadingSpinner } from '../LoadingState';
 interface ListingsTabProps {
   listings: Listing[];
   loading: boolean;
-  onDelete: (id: number) => void;
+  onDelete?: (id: number) => void;
+  viewOnly?: boolean;
 }
 
-export const ListingsTab = ({ listings, loading, onDelete }: ListingsTabProps) => {
+export const ListingsTab = ({ listings, loading, onDelete, viewOnly = false }: ListingsTabProps) => {
+  // Filter to only show active listings for public view
+  const displayListings = viewOnly 
+    ? listings.filter(l => l.status === 'active')
+    : listings;
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-gray-900">My Listings</h2>
-        <Link
-          to="/listings/create"
-          className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-        >
-          + New Listing
-        </Link>
+        <h2 className="font-semibold text-gray-900">
+          {viewOnly ? 'Listings' : 'My Listings'}
+        </h2>
+        {!viewOnly && (
+          <Link
+            to="/listings/create"
+            className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+          >
+            + New Listing
+          </Link>
+        )}
       </div>
       
       {loading ? (
         <TabLoadingSpinner color="purple" />
-      ) : listings.length === 0 ? (
+      ) : displayListings.length === 0 ? (
         <div className="text-center py-10">
           <div className="text-4xl mb-2">🏷️</div>
-          <p className="text-gray-500 mb-4">No listings yet</p>
-          <Link
-            to="/listings/create"
-            className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium text-sm"
-          >
-            Create your first listing →
-          </Link>
+          <p className="text-gray-500 mb-4">
+            {viewOnly ? 'No listings available' : 'No listings yet'}
+          </p>
+          {!viewOnly && (
+            <Link
+              to="/listings/create"
+              className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium text-sm"
+            >
+              Create your first listing →
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {listings.map(listing => {
+          {displayListings.map(listing => {
             const images = listing.images ? listing.images.split(',').filter(Boolean) : [];
             const firstImage = images[0];
             
@@ -56,15 +70,23 @@ export const ListingsTab = ({ listings, loading, onDelete }: ListingsTabProps) =
                     <Link to={`/listings/${listing.id}`} className="font-medium text-gray-900 hover:text-purple-600 truncate">
                       {listing.title}
                     </Link>
-                    <span className={`px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${getStatusBadgeClass(listing.status)}`}>
-                      {listing.status}
-                    </span>
+                    {!viewOnly && (
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${getStatusBadgeClass(listing.status)}`}>
+                        {listing.status}
+                      </span>
+                    )}
                   </div>
                   <p className="text-purple-600 font-semibold">€{Number(listing.price).toLocaleString()}</p>
                   <div className="flex items-center gap-3 mt-2">
                     <Link to={`/listings/${listing.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
-                    <Link to={`/listings/${listing.id}/edit`} className="text-xs text-gray-500 hover:underline">Edit</Link>
-                    <button onClick={() => onDelete(listing.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                    {!viewOnly && (
+                      <>
+                        <Link to={`/listings/${listing.id}/edit`} className="text-xs text-gray-500 hover:underline">Edit</Link>
+                        {onDelete && (
+                          <button onClick={() => onDelete(listing.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
