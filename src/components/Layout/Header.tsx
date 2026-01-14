@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../stores/authStore'
 import { useLogout } from '../../hooks/useAuth'
@@ -15,6 +15,7 @@ interface NotificationCounts {
 
 export default function Header() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
   const logout = useLogout()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -28,6 +29,12 @@ export default function Header() {
   })
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Helper to navigate and close dropdown
+  const handleNotificationClick = (path: string) => {
+    setNotificationDropdownOpen(false);
+    navigate(path);
+  };
 
   // Fetch notification counts
   const fetchNotifications = async () => {
@@ -204,23 +211,21 @@ export default function Header() {
                           <span className="text-3xl mb-2 block" aria-hidden="true">✨</span>
                           <p className="font-medium">You're all caught up!</p>
                           <p className="text-sm mt-1">New notifications will appear here</p>
-                          <Link 
-                            to="/tasks" 
+                          <button 
+                            onClick={() => handleNotificationClick('/tasks')}
                             className="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700"
-                            onClick={() => setNotificationDropdownOpen(false)}
                             role="menuitem"
                           >
                             Browse tasks to help others →
-                          </Link>
+                          </button>
                         </div>
                       ) : (
                         <div className="max-h-80 overflow-y-auto">
                           {/* Accepted Applications - FOR WORKERS */}
                           {notifications.acceptedApplications > 0 && (
-                            <Link
-                              to="/profile?tab=tasks&view=my-jobs"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-jobs')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600" aria-hidden="true">
@@ -235,15 +240,14 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">Your application was accepted</p>
                               </div>
                               <span className="w-2 h-2 bg-purple-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                           
                           {/* Unread Messages */}
                           {notifications.unreadMessages > 0 && (
-                            <Link
-                              to="/messages"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/messages')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600" aria-hidden="true">
@@ -258,15 +262,14 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">Click to view your messages</p>
                               </div>
                               <span className="w-2 h-2 bg-blue-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                           
                           {/* Pending Applications on My Tasks */}
                           {notifications.pendingApplications > 0 && (
-                            <Link
-                              to="/profile?tab=tasks&subtab=created"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600" aria-hidden="true">
@@ -281,15 +284,14 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">People want to help with your tasks</p>
                               </div>
                               <span className="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                           
                           {/* Tasks Pending Confirmation */}
                           {notifications.pendingConfirmation > 0 && (
-                            <Link
-                              to="/profile?tab=tasks&subtab=created&created_filter=in_progress"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks&status=in_progress')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600" aria-hidden="true">
@@ -304,21 +306,20 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">Workers marked these as done</p>
                               </div>
                               <span className="w-2 h-2 bg-yellow-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                         </div>
                       )}
                       
                       {/* View All Link */}
                       <div className="border-t border-gray-100 mt-2 pt-2 px-4 pb-1">
-                        <Link
-                          to="/profile?tab=tasks"
-                          onClick={() => setNotificationDropdownOpen(false)}
-                          className="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        <button
+                          onClick={() => handleNotificationClick('/profile?tab=tasks')}
+                          className="block w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
                           role="menuitem"
                         >
                           View all activity →
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   )}
