@@ -32,11 +32,21 @@ export const useTaskActions = ({
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [messageLoading, setMessageLoading] = useState(false);
 
+  // Helper to invalidate all task-related caches
+  const invalidateTaskCaches = async () => {
+    // Invalidate ALL task details (all languages) to ensure fresh data
+    await queryClient.invalidateQueries({ queryKey: taskKeys.details() });
+    // Also invalidate task lists so "My Jobs" shows correct status
+    await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    await queryClient.invalidateQueries({ queryKey: taskKeys.all });
+  };
+
   const handleMarkDone = async () => {
     try {
       setActionLoading(true);
       await markTaskDone(taskId);
       toast.success('Task marked as done! Waiting for creator confirmation.');
+      await invalidateTaskCaches();
       refetchTask();
     } catch (error: any) {
       console.error('Error marking task done:', error);
@@ -47,17 +57,28 @@ export const useTaskActions = ({
   };
 
   const handleConfirmDone = async () => {
+    // Double-check status before making the request
+    if (task?.status !== 'pending_confirmation') {
+      toast.error('Task is not pending confirmation');
+      await invalidateTaskCaches();
+      refetchTask();
+      return;
+    }
+
     try {
       setActionLoading(true);
       await confirmTaskCompletion(taskId);
       toast.success('Task completed! You can now leave a review.');
       
-      // Invalidate and refetch to get fresh data
-      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      // Invalidate ALL task caches and refetch
+      await invalidateTaskCaches();
       await refetchTask();
     } catch (error: any) {
       console.error('Error confirming task:', error);
       toast.error(error?.response?.data?.error || 'Failed to confirm task');
+      // Refetch to get correct state even on error
+      await invalidateTaskCaches();
+      refetchTask();
     } finally {
       setActionLoading(false);
     }
@@ -71,6 +92,7 @@ export const useTaskActions = ({
       setActionLoading(true);
       await disputeTask(taskId, reason);
       toast.warning('Task has been disputed. Please resolve with the worker.');
+      await invalidateTaskCaches();
       refetchTask();
     } catch (error: any) {
       console.error('Error disputing task:', error);
@@ -87,6 +109,7 @@ export const useTaskActions = ({
       setActionLoading(true);
       await cancelTask(taskId);
       toast.success('Task cancelled.');
+      await invalidateTaskCaches();
       refetchTask();
     } catch (error: any) {
       console.error('Error cancelling task:', error);
@@ -101,6 +124,7 @@ export const useTaskActions = ({
       setAcceptingId(applicationId);
       await acceptApplication(taskId, applicationId);
       toast.success('🎉 Application accepted! The task has been assigned.');
+      await invalidateTaskCaches();
       refetchTask();
       fetchApplications();
     } catch (error: any) {
