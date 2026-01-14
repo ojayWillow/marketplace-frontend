@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getConversations, getMessages, sendMessage, markAsRead } from '../messages';
+import { getConversations, getConversation, getMessages, sendMessage, markAsRead } from '../messages';
 
 // Query keys for cache management
 export const messageKeys = {
   all: ['messages'] as const,
   conversations: () => [...messageKeys.all, 'conversations'] as const,
+  conversation: (conversationId: number) => [...messageKeys.all, 'conversation-detail', conversationId] as const,
   messages: (conversationId: number) => [...messageKeys.all, 'conversation', conversationId] as const,
 };
 
@@ -16,6 +17,17 @@ export const useConversations = (options?: { enabled?: boolean }) => {
     staleTime: 1000 * 30, // 30 seconds (messages should be fresh)
     refetchInterval: 1000 * 60, // Refetch every minute
     ...options,
+  });
+};
+
+// Fetch a specific conversation (for header info like online status)
+export const useConversation = (conversationId: number, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: messageKeys.conversation(conversationId),
+    queryFn: () => getConversation(conversationId),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 1000 * 30, // Refetch every 30 seconds for real-time online status
+    enabled: !!conversationId && options?.enabled !== false,
   });
 };
 
