@@ -247,7 +247,7 @@ export const TasksTab = ({
               Jobs I'm Doing
               {pendingReviewsCount > 0 && (
                 <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-yellow-500 text-white font-bold">
-                  ⭐{pendingReviewsCount}
+                  {pendingReviewsCount}
                 </span>
               )}
             </button>
@@ -420,33 +420,15 @@ export const TasksTab = ({
                     key={application.id} 
                     className={`p-4 border rounded-lg ${
                       needsReview 
-                        ? 'border-yellow-300 bg-yellow-50' 
+                        ? 'border-yellow-200 bg-white' 
                         : 'border-green-200 bg-green-50/50'
                     }`}
                   >
-                    {/* Review prompt banner */}
-                    {needsReview && (
-                      <button
-                        onClick={() => handleReviewClick(task)}
-                        className="w-full flex items-center justify-between bg-yellow-500 text-white p-2.5 rounded-lg mb-3 text-sm hover:bg-yellow-600 transition-colors"
-                      >
-                        <span>⭐ Rate your experience with {task.creator_name || 'the job poster'}</span>
-                        <span className="font-medium">Leave Review →</span>
-                      </button>
-                    )}
-                    
-                    <div className="flex items-center gap-2 text-sm mb-2">
-                      {task.status === 'completed' ? (
-                        <div className={`flex items-center gap-2 ${needsReview ? 'text-yellow-700' : 'text-green-700'}`}>
-                          <span>🎉</span>
-                          <span className="font-medium">Completed!</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-green-700">
-                          <span>🎉</span>
-                          <span className="font-medium">You're assigned</span>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
+                      <span>🎉</span>
+                      <span className="font-medium">
+                        {task.status === 'completed' ? 'Completed!' : "You're assigned"}
+                      </span>
                     </div>
                     
                     <div className="flex items-start justify-between gap-3">
