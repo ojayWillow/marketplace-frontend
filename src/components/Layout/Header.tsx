@@ -10,7 +10,7 @@ interface NotificationCounts {
   unreadMessages: number;
   pendingApplications: number;
   pendingConfirmation: number;
-  acceptedApplications: number; // NEW: For workers - their application was accepted
+  acceptedApplications: number; // For workers - their application was accepted
 }
 
 export default function Header() {
@@ -30,9 +30,36 @@ export default function Header() {
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
 
+  // Mark specific notification type as read
+  const markNotificationsAsRead = async (type: 'accepted_applications' | 'all') => {
+    try {
+      await apiClient.post('/api/notifications/mark-read', { type });
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      // Continue with navigation even if marking fails
+    }
+  };
+
   // Helper to navigate and close dropdown
-  const handleNotificationClick = (path: string) => {
+  const handleNotificationClick = async (path: string, notificationType?: 'accepted_applications' | 'messages' | 'pending_applications' | 'pending_confirmation') => {
     setNotificationDropdownOpen(false);
+    
+    // Clear the specific notification count immediately for responsive UX
+    if (notificationType) {
+      setNotifications(prev => ({
+        ...prev,
+        ...(notificationType === 'accepted_applications' && { acceptedApplications: 0 }),
+        ...(notificationType === 'messages' && { unreadMessages: 0 }),
+        ...(notificationType === 'pending_applications' && { pendingApplications: 0 }),
+        ...(notificationType === 'pending_confirmation' && { pendingConfirmation: 0 }),
+      }));
+      
+      // Mark as read in background (don't await)
+      if (notificationType === 'accepted_applications') {
+        markNotificationsAsRead('accepted_applications');
+      }
+    }
+    
     navigate(path);
   };
 
@@ -224,7 +251,7 @@ export default function Header() {
                           {/* Accepted Applications - FOR WORKERS */}
                           {notifications.acceptedApplications > 0 && (
                             <button
-                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-jobs')}
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-jobs', 'accepted_applications')}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors text-left"
                               role="menuitem"
                             >
@@ -246,7 +273,7 @@ export default function Header() {
                           {/* Unread Messages */}
                           {notifications.unreadMessages > 0 && (
                             <button
-                              onClick={() => handleNotificationClick('/messages')}
+                              onClick={() => handleNotificationClick('/messages', 'messages')}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors text-left"
                               role="menuitem"
                             >
@@ -268,7 +295,7 @@ export default function Header() {
                           {/* Pending Applications on My Tasks */}
                           {notifications.pendingApplications > 0 && (
                             <button
-                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks')}
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks', 'pending_applications')}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
                               role="menuitem"
                             >
@@ -290,7 +317,7 @@ export default function Header() {
                           {/* Tasks Pending Confirmation */}
                           {notifications.pendingConfirmation > 0 && (
                             <button
-                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks&status=in_progress')}
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks&status=in_progress', 'pending_confirmation')}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 transition-colors text-left"
                               role="menuitem"
                             >
@@ -314,7 +341,7 @@ export default function Header() {
                       {/* View All Link */}
                       <div className="border-t border-gray-100 mt-2 pt-2 px-4 pb-1">
                         <button
-                          onClick={() => handleNotificationClick('/profile?tab=tasks')}
+                          onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks')}
                           className="block w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
                           role="menuitem"
                         >
