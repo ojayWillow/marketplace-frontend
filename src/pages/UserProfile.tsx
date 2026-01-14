@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUserProfile, useUserReviews, useStartConversation } from '../api/hooks'
@@ -10,6 +10,15 @@ import apiClient from '../api/client'
 import { useQueryClient } from '@tanstack/react-query'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ErrorMessage from '../components/ui/ErrorMessage'
+
+interface ReviewableTransaction {
+  type: string
+  id: number
+  title: string
+  completed_at: string | null
+  your_role: string
+  review_type: string
+}
 
 export default function UserProfile() {
   const { t } = useTranslation()
@@ -27,12 +36,44 @@ export default function UserProfile() {
   const startConversationMutation = useStartConversation()
   
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [reviewData, setReviewData] = useState({ rating: 5, content: '' })
+  const [reviewData, setReviewData] = useState({ rating: 5, content: '', taskId: 0 })
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewableTransactions, setReviewableTransactions] = useState<ReviewableTransaction[]>([])
+  const [canReview, setCanReview] = useState(false)
 
   const isOwnProfile = currentUser && user && currentUser.id === user.id
   const loading = userLoading || reviewsLoading
   const error = userError ? (userError as any)?.response?.data?.error || 'Failed to load user profile' : null
+
+  // Check if current user can review this user
+  useEffect(() => {
+    const checkCanReview = async () => {
+      if (!currentUser || !id || isOwnProfile) {
+        setCanReview(false)
+        setReviewableTransactions([])
+        return
+      }
+
+      try {
+        const response = await apiClient.get(`/api/reviews/can-review-user/${id}`)
+        setCanReview(response.data.can_review)
+        setReviewableTransactions(response.data.reviewable_transactions || [])
+        
+        // Pre-select first transaction if available
+        if (response.data.reviewable_transactions?.length > 0) {
+          setReviewData(prev => ({ 
+            ...prev, 
+            taskId: response.data.reviewable_transactions[0].id 
+          }))
+        }
+      } catch (err) {
+        setCanReview(false)
+        setReviewableTransactions([])
+      }
+    }
+
+    checkCanReview()
+  }, [currentUser, id, isOwnProfile])
 
   const handleStartConversation = async () => {
     if (!currentUser) {
@@ -66,10 +107,16 @@ export default function UserProfile() {
       return
     }
 
+    if (!reviewData.taskId) {
+      toast.error('Please select a transaction to review')
+      return
+    }
+
     try {
       setSubmittingReview(true)
-      await apiClient.post('/api/reviews', {
-        reviewed_user_id: Number(id),
+      
+      // Post to task-specific review endpoint
+      await apiClient.post(`/api/reviews/task/${reviewData.taskId}`, {
         rating: reviewData.rating,
         content: reviewData.content
       })
@@ -78,8 +125,14 @@ export default function UserProfile() {
       queryClient.invalidateQueries({ queryKey: ['user-reviews', Number(id)] })
       queryClient.invalidateQueries({ queryKey: ['user-profile', Number(id)] })
       
+      // Remove the reviewed transaction from reviewable list
+      setReviewableTransactions(prev => prev.filter(t => t.id !== reviewData.taskId))
+      if (reviewableTransactions.length <= 1) {
+        setCanReview(false)
+      }
+      
       setShowReviewModal(false)
-      setReviewData({ rating: 5, content: '' })
+      setReviewData({ rating: 5, content: '', taskId: 0 })
       toast.success('Review submitted successfully!')
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Failed to submit review')
@@ -232,7 +285,7 @@ export default function UserProfile() {
 
           {/* Action Buttons */}
           {!isOwnProfile && currentUser && (
-            <div className="mt-6 pt-6 border-t grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={`mt-6 pt-6 border-t grid grid-cols-1 ${canReview ? 'sm:grid-cols-2' : ''} gap-3`}>
               <button
                 onClick={handleStartConversation}
                 disabled={startConversationMutation.isPending}
@@ -240,12 +293,14 @@ export default function UserProfile() {
               >
                 💬 {startConversationMutation.isPending ? 'Loading...' : 'Message'}
               </button>
-              <button
-                onClick={() => setShowReviewModal(true)}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                ✍️ Leave a Review
-              </button>
+              {canReview && (
+                <button
+                  onClick={() => setShowReviewModal(true)}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  ✍️ Leave a Review
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -258,7 +313,7 @@ export default function UserProfile() {
 
           {reviews.length === 0 ? (
             <p className="text-gray-500 text-center py-8">
-              No reviews yet. {!isOwnProfile && currentUser && 'Be the first to leave a review!'}
+              No reviews yet.
             </p>
           ) : (
             <div className="space-y-6">
@@ -313,6 +368,38 @@ export default function UserProfile() {
             </h3>
             
             <form onSubmit={handleSubmitReview}>
+              {/* Transaction Selection */}
+              {reviewableTransactions.length > 1 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Transaction
+                  </label>
+                  <select
+                    value={reviewData.taskId}
+                    onChange={(e) => setReviewData(prev => ({ ...prev, taskId: Number(e.target.value) }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {reviewableTransactions.map(tx => (
+                      <option key={tx.id} value={tx.id}>
+                        {tx.title} ({tx.your_role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Show which task is being reviewed if only one */}
+              {reviewableTransactions.length === 1 && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    Reviewing for: <span className="font-medium">{reviewableTransactions[0].title}</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Your role: {reviewableTransactions[0].your_role}
+                  </p>
+                </div>
+              )}
+
               {/* Rating */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -335,7 +422,7 @@ export default function UserProfile() {
                   onChange={(e) => setReviewData(prev => ({ ...prev, content: e.target.value }))}
                   rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Share your experience with this user..."
+                  placeholder="Share your experience working with this user..."
                   required
                 />
               </div>
@@ -346,7 +433,7 @@ export default function UserProfile() {
                   type="button"
                   onClick={() => {
                     setShowReviewModal(false)
-                    setReviewData({ rating: 5, content: '' })
+                    setReviewData({ rating: 5, content: '', taskId: reviewableTransactions[0]?.id || 0 })
                   }}
                   className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                 >
