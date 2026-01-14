@@ -58,6 +58,8 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Don't cache API routes - always fetch fresh data
+        navigateFallbackDenylist: [/^\/api\/.*/],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
@@ -89,51 +91,6 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /\/api\/listings.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'listings-api',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
-              },
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /\/api\/tasks.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'tasks-api',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
-              },
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /\/api\/offerings.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'offerings-api',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
-              },
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
             urlPattern: /\/uploads\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -150,7 +107,8 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true
+        // Disable service worker in development to avoid caching issues
+        enabled: false
       }
     })
   ],
