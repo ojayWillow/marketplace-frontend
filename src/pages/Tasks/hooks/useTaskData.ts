@@ -76,47 +76,49 @@ export const useTaskData = ({
       // Radius 0 means "all of Latvia" - use large radius
       const effectiveRadius = baseRadius === 0 ? 500 : baseRadius;
       
-      // Fetch tasks
-      const tasksResponse = await getTasks({
+      const requestParams = {
         latitude: userLocation.lat,
         longitude: userLocation.lng,
         radius: effectiveRadius,
-        status: 'open',
         category: selectedCategory !== 'all' ? selectedCategory : undefined
-      });
-      
-      const tasksWithIcons = tasksResponse.tasks.map(task => ({
-        ...task,
-        icon: getCategoryIcon(task.category)
-      }));
-      
-      setTasks(tasksWithIcons);
-      
-      // Fetch offerings (non-blocking errors)
-      try {
-        const offeringsResponse = await getOfferings({
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-          radius: effectiveRadius,
-          status: 'active',
-          category: selectedCategory !== 'all' ? selectedCategory : undefined
-        });
-        setOfferings(offeringsResponse.offerings || []);
-      } catch {
+      };
+
+      // Fetch all data in parallel for faster loading
+      const [tasksResult, offeringsResult, boostedResult] = await Promise.allSettled([
+        getTasks({ ...requestParams, status: 'open' }),
+        getOfferings({ ...requestParams, status: 'active' }),
+        getBoostedOfferings(requestParams)
+      ]);
+
+      // Process tasks
+      if (tasksResult.status === 'fulfilled') {
+        const tasksWithIcons = tasksResult.value.tasks.map(task => ({
+          ...task,
+          icon: getCategoryIcon(task.category)
+        }));
+        setTasks(tasksWithIcons);
+      } else {
+        console.error('Failed to fetch tasks:', tasksResult.reason);
+        setTasks([]);
+      }
+
+      // Process offerings
+      if (offeringsResult.status === 'fulfilled') {
+        setOfferings(offeringsResult.value.offerings || []);
+      } else {
         setOfferings([]);
       }
-      
-      // Fetch boosted offerings (non-blocking errors)
-      try {
-        const boostedResponse = await getBoostedOfferings({
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-          radius: effectiveRadius,
-          category: selectedCategory !== 'all' ? selectedCategory : undefined
-        });
-        setBoostedOfferings(boostedResponse.offerings || []);
-      } catch {
+
+      // Process boosted offerings
+      if (boostedResult.status === 'fulfilled') {
+        setBoostedOfferings(boostedResult.value.offerings || []);
+      } else {
         setBoostedOfferings([]);
+      }
+
+      // Only show error if tasks failed (main content)
+      if (tasksResult.status === 'rejected') {
+        setError(t('tasks.errorLoad', 'Failed to load data. Please try again later.'));
       }
       
       hasFetchedRef.current = true;
