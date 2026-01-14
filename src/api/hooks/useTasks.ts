@@ -34,7 +34,9 @@ export const useTask = (id: number, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: taskKeys.detail(id, lang),
     queryFn: () => getTask(id),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    // Short stale time to ensure fresh status data
+    // Task status can change frequently (assigned -> done -> completed)
+    staleTime: 1000 * 30, // 30 seconds
     enabled: !!id && options?.enabled !== false,
   });
 };

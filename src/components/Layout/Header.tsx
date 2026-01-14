@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../stores/authStore'
 import { useLogout } from '../../hooks/useAuth'
@@ -10,10 +10,12 @@ interface NotificationCounts {
   unreadMessages: number;
   pendingApplications: number;
   pendingConfirmation: number;
+  acceptedApplications: number; // For workers - their application was accepted
 }
 
 export default function Header() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
   const logout = useLogout()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -22,10 +24,44 @@ export default function Header() {
   const [notifications, setNotifications] = useState<NotificationCounts>({
     unreadMessages: 0,
     pendingApplications: 0,
-    pendingConfirmation: 0
+    pendingConfirmation: 0,
+    acceptedApplications: 0
   })
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Mark specific notification type as read
+  const markNotificationsAsRead = async (type: 'accepted_applications' | 'all') => {
+    try {
+      await apiClient.post('/api/notifications/mark-read', { type });
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      // Continue with navigation even if marking fails
+    }
+  };
+
+  // Helper to navigate and close dropdown
+  const handleNotificationClick = async (path: string, notificationType?: 'accepted_applications' | 'messages' | 'pending_applications' | 'pending_confirmation') => {
+    setNotificationDropdownOpen(false);
+    
+    // Clear the specific notification count immediately for responsive UX
+    if (notificationType) {
+      setNotifications(prev => ({
+        ...prev,
+        ...(notificationType === 'accepted_applications' && { acceptedApplications: 0 }),
+        ...(notificationType === 'messages' && { unreadMessages: 0 }),
+        ...(notificationType === 'pending_applications' && { pendingApplications: 0 }),
+        ...(notificationType === 'pending_confirmation' && { pendingConfirmation: 0 }),
+      }));
+      
+      // Mark as read in background (don't await)
+      if (notificationType === 'accepted_applications') {
+        markNotificationsAsRead('accepted_applications');
+      }
+    }
+    
+    navigate(path);
+  };
 
   // Fetch notification counts
   const fetchNotifications = async () => {
@@ -41,10 +77,21 @@ export default function Header() {
       const pendingApplications = taskNotificationsResponse.data.pending_applications || 0;
       const pendingConfirmation = taskNotificationsResponse.data.pending_confirmation || 0;
       
+      // Fetch real notifications (for accepted applications - worker side)
+      let acceptedApplications = 0;
+      try {
+        const notificationsResponse = await apiClient.get('/api/notifications/unread-count');
+        acceptedApplications = notificationsResponse.data.accepted_applications || 0;
+      } catch (e) {
+        // Notifications API might not be available, that's ok
+        console.log('Notifications API not available');
+      }
+      
       setNotifications({
         unreadMessages,
         pendingApplications,
-        pendingConfirmation
+        pendingConfirmation,
+        acceptedApplications
       });
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -87,7 +134,7 @@ export default function Header() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
-  const totalNotifications = notifications.unreadMessages + notifications.pendingApplications + notifications.pendingConfirmation;
+  const totalNotifications = notifications.unreadMessages + notifications.pendingApplications + notifications.pendingConfirmation + notifications.acceptedApplications;
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
@@ -191,23 +238,43 @@ export default function Header() {
                           <span className="text-3xl mb-2 block" aria-hidden="true">✨</span>
                           <p className="font-medium">You're all caught up!</p>
                           <p className="text-sm mt-1">New notifications will appear here</p>
-                          <Link 
-                            to="/tasks" 
+                          <button 
+                            onClick={() => handleNotificationClick('/tasks')}
                             className="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700"
-                            onClick={() => setNotificationDropdownOpen(false)}
                             role="menuitem"
                           >
                             Browse tasks to help others →
-                          </Link>
+                          </button>
                         </div>
                       ) : (
                         <div className="max-h-80 overflow-y-auto">
+                          {/* Accepted Applications - FOR WORKERS */}
+                          {notifications.acceptedApplications > 0 && (
+                            <button
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-jobs', 'accepted_applications')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors text-left"
+                              role="menuitem"
+                            >
+                              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600" aria-hidden="true">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">
+                                  🎉 You got assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!
+                                </p>
+                                <p className="text-xs text-gray-500">Your application was accepted</p>
+                              </div>
+                              <span className="w-2 h-2 bg-purple-500 rounded-full" aria-hidden="true"></span>
+                            </button>
+                          )}
+                          
                           {/* Unread Messages */}
                           {notifications.unreadMessages > 0 && (
-                            <Link
-                              to="/messages"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/messages', 'messages')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600" aria-hidden="true">
@@ -222,15 +289,14 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">Click to view your messages</p>
                               </div>
                               <span className="w-2 h-2 bg-blue-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                           
                           {/* Pending Applications on My Tasks */}
                           {notifications.pendingApplications > 0 && (
-                            <Link
-                              to="/profile?tab=tasks&subtab=created"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks', 'pending_applications')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600" aria-hidden="true">
@@ -245,15 +311,14 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">People want to help with your tasks</p>
                               </div>
                               <span className="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                           
                           {/* Tasks Pending Confirmation */}
                           {notifications.pendingConfirmation > 0 && (
-                            <Link
-                              to="/profile?tab=tasks&subtab=created&created_filter=in_progress"
-                              onClick={() => setNotificationDropdownOpen(false)}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 transition-colors"
+                            <button
+                              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks&status=in_progress', 'pending_confirmation')}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 transition-colors text-left"
                               role="menuitem"
                             >
                               <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600" aria-hidden="true">
@@ -268,21 +333,20 @@ export default function Header() {
                                 <p className="text-xs text-gray-500">Workers marked these as done</p>
                               </div>
                               <span className="w-2 h-2 bg-yellow-500 rounded-full" aria-hidden="true"></span>
-                            </Link>
+                            </button>
                           )}
                         </div>
                       )}
                       
                       {/* View All Link */}
                       <div className="border-t border-gray-100 mt-2 pt-2 px-4 pb-1">
-                        <Link
-                          to="/profile?tab=tasks"
-                          onClick={() => setNotificationDropdownOpen(false)}
-                          className="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        <button
+                          onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks')}
+                          className="block w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
                           role="menuitem"
                         >
                           View all activity →
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   )}
@@ -386,9 +450,9 @@ export default function Header() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                           </svg>
                           My Tasks
-                          {(notifications.pendingApplications + notifications.pendingConfirmation) > 0 && (
+                          {(notifications.pendingApplications + notifications.pendingConfirmation + notifications.acceptedApplications) > 0 && (
                             <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-600 rounded-full">
-                              {notifications.pendingApplications + notifications.pendingConfirmation}
+                              {notifications.pendingApplications + notifications.pendingConfirmation + notifications.acceptedApplications}
                             </span>
                           )}
                         </Link>
@@ -603,6 +667,9 @@ export default function Header() {
                           <span aria-hidden="true">🔔</span> You have {totalNotifications} notification{totalNotifications !== 1 ? 's' : ''}
                         </p>
                         <div className="mt-1 text-xs text-blue-600 space-y-1">
+                          {notifications.acceptedApplications > 0 && (
+                            <p>• 🎉 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
+                          )}
                           {notifications.unreadMessages > 0 && (
                             <p>• {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
                           )}
