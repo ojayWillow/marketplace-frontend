@@ -18,11 +18,11 @@ export const usePublicProfileData = (userId: number | undefined) => {
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   
-  // Loading states
+  // Loading states - start with true so spinners show immediately
   const [loading, setLoading] = useState(true);
-  const [listingsLoading, setListingsLoading] = useState(false);
-  const [offeringsLoading, setOfferingsLoading] = useState(false);
-  const [tasksLoading, setTasksLoading] = useState(false);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [offeringsLoading, setOfferingsLoading] = useState(true);
+  const [tasksLoading, setTasksLoading] = useState(true);
   
   // Error state
   const [error, setError] = useState<string | null>(null);
