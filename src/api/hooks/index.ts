@@ -24,7 +24,8 @@ export {
 
 // Message hooks
 export { 
-  useConversations, 
+  useConversations,
+  useConversation,
   useMessages, 
   useSendMessage, 
   useMarkAsRead,
