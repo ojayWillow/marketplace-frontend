@@ -4,7 +4,8 @@ import type { UserLocation, LocationType } from '../types';
 
 // Default location: Riga, Latvia
 const DEFAULT_LOCATION: UserLocation = { lat: 56.9496, lng: 24.1052 };
-const LOCATION_TIMEOUT_MS = 5000;
+// Reduced timeout from 5s to 3s for faster page load
+const LOCATION_TIMEOUT_MS = 3000;
 
 export interface UseTaskLocationReturn {
   // Location state
@@ -29,14 +30,16 @@ export const useTaskLocation = (
 ): UseTaskLocationReturn => {
   const { t } = useTranslation();
   
-  // Location state
+  // Start with location granted = true to not block UI
+  // We'll show content immediately with default location
   const [userLocation, setUserLocation] = useState<UserLocation>(DEFAULT_LOCATION);
-  const [locationGranted, setLocationGranted] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationGranted, setLocationGranted] = useState(true); // Changed: don't block UI
+  const [locationLoading, setLocationLoading] = useState(false); // Changed: no loading screen
   const [locationType, setLocationType] = useState<LocationType>('default');
   const [manualLocationName, setManualLocationName] = useState<string | null>(null);
   
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAttemptedGeolocation = useRef(false);
 
   // Compute display location name based on type
   const getLocationDisplayName = useCallback(() => {
@@ -88,41 +91,44 @@ export const useTaskLocation = (
     }
   }, [onLocationChange]);
 
-  // Auto-detect location on mount
+  // Auto-detect location on mount (non-blocking)
   useEffect(() => {
+    // Prevent double execution in React strict mode
+    if (hasAttemptedGeolocation.current) return;
+    hasAttemptedGeolocation.current = true;
+
+    if (!navigator.geolocation) return;
+
+    // Set a timeout to stop waiting for geolocation
     locationTimeoutRef.current = setTimeout(() => {
-      if (locationLoading) {
-        skipLocationDetection();
-      }
+      // Timeout reached - stay with default location
+      setLocationType('default');
     }, LOCATION_TIMEOUT_MS);
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({ 
-            lat: position.coords.latitude, 
-            lng: position.coords.longitude 
-          });
-          setLocationGranted(true);
-          setLocationLoading(false);
-          setLocationType('auto');
-          if (locationTimeoutRef.current) {
-            clearTimeout(locationTimeoutRef.current);
-          }
-        },
-        () => {
-          // Permission denied or error - use default
-          setLocationGranted(true);
-          setLocationLoading(false);
-          setLocationType('default');
-        },
-        { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
-      );
-    } else {
-      // Geolocation not supported
-      setLocationGranted(true);
-      setLocationLoading(false);
-    }
+    // Try to get user's location in background
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Success - update to user's location
+        setUserLocation({ 
+          lat: position.coords.latitude, 
+          lng: position.coords.longitude 
+        });
+        setLocationType('auto');
+        if (locationTimeoutRef.current) {
+          clearTimeout(locationTimeoutRef.current);
+        }
+        // Trigger a refresh with new location
+        onLocationChange?.();
+      },
+      () => {
+        // Permission denied or error - keep default location
+        setLocationType('default');
+        if (locationTimeoutRef.current) {
+          clearTimeout(locationTimeoutRef.current);
+        }
+      },
+      { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
+    );
 
     return () => {
       if (locationTimeoutRef.current) {

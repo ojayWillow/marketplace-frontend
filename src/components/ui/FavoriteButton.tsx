@@ -1,13 +1,15 @@
 /**
  * FavoriteButton - A reusable heart button for favoriting items
+ * Uses batched favorites store to minimize API calls
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useToastStore } from '../../stores/toastStore';
+import { useFavoritesStore } from '../../stores/favoritesStore';
 import { useToggleFavorite } from '../../hooks/useFavorites';
-import { FavoriteItemType, checkFavorites } from '../../api/favorites';
+import { FavoriteItemType } from '../../api/favorites';
 
 interface FavoriteButtonProps {
   itemType: FavoriteItemType;
@@ -30,27 +32,25 @@ export default function FavoriteButton({
   const { isAuthenticated } = useAuthStore();
   const toast = useToastStore();
   const toggleFavorite = useToggleFavorite();
-  const [isFavorited, setIsFavorited] = useState(initialFavorited ?? false);
+  const { checkFavorite, setFavorite, cache } = useFavoritesStore();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [hasChecked, setHasChecked] = useState(initialFavorited !== undefined);
 
-  // Check initial favorite status if not provided
+  // Get favorite status from cache or initial value
+  const cacheKey = `${itemType}:${itemId}`;
+  const cachedValue = cache.get(cacheKey);
+  const isFavorited = cachedValue ?? initialFavorited ?? false;
+
+  // Check initial favorite status using batched store
   useEffect(() => {
-    if (!isAuthenticated || hasChecked) return;
+    if (!isAuthenticated || hasChecked || initialFavorited !== undefined) return;
 
-    const checkStatus = async () => {
-      try {
-        const result = await checkFavorites([{ type: itemType, id: itemId }]);
-        const key = `${itemType}:${itemId}`;
-        setIsFavorited(result.favorites[key] ?? false);
-        setHasChecked(true);
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
-      }
-    };
-
-    checkStatus();
-  }, [isAuthenticated, itemType, itemId, hasChecked]);
+    // Use batched check - this will be combined with other checks
+    checkFavorite(itemType, itemId).then(() => {
+      setHasChecked(true);
+    });
+  }, [isAuthenticated, itemType, itemId, hasChecked, initialFavorited, checkFavorite]);
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -65,7 +65,8 @@ export default function FavoriteButton({
     setIsLoading(true);
     try {
       const result = await toggleFavorite.mutateAsync({ itemType, itemId });
-      setIsFavorited(result.is_favorited);
+      // Update the store cache
+      setFavorite(itemType, itemId, result.is_favorited);
       toast.success(result.message);
     } catch (error) {
       console.error('Error toggling favorite:', error);

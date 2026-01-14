@@ -1,3 +1,4 @@
 // Utility functions barrel export
-export * from './taskHelpers';
-export * from './mapHelpers';
+export { calculateDistance, formatDistance, formatTimeAgo } from './taskHelpers';
+export { addMarkerOffsets } from './mapHelpers';
+export * from './markerIcons';
