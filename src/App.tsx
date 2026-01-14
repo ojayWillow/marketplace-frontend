@@ -18,6 +18,8 @@ const PageLoader = () => (
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'))
 const Listings = lazy(() => import('./pages/listings/Listings'))
 const ListingDetail = lazy(() => import('./pages/listings/ListingDetail'))
 const CreateListing = lazy(() => import('./pages/listings/CreateListing'))
@@ -57,6 +59,8 @@ function App() {
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
             <Route path="listings" element={<Listings />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="tasks/:id" element={<TaskDetail />} />
