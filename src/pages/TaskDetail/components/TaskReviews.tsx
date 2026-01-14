@@ -30,8 +30,9 @@ export const TaskReviews = ({
   const [touched, setTouched] = useState(false);
 
   const contentLength = reviewContent.trim().length;
+  const charsRemaining = MIN_REVIEW_LENGTH - contentLength;
   const isContentValid = contentLength >= MIN_REVIEW_LENGTH;
-  const showError = touched && !isContentValid;
+  const showError = touched && !isContentValid && contentLength > 0;
 
   const handleSubmitReview = async () => {
     if (!canReview?.can_review) return;
@@ -122,7 +123,7 @@ export const TaskReviews = ({
 
               <div className="mb-3">
                 <label className="block text-sm text-gray-600 mb-1">
-                  {t('reviews.comment')} <span className="text-red-500">*</span>
+                  {t('reviews.commentRequired')}
                 </label>
                 <textarea
                   value={reviewContent}
@@ -134,23 +135,30 @@ export const TaskReviews = ({
                   }`}
                 />
                 <div className="flex justify-between items-center mt-1">
-                  {showError ? (
-                    <p className="text-red-500 text-sm">
-                      {t('reviews.minChars', { count: MIN_REVIEW_LENGTH })}
-                    </p>
-                  ) : (
-                    <p className="text-gray-400 text-sm">
-                      {t('reviews.helpOthers')}
-                    </p>
-                  )}
-                  <span className={`text-sm ${
-                    contentLength >= MIN_REVIEW_LENGTH 
+                  <div>
+                    {showError ? (
+                      <p className="text-red-500 text-sm">
+                        {t('reviews.charsRemaining', { count: charsRemaining })}
+                      </p>
+                    ) : contentLength === 0 && touched ? (
+                      <p className="text-red-500 text-sm">
+                        {t('reviews.contentRequired')}
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 text-sm">
+                        {t('reviews.helpOthers')}
+                      </p>
+                    )}
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    isContentValid 
                       ? 'text-green-600' 
                       : contentLength > 0 
                         ? 'text-yellow-600' 
                         : 'text-gray-400'
                   }`}>
                     {contentLength}/{MIN_REVIEW_LENGTH}
+                    {isContentValid && ' ✓'}
                   </span>
                 </div>
               </div>
