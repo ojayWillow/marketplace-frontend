@@ -24,6 +24,9 @@ import {
   SlideOutMenu,
 } from './components';
 
+// Reduced timeout for faster perceived loading
+const LOCATION_TIMEOUT_MS = 3000;
+
 /**
  * Main Mobile Tasks View Component
  * Displays a map with task markers and a draggable bottom sheet with task list
@@ -36,6 +39,7 @@ const MobileTasksView = () => {
   // Task data state
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  // Default location: Riga, Latvia
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [searchRadius, setSearchRadius] = useState(25);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -55,6 +59,10 @@ const MobileTasksView = () => {
   const [sheetPosition, setSheetPosition] = useState<SheetPosition>('half');
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
+  
+  // Refs for controlling fetches and geolocation
+  const hasAttemptedGeolocation = useRef(false);
+  const hasFetchedInitial = useRef(false);
 
   // Calculate sheet height based on position
   const getSheetHeight = () => {
@@ -73,53 +81,77 @@ const MobileTasksView = () => {
 
   const sheetHeight = getSheetHeight();
 
-  // Get user location on mount
-  useEffect(() => {
-    const savedRadius = localStorage.getItem('taskSearchRadius');
-    if (savedRadius) setSearchRadius(parseInt(savedRadius, 10));
+  // Fetch tasks function
+  const fetchTasks = async (lat: number, lng: number, radius: number, category: string) => {
+    setLoading(true);
+    try {
+      const effectiveRadius = radius === 0 ? 500 : radius;
+      const response = await getTasks({
+        latitude: lat,
+        longitude: lng,
+        radius: effectiveRadius,
+        status: 'open',
+        category: category !== 'all' ? category : undefined,
+      });
 
-    if (navigator.geolocation) {
+      const tasksWithIcons = response.tasks.map((task) => ({
+        ...task,
+        icon: getCategoryIcon(task.category),
+      }));
+
+      setTasks(tasksWithIcons);
+    } catch (err) {
+      console.error('Failed to load jobs', err);
+    }
+    setLoading(false);
+  };
+
+  // Initialize: Get saved radius, start geolocation, and fetch data immediately
+  useEffect(() => {
+    if (hasFetchedInitial.current) return;
+    hasFetchedInitial.current = true;
+
+    // Load saved radius
+    const savedRadius = localStorage.getItem('taskSearchRadius');
+    const initialRadius = savedRadius ? parseInt(savedRadius, 10) : 25;
+    if (savedRadius) setSearchRadius(initialRadius);
+
+    // Fetch immediately with default location (don't wait for geolocation)
+    fetchTasks(56.9496, 24.1052, initialRadius, 'all');
+
+    // Try to get user's actual location in background
+    if (navigator.geolocation && !hasAttemptedGeolocation.current) {
+      hasAttemptedGeolocation.current = true;
+      
+      const timeoutId = setTimeout(() => {
+        // Timeout - stay with default location, data already loaded
+      }, LOCATION_TIMEOUT_MS);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          clearTimeout(timeoutId);
+          const newLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          setUserLocation(newLocation);
+          // Refresh data with actual location
+          fetchTasks(newLocation.lat, newLocation.lng, initialRadius, 'all');
         },
-        () => {},
-        { timeout: 5000, enableHighAccuracy: false }
+        () => {
+          clearTimeout(timeoutId);
+          // Permission denied - keep default location, data already loaded
+        },
+        { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
       );
     }
   }, []);
 
-  // Fetch tasks when location/filters change
+  // Refetch when filters change (but not on initial mount)
   useEffect(() => {
-    const fetchTasks = async () => {
-      setLoading(true);
-      try {
-        const effectiveRadius = searchRadius === 0 ? 500 : searchRadius;
-        const response = await getTasks({
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-          radius: effectiveRadius,
-          status: 'open',
-          category: selectedCategory !== 'all' ? selectedCategory : undefined,
-        });
-
-        const tasksWithIcons = response.tasks.map((task) => ({
-          ...task,
-          icon: getCategoryIcon(task.category),
-        }));
-
-        setTasks(tasksWithIcons);
-      } catch (err) {
-        console.error('Failed to load jobs', err);
-      }
-      setLoading(false);
-    };
-
-    fetchTasks();
-  }, [userLocation, searchRadius, selectedCategory]);
+    if (!hasFetchedInitial.current) return;
+    fetchTasks(userLocation.lat, userLocation.lng, searchRadius, selectedCategory);
+  }, [searchRadius, selectedCategory]);
 
   // Memoized values
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
