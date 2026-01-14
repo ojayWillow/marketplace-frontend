@@ -495,6 +495,102 @@ const MapMarkers = ({
   );
 };
 
+// =====================================================
+// MAP LOADING OVERLAY - Shows when searching/refreshing
+// =====================================================
+const MapLoadingOverlay = ({ 
+  isLoading, 
+  radius, 
+  previousRadius 
+}: { 
+  isLoading: boolean; 
+  radius: number;
+  previousRadius: number | null;
+}) => {
+  const { t } = useTranslation();
+  
+  if (!isLoading) return null;
+  
+  const getRadiusText = () => {
+    if (radius === 0) {
+      return t('tasks.allLatvia', 'All Latvia');
+    }
+    return `${radius} km`;
+  };
+  
+  const isExpanding = previousRadius !== null && (radius === 0 || radius > previousRadius);
+  
+  return (
+    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-[1000] flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl p-6 max-w-xs text-center border border-gray-100">
+        {/* Animated search icon */}
+        <div className="relative w-20 h-20 mx-auto mb-4">
+          {/* Expanding rings animation */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute w-16 h-16 border-2 border-blue-300 rounded-full animate-ping opacity-30"></div>
+            <div className="absolute w-12 h-12 border-2 border-blue-400 rounded-full animate-ping opacity-40" style={{ animationDelay: '0.2s' }}></div>
+            <div className="absolute w-8 h-8 border-2 border-blue-500 rounded-full animate-ping opacity-50" style={{ animationDelay: '0.4s' }}></div>
+          </div>
+          {/* Center icon */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-2xl">🔍</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Status text */}
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          {t('tasks.searchingJobs', 'Searching for jobs...')}
+        </h3>
+        
+        {/* Radius badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full mb-3">
+          {radius === 0 ? (
+            <span className="text-lg">🇱🇻</span>
+          ) : (
+            <span className="text-lg">📍</span>
+          )}
+          <span className="font-semibold text-blue-700">{getRadiusText()}</span>
+          {isExpanding && previousRadius !== null && (
+            <span className="text-blue-500 text-sm">
+              ← {previousRadius === 0 ? t('tasks.allLatvia', 'All Latvia') : `${previousRadius} km`}
+            </span>
+          )}
+        </div>
+        
+        {/* Progress bar */}
+        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full animate-pulse"
+            style={{ 
+              width: '100%',
+              animation: 'loading-progress 1.5s ease-in-out infinite'
+            }}
+          ></div>
+        </div>
+        
+        {/* Helpful text */}
+        <p className="text-sm text-gray-500 mt-3">
+          {radius === 0 
+            ? t('tasks.loadingAllLatvia', 'Loading jobs from all of Latvia...') 
+            : t('tasks.loadingRadius', 'Finding opportunities nearby...')
+          }
+        </p>
+      </div>
+      
+      {/* CSS for progress animation */}
+      <style>{`
+        @keyframes loading-progress {
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(0%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 type LocationType = 'auto' | 'default' | 'manual';
 
 const DEFAULT_FILTERS: CompactFilterValues = {
@@ -737,6 +833,9 @@ const DesktopTasksView = () => {
   
   const [showIntroModal, setShowIntroModal] = useState(false);
   
+  // Track previous radius for loading overlay
+  const [previousRadius, setPreviousRadius] = useState<number | null>(null);
+  
   const [filters, setFilters] = useState<CompactFilterValues>(() => {
     const saved = localStorage.getItem('taskAdvancedFilters');
     if (saved) {
@@ -862,6 +961,11 @@ const DesktopTasksView = () => {
   const handleFiltersChange = (newFilters: CompactFilterValues) => {
     const distanceChanged = newFilters.distance !== filters.distance;
     const categoryChanged = newFilters.category !== filters.category;
+    
+    // Track previous radius before changing
+    if (distanceChanged) {
+      setPreviousRadius(filters.distance);
+    }
     
     setFilters(newFilters);
     localStorage.setItem('taskAdvancedFilters', JSON.stringify(newFilters));
@@ -991,6 +1095,8 @@ const DesktopTasksView = () => {
     
     setInitialLoading(false);
     setRefreshing(false);
+    // Clear previous radius after loading completes
+    setPreviousRadius(null);
   };
 
   useEffect(() => {
@@ -1270,17 +1376,10 @@ const DesktopTasksView = () => {
           <button onClick={() => setActiveTab('offerings')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             👋 {t('common.offerings', 'Offerings')} ({filteredOfferings.length})
           </button>
-          
-          {refreshing && (
-            <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
-              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-              <span>{t('tasks.updating', 'Updating...')}</span>
-            </div>
-          )}
         </div>
 
-        {/* Map */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        {/* Map with Loading Overlay */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6 relative">
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
             <span className="font-semibold text-gray-700">{t('map.legend', 'Map')}:</span>
             
@@ -1314,7 +1413,7 @@ const DesktopTasksView = () => {
               <span className="text-gray-500 text-xs">{t('map.boostedOfferings', 'Boosted services')}</span>
             </div>
           </div>
-          <div style={{ height: '350px' }}>
+          <div style={{ height: '350px' }} className="relative">
             <MapContainer 
               center={[userLocation.lat, userLocation.lng]} 
               zoom={13} 
@@ -1334,6 +1433,13 @@ const DesktopTasksView = () => {
                 searchRadius={searchRadius}
               />
             </MapContainer>
+            
+            {/* Loading Overlay on Map */}
+            <MapLoadingOverlay 
+              isLoading={refreshing} 
+              radius={searchRadius} 
+              previousRadius={previousRadius}
+            />
           </div>
           
           {(filteredTasks.length > 0 || mapBoostedOfferings.length > 0) && (
