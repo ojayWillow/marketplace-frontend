@@ -21,7 +21,7 @@ import { TaskCard } from './components/TaskCard';
 import { OfferingCard } from './components/OfferingCard';
 import { MapMarkers } from './components/Map';
 import { LocationLoadingState, DataLoadingState, ErrorState } from './components/LoadingStates';
-import { LocationModal } from './components/LocationModal';
+import LocationModal from './components/LocationModal';
 import { UrgentJobsBanner, MatchingJobsBanner, MapLoadingOverlay } from './components/Banners';
 
 // Modular hooks
