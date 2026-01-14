@@ -8,13 +8,13 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-import { useAuthStore } from '../../../stores/authStore';
-import { useMatchingStore } from '../../../stores/matchingStore';
-import { CATEGORY_OPTIONS } from '../../../constants/categories';
-import CompactFilterBar from '../../../components/ui/CompactFilterBar';
-import { useIsMobile } from '../../../hooks/useIsMobile';
-import MobileTasksView from '../../../components/MobileTasksView';
-import QuickHelpIntroModal from '../../../components/QuickHelpIntroModal';
+import { useAuthStore } from '../../stores/authStore';
+import { useMatchingStore } from '../../stores/matchingStore';
+import { CATEGORY_OPTIONS } from '../../constants/categories';
+import CompactFilterBar from '../../components/ui/CompactFilterBar';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import MobileTasksView from '../../components/MobileTasksView';
+import QuickHelpIntroModal from '../../components/QuickHelpIntroModal';
 
 // Modular components
 import { TaskCard } from './components/TaskCard';
