@@ -201,7 +201,7 @@ const Profile = () => {
             onViewModeChange={setTaskViewMode}
             onStatusFilterChange={setTaskStatusFilter}
             onCancelTask={actions.handleCancelTask}
-            onConfirmTask={actions.handleConfirmTask}
+            onTaskConfirmed={fetchTasks}
             userId={user?.id}
           />
         )}
