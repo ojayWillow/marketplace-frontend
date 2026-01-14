@@ -102,6 +102,17 @@ export const getMyOfferings = async (): Promise<GetOfferingsResponse> => {
 };
 
 /**
+ * Get offerings by a specific user ID (public)
+ * Automatically includes current language for translation
+ */
+export const getOfferingsByUser = async (userId: number): Promise<GetOfferingsResponse> => {
+  const response = await apiClient.get(`/api/offerings/user/${userId}`, {
+    params: { lang: getCurrentLanguage() }
+  });
+  return response.data;
+};
+
+/**
  * Get a single offering by ID
  * Automatically includes current language for translation
  */
