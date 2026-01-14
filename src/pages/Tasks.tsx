@@ -45,6 +45,32 @@ const DEFAULT_FILTERS: CompactFilterValues = {
 };
 
 // =====================================================
+// MAP LOADING OVERLAY - Shows when data is refreshing
+// =====================================================
+const MapLoadingOverlay = ({ isLoading }: { isLoading: boolean }) => {
+  const { t } = useTranslation();
+  
+  if (!isLoading) return null;
+  
+  return (
+    <div 
+      className="absolute inset-0 z-[999] flex items-center justify-center pointer-events-none"
+      style={{ 
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(2px)'
+      }}
+    >
+      <div className="bg-white rounded-xl shadow-lg px-6 py-4 flex items-center gap-3">
+        <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full" />
+        <span className="font-medium text-gray-700">
+          {t('map.updating', 'Updating map...')}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
 // MAIN TASKS COMPONENT WITH MOBILE/DESKTOP SWITCH
 // =====================================================
 const Tasks = () => {
@@ -500,16 +526,9 @@ const DesktopTasksView = () => {
           <button onClick={() => setActiveTab('offerings')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             👋 {t('common.offerings', 'Offerings')} ({filteredOfferings.length})
           </button>
-          
-          {refreshing && (
-            <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
-              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-              <span>{t('tasks.updating', 'Updating...')}</span>
-            </div>
-          )}
         </div>
 
-        {/* MAP */}
+        {/* MAP - Now with loading overlay */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           {/* Map Legend */}
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
@@ -553,7 +572,9 @@ const DesktopTasksView = () => {
             </div>
           </div>
           
-          <div style={{ height: '350px' }}>
+          {/* Map container with loading overlay */}
+          <div className="relative" style={{ height: '350px' }}>
+            <MapLoadingOverlay isLoading={refreshing} />
             <MapContainer 
               center={[userLocation.lat, userLocation.lng]} 
               zoom={13} 
@@ -601,7 +622,7 @@ const DesktopTasksView = () => {
           )}
         </div>
 
-        {/* Jobs List - FIXED: Added grid-cols for multi-column layout */}
+        {/* Jobs List */}
         {(activeTab === 'all' || activeTab === 'jobs') && (
           <div className="mb-8">
             {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">💰 {t('tasks.availableJobs', 'Available Jobs')}</h2>}
@@ -628,7 +649,7 @@ const DesktopTasksView = () => {
           </div>
         )}
 
-        {/* Offerings List - FIXED: Added grid-cols for multi-column layout */}
+        {/* Offerings List */}
         {(activeTab === 'all' || activeTab === 'offerings') && (
           <div>
             {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">👋 {t('offerings.availableServices', 'Available Services')}</h2>}
