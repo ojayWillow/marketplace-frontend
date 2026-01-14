@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getTasks } from '../../../api/tasks';
 import { getOfferings, getBoostedOfferings, Offering } from '../../../api/offerings';
@@ -29,6 +29,15 @@ export interface UseTaskDataReturn {
   resetFetchFlag: () => void;
 }
 
+// Stable query key generator
+const getQueryKey = (
+  type: 'tasks' | 'offerings' | 'boosted',
+  lat: number,
+  lng: number,
+  radius: number,
+  category: string
+) => [type, lat.toFixed(4), lng.toFixed(4), radius, category];
+
 export const useTaskData = ({
   userLocation,
   locationGranted,
@@ -37,118 +46,87 @@ export const useTaskData = ({
 }: UseTaskDataParams): UseTaskDataReturn => {
   const { t } = useTranslation();
   
-  // Data state
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [offerings, setOfferings] = useState<Offering[]>([]);
-  const [boostedOfferings, setBoostedOfferings] = useState<Offering[]>([]);
+  // Radius 0 means "all of Latvia" - use large radius
+  const effectiveRadius = searchRadius === 0 ? 500 : searchRadius;
+  const selectedCategory = category !== 'all' ? category : undefined;
   
-  // Loading state
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Refs for fetch control
-  const hasFetchedRef = useRef(false);
-  const hasEverLoadedRef = useRef(false);
+  const requestParams = {
+    latitude: userLocation.lat,
+    longitude: userLocation.lng,
+    radius: effectiveRadius,
+    category: selectedCategory,
+  };
 
-  const resetFetchFlag = useCallback(() => {
-    hasFetchedRef.current = false;
-  }, []);
+  // Tasks query with caching
+  const tasksQuery = useQuery({
+    queryKey: getQueryKey('tasks', userLocation.lat, userLocation.lng, effectiveRadius, category),
+    queryFn: async () => {
+      const response = await getTasks({ ...requestParams, status: 'open' });
+      return response.tasks.map(task => ({
+        ...task,
+        icon: getCategoryIcon(task.category)
+      }));
+    },
+    enabled: locationGranted,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
-  const fetchData = useCallback(async (
-    forceRefresh = false, 
-    radiusOverride?: number, 
-    categoryOverride?: string
-  ) => {
-    if (hasFetchedRef.current && !forceRefresh) return;
-    
-    // Show initial loading only on first load, otherwise show refresh indicator
-    if (!hasEverLoadedRef.current) {
-      setInitialLoading(true);
-    } else {
-      setRefreshing(true);
-    }
-    setError(null);
-    
-    try {
-      const baseRadius = radiusOverride ?? searchRadius;
-      const selectedCategory = categoryOverride ?? category;
-      // Radius 0 means "all of Latvia" - use large radius
-      const effectiveRadius = baseRadius === 0 ? 500 : baseRadius;
-      
-      const requestParams = {
-        latitude: userLocation.lat,
-        longitude: userLocation.lng,
-        radius: effectiveRadius,
-        category: selectedCategory !== 'all' ? selectedCategory : undefined
-      };
+  // Offerings query with caching
+  const offeringsQuery = useQuery({
+    queryKey: getQueryKey('offerings', userLocation.lat, userLocation.lng, effectiveRadius, category),
+    queryFn: async () => {
+      const response = await getOfferings({ ...requestParams, status: 'active' });
+      return response.offerings || [];
+    },
+    enabled: locationGranted,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-      // Fetch all data in parallel for faster loading
-      const [tasksResult, offeringsResult, boostedResult] = await Promise.allSettled([
-        getTasks({ ...requestParams, status: 'open' }),
-        getOfferings({ ...requestParams, status: 'active' }),
-        getBoostedOfferings(requestParams)
-      ]);
+  // Boosted offerings query with caching
+  const boostedQuery = useQuery({
+    queryKey: getQueryKey('boosted', userLocation.lat, userLocation.lng, effectiveRadius, category),
+    queryFn: async () => {
+      const response = await getBoostedOfferings(requestParams);
+      return response.offerings || [];
+    },
+    enabled: locationGranted,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-      // Process tasks
-      if (tasksResult.status === 'fulfilled') {
-        const tasksWithIcons = tasksResult.value.tasks.map(task => ({
-          ...task,
-          icon: getCategoryIcon(task.category)
-        }));
-        setTasks(tasksWithIcons);
-      } else {
-        console.error('Failed to fetch tasks:', tasksResult.reason);
-        setTasks([]);
-      }
+  // Compute loading states
+  const initialLoading = tasksQuery.isLoading && !tasksQuery.data;
+  const refreshing = tasksQuery.isFetching && !!tasksQuery.data;
+  const hasEverLoaded = !!tasksQuery.data;
 
-      // Process offerings
-      if (offeringsResult.status === 'fulfilled') {
-        setOfferings(offeringsResult.value.offerings || []);
-      } else {
-        setOfferings([]);
-      }
+  // Force refresh function
+  const fetchData = async () => {
+    await Promise.all([
+      tasksQuery.refetch(),
+      offeringsQuery.refetch(),
+      boostedQuery.refetch(),
+    ]);
+  };
 
-      // Process boosted offerings
-      if (boostedResult.status === 'fulfilled') {
-        setBoostedOfferings(boostedResult.value.offerings || []);
-      } else {
-        setBoostedOfferings([]);
-      }
-
-      // Only show error if tasks failed (main content)
-      if (tasksResult.status === 'rejected') {
-        setError(t('tasks.errorLoad', 'Failed to load data. Please try again later.'));
-      }
-      
-      hasFetchedRef.current = true;
-      hasEverLoadedRef.current = true;
-    } catch {
-      setError(t('tasks.errorLoad', 'Failed to load data. Please try again later.'));
-    }
-    
-    setInitialLoading(false);
-    setRefreshing(false);
-  }, [userLocation.lat, userLocation.lng, searchRadius, category, t]);
-
-  // Fetch data when location is granted
-  useEffect(() => {
-    if (locationGranted) {
-      fetchData();
-    }
-  }, [locationGranted]);
+  // No-op for backward compatibility
+  const resetFetchFlag = () => {};
 
   return {
-    // Data
-    tasks,
-    offerings,
-    boostedOfferings,
+    // Data (default to empty arrays)
+    tasks: (tasksQuery.data || []) as Task[],
+    offerings: offeringsQuery.data || [],
+    boostedOfferings: boostedQuery.data || [],
     
     // Loading state
     initialLoading,
     refreshing,
-    error,
-    hasEverLoaded: hasEverLoadedRef.current,
+    error: tasksQuery.error ? t('tasks.errorLoad', 'Failed to load data. Please try again later.') : null,
+    hasEverLoaded,
     
     // Actions
     fetchData,
