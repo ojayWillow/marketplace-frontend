@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { useToastStore } from '../stores/toastStore';
+
+const MIN_REVIEW_LENGTH = 10;
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -25,6 +28,7 @@ export const ReviewModal = ({
   revieweeId,
   reviewType,
 }: ReviewModalProps) => {
+  const { t } = useTranslation();
   const toast = useToastStore();
   const [step, setStep] = useState<ModalStep>('review');
   const [loading, setLoading] = useState(false);
@@ -33,15 +37,29 @@ export const ReviewModal = ({
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewContent, setReviewContent] = useState('');
   const [hoverRating, setHoverRating] = useState(0);
+  const [touched, setTouched] = useState(false);
+
+  const contentLength = reviewContent.trim().length;
+  const charsRemaining = MIN_REVIEW_LENGTH - contentLength;
+  const isContentValid = contentLength >= MIN_REVIEW_LENGTH;
+  const showError = touched && !isContentValid;
 
   const handleSubmitReview = async () => {
+    // Mark as touched to show validation
+    setTouched(true);
+    
+    if (!isContentValid) {
+      // Don't close modal, just show error
+      return;
+    }
+
     try {
       setLoading(true);
       await apiClient.post(`/api/reviews/task/${taskId}`, {
         rating: reviewRating,
-        content: reviewContent
+        content: reviewContent.trim()
       });
-      toast.success('Review submitted! Thank you for your feedback.');
+      toast.success(t('reviews.submitSuccess'));
       setStep('success');
       // Auto close after showing success
       setTimeout(() => {
@@ -49,7 +67,7 @@ export const ReviewModal = ({
       }, 1500);
     } catch (error: any) {
       console.error('Error submitting review:', error);
-      toast.error(error?.response?.data?.error || 'Failed to submit review');
+      toast.error(error?.response?.data?.error || t('reviews.submitError'));
     } finally {
       setLoading(false);
     }
@@ -61,6 +79,7 @@ export const ReviewModal = ({
     setReviewRating(5);
     setReviewContent('');
     setHoverRating(0);
+    setTouched(false);
     if (submitted) {
       onReviewSubmitted();
     }
@@ -105,14 +124,14 @@ export const ReviewModal = ({
     if (reviewType === 'creator') {
       return {
         emoji: '⭐',
-        title: `Rate ${revieweeName}`,
+        title: t('reviews.leaveReviewFor', { name: revieweeName }),
         subtitle: 'How was your experience with this job poster?',
         gradient: 'from-yellow-400 to-orange-500'
       };
     }
     return {
       emoji: '⭐',
-      title: `Rate ${revieweeName}`,
+      title: t('reviews.leaveReviewFor', { name: revieweeName }),
       subtitle: 'How was your experience with this helper?',
       gradient: 'from-yellow-400 to-yellow-500'
     };
@@ -152,9 +171,39 @@ export const ReviewModal = ({
                 <textarea
                   value={reviewContent}
                   onChange={(e) => setReviewContent(e.target.value)}
-                  placeholder="Share your experience (optional)..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px] resize-none"
+                  onBlur={() => setTouched(true)}
+                  placeholder={t('reviews.placeholder')}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px] resize-none ${
+                    showError ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  }`}
                 />
+                <div className="flex justify-between items-center mt-2">
+                  <div>
+                    {showError && contentLength === 0 ? (
+                      <p className="text-red-500 text-sm">
+                        {t('reviews.contentRequired')}
+                      </p>
+                    ) : showError ? (
+                      <p className="text-red-500 text-sm">
+                        {t('reviews.charsRemaining', { count: charsRemaining })}
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 text-sm">
+                        {t('reviews.helpOthers')}
+                      </p>
+                    )}
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    isContentValid 
+                      ? 'text-green-600' 
+                      : contentLength > 0 
+                        ? 'text-yellow-600' 
+                        : 'text-gray-400'
+                  }`}>
+                    {contentLength}/{MIN_REVIEW_LENGTH}
+                    {isContentValid && ' ✓'}
+                  </span>
+                </div>
               </div>
               
               <div className="flex gap-3">
@@ -163,14 +212,14 @@ export const ReviewModal = ({
                   disabled={loading}
                   className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
                 >
-                  Later
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitReview}
-                  disabled={loading}
-                  className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-medium transition-colors"
+                  disabled={loading || !isContentValid}
+                  className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
                 >
-                  {loading ? 'Submitting...' : '⭐ Submit Review'}
+                  {loading ? t('reviews.submitting') : `⭐ ${t('reviews.submit')}`}
                 </button>
               </div>
             </div>
