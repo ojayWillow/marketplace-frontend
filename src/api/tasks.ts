@@ -158,6 +158,17 @@ export const getCreatedTasks = async (): Promise<GetTasksResponse> => {
 };
 
 /**
+ * Get tasks by a specific user ID (public - only open tasks)
+ * Automatically includes current language for translation
+ */
+export const getTasksByUser = async (userId: number): Promise<GetTasksResponse> => {
+  const response = await apiClient.get(`/api/tasks/user/${userId}`, {
+    params: { lang: getCurrentLanguage() }
+  });
+  return response.data;
+};
+
+/**
  * Get a single task by ID
  * Automatically includes current language for translation
  */
