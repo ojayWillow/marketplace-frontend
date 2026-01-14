@@ -35,6 +35,14 @@ export const listingsApi = {
     return response.data
   },
 
+  /**
+   * Get listings by a specific user ID (public - only active listings)
+   */
+  getByUser: async (userId: number): Promise<MyListingsResponse> => {
+    const response = await apiClient.get(`/api/listings/user/${userId}`)
+    return response.data
+  },
+
   create: async (data: CreateListingData): Promise<Listing> => {
     const response = await apiClient.post('/api/listings', data)
     return response.data
