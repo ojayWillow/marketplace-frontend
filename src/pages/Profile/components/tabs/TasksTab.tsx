@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Task, TaskApplication } from '../../../../api/tasks';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
 import { TabLoadingSpinner } from '../LoadingState';
 import { ConfirmTaskModal } from '../../../../components/ConfirmTaskModal';
+import { ReviewModal } from '../../../../components/ReviewModal';
+import apiClient from '../../../../api/client';
 import type { TaskViewMode, TaskStatusFilter, TaskMatchCounts } from '../../types';
+
+interface CanReviewStatus {
+  taskId: number;
+  canReview: boolean;
+  revieweeName?: string;
+  revieweeId?: number;
+}
 
 interface TasksTabProps {
   createdTasks: Task[];
@@ -42,12 +51,58 @@ export const TasksTab = ({
   // Confirmation modal state
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
+  
+  // Review modal state (for workers reviewing job creators)
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [taskToReview, setTaskToReview] = useState<Task | null>(null);
+  
+  // Track which completed tasks can be reviewed
+  const [canReviewStatuses, setCanReviewStatuses] = useState<Map<number, CanReviewStatus>>(new Map());
 
   // Counts
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
     return sum + (task.pending_applications_count || 0);
   }, 0);
   const tasksWithMatches = Object.entries(taskMatchCounts).filter(([_, count]) => count > 0).length;
+
+  // Count pending reviews for "Jobs I'm Doing"
+  const pendingReviewsCount = Array.from(canReviewStatuses.values()).filter(s => s.canReview).length;
+
+  // Check review status for completed tasks in "Jobs I'm Doing"
+  useEffect(() => {
+    const checkReviewStatuses = async () => {
+      const completedJobs = myApplications
+        .filter(app => app.status === 'accepted' && app.task?.status === 'completed')
+        .map(app => app.task!)
+        .filter(Boolean);
+
+      const newStatuses = new Map<number, CanReviewStatus>();
+      
+      for (const task of completedJobs) {
+        try {
+          const response = await apiClient.get(`/api/reviews/task/${task.id}/can-review`);
+          newStatuses.set(task.id, {
+            taskId: task.id,
+            canReview: response.data.can_review,
+            revieweeName: response.data.reviewee?.username || task.creator_name,
+            revieweeId: response.data.reviewee?.id || task.creator_id,
+          });
+        } catch (error) {
+          console.error(`Error checking review status for task ${task.id}:`, error);
+          newStatuses.set(task.id, {
+            taskId: task.id,
+            canReview: false,
+          });
+        }
+      }
+      
+      setCanReviewStatuses(newStatuses);
+    };
+
+    if (!viewOnly && myApplications.length > 0) {
+      checkReviewStatuses();
+    }
+  }, [myApplications, viewOnly]);
 
   // Get tasks for current view mode
   const getDisplayTasks = () => {
@@ -97,9 +152,34 @@ export const TasksTab = ({
     onTaskConfirmed?.();
   };
 
+  const handleReviewClick = (task: Task) => {
+    setTaskToReview(task);
+    setReviewModalOpen(true);
+  };
+
+  const handleReviewModalClose = () => {
+    setReviewModalOpen(false);
+    setTaskToReview(null);
+  };
+
+  const handleReviewSubmitted = () => {
+    // Update the status to mark as reviewed
+    if (taskToReview) {
+      setCanReviewStatuses(prev => {
+        const newMap = new Map(prev);
+        newMap.set(taskToReview.id, {
+          ...prev.get(taskToReview.id)!,
+          canReview: false,
+        });
+        return newMap;
+      });
+    }
+    handleReviewModalClose();
+  };
+
   return (
     <>
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal (for job creators) */}
       {taskToConfirm && (
         <ConfirmTaskModal
           isOpen={confirmModalOpen}
@@ -110,6 +190,20 @@ export const TasksTab = ({
           workerName={taskToConfirm.assigned_to_name || 'the helper'}
           workerId={taskToConfirm.assigned_to_id || 0}
           budget={taskToConfirm.budget}
+        />
+      )}
+
+      {/* Review Modal (for workers reviewing job creators) */}
+      {taskToReview && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={handleReviewModalClose}
+          onReviewSubmitted={handleReviewSubmitted}
+          taskId={taskToReview.id}
+          taskTitle={taskToReview.title}
+          revieweeName={canReviewStatuses.get(taskToReview.id)?.revieweeName || taskToReview.creator_name || 'Job Creator'}
+          revieweeId={canReviewStatuses.get(taskToReview.id)?.revieweeId || taskToReview.creator_id}
+          reviewType="creator"
         />
       )}
 
@@ -146,11 +240,16 @@ export const TasksTab = ({
             </button>
             <button
               onClick={() => onViewModeChange('my-jobs')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
                 taskViewMode === 'my-jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
               }`}
             >
               Jobs I'm Doing
+              {pendingReviewsCount > 0 && (
+                <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-yellow-500 text-white font-bold">
+                  ⭐{pendingReviewsCount}
+                </span>
+              )}
             </button>
           </div>
         )}
@@ -312,13 +411,42 @@ export const TasksTab = ({
                 if (taskStatusFilter === 'active' && !['assigned', 'in_progress', 'pending_confirmation'].includes(task.status)) return null;
                 if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
                 
+                // Check if this task needs a review
+                const reviewStatus = canReviewStatuses.get(task.id);
+                const needsReview = task.status === 'completed' && reviewStatus?.canReview;
+                
                 return (
-                  <div key={application.id} className="p-4 border border-green-200 rounded-lg bg-green-50/50">
-                    <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
-                      <span>🎉</span>
-                      <span className="font-medium">
-                        {task.status === 'completed' ? 'Completed!' : "You're assigned"}
-                      </span>
+                  <div 
+                    key={application.id} 
+                    className={`p-4 border rounded-lg ${
+                      needsReview 
+                        ? 'border-yellow-300 bg-yellow-50' 
+                        : 'border-green-200 bg-green-50/50'
+                    }`}
+                  >
+                    {/* Review prompt banner */}
+                    {needsReview && (
+                      <button
+                        onClick={() => handleReviewClick(task)}
+                        className="w-full flex items-center justify-between bg-yellow-500 text-white p-2.5 rounded-lg mb-3 text-sm hover:bg-yellow-600 transition-colors"
+                      >
+                        <span>⭐ Rate your experience with {task.creator_name || 'the job poster'}</span>
+                        <span className="font-medium">Leave Review →</span>
+                      </button>
+                    )}
+                    
+                    <div className="flex items-center gap-2 text-sm mb-2">
+                      {task.status === 'completed' ? (
+                        <div className={`flex items-center gap-2 ${needsReview ? 'text-yellow-700' : 'text-green-700'}`}>
+                          <span>🎉</span>
+                          <span className="font-medium">Completed!</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-green-700">
+                          <span>🎉</span>
+                          <span className="font-medium">You're assigned</span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-start justify-between gap-3">
@@ -338,12 +466,22 @@ export const TasksTab = ({
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Posted by {task.creator_name || 'Unknown'}</p>
                       </div>
-                      <Link
-                        to={`/tasks/${task.id}`}
-                        className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      >
-                        View
-                      </Link>
+                      <div className="flex flex-col gap-1">
+                        {needsReview && (
+                          <button
+                            onClick={() => handleReviewClick(task)}
+                            className="px-2.5 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                          >
+                            ⭐ Review
+                          </button>
+                        )}
+                        <Link
+                          to={`/tasks/${task.id}`}
+                          className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center"
+                        >
+                          View
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
