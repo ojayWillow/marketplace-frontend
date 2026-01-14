@@ -1,0 +1,67 @@
+import type { ActiveTab } from '../../types';
+
+interface ProfileTabsProps {
+  activeTab: ActiveTab;
+  onTabChange: (tab: ActiveTab) => void;
+  counts: {
+    tasks: number;
+    offerings: number;
+    listings: number;
+    reviews: number;
+    pendingNotifications: number;
+  };
+  hasContent: {
+    tasks: boolean;
+    offerings: boolean;
+    listings: boolean;
+    reviews: boolean;
+  };
+}
+
+export const ProfileTabs = ({
+  activeTab,
+  onTabChange,
+  counts,
+  hasContent,
+}: ProfileTabsProps) => {
+  const tabClass = (tab: ActiveTab) =>
+    `px-4 py-2 rounded-md text-sm font-medium transition-all ${
+      activeTab === tab
+        ? 'bg-white text-gray-900 shadow-sm'
+        : 'text-gray-600 hover:text-gray-900'
+    }`;
+
+  return (
+    <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+      <button onClick={() => onTabChange('about')} className={tabClass('about')}>
+        About
+      </button>
+      
+      <button
+        onClick={() => onTabChange('tasks')}
+        className={`${tabClass('tasks')} relative`}
+      >
+        Jobs {hasContent.tasks && <span className="text-gray-400">({counts.tasks})</span>}
+        {counts.pendingNotifications > 0 && (
+          <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
+            {counts.pendingNotifications}
+          </span>
+        )}
+      </button>
+      
+      <button onClick={() => onTabChange('offerings')} className={tabClass('offerings')}>
+        Services {hasContent.offerings && <span className="text-gray-400">({counts.offerings})</span>}
+      </button>
+      
+      <button onClick={() => onTabChange('listings')} className={tabClass('listings')}>
+        Listings {hasContent.listings && <span className="text-gray-400">({counts.listings})</span>}
+      </button>
+      
+      {hasContent.reviews && (
+        <button onClick={() => onTabChange('reviews')} className={tabClass('reviews')}>
+          Reviews ({counts.reviews})
+        </button>
+      )}
+    </div>
+  );
+};
