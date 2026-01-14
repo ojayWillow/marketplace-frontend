@@ -1,0 +1,222 @@
+import { useEffect } from 'react';
+import {
+  ProfileHeader,
+  AvatarPicker,
+  ProfileTabs,
+  LoadingState,
+  ErrorState,
+} from './components';
+import {
+  AboutTab,
+  ListingsTab,
+  OfferingsTab,
+  TasksTab,
+  ReviewsTab,
+} from './components/tabs';
+import {
+  useProfileData,
+  useProfileTabs,
+  useAvatarPicker,
+  useProfileActions,
+} from './hooks';
+
+const Profile = () => {
+  // Data management
+  const {
+    profile,
+    reviews,
+    setReviews,
+    myListings,
+    setMyListings,
+    myOfferings,
+    setMyOfferings,
+    createdTasks,
+    myApplications,
+    taskMatchCounts,
+    user,
+    loading,
+    listingsLoading,
+    offeringsLoading,
+    tasksLoading,
+    applicationsLoading,
+    editing,
+    setEditing,
+    saving,
+    formData,
+    setFormData,
+    handleSave,
+    handleChange,
+    fetchTasks,
+    fetchApplications,
+  } = useProfileData();
+
+  // Tab state management
+  const {
+    activeTab,
+    taskViewMode,
+    taskStatusFilter,
+    setActiveTab,
+    setTaskViewMode,
+    setTaskStatusFilter,
+  } = useProfileTabs();
+
+  // Avatar picker
+  const avatarPicker = useAvatarPicker({
+    initialSeed: profile?.username || '',
+    setFormData,
+  });
+
+  // Update avatar seed when profile loads
+  useEffect(() => {
+    if (profile?.username) {
+      avatarPicker.setAvatarSeed(profile.username);
+    }
+  }, [profile?.username]);
+
+  // Actions
+  const actions = useProfileActions({
+    setMyListings,
+    setMyOfferings,
+    setReviews,
+    fetchTasks,
+    fetchApplications,
+  });
+
+  // Loading state
+  if (loading) {
+    return <LoadingState />;
+  }
+
+  // Error state
+  if (!profile) {
+    return <ErrorState />;
+  }
+
+  // Calculate counts and stats
+  const myTasksCount = createdTasks.length;
+  const myJobsCount = myApplications.filter(app => app.status === 'accepted').length;
+  const pendingAppsCount = myApplications.filter(app => app.status === 'pending').length;
+  const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
+    return sum + (task.pending_applications_count || 0);
+  }, 0);
+
+  const tasksCompletedAsWorker = myApplications.filter(app => 
+    app.status === 'accepted' && app.task?.status === 'completed'
+  ).length;
+  const tasksCompletedAsCreator = createdTasks.filter(t => t.status === 'completed').length;
+  const totalTasksCompleted = tasksCompletedAsWorker + tasksCompletedAsCreator;
+
+  // Content checks
+  const hasListings = myListings.length > 0;
+  const hasOfferings = myOfferings.length > 0;
+  const hasTasks = createdTasks.length > 0 || myApplications.length > 0;
+  const hasReviews = reviews.length > 0;
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Profile Header */}
+        <ProfileHeader
+          profile={profile}
+          formData={formData}
+          editing={editing}
+          saving={saving}
+          totalTasksCompleted={totalTasksCompleted}
+          onEdit={() => setEditing(true)}
+          onCancel={() => setEditing(false)}
+          onSave={handleSave}
+          onChangeAvatar={() => avatarPicker.setShowAvatarPicker(true)}
+        />
+
+        {/* Avatar Picker Modal */}
+        <AvatarPicker
+          isOpen={avatarPicker.showAvatarPicker}
+          onClose={() => avatarPicker.setShowAvatarPicker(false)}
+          selectedStyle={avatarPicker.selectedAvatarStyle}
+          onStyleChange={avatarPicker.setSelectedAvatarStyle}
+          seed={avatarPicker.avatarSeed}
+          onSeedChange={avatarPicker.setAvatarSeed}
+          onRandomize={avatarPicker.handleRandomizeSeed}
+          onSelect={avatarPicker.handleSelectGeneratedAvatar}
+          uploading={avatarPicker.uploadingAvatar}
+          onFileUpload={avatarPicker.handleFileUpload}
+          onTriggerFileInput={avatarPicker.triggerFileInput}
+          fileInputRef={avatarPicker.fileInputRef}
+        />
+
+        {/* Tabs */}
+        <ProfileTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          counts={{
+            tasks: myTasksCount + myJobsCount,
+            offerings: myOfferings.length,
+            listings: myListings.length,
+            reviews: reviews.length,
+            pendingNotifications: totalPendingApplicationsOnMyTasks + pendingAppsCount,
+          }}
+          hasContent={{
+            tasks: hasTasks,
+            offerings: hasOfferings,
+            listings: hasListings,
+            reviews: hasReviews,
+          }}
+        />
+
+        {/* Tab Content */}
+        {activeTab === 'about' && (
+          <AboutTab
+            profile={profile}
+            editing={editing}
+            formData={formData}
+            onChange={handleChange}
+          />
+        )}
+
+        {activeTab === 'listings' && (
+          <ListingsTab
+            listings={myListings}
+            loading={listingsLoading}
+            onDelete={actions.handleDeleteListing}
+          />
+        )}
+
+        {activeTab === 'offerings' && (
+          <OfferingsTab
+            offerings={myOfferings}
+            loading={offeringsLoading}
+            onDelete={actions.handleDeleteOffering}
+          />
+        )}
+
+        {activeTab === 'tasks' && (
+          <TasksTab
+            createdTasks={createdTasks}
+            myApplications={myApplications}
+            taskMatchCounts={taskMatchCounts}
+            tasksLoading={tasksLoading}
+            applicationsLoading={applicationsLoading}
+            taskViewMode={taskViewMode}
+            taskStatusFilter={taskStatusFilter}
+            onViewModeChange={setTaskViewMode}
+            onStatusFilterChange={setTaskStatusFilter}
+            onCancelTask={actions.handleCancelTask}
+            onConfirmTask={actions.handleConfirmTask}
+            userId={user?.id}
+          />
+        )}
+
+        {activeTab === 'reviews' && (
+          <ReviewsTab
+            reviews={reviews}
+            currentUserId={user?.id}
+            onDeleteReview={actions.handleDeleteReview}
+            setReviews={setReviews}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Profile;
