@@ -18,11 +18,13 @@ export const usePublicProfileData = (userId: number | undefined) => {
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   
-  // Loading states - start with true so spinners show immediately
+  // Single loading state for everything
   const [loading, setLoading] = useState(true);
-  const [listingsLoading, setListingsLoading] = useState(true);
-  const [offeringsLoading, setOfferingsLoading] = useState(true);
-  const [tasksLoading, setTasksLoading] = useState(true);
+  
+  // Individual loading states (for tab spinners if needed)
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [offeringsLoading, setOfferingsLoading] = useState(false);
+  const [tasksLoading, setTasksLoading] = useState(false);
   
   // Error state
   const [error, setError] = useState<string | null>(null);
@@ -30,80 +32,43 @@ export const usePublicProfileData = (userId: number | undefined) => {
   // Check if viewing own profile
   const isOwnProfile = currentUser?.id === userId;
 
-  // Fetch profile
-  const fetchProfile = async () => {
+  // Fetch all data in parallel
+  const fetchAllData = async () => {
     if (!userId) return;
     
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-      const response = await apiClient.get(`/api/auth/users/${userId}`);
-      setProfile(response.data);
+      // Fetch everything in parallel
+      const [profileRes, reviewsRes, offeringsRes, tasksRes, listingsRes] = await Promise.all([
+        apiClient.get(`/api/auth/users/${userId}`).catch(err => ({ data: null, error: err })),
+        apiClient.get(`/api/auth/users/${userId}/reviews`).catch(() => ({ data: { reviews: [] } })),
+        getOfferingsByUser(userId).catch(() => ({ offerings: [] })),
+        getTasksByUser(userId).catch(() => ({ tasks: [] })),
+        listingsApi.getByUser(userId).catch(() => ({ listings: [] })),
+      ]);
       
-      // Fetch reviews
-      try {
-        const reviewsResponse = await apiClient.get(`/api/auth/users/${userId}/reviews`);
-        setReviews(reviewsResponse.data.reviews || []);
-      } catch (err) {
-        console.error('Error fetching reviews:', err);
-        setReviews([]);
+      // Check if profile fetch failed
+      if (!profileRes.data || (profileRes as any).error) {
+        const err = (profileRes as any).error;
+        setError(err?.response?.data?.error || 'User not found');
+        setLoading(false);
+        return;
       }
+      
+      // Set all data at once
+      setProfile(profileRes.data);
+      setReviews(reviewsRes.data?.reviews || []);
+      setOfferings((offeringsRes.offerings || []).filter((o: Offering) => o.status === 'active'));
+      setTasks((tasksRes.tasks || []).filter((t: Task) => t.status === 'open'));
+      setListings((listingsRes.listings || []).filter((l: Listing) => l.status === 'active'));
+      
     } catch (err: any) {
-      console.error('Error fetching profile:', err);
-      setError(err?.response?.data?.error || 'User not found');
+      console.error('Error fetching profile data:', err);
+      setError(err?.response?.data?.error || 'Failed to load profile');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fetch user's listings
-  const fetchListings = async () => {
-    if (!userId) return;
-    
-    try {
-      setListingsLoading(true);
-      const response = await listingsApi.getByUser(userId);
-      // Filter to only active listings for public view
-      setListings((response.listings || []).filter((l: Listing) => l.status === 'active'));
-    } catch (err) {
-      console.error('Error fetching listings:', err);
-      setListings([]);
-    } finally {
-      setListingsLoading(false);
-    }
-  };
-
-  // Fetch user's offerings
-  const fetchOfferings = async () => {
-    if (!userId) return;
-    
-    try {
-      setOfferingsLoading(true);
-      const response = await getOfferingsByUser(userId);
-      // Filter to only active offerings for public view
-      setOfferings((response.offerings || []).filter((o: Offering) => o.status === 'active'));
-    } catch (err) {
-      console.error('Error fetching offerings:', err);
-      setOfferings([]);
-    } finally {
-      setOfferingsLoading(false);
-    }
-  };
-
-  // Fetch user's tasks
-  const fetchTasks = async () => {
-    if (!userId) return;
-    
-    try {
-      setTasksLoading(true);
-      const response = await getTasksByUser(userId);
-      // Filter to only open tasks for public view
-      setTasks((response.tasks || []).filter((t: Task) => t.status === 'open'));
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setTasks([]);
-    } finally {
-      setTasksLoading(false);
     }
   };
 
@@ -117,10 +82,7 @@ export const usePublicProfileData = (userId: number | undefined) => {
       return;
     }
     
-    fetchProfile();
-    fetchListings();
-    fetchOfferings();
-    fetchTasks();
+    fetchAllData();
   }, [userId, isOwnProfile]);
 
   return {
