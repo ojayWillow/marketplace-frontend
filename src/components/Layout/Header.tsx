@@ -10,6 +10,7 @@ interface NotificationCounts {
   unreadMessages: number;
   pendingApplications: number;
   pendingConfirmation: number;
+  acceptedApplications: number; // NEW: For workers - their application was accepted
 }
 
 export default function Header() {
@@ -22,7 +23,8 @@ export default function Header() {
   const [notifications, setNotifications] = useState<NotificationCounts>({
     unreadMessages: 0,
     pendingApplications: 0,
-    pendingConfirmation: 0
+    pendingConfirmation: 0,
+    acceptedApplications: 0
   })
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
@@ -41,10 +43,21 @@ export default function Header() {
       const pendingApplications = taskNotificationsResponse.data.pending_applications || 0;
       const pendingConfirmation = taskNotificationsResponse.data.pending_confirmation || 0;
       
+      // Fetch real notifications (for accepted applications - worker side)
+      let acceptedApplications = 0;
+      try {
+        const notificationsResponse = await apiClient.get('/api/notifications/unread-count');
+        acceptedApplications = notificationsResponse.data.accepted_applications || 0;
+      } catch (e) {
+        // Notifications API might not be available, that's ok
+        console.log('Notifications API not available');
+      }
+      
       setNotifications({
         unreadMessages,
         pendingApplications,
-        pendingConfirmation
+        pendingConfirmation,
+        acceptedApplications
       });
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -87,7 +100,7 @@ export default function Header() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
-  const totalNotifications = notifications.unreadMessages + notifications.pendingApplications + notifications.pendingConfirmation;
+  const totalNotifications = notifications.unreadMessages + notifications.pendingApplications + notifications.pendingConfirmation + notifications.acceptedApplications;
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
@@ -202,6 +215,29 @@ export default function Header() {
                         </div>
                       ) : (
                         <div className="max-h-80 overflow-y-auto">
+                          {/* Accepted Applications - FOR WORKERS */}
+                          {notifications.acceptedApplications > 0 && (
+                            <Link
+                              to="/profile?tab=tasks&view=my-jobs"
+                              onClick={() => setNotificationDropdownOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors"
+                              role="menuitem"
+                            >
+                              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600" aria-hidden="true">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">
+                                  🎉 You got assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!
+                                </p>
+                                <p className="text-xs text-gray-500">Your application was accepted</p>
+                              </div>
+                              <span className="w-2 h-2 bg-purple-500 rounded-full" aria-hidden="true"></span>
+                            </Link>
+                          )}
+                          
                           {/* Unread Messages */}
                           {notifications.unreadMessages > 0 && (
                             <Link
@@ -386,9 +422,9 @@ export default function Header() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                           </svg>
                           My Tasks
-                          {(notifications.pendingApplications + notifications.pendingConfirmation) > 0 && (
+                          {(notifications.pendingApplications + notifications.pendingConfirmation + notifications.acceptedApplications) > 0 && (
                             <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-600 rounded-full">
-                              {notifications.pendingApplications + notifications.pendingConfirmation}
+                              {notifications.pendingApplications + notifications.pendingConfirmation + notifications.acceptedApplications}
                             </span>
                           )}
                         </Link>
@@ -603,6 +639,9 @@ export default function Header() {
                           <span aria-hidden="true">🔔</span> You have {totalNotifications} notification{totalNotifications !== 1 ? 's' : ''}
                         </p>
                         <div className="mt-1 text-xs text-blue-600 space-y-1">
+                          {notifications.acceptedApplications > 0 && (
+                            <p>• 🎉 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
+                          )}
                           {notifications.unreadMessages > 0 && (
                             <p>• {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
                           )}
