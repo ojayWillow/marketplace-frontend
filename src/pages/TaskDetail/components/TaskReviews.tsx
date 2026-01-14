@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../../api/client';
 import { useToastStore } from '../../../stores/toastStore';
 import { Review, CanReviewResponse } from '../types';
+
+const MIN_REVIEW_LENGTH = 10;
 
 interface TaskReviewsProps {
   taskId: number;
@@ -17,30 +20,45 @@ export const TaskReviews = ({
   canReview,
   onReviewSubmitted,
 }: TaskReviewsProps) => {
+  const { t } = useTranslation();
   const toast = useToastStore();
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewContent, setReviewContent] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const [touched, setTouched] = useState(false);
+
+  const contentLength = reviewContent.trim().length;
+  const isContentValid = contentLength >= MIN_REVIEW_LENGTH;
+  const showError = touched && !isContentValid;
 
   const handleSubmitReview = async () => {
     if (!canReview?.can_review) return;
+    
+    // Mark as touched to show validation
+    setTouched(true);
+    
+    if (!isContentValid) {
+      toast.error(t('reviews.contentRequired'));
+      return;
+    }
 
     try {
       setReviewLoading(true);
       await apiClient.post(`/api/reviews/task/${taskId}`, {
         rating: reviewRating,
-        content: reviewContent
+        content: reviewContent.trim()
       });
-      toast.success('Review submitted successfully!');
+      toast.success(t('reviews.submitSuccess'));
       setShowReviewForm(false);
       setReviewContent('');
       setReviewRating(5);
+      setTouched(false);
       onReviewSubmitted();
     } catch (error: any) {
       console.error('Error submitting review:', error);
-      toast.error(error?.response?.data?.error || 'Failed to submit review');
+      toast.error(error?.response?.data?.error || t('reviews.submitError'));
     } finally {
       setReviewLoading(false);
     }
@@ -74,7 +92,7 @@ export const TaskReviews = ({
   return (
     <div className="mt-6 bg-white rounded-xl shadow-md p-6">
       <h2 className="font-semibold text-gray-900 text-lg mb-4 flex items-center gap-2">
-        ⭐ Reviews
+        ⭐ {t('reviews.title')}
         {reviews.length > 0 && (
           <span className="text-sm font-normal text-gray-500">({reviews.length})</span>
         )}
@@ -88,47 +106,73 @@ export const TaskReviews = ({
               className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center hover:bg-yellow-100 transition-colors"
             >
               <span className="font-medium text-yellow-700">
-                ⭐ Leave a review for {canReview.reviewee?.username}
+                ⭐ {t('reviews.leaveReviewFor', { name: canReview.reviewee?.username })}
               </span>
             </button>
           ) : (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-3">
-                Review for {canReview.reviewee?.username}
+                {t('reviews.reviewFor', { name: canReview.reviewee?.username })}
               </h3>
               
               <div className="mb-3">
-                <label className="block text-sm text-gray-600 mb-1">Rating</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('reviews.rating')}</label>
                 {renderStars(reviewRating, true)}
               </div>
 
               <div className="mb-3">
-                <label className="block text-sm text-gray-600 mb-1">Comment (optional)</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  {t('reviews.comment')} <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   value={reviewContent}
                   onChange={(e) => setReviewContent(e.target.value)}
-                  placeholder="Share your experience..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[80px]"
+                  onBlur={() => setTouched(true)}
+                  placeholder={t('reviews.placeholder')}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px] ${
+                    showError ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  }`}
                 />
+                <div className="flex justify-between items-center mt-1">
+                  {showError ? (
+                    <p className="text-red-500 text-sm">
+                      {t('reviews.minChars', { count: MIN_REVIEW_LENGTH })}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 text-sm">
+                      {t('reviews.helpOthers')}
+                    </p>
+                  )}
+                  <span className={`text-sm ${
+                    contentLength >= MIN_REVIEW_LENGTH 
+                      ? 'text-green-600' 
+                      : contentLength > 0 
+                        ? 'text-yellow-600' 
+                        : 'text-gray-400'
+                  }`}>
+                    {contentLength}/{MIN_REVIEW_LENGTH}
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-2">
                 <button
                   onClick={handleSubmitReview}
-                  disabled={reviewLoading}
-                  className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 font-medium"
+                  disabled={reviewLoading || !isContentValid}
+                  className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
                 >
-                  {reviewLoading ? 'Submitting...' : 'Submit Review'}
+                  {reviewLoading ? t('reviews.submitting') : t('reviews.submit')}
                 </button>
                 <button
                   onClick={() => {
                     setShowReviewForm(false);
                     setReviewContent('');
                     setReviewRating(5);
+                    setTouched(false);
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -139,7 +183,7 @@ export const TaskReviews = ({
       {canReview && !canReview.can_review && canReview.existing_review && (
         <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
           <p className="text-green-700 flex items-center gap-2 text-sm">
-            <span>✅</span> You've already reviewed this task
+            <span>✅</span> {t('reviews.alreadyReviewed')}
           </p>
         </div>
       )}
@@ -147,7 +191,7 @@ export const TaskReviews = ({
       {reviews.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <span className="text-4xl mb-2 block">💬</span>
-          <p className="text-gray-500">No reviews yet</p>
+          <p className="text-gray-500">{t('reviews.noReviews')}</p>
         </div>
       ) : (
         <div className="space-y-3">
