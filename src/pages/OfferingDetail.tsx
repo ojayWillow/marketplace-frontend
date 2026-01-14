@@ -88,10 +88,10 @@ const OfferingDetail = () => {
     try {
       setContacting(true);
       // Create or get existing conversation with the offering creator
+      // Backend expects: user_id, message (optional), task_id (optional)
       const response = await apiClient.post('/api/messages/conversations', {
-        recipient_id: offering.creator_id,
-        offering_id: offering.id,
-        initial_message: `Hi! I'm interested in your offering: "${offering.title}"`
+        user_id: offering.creator_id,
+        message: `Hi! I'm interested in your offering: "${offering.title}"`
       });
       
       // Navigate to the conversation
