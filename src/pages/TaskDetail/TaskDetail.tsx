@@ -272,13 +272,14 @@ const TaskDetail = () => {
                 </div>
               </div>
               
+              {/* Header button: View Profile for visitors */}
               {!isCreator && task.status === 'open' && (
-                <button
-                  onClick={() => setShowApplicationForm(true)}
-                  className="bg-blue-500 text-white px-6 py-2.5 rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                <Link
+                  to={`/users/${task.creator_id}`}
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
-                  ✓ Apply Now
-                </button>
+                  👤 View Profile
+                </Link>
               )}
               {isCreator && canEdit && (
                 <Link

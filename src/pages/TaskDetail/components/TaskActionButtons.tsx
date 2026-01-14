@@ -28,20 +28,20 @@ export const TaskActionButtons = ({
   onDispute,
   onCancel,
 }: TaskActionButtonsProps) => {
+  const canApply = isAuthenticated && !isCreator && task.status === 'open';
   const canMarkDone = isAssigned && (task.status === 'assigned' || task.status === 'in_progress');
   const canEdit = isCreator && task.status === 'open';
-  const isVisitor = !isCreator && task.status === 'open';
 
   return (
     <div className="mt-8 flex gap-4">
-      {/* Visitor View - Just View Profile (Apply button is already in header) */}
-      {isVisitor && !showApplicationForm && (
-        <Link
-          to={`/users/${task.creator_id}`}
-          className="flex-1 py-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
+      {/* Visitor View - Apply button at the bottom */}
+      {canApply && !showApplicationForm && (
+        <button
+          onClick={onShowApplicationForm}
+          className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
         >
-          👤 View Profile
-        </Link>
+          ✓ Apply for This Job
+        </button>
       )}
       
       {/* Owner View */}
