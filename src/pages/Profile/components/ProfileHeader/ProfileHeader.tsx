@@ -8,10 +8,13 @@ interface ProfileHeaderProps {
   editing: boolean;
   saving: boolean;
   totalTasksCompleted: number;
+  viewOnly?: boolean;
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
   onChangeAvatar: () => void;
+  onMessage?: () => void;
+  messageLoading?: boolean;
 }
 
 export const ProfileHeader = ({
@@ -20,10 +23,13 @@ export const ProfileHeader = ({
   editing,
   saving,
   totalTasksCompleted,
+  viewOnly = false,
   onEdit,
   onCancel,
   onSave,
   onChangeAvatar,
+  onMessage,
+  messageLoading = false,
 }: ProfileHeaderProps) => {
   const memberSince = new Date(profile.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -38,7 +44,7 @@ export const ProfileHeader = ({
   };
 
   const currentAvatarUrl = getAvatarDisplayUrl(
-    formData.avatar_url || profile.avatar_url || profile.profile_picture_url
+    viewOnly ? (profile.avatar_url || profile.profile_picture_url) : (formData.avatar_url || profile.avatar_url || profile.profile_picture_url)
   );
 
   return (
@@ -66,7 +72,7 @@ export const ProfileHeader = ({
               </svg>
             </div>
           )}
-          {editing && (
+          {!viewOnly && editing && (
             <button
               onClick={onChangeAvatar}
               className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded-full text-xs hover:bg-gray-700 transition-colors"
@@ -115,62 +121,78 @@ export const ProfileHeader = ({
           </div>
         </div>
 
-        {/* Edit Button */}
+        {/* Action Buttons */}
         <div className="flex-shrink-0">
-          {!editing ? (
-            <button
-              onClick={onEdit}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-            >
-              Edit Profile
-            </button>
+          {viewOnly ? (
+            // Public profile - show Message button
+            onMessage && (
+              <button
+                onClick={onMessage}
+                disabled={messageLoading}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 flex items-center gap-2"
+              >
+                💬 {messageLoading ? 'Loading...' : 'Message'}
+              </button>
+            )
           ) : (
-            <div className="flex gap-2">
+            // Own profile - show Edit buttons
+            !editing ? (
               <button
-                onClick={onCancel}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                onClick={onEdit}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
               >
-                Cancel
+                Edit Profile
               </button>
-              <button
-                onClick={onSave}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={onCancel}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onSave}
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            )
           )}
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-100">
-        <Link
-          to="/tasks/create"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition-colors"
-        >
-          📋 Post Job
-        </Link>
-        <Link
-          to="/offerings/create"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium hover:bg-amber-100 transition-colors"
-        >
-          👋 Offer Service
-        </Link>
-        <Link
-          to="/listings/create"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-100 transition-colors"
-        >
-          🏷️ Sell Item
-        </Link>
-        <Link
-          to="/favorites"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 text-pink-700 rounded-full text-sm font-medium hover:bg-pink-100 transition-colors"
-        >
-          ❤️ Favorites
-        </Link>
-      </div>
+      {/* Quick Actions - Only show for own profile */}
+      {!viewOnly && (
+        <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-100">
+          <Link
+            to="/tasks/create"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition-colors"
+          >
+            📋 Post Job
+          </Link>
+          <Link
+            to="/offerings/create"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium hover:bg-amber-100 transition-colors"
+          >
+            👋 Offer Service
+          </Link>
+          <Link
+            to="/listings/create"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-100 transition-colors"
+          >
+            🏷️ Sell Item
+          </Link>
+          <Link
+            to="/favorites"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 text-pink-700 rounded-full text-sm font-medium hover:bg-pink-100 transition-colors"
+          >
+            ❤️ Favorites
+          </Link>
+        </div>
+      )}
     </div>
   );
 };
