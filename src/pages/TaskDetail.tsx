@@ -332,9 +332,12 @@ const TaskDetail = () => {
   const handleConfirmDone = async () => {
     try {
       setActionLoading(true);
-      await confirmTaskCompletion(Number(id));
+      const response = await confirmTaskCompletion(Number(id));
       toast.success('Task completed! You can now leave a review.');
-      refetchTask();
+      
+      // Invalidate and refetch to get fresh data
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(Number(id)) });
+      await refetchTask();
     } catch (error: any) {
       console.error('Error confirming task:', error);
       toast.error(error?.response?.data?.error || 'Failed to confirm task');
@@ -1042,8 +1045,8 @@ const TaskDetail = () => {
                 </button>
               )}
 
-              {/* Creator confirming */}
-              {canConfirm && (
+              {/* Creator confirming - FIXED CONDITION */}
+              {isCreator && task.status === 'pending_confirmation' && (
                 <>
                   <button
                     onClick={handleConfirmDone}
