@@ -16,6 +16,7 @@ interface ProfileTabsProps {
     listings: boolean;
     reviews: boolean;
   };
+  viewOnly?: boolean;
 }
 
 export const ProfileTabs = ({
@@ -23,6 +24,7 @@ export const ProfileTabs = ({
   onTabChange,
   counts,
   hasContent,
+  viewOnly = false,
 }: ProfileTabsProps) => {
   const tabClass = (tab: ActiveTab) =>
     `px-4 py-2 rounded-md text-sm font-medium transition-all ${
@@ -32,7 +34,7 @@ export const ProfileTabs = ({
     }`;
 
   return (
-    <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+    <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
       <button onClick={() => onTabChange('about')} className={tabClass('about')}>
         About
       </button>
@@ -42,7 +44,8 @@ export const ProfileTabs = ({
         className={`${tabClass('tasks')} relative`}
       >
         Jobs {hasContent.tasks && <span className="text-gray-400">({counts.tasks})</span>}
-        {counts.pendingNotifications > 0 && (
+        {/* Only show notifications badge for own profile */}
+        {!viewOnly && counts.pendingNotifications > 0 && (
           <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
             {counts.pendingNotifications}
           </span>
@@ -57,7 +60,8 @@ export const ProfileTabs = ({
         Listings {hasContent.listings && <span className="text-gray-400">({counts.listings})</span>}
       </button>
       
-      {hasContent.reviews && (
+      {/* Always show reviews tab if there are reviews, or if viewing own profile */}
+      {(hasContent.reviews || !viewOnly) && (
         <button onClick={() => onTabChange('reviews')} className={tabClass('reviews')}>
           Reviews ({counts.reviews})
         </button>
