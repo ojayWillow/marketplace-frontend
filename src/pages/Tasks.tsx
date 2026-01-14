@@ -1,18 +1,12 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import { divIcon } from 'leaflet';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
-import { getTasks, Task as APITask } from '../api/tasks';
-import { getOfferings, getBoostedOfferings, Offering } from '../api/offerings';
 import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
 import { useMatchingStore } from '../stores/matchingStore';
-import { getCategoryIcon, getCategoryLabel, CATEGORY_OPTIONS } from '../constants/categories';
-import FavoriteButton from '../components/ui/FavoriteButton';
-import CompactFilterBar, { CompactFilterValues } from '../components/ui/CompactFilterBar';
-import { filterByDate, filterByPrice } from '../components/ui/AdvancedFilters';
+import { CATEGORY_OPTIONS } from '../constants/categories';
+import CompactFilterBar from '../components/ui/CompactFilterBar';
 import { useIsMobile } from '../hooks/useIsMobile';
 import MobileTasksView from '../components/MobileTasksView';
 import QuickHelpIntroModal from '../components/QuickHelpIntroModal';
@@ -23,6 +17,19 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
+// EXTRACTED COMPONENTS ✅
+import { TaskCard } from './Tasks/components/TaskCard';
+import { OfferingCard } from './Tasks/components/OfferingCard';
+import { MapMarkers } from './Tasks/components/Map';
+import { LocationLoadingState, DataLoadingState, ErrorState } from './Tasks/components/LoadingStates';
+import LocationModal from './Tasks/components/LocationModal';
+import { UrgentJobsBanner, MatchingJobsBanner, MapLoadingOverlay } from './Tasks/components/Banners';
+
+// EXTRACTED HOOKS ✅
+import { useTaskLocation } from './Tasks/hooks/useTaskLocation';
+import { useTaskData } from './Tasks/hooks/useTaskData';
+import { useTaskFilters } from './Tasks/hooks/useTaskFilters';
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl,
@@ -30,6 +37,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
+<<<<<<< HEAD
+=======
 // Extend API Task with UI-specific properties
 interface Task extends APITask {
   icon?: string;
@@ -601,6 +610,7 @@ const DEFAULT_FILTERS: CompactFilterValues = {
   category: 'all'
 };
 
+>>>>>>> origin/main
 // =====================================================
 // JOB CARD COMPONENT - For desktop list view
 // =====================================================
@@ -805,14 +815,69 @@ const Tasks = () => {
   return <DesktopTasksView />;
 };
 
+<<<<<<< HEAD
+// =====================================================
+// DESKTOP TASKS VIEW - Now using extracted hooks!
+// =====================================================
+=======
 // Desktop Tasks View
+>>>>>>> origin/main
 const DesktopTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuthStore();
-  const toast = useToastStore();
+  const { isAuthenticated } = useAuthStore();
   const { loadMyOfferings, isJobMatchingMyOfferings, myOfferingCategories } = useMatchingStore();
   
+<<<<<<< HEAD
+  // UI State
+  const [activeTab, setActiveTab] = useState<'jobs' | 'offerings' | 'all'>('all');
+  const [showIntroModal, setShowIntroModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  // ✅ LOCATION HOOK - handles geolocation, manual selection, display names
+  const {
+    userLocation,
+    locationGranted,
+    locationLoading,
+    locationName,
+    manualLocationSet,
+    skipLocationDetection,
+    handleLocationSelect: baseHandleLocationSelect,
+    resetToAutoLocation,
+  } = useTaskLocation();
+
+  // ✅ FILTERS HOOK - handles filter state, search, localStorage
+  const {
+    filters,
+    searchQuery,
+    searchRadius,
+    hasActiveFilters,
+    setSearchQuery,
+    handleFiltersChange: baseHandleFiltersChange,
+    filterTasks,
+    filterOfferings,
+  } = useTaskFilters();
+
+  // ✅ DATA HOOK - handles API calls, loading states
+  const {
+    tasks,
+    offerings,
+    boostedOfferings,
+    initialLoading,
+    refreshing,
+    error,
+    hasEverLoaded,
+    fetchData,
+    resetFetchFlag,
+  } = useTaskData({
+    userLocation,
+    locationGranted,
+    searchRadius,
+    category: filters.category,
+  });
+
+  // Check intro modal on mount
+=======
   const [activeTab, setActiveTab] = useState<'jobs' | 'offerings' | 'all'>('all');
   
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -863,13 +928,15 @@ const DesktopTasksView = () => {
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+>>>>>>> origin/main
   useEffect(() => {
     const hasSeenIntro = localStorage.getItem('quickHelpIntroSeen');
-    if (!hasSeenIntro) {
-      setShowIntroModal(true);
-    }
+    if (!hasSeenIntro) setShowIntroModal(true);
   }, []);
 
+<<<<<<< HEAD
+  // Load user's offerings for matching
+=======
   const getLocationDisplayName = () => {
     switch (locationType) {
       case 'auto':
@@ -885,12 +952,14 @@ const DesktopTasksView = () => {
   const locationName = getLocationDisplayName();
   const manualLocationSet = locationType === 'manual';
 
+>>>>>>> origin/main
   useEffect(() => {
-    if (isAuthenticated) {
-      loadMyOfferings();
-    }
+    if (isAuthenticated) loadMyOfferings();
   }, [isAuthenticated, loadMyOfferings]);
 
+<<<<<<< HEAD
+  // Wrapped handlers that trigger data refresh
+=======
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
@@ -949,15 +1018,21 @@ const DesktopTasksView = () => {
     };
   }, []);
 
+>>>>>>> origin/main
   const handleLocationSelect = (lat: number, lng: number, name?: string) => {
-    setUserLocation({ lat, lng });
-    setLocationType('manual');
-    setManualLocationName(name || null);
-    hasFetchedRef.current = false;
+    baseHandleLocationSelect(lat, lng, name);
+    resetFetchFlag();
     fetchData(true);
     setShowLocationModal(false);
   };
 
+<<<<<<< HEAD
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    const distanceChanged = newFilters.distance !== filters.distance;
+    const categoryChanged = newFilters.category !== filters.category;
+    
+    baseHandleFiltersChange(newFilters);
+=======
   const handleFiltersChange = (newFilters: CompactFilterValues) => {
     const distanceChanged = newFilters.distance !== filters.distance;
     const categoryChanged = newFilters.category !== filters.category;
@@ -970,13 +1045,24 @@ const DesktopTasksView = () => {
     setFilters(newFilters);
     localStorage.setItem('taskAdvancedFilters', JSON.stringify(newFilters));
     localStorage.setItem('taskSearchRadius', newFilters.distance.toString());
+>>>>>>> origin/main
     
     if (distanceChanged || categoryChanged) {
-      hasFetchedRef.current = false;
+      resetFetchFlag();
       fetchData(true, newFilters.distance, newFilters.category);
     }
   };
 
+<<<<<<< HEAD
+  const handleResetToAuto = () => {
+    resetToAutoLocation(() => {
+      resetFetchFlag();
+      fetchData(true);
+    });
+  };
+
+  // Loading states
+=======
   const searchAddressSuggestions = async (query: string) => {
     if (query.length < 2) {
       setSuggestions([]);
@@ -1145,31 +1231,15 @@ const DesktopTasksView = () => {
     return filtered;
   };
 
+>>>>>>> origin/main
   if (locationLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md">
-          <div className="relative w-20 h-20 mx-auto mb-4">
-            <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center text-2xl">📍</div>
-          </div>
-          <div className="text-xl font-bold text-gray-900 mb-2">{t('tasks.findingLocation', 'Finding your location...')}</div>
-          <div className="text-gray-600 mb-4">{t('tasks.locationHelp', 'This helps show nearby jobs and services')}</div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-            <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-          </div>
-          <button 
-            onClick={skipLocationDetection}
-            className="text-blue-600 hover:text-blue-700 font-medium underline"
-          >
-            {t('tasks.skipLocation', 'Skip → Use Riga as default')}
-          </button>
-        </div>
-      </div>
-    );
+    return <LocationLoadingState onSkip={skipLocationDetection} />;
   }
 
+<<<<<<< HEAD
+  if (initialLoading && !hasEverLoaded) {
+    return <DataLoadingState searchRadius={searchRadius} locationName={locationName} />;
+=======
   if (initialLoading && !hasEverLoadedRef.current) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1185,29 +1255,43 @@ const DesktopTasksView = () => {
         </div>
       </div>
     );
+>>>>>>> origin/main
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
-          <div className="text-5xl mb-4">⚠️</div>
-          <div className="text-2xl font-bold text-red-600 mb-2">{t('tasks.errorTitle', 'Oops!')}</div>
-          <div className="text-gray-600 mb-4">{error}</div>
-          <button onClick={() => { hasFetchedRef.current = false; fetchData(true); }} className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">
-            {t('tasks.tryAgain', 'Try Again')}
-          </button>
-        </div>
-      </div>
+      <ErrorState 
+        error={error} 
+        onRetry={() => { resetFetchFlag(); fetchData(true); }} 
+      />
     );
   }
 
+  // Apply filters
   const filteredTasks = filterTasks(tasks);
   const filteredOfferings = filterOfferings(offerings);
   
+<<<<<<< HEAD
+  // Computed values
+=======
+>>>>>>> origin/main
   const matchingJobsCount = isAuthenticated 
-    ? filteredTasks.filter(t => isJobMatchingMyOfferings(t.category)).length 
+    ? filteredTasks.filter(task => isJobMatchingMyOfferings(task.category)).length 
     : 0;
+<<<<<<< HEAD
+  const urgentJobsCount = filteredTasks.filter(task => task.is_urgent).length;
+  const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
+  const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 75);
+
+  // Map markers based on active tab
+  const getMapMarkers = () => {
+    if (activeTab === 'jobs') return { tasks: filteredTasks, boosted: [] };
+    if (activeTab === 'offerings') return { tasks: [], boosted: boostedOfferings };
+    return { tasks: filteredTasks, boosted: boostedOfferings };
+  };
+  const { tasks: mapTasks, boosted: mapBoostedOfferings } = getMapMarkers();
+
+=======
   
   const urgentJobsCount = filteredTasks.filter(t => t.is_urgent).length;
 
@@ -1222,6 +1306,7 @@ const DesktopTasksView = () => {
   const maxBudget = Math.max(...filteredTasks.map(t => t.budget || t.reward || 0), 0);
   const hasHighValueJobs = filteredTasks.some(t => (t.budget || t.reward || 0) > 75);
 
+>>>>>>> origin/main
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
@@ -1259,6 +1344,19 @@ const DesktopTasksView = () => {
           </div>
         </div>
 
+<<<<<<< HEAD
+        {/* Banners */}
+        <UrgentJobsBanner urgentCount={urgentJobsCount} onViewJobs={() => setActiveTab('jobs')} />
+        {isAuthenticated && (
+          <MatchingJobsBanner 
+            matchingCount={matchingJobsCount} 
+            categories={myOfferingCategories} 
+            onViewJobs={() => setActiveTab('jobs')} 
+          />
+        )}
+
+        {/* Filter Bar */}
+=======
         {/* Urgent jobs banner */}
         {urgentJobsCount > 0 && (
           <div className="mb-4 bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-4 text-white shadow-md">
@@ -1302,6 +1400,7 @@ const DesktopTasksView = () => {
         )}
 
         {/* Compact Filter Bar */}
+>>>>>>> origin/main
         <div className="mb-4 relative" style={{ zIndex: 1000 }}>
           <CompactFilterBar
             filters={filters}
@@ -1314,50 +1413,13 @@ const DesktopTasksView = () => {
             categoryOptions={CATEGORY_OPTIONS}
             variant={activeTab === 'offerings' ? 'offerings' : 'jobs'}
           />
-          
-          {/* Location Search Modal */}
-          {showLocationModal && (
-            <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-50" ref={suggestionsRef}>
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">📍 {t('tasks.changeLocation', 'Change Location')}</label>
-                <input 
-                  type="text" 
-                  value={addressSearch} 
-                  onChange={(e) => handleAddressInputChange(e.target.value)} 
-                  placeholder={t('tasks.searchAddress', 'Search address or city...')} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  autoFocus
-                />
-                {searchingAddress && <span className="text-sm text-gray-500 mt-1">{t('common.loading', 'Searching...')}</span>}
-              </div>
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
-                  {suggestions.map((suggestion, index) => (
-                    <button 
-                      key={index} 
-                      onClick={() => selectSuggestion(suggestion)} 
-                      className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0 text-sm"
-                    >
-                      {suggestion.display_name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
-                {manualLocationSet && (
-                  <button onClick={resetToAutoLocation} className="text-sm text-blue-600 hover:underline">
-                    {t('tasks.resetLocation', 'Reset to auto-detect')}
-                  </button>
-                )}
-                <button 
-                  onClick={() => setShowLocationModal(false)} 
-                  className="ml-auto text-sm text-gray-500 hover:text-gray-700"
-                >
-                  {t('common.close', 'Close')}
-                </button>
-              </div>
-            </div>
-          )}
+          <LocationModal
+            isOpen={showLocationModal}
+            onClose={() => setShowLocationModal(false)}
+            onLocationSelect={handleLocationSelect}
+            onResetToAuto={handleResetToAuto}
+            manualLocationSet={manualLocationSet}
+          />
         </div>
 
         {/* Tabs */}
@@ -1368,33 +1430,57 @@ const DesktopTasksView = () => {
           <button onClick={() => setActiveTab('jobs')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors relative ${activeTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             💰 {t('common.jobs', 'Jobs')} ({filteredTasks.length})
             {urgentJobsCount > 0 && activeTab !== 'jobs' && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                {urgentJobsCount} ⚡
-              </span>
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">{urgentJobsCount} ⚡</span>
             )}
+<<<<<<< HEAD
+            {isAuthenticated && matchingJobsCount > 0 && urgentJobsCount === 0 && activeTab !== 'jobs' && (
+              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">{matchingJobsCount} {t('tasks.match', 'match')}</span>
+            )}
+=======
+>>>>>>> origin/main
           </button>
           <button onClick={() => setActiveTab('offerings')} className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'offerings' ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 shadow'}`}>
             👋 {t('common.offerings', 'Offerings')} ({filteredOfferings.length})
           </button>
         </div>
 
+<<<<<<< HEAD
+        {/* Map */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          {/* Map Legend */}
+          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
+            <span className="font-semibold text-gray-700">{t('map.legend', 'Map')}:</span>
+=======
         {/* Map with Loading Overlay */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6 relative">
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b flex flex-wrap items-center gap-4 text-sm">
             <span className="font-semibold text-gray-700">{t('map.legend', 'Map')}:</span>
             
+>>>>>>> origin/main
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }}></div>
+              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" style={{ transform: 'rotate(-45deg)', borderRadius: '50% 50% 50% 0' }} />
               <span className="text-gray-600">{t('map.you', 'You')}</span>
             </div>
+<<<<<<< HEAD
+=======
             
+>>>>>>> origin/main
             {searchRadius === 0 && (
               <div className="flex items-center gap-1.5 bg-blue-100 px-2 py-1 rounded-full">
                 <span className="text-sm">🇱🇻</span>
                 <span className="text-blue-700 font-medium text-xs">{t('tasks.viewingAllLatvia', 'Viewing all of Latvia')}</span>
               </div>
             )}
+<<<<<<< HEAD
+            {urgentJobsCount > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold border-2 border-red-400">€</span>
+                <span className="text-red-600 text-xs font-medium">{t('map.urgentJobs', 'Urgent')}</span>
+              </div>
+            )}
+=======
             
+>>>>>>> origin/main
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold">€25</span>
               <span className="text-gray-500 text-xs">{t('map.quickTasks', 'Quick tasks')}</span>
@@ -1407,12 +1493,23 @@ const DesktopTasksView = () => {
               <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)' }}>€100+</span>
               <span className="text-gray-500 text-xs">{t('map.premiumJobs', 'Premium')} ✨</span>
             </div>
+<<<<<<< HEAD
+=======
             
+>>>>>>> origin/main
             <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
               <span className="w-6 h-6 flex items-center justify-center text-white rounded-full text-sm" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>🧹</span>
               <span className="text-gray-500 text-xs">{t('map.boostedOfferings', 'Boosted services')}</span>
             </div>
           </div>
+<<<<<<< HEAD
+          
+          {/* Map Container */}
+          <div className="relative" style={{ height: '350px' }}>
+            <MapLoadingOverlay isLoading={refreshing} searchRadius={searchRadius} />
+            <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+=======
           <div style={{ height: '350px' }} className="relative">
             <MapContainer 
               center={[userLocation.lat, userLocation.lng]} 
@@ -1423,6 +1520,7 @@ const DesktopTasksView = () => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
               />
+>>>>>>> origin/main
               <MapMarkers
                 tasks={mapTasks}
                 boostedOfferings={mapBoostedOfferings}
@@ -1442,31 +1540,60 @@ const DesktopTasksView = () => {
             />
           </div>
           
+<<<<<<< HEAD
+          {/* Map Stats */}
+=======
+>>>>>>> origin/main
           {(filteredTasks.length > 0 || mapBoostedOfferings.length > 0) && (
             <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex flex-wrap items-center gap-4 text-sm">
-              <span className="font-medium text-blue-700">
-                💰 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}
-              </span>
-              {urgentJobsCount > 0 && (
-                <span className="font-medium text-red-600">
-                  ⚡ {t('tasks.urgentOnMap', '{{count}} urgent', { count: urgentJobsCount })}
-                </span>
-              )}
-              {mapBoostedOfferings.length > 0 && (
-                <span className="font-medium text-amber-700">
-                  👋 {t('offerings.boostedOnMap', '{{count}} boosted service(s)', { count: mapBoostedOfferings.length })}
-                </span>
-              )}
-              {maxBudget > 0 && (
-                <span className="text-green-600">{t('tasks.topPayout', 'Top payout')}: €{maxBudget}</span>
-              )}
-              {hasHighValueJobs && (
-                <span className="text-purple-600 font-medium">✨ {t('tasks.premiumAvailable', 'Premium jobs available!')}</span>
-              )}
+              <span className="font-medium text-blue-700">💰 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}</span>
+              {urgentJobsCount > 0 && <span className="font-medium text-red-600">⚡ {t('tasks.urgentOnMap', '{{count}} urgent', { count: urgentJobsCount })}</span>}
+              {mapBoostedOfferings.length > 0 && <span className="font-medium text-amber-700">👋 {t('offerings.boostedOnMap', '{{count}} boosted service(s)', { count: mapBoostedOfferings.length })}</span>}
+              {maxBudget > 0 && <span className="text-green-600">{t('tasks.topPayout', 'Top payout')}: €{maxBudget}</span>}
+              {hasHighValueJobs && <span className="text-purple-600 font-medium">✨ {t('tasks.premiumAvailable', 'Premium jobs available!')}</span>}
             </div>
           )}
         </div>
 
+<<<<<<< HEAD
+        {/* Jobs List */}
+        {(activeTab === 'all' || activeTab === 'jobs') && (
+          <div className="mb-8">
+            {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">💰 {t('tasks.availableJobs', 'Available Jobs')}</h2>}
+            {filteredTasks.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500 text-lg mb-2">{t('tasks.noJobsFound', 'No jobs found')}</p>
+                <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('tasks.checkBackLater', 'Check back later for new opportunities')}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} userLocation={userLocation} isMatching={isAuthenticated && isJobMatchingMyOfferings(task.category)} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Offerings List */}
+        {(activeTab === 'all' || activeTab === 'offerings') && (
+          <div>
+            {activeTab === 'all' && <h2 className="text-2xl font-bold mb-4 text-gray-900">👋 {t('offerings.availableServices', 'Available Services')}</h2>}
+            {filteredOfferings.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500 text-lg mb-2">{t('offerings.noOfferingsFound', 'No services found')}</p>
+                <p className="text-gray-400">{hasActiveFilters ? t('tasks.tryDifferentFilters', 'Try adjusting your filters') : t('offerings.checkBackLater', 'Check back later for new services')}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredOfferings.map((offering) => (
+                  <OfferingCard key={offering.id} offering={offering} userLocation={userLocation} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+=======
         {/* =====================================================
             LIST SECTION - Jobs and Offerings cards
             ===================================================== */}
@@ -1534,14 +1661,11 @@ const DesktopTasksView = () => {
             </>
           )}
         </div>
+>>>>>>> origin/main
       </div>
       
       {/* Intro Modal */}
-      <QuickHelpIntroModal
-        isOpen={showIntroModal}
-        onClose={() => setShowIntroModal(false)}
-        showCheckboxes={!localStorage.getItem('quickHelpIntroSeen')}
-      />
+      <QuickHelpIntroModal isOpen={showIntroModal} onClose={() => setShowIntroModal(false)} showCheckboxes={!localStorage.getItem('quickHelpIntroSeen')} />
     </div>
   );
 };
