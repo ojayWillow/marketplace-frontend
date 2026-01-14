@@ -4,6 +4,7 @@ import { Task, TaskApplication } from '../../../../api/tasks';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
 import { TabLoadingSpinner } from '../LoadingState';
+import { ConfirmTaskModal } from '../../../../components/ConfirmTaskModal';
 import type { TaskViewMode, TaskStatusFilter, TaskMatchCounts } from '../../types';
 
 interface TasksTabProps {
@@ -17,7 +18,7 @@ interface TasksTabProps {
   onViewModeChange: (mode: TaskViewMode) => void;
   onStatusFilterChange: (filter: TaskStatusFilter) => void;
   onCancelTask?: (id: number) => void;
-  onConfirmTask?: (id: number) => void;
+  onTaskConfirmed?: () => void;
   userId?: number;
   viewOnly?: boolean;
 }
@@ -33,10 +34,14 @@ export const TasksTab = ({
   onViewModeChange,
   onStatusFilterChange,
   onCancelTask,
-  onConfirmTask,
+  onTaskConfirmed,
   viewOnly = false,
 }: TasksTabProps) => {
   const [expandedMatchHint, setExpandedMatchHint] = useState<number | null>(null);
+  
+  // Confirmation modal state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
 
   // Counts
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
@@ -77,245 +82,276 @@ export const TasksTab = ({
     }
   };
 
+  const handleConfirmClick = (task: Task) => {
+    setTaskToConfirm(task);
+    setConfirmModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setConfirmModalOpen(false);
+    setTaskToConfirm(null);
+  };
+
+  const handleTaskConfirmed = () => {
+    handleModalClose();
+    onTaskConfirmed?.();
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-gray-900">
-          {viewOnly ? 'Posted Jobs' : 'My Jobs'}
-        </h2>
-        {!viewOnly && (
-          <Link
-            to="/tasks/create"
-            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            + Post Job
-          </Link>
-        )}
-      </div>
-
-      {/* View Toggle - Only for own profile */}
-      {!viewOnly && (
-        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
-          <button
-            onClick={() => onViewModeChange('my-tasks')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
-              taskViewMode === 'my-tasks' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-            }`}
-          >
-            Jobs I Posted
-            {totalPendingApplicationsOnMyTasks > 0 && (
-              <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-green-500 text-white font-bold">
-                {totalPendingApplicationsOnMyTasks}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => onViewModeChange('my-jobs')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              taskViewMode === 'my-jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-            }`}
-          >
-            Jobs I'm Doing
-          </button>
-        </div>
+    <>
+      {/* Confirmation Modal */}
+      {taskToConfirm && (
+        <ConfirmTaskModal
+          isOpen={confirmModalOpen}
+          onClose={handleModalClose}
+          onConfirmed={handleTaskConfirmed}
+          taskId={taskToConfirm.id}
+          taskTitle={taskToConfirm.title}
+          workerName={taskToConfirm.assigned_to_name || 'the helper'}
+          workerId={taskToConfirm.assigned_to_id || 0}
+          budget={taskToConfirm.budget}
+        />
       )}
 
-      {/* Status Filter - Only for own profile */}
-      {!viewOnly && (
-        <div className="flex gap-1 mb-4">
-          {[
-            { value: 'all', label: 'All' },
-            { value: 'active', label: 'Active' },
-            { value: 'completed', label: 'Done' },
-          ].map(filter => (
-            <button
-              key={filter.value}
-              onClick={() => onStatusFilterChange(filter.value as TaskStatusFilter)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                taskStatusFilter === filter.value
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Matches Summary Banner - Only for own profile */}
-      {!viewOnly && taskViewMode === 'my-tasks' && tasksWithMatches > 0 && (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-center gap-2 text-amber-800">
-            <span className="text-lg">✨</span>
-            <p className="text-sm">
-              <span className="font-medium">{tasksWithMatches} of your jobs</span> have potential helpers nearby
-            </p>
-          </div>
-        </div>
-      )}
-
-      {tasksLoading || applicationsLoading ? (
-        <TabLoadingSpinner color="blue" />
-      ) : getDisplayTasks().length === 0 ? (
-        <div className="text-center py-10">
-          <div className="text-4xl mb-2">{taskViewMode === 'my-tasks' || viewOnly ? '📋' : '🛠️'}</div>
-          <p className="text-gray-500 mb-4">
-            {viewOnly 
-              ? 'No active jobs posted'
-              : taskViewMode === 'my-tasks' 
-                ? 'No jobs posted yet' 
-                : 'No jobs yet'
-            }
-          </p>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-semibold text-gray-900">
+            {viewOnly ? 'Posted Jobs' : 'My Jobs'}
+          </h2>
           {!viewOnly && (
             <Link
-              to={taskViewMode === 'my-tasks' ? '/tasks/create' : '/tasks'}
-              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
+              to="/tasks/create"
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
-              {taskViewMode === 'my-tasks' ? 'Post your first job →' : 'Browse available jobs →'}
+              + Post Job
             </Link>
           )}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {(taskViewMode === 'my-tasks' || viewOnly) ? (
-            getDisplayTasks().map(task => {
-              const hasApplications = !viewOnly && task.status === 'open' && (task.pending_applications_count || 0) > 0;
-              const matchCount = taskMatchCounts[task.id] || 0;
-              const hasMatches = !viewOnly && task.status === 'open' && matchCount > 0;
-              const isExpanded = expandedMatchHint === task.id;
-              
-              return (
-                <div 
-                  key={task.id} 
-                  className={`p-4 border rounded-lg transition-colors ${
-                    hasApplications ? 'border-green-300 bg-green-50' : 
-                    hasMatches ? 'border-amber-200 bg-amber-50/30' :
-                    'border-gray-100 hover:bg-gray-50'
-                  }`}
-                >
-                  {/* Application notification - only for own profile */}
-                  {!viewOnly && hasApplications && (
-                    <Link 
-                      to={`/tasks/${task.id}`}
-                      className="flex items-center justify-between bg-green-500 text-white p-2.5 rounded-lg mb-3 text-sm"
-                    >
-                      <span>📩 {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}!</span>
-                      <span className="font-medium">Review →</span>
-                    </Link>
-                  )}
-                  
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span>{getCategoryIcon(task.category)}</span>
-                        <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
-                          {task.title}
-                        </Link>
-                        {!viewOnly && (
+
+        {/* View Toggle - Only for own profile */}
+        {!viewOnly && (
+          <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+            <button
+              onClick={() => onViewModeChange('my-tasks')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
+                taskViewMode === 'my-tasks' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              Jobs I Posted
+              {totalPendingApplicationsOnMyTasks > 0 && (
+                <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-green-500 text-white font-bold">
+                  {totalPendingApplicationsOnMyTasks}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => onViewModeChange('my-jobs')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                taskViewMode === 'my-jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              Jobs I'm Doing
+            </button>
+          </div>
+        )}
+
+        {/* Status Filter - Only for own profile */}
+        {!viewOnly && (
+          <div className="flex gap-1 mb-4">
+            {[
+              { value: 'all', label: 'All' },
+              { value: 'active', label: 'Active' },
+              { value: 'completed', label: 'Done' },
+            ].map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => onStatusFilterChange(filter.value as TaskStatusFilter)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  taskStatusFilter === filter.value
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Matches Summary Banner - Only for own profile */}
+        {!viewOnly && taskViewMode === 'my-tasks' && tasksWithMatches > 0 && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-2 text-amber-800">
+              <span className="text-lg">✨</span>
+              <p className="text-sm">
+                <span className="font-medium">{tasksWithMatches} of your jobs</span> have potential helpers nearby
+              </p>
+            </div>
+          </div>
+        )}
+
+        {tasksLoading || applicationsLoading ? (
+          <TabLoadingSpinner color="blue" />
+        ) : getDisplayTasks().length === 0 ? (
+          <div className="text-center py-10">
+            <div className="text-4xl mb-2">{taskViewMode === 'my-tasks' || viewOnly ? '📋' : '🛠️'}</div>
+            <p className="text-gray-500 mb-4">
+              {viewOnly 
+                ? 'No active jobs posted'
+                : taskViewMode === 'my-tasks' 
+                  ? 'No jobs posted yet' 
+                  : 'No jobs yet'
+              }
+            </p>
+            {!viewOnly && (
+              <Link
+                to={taskViewMode === 'my-tasks' ? '/tasks/create' : '/tasks'}
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
+              >
+                {taskViewMode === 'my-tasks' ? 'Post your first job →' : 'Browse available jobs →'}
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {(taskViewMode === 'my-tasks' || viewOnly) ? (
+              getDisplayTasks().map(task => {
+                const hasApplications = !viewOnly && task.status === 'open' && (task.pending_applications_count || 0) > 0;
+                const matchCount = taskMatchCounts[task.id] || 0;
+                const hasMatches = !viewOnly && task.status === 'open' && matchCount > 0;
+                const isExpanded = expandedMatchHint === task.id;
+                
+                return (
+                  <div 
+                    key={task.id} 
+                    className={`p-4 border rounded-lg transition-colors ${
+                      hasApplications ? 'border-green-300 bg-green-50' : 
+                      hasMatches ? 'border-amber-200 bg-amber-50/30' :
+                      'border-gray-100 hover:bg-gray-50'
+                    }`}
+                  >
+                    {/* Application notification - only for own profile */}
+                    {!viewOnly && hasApplications && (
+                      <Link 
+                        to={`/tasks/${task.id}`}
+                        className="flex items-center justify-between bg-green-500 text-white p-2.5 rounded-lg mb-3 text-sm"
+                      >
+                        <span>📩 {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}!</span>
+                        <span className="font-medium">Review →</span>
+                      </Link>
+                    )}
+                    
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span>{getCategoryIcon(task.category)}</span>
+                          <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                            {task.title}
+                          </Link>
+                          {!viewOnly && (
+                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
+                              {task.status.replace('_', ' ')}
+                            </span>
+                          )}
+                          {!viewOnly && hasMatches && !hasApplications && (
+                            <button
+                              onClick={() => setExpandedMatchHint(isExpanded ? null : task.id)}
+                              className="px-2 py-0.5 text-xs rounded-full font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center gap-1"
+                            >
+                              ✨ {matchCount}
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-gray-600 text-sm line-clamp-1">{task.description}</p>
+                        <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+                          <span>📍 {task.location}</span>
+                          {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
+                        </div>
+                        
+                        {!viewOnly && isExpanded && hasMatches && (
+                          <Link
+                            to={`/tasks/${task.id}`}
+                            className="mt-3 flex items-center justify-between p-2.5 bg-amber-100 rounded-lg text-sm text-amber-800 hover:bg-amber-200 transition-colors"
+                          >
+                            <span>
+                              💡 {matchCount} helper{matchCount !== 1 ? 's' : ''} offering <strong>{getCategoryLabel(task.category)}</strong> nearby
+                            </span>
+                            <span className="font-medium">View matches →</span>
+                          </Link>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {!viewOnly && task.status === 'pending_confirmation' && (
+                          <button
+                            onClick={() => handleConfirmClick(task)}
+                            className="px-2.5 py-1 text-xs bg-green-500 text-white rounded-md hover:bg-green-600"
+                          >
+                            ✓ Confirm
+                          </button>
+                        )}
+                        <Link to={`/tasks/${task.id}`} className="text-xs text-blue-600 hover:underline text-center">View</Link>
+                        {!viewOnly && task.status === 'open' && !hasApplications && (
+                          <>
+                            <Link to={`/tasks/${task.id}/edit`} className="text-xs text-gray-500 hover:underline text-center">Edit</Link>
+                            {onCancelTask && (
+                              <button onClick={() => onCancelTask(task.id)} className="text-xs text-red-500 hover:underline">Cancel</button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              // My Jobs (applications) - only for own profile
+              myApplications.filter(app => app.status === 'accepted').map(application => {
+                const task = application.task;
+                if (!task) return null;
+                
+                if (taskStatusFilter === 'active' && !['assigned', 'in_progress', 'pending_confirmation'].includes(task.status)) return null;
+                if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
+                
+                return (
+                  <div key={application.id} className="p-4 border border-green-200 rounded-lg bg-green-50/50">
+                    <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
+                      <span>🎉</span>
+                      <span className="font-medium">
+                        {task.status === 'completed' ? 'Completed!' : "You're assigned"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span>{getCategoryIcon(task.category)}</span>
+                          <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                            {task.title}
+                          </Link>
                           <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
                             {task.status.replace('_', ' ')}
                           </span>
-                        )}
-                        {!viewOnly && hasMatches && !hasApplications && (
-                          <button
-                            onClick={() => setExpandedMatchHint(isExpanded ? null : task.id)}
-                            className="px-2 py-0.5 text-xs rounded-full font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center gap-1"
-                          >
-                            ✨ {matchCount}
-                          </button>
-                        )}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span>📍 {task.location}</span>
+                          {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Posted by {task.creator_name || 'Unknown'}</p>
                       </div>
-                      <p className="text-gray-600 text-sm line-clamp-1">{task.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-                        <span>📍 {task.location}</span>
-                        {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
-                      </div>
-                      
-                      {!viewOnly && isExpanded && hasMatches && (
-                        <Link
-                          to={`/tasks/${task.id}`}
-                          className="mt-3 flex items-center justify-between p-2.5 bg-amber-100 rounded-lg text-sm text-amber-800 hover:bg-amber-200 transition-colors"
-                        >
-                          <span>
-                            💡 {matchCount} helper{matchCount !== 1 ? 's' : ''} offering <strong>{getCategoryLabel(task.category)}</strong> nearby
-                          </span>
-                          <span className="font-medium">View matches →</span>
-                        </Link>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {!viewOnly && task.status === 'pending_confirmation' && onConfirmTask && (
-                        <button
-                          onClick={() => onConfirmTask(task.id)}
-                          className="px-2.5 py-1 text-xs bg-green-500 text-white rounded-md hover:bg-green-600"
-                        >
-                          ✓ Confirm
-                        </button>
-                      )}
-                      <Link to={`/tasks/${task.id}`} className="text-xs text-blue-600 hover:underline text-center">View</Link>
-                      {!viewOnly && task.status === 'open' && !hasApplications && (
-                        <>
-                          <Link to={`/tasks/${task.id}/edit`} className="text-xs text-gray-500 hover:underline text-center">Edit</Link>
-                          {onCancelTask && (
-                            <button onClick={() => onCancelTask(task.id)} className="text-xs text-red-500 hover:underline">Cancel</button>
-                          )}
-                        </>
-                      )}
+                      <Link
+                        to={`/tasks/${task.id}`}
+                        className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        View
+                      </Link>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          ) : (
-            // My Jobs (applications) - only for own profile
-            myApplications.filter(app => app.status === 'accepted').map(application => {
-              const task = application.task;
-              if (!task) return null;
-              
-              if (taskStatusFilter === 'active' && !['assigned', 'in_progress', 'pending_confirmation'].includes(task.status)) return null;
-              if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
-              
-              return (
-                <div key={application.id} className="p-4 border border-green-200 rounded-lg bg-green-50/50">
-                  <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
-                    <span>🎉</span>
-                    <span className="font-medium">
-                      {task.status === 'completed' ? 'Completed!' : "You're assigned"}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span>{getCategoryIcon(task.category)}</span>
-                        <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
-                          {task.title}
-                        </Link>
-                        <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                          {task.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <span>📍 {task.location}</span>
-                        {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Posted by {task.creator_name || 'Unknown'}</p>
-                    </div>
-                    <Link
-                      to={`/tasks/${task.id}`}
-                      className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      View
-                    </Link>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-    </div>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 };
