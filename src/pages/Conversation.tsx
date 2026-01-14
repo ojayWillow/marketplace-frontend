@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import { getConversation, Conversation as ConvType, Message } from '../api/messages';
-import { useMessages, useSendMessage, useMarkAsRead } from '../api/hooks';
+import { Conversation as ConvType, Message } from '../api/messages';
+import { useConversation, useMessages, useSendMessage, useMarkAsRead } from '../api/hooks';
 import { getImageUrl } from '../api/uploads';
 import OnlineStatus from '../components/ui/OnlineStatus';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,10 +16,13 @@ export default function Conversation() {
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
   const queryClient = useQueryClient();
-  const [conversation, setConversation] = useState<ConvType | null>(null);
-  const [convLoading, setConvLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // React Query for conversation - auto-refetches every 30 seconds for real-time online status
+  const { data: conversation, isLoading: convLoading } = useConversation(Number(id), { 
+    enabled: isAuthenticated && !!id 
+  });
   
   // React Query for messages - auto-refetches every 30 seconds
   const { data: msgData, isLoading: messagesLoading } = useMessages(Number(id), { enabled: isAuthenticated && !!id });
@@ -33,10 +36,7 @@ export default function Conversation() {
       navigate('/login');
       return;
     }
-    if (id) {
-      fetchConversation();
-    }
-  }, [isAuthenticated, id]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     scrollToBottom();
@@ -48,19 +48,6 @@ export default function Conversation() {
       markReadMutation.mutate(Number(id));
     }
   }, [id, messages.length]);
-
-  const fetchConversation = async () => {
-    try {
-      setConvLoading(true);
-      const convData = await getConversation(Number(id));
-      setConversation(convData);
-    } catch (error) {
-      console.error('Error fetching conversation:', error);
-      toast.error(t('messages.errorLoading', 'Failed to load conversation'));
-    } finally {
-      setConvLoading(false);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
