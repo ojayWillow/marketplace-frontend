@@ -89,7 +89,8 @@ const OfferingDetail = () => {
       setContacting(true);
       // Create or get existing conversation with the offering creator
       const response = await apiClient.post('/api/messages/conversations', {
-        participant_id: offering.creator_id,
+        recipient_id: offering.creator_id,
+        offering_id: offering.id,
         initial_message: `Hi! I'm interested in your offering: "${offering.title}"`
       });
       
@@ -319,7 +320,7 @@ const OfferingDetail = () => {
 
           {/* Content */}
           <div className="p-6">
-            {/* Creator Info */}
+            {/* Creator Info - View Profile button only */}
             <div className="flex items-center gap-4 mb-6 pb-6 border-b">
               <Link to={`/users/${offering.creator_id}`} className="flex-shrink-0">
                 {offering.creator_avatar ? (
@@ -347,20 +348,13 @@ const OfferingDetail = () => {
                   </div>
                 )}
               </div>
-              {!isOwner && (
-                <button
-                  onClick={handleContact}
-                  disabled={contacting}
-                  className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-medium"
-                >
-                  {contacting ? 'Starting chat...' : '💬 Contact'}
-                </button>
-              )}
-              {isOwner && (
-                <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm">
-                  This is your offering
-                </span>
-              )}
+              {/* View Profile button in header area */}
+              <Link
+                to={`/users/${offering.creator_id}`}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
+              >
+                👤 View Profile
+              </Link>
             </div>
 
             {/* Boost Section - Only for owners */}
@@ -498,24 +492,16 @@ const OfferingDetail = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              {!isOwner && (
-                <button
-                  onClick={handleContact}
-                  disabled={contacting}
-                  className="flex-1 bg-amber-500 text-white py-4 rounded-lg hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-semibold text-lg"
-                >
-                  {contacting ? 'Starting conversation...' : '💬 Contact ' + (offering.creator_name?.split(' ')[0] || 'Seller')}
-                </button>
-              )}
-              <Link
-                to={`/users/${offering.creator_id}`}
-                className={`${isOwner ? 'flex-1' : ''} px-6 py-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center`}
+            {/* Action Button - Only Contact button at bottom for non-owners */}
+            {!isOwner && (
+              <button
+                onClick={handleContact}
+                disabled={contacting}
+                className="w-full bg-amber-500 text-white py-4 rounded-lg hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-semibold text-lg"
               >
-                👤 View Profile
-              </Link>
-            </div>
+                {contacting ? 'Starting conversation...' : '💬 Contact ' + (offering.creator_name?.split(' ')[0] || 'Seller')}
+              </button>
+            )}
           </div>
         </div>
 
