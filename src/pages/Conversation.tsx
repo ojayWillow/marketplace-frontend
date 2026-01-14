@@ -3,10 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import { getConversation, Conversation as ConvType } from '../api/messages';
+import { getConversation, Conversation as ConvType, Message } from '../api/messages';
 import { useMessages, useSendMessage, useMarkAsRead } from '../api/hooks';
 import { getImageUrl } from '../api/uploads';
 import OnlineStatus from '../components/ui/OnlineStatus';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Conversation() {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ export default function Conversation() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
+  const queryClient = useQueryClient();
   const [conversation, setConversation] = useState<ConvType | null>(null);
   const [convLoading, setConvLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
@@ -66,18 +68,63 @@ export default function Conversation() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || sendMutation.isPending || !id) return;
+    if (!newMessage.trim() || sendMutation.isPending || !id || !user) return;
 
     const messageContent = newMessage.trim();
+    const conversationId = Number(id);
+    
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: Date.now(), // Temporary ID
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content: messageContent,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+    
+    // Clear input immediately
     setNewMessage('');
     
-    // Use conversation ID (from URL param), not recipient ID
+    // Optimistically add message to cache
+    queryClient.setQueryData(
+      ['messages', 'conversation', conversationId],
+      (old: any) => {
+        if (!old) return { messages: [optimisticMessage], total: 1, page: 1, pages: 1, has_more: false };
+        return {
+          ...old,
+          messages: [...old.messages, optimisticMessage],
+          total: old.total + 1,
+        };
+      }
+    );
+    
+    // Scroll to bottom immediately
+    setTimeout(scrollToBottom, 50);
+    
+    // Send to server
     sendMutation.mutate(
-      { recipientId: Number(id), content: messageContent },
+      { recipientId: conversationId, content: messageContent },
       {
+        onSuccess: () => {
+          // Invalidate to get real message from server
+          queryClient.invalidateQueries({ queryKey: ['messages', 'conversation', conversationId] });
+        },
         onError: (error) => {
           console.error('Error sending message:', error);
           toast.error(t('messages.errorSending', 'Failed to send message'));
+          // Remove optimistic message on error
+          queryClient.setQueryData(
+            ['messages', 'conversation', conversationId],
+            (old: any) => {
+              if (!old) return old;
+              return {
+                ...old,
+                messages: old.messages.filter((m: Message) => m.id !== optimisticMessage.id),
+                total: old.total - 1,
+              };
+            }
+          );
           setNewMessage(messageContent); // Restore message on error
         }
       }
@@ -142,6 +189,11 @@ export default function Conversation() {
 
   const otherUser = conversation.other_participant;
   const onlineStatus = otherUser?.online_status as 'online' | 'recently' | 'inactive' | undefined;
+
+  // Sort messages by created_at to ensure correct order (oldest first)
+  const sortedMessages = [...messages].sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
 
   return (
     <div className="bg-gray-100 py-4">
@@ -208,16 +260,16 @@ export default function Conversation() {
 
           {/* Messages - scrollable area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-            {messages.length === 0 ? (
+            {sortedMessages.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 {t('messages.sendFirst', 'No messages yet. Send the first message!')}
               </div>
             ) : (
               <>
-                {messages.map((msg, index) => {
+                {sortedMessages.map((msg, index) => {
                   const isOwn = msg.sender_id === user?.id;
                   const showDate = index === 0 || 
-                    formatDate(messages[index - 1].created_at) !== formatDate(msg.created_at);
+                    formatDate(sortedMessages[index - 1].created_at) !== formatDate(msg.created_at);
 
                   return (
                     <div key={msg.id}>
