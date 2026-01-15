@@ -40,7 +40,7 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className={isMobile ? "fixed inset-0 z-50 bg-gray-50 flex items-center justify-center" : "min-h-screen bg-gray-50 flex items-center justify-center"}>
+      <div className={isMobile ? "fixed inset-0 z-[10000] bg-gray-50 flex items-center justify-center" : "min-h-screen bg-gray-50 flex items-center justify-center"}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
@@ -49,7 +49,7 @@ export default function Messages() {
   // Mobile: Fixed fullscreen list that covers header/footer
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-gray-50">
+      <div className="fixed inset-0 z-[10000] flex flex-col bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b px-4 py-3 flex-shrink-0" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
           <div className="flex items-center gap-3">
