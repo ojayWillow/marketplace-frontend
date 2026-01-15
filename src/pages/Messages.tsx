@@ -5,11 +5,13 @@ import { useAuthStore } from '../stores/authStore';
 import { useConversations } from '../api/hooks';
 import { getImageUrl } from '../api/uploads';
 import OnlineStatus from '../components/ui/OnlineStatus';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export default function Messages() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const isMobile = useIsMobile();
   
   // React Query for conversations - auto-refetches every minute
   const { data, isLoading: loading } = useConversations({ enabled: isAuthenticated });
@@ -38,12 +40,112 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`${isMobile ? 'h-screen' : 'min-h-screen'} bg-gray-50 flex items-center justify-center`}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
+  // Mobile: Fullscreen list
+  if (isMobile) {
+    return (
+      <div className="h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b px-4 py-4 flex-shrink-0 safe-area-top">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-gray-500 hover:text-gray-700 p-1">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <h1 className="text-xl font-bold text-gray-900">
+              💬 {t('messages.title', 'Messages')}
+            </h1>
+          </div>
+        </div>
+
+        {/* Conversations list */}
+        <div className="flex-1 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <div className="text-6xl mb-4">📭</div>
+              <p className="text-gray-500 mb-4">{t('messages.noConversations', 'No conversations yet')}</p>
+              <Link
+                to="/tasks"
+                className="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+              >
+                {t('messages.browseTasks', 'Browse Tasks')}
+              </Link>
+            </div>
+          ) : (
+            <div className="bg-white">
+              {conversations.map((conv) => (
+                <Link
+                  key={conv.id}
+                  to={`/messages/${conv.id}`}
+                  className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    {conv.other_participant?.avatar_url ? (
+                      <img
+                        src={getImageUrl(conv.other_participant.avatar_url)}
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                        {conv.other_participant?.username?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Online Status Icon */}
+                  {conv.other_participant?.online_status && (
+                    <div className="flex-shrink-0">
+                      <OnlineStatus
+                        status={conv.other_participant.online_status as 'online' | 'recently' | 'inactive'}
+                        lastSeenDisplay={conv.other_participant.last_seen_display}
+                        size="md"
+                      />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-900 truncate">
+                        {conv.other_participant?.first_name && conv.other_participant?.last_name
+                          ? `${conv.other_participant.first_name} ${conv.other_participant.last_name}`
+                          : conv.other_participant?.username || 'Unknown'}
+                      </span>
+                      {conv.last_message && (
+                        <span className="text-xs text-gray-500 flex-shrink-0">
+                          {formatTime(conv.last_message.created_at)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">
+                      {conv.last_message?.content || t('messages.noMessagesYet', 'No messages yet')}
+                    </p>
+                  </div>
+
+                  {/* Unread badge */}
+                  {conv.unread_count > 0 && (
+                    <div className="flex-shrink-0 bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {conv.unread_count}
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: Card-style layout
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
@@ -70,7 +172,7 @@ export default function Messages() {
                 to={`/messages/${conv.id}`}
                 className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
               >
-                {/* Avatar - clean, no overlay */}
+                {/* Avatar */}
                 <div className="flex-shrink-0">
                   {conv.other_participant?.avatar_url ? (
                     <img
@@ -85,7 +187,7 @@ export default function Messages() {
                   )}
                 </div>
 
-                {/* Online Status Icon - between avatar and content */}
+                {/* Online Status Icon */}
                 {conv.other_participant?.online_status && (
                   <div className="flex-shrink-0">
                     <OnlineStatus
