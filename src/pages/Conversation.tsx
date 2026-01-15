@@ -157,7 +157,7 @@ export default function Conversation() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className={isMobile ? "fixed inset-0 z-50 flex items-center justify-center bg-gray-50" : "h-96 flex items-center justify-center bg-gray-50"}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
@@ -165,7 +165,7 @@ export default function Conversation() {
 
   if (!conversation) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className={isMobile ? "fixed inset-0 z-50 flex items-center justify-center bg-gray-50" : "h-96 flex items-center justify-center bg-gray-50"}>
         <div className="text-center">
           <p className="text-gray-500 mb-4">{t('messages.notFound', 'Conversation not found')}</p>
           <Link to="/messages" className="text-blue-500 hover:text-blue-600">
@@ -184,13 +184,13 @@ export default function Conversation() {
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  // Mobile: Full screen chat
+  // Mobile: Fixed full screen chat that covers everything
   if (isMobile) {
     return (
-      <div className="h-screen flex flex-col bg-white">
+      <div className="fixed inset-0 z-50 flex flex-col bg-white">
         {/* Header */}
-        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0 safe-area-top">
-          <Link to="/messages" className="text-gray-500 hover:text-gray-700 p-1">
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
+          <Link to="/messages" className="text-gray-500 hover:text-gray-700 p-1 -ml-1">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -289,7 +289,7 @@ export default function Conversation() {
         </div>
 
         {/* Input - fixed at bottom */}
-        <div className="bg-white border-t p-3 flex-shrink-0 safe-area-bottom">
+        <div className="bg-white border-t p-3 flex-shrink-0" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
           <form onSubmit={handleSend} className="flex gap-2">
             <input
               type="text"
