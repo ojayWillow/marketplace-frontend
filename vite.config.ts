@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.svg'],
+      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.svg', 'sw-push.js'],
       manifest: {
         name: 'Tirgus - Latvijas Tirgus',
         short_name: 'Tirgus',
@@ -58,6 +58,8 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Import the push notification handlers into the service worker
+        importScripts: ['/sw-push.js'],
         // Don't cache API routes - always fetch fresh data
         navigateFallbackDenylist: [/^\/api\/.*/],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
