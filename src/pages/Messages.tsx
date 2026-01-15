@@ -40,20 +40,20 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className={`${isMobile ? 'h-screen' : 'min-h-screen'} bg-gray-50 flex items-center justify-center`}>
+      <div className={isMobile ? "fixed inset-0 z-50 bg-gray-50 flex items-center justify-center" : "min-h-screen bg-gray-50 flex items-center justify-center"}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  // Mobile: Fullscreen list
+  // Mobile: Fixed fullscreen list that covers header/footer
   if (isMobile) {
     return (
-      <div className="h-screen flex flex-col bg-gray-50">
+      <div className="fixed inset-0 z-50 flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="bg-white border-b px-4 py-4 flex-shrink-0 safe-area-top">
+        <div className="bg-white border-b px-4 py-3 flex-shrink-0" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
           <div className="flex items-center gap-3">
-            <Link to="/" className="text-gray-500 hover:text-gray-700 p-1">
+            <Link to="/" className="text-gray-500 hover:text-gray-700 p-1 -ml-1">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -145,7 +145,7 @@ export default function Messages() {
     );
   }
 
-  // Desktop: Card-style layout
+  // Desktop: Card-style layout (no changes needed)
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
