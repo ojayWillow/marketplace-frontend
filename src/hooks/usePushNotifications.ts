@@ -1,8 +1,8 @@
 /**
  * React hook for managing push notification subscriptions
  * 
- * Fixed to properly sync permission state with UI toggle.
- * The toggle now reflects actual browser permission state.
+ * Fixed to properly persist toggle state across app sessions.
+ * Uses both browser permission AND localStorage to track user preference.
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -13,6 +13,8 @@ import {
   urlBase64ToUint8Array,
 } from '../api/push';
 import { useAuthStore } from '../stores/authStore';
+
+const PUSH_PREFERENCE_KEY = 'push_notifications_enabled';
 
 export interface UsePushNotificationsReturn {
   /** Whether push notifications are supported by the browser */
@@ -34,12 +36,17 @@ export interface UsePushNotificationsReturn {
 }
 
 export function usePushNotifications(): UsePushNotificationsReturn {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [isSupported, setIsSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Get user-specific storage key
+  const getStorageKey = useCallback(() => {
+    return user?.id ? `${PUSH_PREFERENCE_KEY}_${user.id}` : PUSH_PREFERENCE_KEY;
+  }, [user?.id]);
 
   // Check if push notifications are supported
   useEffect(() => {
@@ -61,22 +68,40 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     
     try {
       // Update permission state in case it changed
-      setPermission(Notification.permission);
+      const currentPermission = Notification.permission;
+      setPermission(currentPermission);
       
+      // First check if there's an actual browser subscription
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setIsSubscribed(!!subscription);
       
-      // If permission is granted but no subscription exists, and user is authenticated,
-      // try to create subscription (this handles the case where permission was granted
-      // but subscription failed)
-      if (Notification.permission === 'granted' && !subscription && isAuthenticated) {
-        console.log('Permission granted but no subscription - will retry on next toggle');
+      if (subscription) {
+        // Real subscription exists
+        setIsSubscribed(true);
+        localStorage.setItem(getStorageKey(), 'true');
+        return;
+      }
+      
+      // No browser subscription - check if user has granted permission
+      // AND has previously enabled notifications (stored preference)
+      const storedPreference = localStorage.getItem(getStorageKey());
+      
+      if (currentPermission === 'granted' && storedPreference === 'true') {
+        // Permission granted and user previously enabled - show as subscribed
+        // (This handles the case where VAPID key isn't configured)
+        setIsSubscribed(true);
+      } else if (currentPermission === 'denied') {
+        // Permission was denied - definitely not subscribed
+        setIsSubscribed(false);
+        localStorage.removeItem(getStorageKey());
+      } else {
+        // Default state or permission revoked
+        setIsSubscribed(false);
       }
     } catch (err) {
       console.error('Error checking subscription:', err);
     }
-  }, [isSupported, isAuthenticated]);
+  }, [isSupported, getStorageKey]);
 
   // Check subscription on mount and when auth state changes
   useEffect(() => {
@@ -117,9 +142,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
       if (permissionResult !== 'granted') {
         setError('Notification permission denied');
+        localStorage.removeItem(getStorageKey());
         setIsLoading(false);
         return false;
       }
+
+      // Permission granted - save user preference immediately
+      localStorage.setItem(getStorageKey(), 'true');
 
       // Get VAPID public key from server
       let vapidPublicKey: string | null = null;
@@ -133,9 +162,9 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         // Permission was granted but server doesn't have VAPID configured
         // Still mark as subscribed since user wants notifications
         console.warn('Push notifications not configured on server - permission granted but subscription pending');
-        setIsSubscribed(true); // Optimistically set to true since user granted permission
+        setIsSubscribed(true);
         setIsLoading(false);
-        return true; // Return success since permission was granted
+        return true;
       }
 
       // Get service worker registration
@@ -171,13 +200,14 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       // Even if subscription failed, check if permission was granted
       // and update state accordingly
       if (Notification.permission === 'granted') {
-        setIsSubscribed(true); // User granted permission, consider it success
+        localStorage.setItem(getStorageKey(), 'true');
+        setIsSubscribed(true);
         return true;
       }
       
       return false;
     }
-  }, [isSupported, isAuthenticated]);
+  }, [isSupported, isAuthenticated, getStorageKey]);
 
   const unsubscribe = useCallback(async (): Promise<boolean> => {
     if (!isSupported) return false;
@@ -186,6 +216,9 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setError(null);
 
     try {
+      // Remove stored preference
+      localStorage.removeItem(getStorageKey());
+
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
 
@@ -210,7 +243,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       setIsLoading(false);
       return false;
     }
-  }, [isSupported]);
+  }, [isSupported, getStorageKey]);
 
   const testNotification = useCallback(async (): Promise<void> => {
     if (!isSubscribed) {
