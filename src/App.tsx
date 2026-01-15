@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
+import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 
 // Loading spinner component
 const PageLoader = () => (
@@ -174,6 +175,9 @@ function App() {
       
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
+      
+      {/* PWA Update Prompt - notifies users when new version is available */}
+      <PWAUpdatePrompt />
     </>
   )
 }
