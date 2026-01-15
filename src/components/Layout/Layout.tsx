@@ -7,17 +7,19 @@ const Layout = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   
-  // Check if we're on the Tasks page (Quick Help) on mobile
+  // Check if we're on pages that need fullscreen mobile experience
   // These pages get a fullscreen mobile experience without header/footer
   const isFullscreenMobilePage = isMobile && (
     location.pathname === '/tasks' || 
-    location.pathname === '/quick-help'
+    location.pathname === '/quick-help' ||
+    location.pathname === '/messages' ||
+    location.pathname.startsWith('/messages/')
   );
 
   // For fullscreen mobile pages, render without header/footer/padding
   if (isFullscreenMobilePage) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gray-50">
         <main id="main-content" tabIndex={-1}>
           <Outlet />
         </main>
