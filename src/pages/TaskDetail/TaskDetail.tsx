@@ -253,7 +253,7 @@ const TaskDetail = () => {
           <TaskHeader task={task} />
 
           <div className="p-6">
-            {/* Profile Section */}
+            {/* Profile Section - Header with View Profile button only (no Apply button here) */}
             <div className="flex items-center justify-between gap-4 pb-6 border-b border-gray-200">
               <div className="flex items-center gap-4">
                 <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
@@ -272,13 +272,16 @@ const TaskDetail = () => {
                 </div>
               </div>
               
-              {/* Header button: View Profile for visitors */}
-              {!isCreator && task.status === 'open' && (
+              {/* Header button: ONLY View Profile for visitors (Apply button is at bottom only) */}
+              {!isCreator && (
                 <Link
                   to={`/users/${task.creator_id}`}
-                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
-                  👤 View Profile
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  View Profile
                 </Link>
               )}
               {isCreator && canEdit && (
@@ -361,7 +364,7 @@ const TaskDetail = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Action Buttons - This is where the ONLY Apply button should be */}
             <TaskActionButtons
               task={task}
               isCreator={isCreator}
