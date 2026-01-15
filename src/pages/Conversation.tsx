@@ -8,6 +8,7 @@ import { useConversation, useMessages, useSendMessage, useMarkAsRead } from '../
 import { getImageUrl } from '../api/uploads';
 import OnlineStatus from '../components/ui/OnlineStatus';
 import { useQueryClient } from '@tanstack/react-query';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export default function Conversation() {
   const { t } = useTranslation();
@@ -16,6 +17,7 @@ export default function Conversation() {
   const { isAuthenticated, user } = useAuthStore();
   const toast = useToastStore();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -155,7 +157,7 @@ export default function Conversation() {
 
   if (loading) {
     return (
-      <div className="min-h-[500px] bg-gray-50 flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
@@ -163,7 +165,7 @@ export default function Conversation() {
 
   if (!conversation) {
     return (
-      <div className="min-h-[500px] bg-gray-50 flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <p className="text-gray-500 mb-4">{t('messages.notFound', 'Conversation not found')}</p>
           <Link to="/messages" className="text-blue-500 hover:text-blue-600">
@@ -182,132 +184,258 @@ export default function Conversation() {
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  return (
-    <div className="bg-gray-100 py-4">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 120px)', maxHeight: '700px' }}>
-          {/* Header */}
-          <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
-            <Link to="/messages" className="text-gray-500 hover:text-gray-700">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            
-            <Link to={`/users/${otherUser?.id}`} className="flex items-center gap-3 flex-1">
-              {/* Avatar - clean, no overlay */}
-              <div className="flex-shrink-0">
-                {otherUser?.avatar_url ? (
-                  <img
-                    src={getImageUrl(otherUser.avatar_url)}
-                    alt=""
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                    {otherUser?.username?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                )}
-              </div>
-              
-              {/* Online status icon - between avatar and name */}
-              {onlineStatus && (
-                <div className="flex-shrink-0">
-                  <OnlineStatus
-                    status={onlineStatus}
-                    lastSeenDisplay={otherUser?.last_seen_display}
-                    size="md"
-                    showTooltip={false}
-                  />
+  // Mobile: Full screen chat
+  if (isMobile) {
+    return (
+      <div className="h-screen flex flex-col bg-white">
+        {/* Header */}
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0 safe-area-top">
+          <Link to="/messages" className="text-gray-500 hover:text-gray-700 p-1">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          
+          <Link to={`/users/${otherUser?.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Avatar */}
+            <div className="flex-shrink-0">
+              {otherUser?.avatar_url ? (
+                <img
+                  src={getImageUrl(otherUser.avatar_url)}
+                  alt=""
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                  {otherUser?.username?.charAt(0).toUpperCase() || '?'}
                 </div>
               )}
-              
-              {/* Name and status text */}
-              <div>
-                <p className="font-medium text-gray-900">
-                  {otherUser?.first_name && otherUser?.last_name
-                    ? `${otherUser.first_name} ${otherUser.last_name}`
-                    : otherUser?.username || 'Unknown'}
+            </div>
+            
+            {/* Online status icon */}
+            {onlineStatus && (
+              <div className="flex-shrink-0">
+                <OnlineStatus
+                  status={onlineStatus}
+                  lastSeenDisplay={otherUser?.last_seen_display}
+                  size="md"
+                  showTooltip={false}
+                />
+              </div>
+            )}
+            
+            {/* Name and status */}
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-gray-900 truncate">
+                {otherUser?.first_name && otherUser?.last_name
+                  ? `${otherUser.first_name} ${otherUser.last_name}`
+                  : otherUser?.username || 'Unknown'}
+              </p>
+              {onlineStatus && (
+                <p className={`text-xs truncate ${
+                  onlineStatus === 'online' 
+                    ? 'text-green-600' 
+                    : onlineStatus === 'inactive'
+                      ? 'text-amber-600'
+                      : 'text-gray-500'
+                }`}>
+                  {getOnlineStatusText(onlineStatus, otherUser?.last_seen_display)}
                 </p>
-                {/* Online status text */}
-                {onlineStatus && (
-                  <p className={`text-xs ${
-                    onlineStatus === 'online' 
-                      ? 'text-green-600' 
-                      : onlineStatus === 'inactive'
-                        ? 'text-amber-600'
-                        : 'text-gray-500'
-                  }`}>
-                    {getOnlineStatusText(onlineStatus, otherUser?.last_seen_display)}
-                  </p>
-                )}
-              </div>
-            </Link>
-          </div>
+              )}
+            </div>
+          </Link>
+        </div>
 
-          {/* Messages - scrollable area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-            {sortedMessages.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                {t('messages.sendFirst', 'No messages yet. Send the first message!')}
-              </div>
-            ) : (
-              <>
-                {sortedMessages.map((msg, index) => {
-                  const isOwn = msg.sender_id === user?.id;
-                  const showDate = index === 0 || 
-                    formatDate(sortedMessages[index - 1].created_at) !== formatDate(msg.created_at);
+        {/* Messages - scrollable area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          {sortedMessages.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              {t('messages.sendFirst', 'No messages yet. Send the first message!')}
+            </div>
+          ) : (
+            <>
+              {sortedMessages.map((msg, index) => {
+                const isOwn = msg.sender_id === user?.id;
+                const showDate = index === 0 || 
+                  formatDate(sortedMessages[index - 1].created_at) !== formatDate(msg.created_at);
 
-                  return (
-                    <div key={msg.id}>
-                      {showDate && (
-                        <div className="text-center text-xs text-gray-400 my-3">
-                          {formatDate(msg.created_at)}
-                        </div>
-                      )}
-                      <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                        <div
-                          className={`max-w-[75%] px-4 py-2 rounded-2xl ${
-                            isOwn
-                              ? 'bg-blue-500 text-white rounded-br-md'
-                              : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
-                          }`}
-                        >
-                          <p className="break-words">{msg.content}</p>
-                          <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-400'}`}>
-                            {formatTime(msg.created_at)}
-                          </p>
-                        </div>
+                return (
+                  <div key={msg.id}>
+                    {showDate && (
+                      <div className="text-center text-xs text-gray-400 my-3">
+                        {formatDate(msg.created_at)}
+                      </div>
+                    )}
+                    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                          isOwn
+                            ? 'bg-blue-500 text-white rounded-br-md'
+                            : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
+                        }`}
+                      >
+                        <p className="break-words">{msg.content}</p>
+                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {formatTime(msg.created_at)}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
 
-          {/* Input - fixed at bottom */}
-          <div className="bg-white border-t p-3 flex-shrink-0">
-            <form onSubmit={handleSend} className="flex gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={t('messages.typeMessage', 'Type a message...')}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                disabled={sendMutation.isPending}
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || sendMutation.isPending}
-                className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm"
-              >
-                {sendMutation.isPending ? '...' : t('messages.send', 'Send')}
-              </button>
-            </form>
-          </div>
+        {/* Input - fixed at bottom */}
+        <div className="bg-white border-t p-3 flex-shrink-0 safe-area-bottom">
+          <form onSubmit={handleSend} className="flex gap-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={t('messages.typeMessage', 'Type a message...')}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              disabled={sendMutation.isPending}
+            />
+            <button
+              type="submit"
+              disabled={!newMessage.trim() || sendMutation.isPending}
+              className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+            >
+              {sendMutation.isPending ? '...' : t('messages.send', 'Send')}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: Card-style chat
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 200px)', minHeight: '500px', maxHeight: '700px' }}>
+        {/* Header */}
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          <Link to="/messages" className="text-gray-500 hover:text-gray-700">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          
+          <Link to={`/users/${otherUser?.id}`} className="flex items-center gap-3 flex-1">
+            {/* Avatar */}
+            <div className="flex-shrink-0">
+              {otherUser?.avatar_url ? (
+                <img
+                  src={getImageUrl(otherUser.avatar_url)}
+                  alt=""
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                  {otherUser?.username?.charAt(0).toUpperCase() || '?'}
+                </div>
+              )}
+            </div>
+            
+            {/* Online status icon */}
+            {onlineStatus && (
+              <div className="flex-shrink-0">
+                <OnlineStatus
+                  status={onlineStatus}
+                  lastSeenDisplay={otherUser?.last_seen_display}
+                  size="md"
+                  showTooltip={false}
+                />
+              </div>
+            )}
+            
+            {/* Name and status text */}
+            <div>
+              <p className="font-medium text-gray-900">
+                {otherUser?.first_name && otherUser?.last_name
+                  ? `${otherUser.first_name} ${otherUser.last_name}`
+                  : otherUser?.username || 'Unknown'}
+              </p>
+              {onlineStatus && (
+                <p className={`text-xs ${
+                  onlineStatus === 'online' 
+                    ? 'text-green-600' 
+                    : onlineStatus === 'inactive'
+                      ? 'text-amber-600'
+                      : 'text-gray-500'
+                }`}>
+                  {getOnlineStatusText(onlineStatus, otherUser?.last_seen_display)}
+                </p>
+              )}
+            </div>
+          </Link>
+        </div>
+
+        {/* Messages - scrollable area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          {sortedMessages.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              {t('messages.sendFirst', 'No messages yet. Send the first message!')}
+            </div>
+          ) : (
+            <>
+              {sortedMessages.map((msg, index) => {
+                const isOwn = msg.sender_id === user?.id;
+                const showDate = index === 0 || 
+                  formatDate(sortedMessages[index - 1].created_at) !== formatDate(msg.created_at);
+
+                return (
+                  <div key={msg.id}>
+                    {showDate && (
+                      <div className="text-center text-xs text-gray-400 my-3">
+                        {formatDate(msg.created_at)}
+                      </div>
+                    )}
+                    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+                          isOwn
+                            ? 'bg-blue-500 text-white rounded-br-md'
+                            : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
+                        }`}
+                      >
+                        <p className="break-words">{msg.content}</p>
+                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {formatTime(msg.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* Input - fixed at bottom */}
+        <div className="bg-white border-t p-3 flex-shrink-0">
+          <form onSubmit={handleSend} className="flex gap-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={t('messages.typeMessage', 'Type a message...')}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              disabled={sendMutation.isPending}
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={!newMessage.trim() || sendMutation.isPending}
+              className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm"
+            >
+              {sendMutation.isPending ? '...' : t('messages.send', 'Send')}
+            </button>
+          </form>
         </div>
       </div>
     </div>
