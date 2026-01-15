@@ -1,17 +1,20 @@
 /**
- * Service Worker Push Event Handlers
- * This file handles incoming push notifications
+ * Service Worker for Push Notifications
+ * Handles incoming push notifications and notification clicks
  */
+
+// Cache name for offline assets
+const CACHE_NAME = 'marketplace-v1';
 
 // Handle push events
 self.addEventListener('push', function(event) {
   console.log('[Service Worker] Push received:', event);
   
   let data = {
-    title: 'Tirgus',
+    title: 'Marketplace',
     body: 'You have a new notification',
-    icon: '/android-chrome-192x192.png',
-    badge: '/android-chrome-192x192.png',
+    icon: '/favicon.svg',
+    badge: '/favicon.svg',
     data: { url: '/' }
   };
   
@@ -42,8 +45,8 @@ self.addEventListener('push', function(event) {
     vibrate: [100, 50, 100],
     requireInteraction: false,
     actions: [
-      { action: 'open', title: 'Atvērt' },
-      { action: 'close', title: 'Aizvērt' }
+      { action: 'open', title: 'Open' },
+      { action: 'close', title: 'Close' }
     ]
   });
   
@@ -93,4 +96,18 @@ self.addEventListener('notificationclick', function(event) {
 // Handle notification close
 self.addEventListener('notificationclose', function(event) {
   console.log('[Service Worker] Notification closed:', event);
+});
+
+// Handle service worker install
+self.addEventListener('install', function(event) {
+  console.log('[Service Worker] Installing...');
+  // Skip waiting to activate immediately
+  self.skipWaiting();
+});
+
+// Handle service worker activation
+self.addEventListener('activate', function(event) {
+  console.log('[Service Worker] Activating...');
+  // Claim all clients immediately
+  event.waitUntil(clients.claim());
 });
