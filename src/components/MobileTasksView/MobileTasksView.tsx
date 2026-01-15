@@ -46,12 +46,16 @@ const MobileTasksView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
+  // Check if user has already seen and agreed to intro
+  const hasSeenIntro = localStorage.getItem('quickHelpIntroSeen') === 'true';
+
   // UI state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showIntroModal, setShowIntroModal] = useState(
-    () => !localStorage.getItem('quickHelpIntroSeen')
-  );
+  // Show intro modal automatically only for first-time users
+  const [showIntroModal, setShowIntroModal] = useState(!hasSeenIntro);
+  // Track if this is a manual open (from menu) vs automatic (first time)
+  const [isManualIntroOpen, setIsManualIntroOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
 
@@ -219,6 +223,18 @@ const MobileTasksView = () => {
     }
   };
 
+  // Handle opening intro from menu (manual open - no checkboxes)
+  const handleShowIntroFromMenu = () => {
+    setIsManualIntroOpen(true);
+    setShowIntroModal(true);
+  };
+
+  // Handle closing intro modal
+  const handleCloseIntro = () => {
+    setShowIntroModal(false);
+    setIsManualIntroOpen(false);
+  };
+
   // Sheet drag handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
@@ -262,7 +278,7 @@ const MobileTasksView = () => {
         user={user}
         onLogout={logout}
         navigate={navigate}
-        onShowIntro={() => setShowIntroModal(true)}
+        onShowIntro={handleShowIntroFromMenu}
       />
 
       {/* Create Choice Modal */}
@@ -274,9 +290,11 @@ const MobileTasksView = () => {
       />
 
       {/* Quick Help Intro Modal */}
+      {/* showCheckboxes: true for first-time (must agree), false when opened from menu */}
       <QuickHelpIntroModal
         isOpen={showIntroModal}
-        onClose={() => setShowIntroModal(false)}
+        onClose={handleCloseIntro}
+        showCheckboxes={!hasSeenIntro && !isManualIntroOpen}
       />
 
       <div className="mobile-tasks-container">
