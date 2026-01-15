@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { LANGUAGE_OPTIONS } from '../constants';
+import { usePushNotifications } from '../../../hooks/usePushNotifications';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -37,6 +38,15 @@ const SlideOutMenu = ({
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const currentLanguage = i18n.language;
+
+  // Push notifications hook
+  const {
+    isSupported: isPushSupported,
+    isSubscribed: isPushSubscribed,
+    isLoading: isPushLoading,
+    subscribe: subscribeToPush,
+    unsubscribe: unsubscribeFromPush,
+  } = usePushNotifications();
 
   // PWA Install state
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -148,6 +158,16 @@ const SlideOutMenu = ({
       }
     } else if (isIOS) {
       setShowIOSInstructions(true);
+    }
+  };
+
+  const handlePushToggle = async () => {
+    if (isPushLoading) return;
+    
+    if (isPushSubscribed) {
+      await unsubscribeFromPush();
+    } else {
+      await subscribeToPush();
     }
   };
 
@@ -300,27 +320,57 @@ const SlideOutMenu = ({
             </>
           )}
 
+          {/* Settings Section */}
+          <div className="h-px bg-gray-200 my-1.5 mx-4" />
+          <div className="px-4 py-1.5">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+              {t('menu.settings', 'Settings')}
+            </span>
+          </div>
+
+          {/* Push Notifications Toggle - Only show if supported and authenticated */}
+          {isPushSupported && isAuthenticated && (
+            <button
+              onClick={handlePushToggle}
+              disabled={isPushLoading}
+              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+            >
+              <span className="text-lg">🔔</span>
+              <span className="font-medium text-sm text-gray-700 flex-1 text-left">
+                {t('menu.pushNotifications', 'Push Notifications')}
+              </span>
+              {/* Toggle Switch */}
+              <div
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  isPushSubscribed ? 'bg-blue-500' : 'bg-gray-300'
+                } ${isPushLoading ? 'opacity-50' : ''}`}
+              >
+                <div
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    isPushSubscribed ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </div>
+            </button>
+          )}
+
           {/* Install App Option */}
           {showInstallOption && (
-            <>
-              <div className="h-px bg-gray-200 my-1.5 mx-4" />
-              <button
-                onClick={handleInstallClick}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 active:bg-green-100 transition-colors"
-              >
-                <span className="text-lg">📲</span>
-                <span className="font-medium text-sm text-green-600">
-                  {t('menu.installApp', 'Install App')}
-                </span>
-                <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
-                  {t('menu.free', 'Free')}
-                </span>
-              </button>
-            </>
+            <button
+              onClick={handleInstallClick}
+              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 active:bg-green-100 transition-colors"
+            >
+              <span className="text-lg">📲</span>
+              <span className="font-medium text-sm text-green-600">
+                {t('menu.installApp', 'Install App')}
+              </span>
+              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
+                {t('menu.free', 'Free')}
+              </span>
+            </button>
           )}
 
           {/* How it Works */}
-          <div className="h-px bg-gray-200 my-1.5 mx-4" />
           <button
             onClick={handleShowIntro}
             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
