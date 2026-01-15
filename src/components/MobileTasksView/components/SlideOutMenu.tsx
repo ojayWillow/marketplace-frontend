@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { LANGUAGE_OPTIONS } from '../constants';
 
 interface SlideOutMenuProps {
@@ -24,15 +25,34 @@ const SlideOutMenu = ({
   onShowIntro,
 }: SlideOutMenuProps) => {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const currentLanguage = i18n.language;
 
-  // Main menu items
-  const menuItems = isAuthenticated
+  // Check if current path matches
+  const isActive = (path: string) => location.pathname === path;
+
+  // Navigation sections
+  const mainNavItems = [
+    { 
+      icon: '💼', 
+      label: t('menu.quickHelp', 'Quick Help'), 
+      path: '/tasks',
+      description: t('menu.quickHelpDesc', 'Find jobs & earn money'),
+    },
+    { 
+      icon: '🛒', 
+      label: t('menu.marketplace', 'Marketplace'), 
+      path: '/listings',
+      description: t('menu.marketplaceDesc', 'Buy & sell items'),
+    },
+  ];
+
+  // User menu items (only when authenticated)
+  const userMenuItems = isAuthenticated
     ? [
         { icon: '👤', label: t('menu.profile', 'My Profile'), path: '/profile' },
-        { icon: '📋', label: t('menu.myJobs', 'My Jobs'), path: '/profile?tab=tasks' },
-        { icon: '❤️', label: t('menu.favorites', 'Favorites'), path: '/favorites' },
         { icon: '💬', label: t('menu.messages', 'Messages'), path: '/messages' },
+        { icon: '❤️', label: t('menu.favorites', 'Favorites'), path: '/favorites' },
       ]
     : [
         { icon: '🔑', label: t('menu.login', 'Login'), path: '/login' },
@@ -55,6 +75,13 @@ const SlideOutMenu = ({
           path: '/offerings/create',
           color: 'text-amber-600',
           bgHover: 'hover:bg-amber-50',
+        },
+        {
+          icon: '🏷️',
+          label: t('menu.sellItem', 'Sell an Item'),
+          path: '/listings/create',
+          color: 'text-green-600',
+          bgHover: 'hover:bg-green-50',
         },
       ]
     : [];
@@ -137,14 +164,60 @@ const SlideOutMenu = ({
 
         {/* Menu Items - Scrollable */}
         <div className="flex-1 overflow-y-auto py-2">
-          {menuItems.map((item, index) => (
+          {/* Main Navigation Section */}
+          <div className="px-6 py-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              {t('menu.explore', 'Explore')}
+            </span>
+          </div>
+          {mainNavItems.map((item, index) => (
             <button
               key={index}
               onClick={() => handleItemClick(item.path)}
-              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-colors ${
+                isActive(item.path)
+                  ? 'bg-blue-50 border-l-4 border-blue-500'
+                  : 'hover:bg-gray-50 active:bg-gray-100'
+              }`}
+            >
+              <span className="text-2xl">{item.icon}</span>
+              <div className="flex-1 text-left">
+                <span className={`font-semibold ${
+                  isActive(item.path) ? 'text-blue-600' : 'text-gray-800'
+                }`}>
+                  {item.label}
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+              </div>
+              {isActive(item.path) && (
+                <span className="text-blue-500 text-sm">●</span>
+              )}
+            </button>
+          ))}
+
+          {/* User Menu Section */}
+          <div className="h-px bg-gray-200 my-2 mx-6" />
+          <div className="px-6 py-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              {isAuthenticated ? t('menu.account', 'Account') : t('menu.getStarted', 'Get Started')}
+            </span>
+          </div>
+          {userMenuItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => handleItemClick(item.path)}
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-colors ${
+                isActive(item.path)
+                  ? 'bg-blue-50 border-l-4 border-blue-500'
+                  : 'hover:bg-gray-50 active:bg-gray-100'
+              }`}
             >
               <span className="text-xl">{item.icon}</span>
-              <span className="font-medium text-gray-700">{item.label}</span>
+              <span className={`font-medium ${
+                isActive(item.path) ? 'text-blue-600' : 'text-gray-700'
+              }`}>
+                {item.label}
+              </span>
             </button>
           ))}
 
