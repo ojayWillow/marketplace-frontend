@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../stores/authStore';
 import { useToastStore } from '../../../stores/toastStore';
 import apiClient from '../../../api/client';
-import { listingsApi, type Listing } from '../../../api/listings';
-import { Task, TaskApplication, getCreatedTasks, getMyApplications } from '../../../api/tasks';
-import { getMyOfferings, Offering, getOfferings } from '../../../api/offerings';
+import type { Listing } from '../../../api/listings';
+import { Task, TaskApplication } from '../../../api/tasks';
+import { Offering } from '../../../api/offerings';
 import type { UserProfile, Review, TaskMatchCounts, ProfileFormData } from '../types';
 
 export const useProfileData = () => {
@@ -22,7 +22,7 @@ export const useProfileData = () => {
   const [myApplications, setMyApplications] = useState<TaskApplication[]>([]);
   const [taskMatchCounts, setTaskMatchCounts] = useState<TaskMatchCounts>({});
   
-  // Loading states - main loading covers initial page load
+  // Loading states - single loading state for the combined endpoint
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [offeringsLoading, setOfferingsLoading] = useState(false);
@@ -42,57 +42,16 @@ export const useProfileData = () => {
     avatar_url: '',
   });
 
-  // Individual fetch functions (for refreshing specific data)
-  const fetchProfile = useCallback(async () => {
-    const response = await apiClient.get('/api/auth/profile');
-    setProfile(response.data);
-    setFormData({
-      first_name: response.data.first_name || '',
-      last_name: response.data.last_name || '',
-      bio: response.data.bio || '',
-      phone: response.data.phone || '',
-      city: response.data.city || '',
-      country: response.data.country || '',
-      avatar_url: response.data.avatar_url || response.data.profile_picture_url || '',
-    });
-    
-    // Fetch reviews
-    if (response.data.id) {
-      const reviewsResponse = await apiClient.get(`/api/auth/users/${response.data.id}/reviews`);
-      setReviews(reviewsResponse.data.reviews || []);
-    }
-    
-    return response.data;
-  }, []);
-
-  const fetchMyListings = useCallback(async () => {
-    setListingsLoading(true);
-    try {
-      const response = await listingsApi.getMy();
-      setMyListings(response.listings || []);
-      return response.listings || [];
-    } finally {
-      setListingsLoading(false);
-    }
-  }, []);
-
-  const fetchMyOfferings = useCallback(async () => {
-    setOfferingsLoading(true);
-    try {
-      const response = await getMyOfferings();
-      setMyOfferings(response.offerings || []);
-      return response.offerings || [];
-    } finally {
-      setOfferingsLoading(false);
-    }
-  }, []);
-
+  // Individual fetch functions (for refreshing specific data after actions)
   const fetchTasks = useCallback(async () => {
     setTasksLoading(true);
     try {
-      const created = await getCreatedTasks();
-      setCreatedTasks(created.tasks || []);
-      return created.tasks || [];
+      const response = await apiClient.get('/api/tasks/created');
+      setCreatedTasks(response.data.tasks || []);
+      return response.data.tasks || [];
+    } catch (e) {
+      console.error('Error fetching tasks:', e);
+      return [];
     } finally {
       setTasksLoading(false);
     }
@@ -101,40 +60,15 @@ export const useProfileData = () => {
   const fetchApplications = useCallback(async () => {
     setApplicationsLoading(true);
     try {
-      const response = await getMyApplications();
-      setMyApplications(response.applications || []);
-      return response.applications || [];
+      const response = await apiClient.get('/api/tasks/applications/mine');
+      setMyApplications(response.data.applications || []);
+      return response.data.applications || [];
+    } catch (e) {
+      console.error('Error fetching applications:', e);
+      return [];
     } finally {
       setApplicationsLoading(false);
     }
-  }, []);
-
-  // Fetch match counts for open tasks
-  const fetchMatchCountsForTasks = useCallback(async (tasks: Task[], userId?: number) => {
-    const openTasks = tasks.filter(t => t.status === 'open' && t.latitude && t.longitude);
-    if (openTasks.length === 0) return;
-
-    const counts: TaskMatchCounts = {};
-    
-    await Promise.all(openTasks.map(async (task) => {
-      try {
-        const response = await getOfferings({
-          category: task.category,
-          latitude: task.latitude!,
-          longitude: task.longitude!,
-          radius: 50,
-          status: 'active',
-          per_page: 10
-        });
-        const filtered = (response.offerings || []).filter(o => o.creator_id !== userId);
-        counts[task.id] = filtered.length;
-      } catch (error) {
-        console.error(`Error fetching matches for task ${task.id}:`, error);
-        counts[task.id] = 0;
-      }
-    }));
-
-    setTaskMatchCounts(counts);
   }, []);
 
   // Save profile
@@ -165,7 +99,7 @@ export const useProfileData = () => {
     }));
   };
 
-  // Initial data fetch - ALL DATA IN PARALLEL
+  // Initial data fetch - SINGLE API CALL for all data
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -176,81 +110,28 @@ export const useProfileData = () => {
       setLoading(true);
       
       try {
-        // Fetch ALL data in parallel for faster loading
-        const [profileData, listings, offerings, tasks, applications] = await Promise.all([
-          // Profile + reviews
-          (async () => {
-            const response = await apiClient.get('/api/auth/profile');
-            setProfile(response.data);
-            setFormData({
-              first_name: response.data.first_name || '',
-              last_name: response.data.last_name || '',
-              bio: response.data.bio || '',
-              phone: response.data.phone || '',
-              city: response.data.city || '',
-              country: response.data.country || '',
-              avatar_url: response.data.avatar_url || response.data.profile_picture_url || '',
-            });
-            
-            // Fetch reviews (can be parallel with profile data processing)
-            if (response.data.id) {
-              try {
-                const reviewsResponse = await apiClient.get(`/api/auth/users/${response.data.id}/reviews`);
-                setReviews(reviewsResponse.data.reviews || []);
-              } catch (e) {
-                console.error('Error fetching reviews:', e);
-              }
-            }
-            
-            return response.data;
-          })(),
-          
-          // Listings
-          listingsApi.getMy().then(r => {
-            const items = r.listings || [];
-            setMyListings(items);
-            return items;
-          }).catch(e => {
-            console.error('Error fetching listings:', e);
-            return [];
-          }),
-          
-          // Offerings
-          getMyOfferings().then(r => {
-            const items = r.offerings || [];
-            setMyOfferings(items);
-            return items;
-          }).catch(e => {
-            console.error('Error fetching offerings:', e);
-            return [];
-          }),
-          
-          // Created tasks
-          getCreatedTasks().then(r => {
-            const items = r.tasks || [];
-            setCreatedTasks(items);
-            return items;
-          }).catch(e => {
-            console.error('Error fetching tasks:', e);
-            return [];
-          }),
-          
-          // Applications
-          getMyApplications().then(r => {
-            const items = r.applications || [];
-            setMyApplications(items);
-            return items;
-          }).catch(e => {
-            console.error('Error fetching applications:', e);
-            return [];
-          }),
-        ]);
-
-        // Fetch match counts for tasks (secondary priority, can load after main content)
-        if (tasks.length > 0 && profileData?.id) {
-          // Don't await this - let it load in background
-          fetchMatchCountsForTasks(tasks, profileData.id);
-        }
+        // Single API call that returns everything
+        const response = await apiClient.get('/api/auth/profile/full');
+        const data = response.data;
+        
+        // Set profile
+        setProfile(data.profile);
+        setFormData({
+          first_name: data.profile.first_name || '',
+          last_name: data.profile.last_name || '',
+          bio: data.profile.bio || '',
+          phone: data.profile.phone || '',
+          city: data.profile.city || '',
+          country: data.profile.country || '',
+          avatar_url: data.profile.avatar_url || data.profile.profile_picture_url || '',
+        });
+        
+        // Set all related data
+        setReviews(data.reviews || []);
+        setMyListings(data.listings || []);
+        setMyOfferings(data.offerings || []);
+        setCreatedTasks(data.created_tasks || []);
+        setMyApplications(data.applications || []);
         
       } catch (error) {
         console.error('Error loading profile data:', error);
@@ -261,7 +142,7 @@ export const useProfileData = () => {
     };
 
     loadAllData();
-  }, [isAuthenticated, navigate, toast, fetchMatchCountsForTasks]);
+  }, [isAuthenticated, navigate, toast]);
 
   return {
     // Data
