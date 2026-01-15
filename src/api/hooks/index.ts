@@ -32,6 +32,17 @@ export {
   messageKeys 
 } from './useMessages';
 
+// Notification hooks
+export {
+  useNotifications,
+  useNotificationUnreadCount,
+  useUnreadCounts,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+  useMarkNotificationsByType,
+  notificationKeys
+} from './useNotifications';
+
 // User hooks
 export {
   useUserProfile,
