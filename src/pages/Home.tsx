@@ -1,12 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useListings } from '../hooks/useListings'
+import { useIsMobile } from '../hooks/useIsMobile'
 import ListingCard from './listings/components/ListingCard'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
 export default function Home() {
   const { t } = useTranslation()
   const { data: listings, isLoading } = useListings({ per_page: 6 })
+  const isMobile = useIsMobile()
+
+  // Redirect mobile users to Quick Help (Tasks) page
+  if (isMobile) {
+    return <Navigate to="/tasks" replace />
+  }
 
   return (
     <div>
