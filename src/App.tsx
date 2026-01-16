@@ -20,6 +20,7 @@ const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
 const PhoneLogin = lazy(() => import('./pages/auth/PhoneLogin'))
+const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'))
 const Listings = lazy(() => import('./pages/listings/Listings'))
@@ -62,6 +63,15 @@ function App() {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="phone-login" element={<PhoneLogin />} />
+            {/* Verify phone - requires auth but skips phone check to avoid loop */}
+            <Route
+              path="verify-phone"
+              element={
+                <ProtectedRoute skipPhoneCheck>
+                  <VerifyPhone />
+                </ProtectedRoute>
+              }
+            />
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password" element={<ResetPassword />} />
             <Route path="listings" element={<Listings />} />
