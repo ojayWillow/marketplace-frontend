@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../../lib/firebase'
 import type { ConfirmationResult } from '../../lib/firebase'
 import api from '../../api/client'
+import { AxiosError } from 'axios'
 
 type Step = 'phone' | 'code' | 'success'
 
@@ -249,14 +250,40 @@ export default function VerifyPhone() {
       
     } catch (err: unknown) {
       console.error('Verify code error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Verification failed'
       
-      if (errorMessage.includes('invalid-verification-code')) {
-        setError('Invalid code. Please check and try again.')
-      } else if (errorMessage.includes('code-expired')) {
-        setError('Code expired. Please request a new one.')
+      // Check for Axios error with response
+      if (err instanceof AxiosError && err.response) {
+        const status = err.response.status
+        const errorData = err.response.data as { error?: string }
+        
+        if (status === 409) {
+          // Phone already linked to another account
+          setError('This phone number is already linked to another account. Please use a different phone number or log in with the existing account.')
+          // Go back to phone input step
+          setStep('phone')
+          setVerificationCode(['', '', '', '', '', ''])
+          return
+        } else if (status === 401) {
+          setError('Session expired. Please log in again.')
+          logout()
+          navigate('/login')
+          return
+        } else if (errorData?.error) {
+          setError(errorData.error)
+        } else {
+          setError('Verification failed. Please try again.')
+        }
       } else {
-        setError('Verification failed. Please try again.')
+        // Firebase errors
+        const errorMessage = err instanceof Error ? err.message : 'Verification failed'
+        
+        if (errorMessage.includes('invalid-verification-code')) {
+          setError('Invalid code. Please check and try again.')
+        } else if (errorMessage.includes('code-expired')) {
+          setError('Code expired. Please request a new one.')
+        } else {
+          setError('Verification failed. Please try again.')
+        }
       }
       
       // Clear the code inputs on error
@@ -346,8 +373,8 @@ export default function VerifyPhone() {
 
         {/* Error message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
