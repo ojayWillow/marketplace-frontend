@@ -45,6 +45,9 @@ const CreateOffering = () => {
       toast.warning(t('offerings.loginToOffer', 'Please login to create an offering'));
       navigate('/login');
     }
+    // Note: toast, t, and navigate are stable references, but we only want this to run
+    // when isAuthenticated changes. The eslint-disable is intentional here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   // Debounced geocoding search
@@ -128,10 +131,10 @@ const CreateOffering = () => {
     try {
       await boostOffering(createdOfferingId);
       setIsBoosted(true);
-      toast.success('🚀 Boost activated! Your service is now visible on the map.');
+      toast.success(t('createOffering.boostActivated', '🚀 Boost activated! Your service is now visible on the map.'));
     } catch (error: any) {
       console.error('Error boosting offering:', error);
-      toast.error(error?.response?.data?.error || 'Failed to activate boost. Please try again.');
+      toast.error(error?.response?.data?.error || t('createOffering.boostError', 'Failed to activate boost. Please try again.'));
     } finally {
       setActivating(false);
     }
@@ -429,12 +432,14 @@ const CreateOffering = () => {
                 <span className="text-3xl">{isBoosted ? '🚀' : '🎉'}</span>
               </div>
               <h2 className="text-xl font-bold text-gray-900">
-                {isBoosted ? 'Boost Activated!' : 'Service Published!'}
+                {isBoosted 
+                  ? t('createOffering.modal.boostActivatedTitle', 'Boost Activated!') 
+                  : t('createOffering.modal.publishedTitle', 'Service Published!')}
               </h2>
               <p className="text-gray-600 mt-1">
                 {isBoosted 
-                  ? 'Your service is now visible on the Quick Help map!' 
-                  : 'Your offering is now live in the services list.'}
+                  ? t('createOffering.modal.boostActivatedDesc', 'Your service is now visible on the Quick Help map!')
+                  : t('createOffering.modal.publishedDesc', 'Your offering is now live in the services list.')}
               </p>
             </div>
 
@@ -446,13 +451,13 @@ const CreateOffering = () => {
                     <span className="text-2xl">🚀</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 mb-1">Boost for 24 Hours – Free!</h3>
+                    <h3 className="font-bold text-gray-900 mb-1">{t('createOffering.modal.boostTitle', 'Boost for 24 Hours – Free!')}</h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      Get more visibility:
+                      {t('createOffering.modal.boostSubtitle', 'Get more visibility:')}
                     </p>
                     <ul className="text-sm text-gray-700 mb-3 space-y-1">
-                      <li>📍 <strong>Appear on the map</strong> in Quick Help</li>
-                      <li>⬆️ <strong>Rank higher</strong> in search results</li>
+                      <li>📍 <strong>{t('createOffering.modal.boostBenefit1', 'Appear on the map')}</strong> {t('createOffering.modal.boostBenefit1Desc', 'in Quick Help')}</li>
+                      <li>⬆️ <strong>{t('createOffering.modal.boostBenefit2', 'Rank higher')}</strong> {t('createOffering.modal.boostBenefit2Desc', 'in search results')}</li>
                     </ul>
                     <button
                       onClick={handleBoostTrial}
@@ -462,11 +467,11 @@ const CreateOffering = () => {
                       {activating ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          Activating...
+                          {t('createOffering.modal.activating', 'Activating...')}
                         </>
                       ) : (
                         <>
-                          🎁 Activate Free Boost
+                          🎁 {t('createOffering.modal.activateBoost', 'Activate Free Boost')}
                         </>
                       )}
                     </button>
@@ -478,20 +483,20 @@ const CreateOffering = () => {
             {/* Status info */}
             {isBoosted ? (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-green-800 mb-2">🚀 Boost active for 24 hours:</h4>
+                <h4 className="font-medium text-green-800 mb-2">{t('createOffering.modal.boostActiveTitle', '🚀 Boost active for 24 hours:')}</h4>
                 <ul className="text-sm text-green-700 space-y-1">
-                  <li>✓ Your pin is visible on the map</li>
-                  <li>✓ You appear higher in search results</li>
-                  <li>✓ Maximum exposure to nearby clients</li>
+                  <li>✓ {t('createOffering.modal.boostActive1', 'Your pin is visible on the map')}</li>
+                  <li>✓ {t('createOffering.modal.boostActive2', 'You appear higher in search results')}</li>
+                  <li>✓ {t('createOffering.modal.boostActive3', 'Maximum exposure to nearby clients')}</li>
                 </ul>
               </div>
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">✓ Your service is live:</h4>
+                <h4 className="font-medium text-gray-700 mb-2">{t('createOffering.modal.liveTitle', '✓ Your service is live:')}</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Visible in the services list</li>
-                  <li>• People can find and contact you</li>
-                  <li>• You can apply to matching jobs</li>
+                  <li>• {t('createOffering.modal.live1', 'Visible in the services list')}</li>
+                  <li>• {t('createOffering.modal.live2', 'People can find and contact you')}</li>
+                  <li>• {t('createOffering.modal.live3', 'You can apply to matching jobs')}</li>
                 </ul>
               </div>
             )}
@@ -503,7 +508,7 @@ const CreateOffering = () => {
                   onClick={handleViewOnMap}
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 font-semibold flex items-center justify-center gap-2"
                 >
-                  📍 View on Map
+                  📍 {t('createOffering.modal.viewOnMap', 'View on Map')}
                 </button>
               ) : (
                 <button
@@ -513,7 +518,7 @@ const CreateOffering = () => {
                   }}
                   className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
                 >
-                  View My Offering
+                  {t('createOffering.modal.viewOffering', 'View My Offering')}
                 </button>
               )}
               <div className="flex gap-2">
@@ -524,7 +529,7 @@ const CreateOffering = () => {
                   }}
                   className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
                 >
-                  My Services
+                  {t('createOffering.modal.myServices', 'My Services')}
                 </button>
                 <button
                   onClick={() => {
@@ -533,7 +538,7 @@ const CreateOffering = () => {
                   }}
                   className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
                 >
-                  Browse Jobs
+                  {t('createOffering.modal.browseJobs', 'Browse Jobs')}
                 </button>
               </div>
             </div>
