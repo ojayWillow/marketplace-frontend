@@ -39,15 +39,13 @@ export default function Header() {
 
   // Handle mobile notification bell click
   const handleMobileNotificationClick = () => {
-    // Use navigate with replace to ensure it works even when already on /profile
     navigate('/profile?tab=tasks', { replace: false });
-    // Force a re-render by adding a timestamp if needed
     window.dispatchEvent(new CustomEvent('notification-bell-clicked'));
   };
 
   return (
     <header 
-      className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-[9999]"
+      className="bg-slate-900/95 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-[9999]"
       role="banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,7 +65,7 @@ export default function Header() {
                 {/* Favorites Link */}
                 <Link
                   to="/favorites"
-                  className="p-2 text-gray-600 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/50 rounded-full transition-colors"
                   aria-label="My Favorites"
                   title="My Favorites"
                 >
@@ -87,7 +85,7 @@ export default function Header() {
                 {/* Messages Link */}
                 <Link
                   to="/messages"
-                  className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-full transition-colors"
                   aria-label={`Messages${notifications.unreadMessages > 0 ? `, ${notifications.unreadMessages} unread` : ''}`}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -111,11 +109,17 @@ export default function Header() {
                 />
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Link to="/login" className="btn-secondary text-sm">
+              <div className="flex items-center space-x-3">
+                <Link 
+                  to="/login" 
+                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white border border-slate-600 hover:border-slate-500 rounded-lg transition-colors"
+                >
                   {t('common.login')}
                 </Link>
-                <Link to="/register" className="btn-primary text-sm">
+                <Link 
+                  to="/register" 
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+                >
                   {t('common.register')}
                 </Link>
               </div>
@@ -124,11 +128,11 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Mobile notification bell - using button + navigate for better handling */}
+            {/* Mobile notification bell */}
             {isAuthenticated && totalNotifications > 0 && (
               <button
                 onClick={handleMobileNotificationClick}
-                className="relative p-2 text-gray-600"
+                className="relative p-2 text-slate-400 hover:text-white"
                 aria-label={`Notifications, ${totalNotifications} unread`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -141,7 +145,7 @@ export default function Header() {
             )}
             
             <button
-              className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              className="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
