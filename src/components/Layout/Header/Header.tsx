@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../stores/authStore';
 import { useLogout } from '../../../hooks/useAuth';
@@ -15,6 +15,7 @@ import { useNotifications } from './hooks/useNotifications';
 
 export default function Header() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const logout = useLogout();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,6 +36,14 @@ export default function Header() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
+
+  // Handle mobile notification bell click
+  const handleMobileNotificationClick = () => {
+    // Use navigate with replace to ensure it works even when already on /profile
+    navigate('/profile?tab=tasks', { replace: false });
+    // Force a re-render by adding a timestamp if needed
+    window.dispatchEvent(new CustomEvent('notification-bell-clicked'));
+  };
 
   return (
     <header 
@@ -115,10 +124,10 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Mobile notification bell */}
+            {/* Mobile notification bell - using button + navigate for better handling */}
             {isAuthenticated && totalNotifications > 0 && (
-              <Link
-                to="/profile?tab=tasks"
+              <button
+                onClick={handleMobileNotificationClick}
                 className="relative p-2 text-gray-600"
                 aria-label={`Notifications, ${totalNotifications} unread`}
               >
@@ -128,7 +137,7 @@ export default function Header() {
                 <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full" aria-hidden="true">
                   {totalNotifications > 9 ? '9+' : totalNotifications}
                 </span>
-              </Link>
+              </button>
             )}
             
             <button
