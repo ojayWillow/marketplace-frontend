@@ -22,7 +22,7 @@ export default function Footer() {
                 <span className="text-white font-bold text-xl">M</span>
               </div>
               <span className="font-bold text-2xl text-white group-hover:text-blue-400 transition-colors">
-                {t('common.appName')}
+                {t('common.quickHelp')}
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
@@ -90,7 +90,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-slate-800/50">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-500">
-              &copy; {currentYear} {t('common.appName')}. All rights reserved.
+              &copy; {currentYear} {t('common.quickHelp')}. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link 
