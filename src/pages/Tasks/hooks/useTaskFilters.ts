@@ -32,7 +32,7 @@ export interface UseTaskFiltersReturn {
   handleFiltersChange: (newFilters: CompactFilterValues) => void;
   
   // Filter functions
-  filterTasks: (taskList: Task[]) => Task[];
+  filterTasks: (taskList: Task[], isMatchingFn?: (category: string) => boolean) => Task[];
   filterOfferings: (offeringList: Offering[]) => Offering[];
 }
 
@@ -91,7 +91,8 @@ export const useTaskFilters = ({
   }, [filters.distance, filters.category, onDistanceChange, onCategoryChange]);
 
   // Filter tasks by search query, price, and date
-  const filterTasks = useCallback((taskList: Task[]): Task[] => {
+  // isMatchingFn: optional function to check if a task matches user's offerings
+  const filterTasks = useCallback((taskList: Task[], isMatchingFn?: (category: string) => boolean): Task[] => {
     let filtered = taskList;
     
     // Search filter
@@ -109,10 +110,21 @@ export const useTaskFilters = ({
     // Date filter
     filtered = filterByDate(filtered, filters.datePosted);
     
-    // Sort: urgent first, then by date
+    // Sort: 1) Urgent first, 2) Matching user's offerings, 3) By date
     filtered = filtered.sort((a, b) => {
+      // Urgent jobs always come first
       if (a.is_urgent && !b.is_urgent) return -1;
       if (!a.is_urgent && b.is_urgent) return 1;
+      
+      // If both have same urgency, check for matching offerings
+      if (isMatchingFn) {
+        const aMatches = isMatchingFn(a.category);
+        const bMatches = isMatchingFn(b.category);
+        if (aMatches && !bMatches) return -1;
+        if (!aMatches && bMatches) return 1;
+      }
+      
+      // Finally, sort by date (newest first)
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
     
