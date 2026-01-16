@@ -12,23 +12,7 @@ import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import apiClient from '../api/client';
 import ShareButton from '../components/ui/ShareButton';
 import SEOHead from '../components/ui/SEOHead';
-
-// Helper function to render star rating
-const StarRating = ({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  
-  const sizeClass = size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg';
-  
-  return (
-    <span className={`text-yellow-500 ${sizeClass}`}>
-      {'★'.repeat(fullStars)}
-      {hasHalfStar && '½'}
-      {'☆'.repeat(emptyStars)}
-    </span>
-  );
-};
+import StarRating from '../components/ui/StarRating';
 
 const OfferingDetail = () => {
   const { id } = useParams<{ id: string }>();
