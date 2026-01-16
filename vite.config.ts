@@ -9,17 +9,17 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.svg', 'sw-push.js'],
       manifest: {
-        name: 'Tirgus - Latvijas Tirgus',
-        short_name: 'Tirgus',
-        description: 'Latvijas tiešsaistes tirgus vieta. Pērciet un pārdodiet preces, atrodiet darbus tuvumā vai piedāvājiet savus pakalpojumus.',
+        name: 'Quick Help - Local Task Marketplace',
+        short_name: 'Quick Help',
+        description: 'Get help with everyday tasks or earn money by helping others. Dog walking, moving, cleaning, repairs, and more in Latvia.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#3B82F6',
         orientation: 'portrait-primary',
-        lang: 'lv',
-        categories: ['shopping', 'business', 'lifestyle'],
+        lang: 'en',
+        categories: ['business', 'lifestyle', 'productivity'],
         icons: [
           {
             src: '/android-chrome-192x192.png',
@@ -42,17 +42,17 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: 'Sludinājumi',
-            short_name: 'Sludinājumi',
-            description: 'Pārlūkot sludinājumus',
-            url: '/listings',
+            name: 'Browse Tasks',
+            short_name: 'Tasks',
+            description: 'Find tasks near you or post your own',
+            url: '/tasks',
             icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
           },
           {
-            name: 'Ātrā Palīdzība',
-            short_name: 'Darbi',
-            description: 'Atrast darbus vai piedāvāt pakalpojumus',
-            url: '/tasks',
+            name: 'My Applications',
+            short_name: 'Applications',
+            description: 'View your task applications',
+            url: '/applications',
             icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
           }
         ]
