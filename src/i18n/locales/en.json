@@ -49,7 +49,8 @@
     "fixed": "fixed",
     "negotiable": "negotiable",
     "optional": "Optional",
-    "this": "this type of"
+    "this": "this type of",
+    "or": "or"
   },
   "quickHelp": {
     "welcome": "Welcome to Quick Help",
@@ -96,7 +97,20 @@
     "registerButton": "Register",
     "loginError": "Invalid email or password",
     "registerError": "Registration error",
-    "logoutSuccess": "Logged out successfully"
+    "logoutSuccess": "Logged out successfully",
+    "sendCode": "Send Verification Code",
+    "sending": "Sending...",
+    "verifying": "Verifying...",
+    "verify": "Verify",
+    "codeSentTo": "Enter the code sent to",
+    "changeNumber": "Change phone number",
+    "invalidPhone": "Please enter a valid phone number",
+    "invalidCode": "Invalid code. Please try again.",
+    "tooManyRequests": "Too many attempts. Please try again later.",
+    "sendCodeError": "Failed to send code. Please try again.",
+    "verifyError": "Verification failed. Please try again.",
+    "orContinueWith": "or continue with",
+    "useEmail": "Use email instead"
   },
   "menu": {
     "welcome": "Welcome!",
@@ -582,7 +596,12 @@
     "buysellDesc": "Classifieds from all over Latvia",
     "quickHelpTitle": "Quick Help",
     "quickHelpDesc": "Find or offer services",
-    "latestListings": "Latest listings"
+    "latestListings": "Latest listings",
+    "tagline": "Find help nearby in minutes",
+    "benefit1": "Post a task, get offers in minutes",
+    "benefit2": "Verified local helpers",
+    "benefit3": "Secure payments",
+    "browseAsGuest": "Browse as guest"
   },
   "toast": {
     "success": "Success",
@@ -593,8 +612,8 @@
   "footer": {
     "rights": "All rights reserved",
     "about": "About",
-    "terms": "Terms of Service",
-    "privacy": "Privacy Policy",
+    "terms": "Terms",
+    "privacy": "Privacy",
     "contact": "Contact Us"
   }
 }
