@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ActiveTab, TaskViewMode, TaskStatusFilter } from '../types';
 
@@ -10,7 +11,7 @@ export const useProfileTabs = () => {
   const taskStatusFilter = (searchParams.get('status') as TaskStatusFilter) || 'all';
 
   // Helper to update URL params
-  const updateParams = (updates: Record<string, string>) => {
+  const updateParams = useCallback((updates: Record<string, string>) => {
     const newParams = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
       if (value) {
@@ -20,20 +21,35 @@ export const useProfileTabs = () => {
       }
     });
     setSearchParams(newParams, { replace: true });
-  };
+  }, [searchParams, setSearchParams]);
 
   // Tab/filter setters that update URL
-  const setActiveTab = (tab: ActiveTab) => {
+  const setActiveTab = useCallback((tab: ActiveTab) => {
     updateParams({ tab, view: '', status: '' });
-  };
+  }, [updateParams]);
 
-  const setTaskViewMode = (view: TaskViewMode) => {
+  const setTaskViewMode = useCallback((view: TaskViewMode) => {
     updateParams({ view, status: 'all' });
-  };
+  }, [updateParams]);
 
-  const setTaskStatusFilter = (status: TaskStatusFilter) => {
+  const setTaskStatusFilter = useCallback((status: TaskStatusFilter) => {
     updateParams({ status });
-  };
+  }, [updateParams]);
+
+  // Listen for notification bell click event to force tab switch
+  useEffect(() => {
+    const handleBellClick = () => {
+      // Re-read from URL and force update if needed
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabFromUrl = urlParams.get('tab');
+      if (tabFromUrl === 'tasks' && activeTab !== 'tasks') {
+        setSearchParams(urlParams, { replace: true });
+      }
+    };
+
+    window.addEventListener('notification-bell-clicked', handleBellClick);
+    return () => window.removeEventListener('notification-bell-clicked', handleBellClick);
+  }, [activeTab, setSearchParams]);
 
   return {
     activeTab,
