@@ -46,7 +46,7 @@ const OfferingDetail = () => {
         category: offering.category,
         latitude: offering.latitude,
         longitude: offering.longitude,
-        radius: (offering as any).service_radius || 50,
+        radius: offering.service_radius || 50,
         status: 'open',
         per_page: 6
       });
@@ -421,8 +421,8 @@ const OfferingDetail = () => {
               <div className="flex items-center gap-2 text-gray-600 mb-3">
                 <span>📍</span>
                 <span>{offering.location || 'Location not specified'}</span>
-                {(offering as any).service_radius && (
-                  <span className="text-amber-600">• {(offering as any).service_radius}km service radius</span>
+                {offering.service_radius && (
+                  <span className="text-amber-600">• {offering.service_radius}km service radius</span>
                 )}
               </div>
               {offering.latitude && offering.longitude && (
@@ -465,7 +465,7 @@ const OfferingDetail = () => {
               <div className="text-center">
                 <div className="text-2xl mb-1">📍</div>
                 <div className="text-sm text-gray-500">Range</div>
-                <div className="font-semibold">{(offering as any).service_radius || 10}km</div>
+                <div className="font-semibold">{offering.service_radius || 10}km</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl mb-1">📅</div>
