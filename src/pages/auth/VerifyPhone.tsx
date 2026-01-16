@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Phone, ArrowLeft, Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
-import { auth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from '../../lib/firebase'
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../../lib/firebase'
+import type { ConfirmationResult } from '../../lib/firebase'
 import api from '../../api/client'
 
 type Step = 'phone' | 'code' | 'success'
@@ -19,10 +20,12 @@ export default function VerifyPhone() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
+  const [recaptchaReady, setRecaptchaReady] = useState(false)
   
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
+  const mountedRef = useRef(true)
 
   // Get the intended destination after verification
   const from = (location.state as { from?: Location })?.from?.pathname || '/'
@@ -35,35 +38,59 @@ export default function VerifyPhone() {
     }
   }, [resendTimer])
 
-  // Initialize reCAPTCHA
-  const initRecaptcha = () => {
-    if (!recaptchaContainerRef.current) return
+  // Initialize reCAPTCHA - memoized to prevent recreation
+  const initRecaptcha = useCallback(() => {
+    if (!recaptchaContainerRef.current || !mountedRef.current) return
     
-    // Clear any existing verifier
+    // Don't recreate if already exists and is valid
     if (recaptchaVerifierRef.current) {
-      recaptchaVerifierRef.current.clear()
+      setRecaptchaReady(true)
+      return
     }
     
-    recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
-      size: 'invisible',
-      callback: () => {
-        console.log('reCAPTCHA solved')
-      },
-      'expired-callback': () => {
-        setError('reCAPTCHA expired. Please try again.')
-        initRecaptcha()
-      }
-    })
-  }
-
-  useEffect(() => {
-    initRecaptcha()
-    return () => {
-      if (recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current.clear()
-      }
+    try {
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+        size: 'invisible',
+        callback: () => {
+          console.log('reCAPTCHA solved')
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired')
+          // Mark as not ready so it will be recreated on next use
+          recaptchaVerifierRef.current = null
+          setRecaptchaReady(false)
+        }
+      })
+      setRecaptchaReady(true)
+    } catch (err) {
+      console.error('reCAPTCHA init error:', err)
+      setRecaptchaReady(false)
     }
   }, [])
+
+  // Initialize on mount
+  useEffect(() => {
+    mountedRef.current = true
+    
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      initRecaptcha()
+    }, 100)
+    
+    return () => {
+      mountedRef.current = false
+      clearTimeout(timer)
+      // Clean up reCAPTCHA on unmount
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear()
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+        recaptchaVerifierRef.current = null
+      }
+    }
+  }, [initRecaptcha])
 
   // Format phone number for display
   const formatPhoneNumber = (phone: string) => {
@@ -96,15 +123,20 @@ export default function VerifyPhone() {
     }
 
     try {
+      // Ensure reCAPTCHA is ready
       if (!recaptchaVerifierRef.current) {
         initRecaptcha()
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
+      if (!recaptchaVerifierRef.current) {
+        throw new Error('reCAPTCHA not ready')
+      }
+
       const confirmation = await signInWithPhoneNumber(
         auth,
         fullPhone,
-        recaptchaVerifierRef.current!
+        recaptchaVerifierRef.current
       )
       
       setConfirmationResult(confirmation)
@@ -121,12 +153,24 @@ export default function VerifyPhone() {
         setError('Too many attempts. Please try again later.')
       } else if (errorMessage.includes('invalid-phone-number')) {
         setError('Invalid phone number format.')
+      } else if (errorMessage.includes('captcha-check-failed')) {
+        setError('reCAPTCHA verification failed. Please refresh and try again.')
       } else {
         setError('Failed to send code. Please try again.')
       }
       
-      // Re-initialize reCAPTCHA on error
-      initRecaptcha()
+      // Reset reCAPTCHA on error
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear()
+        } catch (e) {
+          // Ignore
+        }
+        recaptchaVerifierRef.current = null
+        setRecaptchaReady(false)
+      }
+      // Reinitialize after a delay
+      setTimeout(() => initRecaptcha(), 500)
     } finally {
       setLoading(false)
     }
@@ -232,13 +276,20 @@ export default function VerifyPhone() {
     setVerificationCode(['', '', '', '', '', ''])
 
     try {
-      initRecaptcha()
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Reinitialize reCAPTCHA if needed
+      if (!recaptchaVerifierRef.current) {
+        initRecaptcha()
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
+      if (!recaptchaVerifierRef.current) {
+        throw new Error('reCAPTCHA not ready')
+      }
 
       const confirmation = await signInWithPhoneNumber(
         auth,
         getFullPhoneNumber(),
-        recaptchaVerifierRef.current!
+        recaptchaVerifierRef.current
       )
       
       setConfirmationResult(confirmation)
@@ -247,7 +298,17 @@ export default function VerifyPhone() {
     } catch (err) {
       console.error('Resend error:', err)
       setError('Failed to resend code. Please try again.')
-      initRecaptcha()
+      // Reset reCAPTCHA
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear()
+        } catch (e) {
+          // Ignore
+        }
+        recaptchaVerifierRef.current = null
+        setRecaptchaReady(false)
+      }
+      setTimeout(() => initRecaptcha(), 500)
     } finally {
       setLoading(false)
     }
@@ -321,13 +382,18 @@ export default function VerifyPhone() {
 
             <button
               type="submit"
-              disabled={loading || phoneNumber.replace(/\D/g, '').length < 8}
+              disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Sending...
+                </>
+              ) : !recaptchaReady ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Initializing...
                 </>
               ) : (
                 'Send Verification Code'
