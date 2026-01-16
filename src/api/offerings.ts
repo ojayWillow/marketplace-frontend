@@ -32,6 +32,7 @@ export interface Offering {
   availability?: string;
   experience?: string;
   images?: string;
+  service_radius?: number; // Service area radius in km
   created_at?: string;
   updated_at?: string;
   distance?: number;
