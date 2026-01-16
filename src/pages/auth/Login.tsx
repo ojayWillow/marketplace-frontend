@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Phone } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
+import { useAuthStore } from '../../stores/authStore'
 import ErrorMessage from '../../components/ui/ErrorMessage'
 
 // Eye icons as simple SVG components
@@ -20,12 +22,26 @@ const EyeSlashIcon = () => (
 
 export default function Login() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const login = useLogin()
+  const { user, isAuthenticated } = useAuthStore()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [showPassword, setShowPassword] = useState(false)
+
+  // If already authenticated but needs phone verification, redirect
+  if (isAuthenticated && user && !user.phone_verified) {
+    navigate('/verify-phone', { replace: true })
+    return null
+  }
+
+  // If fully authenticated, redirect to home
+  if (isAuthenticated && user?.phone_verified) {
+    navigate('/', { replace: true })
+    return null
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,7 +60,7 @@ export default function Login() {
       <div className="max-w-md w-full">
         <div className="card p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t('auth.loginTitle')}
             </h1>
           </div>
@@ -55,6 +71,25 @@ export default function Login() {
               className="mb-6"
             />
           )}
+
+          {/* Phone Login Button - Primary option */}
+          <Link
+            to="/phone-login"
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mb-6"
+          >
+            <Phone className="w-5 h-5" />
+            Sign in with Phone
+          </Link>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">or continue with email</span>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -114,7 +149,14 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
+          {/* Info about phone verification */}
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>Note:</strong> Phone verification is required to use Tirgus. After logging in with email, you'll need to verify your phone number.
+            </p>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             {t('auth.noAccount')}{' '}
             <Link
               to="/register"
