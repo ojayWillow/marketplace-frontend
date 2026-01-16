@@ -9,7 +9,6 @@ import {
   Loader2,
   ChevronDown
 } from 'lucide-react'
-import { useIsMobile } from '../hooks/useIsMobile'
 import { useAuthStore } from '../stores/authStore'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
 import type { ConfirmationResult } from '../lib/firebase'
@@ -24,7 +23,6 @@ const benefits = [
 export default function Home() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const isMobile = useIsMobile()
   const { isAuthenticated, setAuth } = useAuthStore()
   
   // Phone auth state
@@ -64,15 +62,6 @@ export default function Home() {
       setRecaptchaReady(false)
     }
   }, [])
-
-  // Handle redirects
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/tasks', { replace: true })
-    } else if (isMobile) {
-      navigate('/tasks', { replace: true })
-    }
-  }, [isAuthenticated, isMobile, navigate])
 
   // Initialize reCAPTCHA on mount
   useEffect(() => {
@@ -206,9 +195,32 @@ export default function Home() {
     }
   }
 
-  // Show nothing while redirecting
-  if (isAuthenticated || isMobile) {
-    return null
+  // If already logged in, show a different view with quick access to tasks
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md text-center">
+            <div className="w-20 h-20 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Check className="w-10 h-10 text-green-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {t('home.welcomeBack', 'Welcome back!')}
+            </h1>
+            <p className="text-gray-400 mb-8">
+              {t('home.readyToHelp', 'Ready to find or offer help?')}
+            </p>
+            <Link
+              to="/tasks"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+            >
+              {t('home.goToTasks', 'Go to Quick Help')}
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
