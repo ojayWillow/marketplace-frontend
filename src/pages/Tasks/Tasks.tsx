@@ -140,8 +140,9 @@ const DesktopTasksView = () => {
     return <ErrorState error={error} onRetry={() => { resetFetchFlag(); fetchData(true); }} />;
   }
 
-  // Apply filters
-  const filteredTasks = filterTasks(tasks);
+  // Apply filters - pass isJobMatchingMyOfferings for sorting recommended jobs higher
+  const matchingFn = isAuthenticated ? isJobMatchingMyOfferings : undefined;
+  const filteredTasks = filterTasks(tasks, matchingFn);
   const filteredOfferings = filterOfferings(offerings);
 
   // Computed values
