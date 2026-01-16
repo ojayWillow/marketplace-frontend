@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth'
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
+import type { ConfirmationResult } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMzXI3R3PrxUtUrJQbLzhgNI3V8yetHKc",
@@ -14,6 +15,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
+
+// Re-export Firebase Auth types and functions for use in components
+export { RecaptchaVerifier, signInWithPhoneNumber }
+export type { ConfirmationResult }
 
 // Set language to user's browser preference
 auth.useDeviceLanguage()
