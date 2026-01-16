@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
   Handshake, 
@@ -41,16 +41,6 @@ export default function Home() {
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const mountedRef = useRef(true)
 
-  // Redirect if already logged in
-  if (isAuthenticated) {
-    return <Navigate to="/tasks" replace />
-  }
-
-  // Redirect mobile users to tasks
-  if (isMobile) {
-    return <Navigate to="/tasks" replace />
-  }
-
   // Initialize reCAPTCHA
   const initRecaptcha = useCallback(() => {
     if (!recaptchaContainerRef.current || !mountedRef.current) return
@@ -75,6 +65,16 @@ export default function Home() {
     }
   }, [])
 
+  // Handle redirects
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/tasks', { replace: true })
+    } else if (isMobile) {
+      navigate('/tasks', { replace: true })
+    }
+  }, [isAuthenticated, isMobile, navigate])
+
+  // Initialize reCAPTCHA on mount
   useEffect(() => {
     mountedRef.current = true
     const timer = setTimeout(() => initRecaptcha(), 100)
@@ -204,6 +204,11 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show nothing while redirecting
+  if (isAuthenticated || isMobile) {
+    return null
   }
 
   return (
