@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Phone } from 'lucide-react'
@@ -31,17 +31,16 @@ export default function Login() {
   })
   const [showPassword, setShowPassword] = useState(false)
 
-  // If already authenticated but needs phone verification, redirect
-  if (isAuthenticated && user && !user.phone_verified) {
-    navigate('/verify-phone', { replace: true })
-    return null
-  }
-
-  // If fully authenticated, redirect to home
-  if (isAuthenticated && user?.phone_verified) {
-    navigate('/', { replace: true })
-    return null
-  }
+  // Handle redirects in useEffect to avoid setState during render
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (!user.phone_verified) {
+        navigate('/verify-phone', { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
+    }
+  }, [isAuthenticated, user, navigate])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,6 +52,15 @@ export default function Login() {
       ...prev,
       [e.target.name]: e.target.value,
     }))
+  }
+
+  // Don't render the form if already authenticated (will redirect)
+  if (isAuthenticated && user) {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+        <div className="text-gray-500">Redirecting...</div>
+      </div>
+    )
   }
 
   return (
