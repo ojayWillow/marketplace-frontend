@@ -21,6 +21,9 @@ export default function Conversation() {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Track if we've already marked this conversation as read
+  const markedAsReadRef = useRef<number | null>(null);
+  
   // React Query for conversation - auto-refetches every 30 seconds for real-time online status
   const { data: conversation, isLoading: convLoading } = useConversation(Number(id), { 
     enabled: isAuthenticated && !!id 
@@ -38,18 +41,28 @@ export default function Conversation() {
       navigate('/login');
       return;
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
   
-  // Mark as read when messages load
+  // Mark as read when messages load - only once per conversation
   useEffect(() => {
-    if (id && messages.length > 0) {
-      markReadMutation.mutate(Number(id));
+    const conversationId = Number(id);
+    // Only mark as read if:
+    // 1. We have an ID and messages
+    // 2. We haven't already marked this specific conversation as read
+    if (id && messages.length > 0 && markedAsReadRef.current !== conversationId) {
+      markedAsReadRef.current = conversationId;
+      markReadMutation.mutate(conversationId);
     }
-  }, [id, messages.length]);
+  }, [id, messages.length, markReadMutation]);
+  
+  // Reset the markedAsRead ref when conversation ID changes
+  useEffect(() => {
+    markedAsReadRef.current = null;
+  }, [id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
