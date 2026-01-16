@@ -4,13 +4,22 @@ export interface User {
   username: string
   email: string
   phone?: string
+  phone_verified?: boolean
   first_name?: string
   last_name?: string
   avatar_url?: string
+  bio?: string
   city?: string
   country?: string
   is_verified?: boolean
+  is_helper?: boolean
+  skills?: string
+  helper_categories?: string
+  hourly_rate?: number
+  reputation_score?: number
+  completion_rate?: number
   created_at: string
+  updated_at?: string
 }
 
 export interface AuthResponse {
