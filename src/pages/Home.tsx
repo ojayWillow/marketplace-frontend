@@ -8,11 +8,9 @@ import {
   Phone,
   Loader2,
   ChevronDown,
-  Clock,
   Shield,
   Star,
   Zap,
-  Users,
   MessageCircle
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
@@ -209,7 +207,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="bg-[#0a0a0f]">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background gradient */}
@@ -593,25 +591,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-8 border-t border-[#1a1a24]">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">M</span>
-              </div>
-              <span className="text-white font-semibold">Quick Help</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link to="/terms" className="hover:text-gray-300">Terms</Link>
-              <Link to="/privacy" className="hover:text-gray-300">Privacy</Link>
-              <span>© {new Date().getFullYear()} Marketplace</span>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
