@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Phone, ArrowLeft, Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from '../../lib/firebase'
-import api from '../../api/axios'
+import api from '../../api/client'
 
 type Step = 'phone' | 'code' | 'success'
 
