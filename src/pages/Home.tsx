@@ -2,23 +2,23 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
-  Handshake, 
+  MapPin,
   ArrowRight, 
   Check,
   Phone,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Clock,
+  Shield,
+  Star,
+  Zap,
+  Users,
+  MessageCircle
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
 import type { ConfirmationResult } from '../lib/firebase'
 import api from '../api/client'
-
-const benefits = [
-  'home.benefit1',
-  'home.benefit2', 
-  'home.benefit3',
-]
 
 export default function Home() {
   const { t } = useTranslation()
@@ -63,7 +63,6 @@ export default function Home() {
     }
   }, [])
 
-  // Initialize reCAPTCHA on mount
   useEffect(() => {
     mountedRef.current = true
     const timer = setTimeout(() => initRecaptcha(), 100)
@@ -78,7 +77,6 @@ export default function Home() {
     }
   }, [initRecaptcha])
 
-  // Format phone for display
   const formatPhone = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '')
     if (cleaned.length <= 2) return cleaned
@@ -91,7 +89,6 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
-  // Send verification code
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -125,7 +122,6 @@ export default function Home() {
       } else {
         setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
       }
-      // Reset reCAPTCHA
       if (recaptchaVerifierRef.current) {
         try { recaptchaVerifierRef.current.clear() } catch (e) {}
         recaptchaVerifierRef.current = null
@@ -137,7 +133,6 @@ export default function Home() {
     }
   }
 
-  // Handle code input
   const handleCodeChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return
     const newCode = [...verificationCode]
@@ -155,7 +150,6 @@ export default function Home() {
     }
   }
 
-  // Verify code
   const handleVerifyCode = async (code: string) => {
     if (!confirmationResult) return
     setError('')
@@ -172,8 +166,6 @@ export default function Home() {
 
       if (response.data.token && response.data.user) {
         setAuth(response.data.token, response.data.user)
-        
-        // Check if new user needs to complete profile
         if (response.data.isNewUser || response.data.user.username?.startsWith('user_')) {
           navigate('/complete-profile')
         } else {
@@ -195,201 +187,430 @@ export default function Home() {
     }
   }
 
-  // If already logged in, show a different view with quick access to tasks
+  // Logged in users see a simple redirect screen
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-md text-center">
-            <div className="w-20 h-20 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Check className="w-10 h-10 text-green-400" />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {t('home.welcomeBack', 'Welcome back!')}
-            </h1>
-            <p className="text-gray-400 mb-8">
-              {t('home.readyToHelp', 'Ready to find or offer help?')}
-            </p>
-            <Link
-              to="/tasks"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-            >
-              {t('home.goToTasks', 'Go to Quick Help')}
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-green-400" />
           </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Welcome back!</h1>
+          <p className="text-gray-400 mb-6">Ready to find or offer help?</p>
+          <Link
+            to="/tasks"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+          >
+            Go to Quick Help <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Handshake className="w-10 h-10 text-blue-400" />
+    <div className="min-h-screen bg-[#0a0a0f]">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
+        
+        <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            
+            {/* Left: Value Proposition */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-6">
+                <MapPin className="w-4 h-4" />
+                Available in Latvia
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                Get help with
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
+              </h1>
+              
+              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+                Need someone to walk your dog, help you move, or fix something at home? 
+                Connect with trusted locals who can help — usually within hours.
+              </p>
+
+              {/* Quick Stats */}
+              <div className="flex flex-wrap gap-6 mb-8">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">Fast</div>
+                    <div className="text-gray-500 text-sm">Get offers in minutes</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">Verified</div>
+                    <div className="text-gray-500 text-sm">Phone-verified users</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                    <Star className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">Rated</div>
+                    <div className="text-gray-500 text-sm">Reviews you can trust</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Browse as guest link - Desktop */}
+              <div className="hidden lg:block">
+                <Link 
+                  to="/tasks" 
+                  className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1"
+                >
+                  Just browsing? <span className="text-blue-400">See available tasks →</span>
+                </Link>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {t('common.quickHelp', 'Quick Help')}
-            </h1>
-            <p className="text-gray-400">
-              {t('home.tagline', 'Find help nearby in minutes')}
+
+            {/* Right: Login Card */}
+            <div className="lg:pl-8">
+              <div ref={recaptchaContainerRef} id="recaptcha-container-home" />
+              
+              <div className="bg-[#1a1a24] rounded-2xl p-6 md:p-8 border border-[#2a2a3a] shadow-2xl">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-white mb-2">Get Started</h2>
+                  <p className="text-gray-400">Sign in with your phone number</p>
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <p className="text-red-400 text-sm text-center">{error}</p>
+                  </div>
+                )}
+
+                {step === 'phone' ? (
+                  <form onSubmit={handleSendCode}>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                      <Phone className="w-4 h-4" />
+                      Phone Number
+                    </label>
+                    
+                    <div className="flex gap-2 mb-4">
+                      <div className="flex items-center gap-2 px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a]">
+                        <span className="text-lg">🇱🇻</span>
+                        <span className="text-gray-300">+371</span>
+                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <input
+                        type="tel"
+                        value={formatPhone(phoneNumber)}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder="20 000 000"
+                        className="flex-1 px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-lg tracking-wide"
+                        maxLength={11}
+                        autoFocus
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
+                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                      ) : !recaptchaReady ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
+                      ) : (
+                        <>Continue <ArrowRight className="w-5 h-5" /></>
+                      )}
+                    </button>
+
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-[#2a2a3a]"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-4 bg-[#1a1a24] text-gray-500">or</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/login"
+                      className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      Sign in with email
+                    </Link>
+                  </form>
+                ) : (
+                  <div>
+                    <p className="text-gray-400 text-sm text-center mb-4">
+                      Enter the code sent to <span className="text-white">{getFullPhone()}</span>
+                    </p>
+                    
+                    <div className="flex justify-center gap-2 mb-4">
+                      {verificationCode.map((digit, index) => (
+                        <input
+                          key={index}
+                          ref={(el) => { codeInputRefs.current[index] = el }}
+                          type="text"
+                          inputMode="numeric"
+                          value={digit}
+                          onChange={(e) => handleCodeChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(index, e)}
+                          className="w-12 h-14 text-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none"
+                          maxLength={1}
+                          disabled={loading}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => handleVerifyCode(verificationCode.join(''))}
+                      disabled={loading || verificationCode.some(d => d === '')}
+                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
+                    </button>
+
+                    <button
+                      onClick={() => { setStep('phone'); setVerificationCode(['', '', '', '', '', '']); setError('') }}
+                      className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
+                    >
+                      Change phone number
+                    </button>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 text-center mt-6">
+                  By continuing, you agree to our{' '}
+                  <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
+                  <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
+                </p>
+              </div>
+
+              {/* Browse as guest - Mobile */}
+              <div className="lg:hidden text-center mt-6">
+                <Link 
+                  to="/tasks" 
+                  className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1"
+                >
+                  Browse as guest <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-16 md:py-24 border-t border-[#1a1a24]">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">How it works</h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Whether you need help or want to earn money — it's simple
             </p>
           </div>
 
-          {/* reCAPTCHA container */}
-          <div ref={recaptchaContainerRef} id="recaptcha-container-home" />
-
-          {/* Phone Login Card */}
-          <div className="bg-[#1a1a24] rounded-2xl p-6 border border-[#2a2a3a] shadow-xl">
-            
-            {/* Error */}
-            {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-red-400 text-sm text-center">{error}</p>
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+            {/* Need Help Column */}
+            <div className="bg-[#1a1a24]/50 rounded-2xl p-6 md:p-8 border border-[#2a2a3a]">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-6">
+                Need help?
               </div>
-            )}
-
-            {step === 'phone' ? (
-              <form onSubmit={handleSendCode}>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
-                  <Phone className="w-4 h-4" />
-                  {t('auth.phone', 'Phone')}
-                </label>
+              
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-400 font-bold">1</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Post your task</h3>
+                    <p className="text-gray-400 text-sm">Describe what you need help with and set your budget</p>
+                  </div>
+                </div>
                 
-                <div className="flex gap-2 mb-4">
-                  {/* Country Code */}
-                  <div className="flex items-center gap-2 px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a]">
-                    <span className="text-lg">🇱🇻</span>
-                    <span className="text-gray-300">+371</span>
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-400 font-bold">2</span>
                   </div>
-                  
-                  {/* Phone Input */}
-                  <input
-                    type="tel"
-                    value={formatPhone(phoneNumber)}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                    placeholder="20 000 000"
-                    className="flex-1 px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-lg tracking-wide"
-                    maxLength={11}
-                    autoFocus
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> {t('auth.sending', 'Sending...')}</>
-                  ) : !recaptchaReady ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> {t('common.loading', 'Loading...')}</>
-                  ) : (
-                    <>{t('auth.sendCode', 'Send Verification Code')} <ArrowRight className="w-5 h-5" /></>
-                  )}
-                </button>
-
-                {/* Divider */}
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#2a2a3a]"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-[#1a1a24] text-gray-500">{t('auth.orContinueWith', 'or continue with')}</span>
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Get offers</h3>
+                    <p className="text-gray-400 text-sm">Local helpers will apply — review their profiles and ratings</p>
                   </div>
                 </div>
-
-                {/* Email Login Link */}
-                <Link
-                  to="/login"
-                  className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {t('auth.useEmail', 'Use email instead')}
-                </Link>
-              </form>
-            ) : (
-              /* Code Input Step */
-              <div>
-                <p className="text-gray-400 text-sm text-center mb-4">
-                  {t('auth.codeSentTo', 'Enter the code sent to')} <span className="text-white">{getFullPhone()}</span>
-                </p>
                 
-                <div className="flex justify-center gap-2 mb-4">
-                  {verificationCode.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={(el) => { codeInputRefs.current[index] = el }}
-                      type="text"
-                      inputMode="numeric"
-                      value={digit}
-                      onChange={(e) => handleCodeChange(index, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(index, e)}
-                      className="w-12 h-14 text-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none"
-                      maxLength={1}
-                      disabled={loading}
-                    />
-                  ))}
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-400 font-bold">3</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Get it done</h3>
+                    <p className="text-gray-400 text-sm">Pick your helper, they complete the task, you pay them directly</p>
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => handleVerifyCode(verificationCode.join(''))}
-                  disabled={loading || verificationCode.some(d => d === '')}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> {t('auth.verifying', 'Verifying...')}</>
-                  ) : (
-                    t('auth.verify', 'Verify')
-                  )}
-                </button>
-
-                <button
-                  onClick={() => { setStep('phone'); setVerificationCode(['', '', '', '', '', '']); setError('') }}
-                  className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
-                >
-                  {t('auth.changeNumber', 'Change phone number')}
-                </button>
               </div>
-            )}
+            </div>
+
+            {/* Want to Earn Column */}
+            <div className="bg-[#1a1a24]/50 rounded-2xl p-6 md:p-8 border border-[#2a2a3a]">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm font-medium mb-6">
+                Want to earn?
+              </div>
+              
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-400 font-bold">1</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Browse the map</h3>
+                    <p className="text-gray-400 text-sm">See tasks posted near you in real-time on the map</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-400 font-bold">2</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Apply to tasks</h3>
+                    <p className="text-gray-400 text-sm">Found something you can help with? Send your offer</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-400 font-bold">3</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Earn money</h3>
+                    <p className="text-gray-400 text-sm">Complete tasks, build your reputation, and get paid</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Task Categories */}
+      <section className="py-16 md:py-24 border-t border-[#1a1a24]">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Popular tasks</h2>
+            <p className="text-gray-400 text-lg">People in your area are getting help with...</p>
           </div>
 
-          {/* Benefits */}
-          <div className="mt-8 space-y-3">
-            {benefits.map((benefit, i) => (
-              <div key={i} className="flex items-center gap-3 text-gray-400">
-                <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                <span>{t(benefit)}</span>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { icon: '🐕', label: 'Pet Care', desc: 'Walking, sitting' },
+              { icon: '📦', label: 'Moving', desc: 'Furniture, boxes' },
+              { icon: '🧹', label: 'Cleaning', desc: 'Home, office' },
+              { icon: '🚗', label: 'Delivery', desc: 'Pick up & drop' },
+              { icon: '🔧', label: 'Repairs', desc: 'Handyman tasks' },
+              { icon: '💻', label: 'Tech Help', desc: 'Setup, support' },
+            ].map((cat, i) => (
+              <Link 
+                key={i}
+                to="/tasks"
+                className="bg-[#1a1a24]/50 hover:bg-[#1a1a24] border border-[#2a2a3a] hover:border-[#3a3a4a] rounded-xl p-4 text-center transition-all group"
+              >
+                <div className="text-3xl mb-2">{cat.icon}</div>
+                <div className="text-white font-medium group-hover:text-blue-400 transition-colors">{cat.label}</div>
+                <div className="text-gray-500 text-xs">{cat.desc}</div>
+              </Link>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* Browse as Guest */}
-          <div className="mt-8 text-center">
-            <Link 
-              to="/tasks" 
-              className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1"
+      {/* Trust Section */}
+      <section className="py-16 md:py-24 border-t border-[#1a1a24]">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Built on trust</h2>
+            <p className="text-gray-400 text-lg">Your safety and security come first</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center p-6">
+              <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-7 h-7 text-blue-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-2">Phone Verified</h3>
+              <p className="text-gray-400 text-sm">Every user verifies their phone number — no anonymous accounts</p>
+            </div>
+            
+            <div className="text-center p-6">
+              <div className="w-14 h-14 bg-yellow-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Star className="w-7 h-7 text-yellow-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-2">Ratings & Reviews</h3>
+              <p className="text-gray-400 text-sm">See real feedback from other users before you decide</p>
+            </div>
+            
+            <div className="text-center p-6">
+              <div className="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-7 h-7 text-green-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-2">In-App Chat</h3>
+              <p className="text-gray-400 text-sm">Communicate directly and securely within the app</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-16 md:py-24 border-t border-[#1a1a24]">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Ready to get started?
+          </h2>
+          <p className="text-gray-400 text-lg mb-8">
+            Join your local community and start getting things done today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a 
+              href="#top"
+              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
             >
-              {t('home.browseAsGuest', 'Browse as guest')}
-              <ArrowRight className="w-4 h-4" />
+              Sign up free <ArrowRight className="w-5 h-5" />
+            </a>
+            <Link
+              to="/tasks"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-[#2a2a3a] hover:bg-[#1a1a24] text-white font-semibold rounded-xl transition-colors"
+            >
+              Browse tasks first
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Minimal Footer */}
-      <footer className="py-4 text-center text-gray-600 text-sm border-t border-[#1a1a24]">
-        <p>
-          © {new Date().getFullYear()} {t('common.appName')} · {' '}
-          <Link to="/terms" className="hover:text-gray-400">{t('footer.terms')}</Link> · {' '}
-          <Link to="/privacy" className="hover:text-gray-400">{t('footer.privacy')}</Link>
-        </p>
+      {/* Footer */}
+      <footer className="py-8 border-t border-[#1a1a24]">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold">M</span>
+              </div>
+              <span className="text-white font-semibold">Quick Help</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+              <Link to="/terms" className="hover:text-gray-300">Terms</Link>
+              <Link to="/privacy" className="hover:text-gray-300">Privacy</Link>
+              <span>© {new Date().getFullYear()} Marketplace</span>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   )
