@@ -28,34 +28,26 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Links */}
-          <nav aria-label="Footer navigation - Listings">
+          {/* Quick Help Links */}
+          <nav aria-label="Footer navigation - Quick Help">
             <h3 className="text-white font-semibold mb-4">
-              {t('common.listings')}
+              {t('common.quickHelp')}
             </h3>
             <ul className="space-y-2 text-sm" role="list">
-              <li>
-                <Link 
-                  to="/listings" 
-                  className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-gray-900 rounded"
-                >
-                  {t('listings.allListings')}
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/listings/create" 
-                  className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-gray-900 rounded"
-                >
-                  {t('listings.createNew')}
-                </Link>
-              </li>
               <li>
                 <Link 
                   to="/tasks" 
                   className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-gray-900 rounded"
                 >
-                  {t('common.quickHelp')}
+                  {t('tasks.browseTasks', 'Browse Tasks')}
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/tasks/create" 
+                  className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-gray-900 rounded"
+                >
+                  {t('tasks.createTask', 'Post a Task')}
                 </Link>
               </li>
             </ul>
