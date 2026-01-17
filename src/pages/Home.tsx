@@ -230,7 +230,50 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
         
         <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 md:py-16 lg:py-24">
-          {/* Mobile: Login Card First */}
+          {/* Mobile: Value Proposition FIRST */}
+          <div className="lg:hidden mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-medium mb-4">
+              <MapPin className="w-3 h-3" />
+              Available in Latvia
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
+              Get help with
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
+            </h1>
+            
+            <p className="text-base text-gray-400 mb-6 leading-relaxed">
+              Need someone to walk your dog, help you move, or fix something at home? 
+              Connect with trusted locals who can help.
+            </p>
+
+            {/* Quick Stats - Mobile */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              <div className="text-center">
+                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
+                  <Zap className="w-5 h-5 text-green-400" />
+                </div>
+                <div className="text-white font-medium text-sm">Fast</div>
+                <div className="text-gray-500 text-xs">Get offers in minutes</div>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
+                  <Shield className="w-5 h-5 text-blue-400" />
+                </div>
+                <div className="text-white font-medium text-sm">Verified</div>
+                <div className="text-gray-500 text-xs">Phone-verified</div>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
+                  <Star className="w-5 h-5 text-purple-400" />
+                </div>
+                <div className="text-white font-medium text-sm">Rated</div>
+                <div className="text-gray-500 text-xs">Trusted reviews</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: Login Card SECOND */}
           <div className="lg:hidden mb-8">
             <div ref={recaptchaContainerRef} id="recaptcha-container-home" />
             
@@ -266,7 +309,6 @@ export default function Home() {
                       placeholder="20 000 000"
                       className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-base sm:text-lg tracking-wide"
                       maxLength={11}
-                      autoFocus
                     />
                   </div>
 
@@ -358,50 +400,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile: Value Proposition Below Card */}
-          <div className="lg:hidden mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-medium mb-4">
-              <MapPin className="w-3 h-3" />
-              Available in Latvia
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
-              Get help with
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
-            </h1>
-            
-            <p className="text-base text-gray-400 mb-6 leading-relaxed">
-              Need someone to walk your dog, help you move, or fix something at home? 
-              Connect with trusted locals who can help.
-            </p>
-
-            {/* Quick Stats - Mobile */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Zap className="w-5 h-5 text-green-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Fast</div>
-                <div className="text-gray-500 text-xs">Get offers in minutes</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Verified</div>
-                <div className="text-gray-500 text-xs">Phone-verified</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Star className="w-5 h-5 text-purple-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Rated</div>
-                <div className="text-gray-500 text-xs">Trusted reviews</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop: Original Two Column Layout */}
+          {/* Desktop: Original Two Column Layout (unchanged) */}
           <div className="hidden lg:grid lg:grid-cols-2 gap-12 items-center">
             
             {/* Left: Value Proposition */}
