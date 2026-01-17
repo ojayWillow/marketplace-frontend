@@ -1,0 +1,19 @@
+{
+  "title": "Ziņas",
+  "noConversations": "Vēl nav sarunu",
+  "browseTasks": "Pārlūkot darbus",
+  "yesterday": "Vakar",
+  "online": "tiešsaistē",
+  "onlineNow": "Tiešsaistē",
+  "lastSeen": "Pēdējo reizi redzēts {{time}}",
+  "recentlyActive": "Nesen aktīvs",
+  "inactive": "Neaktīvs",
+  "noMessagesYet": "Vēl nav ziņu",
+  "notFound": "Saruna nav atrasta",
+  "backToMessages": "Atpakaļ uz ziņām",
+  "sendFirst": "Vēl nav ziņu. Nosūtiet pirmo ziņu!",
+  "typeMessage": "Rakstiet ziņu...",
+  "send": "Sūtīt",
+  "errorLoading": "Neizdevās ielādēt sarunu",
+  "errorSending": "Neizdevās nosūtīt ziņu"
+}

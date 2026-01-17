@@ -1,0 +1,33 @@
+{
+  "title": "Listings",
+  "createNew": "Create listing",
+  "myListings": "My listings",
+  "allListings": "All listings",
+  "searchPlaceholder": "Search listings...",
+  "priceLabel": "Price (EUR)",
+  "titleLabel": "Title",
+  "descriptionLabel": "Description",
+  "categoryLabel": "Category",
+  "locationLabel": "City/Region",
+  "contactLabel": "Contact information",
+  "publishButton": "Publish",
+  "browseCategories": "Browse Categories",
+  "browseCategoriesDesc": "Select a category to start browsing listings",
+  "viewAllListings": "View all listings",
+  "browseByCategory": "Browse by Category",
+  "clearCategory": "Clear category",
+  "listingNotFound": "Listing not found",
+  "deleteConfirm": "Are you sure you want to delete this listing?",
+  "deleteSuccess": "Listing deleted successfully",
+  "createSuccess": "Listing created successfully",
+  "updateSuccess": "Listing updated successfully",
+  "categories": {
+    "electronics": "Electronics",
+    "vehicles": "Vehicles",
+    "property": "Property",
+    "furniture": "Furniture",
+    "clothing": "Clothing",
+    "sports": "Sports",
+    "other": "Other"
+  }
+}

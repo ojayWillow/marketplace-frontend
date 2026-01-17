@@ -1,0 +1,22 @@
+{
+  "advancedFilters": "Расширенные фильтры",
+  "reset": "Сбросить",
+  "budget": "Бюджет",
+  "price": "Цена",
+  "priceRange": "Диапазон цен",
+  "minPrice": "Мин",
+  "maxPrice": "Макс",
+  "distance": "Расстояние",
+  "datePosted": "Дата публикации",
+  "category": "Категория",
+  "anyTime": "Любое время",
+  "today": "Сегодня",
+  "thisWeek": "На этой неделе",
+  "thisMonth": "В этом месяце",
+  "activeFilters": "Активные фильтры",
+  "showFilters": "Показать фильтры",
+  "hideFilters": "Скрыть фильтры",
+  "clearAll": "Очистить все",
+  "apply": "Применить фильтры",
+  "resultsFound": "Найдено {{count}} результатов"
+}

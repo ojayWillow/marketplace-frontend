@@ -1,0 +1,18 @@
+{
+  "legend": "Карта",
+  "you": "Вы",
+  "yourLocation": "Ваше местоположение",
+  "quickTasks": "Быстрые задания",
+  "mediumJobs": "Средние работы",
+  "premiumJobs": "Премиум",
+  "premium": "Премиум",
+  "priceMarkers": "Маркеры цен",
+  "clickToView": "Нажмите для просмотра",
+  "zoomIn": "Приблизить",
+  "zoomOut": "Отдалить",
+  "recenter": "Центрировать на моём месте",
+  "searchArea": "Искать в этой области",
+  "noJobsInArea": "В этом районе нет работ",
+  "expandSearch": "Попробуйте увеличить радиус поиска",
+  "boostedOfferings": "Продвинутые услуги"
+}
