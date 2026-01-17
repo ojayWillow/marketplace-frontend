@@ -16,14 +16,10 @@ export default function Login() {
   })
   const [showPassword, setShowPassword] = useState(false)
 
-  // Handle redirects in useEffect to avoid setState during render
+  // Redirect authenticated users to home
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (!user.phone_verified) {
-        navigate('/verify-phone', { replace: true })
-      } else {
-        navigate('/', { replace: true })
-      }
+      navigate('/', { replace: true })
     }
   }, [isAuthenticated, user, navigate])
 
