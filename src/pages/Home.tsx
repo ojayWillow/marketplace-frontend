@@ -173,9 +173,14 @@ export default function Home() {
         phoneNumber: getFullPhone()
       })
 
-      if (response.data.token && response.data.user) {
-        setAuth(response.data.token, response.data.user)
-        if (response.data.isNewUser || response.data.user.username?.startsWith('user_')) {
+      const { access_token, user: userData, is_new_user } = response.data
+
+      if (access_token && userData) {
+        // FIXED: Correct argument order (user, token) and correct field names
+        setAuth(userData, access_token)
+        
+        // Check if new user needs to complete profile
+        if (is_new_user || userData.username?.startsWith('user_')) {
           navigate('/complete-profile')
         } else {
           navigate('/tasks')
