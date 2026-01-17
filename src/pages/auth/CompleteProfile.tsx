@@ -8,7 +8,7 @@ import api from '../../api/client'
 export default function CompleteProfile() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, token, isAuthenticated, updateUser } = useAuthStore()
+  const { user, token, isAuthenticated, setAuth } = useAuthStore()
   
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -30,9 +30,9 @@ export default function CompleteProfile() {
     }
   }, [isAuthenticated, token, user, navigate])
 
-  // Pre-fill email if available
+  // Pre-fill email if available (and it's not the placeholder email)
   useEffect(() => {
-    if (user?.email) {
+    if (user?.email && !user.email.includes('@phone.tirgus.local')) {
       setEmail(user.email)
     }
   }, [user])
@@ -78,11 +78,14 @@ export default function CompleteProfile() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
 
-      const { user: updatedUser } = response.data
+      const { access_token, user: updatedUser } = response.data
       
-      // Update local user state
-      if (updatedUser) {
-        updateUser(updatedUser)
+      // Update local auth state with new user and token
+      if (updatedUser && access_token) {
+        setAuth(updatedUser, access_token)
+      } else if (updatedUser) {
+        // Fallback: if no new token, just update with existing token
+        setAuth(updatedUser, token!)
       }
       
       setSuccess(true)
@@ -94,12 +97,12 @@ export default function CompleteProfile() {
     } catch (err: unknown) {
       console.error('Complete profile error:', err)
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { detail?: string } } }
-        const detail = axiosError.response?.data?.detail
-        if (detail?.includes('username') && detail?.includes('taken')) {
+        const axiosError = err as { response?: { data?: { error?: string } } }
+        const errorMsg = axiosError.response?.data?.error
+        if (errorMsg?.toLowerCase().includes('username') && errorMsg?.toLowerCase().includes('exists')) {
           setUsernameError(t('auth.usernameTaken', 'This username is already taken'))
-        } else if (detail) {
-          setError(detail)
+        } else if (errorMsg) {
+          setError(errorMsg)
         } else {
           setError(t('auth.profileUpdateError', 'Failed to update profile. Please try again.'))
         }
@@ -114,15 +117,15 @@ export default function CompleteProfile() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-10 h-10 text-green-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-white mb-2">
             {t('auth.profileComplete', 'Profile Complete!')}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-400">
             {t('auth.redirectingToTasks', 'Redirecting you to browse tasks...')}
           </p>
         </div>
@@ -131,28 +134,28 @@ export default function CompleteProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-blue-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-white">
             {t('auth.completeProfile', 'Complete Your Profile')}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-400 mt-2">
             {t('auth.completeProfileSubtitle', 'Just a few more details to get started')}
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
+        <div className="bg-[#1a1a24] rounded-2xl border border-[#2a2a3a] p-6 sm:p-8">
           <form onSubmit={handleSubmit}>
             <div className="space-y-5">
               {/* Username */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   <User className="inline-block w-4 h-4 mr-2" />
                   {t('auth.username', 'Username')} *
                 </label>
@@ -168,25 +171,26 @@ export default function CompleteProfile() {
                   disabled={loading}
                   autoFocus
                   className={`w-full px-4 py-3 rounded-xl border-2 transition-colors
-                    ${usernameError ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}
-                    bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                    ${usernameError ? 'border-red-500' : 'border-[#2a2a3a]'}
+                    bg-[#0a0a0f] text-white
                     focus:outline-none focus:border-blue-500
                     disabled:opacity-50 disabled:cursor-not-allowed
+                    placeholder-gray-600
                   `}
                 />
                 {usernameError && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{usernameError}</p>
+                  <p className="mt-1 text-sm text-red-400">{usernameError}</p>
                 )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-gray-500">
                   {t('auth.usernameHint', 'Letters, numbers, and underscores only')}
                 </p>
               </div>
 
               {/* Email (optional) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   <Mail className="inline-block w-4 h-4 mr-2" />
-                  {t('auth.email', 'Email')} <span className="text-gray-400">({t('common.optional', 'optional')})</span>
+                  {t('auth.email', 'Email')} <span className="text-gray-500">({t('common.optional', 'optional')})</span>
                 </label>
                 <input
                   type="email"
@@ -194,12 +198,13 @@ export default function CompleteProfile() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t('auth.emailPlaceholder', 'your@email.com')}
                   disabled={loading}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 
-                    bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[#2a2a3a] 
+                    bg-[#0a0a0f] text-white 
                     focus:outline-none focus:border-blue-500 transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    placeholder-gray-600"
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-gray-500">
                   {t('auth.emailHint', 'Used for account recovery and notifications')}
                 </p>
               </div>
@@ -207,8 +212,8 @@ export default function CompleteProfile() {
 
             {/* Error message */}
             {error && (
-              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p className="text-sm text-red-400 text-center">{error}</p>
               </div>
             )}
 
@@ -217,7 +222,7 @@ export default function CompleteProfile() {
               type="submit"
               disabled={loading || !username.trim()}
               className="w-full mt-6 py-4 px-6 bg-blue-600 hover:bg-blue-700 
-                disabled:bg-gray-400 disabled:cursor-not-allowed 
+                disabled:bg-gray-700 disabled:cursor-not-allowed 
                 text-white font-semibold rounded-xl transition-colors 
                 flex items-center justify-center gap-2"
             >
@@ -239,7 +244,7 @@ export default function CompleteProfile() {
           <button
             onClick={() => navigate('/tasks', { replace: true })}
             disabled={loading}
-            className="w-full mt-3 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 
+            className="w-full mt-3 py-3 text-gray-500 hover:text-gray-300 
               text-sm font-medium transition-colors disabled:opacity-50"
           >
             {t('auth.skipForNow', 'Skip for now')}
@@ -247,7 +252,7 @@ export default function CompleteProfile() {
         </div>
 
         {/* Privacy note */}
-        <p className="mt-6 text-xs text-gray-500 dark:text-gray-400 text-center">
+        <p className="mt-6 text-xs text-gray-500 text-center">
           {t('auth.profilePrivacyNote', 'Your phone number is verified. Username will be visible to others.')}
         </p>
       </div>
