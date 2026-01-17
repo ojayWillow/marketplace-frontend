@@ -14,6 +14,10 @@ import type { AuthResponse } from '../api/types'
 
 export type PhoneAuthStep = 'phone' | 'otp' | 'register' | 'success'
 
+interface PhoneVerifyResponse extends AuthResponse {
+  is_new_user: boolean
+}
+
 interface UsePhoneAuthReturn {
   step: PhoneAuthStep
   phoneNumber: string
@@ -101,15 +105,16 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       }
 
       // Verify with our backend
-      const response = await apiClient.post<AuthResponse>('/api/auth/phone/verify', {
+      const response = await apiClient.post<PhoneVerifyResponse>('/api/auth/phone/verify', {
         idToken,
         phoneNumber
       })
 
-      const { access_token, user } = response.data
+      const { access_token, user, is_new_user } = response.data
 
       // Check if this is a new user that needs to complete registration
-      if (!user.username || user.username.startsWith('user_')) {
+      // Use the is_new_user flag from backend (true only when user was just created)
+      if (is_new_user) {
         setIsNewUser(true)
         setStep('register')
         // Store token temporarily for registration completion
