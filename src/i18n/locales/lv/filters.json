@@ -1,0 +1,22 @@
+{
+  "advancedFilters": "Papildu filtri",
+  "reset": "Atiestatīt",
+  "budget": "Budžets",
+  "price": "Cena",
+  "priceRange": "Cenu diapazons",
+  "minPrice": "Min",
+  "maxPrice": "Maks",
+  "distance": "Attālums",
+  "datePosted": "Publicēšanas datums",
+  "category": "Kategorija",
+  "anyTime": "Jebkurā laikā",
+  "today": "Šodien",
+  "thisWeek": "ŠonedEļ",
+  "thisMonth": "Šomēnes",
+  "activeFilters": "Aktīvie filtri",
+  "showFilters": "Rādīt filtrus",
+  "hideFilters": "Slēpt filtrus",
+  "clearAll": "Notīrīt visus",
+  "apply": "Lietot filtrus",
+  "resultsFound": "Atrasti {{count}} rezultāti"
+}
