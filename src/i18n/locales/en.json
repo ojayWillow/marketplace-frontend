@@ -50,7 +50,8 @@
     "negotiable": "negotiable",
     "optional": "Optional",
     "this": "this type of",
-    "or": "or"
+    "or": "or",
+    "gotIt": "Got it!"
   },
   "quickHelp": {
     "welcome": "Welcome to Quick Help",
@@ -87,6 +88,7 @@
     "confirmPassword": "Confirm password",
     "username": "Username",
     "phone": "Phone",
+    "phoneNumber": "Phone Number",
     "firstName": "First name",
     "lastName": "Last name",
     "loginTitle": "Sign in",
@@ -110,7 +112,8 @@
     "sendCodeError": "Failed to send code. Please try again.",
     "verifyError": "Verification failed. Please try again.",
     "orContinueWith": "or continue with",
-    "useEmail": "Use email instead"
+    "useEmail": "Use email instead",
+    "signInWithEmail": "Sign in with email"
   },
   "menu": {
     "welcome": "Welcome!",
@@ -125,9 +128,22 @@
     "createSection": "CREATE",
     "postJob": "Post a Job",
     "offerService": "Offer a Service",
+    "sellItem": "Sell Item",
     "language": "Language",
     "settings": "Settings",
-    "help": "Help"
+    "help": "Help",
+    "explore": "Explore",
+    "account": "Account",
+    "getStarted": "Get Started",
+    "pushNotifications": "Push Notifications",
+    "installApp": "Install App",
+    "free": "Free",
+    "addToHomeScreen": "Add to your home screen",
+    "tapShare": "Tap the Share button",
+    "selectAddHome": "Select \"Add to Home Screen\"",
+    "tapAdd": "Tap \"Add\"",
+    "quickHelpDesc": "Find jobs & earn",
+    "marketplaceDesc": "Buy & sell items"
   },
   "createModal": {
     "title": "What would you like to do?",
@@ -229,6 +245,8 @@
     "noJobsNearby": "No jobs posted nearby yet",
     "noJobsInLatvia": "No jobs posted in Latvia yet",
     "tryDifferentCategory": "Try a different category or increase the radius",
+    "tryDifferentFilters": "Try adjusting your filters",
+    "checkBackLater": "Check back later",
     "beFirstToPost": "Be the first to post a job in your area! Need help with moving, cleaning, or any other task? Post it here.",
     "postFirstJob": "Post Your First Job",
     "loginToPost": "Login to Post Jobs or Offer Services",
@@ -315,6 +333,7 @@
     "allLatvia": "All Latvia",
     "swipeUpForJobs": "Swipe up to see jobs",
     "createJobOrService": "Create a job or service",
+    "urgentOnMap": "{{count}} urgent",
     "time": {
       "justNow": "Just now"
     },
@@ -347,9 +366,11 @@
     "myOfferings": "My Offerings",
     "allOfferings": "All Offerings",
     "availableOfferings": "Available Services",
+    "availableServices": "Available Services",
     "noOfferings": "No service providers in your area yet",
     "noOfferingsNearby": "No service providers in your area yet",
     "noOfferingsInLatvia": "No service providers in Latvia yet",
+    "noOfferingsFound": "No services found",
     "noOfferingsDesc": "Are you skilled at something? Advertise your services here and get hired by people nearby!",
     "beFirstToOffer": "Are you skilled at something? Advertise your services here and get hired by people nearby!",
     "offerYourServices": "Offer Your Services",
@@ -377,6 +398,8 @@
     "premiumTip": "Offerings are shown in the list below. Want your offering to appear on the map? Premium features coming soon!",
     "matchesYourOffering": "Matches your offering",
     "premiumOpportunity": "Premium opportunity!",
+    "boostedOnMap": "{{count}} boosted service(s)",
+    "checkBackLater": "Check back later",
     "priceTypes": {
       "hourly": "Hourly rate",
       "fixed": "Fixed price",
@@ -542,7 +565,8 @@
     "recenter": "Center on my location",
     "searchArea": "Search this area",
     "noJobsInArea": "No jobs in this area",
-    "expandSearch": "Try expanding your search radius"
+    "expandSearch": "Try expanding your search radius",
+    "boostedOfferings": "Boosted services"
   },
   "profile": {
     "title": "Profile",
@@ -601,7 +625,23 @@
     "benefit1": "Post a task, get offers in minutes",
     "benefit2": "Verified local helpers",
     "benefit3": "Secure payments",
-    "browseAsGuest": "Browse as guest"
+    "browseAsGuest": "Browse as guest",
+    "availableInLatvia": "Available in Latvia",
+    "getHelpWith": "Get help with",
+    "everydayTasks": "everyday tasks",
+    "needHelp": "Need someone to walk your dog, help you move, or fix something at home? Connect with trusted locals who can help.",
+    "fast": "Fast",
+    "fastDesc": "Get offers in minutes",
+    "verified": "Verified",
+    "verifiedDesc": "Phone-verified",
+    "rated": "Rated",
+    "ratedDesc": "Trusted reviews",
+    "getStarted": "Get Started",
+    "signInWithPhone": "Sign in with your phone number",
+    "welcome": "Welcome!",
+    "welcomeBack": "Welcome, {{name}}!",
+    "searchingOpportunities": "Searching for opportunities within 25km radius of Riga, Latvia",
+    "browseTasksGuest": "Just browsing? See available tasks"
   },
   "toast": {
     "success": "Success",
