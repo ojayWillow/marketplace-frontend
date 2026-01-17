@@ -54,7 +54,7 @@ export default function Login() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <Phone className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {t('auth.loginTitle')}
@@ -70,7 +70,7 @@ export default function Login() {
             className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors mb-6"
           >
             <Phone className="w-5 h-5" />
-            Sign in with Phone
+            {t('auth.signInWithPhone', 'Sign in with Phone')}
             <ArrowRight className="w-5 h-5 ml-auto" />
           </Link>
 
@@ -80,7 +80,9 @@ export default function Login() {
               <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">or continue with email</span>
+              <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">
+                {t('auth.existingUserEmail', 'existing user? use email')}
+              </span>
             </div>
           </div>
 
@@ -121,7 +123,7 @@ export default function Login() {
                   to="/forgot-password"
                   className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
-                  Forgot Password?
+                  {t('auth.forgotPassword', 'Forgot Password?')}
                 </Link>
               </div>
               <div className="relative">
@@ -155,7 +157,7 @@ export default function Login() {
               {login.isPending ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Signing in...
+                  {t('auth.signingIn', 'Signing in...')}
                 </>
               ) : (
                 <>
@@ -167,21 +169,14 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Info about phone verification */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-500/20">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>Note:</strong> Phone verification is required to use Tirgus. After logging in with email, you'll need to verify your phone number.
-          </p>
-        </div>
-
-        {/* Register link */}
+        {/* New user prompt */}
         <p className="mt-6 text-center text-gray-600 dark:text-gray-400">
-          {t('auth.noAccount')}{' '}
+          {t('auth.newUser', 'New to Tirgus?')}{' '}
           <Link
-            to="/register"
+            to="/phone-login"
             className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
           >
-            {t('common.register')}
+            {t('auth.createAccountWithPhone', 'Create account with phone')}
           </Link>
         </p>
       </div>
