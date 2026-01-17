@@ -49,13 +49,14 @@ export const MobileMenu = ({
         >
           {t('common.home')}
         </NavLink>
-        <NavLink
+        {/* Listings/Marketplace removed - not needed for now */}
+        {/* <NavLink
           to="/listings"
           className={navLinkClass}
           onClick={onClose}
         >
           {t('common.listings')}
-        </NavLink>
+        </NavLink> */}
         <NavLink
           to="/tasks"
           className={navLinkClass}
