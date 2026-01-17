@@ -9,6 +9,14 @@ interface AboutTabProps {
 }
 
 export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = false }: AboutTabProps) => {
+  // Helper to check if email is a placeholder (auto-generated for phone users)
+  const isPlaceholderEmail = (email: string) => {
+    return email.includes('@phone.tirgus.local');
+  };
+
+  // Get display email (null if it's a placeholder)
+  const displayEmail = profile.email && !isPlaceholderEmail(profile.email) ? profile.email : null;
+
   if (!viewOnly && editing) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -106,14 +114,16 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
         )}
         
         {/* Contact info - only show for own profile */}
-        {!viewOnly && (
+        {!viewOnly && (displayEmail || profile.phone) && (
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-3">Contact</h3>
             <div className="space-y-2">
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-gray-400">📧</span>
-                <span className="text-gray-700">{profile.email}</span>
-              </div>
+              {displayEmail && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-400">📧</span>
+                  <span className="text-gray-700">{displayEmail}</span>
+                </div>
+              )}
               {profile.phone && (
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-gray-400">📱</span>
