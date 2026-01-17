@@ -1,0 +1,18 @@
+{
+  "legend": "Map",
+  "you": "You",
+  "yourLocation": "Your location",
+  "quickTasks": "Quick tasks",
+  "mediumJobs": "Medium",
+  "premiumJobs": "Premium",
+  "premium": "Premium",
+  "priceMarkers": "Price markers",
+  "clickToView": "Click to view details",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "recenter": "Center on my location",
+  "searchArea": "Search this area",
+  "noJobsInArea": "No jobs in this area",
+  "expandSearch": "Try expanding your search radius",
+  "boostedOfferings": "Boosted services"
+}
