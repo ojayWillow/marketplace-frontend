@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { 
   MapPin,
   ArrowRight, 
-  Check,
   Phone,
   Loader2,
   ChevronDown,
@@ -36,6 +35,13 @@ export default function Home() {
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const mountedRef = useRef(true)
+
+  // Redirect authenticated users immediately
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/tasks', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   // Initialize reCAPTCHA
   const initRecaptcha = useCallback(() => {
@@ -185,22 +191,14 @@ export default function Home() {
     }
   }
 
-  // Logged in users see a simple redirect screen
+  // Logged in users see loading while redirecting
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-green-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome back!</h1>
-          <p className="text-gray-400 mb-6">Ready to find or offer help?</p>
-          <Link
-            to="/tasks"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-          >
-            Go to Quick Help <ArrowRight className="w-5 h-5" />
-          </Link>
+          <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-white mb-2">Welcome back! 👋</h1>
+          <p className="text-gray-400">Meklējam iespējas 25km rādiusā no Rīga, Latvija</p>
         </div>
       </div>
     )
