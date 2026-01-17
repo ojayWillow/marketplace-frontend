@@ -142,25 +142,115 @@ export default function Home() {
     }
   }
 
-  const handleCodeChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return
+  // Handle paste event for OTP (e.g., from SMS autofill or manual paste)
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pastedData.length > 0) {
+      const newCode = [...verificationCode]
+      for (let i = 0; i < 6; i++) {
+        newCode[i] = pastedData[i] || ''
+      }
+      setVerificationCode(newCode)
+      
+      // Focus last filled input or verify if complete
+      const lastFilledIndex = Math.min(pastedData.length - 1, 5)
+      if (pastedData.length === 6) {
+        handleVerifyCode(pastedData)
+      } else {
+        codeInputRefs.current[lastFilledIndex + 1]?.focus()
+      }
+    }
+  }
+
+  // Handle input change with better mobile support
+  const handleCodeInput = (index: number, e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget
+    const value = input.value.replace(/\D/g, '')
+    
+    // Handle multi-character input (SMS autofill often pastes full code)
+    if (value.length > 1) {
+      const newCode = [...verificationCode]
+      for (let i = 0; i < 6; i++) {
+        newCode[i] = value[i - index] || newCode[i] || ''
+      }
+      // If we got a full code, fill it all
+      if (value.length >= 6 - index) {
+        for (let i = index; i < 6 && i - index < value.length; i++) {
+          newCode[i] = value[i - index]
+        }
+      }
+      setVerificationCode(newCode)
+      
+      // Auto-verify if complete
+      const fullCode = newCode.join('')
+      if (fullCode.length === 6 && newCode.every(d => d !== '')) {
+        handleVerifyCode(fullCode)
+      } else {
+        // Focus next empty or last
+        const nextEmpty = newCode.findIndex(d => d === '')
+        codeInputRefs.current[nextEmpty !== -1 ? nextEmpty : 5]?.focus()
+      }
+      return
+    }
+    
+    // Single character input
+    const digit = value.slice(-1)
     const newCode = [...verificationCode]
-    newCode[index] = value.slice(-1)
+    newCode[index] = digit
     setVerificationCode(newCode)
-    if (value && index < 5) codeInputRefs.current[index + 1]?.focus()
-    if (newCode.every(d => d !== '') && newCode.join('').length === 6) {
+    
+    // Auto-advance to next input
+    if (digit && index < 5) {
+      // Use setTimeout to ensure state updates before focus
+      setTimeout(() => {
+        codeInputRefs.current[index + 1]?.focus()
+      }, 0)
+    }
+    
+    // Auto-verify when complete
+    if (digit && newCode.every(d => d !== '')) {
       handleVerifyCode(newCode.join(''))
     }
   }
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle backspace
+    if (e.key === 'Backspace') {
+      if (!verificationCode[index] && index > 0) {
+        // If current input is empty, go back and clear previous
+        const newCode = [...verificationCode]
+        newCode[index - 1] = ''
+        setVerificationCode(newCode)
+        codeInputRefs.current[index - 1]?.focus()
+        e.preventDefault()
+      } else if (verificationCode[index]) {
+        // Clear current input
+        const newCode = [...verificationCode]
+        newCode[index] = ''
+        setVerificationCode(newCode)
+        e.preventDefault()
+      }
+    }
+    
+    // Handle left/right arrow keys
+    if (e.key === 'ArrowLeft' && index > 0) {
       codeInputRefs.current[index - 1]?.focus()
+      e.preventDefault()
+    }
+    if (e.key === 'ArrowRight' && index < 5) {
+      codeInputRefs.current[index + 1]?.focus()
+      e.preventDefault()
     }
   }
 
+  // Handle focus - select all text in input
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select()
+  }
+
   const handleVerifyCode = async (code: string) => {
-    if (!confirmationResult) return
+    if (!confirmationResult || loading) return
     setError('')
     setLoading(true)
 
@@ -226,6 +316,30 @@ export default function Home() {
       </div>
     )
   }
+
+  // OTP Input component for reuse
+  const renderOTPInputs = () => (
+    <div className="flex justify-center gap-1.5 sm:gap-2 mb-4">
+      {verificationCode.map((digit, index) => (
+        <input
+          key={index}
+          ref={(el) => { codeInputRefs.current[index] = el }}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete={index === 0 ? "one-time-code" : "off"}
+          value={digit}
+          onInput={(e) => handleCodeInput(index, e)}
+          onKeyDown={(e) => handleKeyDown(index, e)}
+          onFocus={handleFocus}
+          onPaste={index === 0 ? handlePaste : undefined}
+          className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
+          maxLength={6}
+          disabled={loading}
+        />
+      ))}
+    </div>
+  )
 
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
@@ -353,22 +467,7 @@ export default function Home() {
                     Enter the code sent to <span className="text-white">{getFullPhone()}</span>
                   </p>
                   
-                  <div className="flex justify-center gap-1.5 sm:gap-2 mb-4">
-                    {verificationCode.map((digit, index) => (
-                      <input
-                        key={index}
-                        ref={(el) => { codeInputRefs.current[index] = el }}
-                        type="text"
-                        inputMode="numeric"
-                        value={digit}
-                        onChange={(e) => handleCodeChange(index, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(index, e)}
-                        className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none"
-                        maxLength={1}
-                        disabled={loading}
-                      />
-                    ))}
-                  </div>
+                  {renderOTPInputs()}
 
                   <button
                     onClick={() => handleVerifyCode(verificationCode.join(''))}
@@ -540,22 +639,7 @@ export default function Home() {
                       Enter the code sent to <span className="text-white">{getFullPhone()}</span>
                     </p>
                     
-                    <div className="flex justify-center gap-2 mb-4">
-                      {verificationCode.map((digit, index) => (
-                        <input
-                          key={index}
-                          ref={(el) => { codeInputRefs.current[index] = el }}
-                          type="text"
-                          inputMode="numeric"
-                          value={digit}
-                          onChange={(e) => handleCodeChange(index, e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(index, e)}
-                          className="w-12 h-14 text-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none"
-                          maxLength={1}
-                          disabled={loading}
-                        />
-                      ))}
-                    </div>
+                    {renderOTPInputs()}
 
                     <button
                       onClick={() => handleVerifyCode(verificationCode.join(''))}
