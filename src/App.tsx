@@ -21,6 +21,7 @@ const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
 const PhoneLogin = lazy(() => import('./pages/auth/PhoneLogin'))
 const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
+const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'))
 const Listings = lazy(() => import('./pages/listings/Listings'))
@@ -69,6 +70,15 @@ function App() {
               element={
                 <ProtectedRoute skipPhoneCheck>
                   <VerifyPhone />
+                </ProtectedRoute>
+              }
+            />
+            {/* Complete profile - for new users who registered via phone */}
+            <Route
+              path="complete-profile"
+              element={
+                <ProtectedRoute skipPhoneCheck>
+                  <CompleteProfile />
                 </ProtectedRoute>
               }
             />
