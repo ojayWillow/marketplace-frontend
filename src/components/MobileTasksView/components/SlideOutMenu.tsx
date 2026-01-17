@@ -75,7 +75,7 @@ const SlideOutMenu = ({
   // Check if current path matches
   const isActive = (path: string) => location.pathname === path;
 
-  // Navigation sections
+  // Navigation sections - Marketplace removed
   const mainNavItems = [
     { 
       icon: '💼', 
@@ -83,12 +83,13 @@ const SlideOutMenu = ({
       path: '/tasks',
       description: t('menu.quickHelpDesc', 'Find jobs & earn'),
     },
-    { 
-      icon: '🛒', 
-      label: t('menu.marketplace', 'Marketplace'), 
-      path: '/listings',
-      description: t('menu.marketplaceDesc', 'Buy & sell items'),
-    },
+    // Marketplace removed - not needed for now
+    // { 
+    //   icon: '🛒', 
+    //   label: t('menu.marketplace', 'Marketplace'), 
+    //   path: '/listings',
+    //   description: t('menu.marketplaceDesc', 'Buy & sell items'),
+    // },
   ];
 
   // User menu items (only when authenticated)
