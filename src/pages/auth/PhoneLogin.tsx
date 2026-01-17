@@ -239,6 +239,9 @@ export const PhoneLogin = () => {
                     disabled={isLoading}
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors"
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t('auth.emailHint', 'Used for account recovery and notifications')}
+                  </p>
                 </div>
               </div>
 
@@ -282,16 +285,16 @@ export const PhoneLogin = () => {
           )}
         </div>
 
-        {/* Alternative login methods */}
+        {/* Existing user - email login option */}
         {step === 'phone' && (
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">
-              {t('auth.preferEmail', 'Prefer email login?')}{' '}
+              {t('auth.existingEmailUser', 'Already have an account with email?')}{' '}
               <Link
                 to="/login"
                 className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
-                {t('auth.useEmail', 'Use email instead')}
+                {t('auth.signInWithEmail', 'Sign in with email')}
               </Link>
             </p>
           </div>
