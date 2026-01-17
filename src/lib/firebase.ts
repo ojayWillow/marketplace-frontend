@@ -3,13 +3,13 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth
 import type { ConfirmationResult } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDMzXI3R3PrxUtUrJQbLzhgNI3V8yetHKc",
-  authDomain: "tirgus-marketplace.firebaseapp.com",
-  projectId: "tirgus-marketplace",
-  storageBucket: "tirgus-marketplace.firebasestorage.app",
-  messagingSenderId: "959586377999",
-  appId: "1:959586377999:web:f62e45a632a6e60dd59e7a",
-  measurementId: "G-XCG2PE7W1T"
+  apiKey: "AIzaSyCSgVxOHEBlo4r57SWqHRuhi8HiRbuNy9Q",
+  authDomain: "quickhelp-84c3a.firebaseapp.com",
+  projectId: "quickhelp-84c3a",
+  storageBucket: "quickhelp-84c3a.firebasestorage.app",
+  messagingSenderId: "634890538344",
+  appId: "1:634890538344:web:8146e84febe024557bdadd",
+  measurementId: "G-KV9VC23LLD"
 }
 
 // Initialize Firebase
