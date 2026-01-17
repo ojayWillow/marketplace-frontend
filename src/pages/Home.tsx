@@ -30,16 +30,21 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [recaptchaReady, setRecaptchaReady] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
   
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const mountedRef = useRef(true)
 
-  // Redirect authenticated users immediately
+  // Redirect authenticated users with a brief loading screen
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/tasks', { replace: true })
+      setShowWelcome(true)
+      const timer = setTimeout(() => {
+        navigate('/tasks', { replace: true })
+      }, 1500) // Show loading for 1.5 seconds
+      return () => clearTimeout(timer)
     }
   }, [isAuthenticated, navigate])
 
@@ -191,13 +196,15 @@ export default function Home() {
     }
   }
 
-  // Logged in users see loading while redirecting
-  if (isAuthenticated) {
+  // Logged in users see welcome loading screen
+  if (isAuthenticated || showWelcome) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-white mb-2">Welcome back! 👋</h1>
+          <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Sveicināti! 👋</h1>
           <p className="text-gray-400">Meklējam iespējas 25km rādiusā no Rīga, Latvija</p>
         </div>
       </div>
