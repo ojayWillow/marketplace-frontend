@@ -6,6 +6,23 @@ export interface UploadResponse {
   filename: string;
 }
 
+// Environment-agnostic API URL getter
+const getApiUrl = (): string => {
+  // Vite (web)
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) {
+    return (import.meta as any).env.VITE_API_URL
+  }
+  // React Native / Node
+  if (typeof process !== 'undefined' && process.env?.API_URL) {
+    return process.env.API_URL
+  }
+  // Expo
+  if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL
+  }
+  return 'http://localhost:5000'
+}
+
 /**
  * Upload a single image file
  */
@@ -51,6 +68,6 @@ export const getImageUrl = (path: string): string => {
     return path;
   }
   // For local development, prepend the API base URL
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const baseUrl = getApiUrl();
   return `${baseUrl}${path}`;
 };
