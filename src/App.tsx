@@ -42,6 +42,10 @@ const Conversation = lazy(() => import('./pages/Conversation'))
 const Favorites = lazy(() => import('./pages/Favorites'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
+// Legal pages
+const Terms = lazy(() => import('./pages/legal/Terms'))
+const Privacy = lazy(() => import('./pages/legal/Privacy'))
+
 // Admin pages
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'))
@@ -169,6 +173,9 @@ function App() {
             />
             {/* Public user profile */}
             <Route path="users/:id" element={<UserProfile />} />
+            {/* Legal pages */}
+            <Route path="terms" element={<Terms />} />
+            <Route path="privacy" element={<Privacy />} />
             {/* 404 catch-all route - must be last */}
             <Route path="*" element={<NotFound />} />
           </Route>
