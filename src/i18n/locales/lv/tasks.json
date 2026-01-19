@@ -1,6 +1,7 @@
 {
   "title": "Ātrā palīdzība",
   "subtitle": "Atrodi darbus tuvumā un nopelni naudu",
+  "browseTasks": "Pārlūkot darbus",
   "createTask": "Publicēt darbu",
   "postJob": "Publicēt darbu",
   "offerService": "Piedāvāt pakalpojumu",
@@ -24,7 +25,7 @@
   "loginToPostJob": "Ieejiet, lai publicētu darbu",
   "accept": "Pieņemt",
   "apply": "Pieteikties",
-  "applying": "Piesasās...",
+  "applying": "Piesasas...",
   "accepting": "Pieņem...",
   "navigate": "Navigēt",
   "markDone": "Atzīmēt kā pabeigtu",
