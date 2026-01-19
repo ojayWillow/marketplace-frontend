@@ -1,9 +1,3 @@
-// Polyfill for React Native
-import '@formatjs/intl-pluralrules/polyfill'
-import '@formatjs/intl-pluralrules/locale-data/en'
-import '@formatjs/intl-pluralrules/locale-data/lv'
-import '@formatjs/intl-pluralrules/locale-data/ru'
-
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
@@ -162,6 +156,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'lv',
+    compatibilityJSON: 'v3', // Use v3 format for React Native compatibility
     interpolation: {
       escapeValue: false,
     },
