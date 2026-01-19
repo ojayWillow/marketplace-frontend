@@ -1,5 +1,6 @@
-import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, Avatar, Surface, Divider, Button } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useAuthStore } from '@marketplace/shared';
 
@@ -24,96 +25,96 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleLogin = () => {
-    router.push('/(auth)/login');
-  };
-
   if (!isAuthenticated || !user) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-1 justify-center items-center px-6">
-          <View className="w-20 h-20 bg-gray-200 rounded-full items-center justify-center mb-4">
-            <Text className="text-gray-400 text-3xl">?</Text>
-          </View>
-          <Text className="text-xl font-semibold text-gray-900 mb-2">Not Logged In</Text>
-          <Text className="text-gray-500 text-center mb-6">
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <Avatar.Icon size={80} icon="account" style={styles.guestAvatar} />
+          <Text variant="headlineSmall" style={styles.notLoggedInTitle}>Not Logged In</Text>
+          <Text style={styles.notLoggedInSubtitle}>
             Sign in to access your profile, listings, and messages
           </Text>
-          <Pressable
-            onPress={handleLogin}
-            className="bg-primary-500 px-8 py-3 rounded-xl active:bg-primary-600"
+          <Button
+            mode="contained"
+            onPress={() => router.push('/(auth)/login')}
+            style={styles.signInButton}
           >
-            <Text className="text-white font-semibold">Sign In</Text>
-          </Pressable>
+            Sign In
+          </Button>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1">
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
         {/* Header */}
-        <View className="bg-white px-6 py-8 items-center border-b border-gray-100">
-          {/* Avatar */}
-          <View className="w-24 h-24 bg-primary-500 rounded-full items-center justify-center mb-4">
-            <Text className="text-white text-3xl font-bold">
-              {user.username?.charAt(0).toUpperCase() || 'U'}
-            </Text>
-          </View>
+        <Surface style={styles.header} elevation={1}>
+          <Avatar.Text
+            size={96}
+            label={user.username?.charAt(0).toUpperCase() || 'U'}
+            style={styles.avatar}
+          />
           
-          {/* Name */}
-          <Text className="text-xl font-bold text-gray-900">
+          <Text variant="headlineSmall" style={styles.name}>
             {user.first_name && user.last_name
               ? `${user.first_name} ${user.last_name}`
               : user.username}
           </Text>
-          <Text className="text-gray-500">@{user.username}</Text>
+          <Text style={styles.username}>@{user.username}</Text>
           
           {/* Stats */}
           {user.reputation_score !== undefined && (
-            <View className="flex-row mt-4 gap-6">
-              <View className="items-center">
-                <Text className="text-lg font-bold text-gray-900">
+            <View style={styles.statsContainer}>
+              <View style={styles.stat}>
+                <Text variant="titleLarge" style={styles.statValue}>
                   {user.reputation_score?.toFixed(1) || '0.0'}
                 </Text>
-                <Text className="text-gray-500 text-sm">Rating</Text>
+                <Text style={styles.statLabel}>Rating</Text>
               </View>
               {user.completion_rate !== undefined && (
-                <View className="items-center">
-                  <Text className="text-lg font-bold text-gray-900">
+                <View style={styles.stat}>
+                  <Text variant="titleLarge" style={styles.statValue}>
                     {Math.round(user.completion_rate * 100)}%
                   </Text>
-                  <Text className="text-gray-500 text-sm">Completion</Text>
+                  <Text style={styles.statLabel}>Completion</Text>
                 </View>
               )}
             </View>
           )}
-        </View>
+        </Surface>
 
         {/* Menu Items */}
-        <View className="mt-4">
+        <Surface style={styles.menuContainer} elevation={0}>
           <MenuItem title="Edit Profile" icon="✏️" onPress={() => {}} />
+          <Divider />
           <MenuItem title="My Listings" icon="📦" onPress={() => {}} />
+          <Divider />
           <MenuItem title="My Tasks" icon="📋" onPress={() => {}} />
+          <Divider />
           <MenuItem title="Favorites" icon="❤️" onPress={() => {}} />
+          <Divider />
           <MenuItem title="Settings" icon="⚙️" onPress={() => {}} />
+          <Divider />
           <MenuItem title="Help & Support" icon="❓" onPress={() => {}} />
-        </View>
+        </Surface>
 
         {/* Logout */}
-        <View className="mt-4 mb-8">
-          <Pressable
+        <View style={styles.logoutContainer}>
+          <Button
+            mode="outlined"
             onPress={handleLogout}
-            className="bg-white mx-4 py-4 rounded-xl items-center border border-red-200 active:bg-red-50"
+            textColor="#ef4444"
+            style={styles.logoutButton}
           >
-            <Text className="text-red-500 font-semibold">Logout</Text>
-          </Pressable>
+            Logout
+          </Button>
         </View>
 
         {/* Account Info */}
-        <View className="px-6 pb-8">
-          <Text className="text-gray-400 text-center text-sm">
+        <View style={styles.footer}>
+          <Text style={styles.memberSince}>
             Member since {new Date(user.created_at).toLocaleDateString()}
           </Text>
         </View>
@@ -126,11 +127,123 @@ function MenuItem({ title, icon, onPress }: { title: string; icon: string; onPre
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white flex-row items-center px-6 py-4 border-b border-gray-100 active:bg-gray-50"
+      style={({ pressed }) => [
+        styles.menuItem,
+        pressed && styles.menuItemPressed,
+      ]}
     >
-      <Text className="text-xl mr-4">{icon}</Text>
-      <Text className="flex-1 text-gray-900 text-base">{title}</Text>
-      <Text className="text-gray-400">›</Text>
+      <Text style={styles.menuIcon}>{icon}</Text>
+      <Text style={styles.menuTitle}>{title}</Text>
+      <Text style={styles.menuArrow}>›</Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  guestAvatar: {
+    backgroundColor: '#e5e7eb',
+    marginBottom: 16,
+  },
+  notLoggedInTitle: {
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  notLoggedInSubtitle: {
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  signInButton: {
+    paddingHorizontal: 24,
+  },
+  header: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  avatar: {
+    backgroundColor: '#0ea5e9',
+    marginBottom: 16,
+  },
+  name: {
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  username: {
+    color: '#6b7280',
+    marginTop: 4,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    marginTop: 24,
+    gap: 48,
+  },
+  stat: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  statLabel: {
+    color: '#6b7280',
+    fontSize: 13,
+    marginTop: 4,
+  },
+  menuContainer: {
+    backgroundColor: '#ffffff',
+    marginTop: 16,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  menuItemPressed: {
+    backgroundColor: '#f9fafb',
+  },
+  menuIcon: {
+    fontSize: 20,
+    marginRight: 16,
+  },
+  menuTitle: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  menuArrow: {
+    fontSize: 20,
+    color: '#9ca3af',
+  },
+  logoutContainer: {
+    marginTop: 16,
+    marginHorizontal: 16,
+  },
+  logoutButton: {
+    borderColor: '#fecaca',
+  },
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  memberSince: {
+    color: '#9ca3af',
+    fontSize: 13,
+  },
+});
