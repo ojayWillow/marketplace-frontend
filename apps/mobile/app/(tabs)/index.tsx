@@ -1,5 +1,6 @@
-import { View, Text, ScrollView, Pressable, TextInput, Image, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl, TextInput, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, Card, Chip, ActivityIndicator, Button, Surface } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
@@ -18,7 +19,6 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Fetch offerings
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['offerings', selectedCategory, searchQuery],
     queryFn: async () => {
@@ -37,16 +37,15 @@ export default function HomeScreen() {
   const offerings = data?.offerings || [];
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View className="bg-white px-4 py-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">Marketplace</Text>
-
+      <Surface style={styles.header} elevation={1}>
+        <Text variant="headlineMedium" style={styles.title}>Marketplace</Text>
+        
         {/* Search Bar */}
-        <View className="mt-4 flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
-          <Text className="text-gray-400 mr-2">🔍</Text>
+        <View style={styles.searchContainer}>
           <TextInput
-            className="flex-1 text-base"
+            style={styles.searchInput}
             placeholder="Search offerings..."
             placeholderTextColor="#9ca3af"
             value={searchQuery}
@@ -54,121 +53,202 @@ export default function HomeScreen() {
             returnKeyType="search"
           />
         </View>
-      </View>
+      </Surface>
 
       <ScrollView
-        className="flex-1"
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
       >
         {/* Categories */}
-        <View className="p-4">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">Categories</Text>
+        <View style={styles.section}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Categories</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CATEGORIES.map((category) => (
-              <Pressable
-                key={category.id}
-                onPress={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-full mr-2 border ${
-                  selectedCategory === category.id
-                    ? 'bg-primary-500 border-primary-500'
-                    : 'bg-white border-gray-200 active:bg-gray-50'
-                }`}
-              >
-                <Text
-                  className={`${
-                    selectedCategory === category.id ? 'text-white font-semibold' : 'text-gray-700'
-                  }`}
+            <View style={styles.chipContainer}>
+              {CATEGORIES.map((category) => (
+                <Chip
+                  key={category.id}
+                  selected={selectedCategory === category.id}
+                  onPress={() => setSelectedCategory(category.id)}
+                  style={styles.chip}
+                  mode={selectedCategory === category.id ? 'flat' : 'outlined'}
                 >
                   {category.label}
-                </Text>
-              </Pressable>
-            ))}
+                </Chip>
+              ))}
+            </View>
           </ScrollView>
         </View>
 
-        {/* Offerings List */}
-        <View className="px-4 pb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">
-            {selectedCategory === 'all' ? 'All Offerings' : `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Offerings`}
+        {/* Offerings */}
+        <View style={styles.section}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            {selectedCategory === 'all' ? 'All Offerings' : `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`}
           </Text>
 
-          {/* Loading State */}
+          {/* Loading */}
           {isLoading && (
-            <View className="items-center py-12">
-              <Text className="text-gray-500">Loading offerings...</Text>
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" />
+              <Text style={styles.statusText}>Loading offerings...</Text>
             </View>
           )}
 
-          {/* Error State */}
+          {/* Error */}
           {isError && (
-            <View className="items-center py-12">
-              <Text className="text-red-500 mb-2">Failed to load offerings</Text>
-              <Pressable onPress={() => refetch()} className="bg-primary-500 px-4 py-2 rounded-lg">
-                <Text className="text-white font-semibold">Retry</Text>
-              </Pressable>
+            <View style={styles.centerContainer}>
+              <Text style={styles.errorText}>Failed to load offerings</Text>
+              <Button mode="contained" onPress={() => refetch()} style={styles.retryButton}>
+                Retry
+              </Button>
             </View>
           )}
 
-          {/* Empty State */}
+          {/* Empty */}
           {!isLoading && !isError && offerings.length === 0 && (
-            <View className="items-center py-12">
-              <Text className="text-4xl mb-2">📦</Text>
-              <Text className="text-gray-500 text-center">
-                {searchQuery ? 'No offerings found for your search' : 'No offerings available'}
+            <View style={styles.centerContainer}>
+              <Text style={styles.emptyIcon}>📦</Text>
+              <Text style={styles.statusText}>
+                {searchQuery ? 'No offerings found' : 'No offerings available'}
               </Text>
             </View>
           )}
 
-          {/* Offerings Grid */}
+          {/* Offerings List */}
           {!isLoading && !isError && offerings.length > 0 && (
-            <>
+            <View>
               {offerings.map((offering: any) => (
-                <Pressable
+                <Card
                   key={offering.id}
+                  style={styles.card}
                   onPress={() => router.push(`/offering/${offering.id}`)}
-                  className="bg-white rounded-xl p-4 mb-3 border border-gray-100 active:bg-gray-50"
                 >
-                  {/* Image */}
                   {offering.images && offering.images.length > 0 ? (
-                    <Image
-                      source={{ uri: offering.images[0] }}
-                      className="h-40 rounded-lg mb-3"
-                      resizeMode="cover"
-                    />
+                    <Card.Cover source={{ uri: offering.images[0] }} style={styles.cardImage} />
                   ) : (
-                    <View className="h-40 bg-gray-200 rounded-lg mb-3 items-center justify-center">
-                      <Text className="text-gray-400 text-4xl">📦</Text>
+                    <View style={styles.placeholderImage}>
+                      <Text style={styles.placeholderIcon}>📦</Text>
                     </View>
                   )}
-
-                  {/* Title */}
-                  <Text className="text-lg font-semibold text-gray-900" numberOfLines={1}>
-                    {offering.title}
-                  </Text>
-
-                  {/* Description */}
-                  <Text className="text-gray-500 mt-1" numberOfLines={2}>
-                    {offering.description}
-                  </Text>
-
-                  {/* Footer */}
-                  <View className="flex-row justify-between items-center mt-3">
-                    <Text className="text-primary-500 font-bold">
-                      €{offering.price ? offering.price.toFixed(2) : '0.00'}
-                      {offering.price_type === 'hourly' && '/hr'}
+                  <Card.Content style={styles.cardContent}>
+                    <Text variant="titleMedium" numberOfLines={1}>{offering.title}</Text>
+                    <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
+                      {offering.description}
                     </Text>
-                    <Text className="text-gray-400 text-sm">
-                      📍 {offering.location?.city || 'Location'}
-                    </Text>
-                  </View>
-                </Pressable>
+                    <View style={styles.cardFooter}>
+                      <Text variant="titleMedium" style={styles.price}>
+                        €{offering.price?.toFixed(2) || '0.00'}
+                        {offering.price_type === 'hourly' && '/hr'}
+                      </Text>
+                      <Text variant="bodySmall" style={styles.location}>
+                        📍 {offering.location?.city || 'Location'}
+                      </Text>
+                    </View>
+                  </Card.Content>
+                </Card>
               ))}
-            </>
+            </View>
           )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  searchContainer: {
+    marginTop: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+  },
+  searchInput: {
+    height: 44,
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  section: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#1f2937',
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  chip: {
+    marginRight: 8,
+  },
+  centerContainer: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  statusText: {
+    marginTop: 12,
+    color: '#6b7280',
+  },
+  errorText: {
+    color: '#ef4444',
+    marginBottom: 12,
+  },
+  retryButton: {
+    marginTop: 8,
+  },
+  emptyIcon: {
+    fontSize: 48,
+  },
+  card: {
+    marginBottom: 12,
+    backgroundColor: '#ffffff',
+  },
+  cardImage: {
+    height: 160,
+  },
+  placeholderImage: {
+    height: 160,
+    backgroundColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderIcon: {
+    fontSize: 48,
+  },
+  cardContent: {
+    paddingTop: 12,
+  },
+  description: {
+    color: '#6b7280',
+    marginTop: 4,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  price: {
+    color: '#0ea5e9',
+    fontWeight: 'bold',
+  },
+  location: {
+    color: '#9ca3af',
+  },
+});
