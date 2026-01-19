@@ -1,108 +1,185 @@
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, TextInput, Button, useTheme, Snackbar } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const theme = useTheme();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter both email and password');
+      setError('Please enter both email and password');
       return;
     }
 
     setLoading(true);
+    setError('');
     try {
       const response = await authApi.login({ email: email.trim(), password });
       setAuth(response.user, response.access_token);
       router.replace('/(tabs)');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
-      Alert.alert('Login Failed', message);
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={styles.keyboardView}
       >
-        <View className="flex-1 px-6 pt-8">
-          {/* Header */}
-          <Text className="text-2xl font-bold text-gray-900 mb-8">Welcome Back</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.content}>
+            {/* Header */}
+            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+              Welcome Back
+            </Text>
 
-          {/* Email Input */}
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Email</Text>
+            {/* Email Input */}
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
-              placeholder="Enter your email"
-              placeholderTextColor="#9ca3af"
+              label="Email"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              editable={!loading}
+              disabled={loading}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="email" />}
             />
-          </View>
 
-          {/* Password Input */}
-          <View className="mb-6">
-            <Text className="text-gray-700 font-medium mb-2">Password</Text>
+            {/* Password Input */}
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
-              placeholder="Enter your password"
-              placeholderTextColor="#9ca3af"
+              label="Password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
-              editable={!loading}
+              secureTextEntry={!showPassword}
+              disabled={loading}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="lock" />}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
             />
-          </View>
 
-          {/* Forgot Password */}
-          <Pressable className="self-end mb-6" disabled={loading}>
-            <Text className="text-primary-500">Forgot Password?</Text>
-          </Pressable>
+            {/* Forgot Password */}
+            <Button
+              mode="text"
+              onPress={() => {}}
+              disabled={loading}
+              style={styles.forgotButton}
+            >
+              Forgot Password?
+            </Button>
 
-          {/* Login Button */}
-          <Pressable
-            onPress={handleLogin}
-            disabled={loading}
-            className={`py-4 rounded-xl items-center ${loading ? 'bg-primary-300' : 'bg-primary-500 active:bg-primary-600'}`}
-          >
-            <Text className="text-white font-semibold text-lg">
+            {/* Login Button */}
+            <Button
+              mode="contained"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={loading}
+              style={styles.loginButton}
+              contentStyle={styles.buttonContent}
+            >
               {loading ? 'Signing In...' : 'Sign In'}
-            </Text>
-          </Pressable>
+            </Button>
 
-          {/* Register Link */}
-          <View className="flex-row justify-center mt-6">
-            <Text className="text-gray-500">Don't have an account? </Text>
-            <Link href="/(auth)/register" asChild>
-              <Pressable disabled={loading}>
-                <Text className="text-primary-500 font-medium">Sign Up</Text>
-              </Pressable>
+            {/* Register Link */}
+            <View style={styles.registerRow}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                Don't have an account?{' '}
+              </Text>
+              <Link href="/(auth)/register" asChild>
+                <Button mode="text" disabled={loading} compact>
+                  Sign Up
+                </Button>
+              </Link>
+            </View>
+
+            {/* Browse as Guest */}
+            <Link href="/(tabs)" asChild>
+              <Button mode="text" disabled={loading} style={styles.guestButton}>
+                Continue as Guest
+              </Button>
             </Link>
           </View>
-
-          {/* Browse as Guest */}
-          <Link href="/(tabs)" asChild>
-            <Pressable className="mt-8 items-center" disabled={loading}>
-              <Text className="text-gray-400">Continue as Guest</Text>
-            </Pressable>
-          </Link>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError('')}
+        duration={4000}
+        action={{
+          label: 'Dismiss',
+          onPress: () => setError(''),
+        }}
+      >
+        {error}
+      </Snackbar>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: 32,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+  },
+  loginButton: {
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  guestButton: {
+    marginTop: 32,
+  },
+});
