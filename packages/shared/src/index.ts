@@ -49,8 +49,28 @@ export {
   userKeys,
 } from '../../apps/web/src/api/hooks';
 
-// Export utility functions from tasks
-export { getStatusLabel, getDifficultyLabel } from './api/tasks';
+// Utility functions for task/offering status and difficulty labels
+export const getStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    'open': 'Open',
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled',
+    'pending': 'Pending',
+    'active': 'Active',
+    'inactive': 'Inactive',
+  };
+  return labels[status] || status;
+};
+
+export const getDifficultyLabel = (difficulty: string): string => {
+  const labels: Record<string, string> = {
+    'easy': 'Easy',
+    'medium': 'Medium',
+    'hard': 'Hard',
+  };
+  return labels[difficulty] || difficulty;
+};
 
 // Store exports
 export { useAuthStore } from './stores/authStore';
