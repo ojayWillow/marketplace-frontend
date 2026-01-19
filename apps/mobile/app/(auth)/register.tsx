@@ -1,7 +1,8 @@
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, TextInput, Button, useTheme, Snackbar } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 
 export default function RegisterScreen() {
@@ -10,26 +11,31 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const theme = useTheme();
 
   const handleRegister = async () => {
     // Validation
     if (!username.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      setError('Please fill in all required fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
+    setError('');
     try {
       const response = await authApi.register({
         username: username.trim(),
@@ -40,109 +46,182 @@ export default function RegisterScreen() {
       router.replace('/(tabs)');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
-      Alert.alert('Registration Failed', message);
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={styles.keyboardView}
       >
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 24 }}>
-          {/* Header */}
-          <Text className="text-2xl font-bold text-gray-900 mb-2">Create Account</Text>
-          <Text className="text-gray-500 mb-8">Join the marketplace community</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.content}>
+            {/* Header */}
+            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+              Create Account
+            </Text>
+            <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+              Join the marketplace community
+            </Text>
 
-          {/* Username Input */}
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Username</Text>
+            {/* Username Input */}
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
-              placeholder="Choose a username"
-              placeholderTextColor="#9ca3af"
+              label="Username"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
               autoCorrect={false}
-              editable={!loading}
+              disabled={loading}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="account" />}
             />
-          </View>
 
-          {/* Email Input */}
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Email</Text>
+            {/* Email Input */}
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
-              placeholder="Enter your email"
-              placeholderTextColor="#9ca3af"
+              label="Email"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              editable={!loading}
+              disabled={loading}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="email" />}
             />
-          </View>
 
-          {/* Password Input */}
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Password</Text>
+            {/* Password Input */}
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
-              placeholder="Create a password"
-              placeholderTextColor="#9ca3af"
+              label="Password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
-              editable={!loading}
+              secureTextEntry={!showPassword}
+              disabled={loading}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="lock" />}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
             />
-          </View>
 
-          {/* Confirm Password Input */}
-          <View className="mb-6">
-            <Text className="text-gray-700 font-medium mb-2">Confirm Password</Text>
+            {/* Confirm Password Input */}
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
-              placeholder="Confirm your password"
-              placeholderTextColor="#9ca3af"
+              label="Confirm Password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              secureTextEntry
-              editable={!loading}
+              secureTextEntry={!showConfirmPassword}
+              disabled={loading}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="lock-check" />}
+              right={
+                <TextInput.Icon
+                  icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
+              }
             />
-          </View>
 
-          {/* Register Button */}
-          <Pressable
-            onPress={handleRegister}
-            disabled={loading}
-            className={`py-4 rounded-xl items-center ${loading ? 'bg-primary-300' : 'bg-primary-500 active:bg-primary-600'}`}
-          >
-            <Text className="text-white font-semibold text-lg">
+            {/* Register Button */}
+            <Button
+              mode="contained"
+              onPress={handleRegister}
+              loading={loading}
+              disabled={loading}
+              style={styles.registerButton}
+              contentStyle={styles.buttonContent}
+            >
               {loading ? 'Creating Account...' : 'Create Account'}
+            </Button>
+
+            {/* Login Link */}
+            <View style={styles.loginRow}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                Already have an account?{' '}
+              </Text>
+              <Link href="/(auth)/login" asChild>
+                <Button mode="text" disabled={loading} compact>
+                  Sign In
+                </Button>
+              </Link>
+            </View>
+
+            {/* Terms */}
+            <Text variant="bodySmall" style={[styles.terms, { color: theme.colors.onSurfaceVariant }]}>
+              By creating an account, you agree to our Terms of Service and Privacy Policy
             </Text>
-          </Pressable>
-
-          {/* Login Link */}
-          <View className="flex-row justify-center mt-6">
-            <Text className="text-gray-500">Already have an account? </Text>
-            <Link href="/(auth)/login" asChild>
-              <Pressable disabled={loading}>
-                <Text className="text-primary-500 font-medium">Sign In</Text>
-              </Pressable>
-            </Link>
           </View>
-
-          {/* Terms */}
-          <Text className="text-gray-400 text-center text-sm mt-8">
-            By creating an account, you agree to our Terms of Service and Privacy Policy
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError('')}
+        duration={4000}
+        action={{
+          label: 'Dismiss',
+          onPress: () => setError(''),
+        }}
+      >
+        {error}
+      </Snackbar>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  content: {
+    flex: 1,
+  },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    marginBottom: 32,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  registerButton: {
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  loginRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  terms: {
+    textAlign: 'center',
+    marginTop: 32,
+    paddingHorizontal: 16,
+  },
+});
