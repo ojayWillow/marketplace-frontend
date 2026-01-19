@@ -90,20 +90,20 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-slate-800/50">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-500">
-              &copy; {currentYear} {t('common.quickHelp')}. All rights reserved.
+              &copy; {currentYear} {t('common.quickHelp')}. {t('footer.allRightsReserved', 'All rights reserved.')}
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link 
                 to="/terms" 
                 className="text-slate-500 hover:text-white transition-colors"
               >
-                Terms
+                {t('legal.terms.title')}
               </Link>
               <Link 
                 to="/privacy" 
                 className="text-slate-500 hover:text-white transition-colors"
               >
-                Privacy
+                {t('legal.privacy.title')}
               </Link>
             </div>
           </div>
