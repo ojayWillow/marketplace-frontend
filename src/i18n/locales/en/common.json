@@ -51,5 +51,21 @@
   "this": "this type of",
   "or": "or",
   "gotIt": "Got it!",
-  "and": "and"
+  "and": "and",
+  "notifications": {
+    "title": "Notifications",
+    "unread": "unread",
+    "allCaughtUp": "You're all caught up!",
+    "newWillAppear": "New notifications will appear here",
+    "browseTasks": "Browse tasks to help others",
+    "assignedToJobs": "You got assigned to {{count}} job(s)!",
+    "applicationAccepted": "Your application was accepted",
+    "newMessages": "{{count}} new message(s)",
+    "clickToView": "Click to view your messages",
+    "newApplications": "{{count}} new application(s)",
+    "peopleWantToHelp": "People want to help with your tasks",
+    "awaitingConfirmation": "{{count}} task(s) awaiting confirmation",
+    "workersMarkedDone": "Workers marked these as done",
+    "viewAllActivity": "View all activity"
+  }
 }
