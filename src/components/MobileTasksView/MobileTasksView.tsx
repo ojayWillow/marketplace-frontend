@@ -9,6 +9,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { useUnreadCounts } from '../../api/hooks';
 import { getCategoryIcon, CATEGORY_OPTIONS } from '../../constants/categories';
 import QuickHelpIntroModal from '../QuickHelpIntroModal';
+import { NotificationBell } from '../Layout/Header/NotificationBell';
+import { useNotifications } from '../Layout/Header/hooks/useNotifications';
 
 import { Task, SheetPosition } from './types';
 import { mobileTasksStyles } from './styles';
@@ -39,6 +41,14 @@ const MobileTasksView = () => {
 
   // Fetch unread counts for notifications (only when authenticated)
   const { data: unreadCounts } = useUnreadCounts({ enabled: isAuthenticated });
+
+  // Use notifications hook for the bell component
+  const {
+    notifications,
+    totalNotifications,
+    markNotificationsAsRead,
+    clearNotificationType,
+  } = useNotifications(isAuthenticated);
 
   // Task data state
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -307,12 +317,12 @@ const MobileTasksView = () => {
       />
 
       <div className="mobile-tasks-container">
-        {/* TOP BAR - Menu + Search + Radius */}
+        {/* TOP BAR - Menu + Notification Bell + Search + Radius */}
         <div className="bg-white shadow-md z-50 flex-shrink-0">
           {/* Search Bar Row */}
           <div className="p-3 pb-2">
             <div className="flex gap-2 items-center">
-              {/* Hamburger Menu Button with Badge */}
+              {/* Hamburger Menu Button */}
               <button
                 onClick={() => setIsMenuOpen(true)}
                 className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 active:bg-gray-200 relative"
@@ -330,12 +340,6 @@ const MobileTasksView = () => {
                   <line x1="3" y1="12" x2="21" y2="12" />
                   <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
-                {/* Notification Badge on Hamburger */}
-                {totalUnread > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
-                    {totalUnread > 99 ? '99+' : totalUnread}
-                  </span>
-                )}
               </button>
 
               {/* Search Input */}
@@ -367,6 +371,17 @@ const MobileTasksView = () => {
                   🇱🇻 {t('tasks.allLatvia', 'All')}
                 </option>
               </select>
+
+              {/* Notification Bell - Visible when authenticated */}
+              {isAuthenticated && (
+                <NotificationBell
+                  notifications={notifications}
+                  totalNotifications={totalNotifications}
+                  onMarkAsRead={markNotificationsAsRead}
+                  onClearType={clearNotificationType}
+                  isMobile={true}
+                />
+              )}
             </div>
           </div>
 
