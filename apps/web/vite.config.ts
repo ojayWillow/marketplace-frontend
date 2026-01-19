@@ -114,6 +114,14 @@ export default defineConfig({
       }
     })
   ],
+  optimizeDeps: {
+    exclude: ['react-native']
+  },
+  resolve: {
+    alias: {
+      'react-native': 'react-native-web'
+    }
+  },
   server: {
     port: 3000,
     proxy: {
