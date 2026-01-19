@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useToastStore } from '../../../../stores/toastStore';
 import { reviewsApi } from '../../../../api/reviews';
 import { StarRating } from '../StarRating';
@@ -12,6 +13,7 @@ interface ReviewsTabProps {
 }
 
 export const ReviewsTab = ({ reviews, currentUserId, onDeleteReview, setReviews }: ReviewsTabProps) => {
+  const { t } = useTranslation();
   const toast = useToastStore();
   const [editingReview, setEditingReview] = useState<number | null>(null);
   const [reviewEditData, setReviewEditData] = useState<{ rating: number; content: string }>({ rating: 5, content: '' });
@@ -28,21 +30,21 @@ export const ReviewsTab = ({ reviews, currentUserId, onDeleteReview, setReviews 
         r.id === reviewId ? { ...r, ...reviewEditData } : r
       ));
       setEditingReview(null);
-      toast.success('Review updated successfully');
+      toast.success(t('reviews.updateSuccess'));
     } catch (error) {
       console.error('Error updating review:', error);
-      toast.error('Failed to update review');
+      toast.error(t('reviews.submitError'));
     }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h2 className="font-semibold text-gray-900 mb-4">Reviews</h2>
+      <h2 className="font-semibold text-gray-900 mb-4">{t('profile.reviewsTab.title')}</h2>
       
       {reviews.length === 0 ? (
         <div className="text-center py-10">
           <div className="text-4xl mb-2">⭐</div>
-          <p className="text-gray-500">No reviews yet</p>
+          <p className="text-gray-500">{t('profile.reviewsTab.noReviews')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -51,7 +53,7 @@ export const ReviewsTab = ({ reviews, currentUserId, onDeleteReview, setReviews 
               {editingReview === review.id ? (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.reviewsTab.rating')}</label>
                     <StarRating
                       rating={reviewEditData.rating}
                       editable
@@ -60,7 +62,7 @@ export const ReviewsTab = ({ reviews, currentUserId, onDeleteReview, setReviews 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.reviewsTab.comment')}</label>
                     <textarea
                       value={reviewEditData.content}
                       onChange={(e) => setReviewEditData(prev => ({ ...prev, content: e.target.value }))}
@@ -69,8 +71,8 @@ export const ReviewsTab = ({ reviews, currentUserId, onDeleteReview, setReviews 
                     />
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleSaveReview(review.id)} className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm">Save</button>
-                    <button onClick={() => setEditingReview(null)} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm">Cancel</button>
+                    <button onClick={() => handleSaveReview(review.id)} className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm">{t('profile.reviewsTab.save')}</button>
+                    <button onClick={() => setEditingReview(null)} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm">{t('profile.reviewsTab.cancel')}</button>
                   </div>
                 </div>
               ) : (
@@ -90,14 +92,14 @@ export const ReviewsTab = ({ reviews, currentUserId, onDeleteReview, setReviews 
                     {review.content ? (
                       <p className="text-gray-600 text-sm">{review.content}</p>
                     ) : (
-                      <p className="text-gray-400 text-sm italic">No comment</p>
+                      <p className="text-gray-400 text-sm italic">{t('profile.reviewsTab.noComment')}</p>
                     )}
                     <p className="text-xs text-gray-400 mt-1">{new Date(review.created_at).toLocaleDateString()}</p>
                   </div>
                   {currentUserId && review.reviewer_id === currentUserId && (
                     <div className="flex gap-2">
-                      <button onClick={() => handleEditReview(review)} className="text-xs text-blue-600 hover:underline">Edit</button>
-                      <button onClick={() => onDeleteReview(review.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                      <button onClick={() => handleEditReview(review)} className="text-xs text-blue-600 hover:underline">{t('profile.reviewsTab.edit')}</button>
+                      <button onClick={() => onDeleteReview(review.id)} className="text-xs text-red-500 hover:underline">{t('profile.reviewsTab.delete')}</button>
                     </div>
                   )}
                 </div>
