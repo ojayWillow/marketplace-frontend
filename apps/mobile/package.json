@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
+    "@formatjs/intl-pluralrules": "^5.2.14",
     "@marketplace/shared": "workspace:*",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.5",
