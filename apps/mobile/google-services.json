@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "634890538344",
+    "project_id": "quickhelp-84c3a",
+    "storage_bucket": "quickhelp-84c3a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:634890538344:android:9f268e96d51e9a827bdadd",
+        "android_client_info": {
+          "package_name": "Quickhelp.auth"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdE4uF_EJsE6_L3DtiXxfgfrLlMdVZ4yI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:634890538344:android:35da04134fd597ea7bdadd",
+        "android_client_info": {
+          "package_name": "com.marketplace.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdE4uF_EJsE6_L3DtiXxfgfrLlMdVZ4yI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
