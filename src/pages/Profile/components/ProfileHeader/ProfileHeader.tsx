@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '../../../../api/uploads';
 import type { UserProfile, ProfileFormData } from '../../types';
 
@@ -31,10 +32,15 @@ export const ProfileHeader = ({
   onMessage,
   messageLoading = false,
 }: ProfileHeaderProps) => {
-  const memberSince = new Date(profile.created_at).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long'
-  });
+  const { t, i18n } = useTranslation();
+
+  const memberSince = new Date(profile.created_at).toLocaleDateString(
+    i18n.language === 'lv' ? 'lv-LV' : i18n.language === 'ru' ? 'ru-RU' : 'en-US',
+    {
+      year: 'numeric',
+      month: 'long'
+    }
+  );
 
   // Helper to get full avatar URL
   const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
@@ -77,7 +83,7 @@ export const ProfileHeader = ({
               onClick={onChangeAvatar}
               className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded-full text-xs hover:bg-gray-700 transition-colors"
             >
-              Change
+              {t('profile.changeAvatar')}
             </button>
           )}
         </div>
@@ -88,7 +94,7 @@ export const ProfileHeader = ({
             <h1 className="text-xl font-bold text-gray-900">{profile.username}</h1>
             {profile.is_verified && (
               <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full font-medium">
-                ✓ Verified
+                ✓ {t('profile.verified')}
               </span>
             )}
           </div>
@@ -103,7 +109,7 @@ export const ProfileHeader = ({
                 📍 {[profile.city, profile.country].filter(Boolean).join(', ')}
               </span>
             )}
-            <span>Member since {memberSince}</span>
+            <span>{t('profile.memberSince', { date: memberSince })}</span>
           </div>
 
           {/* Stats inline */}
@@ -116,7 +122,7 @@ export const ProfileHeader = ({
             <div className="text-gray-300">|</div>
             <div className="flex items-center gap-1">
               <span className="text-green-500 font-semibold">{profile.tasks_completed || totalTasksCompleted}</span>
-              <span className="text-gray-500 text-sm">tasks done</span>
+              <span className="text-gray-500 text-sm">{t('profile.tasksDone')}</span>
             </div>
           </div>
         </div>
@@ -131,7 +137,7 @@ export const ProfileHeader = ({
                 disabled={messageLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 flex items-center gap-2"
               >
-                💬 {messageLoading ? 'Loading...' : 'Message'}
+                💬 {messageLoading ? t('profile.messageLoading') : t('profile.message')}
               </button>
             )
           ) : (
@@ -141,7 +147,7 @@ export const ProfileHeader = ({
                 onClick={onEdit}
                 className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
               >
-                Edit Profile
+                {t('profile.editProfile')}
               </button>
             ) : (
               <div className="flex gap-2">
@@ -149,14 +155,14 @@ export const ProfileHeader = ({
                   onClick={onCancel}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                 >
-                  Cancel
+                  {t('profile.cancel')}
                 </button>
                 <button
                   onClick={onSave}
                   disabled={saving}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
                 >
-                  {saving ? 'Saving...' : 'Save'}
+                  {saving ? t('profile.saving') : t('profile.save')}
                 </button>
               </div>
             )
@@ -171,25 +177,25 @@ export const ProfileHeader = ({
             to="/tasks/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition-colors"
           >
-            📋 Post Job
+            📋 {t('profile.quickActions.postJob')}
           </Link>
           <Link
             to="/offerings/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium hover:bg-amber-100 transition-colors"
           >
-            👋 Offer Service
+            👋 {t('profile.quickActions.offerService')}
           </Link>
           <Link
             to="/listings/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-100 transition-colors"
           >
-            🏷️ Sell Item
+            🏷️ {t('profile.quickActions.sellItem')}
           </Link>
           <Link
             to="/favorites"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 text-pink-700 rounded-full text-sm font-medium hover:bg-pink-100 transition-colors"
           >
-            ❤️ Favorites
+            ❤️ {t('profile.quickActions.favorites')}
           </Link>
         </div>
       )}
