@@ -16,6 +16,7 @@ export default ({ config }) => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.marketplace.app',
+    googleServicesFile: './GoogleService-Info.plist',
     config: {
       usesNonExemptEncryption: false,
     },
@@ -26,6 +27,7 @@ export default ({ config }) => ({
       backgroundColor: '#ffffff',
     },
     package: 'com.marketplace.app',
+    googleServicesFile: './google-services.json',
     permissions: [
       'ACCESS_FINE_LOCATION',
       'ACCESS_COARSE_LOCATION',
@@ -44,6 +46,8 @@ export default ({ config }) => ({
     'expo-secure-store',
     'expo-image-picker',
     'expo-location',
+    '@react-native-firebase/app',
+    '@react-native-firebase/auth',
     [
       'expo-notifications',
       {
