@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Task, TaskApplication } from '../../../../api/tasks';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
@@ -46,6 +47,7 @@ export const TasksTab = ({
   onTaskConfirmed,
   viewOnly = false,
 }: TasksTabProps) => {
+  const { t } = useTranslation();
   const [expandedMatchHint, setExpandedMatchHint] = useState<number | null>(null);
   
   // Confirmation modal state
@@ -210,14 +212,14 @@ export const TasksTab = ({
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-semibold text-gray-900">
-            {viewOnly ? 'Posted Jobs' : 'My Jobs'}
+            {viewOnly ? t('profile.jobsTab.titleViewOnly') : t('profile.jobsTab.title')}
           </h2>
           {!viewOnly && (
             <Link
               to="/tasks/create"
               className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
-              + Post Job
+              {t('profile.jobsTab.postJob')}
             </Link>
           )}
         </div>
@@ -231,7 +233,7 @@ export const TasksTab = ({
                 taskViewMode === 'my-tasks' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
               }`}
             >
-              Jobs I Posted
+              {t('profile.jobsTab.jobsIPosted')}
               {totalPendingApplicationsOnMyTasks > 0 && (
                 <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-green-500 text-white font-bold">
                   {totalPendingApplicationsOnMyTasks}
@@ -244,7 +246,7 @@ export const TasksTab = ({
                 taskViewMode === 'my-jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
               }`}
             >
-              Jobs I'm Doing
+              {t('profile.jobsTab.jobsImDoing')}
               {pendingReviewsCount > 0 && (
                 <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[10px] rounded-full bg-yellow-500 text-white font-bold">
                   {pendingReviewsCount}
@@ -258,9 +260,9 @@ export const TasksTab = ({
         {!viewOnly && (
           <div className="flex gap-1 mb-4">
             {[
-              { value: 'all', label: 'All' },
-              { value: 'active', label: 'Active' },
-              { value: 'completed', label: 'Done' },
+              { value: 'all', label: t('profile.jobsTab.filterAll') },
+              { value: 'active', label: t('profile.jobsTab.filterActive') },
+              { value: 'completed', label: t('profile.jobsTab.filterDone') },
             ].map(filter => (
               <button
                 key={filter.value}
@@ -283,7 +285,7 @@ export const TasksTab = ({
             <div className="flex items-center gap-2 text-amber-800">
               <span className="text-lg">✨</span>
               <p className="text-sm">
-                <span className="font-medium">{tasksWithMatches} of your jobs</span> have potential helpers nearby
+                <span className="font-medium">{t('profile.jobsTab.matchesBanner', { count: tasksWithMatches })}</span>
               </p>
             </div>
           </div>
@@ -296,10 +298,10 @@ export const TasksTab = ({
             <div className="text-4xl mb-2">{taskViewMode === 'my-tasks' || viewOnly ? '📋' : '🛠️'}</div>
             <p className="text-gray-500 mb-4">
               {viewOnly 
-                ? 'No active jobs posted'
+                ? t('profile.jobsTab.noActiveJobs')
                 : taskViewMode === 'my-tasks' 
-                  ? 'No jobs posted yet' 
-                  : 'No jobs yet'
+                  ? t('profile.jobsTab.noJobsPosted')
+                  : t('profile.jobsTab.noJobs')
               }
             </p>
             {!viewOnly && (
@@ -307,7 +309,7 @@ export const TasksTab = ({
                 to={taskViewMode === 'my-tasks' ? '/tasks/create' : '/tasks'}
                 className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
               >
-                {taskViewMode === 'my-tasks' ? 'Post your first job →' : 'Browse available jobs →'}
+                {taskViewMode === 'my-tasks' ? t('profile.jobsTab.postFirstJob') : t('profile.jobsTab.browseJobs')}
               </Link>
             )}
           </div>
@@ -335,8 +337,8 @@ export const TasksTab = ({
                         to={`/tasks/${task.id}`}
                         className="flex items-center justify-between bg-green-500 text-white p-2.5 rounded-lg mb-3 text-sm"
                       >
-                        <span>📩 {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}!</span>
-                        <span className="font-medium">Review →</span>
+                        <span>📩 {t('profile.jobsTab.applications', { count: task.pending_applications_count })}</span>
+                        <span className="font-medium">{t('profile.jobsTab.reviewApplications')}</span>
                       </Link>
                     )}
                     
@@ -373,9 +375,9 @@ export const TasksTab = ({
                             className="mt-3 flex items-center justify-between p-2.5 bg-amber-100 rounded-lg text-sm text-amber-800 hover:bg-amber-200 transition-colors"
                           >
                             <span>
-                              💡 {matchCount} helper{matchCount !== 1 ? 's' : ''} offering <strong>{getCategoryLabel(task.category)}</strong> nearby
+                              💡 {t('profile.jobsTab.helpersNearby', { count: matchCount, category: getCategoryLabel(task.category) })}
                             </span>
-                            <span className="font-medium">View matches →</span>
+                            <span className="font-medium">{t('profile.jobsTab.viewMatches')}</span>
                           </Link>
                         )}
                       </div>
@@ -385,15 +387,15 @@ export const TasksTab = ({
                             onClick={() => handleConfirmClick(task)}
                             className="px-2.5 py-1 text-xs bg-green-500 text-white rounded-md hover:bg-green-600"
                           >
-                            ✓ Confirm
+                            {t('profile.jobsTab.confirm')}
                           </button>
                         )}
-                        <Link to={`/tasks/${task.id}`} className="text-xs text-blue-600 hover:underline text-center">View</Link>
+                        <Link to={`/tasks/${task.id}`} className="text-xs text-blue-600 hover:underline text-center">{t('profile.jobsTab.view')}</Link>
                         {!viewOnly && task.status === 'open' && !hasApplications && (
                           <>
-                            <Link to={`/tasks/${task.id}/edit`} className="text-xs text-gray-500 hover:underline text-center">Edit</Link>
+                            <Link to={`/tasks/${task.id}/edit`} className="text-xs text-gray-500 hover:underline text-center">{t('profile.jobsTab.edit')}</Link>
                             {onCancelTask && (
-                              <button onClick={() => onCancelTask(task.id)} className="text-xs text-red-500 hover:underline">Cancel</button>
+                              <button onClick={() => onCancelTask(task.id)} className="text-xs text-red-500 hover:underline">{t('profile.jobsTab.cancelJob')}</button>
                             )}
                           </>
                         )}
@@ -427,7 +429,7 @@ export const TasksTab = ({
                     <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
                       <span>🎉</span>
                       <span className="font-medium">
-                        {task.status === 'completed' ? 'Completed!' : "You're assigned"}
+                        {task.status === 'completed' ? t('profile.jobsTab.completed') : t('profile.jobsTab.assigned')}
                       </span>
                     </div>
                     
@@ -446,7 +448,7 @@ export const TasksTab = ({
                           <span>📍 {task.location}</span>
                           {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">Posted by {task.creator_name || 'Unknown'}</p>
+                        <p className="text-xs text-gray-400 mt-1">{t('profile.jobsTab.postedBy')} {task.creator_name || 'Unknown'}</p>
                       </div>
                       <div className="flex flex-col gap-1">
                         {needsReview && (
@@ -454,14 +456,14 @@ export const TasksTab = ({
                             onClick={() => handleReviewClick(task)}
                             className="px-2.5 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
                           >
-                            ⭐ Review
+                            {t('profile.jobsTab.review')}
                           </button>
                         )}
                         <Link
                           to={`/tasks/${task.id}`}
                           className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center"
                         >
-                          View
+                          {t('profile.jobsTab.view')}
                         </Link>
                       </div>
                     </div>
