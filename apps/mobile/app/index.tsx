@@ -24,23 +24,25 @@ export default function WelcomeScreen() {
 
         {/* Buttons */}
         <View style={styles.buttonContainer}>
-          <Link href="/(auth)/login" asChild>
+          <Link href="/(auth)/phone" asChild>
             <Button 
               mode="contained" 
               style={styles.button}
               contentStyle={styles.buttonContent}
+              icon="phone"
             >
-              Sign In
+              Continue with Phone
             </Button>
           </Link>
 
-          <Link href="/(auth)/register" asChild>
+          <Link href="/(auth)/login" asChild>
             <Button 
               mode="outlined" 
               style={styles.button}
               contentStyle={styles.buttonContent}
+              icon="email"
             >
-              Create Account
+              Sign In with Email
             </Button>
           </Link>
         </View>
