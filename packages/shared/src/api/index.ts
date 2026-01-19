@@ -1,18 +1,44 @@
 // Core client
 export { apiClient, default as api } from './client';
 
-// API modules - export the api objects
+// API modules
 export { authApi } from './auth';
 export * from './favorites';
 export * from './geocoding';
 export * from './listings';
 export * from './messages';
-export * from './notifications';
+
+// Notifications - rename conflicting exports
+export {
+  NotificationType,
+  type Notification,
+  type GetNotificationsResponse,
+  type UnreadCountResponse,
+  getNotifications,
+  getUnreadCount as getUnreadNotificationCount,
+  markAsRead as markNotificationAsRead,
+  markAllAsRead as markAllNotificationsAsRead,
+  markReadByType,
+  deleteNotification,
+} from './notifications';
+
 export * from './offerings';
 export * from './push';
 export * from './reviews';
 export * from './taskResponses';
-export * from './tasks';
+
+// Tasks - don't re-export Task type (it's in types.ts)
+export {
+  getTasks,
+  getTask,
+  createTask,
+  updateTask,
+  getTasksByUser,
+  getMyTasks,
+  tasksApi,
+  type GetTasksResponse,
+} from './tasks';
+
 export * from './uploads';
 export * from './users';
 
