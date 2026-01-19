@@ -1,35 +1,40 @@
-import axios from 'axios';
+import axios from 'axios'
+import { useAuthStore } from '../stores/authStore'
 
-// Create axios instance with default config
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 export const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL || process.env.VITE_API_URL || 'http://localhost:3000/api',
-  timeout: 10000,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
+})
 
-// Request interceptor for auth token
+// Request interceptor - add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    // Token will be set by the auth module
-    // This is a placeholder for the token injection logic
-    return config;
+    const token = useAuthStore.getState().token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
   },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  (error) => Promise.reject(error)
+)
 
-// Response interceptor for error handling
+// Response interceptor - handle 401 (but not for non-critical endpoints)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle common errors (401, 403, 500, etc.)
-    if (error.response?.status === 401) {
-      // Trigger logout or token refresh
-      console.log('Unauthorized - need to handle auth refresh');
+    // Only auto-logout on 401 for critical auth endpoints, not for optional features
+    const url = error.config?.url || ''
+    const isOptionalEndpoint = url.includes('/tasks/my')
+    
+    if (error.response?.status === 401 && !isOptionalEndpoint) {
+      useAuthStore.getState().logout()
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
+
+export default apiClient

@@ -1,0 +1,165 @@
+{
+  "terms": {
+    "title": "Lietošanas noteikumi",
+    "lastUpdated": "Pēdējo reizi atjaunināts: {{date}}",
+    "intro": "Laipni lūdzam Tirgus platformā (\"Platforma\"). Izmantojot mūsu pakalpojumus, jūs piekrītat šiem noteikumiem. Lūdzu, izlasiet tos uzmanīgi.",
+    "sections": {
+      "platform": {
+        "title": "1. Kas mēs esam",
+        "content": "Tirgus ir kopienas savienojuma platforma, kas palīdz cilvēkiem atrast un piedāvāt palīdzību ikdienas uzdevumos. Iedomājieties mūs kā digitālu sludinājumu dēli vai pastu \u2014 mēs nodrošinām vietu, kur cilvēki var sazināties, bet mēs nepiedalāmies un nekontrolējam vienošanās starp lietotājiem."
+      },
+      "noLiability": {
+        "title": "2. Mūsu loma un ierobežojumi",
+        "content": "Mēs neesam puse nevienā līgumā starp lietotājiem. Visi darbi, pakalpojumi, maksājumi un vienošanās tiek veiktas tieši starp darba devēju un palīdzības sniedzotāju. Tirgus:",
+        "list": [
+          "Nenodarbina un neslēdz līgumus ar darbiniekiem/palīgiem",
+          "Negarantē veiktā darba kvalitāti, drošību vai likumību",
+          "Neapstrādā maksājumus un neņem komisijas maksu no darījumiem",
+          "Nepārbauda lietotāju prasmes vai izcelsmi",
+          "Neuzņemas atbildību par strīdiem starp lietotājiem"
+        ]
+      },
+      "userResponsibility": {
+        "title": "3. Jūsu pienākumi",
+        "content": "Izmantojot Tirgus, jūs piekrītat, ka esat personīgi atbildīgs par:",
+        "list": [
+          "Publicētās informācijas precizitāti",
+          "Skaidru komunikāciju ar citiem lietotājiem",
+          "Vienošanos par noteikumiem, samaksu un gaidoām pirms darba uzsākšanas",
+          "Visu piemērojamo likumu un noteikumu ievērošanu",
+          "Savu drošību, tiekoties vai strādājot ar citiem",
+          "Jebkādu strīdu risināšanu tieši ar otru pusi"
+        ]
+      },
+      "age": {
+        "title": "4. Vecuma prasība",
+        "content": "Lai izmantotu Tirgus, jums jābūt vismaz 16 gadus vecam. Izveidojot kontu, jūs apstiprināt, ka atbilstat šai vecuma prasībai. Lietotājiem, kas jaunāki par 18 gadiem, jābūt vecāku vai aizbildņu piekrišanai."
+      },
+      "noFees": {
+        "title": "5. Bezmaksas platforma",
+        "content": "Tirgus pašlaik ir bezmaksas. Mēs neiekšējam maksu un neņemam komisiju no darījumiem starp lietotājiem. Visi maksājumi par darbiem vai pakalpojumiem tiek norunāti tieši starp lietotājiem."
+      },
+      "content": {
+        "title": "6. Lietotāju saturs",
+        "content": "Jūs esat atbildīgs par visu saturu, ko publicējat Tirgus platformā. Jūs piekrītat nepublicēt:",
+        "list": [
+          "Nepatiesu, maldinošu vai krāpniecisku informāciju",
+          "Nelikumīgus pakalpojumus vai pieprasījumus",
+          "Aizvainojošu, diskriminējošu vai kaitējošu saturu",
+          "Surogātpastu vai komerciālu reklāmu, kas nav saistīta ar uzdevumiem/pakalpojumiem"
+        ],
+        "removal": "Mēs paturējam tiesības noņemt jebkādu saturu un apturēt kontus, kas pārkāpj šos noteikumus."
+      },
+      "safety": {
+        "title": "7. Drošības vadlīnijas",
+        "content": "Lai gan mēs vēlamies, lai visiem būtu pozitīva pieredze, lūdzu, izmantojiet veselo saproātu un piesardzību:",
+        "list": [
+          "Tieciet publiskās vietās pirmajai tikšanās reizei",
+          "Pastostiet kādam, kurp dodaties",
+          "Uzticieties savai intuīcijai \u2014 ja kaut kas šķiet nepareizi, ejiet prom",
+          "Neizpaudiet jutlīgu personīgo informāciju bez nepieciešamības",
+          "Ziņojiet mums par aizdomīgu uzvedību"
+        ]
+      },
+      "disclaimer": {
+        "title": "8. Atrunāšanās",
+        "content": "PLATFORMA TIEK NODROŠINĀTA \"KĀDA TĀ IR\" BEZ JEBKĀDĀM GARANTIJĀM. MĒS NEGARANTĒJAM NEPARĀRAUKTU PIEKļUVI MŪSU PAKALPOJUMIEM. CIKTĀL TO ATļAUJ LIKUMS, TIRGUS NAV ATBILDĪGS PAR JEBKĀDIEM NETIEŠIEM, NEJAUŠIEM, ĪPAŠIEM VAI IZRIETOŠIEM ZAUĒJUMIEM, KAS RODAS NO PLATFORMAS IZMANTOŠANAS."
+      },
+      "changes": {
+        "title": "9. Noteikumu izmaiņas",
+        "content": "Mēs varam laiku pa laikam atjaunināt šos noteikumus. Turpināta platformas izmantošana pēc izmaiņām nozīmē jauno noteikumu pieņemšanu."
+      },
+      "contact": {
+        "title": "10. Sazinieties ar mums",
+        "content": "Ja jums ir jautājumi par šiem noteikumiem, lūdzu, sazinieties ar mums:",
+        "email": "info@marketplace.lv"
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privātuma politika",
+    "lastUpdated": "Pēdējo reizi atjaunināts: {{date}}",
+    "intro": "Jūsu privātums mums ir svarīgs. Šī politika skaidro, kādu informāciju mēs vācam, kā to izmantojam un jūsu tiesības attiecībā uz jūsu datiem.",
+    "sections": {
+      "collect": {
+        "title": "1. Informācija, ko mēs vācam",
+        "content": "Mēs vācam informāciju, ko jūs tieši sniedzat:",
+        "list": [
+          "Konta informācija: vārds, e-pasts, tālruņa numurs, profila attēls",
+          "Profila detaļas: apraksts, atrašanās vieta (pilsēta/valsts), prasmes",
+          "Saturs, ko veidojat: darbu sludinājumi, pakalpojumu piedāvājumi, ziņas, atsauksmes",
+          "Atrašanās vietas dati: aptuvena atrašanās vieta, lai parādītu tuvumā esošos darbus/pakalpojumus (tikai ar jūsu atļauju)"
+        ],
+        "automatic": "Mēs arī automātiski vācam dažu informāciju:",
+        "automaticList": [
+          "Ierīces informācija un pārlūka veids",
+          "Lietošanas dati (apmeklētās lapas, izmantotas funkcijas)",
+          "IP adrese drošības nolūkiem"
+        ]
+      },
+      "use": {
+        "title": "2. Kā mēs izmantojam jūsu informāciju",
+        "content": "Mēs izmantojam jūsu informāciju, lai:",
+        "list": [
+          "Nodrošinātu un uzlabotu mūsu pakalpojumus",
+          "Savienotu jums ar atbilstošiem darbiem un palīgiem jūsu apkārtnē",
+          "Iespējotu komunikāciju starp lietotājiem",
+          "Nosūtītu svarīgus atjauninājumus par jūsu kontu vai darījumiem",
+          "Nodrošinātu platformas drošību un novērstu krāpšanu",
+          "Analizētu lietošanu, lai uzlabotu platformu"
+        ]
+      },
+      "sharing": {
+        "title": "3. Informācijas kopīgošana",
+        "content": "MĒS NEPĀRDODAM jūsu personiskos datus. Mēs varam kopīgot informāciju:",
+        "list": [
+          "Ar citiem lietotājiem: Jūsu publiskais profils, darbu sludinājumi un piedāvājumi ir redzami citiem",
+          "Ar pakalpojumu sniedzējiem: Uzņēmumi, kas palīdz mums darboties (hosting, analītika) ar stingru konfidencialitāti",
+          "Juridisku iemeslu dēļ: Ja to pieprasa likums vai lai aizsargātu tiesības un drošību"
+        ]
+      },
+      "security": {
+        "title": "4. Datu drošība",
+        "content": "Mēs īstenom saprātīgus drošības pasākumus, lai aizsargātu jūsu datus, tostarp šifrēšanu, drošus serverus un piekļuves kontroli. Tomēr neviena interneta pārraide nav 100% droša."
+      },
+      "rights": {
+        "title": "5. Jūsu tiesības",
+        "content": "Jums ir tiesības:",
+        "list": [
+          "Piekļūt saviem personiskajiem datiem",
+          "Labot neprecīzu informāciju",
+          "Dzēst savu kontu un saistītos datus",
+          "Eksportēt savus datus",
+          "Atteikties no mārketinga paziņojumiem"
+        ],
+        "howTo": "Lai izmantotu šīs tiesības, dodieties uz sava Profila iestatījumiem vai sazinieties ar mums."
+      },
+      "cookies": {
+        "title": "6. Sīkdatnes",
+        "content": "Mēs izmantojam nepieciešamās sīkdatnes, lai platforma darbotos pareizi (pieteikšanās sesijas, preferences). Mēs varam izmantot analītikas sīkdatnes, lai saprastu, kā cilvēki izmanto Tirgus. Jūs varat kontrolēt sīkdatnes caur sava pārlūka iestatījumiem."
+      },
+      "retention": {
+        "title": "7. Datu saglabāšana",
+        "content": "Mēs saglabājam jūsu datus, kamēr jūsu konts ir aktīvs. Ja jūs dzēšat savu kontu, mēs noņemsim jūsu personiskos datus 30 dienu laikā, izņemot gadījumus, kad mums tie jāsaglabā juridisku iemeslu dēļ."
+      },
+      "children": {
+        "title": "8. Bērnu privātums",
+        "content": "Tirgus nav paredzēts lietotājiem, kas jaunāki par 16 gadiem. Mēs apzināti nevācam datus no bērniem, kas jaunāki par 16 gadiem. Ja uzzināsim, ka esam vākuši šādus datus, mēs tos nekavējoties dzēsīsim."
+      },
+      "changes": {
+        "title": "9. Šīs politikas izmaiņas",
+        "content": "Mēs varam atjaunināt šo privātuma politiku. Mēs paziņosim jums par būtiskām izmaiņām caur platformu vai e-pastu."
+      },
+      "contact": {
+        "title": "10. Sazinieties ar mums",
+        "content": "Ar privātumu saistītiem jautājumiem vai pieprasījumiem:",
+        "email": "info@marketplace.lv",
+        "location": "Rīga, Latvija"
+      }
+    }
+  },
+  "footer": {
+    "terms": "Lietošanas noteikumi",
+    "privacy": "Privātuma politika"
+  }
+}

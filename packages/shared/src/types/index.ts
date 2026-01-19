@@ -1,63 +1,100 @@
-// Shared types between web and mobile
-// These will be migrated from apps/web/src/types/
-
+// User types
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
+  phone?: string;
+  created_at: string;
 }
 
-export interface Task {
-  id: string;
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+}
+
+// Listing types
+export interface Listing {
+  id: number;
   title: string;
   description: string;
-  budget?: number;
-  location?: Location;
-  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
-  authorId: string;
-  author?: User;
-  createdAt: string;
-  updatedAt: string;
+  price: number;
+  category: ListingCategory;
+  condition: ListingCondition;
+  location: string;
+  images?: string[];
+  user_id: number;
+  user?: User;
+  created_at: string;
+  updated_at: string;
+  views?: number;
+  is_active: boolean;
 }
 
-export interface Offering {
-  id: string;
+export type ListingCategory = 
+  | 'electronics'
+  | 'vehicles'
+  | 'property'
+  | 'furniture'
+  | 'clothing'
+  | 'sports'
+  | 'books'
+  | 'other';
+
+export type ListingCondition = 
+  | 'new'
+  | 'like_new'
+  | 'good'
+  | 'fair'
+  | 'poor';
+
+export interface CreateListingData {
   title: string;
   description: string;
-  price?: number;
-  priceType?: 'fixed' | 'hourly' | 'negotiable';
-  images: string[];
-  category: string;
-  location?: Location;
-  authorId: string;
-  author?: User;
-  createdAt: string;
-  updatedAt: string;
+  price: number;
+  category: ListingCategory;
+  condition: ListingCondition;
+  location: string;
 }
 
-export interface Location {
-  lat: number;
-  lng: number;
-  address?: string;
-  city?: string;
+export interface ListingsFilter {
+  category?: ListingCategory;
+  condition?: ListingCondition;
+  min_price?: number;
+  max_price?: number;
+  location?: string;
+  search?: string;
 }
 
-export interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  content: string;
-  createdAt: string;
-  read: boolean;
+// API Response types
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
 }
 
-export interface Conversation {
-  id: string;
-  participants: User[];
-  lastMessage?: Message;
-  createdAt: string;
-  updatedAt: string;
+export interface ApiError {
+  error: string;
+  message: string;
+  status: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
 }

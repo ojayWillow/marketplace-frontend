@@ -1,24 +1,18 @@
 {
   "name": "@marketplace/shared",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "scripts": {
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src/"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.5",
     "i18next": "^23.7.16",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@types/react": "^18.2.47",
     "typescript": "^5.3.3"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0"
   }
 }
