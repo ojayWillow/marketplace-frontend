@@ -23,6 +23,7 @@ export const OTPInput = ({
   const [otp, setOtp] = useState<string[]>(Array(length).fill(''))
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const isUpdatingFromPaste = useRef(false)
+  const lastInputTime = useRef<number>(0)
 
   // Sync external value with internal state (but skip if we just pasted)
   useEffect(() => {
@@ -104,17 +105,47 @@ export const OTPInput = ({
     }
   }, [length, onChange])
 
+  const handlePasteValue = useCallback((pastedData: string, startIndex: number = 0) => {
+    const cleanData = pastedData.replace(/\D/g, '').slice(0, length - startIndex)
+    
+    if (cleanData.length > 0) {
+      const newOtp = [...otp]
+      cleanData.split('').forEach((digit, i) => {
+        if (startIndex + i < length) {
+          newOtp[startIndex + i] = digit
+        }
+      })
+      
+      isUpdatingFromPaste.current = true
+      setOtp(newOtp)
+      onChange(newOtp.join(''))
+      
+      // Focus last filled input or last input
+      const focusIndex = Math.min(startIndex + cleanData.length, length) - 1
+      setTimeout(() => {
+        inputRefs.current[focusIndex]?.focus()
+      }, 0)
+    }
+  }, [length, onChange, otp])
+
   const handleChange = (index: number, newValue: string) => {
-    // Handle case where user pastes into a single input (some browsers do this)
+    const now = Date.now()
     const cleanValue = newValue.replace(/\D/g, '')
     
-    if (cleanValue.length > 1) {
-      // User pasted multiple digits into single input
-      handlePasteValue(cleanValue)
+    // Detect autofill: multiple digits entered at once (but NOT via rapid typing)
+    // Autofill typically happens all at once, typing has delays between keystrokes
+    const timeSinceLastInput = now - lastInputTime.current
+    const isLikelyAutofill = cleanValue.length > 1 && timeSinceLastInput > 50
+    
+    lastInputTime.current = now
+    
+    if (isLikelyAutofill) {
+      // User pasted or browser autofilled multiple digits
+      handlePasteValue(cleanValue, index)
       return
     }
     
-    // Only allow single digit
+    // Only allow single digit - take the last one (handles overtype)
     const digit = cleanValue.slice(-1)
     
     const newOtp = [...otp]
@@ -161,49 +192,18 @@ export const OTPInput = ({
     }
   }
 
-  const handlePasteValue = useCallback((pastedData: string) => {
-    const cleanData = pastedData.replace(/\D/g, '').slice(0, length)
-    
-    if (cleanData.length > 0) {
-      const newOtp = Array(length).fill('')
-      cleanData.split('').forEach((digit, index) => {
-        newOtp[index] = digit
-      })
-      
-      isUpdatingFromPaste.current = true
-      setOtp(newOtp)
-      onChange(newOtp.join(''))
-      
-      // Focus last filled input or last input
-      const focusIndex = Math.min(cleanData.length, length) - 1
-      setTimeout(() => {
-        inputRefs.current[focusIndex]?.focus()
-      }, 0)
-    }
-  }, [length, onChange])
-
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault()
     e.stopPropagation()
     
     const pastedData = e.clipboardData.getData('text')
-    handlePasteValue(pastedData)
+    // Start pasting from the first box
+    handlePasteValue(pastedData, 0)
   }
 
   const handleFocus = (index: number) => {
     // Select the input content on focus
     inputRefs.current[index]?.select()
-  }
-
-  // Handle input event for mobile autofill (some browsers use this instead of paste)
-  const handleInput = (index: number, e: React.FormEvent<HTMLInputElement>) => {
-    const target = e.target as HTMLInputElement
-    const inputValue = target.value.replace(/\D/g, '')
-    
-    // If multiple digits detected (autofill scenario)
-    if (inputValue.length > 1) {
-      handlePasteValue(inputValue)
-    }
   }
 
   return (
@@ -224,12 +224,11 @@ export const OTPInput = ({
             autoComplete={index === 0 ? 'one-time-code' : 'off'}
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
-            onInput={(e) => handleInput(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             onFocus={() => handleFocus(index)}
             disabled={disabled}
-            maxLength={length} // Allow longer input for paste/autofill detection
+            maxLength={2}
             className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 transition-all
               ${error
                   ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20'
