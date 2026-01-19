@@ -12,11 +12,11 @@ const firebaseConfig = {
   appId: Constants.expoConfig?.extra?.firebaseAppId || process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let auth: Auth;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
 
 // Lazy initialization - only initialize when actually needed
-export const getFirebaseApp = () => {
+export const getFirebaseApp = (): FirebaseApp => {
   if (!app) {
     // Check if Firebase app already exists
     if (getApps().length === 0) {
@@ -28,12 +28,9 @@ export const getFirebaseApp = () => {
   return app;
 };
 
-export const getFirebaseAuth = () => {
+export const getFirebaseAuth = (): Auth => {
   if (!auth) {
     auth = getAuth(getFirebaseApp());
   }
   return auth;
 };
-
-export { auth, app };
-export default getFirebaseApp;
