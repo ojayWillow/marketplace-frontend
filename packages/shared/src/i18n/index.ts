@@ -1,3 +1,11 @@
+// Polyfill for React Native
+if (typeof Intl.PluralRules === 'undefined') {
+  require('@formatjs/intl-pluralrules/polyfill')
+  require('@formatjs/intl-pluralrules/locale-data/en')
+  require('@formatjs/intl-pluralrules/locale-data/lv')
+  require('@formatjs/intl-pluralrules/locale-data/ru')
+}
+
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
