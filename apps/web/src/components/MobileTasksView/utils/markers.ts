@@ -1,5 +1,5 @@
 import { divIcon } from 'leaflet';
-import { Task } from '../types';
+import { Task } from '@marketplace/shared';
 
 /**
  * Add offset to overlapping markers so they don't stack

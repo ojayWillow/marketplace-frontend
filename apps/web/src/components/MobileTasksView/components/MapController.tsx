@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
-import { Task } from '../types';
+import { Task } from '@marketplace/shared';
 
 interface MapControllerProps {
   lat: number;

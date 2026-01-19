@@ -1,4 +1,4 @@
-import { Task as APITask } from '../../api/tasks';
+import { Task as APITask } from '@marketplace/shared';
 
 // Extend API Task with UI-specific properties
 export interface Task extends APITask {

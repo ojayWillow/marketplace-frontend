@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getListings, type Listing } from "../../api/listings";
+import { getListings, type Listing } from '@marketplace/shared';
 
 export default function ListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);

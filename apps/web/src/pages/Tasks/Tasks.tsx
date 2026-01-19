@@ -8,8 +8,8 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-import { useAuthStore } from '../../stores/authStore';
-import { useMatchingStore } from '../../stores/matchingStore';
+import { useAuthStore } from '@marketplace/shared';
+import { useMatchingStore } from '@marketplace/shared';
 import { CATEGORY_OPTIONS } from '../../constants/categories';
 import CompactFilterBar from '../../components/ui/CompactFilterBar';
 import { useIsMobile } from '../../hooks/useIsMobile';

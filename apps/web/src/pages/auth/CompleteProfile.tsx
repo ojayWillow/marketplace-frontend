@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { User, Mail, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
-import { useAuthStore } from '../../stores/authStore'
-import api from '../../api/client'
+import { useAuthStore } from '@marketplace/shared'
+import { apiClient as api } from '@marketplace/shared'
 
 export default function CompleteProfile() {
   const { t } = useTranslation()

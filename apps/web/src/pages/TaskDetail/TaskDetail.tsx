@@ -16,13 +16,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
-import { TaskApplication, getTaskApplications } from '../../api/tasks';
-import { getOfferings, Offering } from '../../api/offerings';
+import { TaskApplication, getTaskApplications } from '@marketplace/shared';
+import { getOfferings, Offering } from '@marketplace/shared';
 import { useTask, useApplyToTask } from '../../api/hooks';
-import { useAuthStore } from '../../stores/authStore';
-import { useToastStore } from '../../stores/toastStore';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 import { getCategoryLabel } from '../../constants/categories';
-import apiClient from '../../api/client';
+import { apiClient } from '@marketplace/shared';
 import SEOHead from '../../components/ui/SEOHead';
 
 // Local components

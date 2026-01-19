@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { UserProfile, ProfileFormData } from '../../types';
+import type { UserProfile, ProfileFormData } from '@marketplace/shared';
 
 interface AboutTabProps {
   profile: UserProfile;

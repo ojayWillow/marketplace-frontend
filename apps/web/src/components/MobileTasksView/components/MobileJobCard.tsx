@@ -1,4 +1,4 @@
-import { Task } from '../types';
+import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import FavoriteButton from '../../ui/FavoriteButton';

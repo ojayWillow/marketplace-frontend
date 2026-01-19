@@ -14,8 +14,8 @@ import {
   FavoritesCountResponse,
   ToggleFavoriteResponse,
   FavoritesCheckResponse
-} from '../api/favorites';
-import { useAuthStore } from '../stores/authStore';
+} from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
 
 /**
  * Hook to get all favorites for the current user

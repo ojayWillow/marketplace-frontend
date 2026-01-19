@@ -5,11 +5,11 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../stores/authStore';
-import { useToastStore } from '../../stores/toastStore';
-import { useFavoritesStore } from '../../stores/favoritesStore';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { useFavoritesStore } from '@marketplace/shared';
 import { useToggleFavorite } from '../../hooks/useFavorites';
-import { FavoriteItemType } from '../../api/favorites';
+import { FavoriteItemType } from '@marketplace/shared';
 
 interface FavoriteButtonProps {
   itemType: FavoriteItemType;

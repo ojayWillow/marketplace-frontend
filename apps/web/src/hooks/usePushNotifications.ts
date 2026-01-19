@@ -11,8 +11,8 @@ import {
   unsubscribeFromPush,
   sendTestNotification,
   urlBase64ToUint8Array,
-} from '../api/push';
-import { useAuthStore } from '../stores/authStore';
+} from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
 
 const PUSH_PREFERENCE_KEY = 'push_notifications_enabled';
 

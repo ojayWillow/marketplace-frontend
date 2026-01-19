@@ -1,5 +1,5 @@
 // Map-related helper functions
-import type { Task } from '../types';
+import type { Task } from '@marketplace/shared';
 
 /**
  * Add offset to overlapping markers so they don't stack on top of each other

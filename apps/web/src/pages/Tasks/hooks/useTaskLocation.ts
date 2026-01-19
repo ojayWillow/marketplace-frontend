@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserLocation, LocationType } from '../types';
+import type { UserLocation, LocationType } from '@marketplace/shared';
 
 // Default location: Riga, Latvia
 const DEFAULT_LOCATION: UserLocation = { lat: 56.9496, lng: 24.1052 };

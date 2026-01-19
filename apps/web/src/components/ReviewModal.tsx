@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import apiClient from '../api/client';
-import { useToastStore } from '../stores/toastStore';
+import { apiClient } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 
 const MIN_REVIEW_LENGTH = 10;
 

@@ -8,9 +8,9 @@ import {
   clearRecaptcha,
   firebaseSignOut
 } from '../lib/firebase'
-import { useAuthStore } from '../stores/authStore'
-import apiClient from '../api/client'
-import type { AuthResponse } from '../api/types'
+import { useAuthStore } from '@marketplace/shared'
+import { apiClient } from '@marketplace/shared'
+import type { AuthResponse } from '@marketplace/shared'
 
 export type PhoneAuthStep = 'phone' | 'otp' | 'register' | 'success'
 

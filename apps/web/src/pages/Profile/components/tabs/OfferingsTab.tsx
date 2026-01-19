@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { type Offering } from '../../../../api/offerings';
+import { type Offering } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
 import { TabLoadingSpinner } from '../LoadingState';

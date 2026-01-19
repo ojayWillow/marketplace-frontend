@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { ActiveTab } from '../../types';
+import type { ActiveTab } from '@marketplace/shared';
 
 interface ProfileTabsProps {
   activeTab: ActiveTab;

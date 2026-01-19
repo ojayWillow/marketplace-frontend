@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { authApi } from '../api/auth'
-import { useAuthStore } from '../stores/authStore'
-import type { LoginCredentials, RegisterData } from '../api/types'
+import { authApi } from '@marketplace/shared'
+import { useAuthStore } from '@marketplace/shared'
+import type { LoginCredentials, RegisterData } from '@marketplace/shared'
 
 export function useLogin() {
   const navigate = useNavigate()

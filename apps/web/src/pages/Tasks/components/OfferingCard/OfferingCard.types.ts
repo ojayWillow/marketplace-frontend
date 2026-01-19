@@ -1,4 +1,4 @@
-import type { Offering } from '../../../../api/offerings';
+import type { Offering } from '@marketplace/shared';
 
 export interface UserLocation {
   lat: number;

@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@marketplace/shared';
 import { useConversations } from '../api/hooks';
-import { getImageUrl } from '../api/uploads';
+import { getImageUrl } from '@marketplace/shared';
 import OnlineStatus from '../components/ui/OnlineStatus';
 import { useIsMobile } from '../hooks/useIsMobile';
 

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import apiClient from '../../../api/client';
-import { useToastStore } from '../../../stores/toastStore';
-import { Review, CanReviewResponse } from '../types';
+import { apiClient } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { Review, CanReviewResponse } from '@marketplace/shared';
 
 const MIN_REVIEW_LENGTH = 10;
 

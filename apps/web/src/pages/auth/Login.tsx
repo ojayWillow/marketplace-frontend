@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Phone, Mail, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '@marketplace/shared'
 
 export default function Login() {
   const { t } = useTranslation()

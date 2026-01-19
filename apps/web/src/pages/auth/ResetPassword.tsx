@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import apiClient from '../../api/client'
+import { apiClient } from '@marketplace/shared'
 
 // Eye icons as simple SVG components
 const EyeIcon = () => (

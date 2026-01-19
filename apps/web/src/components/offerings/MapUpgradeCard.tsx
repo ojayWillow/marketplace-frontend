@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../stores/authStore';
-import { useToastStore } from '../../stores/toastStore';
-import apiClient from '../../api/client';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { apiClient } from '@marketplace/shared';
 
 interface MapUpgradeCardProps {
   offeringId: number;

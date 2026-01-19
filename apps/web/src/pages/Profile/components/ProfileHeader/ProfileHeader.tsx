@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getImageUrl } from '../../../../api/uploads';
-import type { UserProfile, ProfileFormData } from '../../types';
+import { getImageUrl } from '@marketplace/shared';
+import type { UserProfile, ProfileFormData } from '@marketplace/shared';
 
 interface ProfileHeaderProps {
   profile: UserProfile;

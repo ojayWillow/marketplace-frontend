@@ -6,10 +6,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFavorites, useRemoveFavorite } from '../hooks/useFavorites';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
-import { FavoriteItemType, Favorite } from '../api/favorites';
-import { getImageUrl } from '../api/uploads';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { FavoriteItemType, Favorite } from '@marketplace/shared';
+import { getImageUrl } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 

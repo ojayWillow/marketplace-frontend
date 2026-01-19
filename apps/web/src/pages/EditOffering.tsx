@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useOffering } from '../api/hooks';
-import { updateOffering } from '../api/offerings';
-import { geocodeAddress, GeocodingResult } from '../api/geocoding';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
+import { updateOffering } from '@marketplace/shared';
+import { geocodeAddress, GeocodingResult } from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 import { CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
 import { useQueryClient } from '@tanstack/react-query';
 

@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '../../../test/utils';
 import FavoriteButton from '../FavoriteButton';
-import { useAuthStore } from '../../../stores/authStore';
+import { useAuthStore } from '@marketplace/shared';
 import * as favoritesHooks from '../../../hooks/useFavorites';
-import * as favoritesApi from '../../../api/favorites';
+import * as favoritesApi from '@marketplace/shared';
 
 // Mock the favorites hooks and API
 jest.mock('../../../hooks/useFavorites', () => ({

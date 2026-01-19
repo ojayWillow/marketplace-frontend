@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import { useTranslation } from 'react-i18next';
-import { Offering } from '../../../../api/offerings';
+import { Offering } from '@marketplace/shared';
 import { createUserLocationIcon, getJobPriceIcon, getBoostedOfferingIcon } from '../../utils/markerIcons';
 import { addMarkerOffsets } from '../../utils';
 import MapController from './MapController';
 import LocationPicker from './LocationPicker';
 import JobMapPopup from './JobMapPopup';
 import OfferingMapPopup from './OfferingMapPopup';
-import type { Task, UserLocation } from '../../types';
+import type { Task, UserLocation } from '@marketplace/shared';
 
 interface MapMarkersProps {
   tasks: Task[];

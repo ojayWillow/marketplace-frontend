@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Phone, ArrowLeft, Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '@marketplace/shared'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../../lib/firebase'
 import type { ConfirmationResult } from '../../lib/firebase'
-import api from '../../api/client'
+import { apiClient as api } from '@marketplace/shared'
 import { AxiosError } from 'axios'
 
 type Step = 'phone' | 'code' | 'success'

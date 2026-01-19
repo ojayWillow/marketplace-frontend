@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Task } from '../../../api/tasks';
+import { Task } from '@marketplace/shared';
 
 interface TaskActionButtonsProps {
   task: Task;

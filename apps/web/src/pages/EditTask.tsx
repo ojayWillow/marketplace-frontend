@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTask } from '../api/hooks';
-import { geocodeAddress, GeocodingResult } from '../api/geocoding';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
-import apiClient from '../api/client';
+import { geocodeAddress, GeocodingResult } from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { apiClient } from '@marketplace/shared';
 import { useQueryClient } from '@tanstack/react-query';
 
 const EditTask = () => {

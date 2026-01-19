@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listingsApi, type ListingsQueryParams } from '../api/listings'
-import type { CreateListingData } from '../api/types'
+import { listingsApi, type ListingsQueryParams } from '@marketplace/shared'
+import type { CreateListingData } from '@marketplace/shared'
 
 export function useListings(params?: ListingsQueryParams) {
   return useQuery({

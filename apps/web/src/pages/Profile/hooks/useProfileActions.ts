@@ -1,10 +1,10 @@
-import { useToastStore } from '../../../stores/toastStore';
-import apiClient from '../../../api/client';
-import { listingsApi, type Listing } from '../../../api/listings';
-import { reviewsApi } from '../../../api/reviews';
-import { cancelTask, confirmTaskCompletion } from '../../../api/tasks';
-import { deleteOffering, Offering } from '../../../api/offerings';
-import type { Review } from '../types';
+import { useToastStore } from '@marketplace/shared';
+import { apiClient } from '@marketplace/shared';
+import { listingsApi, type Listing } from '@marketplace/shared';
+import { reviewsApi } from '@marketplace/shared';
+import { cancelTask, confirmTaskCompletion } from '@marketplace/shared';
+import { deleteOffering, Offering } from '@marketplace/shared';
+import type { Review } from '@marketplace/shared';
 
 interface UseProfileActionsProps {
   setMyListings: React.Dispatch<React.SetStateAction<Listing[]>>;

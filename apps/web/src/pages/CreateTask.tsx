@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createTask } from '../api/tasks';
-import { geocodeAddress, GeocodingResult } from '../api/geocoding';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
+import { createTask } from '@marketplace/shared';
+import { geocodeAddress, GeocodingResult } from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 import { CATEGORIES, CATEGORY_GROUPS, getCategoryByValue } from '../constants/categories';
 
 const CreateTask = () => {

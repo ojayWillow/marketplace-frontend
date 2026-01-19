@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Task } from '../../../api/tasks';
-import { Offering } from '../../../api/offerings';
+import { Task } from '@marketplace/shared';
+import { Offering } from '@marketplace/shared';
 import { getCategoryLabel } from '../../../constants/categories';
 
 interface RecommendedHelpersProps {

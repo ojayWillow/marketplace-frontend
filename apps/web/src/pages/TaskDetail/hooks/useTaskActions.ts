@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, acceptApplication, rejectApplication } from '../../../api/tasks';
-import { startConversation } from '../../../api/messages';
+import { markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, acceptApplication, rejectApplication } from '@marketplace/shared';
+import { startConversation } from '@marketplace/shared';
 import { taskKeys } from '../../../api/hooks';
-import { useToastStore } from '../../../stores/toastStore';
-import { Task } from '../../../api/tasks';
-import { Offering } from '../../../api/offerings';
+import { useToastStore } from '@marketplace/shared';
+import { Task } from '@marketplace/shared';
+import { Offering } from '@marketplace/shared';
 
 interface UseTaskActionsProps {
   taskId: number;

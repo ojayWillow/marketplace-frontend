@@ -1,5 +1,5 @@
-import { Task } from '../../../api/tasks';
-import { getStatusLabel, getDifficultyLabel } from '../types';
+import { Task } from '@marketplace/shared';
+import { getStatusLabel, getDifficultyLabel } from '@marketplace/shared';
 
 interface TaskInfoGridProps {
   task: Task;

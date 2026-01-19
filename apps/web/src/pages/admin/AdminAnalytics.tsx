@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import apiClient from '../../api/client';
+import { apiClient } from '@marketplace/shared';
 
 // Simple chart components (no external library needed)
 interface DataPoint {

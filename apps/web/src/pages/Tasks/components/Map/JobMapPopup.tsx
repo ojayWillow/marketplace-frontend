@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import FavoriteButton from '../../../../components/ui/FavoriteButton';
 import { calculateDistance, formatDistance, formatTimeAgo } from '../../utils';
-import type { Task, UserLocation } from '../../types';
+import type { Task, UserLocation } from '@marketplace/shared';
 
 interface JobMapPopupProps {
   task: Task;

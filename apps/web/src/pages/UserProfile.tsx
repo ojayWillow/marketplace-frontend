@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 import { useStartConversation } from '../api/hooks';
-import apiClient from '../api/client';
+import { apiClient } from '@marketplace/shared';
 import { useQueryClient } from '@tanstack/react-query';
 
 // Import shared Profile components

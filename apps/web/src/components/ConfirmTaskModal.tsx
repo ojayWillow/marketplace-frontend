@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import apiClient from '../api/client';
-import { confirmTaskCompletion } from '../api/tasks';
-import { useToastStore } from '../stores/toastStore';
+import { apiClient } from '@marketplace/shared';
+import { confirmTaskCompletion } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 
 interface ConfirmTaskModalProps {
   isOpen: boolean;

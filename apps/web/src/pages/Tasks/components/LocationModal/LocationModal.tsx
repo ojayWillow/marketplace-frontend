@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AddressSuggestion } from '../../types';
+import type { AddressSuggestion } from '@marketplace/shared';
 
 interface LocationModalProps {
   isOpen: boolean;

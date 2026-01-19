@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Task, TaskApplication } from '../../../../api/tasks';
+import { Task, TaskApplication } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
 import { TabLoadingSpinner } from '../LoadingState';
 import { ConfirmTaskModal } from '../../../../components/ConfirmTaskModal';
 import { ReviewModal } from '../../../../components/ReviewModal';
-import apiClient from '../../../../api/client';
-import type { TaskViewMode, TaskStatusFilter, TaskMatchCounts } from '../../types';
+import { apiClient } from '@marketplace/shared';
+import type { TaskViewMode, TaskStatusFilter, TaskMatchCounts } from '@marketplace/shared';
 
 interface CanReviewStatus {
   taskId: number;

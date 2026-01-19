@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
-import { getTasks } from '../../api/tasks';
-import { useAuthStore } from '../../stores/authStore';
+import { getTasks } from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
 import { useUnreadCounts } from '../../api/hooks';
 import { getCategoryIcon, CATEGORY_OPTIONS } from '../../constants/categories';
 import QuickHelpIntroModal from '../QuickHelpIntroModal';

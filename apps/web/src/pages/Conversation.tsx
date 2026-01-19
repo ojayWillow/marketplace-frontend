@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
-import { Conversation as ConvType, Message } from '../api/messages';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { Conversation as ConvType, Message } from '@marketplace/shared';
 import { useConversation, useMessages, useSendMessage, useMarkAsRead } from '../api/hooks';
-import { getImageUrl } from '../api/uploads';
+import { getImageUrl } from '@marketplace/shared';
 import OnlineStatus from '../components/ui/OnlineStatus';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '../hooks/useIsMobile';

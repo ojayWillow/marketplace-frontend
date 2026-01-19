@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getTasks } from '../../../api/tasks';
-import { getOfferings, getBoostedOfferings, Offering } from '../../../api/offerings';
+import { getTasks } from '@marketplace/shared';
+import { getOfferings, getBoostedOfferings, Offering } from '@marketplace/shared';
 import { getCategoryIcon } from '../../../constants/categories';
-import type { Task, UserLocation } from '../types';
+import type { Task, UserLocation } from '@marketplace/shared';
 
 export interface UseTaskDataParams {
   userLocation: UserLocation;

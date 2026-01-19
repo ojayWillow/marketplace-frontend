@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../../stores/authStore';
-import apiClient from '../../../api/client';
-import { listingsApi, type Listing } from '../../../api/listings';
-import { Task, getTasksByUser } from '../../../api/tasks';
-import { getOfferingsByUser, Offering } from '../../../api/offerings';
-import type { UserProfile, Review } from '../types';
+import { useAuthStore } from '@marketplace/shared';
+import { apiClient } from '@marketplace/shared';
+import { listingsApi, type Listing } from '@marketplace/shared';
+import { Task, getTasksByUser } from '@marketplace/shared';
+import { getOfferingsByUser, Offering } from '@marketplace/shared';
+import type { UserProfile, Review } from '@marketplace/shared';
 
 export const usePublicProfileData = (userId: number | undefined) => {
   const navigate = useNavigate();

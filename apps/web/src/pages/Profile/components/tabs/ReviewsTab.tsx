@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToastStore } from '../../../../stores/toastStore';
-import { reviewsApi } from '../../../../api/reviews';
+import { useToastStore } from '@marketplace/shared';
+import { reviewsApi } from '@marketplace/shared';
 import { StarRating } from '../StarRating';
-import type { Review } from '../../types';
+import type { Review } from '@marketplace/shared';
 
 interface ReviewsTabProps {
   reviews: Review[];

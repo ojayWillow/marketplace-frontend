@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { type Listing } from '../../../../api/listings';
-import { getImageUrl } from '../../../../api/uploads';
+import { type Listing } from '@marketplace/shared';
+import { getImageUrl } from '@marketplace/shared';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
 import { TabLoadingSpinner } from '../LoadingState';
 

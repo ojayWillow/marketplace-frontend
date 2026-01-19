@@ -1,4 +1,4 @@
-import { useToastStore } from '../../stores/toastStore'
+import { useToastStore } from '@marketplace/shared'
 import Toast from './Toast'
 
 export default function ToastContainer() {

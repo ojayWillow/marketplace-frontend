@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { ActiveTab, TaskViewMode, TaskStatusFilter } from '../types';
+import type { ActiveTab, TaskViewMode, TaskStatusFilter } from '@marketplace/shared';
 
 export const useProfileTabs = () => {
   const [searchParams, setSearchParams] = useSearchParams();

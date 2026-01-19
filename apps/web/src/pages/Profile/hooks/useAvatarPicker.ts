@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import { useToastStore } from '../../../stores/toastStore';
-import { uploadImage, getImageUrl } from '../../../api/uploads';
+import { useToastStore } from '@marketplace/shared';
+import { uploadImage, getImageUrl } from '@marketplace/shared';
 import { generateAvatarUrl, generateRandomSeed } from '../utils/avatarHelpers';
-import type { ProfileFormData } from '../types';
+import type { ProfileFormData } from '@marketplace/shared';
 
 interface UseAvatarPickerProps {
   initialSeed: string;

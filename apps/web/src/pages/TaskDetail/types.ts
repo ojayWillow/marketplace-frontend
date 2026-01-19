@@ -1,4 +1,4 @@
-import { Task } from '../../api/tasks';
+import { Task } from '@marketplace/shared';
 
 export interface Review {
   id: number;

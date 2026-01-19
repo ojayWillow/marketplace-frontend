@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import apiClient from '../../api/client';
-import { useToastStore } from '../../stores/toastStore';
+import { apiClient } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
 
 interface Announcement {
   id: number;

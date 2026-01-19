@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getListings, type Listing } from "../../api/listings";
+import { getListings, type Listing } from '@marketplace/shared';
 
 export default function CategoryListingsPage() {
   const [searchParams] = useSearchParams();

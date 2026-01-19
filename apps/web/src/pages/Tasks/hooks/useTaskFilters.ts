@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { filterByDate, filterByPrice } from '../../../components/ui/AdvancedFilters';
 import type { CompactFilterValues } from '../../../components/ui/CompactFilterBar';
-import type { Offering } from '../../../api/offerings';
-import type { Task } from '../types';
+import type { Offering } from '@marketplace/shared';
+import type { Task } from '@marketplace/shared';
 
 // Default filter values
 export const DEFAULT_FILTERS: CompactFilterValues = {

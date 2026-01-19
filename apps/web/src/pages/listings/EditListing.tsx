@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '../../stores/authStore'
-import { useToastStore } from '../../stores/toastStore'
-import { listingsApi, type Listing } from '../../api/listings'
-import { uploadImage, getImageUrl } from '../../api/uploads'
+import { useAuthStore } from '@marketplace/shared'
+import { useToastStore } from '@marketplace/shared'
+import { listingsApi, type Listing } from '@marketplace/shared'
+import { uploadImage, getImageUrl } from '@marketplace/shared'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const CATEGORIES = [

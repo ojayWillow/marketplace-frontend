@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../../stores/authStore';
-import { useToastStore } from '../../../stores/toastStore';
-import apiClient from '../../../api/client';
-import type { Listing } from '../../../api/listings';
-import { Task, TaskApplication } from '../../../api/tasks';
-import { Offering } from '../../../api/offerings';
-import type { UserProfile, Review, TaskMatchCounts, ProfileFormData } from '../types';
+import { useAuthStore } from '@marketplace/shared';
+import { useToastStore } from '@marketplace/shared';
+import { apiClient } from '@marketplace/shared';
+import type { Listing } from '@marketplace/shared';
+import { Task, TaskApplication } from '@marketplace/shared';
+import { Offering } from '@marketplace/shared';
+import type { UserProfile, Review, TaskMatchCounts, ProfileFormData } from '@marketplace/shared';
 
 export const useProfileData = () => {
   const navigate = useNavigate();

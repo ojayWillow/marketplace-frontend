@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Offering } from '../../../../api/offerings';
+import { Offering } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import FavoriteButton from '../../../../components/ui/FavoriteButton';
 import StarRating from '../StarRating';
 import { calculateDistance, formatDistance } from '../../utils';
-import type { UserLocation } from '../../types';
+import type { UserLocation } from '@marketplace/shared';
 
 interface OfferingMapPopupProps {
   offering: Offering;
