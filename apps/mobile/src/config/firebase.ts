@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { initializeAuth, getAuth, getReactNativePersistence, Auth } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth, Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import Constants from 'expo-constants';
 
 // Firebase configuration from environment variables
@@ -15,32 +14,28 @@ const firebaseConfig = {
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
+let authInitialized = false;
 
 // Lazy initialization - only initialize when actually needed
 export const getFirebaseApp = (): FirebaseApp => {
   if (!app) {
-    // Check if Firebase app already exists
     if (getApps().length === 0) {
+      console.log('Initializing Firebase app...');
       app = initializeApp(firebaseConfig);
     } else {
+      console.log('Getting existing Firebase app...');
       app = getApp();
     }
   }
   return app;
 };
 
-export const getFirebaseAuth = (): Auth => {
-  if (!auth) {
+export const getFirebaseAuth = async (): Promise<Auth> => {
+  if (!auth || !authInitialized) {
     const firebaseApp = getFirebaseApp();
-    try {
-      // Try to get existing auth instance first
-      auth = getAuth(firebaseApp);
-    } catch (error) {
-      // If no auth instance exists, initialize it with AsyncStorage
-      auth = initializeAuth(firebaseApp, {
-        persistence: getReactNativePersistence(AsyncStorage)
-      });
-    }
+    console.log('Getting Firebase auth...');
+    auth = getAuth(firebaseApp);
+    authInitialized = true;
   }
   return auth;
 };
