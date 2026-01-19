@@ -1,11 +1,24 @@
-import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, Alert, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Avatar, Surface, Divider, Button } from 'react-native-paper';
+import { Text, Avatar, Surface, Divider, Button, ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
-import { useAuthStore } from '@marketplace/shared';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore, apiClient } from '@marketplace/shared';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
+
+  // Fetch fresh user data from API
+  const { data: profileData, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const response = await apiClient.get('/api/users/me');
+      return response.data;
+    },
+    enabled: isAuthenticated && !!user,
+  });
+
+  const profile = profileData || user;
 
   const handleLogout = () => {
     Alert.alert(
@@ -48,56 +61,81 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
         {/* Header */}
         <Surface style={styles.header} elevation={1}>
-          <Avatar.Text
-            size={96}
-            label={user.username?.charAt(0).toUpperCase() || 'U'}
-            style={styles.avatar}
-          />
-          
-          <Text variant="headlineSmall" style={styles.name}>
-            {user.first_name && user.last_name
-              ? `${user.first_name} ${user.last_name}`
-              : user.username}
-          </Text>
-          <Text style={styles.username}>@{user.username}</Text>
-          
-          {/* Stats */}
-          {user.reputation_score !== undefined && (
-            <View style={styles.statsContainer}>
-              <View style={styles.stat}>
-                <Text variant="titleLarge" style={styles.statValue}>
-                  {user.reputation_score?.toFixed(1) || '0.0'}
-                </Text>
-                <Text style={styles.statLabel}>Rating</Text>
-              </View>
-              {user.completion_rate !== undefined && (
-                <View style={styles.stat}>
-                  <Text variant="titleLarge" style={styles.statValue}>
-                    {Math.round(user.completion_rate * 100)}%
-                  </Text>
-                  <Text style={styles.statLabel}>Completion</Text>
+          {isLoading ? (
+            <ActivityIndicator size="large" style={{ marginVertical: 24 }} />
+          ) : (
+            <>
+              <Avatar.Text
+                size={96}
+                label={profile?.username?.charAt(0).toUpperCase() || 'U'}
+                style={styles.avatar}
+              />
+              
+              <Text variant="headlineSmall" style={styles.name}>
+                {profile?.first_name && profile?.last_name
+                  ? `${profile.first_name} ${profile.last_name}`
+                  : profile?.username || user.username}
+              </Text>
+              <Text style={styles.username}>@{profile?.username || user.username}</Text>
+              
+              {/* Stats */}
+              {(profile?.reputation_score !== undefined || profile?.completion_rate !== undefined) && (
+                <View style={styles.statsContainer}>
+                  {profile?.reputation_score !== undefined && (
+                    <View style={styles.stat}>
+                      <Text variant="titleLarge" style={styles.statValue}>
+                        {profile.reputation_score?.toFixed(1) || '0.0'}
+                      </Text>
+                      <Text style={styles.statLabel}>Rating</Text>
+                    </View>
+                  )}
+                  {profile?.completion_rate !== undefined && (
+                    <View style={styles.stat}>
+                      <Text variant="titleLarge" style={styles.statValue}>
+                        {Math.round(profile.completion_rate * 100)}%
+                      </Text>
+                      <Text style={styles.statLabel}>Completion</Text>
+                    </View>
+                  )}
                 </View>
               )}
-            </View>
+            </>
           )}
         </Surface>
 
         {/* Menu Items */}
         <Surface style={styles.menuContainer} elevation={0}>
-          <MenuItem title="Edit Profile" icon="✏️" onPress={() => {}} />
+          <MenuItem 
+            title="My Tasks" 
+            icon="📋" 
+            onPress={() => router.push('/(tabs)/tasks')} 
+          />
           <Divider />
-          <MenuItem title="My Listings" icon="📦" onPress={() => {}} />
+          <MenuItem 
+            title="Messages" 
+            icon="💬" 
+            onPress={() => router.push('/(tabs)/messages')} 
+          />
           <Divider />
-          <MenuItem title="My Tasks" icon="📋" onPress={() => {}} />
+          <MenuItem 
+            title="Settings" 
+            icon="⚙️" 
+            onPress={() => Alert.alert('Coming Soon', 'Settings screen will be available soon')} 
+          />
           <Divider />
-          <MenuItem title="Favorites" icon="❤️" onPress={() => {}} />
-          <Divider />
-          <MenuItem title="Settings" icon="⚙️" onPress={() => {}} />
-          <Divider />
-          <MenuItem title="Help & Support" icon="❓" onPress={() => {}} />
+          <MenuItem 
+            title="Help & Support" 
+            icon="❓" 
+            onPress={() => Alert.alert('Help & Support', 'Contact us at support@quickhelp.lv')} 
+          />
         </Surface>
 
         {/* Logout */}
@@ -115,7 +153,7 @@ export default function ProfileScreen() {
         {/* Account Info */}
         <View style={styles.footer}>
           <Text style={styles.memberSince}>
-            Member since {new Date(user.created_at).toLocaleDateString()}
+            Member since {new Date(profile?.created_at || user.created_at).toLocaleDateString()}
           </Text>
         </View>
       </ScrollView>
