@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, Button, Surface, Avatar, Badge } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { messagesAPI, useAuthStore } from '@marketplace/shared';
+import { getConversations, useAuthStore, type Conversation } from '@marketplace/shared';
 
 export default function MessagesScreen() {
   const { user, isAuthenticated } = useAuthStore();
@@ -11,8 +11,7 @@ export default function MessagesScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['conversations', user?.id],
     queryFn: async () => {
-      const response = await messagesAPI.getConversations();
-      return response.data;
+      return await getConversations();
     },
     enabled: isAuthenticated,
   });
@@ -88,10 +87,8 @@ export default function MessagesScreen() {
         {/* Conversations List */}
         {!isLoading && !isError && conversations.length > 0 && (
           <Surface style={styles.listContainer} elevation={0}>
-            {conversations.map((conversation: any, index: number) => {
-              const otherUser = conversation.participants?.find(
-                (p: any) => p.id !== user?.id
-              );
+            {conversations.map((conversation: Conversation, index: number) => {
+              const otherUser = conversation.other_participant;
               const lastMessage = conversation.last_message;
               const unreadCount = conversation.unread_count || 0;
               const isLastItem = index === conversations.length - 1;
