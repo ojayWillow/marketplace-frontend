@@ -51,5 +51,21 @@
   "this": "такого типа",
   "or": "или",
   "gotIt": "Понятно!",
-  "and": "и"
+  "and": "и",
+  "notifications": {
+    "title": "Уведомления",
+    "unread": "непрочитанных",
+    "allCaughtUp": "Всё прочитано!",
+    "newWillAppear": "Новые уведомления появятся здесь",
+    "browseTasks": "Посмотреть задания, чтобы помочь другим",
+    "assignedToJobs": "Вас назначили на {{count}} задание(-ий)!",
+    "applicationAccepted": "Ваша заявка принята",
+    "newMessages": "{{count}} новое(-ых) сообщение(-ий)",
+    "clickToView": "Нажмите, чтобы посмотреть сообщения",
+    "newApplications": "{{count}} новая(-ых) заявка(-ок)",
+    "peopleWantToHelp": "Люди хотят помочь с вашими заданиями",
+    "awaitingConfirmation": "{{count}} задание(-ий) ожидает подтверждения",
+    "workersMarkedDone": "Исполнители отметили эти как выполненные",
+    "viewAllActivity": "Посмотреть всю активность"
+  }
 }
