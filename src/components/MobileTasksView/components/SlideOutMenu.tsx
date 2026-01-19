@@ -17,12 +17,14 @@ interface SlideOutMenuProps {
   onLogout: () => void;
   navigate: (path: string) => void;
   onShowIntro: () => void;
+  // These props are kept for backwards compatibility but no longer used for badges
   unreadMessages?: number;
   newApplications?: number;
 }
 
 /**
- * Slide-out navigation menu with language switcher and notifications
+ * Slide-out navigation menu with language switcher
+ * Note: Notification badges removed - using dedicated NotificationBell component instead
  */
 const SlideOutMenu = ({
   isOpen,
@@ -32,8 +34,6 @@ const SlideOutMenu = ({
   onLogout,
   navigate,
   onShowIntro,
-  unreadMessages = 0,
-  newApplications = 0,
 }: SlideOutMenuProps) => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
@@ -83,25 +83,18 @@ const SlideOutMenu = ({
       path: '/tasks',
       description: t('menu.quickHelpDesc', 'Find jobs & earn'),
     },
-    // Marketplace removed - not needed for now
-    // { 
-    //   icon: '🛒', 
-    //   label: t('menu.marketplace', 'Marketplace'), 
-    //   path: '/listings',
-    //   description: t('menu.marketplaceDesc', 'Buy & sell items'),
-    // },
   ];
 
-  // User menu items (only when authenticated)
+  // User menu items (only when authenticated) - badges removed, using bell instead
   const userMenuItems = isAuthenticated
     ? [
-        { icon: '👤', label: t('menu.profile', 'Profile'), path: '/profile', badge: 0 },
-        { icon: '💬', label: t('menu.messages', 'Messages'), path: '/messages', badge: unreadMessages },
-        { icon: '❤️', label: t('menu.favorites', 'Favorites'), path: '/favorites', badge: 0 },
+        { icon: '👤', label: t('menu.profile', 'Profile'), path: '/profile' },
+        { icon: '💬', label: t('menu.messages', 'Messages'), path: '/messages' },
+        { icon: '❤️', label: t('menu.favorites', 'Favorites'), path: '/favorites' },
       ]
     : [
-        { icon: '🔑', label: t('menu.login', 'Login'), path: '/login', badge: 0 },
-        { icon: '📝', label: t('menu.register', 'Register'), path: '/register', badge: 0 },
+        { icon: '🔑', label: t('menu.login', 'Login'), path: '/login' },
+        { icon: '📝', label: t('menu.register', 'Register'), path: '/register' },
       ];
 
   // Create options - separate section
@@ -288,12 +281,6 @@ const SlideOutMenu = ({
               }`}>
                 {item.label}
               </span>
-              {/* Notification Badge */}
-              {item.badge > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                  {item.badge > 99 ? '99+' : item.badge}
-                </span>
-              )}
             </button>
           ))}
 
