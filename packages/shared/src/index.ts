@@ -1,8 +1,9 @@
 // API exports
 export * from './api';
 
-// Types exports
-export * from './types';
+// Types - export only non-conflicting types from root types
+// (API-related types are already exported from ./api)
+export type { Category } from './types';
 
 // Store exports
 export { useAuthStore } from './stores/authStore';
