@@ -1,25 +1,14 @@
-// API
-export * from './api/client';
-export * from './api/types';
-export * from './api/auth';
-export * from './api/favorites';
-export * from './api/geocoding';
-export * from './api/listings';
-export * from './api/messages';
-export * from './api/notifications';
-export * from './api/offerings';
-export * from './api/push';
-export * from './api/reviews';
-export * from './api/taskResponses';
-export * from './api/tasks';
-export * from './api/uploads';
-export * from './api/users';
+// API exports
+export * from './api';
 
-// Types
+// Types exports
 export * from './types';
 
-// Stores
-export * from './stores/authStore';
-export * from './stores/favoritesStore';
-export * from './stores/matchingStore';
-export * from './stores/toastStore';
+// Store exports
+export { useAuthStore } from './stores/authStore';
+export { useFavoritesStore } from './stores/favoritesStore';
+export { useMatchingStore } from './stores/matchingStore';
+export { useToastStore } from './stores/toastStore';
+
+// i18n exports
+export { default as i18n } from './i18n';
