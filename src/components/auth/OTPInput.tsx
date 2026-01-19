@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent } from 'react'
+import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Shield } from 'lucide-react'
 
@@ -22,12 +22,18 @@ export const OTPInput = ({
   const { t } = useTranslation()
   const [otp, setOtp] = useState<string[]>(Array(length).fill(''))
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const isUpdatingFromPaste = useRef(false)
 
-  // Sync external value with internal state
+  // Sync external value with internal state (but skip if we just pasted)
   useEffect(() => {
+    if (isUpdatingFromPaste.current) {
+      isUpdatingFromPaste.current = false
+      return
+    }
+    
     if (value) {
-      const digits = value.split('').slice(0, length)
-      const newOtp = [...Array(length).fill('')]
+      const digits = value.replace(/\D/g, '').split('').slice(0, length)
+      const newOtp = Array(length).fill('')
       digits.forEach((digit, index) => {
         newOtp[index] = digit
       })
@@ -40,74 +46,164 @@ export const OTPInput = ({
   // Auto focus first input
   useEffect(() => {
     if (autoFocus && inputRefs.current[0]) {
-      inputRefs.current[0].focus()
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        inputRefs.current[0]?.focus()
+      }, 100)
     }
   }, [autoFocus])
 
+  // WebOTP API support for automatic SMS code detection (Chrome on Android)
+  useEffect(() => {
+    if ('OTPCredential' in window) {
+      const abortController = new AbortController()
+      
+      navigator.credentials.get({
+        // @ts-expect-error - OTPCredential is not in TypeScript types yet
+        otp: { transport: ['sms'] },
+        signal: abortController.signal
+      }).then((otpCredential: unknown) => {
+        const credential = otpCredential as { code?: string }
+        if (credential?.code) {
+          const code = credential.code.replace(/\D/g, '').slice(0, length)
+          if (code.length > 0) {
+            const newOtp = Array(length).fill('')
+            code.split('').forEach((digit, index) => {
+              newOtp[index] = digit
+            })
+            isUpdatingFromPaste.current = true
+            setOtp(newOtp)
+            onChange(newOtp.join(''))
+            
+            // Focus the appropriate input
+            const focusIndex = Math.min(code.length, length) - 1
+            if (focusIndex >= 0) {
+              inputRefs.current[focusIndex]?.focus()
+            }
+          }
+        }
+      }).catch(() => {
+        // WebOTP not supported or user denied - silently fail
+      })
+      
+      return () => {
+        abortController.abort()
+      }
+    }
+  }, [length, onChange])
+
+  const updateOtp = useCallback((newOtp: string[], focusIndex?: number) => {
+    setOtp(newOtp)
+    onChange(newOtp.join(''))
+    
+    if (focusIndex !== undefined && focusIndex >= 0 && focusIndex < length) {
+      // Use setTimeout to ensure state is updated before focusing
+      setTimeout(() => {
+        inputRefs.current[focusIndex]?.focus()
+      }, 0)
+    }
+  }, [length, onChange])
+
   const handleChange = (index: number, newValue: string) => {
+    // Handle case where user pastes into a single input (some browsers do this)
+    const cleanValue = newValue.replace(/\D/g, '')
+    
+    if (cleanValue.length > 1) {
+      // User pasted multiple digits into single input
+      handlePasteValue(cleanValue)
+      return
+    }
+    
     // Only allow single digit
-    const digit = newValue.replace(/\D/g, '').slice(-1)
+    const digit = cleanValue.slice(-1)
     
     const newOtp = [...otp]
     newOtp[index] = digit
-    setOtp(newOtp)
-    onChange(newOtp.join(''))
-
+    
     // Move to next input if digit entered
-    if (digit && index < length - 1) {
-      inputRefs.current[index + 1]?.focus()
-    }
+    const nextIndex = digit && index < length - 1 ? index + 1 : undefined
+    updateOtp(newOtp, nextIndex)
   }
 
   const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
     // Handle backspace
     if (e.key === 'Backspace') {
+      e.preventDefault()
+      const newOtp = [...otp]
+      
       if (!otp[index] && index > 0) {
         // Move to previous input if current is empty
-        inputRefs.current[index - 1]?.focus()
-        const newOtp = [...otp]
         newOtp[index - 1] = ''
-        setOtp(newOtp)
-        onChange(newOtp.join(''))
+        updateOtp(newOtp, index - 1)
       } else {
         // Clear current input
-        const newOtp = [...otp]
         newOtp[index] = ''
-        setOtp(newOtp)
-        onChange(newOtp.join(''))
+        updateOtp(newOtp)
       }
+    }
+    
+    // Handle delete key
+    if (e.key === 'Delete') {
+      e.preventDefault()
+      const newOtp = [...otp]
+      newOtp[index] = ''
+      updateOtp(newOtp)
     }
     
     // Handle arrow keys
     if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault()
       inputRefs.current[index - 1]?.focus()
     }
     if (e.key === 'ArrowRight' && index < length - 1) {
+      e.preventDefault()
       inputRefs.current[index + 1]?.focus()
     }
   }
 
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length)
+  const handlePasteValue = useCallback((pastedData: string) => {
+    const cleanData = pastedData.replace(/\D/g, '').slice(0, length)
     
-    if (pastedData) {
-      const newOtp = [...Array(length).fill('')]
-      pastedData.split('').forEach((digit, index) => {
+    if (cleanData.length > 0) {
+      const newOtp = Array(length).fill('')
+      cleanData.split('').forEach((digit, index) => {
         newOtp[index] = digit
       })
+      
+      isUpdatingFromPaste.current = true
       setOtp(newOtp)
       onChange(newOtp.join(''))
       
       // Focus last filled input or last input
-      const focusIndex = Math.min(pastedData.length, length) - 1
-      inputRefs.current[focusIndex]?.focus()
+      const focusIndex = Math.min(cleanData.length, length) - 1
+      setTimeout(() => {
+        inputRefs.current[focusIndex]?.focus()
+      }, 0)
     }
+  }, [length, onChange])
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const pastedData = e.clipboardData.getData('text')
+    handlePasteValue(pastedData)
   }
 
   const handleFocus = (index: number) => {
     // Select the input content on focus
     inputRefs.current[index]?.select()
+  }
+
+  // Handle input event for mobile autofill (some browsers use this instead of paste)
+  const handleInput = (index: number, e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement
+    const inputValue = target.value.replace(/\D/g, '')
+    
+    // If multiple digits detected (autofill scenario)
+    if (inputValue.length > 1) {
+      handlePasteValue(inputValue)
+    }
   }
 
   return (
@@ -124,17 +220,18 @@ export const OTPInput = ({
             ref={(el) => (inputRefs.current[index] = el)}
             type="text"
             inputMode="numeric"
-            autoComplete="one-time-code"
+            pattern="[0-9]*"
+            autoComplete={index === 0 ? 'one-time-code' : 'off'}
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
+            onInput={(e) => handleInput(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             onFocus={() => handleFocus(index)}
             disabled={disabled}
-            maxLength={1}
+            maxLength={length} // Allow longer input for paste/autofill detection
             className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 transition-all
-              ${
-                error
+              ${error
                   ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20'
                   : digit
                   ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
