@@ -20,7 +20,8 @@ export default function HomeScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show nearby tasks');
+        // Default to Riga if permission denied
+        setUserLocation({ latitude: 56.9496, longitude: 24.1052 });
         return;
       }
 
@@ -32,22 +33,18 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Fetch tasks with location
+  // Fetch ALL open tasks (no radius limit)
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['tasks-map', userLocation],
+    queryKey: ['tasks-map'],
     queryFn: async () => {
-      const params: any = { page: 1, per_page: 50, status: 'open' };
-      if (userLocation) {
-        params.latitude = userLocation.latitude;
-        params.longitude = userLocation.longitude;
-        params.radius = 50; // 50km radius
-      }
-      return await getTasks(params);
+      // Get all open tasks without location filter
+      return await getTasks({ page: 1, per_page: 100, status: 'open' });
     },
-    enabled: !!userLocation,
   });
 
   const tasks = data?.tasks || [];
+  const tasksWithLocation = tasks.filter(t => t.latitude && t.longitude);
+  const tasksWithoutLocation = tasks.filter(t => !t.latitude || !t.longitude);
 
   // Get marker color based on category
   const getMarkerColor = (category: string) => {
@@ -58,7 +55,7 @@ export default function HomeScreen() {
       tutoring: '#8b5cf6',
       other: '#6b7280',
     };
-    return colors[category] || '#6b7280';
+    return colors[category] || '#ef4444';
   };
 
   return (
@@ -102,26 +99,24 @@ export default function HomeScreen() {
             initialRegion={{
               latitude: userLocation.latitude,
               longitude: userLocation.longitude,
-              latitudeDelta: 0.1,
-              longitudeDelta: 0.1,
+              latitudeDelta: 0.5, // Wider view to see more area
+              longitudeDelta: 0.5,
             }}
             showsUserLocation
             showsMyLocationButton
           >
-            {tasks.map((task) => {
-              if (!task.latitude || !task.longitude) return null;
-              return (
-                <Marker
-                  key={task.id}
-                  coordinate={{
-                    latitude: task.latitude,
-                    longitude: task.longitude,
-                  }}
-                  pinColor={getMarkerColor(task.category)}
-                  onPress={() => setSelectedTask(task)}
-                />
-              );
-            })}
+            {tasksWithLocation.map((task) => (
+              <Marker
+                key={task.id}
+                coordinate={{
+                  latitude: task.latitude!,
+                  longitude: task.longitude!,
+                }}
+                pinColor={getMarkerColor(task.category)}
+                title={task.title}
+                onPress={() => setSelectedTask(task)}
+              />
+            ))}
           </MapView>
 
           {/* Selected Task Card */}
@@ -164,19 +159,27 @@ export default function HomeScreen() {
 
           {/* Task Count Badge */}
           <View style={styles.taskCountBadge}>
-            <Text style={styles.taskCountText}>{tasks.length} tasks nearby</Text>
+            <Text style={styles.taskCountText}>
+              {tasksWithLocation.length} on map
+              {tasksWithoutLocation.length > 0 && ` • ${tasksWithoutLocation.length} without location`}
+            </Text>
+            {tasksWithoutLocation.length > 0 && (
+              <TouchableOpacity onPress={() => setViewMode('list')} style={styles.viewAllButton}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
 
-      {/* List View */}
+      {/* List View - Show ALL tasks */}
       {!isLoading && !isError && viewMode === 'list' && (
         <View style={styles.listContainer}>
-          <Text variant="titleMedium" style={styles.listTitle}>Tasks Nearby</Text>
+          <Text variant="titleMedium" style={styles.listTitle}>All Open Tasks ({tasks.length})</Text>
           {tasks.length === 0 ? (
             <View style={styles.centerContainer}>
               <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={styles.statusText}>No tasks available nearby</Text>
+              <Text style={styles.statusText}>No tasks available</Text>
             </View>
           ) : (
             tasks.map((task) => (
@@ -187,16 +190,24 @@ export default function HomeScreen() {
               >
                 <Card.Content>
                   <View style={styles.cardHeader}>
-                    <Text variant="titleMedium" numberOfLines={1} style={{ flex: 1 }}>
-                      {task.title}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text variant="titleMedium" numberOfLines={1}>
+                        {task.title}
+                      </Text>
+                      <Text variant="bodySmall" style={styles.category}>
+                        {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
+                      </Text>
+                    </View>
+                    {!task.latitude && (
+                      <Text style={styles.noLocationBadge}>No location</Text>
+                    )}
                   </View>
                   <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
                     {task.description}
                   </Text>
                   <View style={styles.cardFooter}>
                     <Text style={styles.budget}>€{task.budget?.toFixed(2) || '0.00'}</Text>
-                    <Text style={styles.location}>📍 {task.location || 'Location'}</Text>
+                    <Text style={styles.location}>📍 {task.location || 'Location not set'}</Text>
                   </View>
                 </Card.Content>
               </Card>
@@ -317,7 +328,15 @@ const styles = StyleSheet.create({
   taskCountText: {
     color: '#1f2937',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 12,
+  },
+  viewAllButton: {
+    marginTop: 4,
+  },
+  viewAllText: {
+    color: '#0ea5e9',
+    fontSize: 12,
+    fontWeight: '600',
   },
   listContainer: {
     flex: 1,
@@ -342,5 +361,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  noLocationBadge: {
+    fontSize: 10,
+    color: '#ef4444',
+    backgroundColor: '#fee2e2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
 });
