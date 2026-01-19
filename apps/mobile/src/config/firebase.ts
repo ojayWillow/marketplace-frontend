@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import Constants from 'expo-constants';
 
 // Firebase configuration from environment variables
@@ -14,28 +14,23 @@ const firebaseConfig = {
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
-let authInitialized = false;
 
-// Lazy initialization - only initialize when actually needed
-export const getFirebaseApp = (): FirebaseApp => {
+// Get or initialize Firebase app
+function getFirebaseApp(): FirebaseApp {
   if (!app) {
     if (getApps().length === 0) {
-      console.log('Initializing Firebase app...');
       app = initializeApp(firebaseConfig);
     } else {
-      console.log('Getting existing Firebase app...');
       app = getApp();
     }
   }
   return app;
-};
+}
 
-export const getFirebaseAuth = async (): Promise<Auth> => {
-  if (!auth || !authInitialized) {
-    const firebaseApp = getFirebaseApp();
-    console.log('Getting Firebase auth...');
-    auth = getAuth(firebaseApp);
-    authInitialized = true;
+// Get or initialize Firebase auth
+export function getFirebaseAuth(): Auth {
+  if (!auth) {
+    auth = getAuth(getFirebaseApp());
   }
   return auth;
-};
+}
