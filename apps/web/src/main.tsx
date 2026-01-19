@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
-import './i18n'
+import '@marketplace/shared/src/i18n' // Import i18n from shared package to initialize it
 import './index.css'
 
 const queryClient = new QueryClient({
