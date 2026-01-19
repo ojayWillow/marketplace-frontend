@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { type Listing } from '../../../../api/listings';
 import { getImageUrl } from '../../../../api/uploads';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
@@ -12,6 +13,8 @@ interface ListingsTabProps {
 }
 
 export const ListingsTab = ({ listings, loading, onDelete, viewOnly = false }: ListingsTabProps) => {
+  const { t } = useTranslation();
+
   // Filter to only show active listings for public view
   const displayListings = viewOnly 
     ? listings.filter(l => l.status === 'active')
@@ -21,14 +24,14 @@ export const ListingsTab = ({ listings, loading, onDelete, viewOnly = false }: L
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="font-semibold text-gray-900">
-          {viewOnly ? 'Listings' : 'My Listings'}
+          {viewOnly ? t('profile.listingsTab.titleViewOnly') : t('profile.listingsTab.title')}
         </h2>
         {!viewOnly && (
           <Link
             to="/listings/create"
             className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
           >
-            + New Listing
+            {t('profile.listingsTab.newListing')}
           </Link>
         )}
       </div>
@@ -39,14 +42,14 @@ export const ListingsTab = ({ listings, loading, onDelete, viewOnly = false }: L
         <div className="text-center py-10">
           <div className="text-4xl mb-2">🏷️</div>
           <p className="text-gray-500 mb-4">
-            {viewOnly ? 'No listings available' : 'No listings yet'}
+            {viewOnly ? t('profile.listingsTab.noListingsViewOnly') : t('profile.listingsTab.noListings')}
           </p>
           {!viewOnly && (
             <Link
               to="/listings/create"
               className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium text-sm"
             >
-              Create your first listing →
+              {t('profile.listingsTab.createFirst')}
             </Link>
           )}
         </div>
@@ -78,12 +81,12 @@ export const ListingsTab = ({ listings, loading, onDelete, viewOnly = false }: L
                   </div>
                   <p className="text-purple-600 font-semibold">€{Number(listing.price).toLocaleString()}</p>
                   <div className="flex items-center gap-3 mt-2">
-                    <Link to={`/listings/${listing.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                    <Link to={`/listings/${listing.id}`} className="text-xs text-blue-600 hover:underline">{t('profile.listingsTab.view')}</Link>
                     {!viewOnly && (
                       <>
-                        <Link to={`/listings/${listing.id}/edit`} className="text-xs text-gray-500 hover:underline">Edit</Link>
+                        <Link to={`/listings/${listing.id}/edit`} className="text-xs text-gray-500 hover:underline">{t('profile.listingsTab.edit')}</Link>
                         {onDelete && (
-                          <button onClick={() => onDelete(listing.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                          <button onClick={() => onDelete(listing.id)} className="text-xs text-red-500 hover:underline">{t('profile.listingsTab.delete')}</button>
                         )}
                       </>
                     )}
