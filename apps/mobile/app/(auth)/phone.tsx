@@ -61,7 +61,9 @@ export default function PhoneAuthScreen() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const auth = getFirebaseAuth(); // Get auth instance lazily
+      console.log('Getting Firebase auth...');
+      const auth = await getFirebaseAuth(); // Now async
+      console.log('Got Firebase auth, calling signInWithPhoneNumber...');
       
       // Firebase JS SDK will automatically show reCAPTCHA in a WebView
       // when signInWithPhoneNumber is called
