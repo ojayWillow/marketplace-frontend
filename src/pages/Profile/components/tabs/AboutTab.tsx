@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { UserProfile, ProfileFormData } from '../../types';
 
 interface AboutTabProps {
@@ -9,6 +10,8 @@ interface AboutTabProps {
 }
 
 export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = false }: AboutTabProps) => {
+  const { t } = useTranslation();
+
   // Helper to check if email is a placeholder (auto-generated for phone users)
   const isPlaceholderEmail = (email: string) => {
     return email.includes('@phone.tirgus.local');
@@ -23,7 +26,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.firstName')}</label>
               <input
                 type="text"
                 name="first_name"
@@ -33,7 +36,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.lastName')}</label>
               <input
                 type="text"
                 name="last_name"
@@ -45,49 +48,49 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.bio')}</label>
             <textarea
               name="bio"
               value={formData.bio}
               onChange={onChange}
               rows={3}
-              placeholder="Tell others about yourself..."
+              placeholder={t('profile.bioPlaceholder')}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.phone')}</label>
             <input
               type="tel"
               name="phone"
               value={formData.phone}
               onChange={onChange}
-              placeholder="+371 20000000"
+              placeholder={t('profile.phonePlaceholder')}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.city')}</label>
               <input
                 type="text"
                 name="city"
                 value={formData.city}
                 onChange={onChange}
-                placeholder="Riga"
+                placeholder={t('profile.cityPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.country')}</label>
               <input
                 type="text"
                 name="country"
                 value={formData.country}
                 onChange={onChange}
-                placeholder="Latvia"
+                placeholder={t('profile.countryPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -102,13 +105,13 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
       <div className="space-y-5">
         {profile.bio ? (
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">About</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">{t('profile.about')}</h3>
             <p className="text-gray-700">{profile.bio}</p>
           </div>
         ) : (
           <div className="text-center py-6 bg-gray-50 rounded-lg">
             <p className="text-gray-500 text-sm">
-              {viewOnly ? 'This user hasn\'t added a bio yet.' : 'No bio yet. Click "Edit Profile" to add one!'}
+              {viewOnly ? t('profile.noBioViewOnly') : t('profile.noBio')}
             </p>
           </div>
         )}
@@ -116,7 +119,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
         {/* Contact info - only show for own profile */}
         {!viewOnly && (displayEmail || profile.phone) && (
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Contact</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-3">{t('profile.contact')}</h3>
             <div className="space-y-2">
               {displayEmail && (
                 <div className="flex items-center gap-3 text-sm">
@@ -137,7 +140,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, viewOnly = fals
         {/* Location info - show for everyone if available */}
         {(profile.city || profile.country) && (
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Location</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-3">{t('profile.location')}</h3>
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-400">📍</span>
               <span className="text-gray-700">{[profile.city, profile.country].filter(Boolean).join(', ')}</span>
