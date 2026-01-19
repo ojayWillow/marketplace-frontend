@@ -12,10 +12,9 @@ import {
   Zap,
   MessageCircle
 } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore, apiClient as api } from '@marketplace/shared'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
 import type { ConfirmationResult } from '../lib/firebase'
-import api from '../api/client'
 
 export default function Home() {
   const { t } = useTranslation()
