@@ -1,5 +1,6 @@
-import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, ActivityIndicator, Button, Surface, Avatar, Badge } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { messagesAPI, useAuthStore } from '@marketplace/shared';
@@ -7,7 +8,6 @@ import { messagesAPI, useAuthStore } from '@marketplace/shared';
 export default function MessagesScreen() {
   const { user, isAuthenticated } = useAuthStore();
 
-  // Fetch conversations
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['conversations', user?.id],
     queryFn: async () => {
@@ -19,73 +19,75 @@ export default function MessagesScreen() {
 
   const conversations = data?.conversations || [];
 
-  // Not logged in state
+  // Not logged in
   if (!isAuthenticated) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="bg-white px-4 py-4 border-b border-gray-100">
-          <Text className="text-2xl font-bold text-gray-900">Messages</Text>
-        </View>
-        <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-4xl mb-4">💬</Text>
-          <Text className="text-xl font-semibold text-gray-900 mb-2">Sign In to View Messages</Text>
-          <Text className="text-gray-500 text-center mb-6">
+      <SafeAreaView style={styles.container}>
+        <Surface style={styles.header} elevation={1}>
+          <Text variant="headlineMedium" style={styles.title}>Messages</Text>
+        </Surface>
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyIcon}>💬</Text>
+          <Text variant="titleLarge" style={styles.signInTitle}>Sign In to View Messages</Text>
+          <Text style={styles.signInSubtitle}>
             Log in to start conversations and see your messages
           </Text>
-          <Pressable
+          <Button
+            mode="contained"
             onPress={() => router.push('/(auth)/login')}
-            className="bg-primary-500 px-8 py-3 rounded-xl active:bg-primary-600"
+            style={styles.signInButton}
           >
-            <Text className="text-white font-semibold">Sign In</Text>
-          </Pressable>
+            Sign In
+          </Button>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View className="bg-white px-4 py-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">Messages</Text>
-      </View>
+      <Surface style={styles.header} elevation={1}>
+        <Text variant="headlineMedium" style={styles.title}>Messages</Text>
+      </Surface>
 
       <ScrollView
-        className="flex-1"
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
       >
-        {/* Loading State */}
+        {/* Loading */}
         {isLoading && (
-          <View className="items-center py-12">
-            <Text className="text-gray-500">Loading conversations...</Text>
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" />
+            <Text style={styles.statusText}>Loading conversations...</Text>
           </View>
         )}
 
-        {/* Error State */}
+        {/* Error */}
         {isError && (
-          <View className="items-center py-12">
-            <Text className="text-red-500 mb-2">Failed to load messages</Text>
-            <Pressable onPress={() => refetch()} className="bg-primary-500 px-4 py-2 rounded-lg">
-              <Text className="text-white font-semibold">Retry</Text>
-            </Pressable>
+          <View style={styles.centerContainer}>
+            <Text style={styles.errorText}>Failed to load messages</Text>
+            <Button mode="contained" onPress={() => refetch()}>
+              Retry
+            </Button>
           </View>
         )}
 
-        {/* Empty State */}
+        {/* Empty */}
         {!isLoading && !isError && conversations.length === 0 && (
-          <View className="items-center py-12">
-            <Text className="text-4xl mb-2">💬</Text>
-            <Text className="text-gray-500 text-center">
-              No conversations yet.{' \n'}Start by contacting someone!
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyIcon}>💬</Text>
+            <Text style={styles.statusText}>
+              No conversations yet.{"\n"}Start by contacting someone!
             </Text>
           </View>
         )}
 
         {/* Conversations List */}
         {!isLoading && !isError && conversations.length > 0 && (
-          <View className="bg-white">
+          <Surface style={styles.listContainer} elevation={0}>
             {conversations.map((conversation: any, index: number) => {
               const otherUser = conversation.participants?.find(
                 (p: any) => p.id !== user?.id
@@ -98,80 +100,171 @@ export default function MessagesScreen() {
                 <Pressable
                   key={conversation.id}
                   onPress={() => router.push(`/conversation/${conversation.id}`)}
-                  className={`flex-row p-4 active:bg-gray-50 ${
-                    !isLastItem ? 'border-b border-gray-100' : ''
-                  }`}
+                  style={({ pressed }) => [
+                    styles.conversationItem,
+                    !isLastItem && styles.conversationBorder,
+                    pressed && styles.conversationPressed,
+                  ]}
                 >
                   {/* Avatar */}
-                  <View className="w-12 h-12 rounded-full bg-primary-500 items-center justify-center mr-3">
-                    <Text className="text-white text-lg font-bold">
-                      {otherUser?.username?.charAt(0).toUpperCase() || '?'}
-                    </Text>
-                  </View>
+                  <Avatar.Text
+                    size={48}
+                    label={otherUser?.username?.charAt(0).toUpperCase() || '?'}
+                    style={styles.avatar}
+                  />
 
                   {/* Content */}
-                  <View className="flex-1">
-                    {/* Name and Time */}
-                    <View className="flex-row justify-between items-start mb-1">
-                      <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
+                  <View style={styles.conversationContent}>
+                    <View style={styles.conversationHeader}>
+                      <Text variant="titleMedium" style={styles.username} numberOfLines={1}>
                         {otherUser?.username || 'Unknown User'}
                       </Text>
                       {lastMessage?.created_at && (
-                        <Text className="text-xs text-gray-400 ml-2">
+                        <Text style={styles.time}>
                           {formatMessageTime(lastMessage.created_at)}
                         </Text>
                       )}
                     </View>
 
-                    {/* Last Message */}
-                    <View className="flex-row items-center justify-between">
+                    <View style={styles.messageRow}>
                       <Text
-                        className={`flex-1 text-sm ${
-                          unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'
-                        }`}
+                        style={[
+                          styles.lastMessage,
+                          unreadCount > 0 && styles.unreadMessage,
+                        ]}
                         numberOfLines={1}
                       >
                         {lastMessage?.content || 'No messages yet'}
                       </Text>
-                      
-                      {/* Unread Badge */}
+
                       {unreadCount > 0 && (
-                        <View className="bg-primary-500 rounded-full min-w-[20px] h-5 items-center justify-center px-1.5 ml-2">
-                          <Text className="text-white text-xs font-bold">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                          </Text>
-                        </View>
+                        <Badge style={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</Badge>
                       )}
                     </View>
                   </View>
                 </Pressable>
               );
             })}
-          </View>
+          </Surface>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// Helper function to format message time
 function formatMessageTime(timestamp: string): string {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) {
-    return 'Just now';
-  } else if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes}m ago`;
-  } else if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours}h ago`;
-  } else if (diffInSeconds < 604800) {
-    const days = Math.floor(diffInSeconds / 86400);
-    return `${days}d ago`;
-  } else {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
+  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 24,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  signInTitle: {
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  signInSubtitle: {
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  signInButton: {
+    paddingHorizontal: 24,
+  },
+  statusText: {
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#ef4444',
+    marginBottom: 12,
+  },
+  listContainer: {
+    backgroundColor: '#ffffff',
+  },
+  conversationItem: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+  },
+  conversationBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  conversationPressed: {
+    backgroundColor: '#f9fafb',
+  },
+  avatar: {
+    marginRight: 12,
+    backgroundColor: '#0ea5e9',
+  },
+  conversationContent: {
+    flex: 1,
+  },
+  conversationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  username: {
+    flex: 1,
+    fontWeight: '600',
+  },
+  time: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginLeft: 8,
+  },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lastMessage: {
+    flex: 1,
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  unreadMessage: {
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  badge: {
+    backgroundColor: '#0ea5e9',
+    marginLeft: 8,
+  },
+});
