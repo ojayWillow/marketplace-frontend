@@ -1,7 +1,24 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// Environment-agnostic API URL getter
+const getApiUrl = (): string => {
+  // Vite (web)
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) {
+    return (import.meta as any).env.VITE_API_URL
+  }
+  // React Native / Node
+  if (typeof process !== 'undefined' && process.env?.API_URL) {
+    return process.env.API_URL
+  }
+  // Expo
+  if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL
+  }
+  return 'http://localhost:5000'
+}
+
+const API_URL = getApiUrl()
 
 export const apiClient = axios.create({
   baseURL: API_URL,
