@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
 import Constants from 'expo-constants';
 
 // Firebase configuration from environment variables
@@ -12,10 +12,28 @@ const firebaseConfig = {
   appId: Constants.expoConfig?.extra?.firebaseAppId || process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app: FirebaseApp;
+let auth: Auth;
 
-// Get Auth instance (will use default web persistence)
-export const auth = getAuth(app);
+// Lazy initialization - only initialize when actually needed
+export const getFirebaseApp = () => {
+  if (!app) {
+    // Check if Firebase app already exists
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+  }
+  return app;
+};
 
-export default app;
+export const getFirebaseAuth = () => {
+  if (!auth) {
+    auth = getAuth(getFirebaseApp());
+  }
+  return auth;
+};
+
+export { auth, app };
+export default getFirebaseApp;
