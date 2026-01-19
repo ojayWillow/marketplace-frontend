@@ -8,17 +8,17 @@ export interface UploadResponse {
 
 // Environment-agnostic API URL getter
 const getApiUrl = (): string => {
-  // Vite (web)
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) {
-    return (import.meta as any).env.VITE_API_URL
-  }
-  // React Native / Node
-  if (typeof process !== 'undefined' && process.env?.API_URL) {
-    return process.env.API_URL
-  }
-  // Expo
+  // Expo (React Native)
   if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL
+  }
+  // Vite (web) - check for window object instead of import.meta
+  if (typeof window !== 'undefined' && (window as any).__VITE_ENV__?.VITE_API_URL) {
+    return (window as any).__VITE_ENV__.VITE_API_URL
+  }
+  // Node.js
+  if (typeof process !== 'undefined' && process.env?.API_URL) {
+    return process.env.API_URL
   }
   return 'http://localhost:5000'
 }
