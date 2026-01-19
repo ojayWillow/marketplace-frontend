@@ -2,8 +2,13 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TextInput, Button, useTheme, Snackbar } from 'react-native-paper';
+import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
+import Constants from 'expo-constants';
+
+// Check if phone auth is available (not in Expo Go)
+const isExpoGo = Constants.appOwnership === 'expo';
+const isPhoneAuthAvailable = !isExpoGo;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -46,6 +51,20 @@ export default function LoginScreen() {
             <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
               Welcome Back
             </Text>
+            <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+              Sign in to continue
+            </Text>
+
+            {/* Expo Go Info Banner */}
+            {isExpoGo && (
+              <Card style={[styles.infoBanner, { backgroundColor: theme.colors.secondaryContainer }]}>
+                <Card.Content>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
+                    📱 Running in Expo Go - Email login only. Phone authentication will be available in production builds.
+                  </Text>
+                </Card.Content>
+              </Card>
+            )}
 
             {/* Email Input */}
             <TextInput
@@ -98,8 +117,33 @@ export default function LoginScreen() {
               style={styles.loginButton}
               contentStyle={styles.buttonContent}
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Signing In...' : 'Sign In with Email'}
             </Button>
+
+            {/* Phone Login Option - Only in Production */}
+            {isPhoneAuthAvailable && (
+              <>
+                <View style={styles.divider}>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
+                  <Text variant="bodySmall" style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>
+                    or
+                  </Text>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
+                </View>
+
+                <Link href="/(auth)/phone" asChild>
+                  <Button
+                    mode="outlined"
+                    disabled={loading}
+                    style={styles.phoneButton}
+                    contentStyle={styles.buttonContent}
+                    icon="phone"
+                  >
+                    Sign In with Phone
+                  </Button>
+                </Link>
+              </>
+            )}
 
             {/* Register Link */}
             <View style={styles.registerRow}>
@@ -157,7 +201,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
-    marginBottom: 32,
+    marginBottom: 8,
+  },
+  subtitle: {
+    marginBottom: 24,
+  },
+  infoBanner: {
+    marginBottom: 24,
+    borderRadius: 12,
   },
   input: {
     marginBottom: 16,
@@ -172,6 +223,22 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 8,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+  },
+  phoneButton: {
+    borderRadius: 12,
+    marginBottom: 16,
   },
   registerRow: {
     flexDirection: 'row',
