@@ -4,7 +4,7 @@ import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, HelperText } from 'react-native-paper';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { auth } from '../../src/config/firebase';
+import { getFirebaseAuth } from '../../src/config/firebase';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@marketplace/shared';
 import apiClient from '@marketplace/shared/src/api/client';
@@ -61,6 +61,7 @@ export default function PhoneAuthScreen() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
+      const auth = getFirebaseAuth(); // Get auth instance lazily
       
       // Firebase JS SDK will automatically show reCAPTCHA in a WebView
       // when signInWithPhoneNumber is called
