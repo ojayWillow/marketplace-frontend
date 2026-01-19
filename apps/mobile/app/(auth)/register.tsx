@@ -2,8 +2,13 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TextInput, Button, useTheme, Snackbar } from 'react-native-paper';
+import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
+import Constants from 'expo-constants';
+
+// Check if phone auth is available (not in Expo Go)
+const isExpoGo = Constants.appOwnership === 'expo';
+const isPhoneAuthAvailable = !isExpoGo;
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
@@ -67,6 +72,17 @@ export default function RegisterScreen() {
             <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
               Join the marketplace community
             </Text>
+
+            {/* Expo Go Info Banner */}
+            {isExpoGo && (
+              <Card style={[styles.infoBanner, { backgroundColor: theme.colors.secondaryContainer }]}>
+                <Card.Content>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
+                    📱 Running in Expo Go - Email registration only. Phone registration will be available in production builds.
+                  </Text>
+                </Card.Content>
+              </Card>
+            )}
 
             {/* Username Input */}
             <TextInput
@@ -140,8 +156,33 @@ export default function RegisterScreen() {
               style={styles.registerButton}
               contentStyle={styles.buttonContent}
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Creating Account...' : 'Create Account with Email'}
             </Button>
+
+            {/* Phone Registration Option - Only in Production */}
+            {isPhoneAuthAvailable && (
+              <>
+                <View style={styles.divider}>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
+                  <Text variant="bodySmall" style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>
+                    or
+                  </Text>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
+                </View>
+
+                <Link href="/(auth)/phone" asChild>
+                  <Button
+                    mode="outlined"
+                    disabled={loading}
+                    style={styles.phoneButton}
+                    contentStyle={styles.buttonContent}
+                    icon="phone"
+                  >
+                    Register with Phone
+                  </Button>
+                </Link>
+              </>
+            )}
 
             {/* Login Link */}
             <View style={styles.loginRow}>
@@ -200,7 +241,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    marginBottom: 32,
+    marginBottom: 24,
+  },
+  infoBanner: {
+    marginBottom: 24,
+    borderRadius: 12,
   },
   input: {
     marginBottom: 16,
@@ -212,6 +257,22 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 8,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+  },
+  phoneButton: {
+    borderRadius: 12,
+    marginBottom: 16,
   },
   loginRow: {
     flexDirection: 'row',
