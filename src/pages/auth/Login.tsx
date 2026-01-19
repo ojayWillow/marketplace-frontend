@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Phone, Mail, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
+import { Phone, Mail, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
 import { useAuthStore } from '../../stores/authStore'
+import { isPhoneAuthAvailable } from '../../lib/platform'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -15,6 +16,9 @@ export default function Login() {
     password: '',
   })
   const [showPassword, setShowPassword] = useState(false)
+  
+  // Check if phone auth is available (not in Expo Go)
+  const phoneAuthEnabled = isPhoneAuthAvailable()
 
   // Redirect authenticated users to home
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function Login() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Phone className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <Mail className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {t('auth.loginTitle')}
@@ -60,27 +64,48 @@ export default function Login() {
 
         {/* Card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
-          {/* Phone Login Button - Primary option */}
-          <Link
-            to="/phone-login"
-            className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors mb-6"
-          >
-            <Phone className="w-5 h-5" />
-            {t('auth.signInWithPhone', 'Sign in with Phone')}
-            <ArrowRight className="w-5 h-5 ml-auto" />
-          </Link>
+          {/* Phone Login Button - Only show if phone auth is available */}
+          {phoneAuthEnabled && (
+            <>
+              <Link
+                to="/phone-login"
+                className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors mb-6"
+              >
+                <Phone className="w-5 h-5" />
+                {t('auth.signInWithPhone', 'Sign in with Phone')}
+                <ArrowRight className="w-5 h-5 ml-auto" />
+              </Link>
 
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+              {/* Divider */}
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">
+                    {t('auth.orContinueWith', 'or continue with email')}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Info banner when phone auth is not available */}
+          {!phoneAuthEnabled && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-blue-800 dark:text-blue-300 text-sm font-medium">
+                    {t('auth.emailLoginOnly', 'Email Login')}
+                  </p>
+                  <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">
+                    {t('auth.phoneAuthUnavailable', 'Phone authentication is available in the production app.')}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">
-                {t('auth.existingUserEmail', 'existing user? use email')}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Error message */}
           {login.isError && (
@@ -106,6 +131,7 @@ export default function Login() {
                 placeholder="your@email.com"
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500"
                 required
+                autoComplete="email"
               />
             </div>
 
@@ -132,6 +158,7 @@ export default function Login() {
                   placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500 pr-12"
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -148,7 +175,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={login.isPending}
-              className="w-full py-4 px-6 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-gray-900 dark:text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {login.isPending ? (
                 <>
@@ -167,13 +194,22 @@ export default function Login() {
 
         {/* New user prompt */}
         <p className="mt-6 text-center text-gray-600 dark:text-gray-400">
-          {t('auth.newUser', 'New to Tirgus?')}{' '}
-          <Link
-            to="/phone-login"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            {t('auth.createAccountWithPhone', 'Create account with phone')}
-          </Link>
+          {t('auth.noAccount', "Don't have an account?")}{' '}
+          {phoneAuthEnabled ? (
+            <Link
+              to="/phone-login"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              {t('auth.createAccountWithPhone', 'Create account with phone')}
+            </Link>
+          ) : (
+            <Link
+              to="/register"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              {t('auth.registerButton', 'Register')}
+            </Link>
+          )}
         </p>
       </div>
     </div>
