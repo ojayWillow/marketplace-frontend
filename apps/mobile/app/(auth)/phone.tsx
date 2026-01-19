@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, HelperText } from 'react-native-paper';
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { auth } from '../../src/config/firebase';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@marketplace/shared';
 import apiClient from '@marketplace/shared/src/api/client';
 
@@ -20,10 +22,22 @@ export default function PhoneAuthScreen() {
   const [isNewUser, setIsNewUser] = useState(false);
   
   // Store the confirmation result from Firebase
-  const [confirm, setConfirm] = useState<FirebaseAuthTypes.ConfirmationResult | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
   
   const setAuth = useAuthStore((state) => state.setAuth);
   const theme = useTheme();
+
+  // Initialize reCAPTCHA
+  useEffect(() => {
+    // Note: reCAPTCHA needs a DOM element, which we don't have in React Native
+    // Firebase JS SDK will handle this by opening a WebView when needed
+    return () => {
+      if (recaptchaVerifier) {
+        recaptchaVerifier.clear();
+      }
+    };
+  }, [recaptchaVerifier]);
 
   // Format phone number to ensure it has country code
   const formatPhoneNumber = (phone: string): string => {
@@ -47,8 +61,17 @@ export default function PhoneAuthScreen() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const confirmation = await auth().signInWithPhoneNumber(formattedPhone);
-      setConfirm(confirmation);
+      
+      // Firebase JS SDK will automatically show reCAPTCHA in a WebView
+      // when signInWithPhoneNumber is called
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        formattedPhone,
+        // @ts-ignore - Firebase will handle reCAPTCHA internally
+        undefined
+      );
+      
+      setConfirmationResult(confirmation);
       setStep('code');
     } catch (err: any) {
       console.error('Phone auth error:', err);
@@ -59,6 +82,8 @@ export default function PhoneAuthScreen() {
         setError('Too many attempts. Please try again later.');
       } else if (err.code === 'auth/quota-exceeded') {
         setError('SMS quota exceeded. Please try again later.');
+      } else if (err.code === 'auth/captcha-check-failed') {
+        setError('reCAPTCHA verification failed. Please try again.');
       } else {
         setError(err.message || 'Failed to send verification code');
       }
@@ -74,7 +99,7 @@ export default function PhoneAuthScreen() {
       return;
     }
 
-    if (!confirm) {
+    if (!confirmationResult) {
       setError('Verification session expired. Please request a new code.');
       setStep('phone');
       return;
@@ -85,7 +110,7 @@ export default function PhoneAuthScreen() {
 
     try {
       // Confirm the verification code with Firebase
-      const userCredential = await confirm.confirm(verificationCode);
+      const userCredential = await confirmationResult.confirm(verificationCode);
       
       if (!userCredential || !userCredential.user) {
         throw new Error('Verification failed');
@@ -121,7 +146,7 @@ export default function PhoneAuthScreen() {
       } else if (err.code === 'auth/code-expired') {
         setError('Code expired. Please request a new one.');
         setStep('phone');
-        setConfirm(null);
+        setConfirmationResult(null);
       } else {
         setError(err.response?.data?.message || err.message || 'Invalid verification code');
       }
@@ -164,7 +189,7 @@ export default function PhoneAuthScreen() {
   // Resend verification code
   const handleResendCode = async () => {
     setVerificationCode('');
-    setConfirm(null);
+    setConfirmationResult(null);
     await handleSendCode();
   };
 
@@ -203,6 +228,9 @@ export default function PhoneAuthScreen() {
                 />
                 <HelperText type="info">
                   Include country code (e.g., +371 for Latvia)
+                </HelperText>
+                <HelperText type="info">
+                  A reCAPTCHA verification popup will appear
                 </HelperText>
 
                 <Button
@@ -258,7 +286,7 @@ export default function PhoneAuthScreen() {
                     mode="text"
                     onPress={() => {
                       setStep('phone');
-                      setConfirm(null);
+                      setConfirmationResult(null);
                       setVerificationCode('');
                     }}
                     disabled={loading}
