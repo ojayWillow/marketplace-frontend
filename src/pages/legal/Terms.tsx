@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function Terms() {
   const { t } = useTranslation();
+  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,13 +17,13 @@ export default function Terms() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            {t('common.backToHome')}
+            {t('common.backToHome', 'Back to Home')}
           </Link>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
             {t('legal.terms.title')}
           </h1>
           <p className="text-gray-500 text-sm">
-            {t('legal.terms.lastUpdated')}
+            {t('legal.terms.lastUpdated', { date: currentDate })}
           </p>
         </div>
 
@@ -31,155 +32,149 @@ export default function Terms() {
           
           {/* Introduction */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">👋</span>
-              {t('legal.terms.introTitle')}
-            </h2>
-            <p className="text-gray-600 leading-relaxed">
-              {t('legal.terms.introText')}
+            <p className="text-gray-600 leading-relaxed text-lg">
+              {t('legal.terms.intro')}
             </p>
           </section>
 
-          {/* Platform Role */}
+          {/* 1. What We Are */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🤝</span>
-              {t('legal.terms.platformRoleTitle')}
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.platform.title')}
             </h2>
-            <p className="text-gray-600 leading-relaxed mb-3">
-              {t('legal.terms.platformRoleText')}
+            <p className="text-gray-600 leading-relaxed">
+              {t('legal.terms.sections.platform.content')}
             </p>
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <p className="text-blue-800 text-sm">
-                <span className="font-medium">💡 </span>
-                {t('legal.terms.platformRoleNote')}
+          </section>
+
+          {/* 2. Our Role & Limitations */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.noLiability.title')}
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-4">
+              {t('legal.terms.sections.noLiability.content')}
+            </p>
+            <ul className="space-y-2 text-gray-600 ml-4">
+              {(t('legal.terms.sections.noLiability.list', { returnObjects: true }) as string[]).map((item, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-red-500 mt-1">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* 3. Your Responsibilities */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.userResponsibility.title')}
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-4">
+              {t('legal.terms.sections.userResponsibility.content')}
+            </p>
+            <ul className="space-y-2 text-gray-600 ml-4">
+              {(t('legal.terms.sections.userResponsibility.list', { returnObjects: true }) as string[]).map((item, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-green-500 mt-1">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* 4. Age Requirement */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.age.title')}
+            </h2>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-amber-900">
+                {t('legal.terms.sections.age.content')}
               </p>
             </div>
           </section>
 
-          {/* User Responsibility */}
+          {/* 5. Free Platform */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">✅</span>
-              {t('legal.terms.userResponsibilityTitle')}
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.noFees.title')}
             </h2>
-            <ul className="space-y-2 text-gray-600">
-              <li className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
-                {t('legal.terms.userResponsibility1')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
-                {t('legal.terms.userResponsibility2')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
-                {t('legal.terms.userResponsibility3')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
-                {t('legal.terms.userResponsibility4')}
-              </li>
+            <p className="text-gray-600 leading-relaxed">
+              {t('legal.terms.sections.noFees.content')}
+            </p>
+          </section>
+
+          {/* 6. User Content */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.content.title')}
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-4">
+              {t('legal.terms.sections.content.content')}
+            </p>
+            <ul className="space-y-2 text-gray-600 ml-4 mb-4">
+              {(t('legal.terms.sections.content.list', { returnObjects: true }) as string[]).map((item, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-red-500 mt-1">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="text-gray-600 leading-relaxed">
+              {t('legal.terms.sections.content.removal')}
+            </p>
+          </section>
+
+          {/* 7. Safety Guidelines */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.safety.title')}
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-4">
+              {t('legal.terms.sections.safety.content')}
+            </p>
+            <ul className="space-y-2 text-gray-600 ml-4">
+              {(t('legal.terms.sections.safety.list', { returnObjects: true }) as string[]).map((item, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">•</span>
+                  {item}
+                </li>
+              ))}
             </ul>
           </section>
 
-          {/* Age Requirement */}
+          {/* 8. Disclaimer */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🎂</span>
-              {t('legal.terms.ageTitle')}
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.disclaimer.title')}
             </h2>
-            <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
-              <p className="text-amber-800">
-                <span className="font-semibold">{t('legal.terms.ageRequirement')}</span>
-                {' '}{t('legal.terms.ageText')}
+            <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                {t('legal.terms.sections.disclaimer.content')}
               </p>
             </div>
           </section>
 
-          {/* No Liability */}
+          {/* 9. Changes to Terms */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">⚖️</span>
-              {t('legal.terms.liabilityTitle')}
-            </h2>
-            <p className="text-gray-600 leading-relaxed mb-3">
-              {t('legal.terms.liabilityText')}
-            </p>
-            <ul className="space-y-2 text-gray-600">
-              <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
-                {t('legal.terms.liability1')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
-                {t('legal.terms.liability2')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
-                {t('legal.terms.liability3')}
-              </li>
-            </ul>
-          </section>
-
-          {/* Fees */}
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">💰</span>
-              {t('legal.terms.feesTitle')}
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.changes.title')}
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              {t('legal.terms.feesText')}
+              {t('legal.terms.sections.changes.content')}
             </p>
           </section>
 
-          {/* Prohibited */}
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🚫</span>
-              {t('legal.terms.prohibitedTitle')}
-            </h2>
-            <ul className="space-y-2 text-gray-600">
-              <li className="flex items-start gap-2">
-                <span className="text-red-500 mt-1">•</span>
-                {t('legal.terms.prohibited1')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-red-500 mt-1">•</span>
-                {t('legal.terms.prohibited2')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-red-500 mt-1">•</span>
-                {t('legal.terms.prohibited3')}
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-red-500 mt-1">•</span>
-                {t('legal.terms.prohibited4')}
-              </li>
-            </ul>
-          </section>
-
-          {/* Changes */}
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">📝</span>
-              {t('legal.terms.changesTitle')}
-            </h2>
-            <p className="text-gray-600 leading-relaxed">
-              {t('legal.terms.changesText')}
-            </p>
-          </section>
-
-          {/* Contact */}
+          {/* 10. Contact Us */}
           <section className="border-t border-gray-100 pt-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">📧</span>
-              {t('legal.terms.contactTitle')}
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              {t('legal.terms.sections.contact.title')}
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              {t('legal.terms.contactText')}{' '}
-              <a href="mailto:info@marketplace.lv" className="text-blue-600 hover:underline">
-                info@marketplace.lv
+              {t('legal.terms.sections.contact.content')}{' '}
+              <a href={`mailto:${t('legal.terms.sections.contact.email')}`} className="text-blue-600 hover:underline">
+                {t('legal.terms.sections.contact.email')}
               </a>
             </p>
           </section>
