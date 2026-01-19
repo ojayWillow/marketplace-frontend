@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../stores/authStore';
 import { useLogout } from '../../../hooks/useAuth';
@@ -15,7 +15,6 @@ import { useNotifications } from './hooks/useNotifications';
 
 export default function Header() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const logout = useLogout();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,12 +35,6 @@ export default function Header() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
-
-  // Handle mobile notification bell click
-  const handleMobileNotificationClick = () => {
-    navigate('/profile?tab=tasks', { replace: false });
-    window.dispatchEvent(new CustomEvent('notification-bell-clicked'));
-  };
 
   return (
     <header 
@@ -128,20 +121,15 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Mobile notification bell */}
-            {isAuthenticated && totalNotifications > 0 && (
-              <button
-                onClick={handleMobileNotificationClick}
-                className="relative p-2 text-slate-400 hover:text-white"
-                aria-label={`Notifications, ${totalNotifications} unread`}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full" aria-hidden="true">
-                  {totalNotifications > 9 ? '9+' : totalNotifications}
-                </span>
-              </button>
+            {/* Mobile notification bell - Always visible when authenticated */}
+            {isAuthenticated && (
+              <NotificationBell
+                notifications={notifications}
+                totalNotifications={totalNotifications}
+                onMarkAsRead={markNotificationsAsRead}
+                onClearType={clearNotificationType}
+                isMobile={true}
+              />
             )}
             
             <button
