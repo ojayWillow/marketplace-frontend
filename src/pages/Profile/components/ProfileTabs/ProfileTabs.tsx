@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { ActiveTab } from '../../types';
 
 interface ProfileTabsProps {
@@ -26,6 +27,8 @@ export const ProfileTabs = ({
   hasContent,
   viewOnly = false,
 }: ProfileTabsProps) => {
+  const { t } = useTranslation();
+
   const tabClass = (tab: ActiveTab) =>
     `px-4 py-2 rounded-md text-sm font-medium transition-all ${
       activeTab === tab
@@ -36,14 +39,14 @@ export const ProfileTabs = ({
   return (
     <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
       <button onClick={() => onTabChange('about')} className={tabClass('about')}>
-        About
+        {t('profile.tabs.about')}
       </button>
       
       <button
         onClick={() => onTabChange('tasks')}
         className={`${tabClass('tasks')} relative`}
       >
-        Jobs {hasContent.tasks && <span className="text-gray-400">({counts.tasks})</span>}
+        {t('profile.tabs.jobs')} {hasContent.tasks && <span className="text-gray-400">({counts.tasks})</span>}
         {/* Only show notifications badge for own profile */}
         {!viewOnly && counts.pendingNotifications > 0 && (
           <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
@@ -53,17 +56,17 @@ export const ProfileTabs = ({
       </button>
       
       <button onClick={() => onTabChange('offerings')} className={tabClass('offerings')}>
-        Services {hasContent.offerings && <span className="text-gray-400">({counts.offerings})</span>}
+        {t('profile.tabs.services')} {hasContent.offerings && <span className="text-gray-400">({counts.offerings})</span>}
       </button>
       
       <button onClick={() => onTabChange('listings')} className={tabClass('listings')}>
-        Listings {hasContent.listings && <span className="text-gray-400">({counts.listings})</span>}
+        {t('profile.tabs.listings')} {hasContent.listings && <span className="text-gray-400">({counts.listings})</span>}
       </button>
       
       {/* Always show reviews tab if there are reviews, or if viewing own profile */}
       {(hasContent.reviews || !viewOnly) && (
         <button onClick={() => onTabChange('reviews')} className={tabClass('reviews')}>
-          Reviews ({counts.reviews})
+          {t('profile.tabs.reviews')} ({counts.reviews})
         </button>
       )}
     </div>
