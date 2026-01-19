@@ -1,38 +1,34 @@
 module.exports = {
   extends: [
     'expo',
+    'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
   ],
-  plugins: ['@typescript-eslint', 'react', 'react-hooks'],
   parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint', 'react', 'react-hooks'],
   parserOptions: {
-    ecmaVersion: 2021,
-    sourceType: 'module',
     ecmaFeatures: {
       jsx: true,
     },
-  },
-  env: {
-    'react-native/react-native': true,
-    es6: true,
-    node: true,
+    ecmaVersion: 2021,
+    sourceType: 'module',
   },
   rules: {
     'react/react-in-jsx-scope': 'off', // Not needed in React Native
-    'react/prop-types': 'off', // Using TypeScript
+    'react/prop-types': 'off', // Using TypeScript for prop validation
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': [
-      'warn',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-    ],
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   settings: {
     react: {
       version: 'detect',
     },
+  },
+  env: {
+    'react-native/react-native': true,
   },
 };
