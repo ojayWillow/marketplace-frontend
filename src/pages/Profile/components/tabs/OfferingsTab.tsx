@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { type Offering } from '../../../../api/offerings';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
 import { getStatusBadgeClass } from '../../utils/statusHelpers';
@@ -13,6 +14,7 @@ interface OfferingsTabProps {
 }
 
 export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false }: OfferingsTabProps) => {
+  const { t } = useTranslation();
   const [showMapTipDismissed, setShowMapTipDismissed] = useState(() => {
     return localStorage.getItem('mapTipDismissed') === 'true';
   });
@@ -31,14 +33,14 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false }:
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="font-semibold text-gray-900">
-          {viewOnly ? 'Services' : 'My Services'}
+          {viewOnly ? t('profile.servicesTab.titleViewOnly') : t('profile.servicesTab.title')}
         </h2>
         {!viewOnly && (
           <Link
             to="/offerings/create"
             className="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
           >
-            + New Service
+            {t('profile.servicesTab.newService')}
           </Link>
         )}
       </div>
@@ -50,8 +52,7 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false }:
             <span className="text-lg flex-shrink-0">💡</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-blue-800">
-                <span className="font-medium">Pro tip:</span> Your services can appear on the map for people searching nearby. 
-                Map visibility is a premium feature coming soon!
+                <span className="font-medium">{t('profile.servicesTab.proTip')}</span> {t('profile.servicesTab.proTipText')}
               </p>
             </div>
             <button 
@@ -70,14 +71,14 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false }:
         <div className="text-center py-10">
           <div className="text-4xl mb-2">👋</div>
           <p className="text-gray-500 mb-4">
-            {viewOnly ? 'No services available' : 'No services yet'}
+            {viewOnly ? t('profile.servicesTab.noServicesViewOnly') : t('profile.servicesTab.noServices')}
           </p>
           {!viewOnly && (
             <Link
               to="/offerings/create"
               className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 font-medium text-sm"
             >
-              Create your first service →
+              {t('profile.servicesTab.createFirst')}
             </Link>
           )}
         </div>
@@ -108,12 +109,12 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false }:
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Link to={`/offerings/${offering.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                  <Link to={`/offerings/${offering.id}`} className="text-xs text-blue-600 hover:underline">{t('profile.servicesTab.view')}</Link>
                   {!viewOnly && (
                     <>
-                      <Link to={`/offerings/${offering.id}/edit`} className="text-xs text-gray-500 hover:underline">Edit</Link>
+                      <Link to={`/offerings/${offering.id}/edit`} className="text-xs text-gray-500 hover:underline">{t('profile.servicesTab.edit')}</Link>
                       {onDelete && (
-                        <button onClick={() => onDelete(offering.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                        <button onClick={() => onDelete(offering.id)} className="text-xs text-red-500 hover:underline">{t('profile.servicesTab.delete')}</button>
                       )}
                     </>
                   )}
