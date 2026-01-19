@@ -27,17 +27,40 @@ export * from './push';
 export * from './reviews';
 export * from './taskResponses';
 
-// Tasks - don't re-export Task type (it's in types.ts)
+// Tasks - export everything except Task type (it conflicts with types.ts)
 export {
+  getCurrentLanguage,
+  type Helper,
+  type TaskApplication,
+  type TasksParams,
+  type GetTasksParams,
+  type GetHelpersParams,
+  type GetTasksResponse,
+  type GetHelpersResponse,
+  type GetApplicationsResponse,
   getTasks,
+  getHelpers,
+  getMyTasks,
+  getCreatedTasks,
+  getTasksByUser,
   getTask,
   createTask,
   updateTask,
-  getTasksByUser,
-  getMyTasks,
-  tasksApi,
-  type GetTasksResponse,
+  applyToTask,
+  withdrawApplication,
+  getTaskApplications,
+  acceptApplication,
+  rejectApplication,
+  getMyApplications,
+  acceptTask,
+  markTaskDone,
+  confirmTaskCompletion,
+  disputeTask,
+  cancelTask,
+  completeTask,
 } from './tasks';
+// Export Task type with alias to avoid conflict
+export type { Task as TaskType } from './tasks';
 
 export * from './uploads';
 export * from './users';
