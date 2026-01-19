@@ -23,6 +23,7 @@ import enTasks from './locales/en/tasks.json'
 import enOfferings from './locales/en/offerings.json'
 import enCreateOffering from './locales/en/createOffering.json'
 import enCreateTask from './locales/en/createTask.json'
+import enLegal from './locales/en/legal.json'
 
 // Import Latvian translations
 import lvCommon from './locales/lv/common.json'
@@ -45,6 +46,7 @@ import lvTasks from './locales/lv/tasks.json'
 import lvOfferings from './locales/lv/offerings.json'
 import lvCreateOffering from './locales/lv/createOffering.json'
 import lvCreateTask from './locales/lv/createTask.json'
+import lvLegal from './locales/lv/legal.json'
 
 // Import Russian translations
 import ruCommon from './locales/ru/common.json'
@@ -67,6 +69,7 @@ import ruTasks from './locales/ru/tasks.json'
 import ruOfferings from './locales/ru/offerings.json'
 import ruCreateOffering from './locales/ru/createOffering.json'
 import ruCreateTask from './locales/ru/createTask.json'
+import ruLegal from './locales/ru/legal.json'
 
 // Combine all translations per language
 const en = {
@@ -90,6 +93,7 @@ const en = {
   offerings: enOfferings,
   createOffering: enCreateOffering,
   createTask: enCreateTask,
+  legal: enLegal,
 }
 
 const lv = {
@@ -113,6 +117,7 @@ const lv = {
   offerings: lvOfferings,
   createOffering: lvCreateOffering,
   createTask: lvCreateTask,
+  legal: lvLegal,
 }
 
 const ru = {
@@ -136,6 +141,7 @@ const ru = {
   offerings: ruOfferings,
   createOffering: ruCreateOffering,
   createTask: ruCreateTask,
+  legal: ruLegal,
 }
 
 const resources = {
