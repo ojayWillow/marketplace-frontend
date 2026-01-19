@@ -4,7 +4,7 @@ import { Text, Card, Chip, ActivityIndicator, Button, Surface } from 'react-nati
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { tasksAPI, useAuthStore } from '@marketplace/shared';
+import { getTasks, getCreatedTasks, getMyApplications, useAuthStore, type Task, type TaskApplication } from '@marketplace/shared';
 
 type FilterTab = 'all' | 'my_tasks' | 'applied';
 
@@ -15,20 +15,27 @@ export default function TasksScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['tasks', activeTab, user?.id],
     queryFn: async () => {
-      let response;
       if (activeTab === 'my_tasks' && user) {
-        response = await tasksAPI.getUserTasks(user.id);
+        // Get tasks created by me
+        return await getCreatedTasks();
       } else if (activeTab === 'applied' && user) {
-        response = await tasksAPI.getAppliedTasks();
+        // Get my applications
+        const response = await getMyApplications();
+        // Extract tasks from applications
+        return {
+          tasks: response.applications.map((app: TaskApplication) => app.task).filter(Boolean) as Task[],
+          total: response.total,
+          page: 1,
+        };
       } else {
-        response = await tasksAPI.getTasks({ page: 1, limit: 20 });
+        // Get all tasks
+        return await getTasks({ page: 1, per_page: 20 });
       }
-      return response.data;
     },
     enabled: activeTab === 'all' || !!user,
   });
 
-  const tasks = data?.tasks || data || [];
+  const tasks = data?.tasks || [];
 
   const tabs: { id: FilterTab; label: string }[] = [
     { id: 'all', label: 'All Tasks' },
@@ -120,7 +127,7 @@ export default function TasksScreen() {
           {/* Tasks List */}
           {!isLoading && !isError && tasks.length > 0 && (
             <View>
-              {tasks.map((task: any) => {
+              {tasks.map((task: Task) => {
                 const statusColors = getStatusColor(task.status);
                 return (
                   <Card
@@ -160,20 +167,20 @@ export default function TasksScreen() {
                             €{task.budget?.toFixed(2) || '0.00'}
                           </Text>
                           <Text style={styles.location}>
-                            📍 {task.location?.city || 'Location'}
+                            📍 {task.location || 'Location'}
                           </Text>
                         </View>
-                        {task.responses_count !== undefined && (
+                        {task.pending_applications_count !== undefined && (
                           <Text style={styles.applicants}>
-                            👥 {task.responses_count} {task.responses_count === 1 ? 'applicant' : 'applicants'}
+                            👥 {task.pending_applications_count} {task.pending_applications_count === 1 ? 'applicant' : 'applicants'}
                           </Text>
                         )}
                       </View>
 
                       {/* Due Date */}
-                      {task.due_date && (
+                      {task.deadline && (
                         <Text style={styles.dueDate}>
-                          Due: {new Date(task.due_date).toLocaleDateString()}
+                          Due: {new Date(task.deadline).toLocaleDateString()}
                         </Text>
                       )}
                     </Card.Content>
