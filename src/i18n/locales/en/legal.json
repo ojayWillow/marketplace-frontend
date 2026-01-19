@@ -1,0 +1,165 @@
+{
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: {{date}}",
+    "intro": "Welcome to Tirgus (\"Platform\"). By using our services, you agree to these terms. Please read them carefully.",
+    "sections": {
+      "platform": {
+        "title": "1. What We Are",
+        "content": "Tirgus is a community connection platform that helps people find and offer help with everyday tasks. Think of us as a digital notice board or post office \u2014 we provide the space for people to connect, but we don't participate in or control the arrangements made between users."
+      },
+      "noLiability": {
+        "title": "2. Our Role & Limitations",
+        "content": "We are not a party to any agreement between users. All jobs, services, payments, and arrangements are made directly between the person posting a job and the person offering help. Tirgus does not:",
+        "list": [
+          "Employ or contract any workers/helpers",
+          "Guarantee the quality, safety, or legality of any work performed",
+          "Handle payments or take commissions from transactions",
+          "Verify the skills or backgrounds of users",
+          "Take responsibility for disputes between users"
+        ]
+      },
+      "userResponsibility": {
+        "title": "3. Your Responsibilities",
+        "content": "By using Tirgus, you agree that you are solely responsible for:",
+        "list": [
+          "The accuracy of information you post",
+          "Communicating clearly with other users",
+          "Agreeing on terms, payment, and expectations before starting work",
+          "Complying with all applicable laws and regulations",
+          "Your own safety when meeting or working with others",
+          "Resolving any disputes directly with the other party"
+        ]
+      },
+      "age": {
+        "title": "4. Age Requirement",
+        "content": "You must be at least 16 years old to use Tirgus. By creating an account, you confirm that you meet this age requirement. Users under 18 should have parental or guardian consent."
+      },
+      "noFees": {
+        "title": "5. Free Platform",
+        "content": "Tirgus is currently free to use. We do not charge fees or take commissions from any transactions between users. Any payments for jobs or services are arranged directly between users."
+      },
+      "content": {
+        "title": "6. User Content",
+        "content": "You are responsible for all content you post on Tirgus. You agree not to post:",
+        "list": [
+          "False, misleading, or fraudulent information",
+          "Illegal services or requests",
+          "Offensive, discriminatory, or harmful content",
+          "Spam or commercial advertising unrelated to tasks/services"
+        ],
+        "removal": "We reserve the right to remove any content and suspend accounts that violate these terms."
+      },
+      "safety": {
+        "title": "7. Safety Guidelines",
+        "content": "While we want everyone to have positive experiences, please use common sense and caution:",
+        "list": [
+          "Meet in public places when possible for initial meetings",
+          "Tell someone where you're going",
+          "Trust your instincts \u2014 if something feels wrong, leave",
+          "Don't share sensitive personal information unnecessarily",
+          "Report suspicious behavior to us"
+        ]
+      },
+      "disclaimer": {
+        "title": "8. Disclaimer",
+        "content": "THE PLATFORM IS PROVIDED \"AS IS\" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE CONTINUOUS, UNINTERRUPTED ACCESS TO OUR SERVICES. TO THE MAXIMUM EXTENT PERMITTED BY LAW, TIRGUS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE PLATFORM."
+      },
+      "changes": {
+        "title": "9. Changes to Terms",
+        "content": "We may update these terms from time to time. Continued use of the platform after changes constitutes acceptance of the new terms."
+      },
+      "contact": {
+        "title": "10. Contact Us",
+        "content": "If you have questions about these terms, please contact us at:",
+        "email": "info@marketplace.lv"
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: {{date}}",
+    "intro": "Your privacy matters to us. This policy explains what information we collect, how we use it, and your rights regarding your data.",
+    "sections": {
+      "collect": {
+        "title": "1. Information We Collect",
+        "content": "We collect information you provide directly:",
+        "list": [
+          "Account information: name, email, phone number, profile picture",
+          "Profile details: bio, location (city/country), skills",
+          "Content you create: job posts, service offerings, messages, reviews",
+          "Location data: approximate location to show nearby jobs/services (only when you permit)"
+        ],
+        "automatic": "We also collect some information automatically:",
+        "automaticList": [
+          "Device information and browser type",
+          "Usage data (pages visited, features used)",
+          "IP address for security purposes"
+        ]
+      },
+      "use": {
+        "title": "2. How We Use Your Information",
+        "content": "We use your information to:",
+        "list": [
+          "Provide and improve our services",
+          "Connect you with relevant jobs and helpers in your area",
+          "Enable communication between users",
+          "Send important updates about your account or transactions",
+          "Ensure platform safety and prevent fraud",
+          "Analyze usage to improve the platform"
+        ]
+      },
+      "sharing": {
+        "title": "3. Information Sharing",
+        "content": "We do NOT sell your personal data. We may share information:",
+        "list": [
+          "With other users: Your public profile, job posts, and offerings are visible to others",
+          "With service providers: Companies that help us operate (hosting, analytics) under strict confidentiality",
+          "For legal reasons: If required by law or to protect rights and safety"
+        ]
+      },
+      "security": {
+        "title": "4. Data Security",
+        "content": "We implement reasonable security measures to protect your data, including encryption, secure servers, and access controls. However, no internet transmission is 100% secure."
+      },
+      "rights": {
+        "title": "5. Your Rights",
+        "content": "You have the right to:",
+        "list": [
+          "Access your personal data",
+          "Correct inaccurate information",
+          "Delete your account and associated data",
+          "Export your data",
+          "Opt out of marketing communications"
+        ],
+        "howTo": "To exercise these rights, go to your Profile settings or contact us."
+      },
+      "cookies": {
+        "title": "6. Cookies",
+        "content": "We use essential cookies to make the platform work properly (login sessions, preferences). We may use analytics cookies to understand how people use Tirgus. You can control cookies through your browser settings."
+      },
+      "retention": {
+        "title": "7. Data Retention",
+        "content": "We keep your data while your account is active. If you delete your account, we will remove your personal data within 30 days, except where we need to keep it for legal reasons."
+      },
+      "children": {
+        "title": "8. Children's Privacy",
+        "content": "Tirgus is not intended for users under 16. We do not knowingly collect data from children under 16. If we learn we have collected such data, we will delete it promptly."
+      },
+      "changes": {
+        "title": "9. Changes to This Policy",
+        "content": "We may update this privacy policy. We'll notify you of significant changes through the platform or email."
+      },
+      "contact": {
+        "title": "10. Contact Us",
+        "content": "For privacy-related questions or requests:",
+        "email": "info@marketplace.lv",
+        "location": "Riga, Latvia"
+      }
+    }
+  },
+  "footer": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy"
+  }
+}
