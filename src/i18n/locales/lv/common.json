@@ -51,5 +51,21 @@
   "this": "šāda veida",
   "or": "vai",
   "gotIt": "Sapratu!",
-  "and": "un"
+  "and": "un",
+  "notifications": {
+    "title": "Paziņojumi",
+    "unread": "neizlasīti",
+    "allCaughtUp": "Viss izlasīts!",
+    "newWillAppear": "Jauni paziņojumi parādīsies šeit",
+    "browseTasks": "Pārlūkot darbus, lai palīdzētu citiem",
+    "assignedToJobs": "Tu tiki pieņemts {{count}} darbam(-iem)!",
+    "applicationAccepted": "Tavs pieteikums tika pieņemts",
+    "newMessages": "{{count}} jauna(-as) ziņa(-as)",
+    "clickToView": "Noklikšķini, lai skatītu ziņas",
+    "newApplications": "{{count}} jauns(-i) pieteikums(-i)",
+    "peopleWantToHelp": "Cilvēki vēlas palīdzēt ar taviem darbiem",
+    "awaitingConfirmation": "{{count}} darbs(-i) gaida apstiprinājumu",
+    "workersMarkedDone": "Izpildītāji atzīmēja šos kā pabeigtus",
+    "viewAllActivity": "Skatīt visu aktivitāti"
+  }
 }
