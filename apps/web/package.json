@@ -19,6 +19,7 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@marketplace/shared": "workspace:*",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.5",
     "firebase": "^12.8.0",
