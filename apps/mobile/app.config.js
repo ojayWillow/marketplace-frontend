@@ -61,5 +61,8 @@ export default ({ config }) => ({
   },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000',
+    eas: {
+      projectId: 'cded9e1b-0bcb-42d8-a2fe-67b2ffc3e0af'
+    }
   },
 });
