@@ -17,6 +17,7 @@
     "@expo/metro-runtime": "~6.1.2",
     "@formatjs/intl-pluralrules": "^5.2.14",
     "@marketplace/shared": "workspace:*",
+    "@react-native-async-storage/async-storage": "^2.1.0",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.5",
     "expo": "~54.0.0",
