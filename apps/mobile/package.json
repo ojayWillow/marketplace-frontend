@@ -21,6 +21,7 @@
     "axios": "^1.6.5",
     "expo": "~54.0.0",
     "expo-constants": "~18.0.0",
+    "expo-firebase-recaptcha": "~4.0.0",
     "expo-image": "~3.0.0",
     "expo-image-picker": "~17.0.0",
     "expo-linking": "~8.0.0",
