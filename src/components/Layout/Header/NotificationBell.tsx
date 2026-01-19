@@ -62,14 +62,14 @@ export const NotificationBell = ({
 
   // Button styles based on mobile or desktop
   const buttonClass = isMobile
-    ? "relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-full transition-colors"
+    ? "relative p-2.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center"
     : "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/50";
 
   // Badge styles
   const badgeClass = "absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shadow-sm";
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${isMobile ? 'z-[9999]' : ''}`} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={buttonClass}
@@ -77,7 +77,7 @@ export const NotificationBell = ({
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         
@@ -93,11 +93,18 @@ export const NotificationBell = ({
 
       {isOpen && (
         <div 
-          className={`absolute mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-2 z-[9999] ${
+          className={`absolute mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-gray-200 dark:border-slate-700 py-2 z-[99999] ${
             isMobile ? 'right-0 w-[calc(100vw-2rem)] max-w-sm' : 'right-0 w-80'
           }`}
           role="menu"
           aria-label={t('notifications.title', 'Notifications')}
+          style={{ 
+            position: 'fixed',
+            top: isMobile ? '60px' : 'auto',
+            right: isMobile ? '16px' : 'auto',
+            left: isMobile ? '16px' : 'auto',
+            maxWidth: isMobile ? 'calc(100vw - 32px)' : '320px',
+          }}
         >
           <div className="px-4 py-2 border-b border-gray-100 dark:border-slate-700">
             <h3 className="font-semibold text-gray-900 dark:text-white">{t('notifications.title', 'Notifications')}</h3>
@@ -211,11 +218,11 @@ export const NotificationBell = ({
           {/* View All Link */}
           <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 px-4 pb-1">
             <button
-              onClick={() => handleNotificationClick('/profile?tab=tasks&view=my-tasks')}
+              onClick={() => handleNotificationClick('/notifications')}
               className="block w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
               role="menuitem"
             >
-              {t('notifications.viewAllActivity', 'View all activity')} →
+              {t('notifications.viewAll', 'View all notifications')} →
             </button>
           </div>
         </div>
