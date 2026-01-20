@@ -50,7 +50,6 @@ export default function TaskDetailScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      // Show review prompt
       setShowReviewPrompt(true);
     },
     onError: (error: any) => {
@@ -229,7 +228,6 @@ export default function TaskDetailScreen() {
     );
   }
 
-  // Review Prompt Modal
   if (showReviewPrompt) {
     return (
       <SafeAreaView style={styles.container}>
@@ -276,17 +274,16 @@ export default function TaskDetailScreen() {
         {/* Header */}
         <Surface style={styles.header} elevation={1}>
           <View style={styles.headerTop}>
-            <Chip 
-              style={[styles.statusChip, { backgroundColor: getStatusColor(task.status) }]}
-              textStyle={styles.statusText}
-              compact
-            >
-              {getStatusLabel(task.status)}
-            </Chip>
+            {/* Status Badge - Using View instead of Chip */}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
+              <Text style={styles.statusBadgeText}>
+                {getStatusLabel(task.status)}
+              </Text>
+            </View>
             {task.is_urgent ? (
-              <Chip style={styles.urgentChip} textStyle={styles.urgentText} compact>
-                🔥 Urgent
-              </Chip>
+              <View style={styles.urgentBadge}>
+                <Text style={styles.urgentBadgeText}>🔥 Urgent</Text>
+              </View>
             ) : null}
           </View>
           
@@ -297,9 +294,11 @@ export default function TaskDetailScreen() {
               €{task.budget || task.reward || 0}
             </Text>
             {task.pending_applications_count != null && task.pending_applications_count > 0 ? (
-              <Chip style={styles.applicationsChip}>
-                <Text>{task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}</Text>
-              </Chip>
+              <View style={styles.applicationsBadge}>
+                <Text style={styles.applicationsBadgeText}>
+                  {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}
+                </Text>
+              </View>
             ) : null}
           </View>
         </Surface>
@@ -375,9 +374,9 @@ export default function TaskDetailScreen() {
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Category</Text>
-              <Chip style={styles.categoryChip}>
-                <Text>{task.category}</Text>
-              </Chip>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>{task.category}</Text>
+              </View>
             </View>
             {task.deadline ? (
               <View style={styles.detailItem}>
@@ -402,24 +401,24 @@ export default function TaskDetailScreen() {
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Posted by</Text>
           <View style={styles.creatorRow}>
-            <Avatar.Text 
-              size={48} 
-              label={task.creator_name?.charAt(0).toUpperCase() || 'U'} 
-              style={styles.creatorAvatar}
-            />
+            <View style={styles.creatorAvatarContainer}>
+              <Text style={styles.creatorAvatarText}>
+                {task.creator_name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
             <View style={styles.creatorInfo}>
               <Text variant="titleMedium" style={styles.creatorName}>
                 {task.creator_name || 'Unknown'}
               </Text>
               {isOwnTask ? (
-                <Chip style={styles.ownTaskChip} textStyle={styles.ownTaskText}>
+                <View style={styles.ownTaskBadge}>
                   <Text style={styles.ownTaskText}>Your task</Text>
-                </Chip>
+                </View>
               ) : null}
               {isAssignedToMe ? (
-                <Chip style={styles.assignedChip} textStyle={styles.assignedText}>
+                <View style={styles.assignedBadge}>
                   <Text style={styles.assignedText}>Assigned to you</Text>
-                </Chip>
+                </View>
               ) : null}
             </View>
           </View>
@@ -430,11 +429,11 @@ export default function TaskDetailScreen() {
           <Surface style={styles.section} elevation={0}>
             <Text variant="titleMedium" style={styles.sectionTitle}>Assigned to</Text>
             <View style={styles.creatorRow}>
-              <Avatar.Text 
-                size={48} 
-                label={task.assigned_to_name?.charAt(0).toUpperCase() || 'U'} 
-                style={styles.helperAvatar}
-              />
+              <View style={styles.helperAvatarContainer}>
+                <Text style={styles.helperAvatarText}>
+                  {task.assigned_to_name?.charAt(0).toUpperCase() || 'U'}
+                </Text>
+              </View>
               <View style={styles.creatorInfo}>
                 <Text variant="titleMedium" style={styles.creatorName}>
                   {task.assigned_to_name}
@@ -444,7 +443,6 @@ export default function TaskDetailScreen() {
           </Surface>
         ) : null}
 
-        {/* Spacer for bottom button */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -579,21 +577,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 8,
   },
-  statusChip: {
-    height: 26,
+  // Custom badges instead of Chip
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
   },
-  statusText: {
+  statusBadgeText: {
     color: '#ffffff',
     fontSize: 11,
     fontWeight: '600',
   },
-  urgentChip: {
+  urgentBadge: {
     backgroundColor: '#fef3c7',
-    height: 26,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
   },
-  urgentText: {
+  urgentBadgeText: {
     color: '#92400e',
     fontSize: 11,
+    fontWeight: '600',
   },
   title: {
     fontWeight: 'bold',
@@ -609,8 +615,16 @@ const styles = StyleSheet.create({
     color: '#0ea5e9',
     fontWeight: 'bold',
   },
-  applicationsChip: {
+  applicationsBadge: {
     backgroundColor: '#e0f2fe',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  applicationsBadgeText: {
+    color: '#0369a1',
+    fontSize: 12,
+    fontWeight: '500',
   },
   noticeSection: {
     backgroundColor: '#fef3c7',
@@ -692,20 +706,49 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     fontWeight: '500',
   },
-  categoryChip: {
+  categoryBadge: {
     backgroundColor: '#f3f4f6',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '500',
   },
   creatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  creatorAvatar: {
+  // Custom Avatar with View
+  creatorAvatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#0ea5e9',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  helperAvatar: {
+  creatorAvatarText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  helperAvatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
+  },
+  helperAvatarText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '600',
   },
   creatorInfo: {
     flex: 1,
@@ -713,25 +756,31 @@ const styles = StyleSheet.create({
   creatorName: {
     color: '#1f2937',
   },
-  ownTaskChip: {
+  ownTaskBadge: {
     backgroundColor: '#dbeafe',
     alignSelf: 'flex-start',
-    height: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     marginTop: 4,
   },
   ownTaskText: {
     color: '#1d4ed8',
     fontSize: 11,
+    fontWeight: '500',
   },
-  assignedChip: {
+  assignedBadge: {
     backgroundColor: '#dcfce7',
     alignSelf: 'flex-start',
-    height: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     marginTop: 4,
   },
   assignedText: {
     color: '#166534',
     fontSize: 11,
+    fontWeight: '500',
   },
   bottomSpacer: {
     height: 120,
@@ -771,7 +820,6 @@ const styles = StyleSheet.create({
   confirmButton: {
     backgroundColor: '#10b981',
   },
-  // Review Prompt Styles
   reviewPromptContainer: {
     flex: 1,
     justifyContent: 'center',

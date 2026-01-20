@@ -288,7 +288,7 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Selected Task Card - Improved */}
+          {/* Selected Task Card - Fixed Chip */}
           {selectedTask && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -299,19 +299,21 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  {/* Category and Close */}
+                  {/* Category Badge - Using View instead of Chip */}
                   <View style={styles.cardTopRow}>
-                    <Chip
-                      mode="flat"
-                      compact
+                    <View
                       style={[
-                        styles.categoryChip,
+                        styles.categoryBadge,
                         { backgroundColor: getMarkerColor(selectedTask.category) + '20' }
                       ]}
-                      textStyle={{ color: getMarkerColor(selectedTask.category), fontWeight: '600', fontSize: 12 }}
                     >
-                      {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
-                    </Chip>
+                      <Text style={[
+                        styles.categoryBadgeText,
+                        { color: getMarkerColor(selectedTask.category) }
+                      ]}>
+                        {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
+                      </Text>
+                    </View>
                     <IconButton
                       icon="close"
                       size={20}
@@ -325,7 +327,7 @@ export default function HomeScreen() {
                     {selectedTask.title}
                   </Text>
 
-                  {/* Meta Info Row - Distance and Time (NO location icon here) */}
+                  {/* Meta Info Row */}
                   <View style={styles.metaRow}>
                     {userLocation && selectedTask.latitude && selectedTask.longitude && (
                       <View style={styles.metaItem}>
@@ -348,7 +350,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  {/* Location Text (just text, no icon) */}
+                  {/* Location Text */}
                   <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
                     {selectedTask.location || 'Location not specified'}
                   </Text>
@@ -360,7 +362,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Selected Offering Card - Improved */}
+          {/* Selected Offering Card - Fixed Chip */}
           {selectedOffering && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -371,11 +373,11 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  {/* Boost Badge and Close */}
+                  {/* Boost Badge - Using View */}
                   <View style={styles.cardTopRow}>
-                    <Chip mode="flat" compact style={styles.boostChip}>
-                      ⚡ Boosted
-                    </Chip>
+                    <View style={styles.boostBadge}>
+                      <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
+                    </View>
                     <IconButton
                       icon="close"
                       size={20}
@@ -411,7 +413,7 @@ export default function HomeScreen() {
                     )}
                   </View>
 
-                  {/* Location Text (no icon) */}
+                  {/* Location Text */}
                   <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
                     {selectedOffering.location}
                   </Text>
@@ -525,7 +527,6 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  // Custom Price Marker Bubbles
   priceMarker: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 12,
@@ -568,13 +569,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  categoryChip: {
-    height: 26,
-    maxWidth: '70%',
+  // Custom Badge instead of Chip
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
   },
-  boostChip: {
-    height: 26,
+  categoryBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  boostBadge: {
     backgroundColor: '#fef3c7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  boostBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#92400e',
   },
   closeButtonTop: {
     margin: 0,
