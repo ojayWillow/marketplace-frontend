@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createTask, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from '../../components/ImagePicker';
+import LocationPicker from '../../components/LocationPicker';
 
 const CATEGORIES = [
   { value: 'cleaning', label: '🧹 Cleaning' },
@@ -19,6 +20,12 @@ const CATEGORIES = [
   { value: 'other', label: '📌 Other' },
 ];
 
+interface LocationData {
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
 export default function CreateTaskScreen() {
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
@@ -27,7 +34,7 @@ export default function CreateTaskScreen() {
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
   const [category, setCategory] = useState('other');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState<LocationData | null>(null);
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
@@ -60,6 +67,7 @@ export default function CreateTaskScreen() {
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['tasks-map'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks-home'] });
       Alert.alert(
         'Success!',
         'Your task has been created.',
@@ -95,13 +103,19 @@ export default function CreateTaskScreen() {
       Alert.alert('Required', 'Please enter a valid budget.');
       return;
     }
+    if (!location) {
+      Alert.alert('Required', 'Please select a location for your task.');
+      return;
+    }
 
     createMutation.mutate({
       title: title.trim(),
       description: description.trim(),
       budget: parseFloat(budget),
       category,
-      location: location.trim() || undefined,
+      location: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude,
       deadline: deadline?.toISOString(),
       is_urgent: isUrgent,
     });
@@ -213,15 +227,10 @@ export default function CreateTaskScreen() {
 
             {/* Location */}
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Location</Text>
-              <TextInput
-                label="Location"
-                value={location}
-                onChangeText={setLocation}
-                mode="outlined"
-                placeholder="Where is this task located?"
-                left={<TextInput.Icon icon="map-marker" />}
-                style={styles.input}
+              <LocationPicker
+                initialLocation={location || undefined}
+                onLocationSelect={setLocation}
+                label="Location *"
               />
             </Surface>
 
