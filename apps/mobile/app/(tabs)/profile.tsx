@@ -1,11 +1,25 @@
 import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Avatar, Surface, Divider, Button } from 'react-native-paper';
+import { Text, Avatar, Surface, Divider, Button, ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
-import { useAuthStore } from '@marketplace/shared';
+import { useAuthStore, getUserProfile, getUserReviewStats } from '@marketplace/shared';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
+
+  // Fetch fresh user data with stats
+  const { data: userData, isLoading: isLoadingUser } = useQuery({
+    queryKey: ['user', user?.id],
+    queryFn: () => getUserProfile(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const { data: reviewStats, isLoading: isLoadingStats } = useQuery({
+    queryKey: ['userReviewStats', user?.id],
+    queryFn: () => getUserReviewStats(user!.id),
+    enabled: !!user?.id,
+  });
 
   const handleLogout = () => {
     Alert.alert(
@@ -46,6 +60,9 @@ export default function ProfileScreen() {
     );
   }
 
+  const displayUser = userData || user;
+  const isLoading = isLoadingUser || isLoadingStats;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -72,33 +89,39 @@ export default function ProfileScreen() {
           </Text>
           <Text style={styles.username}>@{user.username}</Text>
           
-          {user.bio ? (
-            <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>
+          {displayUser.bio ? (
+            <Text style={styles.bio} numberOfLines={2}>{displayUser.bio}</Text>
           ) : null}
           
           {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.stat}>
-              <Text variant="titleLarge" style={styles.statValue}>
-                {user.average_rating?.toFixed(1) || '-'}
-              </Text>
-              <Text style={styles.statLabel}>⭐ Rating</Text>
+          {isLoading ? (
+            <View style={styles.statsLoading}>
+              <ActivityIndicator size="small" color="#0ea5e9" />
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text variant="titleLarge" style={styles.statValue}>
-                {user.reviews_count || 0}
-              </Text>
-              <Text style={styles.statLabel}>Reviews</Text>
+          ) : (
+            <View style={styles.statsContainer}>
+              <View style={styles.stat}>
+                <Text variant="titleLarge" style={styles.statValue}>
+                  {reviewStats?.average_rating?.toFixed(1) || '-'}
+                </Text>
+                <Text style={styles.statLabel}>⭐ Rating</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}>
+                <Text variant="titleLarge" style={styles.statValue}>
+                  {reviewStats?.total_reviews || 0}
+                </Text>
+                <Text style={styles.statLabel}>Reviews</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}>
+                <Text variant="titleLarge" style={styles.statValue}>
+                  {displayUser.completed_tasks_count || 0}
+                </Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text variant="titleLarge" style={styles.statValue}>
-                {Math.round((user.completion_rate || 0) * 100)}%
-              </Text>
-              <Text style={styles.statLabel}>Complete</Text>
-            </View>
-          </View>
+          )}
         </Surface>
 
         {/* Account Section */}
@@ -293,6 +316,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
     paddingHorizontal: 24,
+  },
+  statsLoading: {
+    marginTop: 24,
+    paddingVertical: 16,
   },
   statsContainer: {
     flexDirection: 'row',
