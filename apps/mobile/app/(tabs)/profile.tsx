@@ -1,24 +1,11 @@
-import { View, Pressable, ScrollView, Alert, StyleSheet, RefreshControl } from 'react-native';
+import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Avatar, Surface, Divider, Button, ActivityIndicator } from 'react-native-paper';
+import { Text, Avatar, Surface, Divider, Button } from 'react-native-paper';
 import { router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { useAuthStore, apiClient } from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
-
-  // Fetch fresh user data from API
-  const { data: profileData, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      const response = await apiClient.get('/api/users/me');
-      return response.data;
-    },
-    enabled: isAuthenticated && !!user,
-  });
-
-  const profile = profileData || user;
 
   const handleLogout = () => {
     Alert.alert(
@@ -61,53 +48,42 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-        }
-      >
+      <ScrollView style={styles.scrollView}>
         {/* Header */}
         <Surface style={styles.header} elevation={1}>
-          {isLoading ? (
-            <ActivityIndicator size="large" style={{ marginVertical: 24 }} />
-          ) : (
-            <>
-              <Avatar.Text
-                size={96}
-                label={profile?.username?.charAt(0).toUpperCase() || 'U'}
-                style={styles.avatar}
-              />
-              
-              <Text variant="headlineSmall" style={styles.name}>
-                {profile?.first_name && profile?.last_name
-                  ? `${profile.first_name} ${profile.last_name}`
-                  : profile?.username || user.username}
-              </Text>
-              <Text style={styles.username}>@{profile?.username || user.username}</Text>
-              
-              {/* Stats */}
-              {(profile?.reputation_score !== undefined || profile?.completion_rate !== undefined) && (
-                <View style={styles.statsContainer}>
-                  {profile?.reputation_score !== undefined && (
-                    <View style={styles.stat}>
-                      <Text variant="titleLarge" style={styles.statValue}>
-                        {profile.reputation_score?.toFixed(1) || '0.0'}
-                      </Text>
-                      <Text style={styles.statLabel}>Rating</Text>
-                    </View>
-                  )}
-                  {profile?.completion_rate !== undefined && (
-                    <View style={styles.stat}>
-                      <Text variant="titleLarge" style={styles.statValue}>
-                        {Math.round(profile.completion_rate * 100)}%
-                      </Text>
-                      <Text style={styles.statLabel}>Completion</Text>
-                    </View>
-                  )}
+          <Avatar.Text
+            size={96}
+            label={user.username?.charAt(0).toUpperCase() || 'U'}
+            style={styles.avatar}
+          />
+          
+          <Text variant="headlineSmall" style={styles.name}>
+            {user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`
+              : user.username}
+          </Text>
+          <Text style={styles.username}>@{user.username}</Text>
+          
+          {/* Stats */}
+          {(user.reputation_score !== undefined || user.completion_rate !== undefined) && (
+            <View style={styles.statsContainer}>
+              {user.reputation_score !== undefined && (
+                <View style={styles.stat}>
+                  <Text variant="titleLarge" style={styles.statValue}>
+                    {user.reputation_score?.toFixed(1) || '0.0'}
+                  </Text>
+                  <Text style={styles.statLabel}>Rating</Text>
                 </View>
               )}
-            </>
+              {user.completion_rate !== undefined && (
+                <View style={styles.stat}>
+                  <Text variant="titleLarge" style={styles.statValue}>
+                    {Math.round((user.completion_rate || 0) * 100)}%
+                  </Text>
+                  <Text style={styles.statLabel}>Completion</Text>
+                </View>
+              )}
+            </View>
           )}
         </Surface>
 
@@ -153,7 +129,7 @@ export default function ProfileScreen() {
         {/* Account Info */}
         <View style={styles.footer}>
           <Text style={styles.memberSince}>
-            Member since {new Date(profile?.created_at || user.created_at).toLocaleDateString()}
+            Member since {new Date(user.created_at).toLocaleDateString()}
           </Text>
         </View>
       </ScrollView>
