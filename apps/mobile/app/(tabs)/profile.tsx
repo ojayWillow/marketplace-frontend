@@ -51,11 +51,19 @@ export default function ProfileScreen() {
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <Surface style={styles.header} elevation={1}>
-          <Avatar.Text
-            size={96}
-            label={user.username?.charAt(0).toUpperCase() || 'U'}
-            style={styles.avatar}
-          />
+          <Pressable 
+            onPress={() => router.push('/profile/edit')}
+            style={styles.avatarContainer}
+          >
+            <Avatar.Text
+              size={96}
+              label={user.username?.charAt(0).toUpperCase() || 'U'}
+              style={styles.avatar}
+            />
+            <View style={styles.editBadge}>
+              <Text style={styles.editBadgeText}>✏️</Text>
+            </View>
+          </Pressable>
           
           <Text variant="headlineSmall" style={styles.name}>
             {user.first_name && user.last_name
@@ -64,35 +72,66 @@ export default function ProfileScreen() {
           </Text>
           <Text style={styles.username}>@{user.username}</Text>
           
+          {user.bio ? (
+            <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>
+          ) : null}
+          
           {/* Stats */}
-          {(user.reputation_score !== undefined || user.completion_rate !== undefined) && (
-            <View style={styles.statsContainer}>
-              {user.reputation_score !== undefined && (
-                <View style={styles.stat}>
-                  <Text variant="titleLarge" style={styles.statValue}>
-                    {user.reputation_score?.toFixed(1) || '0.0'}
-                  </Text>
-                  <Text style={styles.statLabel}>Rating</Text>
-                </View>
-              )}
-              {user.completion_rate !== undefined && (
-                <View style={styles.stat}>
-                  <Text variant="titleLarge" style={styles.statValue}>
-                    {Math.round((user.completion_rate || 0) * 100)}%
-                  </Text>
-                  <Text style={styles.statLabel}>Completion</Text>
-                </View>
-              )}
+          <View style={styles.statsContainer}>
+            <View style={styles.stat}>
+              <Text variant="titleLarge" style={styles.statValue}>
+                {user.average_rating?.toFixed(1) || '-'}
+              </Text>
+              <Text style={styles.statLabel}>⭐ Rating</Text>
             </View>
-          )}
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text variant="titleLarge" style={styles.statValue}>
+                {user.reviews_count || 0}
+              </Text>
+              <Text style={styles.statLabel}>Reviews</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text variant="titleLarge" style={styles.statValue}>
+                {Math.round((user.completion_rate || 0) * 100)}%
+              </Text>
+              <Text style={styles.statLabel}>Complete</Text>
+            </View>
+          </View>
         </Surface>
 
-        {/* Menu Items */}
+        {/* Account Section */}
+        <Text style={styles.sectionLabel}>Account</Text>
+        <Surface style={styles.menuContainer} elevation={0}>
+          <MenuItem 
+            title="Edit Profile" 
+            icon="✏️" 
+            onPress={() => router.push('/profile/edit')} 
+          />
+          <Divider />
+          <MenuItem 
+            title="My Public Profile" 
+            icon="👤" 
+            onPress={() => router.push(`/user/${user.id}`)} 
+          />
+        </Surface>
+
+        {/* Activity Section */}
+        <Text style={styles.sectionLabel}>Activity</Text>
         <Surface style={styles.menuContainer} elevation={0}>
           <MenuItem 
             title="My Tasks" 
+            subtitle="Jobs you've posted or applied to"
             icon="📋" 
             onPress={() => router.push('/(tabs)/tasks')} 
+          />
+          <Divider />
+          <MenuItem 
+            title="My Services" 
+            subtitle="Services you offer"
+            icon="🛠️" 
+            onPress={() => router.push('/(tabs)/offerings')} 
           />
           <Divider />
           <MenuItem 
@@ -100,11 +139,22 @@ export default function ProfileScreen() {
             icon="💬" 
             onPress={() => router.push('/(tabs)/messages')} 
           />
+        </Surface>
+
+        {/* Settings Section */}
+        <Text style={styles.sectionLabel}>Settings</Text>
+        <Surface style={styles.menuContainer} elevation={0}>
+          <MenuItem 
+            title="Notifications" 
+            icon="🔔" 
+            onPress={() => router.push('/settings/notifications')} 
+          />
           <Divider />
           <MenuItem 
-            title="Settings" 
-            icon="⚙️" 
-            onPress={() => Alert.alert('Coming Soon', 'Settings screen will be available soon')} 
+            title="Language" 
+            icon="🌐" 
+            subtitle="English"
+            onPress={() => router.push('/settings/language')} 
           />
           <Divider />
           <MenuItem 
@@ -121,6 +171,7 @@ export default function ProfileScreen() {
             onPress={handleLogout}
             textColor="#ef4444"
             style={styles.logoutButton}
+            icon="logout"
           >
             Logout
           </Button>
@@ -131,13 +182,24 @@ export default function ProfileScreen() {
           <Text style={styles.memberSince}>
             Member since {new Date(user.created_at).toLocaleDateString()}
           </Text>
+          <Text style={styles.version}>App version 1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MenuItem({ title, icon, onPress }: { title: string; icon: string; onPress: () => void }) {
+function MenuItem({ 
+  title, 
+  subtitle,
+  icon, 
+  onPress 
+}: { 
+  title: string; 
+  subtitle?: string;
+  icon: string; 
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -147,7 +209,10 @@ function MenuItem({ title, icon, onPress }: { title: string; icon: string; onPre
       ]}
     >
       <Text style={styles.menuIcon}>{icon}</Text>
-      <Text style={styles.menuTitle}>{title}</Text>
+      <View style={styles.menuTextContainer}>
+        <Text style={styles.menuTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.menuSubtitle}>{subtitle}</Text> : null}
+      </View>
       <Text style={styles.menuArrow}>›</Text>
     </Pressable>
   );
@@ -189,9 +254,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
   avatar: {
     backgroundColor: '#0ea5e9',
-    marginBottom: 16,
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  editBadgeText: {
+    fontSize: 14,
   },
   name: {
     fontWeight: 'bold',
@@ -201,13 +288,25 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 4,
   },
+  bio: {
+    color: '#4b5563',
+    marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
   statsContainer: {
     flexDirection: 'row',
     marginTop: 24,
-    gap: 48,
+    alignItems: 'center',
   },
   stat: {
     alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#e5e7eb',
   },
   statValue: {
     fontWeight: 'bold',
@@ -215,18 +314,26 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: '#6b7280',
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 4,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginTop: 24,
+    marginBottom: 8,
+    marginHorizontal: 16,
+    textTransform: 'uppercase',
   },
   menuContainer: {
     backgroundColor: '#ffffff',
-    marginTop: 16,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   menuItemPressed: {
     backgroundColor: '#f9fafb',
@@ -234,18 +341,26 @@ const styles = StyleSheet.create({
   menuIcon: {
     fontSize: 20,
     marginRight: 16,
+    width: 28,
+  },
+  menuTextContainer: {
+    flex: 1,
   },
   menuTitle: {
-    flex: 1,
     fontSize: 16,
     color: '#1f2937',
   },
+  menuSubtitle: {
+    fontSize: 13,
+    color: '#9ca3af',
+    marginTop: 2,
+  },
   menuArrow: {
-    fontSize: 20,
+    fontSize: 24,
     color: '#9ca3af',
   },
   logoutContainer: {
-    marginTop: 16,
+    marginTop: 24,
     marginHorizontal: 16,
   },
   logoutButton: {
@@ -259,5 +374,10 @@ const styles = StyleSheet.create({
   memberSince: {
     color: '#9ca3af',
     fontSize: 13,
+  },
+  version: {
+    color: '#d1d5db',
+    fontSize: 12,
+    marginTop: 4,
   },
 });
