@@ -1,11 +1,12 @@
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TextInput, Button, Surface, SegmentedButtons, Chip } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, Chip } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask, useAuthStore } from '@marketplace/shared';
+import { createTask, uploadImage, useAuthStore } from '@marketplace/shared';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import ImagePicker from '../../components/ImagePicker';
 
 const CATEGORIES = [
   { value: 'cleaning', label: '🧹 Cleaning' },
@@ -30,9 +31,36 @@ export default function CreateTaskScreen() {
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (data: Parameters<typeof createTask>[0]) => createTask(data),
+    mutationFn: async (data: Parameters<typeof createTask>[0]) => {
+      // Upload images first if any
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        setUploading(true);
+        try {
+          const uploadPromises = images.map(async (uri) => {
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            const result = await uploadImage(blob, `task_${Date.now()}.jpg`);
+            return result.url;
+          });
+          imageUrls = await Promise.all(uploadPromises);
+        } catch (error) {
+          console.error('Image upload error:', error);
+          // Continue without images if upload fails
+        } finally {
+          setUploading(false);
+        }
+      }
+      
+      return createTask({
+        ...data,
+        images: imageUrls.length > 0 ? imageUrls.join(',') : undefined,
+      });
+    },
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['tasks-map'] });
@@ -99,6 +127,8 @@ export default function CreateTaskScreen() {
     );
   }
 
+  const isLoading = createMutation.isPending || uploading;
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen
@@ -139,6 +169,16 @@ export default function CreateTaskScreen() {
                 numberOfLines={4}
                 maxLength={1000}
                 style={[styles.input, styles.textArea]}
+              />
+            </Surface>
+
+            {/* Images */}
+            <Surface style={styles.section} elevation={0}>
+              <ImagePicker
+                images={images}
+                onImagesChange={setImages}
+                maxImages={5}
+                label="Photos (Optional)"
               />
             </Surface>
 
@@ -250,12 +290,12 @@ export default function CreateTaskScreen() {
           <Button
             mode="contained"
             onPress={handleSubmit}
-            loading={createMutation.isPending}
-            disabled={createMutation.isPending}
+            loading={isLoading}
+            disabled={isLoading}
             style={styles.submitButton}
             contentStyle={styles.submitButtonContent}
           >
-            Create Task
+            {uploading ? 'Uploading Images...' : 'Create Task'}
           </Button>
         </Surface>
       </KeyboardAvoidingView>
