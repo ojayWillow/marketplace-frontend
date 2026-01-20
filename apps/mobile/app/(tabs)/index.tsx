@@ -1,13 +1,18 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, Animated, PanResponder, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Card, Surface } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, Circle, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const SHEET_MIN_HEIGHT = 120;
+const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45;
+const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.85;
 
 // Categories for filter
 const CATEGORIES = [
@@ -24,12 +29,11 @@ const CATEGORIES = [
 
 // Radius options in km
 const RADIUS_OPTIONS = [
-  { value: 1, label: '1 km' },
   { value: 5, label: '5 km' },
-  { value: 10, label: '10 km' },
-  { value: 25, label: '25 km' },
+  { value: 20, label: '20 km' },
   { value: 50, label: '50 km' },
-  { value: null, label: 'Any' },
+  { value: 100, label: '100 km' },
+  { value: null, label: 'All' },
 ];
 
 // Helper to calculate distance in km
@@ -73,8 +77,51 @@ export default function HomeScreen() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedRadius, setSelectedRadius] = useState<number | null>(10); // Default 10km
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(5); // Default 5km
   const [showFilters, setShowFilters] = useState(false);
+
+  // Bottom sheet animation
+  const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
+  const lastGestureDy = useRef(0);
+  const currentHeight = useRef(SHEET_MIN_HEIGHT);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        lastGestureDy.current = 0;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const newHeight = currentHeight.current - gestureState.dy;
+        if (newHeight >= SHEET_MIN_HEIGHT && newHeight <= SHEET_MAX_HEIGHT) {
+          sheetHeight.setValue(newHeight);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const newHeight = currentHeight.current - gestureState.dy;
+        let snapTo = SHEET_MIN_HEIGHT;
+        
+        if (gestureState.vy < -0.5 || newHeight > SHEET_MID_HEIGHT) {
+          // Swiping up fast or past mid point
+          snapTo = gestureState.vy < -1 ? SHEET_MAX_HEIGHT : SHEET_MID_HEIGHT;
+        } else if (gestureState.vy > 0.5 || newHeight < SHEET_MID_HEIGHT * 0.7) {
+          // Swiping down fast or below threshold
+          snapTo = SHEET_MIN_HEIGHT;
+        } else {
+          snapTo = SHEET_MID_HEIGHT;
+        }
+        
+        currentHeight.current = snapTo;
+        Animated.spring(sheetHeight, {
+          toValue: snapTo,
+          useNativeDriver: false,
+          bounciness: 4,
+        }).start();
+        haptic.selection();
+      },
+    })
+  ).current;
 
   // Request location permission on mount
   useEffect(() => {
@@ -149,6 +196,16 @@ export default function HomeScreen() {
     });
   }, [allTasks, searchQuery, selectedCategory, selectedRadius, userLocation]);
 
+  // Sort by distance for the list
+  const sortedTasks = useMemo(() => {
+    if (!userLocation) return filteredTasks;
+    return [...filteredTasks].sort((a, b) => {
+      const distA = calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude!, a.longitude!);
+      const distB = calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude!, b.longitude!);
+      return distA - distB;
+    });
+  }, [filteredTasks, userLocation]);
+
   // Get marker color based on category
   const getMarkerColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -198,7 +255,7 @@ export default function HomeScreen() {
     setSelectedOffering(null);
   };
 
-  const activeFilterCount = (selectedCategory !== 'all' ? 1 : 0) + (selectedRadius !== null ? 1 : 0);
+  const activeFilterCount = (selectedCategory !== 'all' ? 1 : 0) + (selectedRadius !== 5 ? 1 : 0);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -344,17 +401,6 @@ export default function HomeScreen() {
             showsUserLocation
             showsMyLocationButton
           >
-            {/* Radius Circle */}
-            {selectedRadius && (
-              <Circle
-                center={userLocation}
-                radius={selectedRadius * 1000}
-                fillColor="rgba(14, 165, 233, 0.1)"
-                strokeColor="rgba(14, 165, 233, 0.3)"
-                strokeWidth={2}
-              />
-            )}
-
             {/* Task Markers */}
             {filteredTasks.map((task) => (
               <Marker
@@ -395,132 +441,111 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Results Count Badge */}
-          <View style={styles.resultsBadge}>
-            <Text style={styles.resultsText}>
-              {filteredTasks.length} job{filteredTasks.length !== 1 ? 's' : ''} found
-            </Text>
-          </View>
-
-          {/* Selected Task Card */}
+          {/* Selected Task Popup */}
           {selectedTask && (
-            <View style={styles.selectedItemContainer}>
+            <View style={styles.selectedPopup}>
               <Card
-                style={styles.selectedItemCard}
+                style={styles.popupCard}
                 onPress={() => {
                   handleCardPress(selectedTask.id, 'task');
                   setSelectedTask(null);
                 }}
               >
-                <Card.Content>
-                  <View style={styles.cardTopRow}>
-                    <View
-                      style={[
-                        styles.categoryBadge,
-                        { backgroundColor: getMarkerColor(selectedTask.category) + '20' }
-                      ]}
-                    >
-                      <Text style={[
-                        styles.categoryBadgeText,
-                        { color: getMarkerColor(selectedTask.category) }
-                      ]}>
-                        {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
-                      </Text>
-                    </View>
+                <Card.Content style={styles.popupContent}>
+                  <View style={styles.popupHeader}>
+                    <View style={[
+                      styles.categoryDot,
+                      { backgroundColor: getMarkerColor(selectedTask.category) }
+                    ]} />
+                    <Text style={styles.popupCategory}>
+                      {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
+                    </Text>
                     <IconButton
                       icon="close"
-                      size={20}
+                      size={18}
                       onPress={() => { haptic.soft(); setSelectedTask(null); }}
-                      style={styles.closeButtonTop}
+                      style={styles.popupClose}
                     />
                   </View>
-
-                  <Text variant="titleLarge" numberOfLines={2} style={styles.cardTitle}>
-                    {selectedTask.title}
-                  </Text>
-
-                  <View style={styles.metaRow}>
-                    {userLocation && selectedTask.latitude && selectedTask.longitude && (
-                      <View style={styles.metaItem}>
-                        <Text style={styles.metaIcon}>📍</Text>
-                        <Text style={styles.metaText}>
-                          {calculateDistance(
-                            userLocation.latitude,
-                            userLocation.longitude,
-                            selectedTask.latitude,
-                            selectedTask.longitude
-                          ).toFixed(1)} km away
-                        </Text>
-                      </View>
-                    )}
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaIcon}>🕐</Text>
-                      <Text style={styles.metaText}>
-                        {formatTimeAgo(selectedTask.created_at)}
+                  <Text style={styles.popupTitle} numberOfLines={1}>{selectedTask.title}</Text>
+                  <View style={styles.popupFooter}>
+                    <Text style={styles.popupPrice}>€{selectedTask.budget?.toFixed(0) || '0'}</Text>
+                    {userLocation && (
+                      <Text style={styles.popupDistance}>
+                        {calculateDistance(
+                          userLocation.latitude,
+                          userLocation.longitude,
+                          selectedTask.latitude!,
+                          selectedTask.longitude!
+                        ).toFixed(1)} km
                       </Text>
-                    </View>
+                    )}
                   </View>
-
-                  <Text style={styles.budgetLarge}>€{selectedTask.budget?.toFixed(2) || '0.00'}</Text>
                 </Card.Content>
               </Card>
             </View>
           )}
 
-          {/* Selected Offering Card */}
-          {selectedOffering && (
-            <View style={styles.selectedItemContainer}>
-              <Card
-                style={styles.selectedItemCard}
-                onPress={() => {
-                  handleCardPress(selectedOffering.id, 'offering');
-                  setSelectedOffering(null);
-                }}
-              >
-                <Card.Content>
-                  <View style={styles.cardTopRow}>
-                    <View style={styles.boostBadge}>
-                      <Text style={styles.boostBadgeText}>⚡ Boosted Service</Text>
+          {/* Slide-up Bottom Sheet */}
+          <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
+            {/* Drag Handle */}
+            <View {...panResponder.panHandlers} style={styles.sheetHandle}>
+              <View style={styles.handleBar} />
+              <Text style={styles.sheetTitle}>
+                {sortedTasks.length} job{sortedTasks.length !== 1 ? 's' : ''} nearby
+              </Text>
+            </View>
+
+            {/* Job List */}
+            <ScrollView 
+              style={styles.sheetContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {sortedTasks.length === 0 ? (
+                <View style={styles.emptySheet}>
+                  <Text style={styles.emptyIcon}>💭</Text>
+                  <Text style={styles.emptyText}>No jobs in this area</Text>
+                  <Text style={styles.emptySubtext}>Try expanding your search radius</Text>
+                </View>
+              ) : (
+                sortedTasks.map((task) => (
+                  <TouchableOpacity
+                    key={task.id}
+                    style={styles.jobItem}
+                    onPress={() => handleCardPress(task.id, 'task')}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.jobLeft}>
+                      <View style={[
+                        styles.jobCategoryDot,
+                        { backgroundColor: getMarkerColor(task.category) }
+                      ]} />
+                      <View style={styles.jobInfo}>
+                        <Text style={styles.jobTitle} numberOfLines={1}>{task.title}</Text>
+                        <Text style={styles.jobMeta}>
+                          {task.category} • {formatTimeAgo(task.created_at)}
+                        </Text>
+                      </View>
                     </View>
-                    <IconButton
-                      icon="close"
-                      size={20}
-                      onPress={() => { haptic.soft(); setSelectedOffering(null); }}
-                      style={styles.closeButtonTop}
-                    />
-                  </View>
-
-                  <Text variant="titleLarge" numberOfLines={2} style={styles.cardTitle}>
-                    {selectedOffering.title}
-                  </Text>
-
-                  <Text variant="bodyMedium" style={styles.providerText}>
-                    by {selectedOffering.creator_name}
-                  </Text>
-
-                  <View style={styles.metaRow}>
-                    {userLocation && selectedOffering.latitude && selectedOffering.longitude && (
-                      <View style={styles.metaItem}>
-                        <Text style={styles.metaIcon}>📍</Text>
-                        <Text style={styles.metaText}>
+                    <View style={styles.jobRight}>
+                      <Text style={styles.jobPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
+                      {userLocation && (
+                        <Text style={styles.jobDistance}>
                           {calculateDistance(
                             userLocation.latitude,
                             userLocation.longitude,
-                            selectedOffering.latitude,
-                            selectedOffering.longitude
-                          ).toFixed(1)} km away
+                            task.latitude!,
+                            task.longitude!
+                          ).toFixed(1)} km
                         </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <Text style={styles.priceLarge}>
-                    {selectedOffering.price ? `€${selectedOffering.price}` : 'Negotiable'}
-                  </Text>
-                </Card.Content>
-              </Card>
-            </View>
-          )}
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+              <View style={styles.sheetSpacer} />
+            </ScrollView>
+          </Animated.View>
         </View>
       )}
     </SafeAreaView>
@@ -703,20 +728,6 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  resultsBadge: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    backgroundColor: '#1f2937',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  resultsText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '500',
-  },
   priceMarker: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 12,
@@ -743,82 +754,164 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#f97316',
   },
-  selectedItemContainer: {
+  // Selected popup (compact)
+  selectedPopup: {
     position: 'absolute',
-    bottom: 16,
+    top: 16,
     left: 16,
     right: 16,
   },
-  selectedItemCard: {
+  popupCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 12,
+    elevation: 4,
   },
-  cardTopRow: {
+  popupContent: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  popupHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 6,
   },
-  categoryBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
-  categoryBadgeText: {
+  popupCategory: {
     fontSize: 12,
+    color: '#6b7280',
+    flex: 1,
+  },
+  popupClose: {
+    margin: -8,
+  },
+  popupTitle: {
+    fontSize: 16,
     fontWeight: '600',
-  },
-  boostBadge: {
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-  },
-  boostBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#92400e',
-  },
-  closeButtonTop: {
-    margin: 0,
-  },
-  cardTitle: {
-    fontWeight: 'bold',
     color: '#1f2937',
     marginBottom: 8,
   },
-  metaRow: {
+  popupFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  metaIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  providerText: {
-    color: '#6b7280',
-    marginBottom: 8,
-  },
-  budgetLarge: {
+  popupPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#0ea5e9',
-    fontWeight: 'bold',
-    fontSize: 24,
   },
-  priceLarge: {
-    color: '#f97316',
+  popupDistance: {
+    fontSize: 13,
+    color: '#9ca3af',
+  },
+  // Bottom Sheet
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  sheetHandle: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  handleBar: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#d1d5db',
+    borderRadius: 2,
+    marginBottom: 12,
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  sheetContent: {
+    flex: 1,
+  },
+  emptySheet: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#9ca3af',
+    marginTop: 4,
+  },
+  jobItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  jobLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  jobCategoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 12,
+  },
+  jobInfo: {
+    flex: 1,
+  },
+  jobTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1f2937',
+    marginBottom: 2,
+  },
+  jobMeta: {
+    fontSize: 13,
+    color: '#9ca3af',
+  },
+  jobRight: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
+  },
+  jobPrice: {
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 24,
+    color: '#0ea5e9',
+  },
+  jobDistance: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 2,
+  },
+  sheetSpacer: {
+    height: 40,
   },
 });
