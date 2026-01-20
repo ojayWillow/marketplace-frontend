@@ -4,6 +4,7 @@ import { Text, TextInput, Button, Surface } from 'react-native-paper';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { haptic } from '../../utils/haptics';
+import { authApi } from '@marketplace/shared';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -36,19 +37,15 @@ export default function ForgotPasswordScreen() {
     haptic.medium();
 
     try {
-      // TODO: Connect to backend password-reset endpoint
-      // await api.auth.requestPasswordReset(email);
-      
-      // Simulate success for now
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
+      await authApi.forgotPassword(email);
       haptic.success();
       setSuccess(true);
       setError('');
-    } catch (err) {
+    } catch (err: any) {
       haptic.error();
       console.error('Password reset error:', err);
-      setError('Failed to send reset email. Please try again');
+      const message = err.response?.data?.error || 'Failed to send reset email. Please try again';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -156,7 +153,7 @@ export default function ForgotPasswordScreen() {
               Still having trouble?
             </Text>
             <Text variant="bodySmall" style={styles.helpLink}>
-              Contact support@quick-help.lv
+              Contact support@quickhelp.lv
             </Text>
           </View>
         </ScrollView>
