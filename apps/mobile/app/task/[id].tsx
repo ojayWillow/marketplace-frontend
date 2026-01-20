@@ -1,51 +1,52 @@
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Card, Avatar, Chip, ActivityIndicator, Divider, IconButton } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask, applyToTask, useAuthStore, type Task } from '@marketplace/shared';
 import { useState } from 'react';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const taskId = parseInt(id);
+  const taskId = parseInt(id || '0', 10);
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
-  const [applicationMessage, setApplicationMessage] = useState('');
+  const [applyMessage, setApplyMessage] = useState('');
 
-  // Fetch task details
-  const { data: task, isLoading, isError } = useQuery({
+  const { data: task, isLoading, error } = useQuery({
     queryKey: ['task', taskId],
     queryFn: () => getTask(taskId),
-    enabled: !!taskId,
+    enabled: taskId > 0,
   });
 
-  // Apply to task mutation
   const applyMutation = useMutation({
-    mutationFn: () => applyToTask(taskId, applicationMessage),
+    mutationFn: () => applyToTask(taskId, applyMessage || undefined),
     onSuccess: () => {
       Alert.alert('Success', 'Your application has been submitted!');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      router.back();
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to apply to task');
+      const message = error.response?.data?.message || 'Failed to apply. Please try again.';
+      Alert.alert('Error', message);
     },
   });
 
   const handleApply = () => {
     if (!isAuthenticated) {
-      Alert.alert('Login Required', 'Please login to apply to this task', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Login', onPress: () => router.push('/(auth)/login') },
-      ]);
+      Alert.alert(
+        'Sign In Required',
+        'You need to sign in to apply for tasks.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+        ]
+      );
       return;
     }
 
     Alert.alert(
-      'Apply to Task',
-      'Are you sure you want to apply to this task?',
+      'Apply for Task',
+      'Would you like to apply for this task?',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Apply', onPress: () => applyMutation.mutate() },
@@ -53,11 +54,20 @@ export default function TaskDetailScreen() {
     );
   };
 
+  const handleOpenMap = () => {
+    if (task?.latitude && task?.longitude) {
+      const url = `https://maps.google.com/?q=${task.latitude},${task.longitude}`;
+      Linking.openURL(url);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return '#10b981';
+      case 'assigned': return '#f59e0b';
       case 'in_progress': return '#3b82f6';
       case 'completed': return '#6b7280';
+      case 'cancelled': return '#ef4444';
       default: return '#6b7280';
     }
   };
@@ -65,31 +75,35 @@ export default function TaskDetailScreen() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open': return 'Open';
+      case 'assigned': return 'Assigned';
       case 'in_progress': return 'In Progress';
       case 'completed': return 'Completed';
-      default: return 'Closed';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
     }
   };
+
+  const isOwnTask = user?.id === task?.creator_id;
+  const canApply = isAuthenticated && !isOwnTask && task?.status === 'open';
 
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: 'Loading...' }} />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.statusText}>Loading task...</Text>
+        <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0ea5e9" />
         </View>
       </SafeAreaView>
     );
   }
 
-  if (isError || !task) {
+  if (error || !task) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: 'Error' }} />
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load task</Text>
-          <Button mode="contained" onPress={() => router.back()}>
+        <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
+        <View style={styles.errorContainer}>
+          <Text variant="headlineSmall" style={styles.errorText}>Task not found</Text>
+          <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
             Go Back
           </Button>
         </View>
@@ -97,142 +111,130 @@ export default function TaskDetailScreen() {
     );
   }
 
-  const isOwnTask = user?.id === task.creator_id;
-  const canApply = !isOwnTask && task.status === 'open' && isAuthenticated;
-
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen 
         options={{ 
+          headerShown: true, 
           title: 'Task Details',
           headerBackTitle: 'Back',
         }} 
       />
       
-      <ScrollView style={styles.scrollView}>
-        {/* Header Card */}
-        <Card style={styles.card}>
-          <Card.Content>
-            {/* Status Badge */}
-            <Chip
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <Surface style={styles.header} elevation={1}>
+          <View style={styles.headerTop}>
+            <Chip 
               style={[styles.statusChip, { backgroundColor: getStatusColor(task.status) }]}
-              textStyle={styles.statusText2}
+              textStyle={styles.statusText}
             >
               {getStatusLabel(task.status)}
             </Chip>
-
-            {/* Title */}
-            <Text variant="headlineSmall" style={styles.title}>
-              {task.title}
-            </Text>
-
-            {/* Category */}
-            {task.category && (
-              <Text style={styles.category}>
-                {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-              </Text>
+            {task.is_urgent && (
+              <Chip style={styles.urgentChip} textStyle={styles.urgentText}>
+                🔥 Urgent
+              </Chip>
             )}
-
-            {/* Budget */}
-            <Text variant="headlineMedium" style={styles.budget}>
-              €{task.budget?.toFixed(2) || '0.00'}
+          </View>
+          
+          <Text variant="headlineSmall" style={styles.title}>{task.title}</Text>
+          
+          <View style={styles.priceRow}>
+            <Text variant="headlineMedium" style={styles.price}>
+              €{task.budget || task.reward || 0}
             </Text>
-          </Card.Content>
-        </Card>
+            {task.pending_applications_count !== undefined && task.pending_applications_count > 0 && (
+              <Chip style={styles.applicationsChip}>
+                {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}
+              </Chip>
+            )}
+          </View>
+        </Surface>
 
         {/* Description */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Description</Text>
-            <Text variant="bodyLarge" style={styles.description}>
-              {task.description}
-            </Text>
-          </Card.Content>
-        </Card>
+        <Surface style={styles.section} elevation={0}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{task.description}</Text>
+        </Surface>
 
-        {/* Task Info */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Details</Text>
-            
-            {/* Location */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>📍</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>{task.location || 'Not specified'}</Text>
-              </View>
+        {/* Location */}
+        {task.location && (
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Location</Text>
+            <View style={styles.locationRow}>
+              <Text style={styles.locationIcon}>📍</Text>
+              <Text style={styles.location}>{task.location}</Text>
             </View>
+            {task.latitude && task.longitude && (
+              <Button 
+                mode="outlined" 
+                onPress={handleOpenMap}
+                style={styles.mapButton}
+                icon="map"
+              >
+                Open in Maps
+              </Button>
+            )}
+          </Surface>
+        )}
 
-            <Divider style={styles.divider} />
-
-            {/* Deadline */}
+        {/* Category & Details */}
+        <Surface style={styles.section} elevation={0}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Details</Text>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Category</Text>
+              <Chip style={styles.categoryChip}>{task.category}</Chip>
+            </View>
             {task.deadline && (
-              <>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoIcon}>📅</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.infoLabel}>Deadline</Text>
-                    <Text style={styles.infoValue}>
-                      {new Date(task.deadline).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </Text>
-                  </View>
-                </View>
-                <Divider style={styles.divider} />
-              </>
-            )}
-
-            {/* Applications */}
-            {task.pending_applications_count !== undefined && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoIcon}>👥</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.infoLabel}>Applications</Text>
-                  <Text style={styles.infoValue}>
-                    {task.pending_applications_count} {task.pending_applications_count === 1 ? 'person' : 'people'} applied
-                  </Text>
-                </View>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-
-        {/* Task Creator */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Posted By</Text>
-            <View style={styles.creatorRow}>
-              <Avatar.Text
-                size={48}
-                label={task.creator_name?.charAt(0).toUpperCase() || 'U'}
-                style={styles.avatar}
-              />
-              <View style={{ flex: 1 }}>
-                <Text variant="titleMedium">{task.creator_name || 'Unknown'}</Text>
-                <Text style={styles.creatorDate}>
-                  Posted {new Date(task.created_at || '').toLocaleDateString()}
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Deadline</Text>
+                <Text style={styles.detailValue}>
+                  {new Date(task.deadline).toLocaleDateString()}
                 </Text>
               </View>
-              <IconButton
-                icon="chevron-right"
-                size={24}
-                onPress={() => {
-                  // Navigate to user profile
-                  Alert.alert('Coming Soon', 'User profile will be available soon');
-                }}
-              />
+            )}
+            {task.created_at && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Posted</Text>
+                <Text style={styles.detailValue}>
+                  {new Date(task.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+            )}
+          </View>
+        </Surface>
+
+        {/* Creator */}
+        <Surface style={styles.section} elevation={0}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Posted by</Text>
+          <View style={styles.creatorRow}>
+            <Avatar.Text 
+              size={48} 
+              label={task.creator_name?.charAt(0).toUpperCase() || 'U'} 
+              style={styles.creatorAvatar}
+            />
+            <View style={styles.creatorInfo}>
+              <Text variant="titleMedium" style={styles.creatorName}>
+                {task.creator_name || 'Unknown'}
+              </Text>
+              {isOwnTask && (
+                <Chip style={styles.ownTaskChip} textStyle={styles.ownTaskText}>
+                  Your task
+                </Chip>
+              )}
             </View>
-          </Card.Content>
-        </Card>
+          </View>
+        </Surface>
+
+        {/* Spacer for bottom button */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* Apply Button */}
       {canApply && (
-        <View style={styles.footer}>
+        <Surface style={styles.bottomBar} elevation={4}>
           <Button
             mode="contained"
             onPress={handleApply}
@@ -241,15 +243,23 @@ export default function TaskDetailScreen() {
             style={styles.applyButton}
             contentStyle={styles.applyButtonContent}
           >
-            Apply to Task
+            Apply for this Task
           </Button>
-        </View>
+        </Surface>
       )}
 
-      {isOwnTask && (
-        <View style={styles.footer}>
-          <Text style={styles.ownTaskText}>This is your task</Text>
-        </View>
+      {/* Own Task Actions */}
+      {isOwnTask && task.status === 'open' && (
+        <Surface style={styles.bottomBar} elevation={4}>
+          <Button
+            mode="contained"
+            onPress={() => Alert.alert('Coming Soon', 'View applications feature coming soon!')}
+            style={styles.applyButton}
+            contentStyle={styles.applyButtonContent}
+          >
+            View Applications ({task.pending_applications_count || 0})
+          </Button>
+        </Surface>
       )}
     </SafeAreaView>
   );
@@ -263,46 +273,70 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  centerContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
   },
-  statusText: {
-    marginTop: 12,
-    color: '#6b7280',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
   },
   errorText: {
-    color: '#ef4444',
-    marginBottom: 12,
+    color: '#6b7280',
+    marginBottom: 16,
   },
-  card: {
-    margin: 16,
-    marginBottom: 0,
+  backButton: {
+    minWidth: 120,
+  },
+  header: {
     backgroundColor: '#ffffff',
+    padding: 20,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
   },
   statusChip: {
-    alignSelf: 'flex-start',
-    marginBottom: 12,
+    height: 28,
   },
-  statusText2: {
+  statusText: {
     color: '#ffffff',
+    fontSize: 12,
     fontWeight: '600',
+  },
+  urgentChip: {
+    backgroundColor: '#fef3c7',
+    height: 28,
+  },
+  urgentText: {
+    color: '#92400e',
+    fontSize: 12,
   },
   title: {
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  category: {
-    color: '#0ea5e9',
-    fontSize: 14,
-    marginBottom: 16,
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  budget: {
+  price: {
     color: '#0ea5e9',
     fontWeight: 'bold',
+  },
+  applicationsChip: {
+    backgroundColor: '#e0f2fe',
+  },
+  section: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    marginTop: 12,
   },
   sectionTitle: {
     fontWeight: '600',
@@ -313,56 +347,80 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     lineHeight: 24,
   },
-  infoRow: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    gap: 8,
   },
-  infoIcon: {
-    fontSize: 24,
-    marginRight: 12,
-    width: 32,
+  locationIcon: {
+    fontSize: 18,
   },
-  infoLabel: {
-    fontSize: 12,
+  location: {
+    color: '#4b5563',
+    flex: 1,
+  },
+  mapButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  detailsGrid: {
+    gap: 16,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  detailLabel: {
     color: '#6b7280',
-    marginBottom: 2,
   },
-  infoValue: {
-    fontSize: 16,
+  detailValue: {
     color: '#1f2937',
     fontWeight: '500',
   },
-  divider: {
+  categoryChip: {
     backgroundColor: '#f3f4f6',
   },
   creatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  avatar: {
+  creatorAvatar: {
     backgroundColor: '#0ea5e9',
-    marginRight: 12,
   },
-  creatorDate: {
-    color: '#6b7280',
-    fontSize: 13,
+  creatorInfo: {
+    flex: 1,
+    gap: 4,
   },
-  footer: {
-    padding: 16,
+  creatorName: {
+    color: '#1f2937',
+  },
+  ownTaskChip: {
+    backgroundColor: '#dbeafe',
+    alignSelf: 'flex-start',
+    height: 24,
+  },
+  ownTaskText: {
+    color: '#1d4ed8',
+    fontSize: 11,
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    padding: 16,
+    paddingBottom: 32,
   },
   applyButton: {
     borderRadius: 12,
   },
   applyButtonContent: {
     paddingVertical: 8,
-  },
-  ownTaskText: {
-    textAlign: 'center',
-    color: '#6b7280',
-    fontSize: 14,
   },
 });
