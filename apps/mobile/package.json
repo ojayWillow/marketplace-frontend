@@ -24,7 +24,6 @@
     "expo-build-properties": "~1.0.0",
     "expo-constants": "~18.0.0",
     "expo-dev-client": "~5.1.0",
-    "expo-firebase-recaptcha": "^3.1.0",
     "expo-image": "~3.0.0",
     "expo-image-picker": "~17.0.0",
     "expo-linking": "~8.0.0",
@@ -53,7 +52,7 @@
     "@babel/core": "^7.24.0",
     "@types/react": "~19.1.10",
     "@types/react-native-vector-icons": "^6.4.18",
-    "eslint": "^8.56.0",
+    "eslint": "^9.0.0",
     "typescript": "^5.3.3"
   }
 }
