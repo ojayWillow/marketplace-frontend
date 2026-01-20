@@ -1,15 +1,36 @@
-import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, ActivityIndicator, Surface, IconButton, Card } from 'react-native-paper';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { Text, ActivityIndicator, IconButton, Card, Surface } from 'react-native-paper';
+import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, Circle, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 
-type ViewMode = 'map' | 'list';
+// Categories for filter
+const CATEGORIES = [
+  { key: 'all', label: 'All', icon: '🔍' },
+  { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
+  { key: 'moving', label: 'Moving', icon: '📦' },
+  { key: 'repairs', label: 'Repairs', icon: '🔧' },
+  { key: 'delivery', label: 'Delivery', icon: '🚗' },
+  { key: 'tutoring', label: 'Tutoring', icon: '📚' },
+  { key: 'tech', label: 'Tech', icon: '💻' },
+  { key: 'beauty', label: 'Beauty', icon: '💅' },
+  { key: 'other', label: 'Other', icon: '📋' },
+];
+
+// Radius options in km
+const RADIUS_OPTIONS = [
+  { value: 1, label: '1 km' },
+  { value: 5, label: '5 km' },
+  { value: 10, label: '10 km' },
+  { value: 25, label: '25 km' },
+  { value: 50, label: '50 km' },
+  { value: null, label: 'Any' },
+];
 
 // Helper to calculate distance in km
 const calculateDistance = (
@@ -18,7 +39,7 @@ const calculateDistance = (
   lat2: number,
   lon2: number
 ): number => {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -45,10 +66,15 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export default function HomeScreen() {
-  const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(10); // Default 10km
+  const [showFilters, setShowFilters] = useState(false);
 
   // Request location permission on mount
   useEffect(() => {
@@ -67,26 +93,12 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Infinite query for list view with pagination
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
+  // Fetch all tasks
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
-    queryFn: async ({ pageParam = 1 }) => {
-      return await getTasks({ page: pageParam, per_page: 20, status: 'open' });
+    queryFn: async () => {
+      return await getTasks({ page: 1, per_page: 100, status: 'open' });
     },
-    getNextPageParam: (lastPage, allPages) => {
-      const currentPage = allPages.length;
-      const totalPages = Math.ceil(lastPage.total / 20);
-      return currentPage < totalPages ? currentPage + 1 : undefined;
-    },
-    initialPageParam: 1,
   });
 
   // Fetch boosted offerings for map view
@@ -97,15 +109,45 @@ export default function HomeScreen() {
     },
   });
 
-  const allTasks = data?.pages.flatMap((page) => page.tasks) || [];
-  const tasksWithLocation = allTasks.filter(t => t.latitude && t.longitude);
-  const totalCount = data?.pages[0]?.total || 0;
-
-  // Filter boosted offerings with location
+  const allTasks = data?.tasks || [];
   const offerings = offeringsData?.offerings || [];
   const boostedOfferings = offerings.filter(
     o => o.is_boost_active && o.latitude && o.longitude
   );
+
+  // Filter tasks based on search, category, and radius
+  const filteredTasks = useMemo(() => {
+    return allTasks.filter(task => {
+      // Must have location for map
+      if (!task.latitude || !task.longitude) return false;
+      
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = task.title.toLowerCase().includes(query);
+        const matchesDesc = task.description?.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesDesc) return false;
+      }
+      
+      // Category filter
+      if (selectedCategory !== 'all' && task.category !== selectedCategory) {
+        return false;
+      }
+      
+      // Radius filter
+      if (selectedRadius && userLocation) {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          task.latitude,
+          task.longitude
+        );
+        if (distance > selectedRadius) return false;
+      }
+      
+      return true;
+    });
+  }, [allTasks, searchQuery, selectedCategory, selectedRadius, userLocation]);
 
   // Get marker color based on category
   const getMarkerColor = (category: string) => {
@@ -133,11 +175,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleViewModeToggle = () => {
-    haptic.selection();
-    setViewMode(viewMode === 'map' ? 'list' : 'map');
-  };
-
   const handleCardPress = (id: number, type: 'task' | 'offering') => {
     haptic.light();
     if (type === 'task') {
@@ -147,73 +184,145 @@ export default function HomeScreen() {
     }
   };
 
-  const handleRefresh = () => {
-    haptic.soft();
-    refetch();
+  const handleCategorySelect = (category: string) => {
+    haptic.selection();
+    setSelectedCategory(category);
+    setSelectedTask(null);
+    setSelectedOffering(null);
   };
 
-  const renderTaskCard = ({ item: task }: { item: Task }) => (
-    <Card
-      key={task.id}
-      style={styles.listCard}
-      onPress={() => handleCardPress(task.id, 'task')}
-    >
-      <Card.Content>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text variant="titleMedium" numberOfLines={1}>
-              {task.title}
-            </Text>
-            <Text variant="bodySmall" style={styles.category}>
-              {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-            </Text>
-          </View>
-          {!task.latitude && (
-            <Text style={styles.noLocationBadge}>No location</Text>
-          )}
-        </View>
-        <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
-          {task.description}
-        </Text>
-        <View style={styles.cardFooter}>
-          <Text style={styles.budget}>€{task.budget?.toFixed(2) || '0.00'}</Text>
-          <Text style={styles.location}>📍 {task.location || 'Location not set'}</Text>
-        </View>
-      </Card.Content>
-    </Card>
-  );
-
-  const renderListFooter = () => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" />
-        <Text style={styles.footerText}>Loading more...</Text>
-      </View>
-    );
+  const handleRadiusSelect = (radius: number | null) => {
+    haptic.selection();
+    setSelectedRadius(radius);
+    setSelectedTask(null);
+    setSelectedOffering(null);
   };
 
-  const renderListEmpty = () => (
-    <View style={styles.centerContainer}>
-      <Text style={styles.emptyIcon}>📋</Text>
-      <Text style={styles.statusText}>No tasks available</Text>
-    </View>
-  );
+  const activeFilterCount = (selectedCategory !== 'all' ? 1 : 0) + (selectedRadius !== null ? 1 : 0);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Search & Filter Bar */}
+      <Surface style={styles.searchContainer} elevation={2}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search jobs..."
+              placeholderTextColor="#9ca3af"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <TouchableOpacity 
+            style={[
+              styles.filterButton,
+              showFilters && styles.filterButtonActive
+            ]} 
+            onPress={() => { haptic.selection(); setShowFilters(!showFilters); }}
+          >
+            <Text style={styles.filterIcon}>⚙️</Text>
+            {activeFilterCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Expandable Filters */}
+        {showFilters && (
+          <View style={styles.filtersExpanded}>
+            {/* Radius Filter */}
+            <Text style={styles.filterLabel}>Distance</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+              {RADIUS_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.label}
+                  style={[
+                    styles.filterChip,
+                    selectedRadius === option.value && styles.filterChipActive
+                  ]}
+                  onPress={() => handleRadiusSelect(option.value)}
+                >
+                  <Text style={[
+                    styles.filterChipText,
+                    selectedRadius === option.value && styles.filterChipTextActive
+                  ]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Category Filter */}
+            <Text style={styles.filterLabel}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+              {CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat.key}
+                  style={[
+                    styles.filterChip,
+                    selectedCategory === cat.key && styles.filterChipActive
+                  ]}
+                  onPress={() => handleCategorySelect(cat.key)}
+                >
+                  <Text style={styles.filterChipIcon}>{cat.icon}</Text>
+                  <Text style={[
+                    styles.filterChipText,
+                    selectedCategory === cat.key && styles.filterChipTextActive
+                  ]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </Surface>
+
+      {/* Category Quick Filters (always visible) */}
+      <View style={styles.quickFilters}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickFiltersContent}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.key}
+              style={[
+                styles.quickFilterChip,
+                selectedCategory === cat.key && styles.quickFilterChipActive
+              ]}
+              onPress={() => handleCategorySelect(cat.key)}
+            >
+              <Text style={styles.quickFilterIcon}>{cat.icon}</Text>
+              <Text style={[
+                styles.quickFilterText,
+                selectedCategory === cat.key && styles.quickFilterTextActive
+              ]}>
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       {/* Loading State */}
       {isLoading && (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" />
-          <Text style={styles.statusText}>Loading tasks...</Text>
+          <Text style={styles.statusText}>Loading jobs...</Text>
         </View>
       )}
 
       {/* Error State */}
       {isError && (
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load tasks</Text>
+          <Text style={styles.errorText}>Failed to load jobs</Text>
           <TouchableOpacity onPress={() => { haptic.medium(); refetch(); }} style={styles.retryButton}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
@@ -221,7 +330,7 @@ export default function HomeScreen() {
       )}
 
       {/* Map View */}
-      {!isLoading && !isError && viewMode === 'map' && userLocation && (
+      {!isLoading && !isError && userLocation && (
         <View style={styles.mapContainer}>
           <MapView
             style={styles.map}
@@ -229,14 +338,25 @@ export default function HomeScreen() {
             initialRegion={{
               latitude: userLocation.latitude,
               longitude: userLocation.longitude,
-              latitudeDelta: 0.5,
-              longitudeDelta: 0.5,
+              latitudeDelta: selectedRadius ? selectedRadius * 0.02 : 0.5,
+              longitudeDelta: selectedRadius ? selectedRadius * 0.02 : 0.5,
             }}
             showsUserLocation
             showsMyLocationButton
           >
-            {/* Task Markers with Price Bubbles */}
-            {tasksWithLocation.map((task) => (
+            {/* Radius Circle */}
+            {selectedRadius && (
+              <Circle
+                center={userLocation}
+                radius={selectedRadius * 1000}
+                fillColor="rgba(14, 165, 233, 0.1)"
+                strokeColor="rgba(14, 165, 233, 0.3)"
+                strokeWidth={2}
+              />
+            )}
+
+            {/* Task Markers */}
+            {filteredTasks.map((task) => (
               <Marker
                 key={`task-${task.id}`}
                 coordinate={{
@@ -255,7 +375,7 @@ export default function HomeScreen() {
               </Marker>
             ))}
 
-            {/* Boosted Offering Markers with Price Bubbles */}
+            {/* Boosted Offering Markers */}
             {boostedOfferings.map((offering) => (
               <Marker
                 key={`offering-${offering.id}`}
@@ -275,6 +395,13 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
+          {/* Results Count Badge */}
+          <View style={styles.resultsBadge}>
+            <Text style={styles.resultsText}>
+              {filteredTasks.length} job{filteredTasks.length !== 1 ? 's' : ''} found
+            </Text>
+          </View>
+
           {/* Selected Task Card */}
           {selectedTask && (
             <View style={styles.selectedItemContainer}>
@@ -286,7 +413,6 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  {/* Category Badge */}
                   <View style={styles.cardTopRow}>
                     <View
                       style={[
@@ -309,12 +435,10 @@ export default function HomeScreen() {
                     />
                   </View>
 
-                  {/* Title */}
                   <Text variant="titleLarge" numberOfLines={2} style={styles.cardTitle}>
                     {selectedTask.title}
                   </Text>
 
-                  {/* Meta Info Row */}
                   <View style={styles.metaRow}>
                     {userLocation && selectedTask.latitude && selectedTask.longitude && (
                       <View style={styles.metaItem}>
@@ -337,12 +461,6 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  {/* Location Text */}
-                  <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
-                    {selectedTask.location || 'Location not specified'}
-                  </Text>
-
-                  {/* Budget */}
                   <Text style={styles.budgetLarge}>€{selectedTask.budget?.toFixed(2) || '0.00'}</Text>
                 </Card.Content>
               </Card>
@@ -360,10 +478,9 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  {/* Boost Badge */}
                   <View style={styles.cardTopRow}>
                     <View style={styles.boostBadge}>
-                      <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
+                      <Text style={styles.boostBadgeText}>⚡ Boosted Service</Text>
                     </View>
                     <IconButton
                       icon="close"
@@ -373,17 +490,14 @@ export default function HomeScreen() {
                     />
                   </View>
 
-                  {/* Title */}
                   <Text variant="titleLarge" numberOfLines={2} style={styles.cardTitle}>
                     {selectedOffering.title}
                   </Text>
 
-                  {/* Provider */}
                   <Text variant="bodyMedium" style={styles.providerText}>
                     by {selectedOffering.creator_name}
                   </Text>
 
-                  {/* Meta Info Row */}
                   <View style={styles.metaRow}>
                     {userLocation && selectedOffering.latitude && selectedOffering.longitude && (
                       <View style={styles.metaItem}>
@@ -400,12 +514,6 @@ export default function HomeScreen() {
                     )}
                   </View>
 
-                  {/* Location Text */}
-                  <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
-                    {selectedOffering.location}
-                  </Text>
-
-                  {/* Price */}
                   <Text style={styles.priceLarge}>
                     {selectedOffering.price ? `€${selectedOffering.price}` : 'Negotiable'}
                   </Text>
@@ -413,52 +521,6 @@ export default function HomeScreen() {
               </Card>
             </View>
           )}
-
-          {/* Toggle to List View Button */}
-          <TouchableOpacity 
-            style={styles.viewToggleButton} 
-            onPress={handleViewModeToggle}
-          >
-            <Text style={styles.viewToggleIcon}>📜</Text>
-            <Text style={styles.viewToggleText}>List</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* List View with Infinite Scroll */}
-      {!isLoading && !isError && viewMode === 'list' && (
-        <View style={styles.listContainer}>
-          {/* List Header with back to map */}
-          <Surface style={styles.listHeader} elevation={1}>
-            <TouchableOpacity 
-              style={styles.backToMapButton} 
-              onPress={handleViewModeToggle}
-            >
-              <Text style={styles.backToMapIcon}>🗺️</Text>
-              <Text style={styles.backToMapText}>Map</Text>
-            </TouchableOpacity>
-            <Text variant="titleMedium" style={styles.listHeaderTitle}>
-              All Open Jobs ({totalCount})
-            </Text>
-            <View style={{ width: 60 }} />
-          </Surface>
-          
-          <FlatList
-            data={allTasks}
-            renderItem={renderTaskCard}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={renderListEmpty}
-            ListFooterComponent={renderListFooter}
-            onEndReached={() => {
-              if (hasNextPage && !isFetchingNextPage) {
-                fetchNextPage();
-              }
-            }}
-            onEndReachedThreshold={0.5}
-            refreshing={false}
-            onRefresh={handleRefresh}
-          />
         </View>
       )}
     </SafeAreaView>
@@ -469,6 +531,143 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  searchContainer: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  clearIcon: {
+    fontSize: 14,
+    color: '#9ca3af',
+    padding: 4,
+  },
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: '#0ea5e9',
+  },
+  filterIcon: {
+    fontSize: 20,
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  filtersExpanded: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  filterScroll: {
+    marginBottom: 16,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: '#0ea5e9',
+  },
+  filterChipIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#ffffff',
+  },
+  quickFilters: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  quickFiltersContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  quickFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  quickFilterChipActive: {
+    backgroundColor: '#0ea5e9',
+  },
+  quickFilterIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  quickFilterText: {
+    fontSize: 13,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  quickFilterTextActive: {
+    color: '#ffffff',
   },
   centerContainer: {
     flex: 1,
@@ -497,15 +696,26 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '600',
   },
-  emptyIcon: {
-    fontSize: 48,
-  },
   mapContainer: {
     flex: 1,
     position: 'relative',
   },
   map: {
     flex: 1,
+  },
+  resultsBadge: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  resultsText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '500',
   },
   priceMarker: {
     backgroundColor: '#ffffff',
@@ -582,7 +792,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
     gap: 16,
   },
   metaItem: {
@@ -597,11 +807,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6b7280',
   },
-  locationText: {
-    color: '#9ca3af',
-    marginBottom: 12,
-    fontSize: 13,
-  },
   providerText: {
     color: '#6b7280',
     marginBottom: 8,
@@ -615,114 +820,5 @@ const styles = StyleSheet.create({
     color: '#f97316',
     fontWeight: 'bold',
     fontSize: 24,
-  },
-  viewToggleButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  viewToggleIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  viewToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  listContainer: {
-    flex: 1,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-  },
-  listHeaderTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  backToMapButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  backToMapIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  backToMapText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  listContent: {
-    padding: 16,
-  },
-  listCard: {
-    marginBottom: 12,
-    backgroundColor: '#ffffff',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  category: {
-    color: '#0ea5e9',
-    marginTop: 2,
-  },
-  description: {
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  budget: {
-    color: '#0ea5e9',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  location: {
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-  noLocationBadge: {
-    fontSize: 10,
-    color: '#ef4444',
-    backgroundColor: '#fee2e2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  footerLoader: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    marginTop: 8,
-    color: '#6b7280',
-    fontSize: 12,
   },
 });
