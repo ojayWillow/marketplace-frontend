@@ -1,7 +1,7 @@
-import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, Chip, ActivityIndicator, Button, Surface, FAB, Avatar } from 'react-native-paper';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { getOfferings, getMyOfferings, useAuthStore, type Offering } from '@marketplace/shared';
@@ -24,23 +24,42 @@ export default function OfferingsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { user, isAuthenticated } = useAuthStore();
 
-  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['offerings', activeTab, selectedCategory, user?.id],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 1 }) => {
       if (activeTab === 'my_offerings' && user) {
+        // My offerings doesn't support pagination yet, return all
         return await getMyOfferings();
       } else {
-        const params: any = { page: 1, per_page: 20, status: 'active' };
+        const params: any = { page: pageParam, per_page: 20, status: 'active' };
         if (selectedCategory !== 'all') {
           params.category = selectedCategory;
         }
         return await getOfferings(params);
       }
     },
+    getNextPageParam: (lastPage, allPages) => {
+      // My offerings doesn't have pagination
+      if (activeTab === 'my_offerings') return undefined;
+      
+      const currentPage = allPages.length;
+      const totalPages = Math.ceil(lastPage.total / 20);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
     enabled: activeTab === 'all' || !!user,
   });
 
-  const offerings = data?.offerings || [];
+  const offerings = data?.pages.flatMap((page) => page.offerings) || [];
+  const totalCount = data?.pages[0]?.total || offerings.length;
 
   const tabs: { id: FilterTab; label: string; requiresAuth: boolean }[] = [
     { id: 'all', label: 'Browse', requiresAuth: false },
@@ -81,8 +100,77 @@ export default function OfferingsScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+  const renderOfferingCard = ({ item: offering }: { item: Offering }) => {
+    const statusColors = getStatusColor(offering.status);
+    const isMyOffering = activeTab === 'my_offerings';
+    
+    return (
+      <Card
+        key={offering.id}
+        style={styles.card}
+        onPress={() => router.push(`/offering/${offering.id}`)}
+      >
+        <Card.Content>
+          {/* Header Row */}
+          <View style={styles.cardHeader}>
+            <View style={styles.providerSection}>
+              <Avatar.Text 
+                size={40} 
+                label={offering.creator_name?.charAt(0).toUpperCase() || 'U'}
+                style={styles.avatar}
+              />
+              <View style={styles.providerInfo}>
+                <Text style={styles.providerName}>{offering.creator_name}</Text>
+                {offering.creator_rating ? (
+                  <Text style={styles.rating}>
+                    ⭐ {offering.creator_rating.toFixed(1)} ({offering.creator_review_count || 0})
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+            {isMyOffering ? (
+              <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+                <Text style={[styles.statusText2, { color: statusColors.text }]}>
+                  {offering.status.charAt(0).toUpperCase() + offering.status.slice(1)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Title & Category */}
+          <View style={styles.titleRow}>
+            <Text style={styles.categoryEmoji}>{getCategoryEmoji(offering.category)}</Text>
+            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>
+              {offering.title}
+            </Text>
+          </View>
+
+          {/* Description */}
+          <Text style={styles.description} numberOfLines={2}>
+            {offering.description}
+          </Text>
+
+          {/* Footer */}
+          <View style={styles.cardFooter}>
+            <Text style={styles.price}>{getPriceLabel(offering)}</Text>
+            <Text style={styles.location}>
+              📍 {offering.location || 'Location'}
+            </Text>
+          </View>
+
+          {/* Boost Badge */}
+          {offering.is_boost_active ? (
+            <View style={styles.boostBadge}>
+              <Text style={styles.boostText}>⚡ Boosted</Text>
+            </View>
+          ) : null}
+        </Card.Content>
+      </Card>
+    );
+  };
+
+  const renderListHeader = () => (
+    <>
       {/* Header */}
       <Surface style={styles.header} elevation={1}>
         <Text variant="headlineMedium" style={styles.title}>Services</Text>
@@ -91,169 +179,119 @@ export default function OfferingsScreen() {
 
       {/* Tabs */}
       <Surface style={styles.tabContainer} elevation={1}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.tabsRow}>
-            {visibleTabs.map((tab) => (
-              <Chip
-                key={tab.id}
-                selected={activeTab === tab.id}
-                onPress={() => setActiveTab(tab.id)}
-                style={styles.tab}
-                mode={activeTab === tab.id ? 'flat' : 'outlined'}
-              >
-                {tab.label}
-              </Chip>
-            ))}
-          </View>
-        </ScrollView>
+        <View style={styles.tabsRow}>
+          {visibleTabs.map((tab) => (
+            <Chip
+              key={tab.id}
+              selected={activeTab === tab.id}
+              onPress={() => setActiveTab(tab.id)}
+              style={styles.tab}
+              mode={activeTab === tab.id ? 'flat' : 'outlined'}
+            >
+              {tab.label}
+            </Chip>
+          ))}
+        </View>
       </Surface>
 
       {/* Category Filter - only show on Browse tab */}
       {activeTab === 'all' ? (
         <Surface style={styles.categoryContainer} elevation={0}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.categoriesRow}>
-              {CATEGORIES.map((cat) => (
-                <Chip
-                  key={cat.id}
-                  selected={selectedCategory === cat.id}
-                  onPress={() => setSelectedCategory(cat.id)}
-                  style={styles.categoryChip}
-                  mode={selectedCategory === cat.id ? 'flat' : 'outlined'}
-                  compact
-                >
-                  {cat.emoji} {cat.label}
-                </Chip>
-              ))}
-            </View>
-          </ScrollView>
+          <View style={styles.categoriesRow}>
+            {CATEGORIES.map((cat) => (
+              <Chip
+                key={cat.id}
+                selected={selectedCategory === cat.id}
+                onPress={() => setSelectedCategory(cat.id)}
+                style={styles.categoryChip}
+                mode={selectedCategory === cat.id ? 'flat' : 'outlined'}
+                compact
+              >
+                {cat.emoji} {cat.label}
+              </Chip>
+            ))}
+          </View>
         </Surface>
       ) : null}
+    </>
+  );
 
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-        }
-      >
-        <View style={styles.content}>
-          {/* Loading */}
-          {isLoading ? (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" />
-              <Text style={styles.statusText}>Loading services...</Text>
-            </View>
-          ) : null}
+  const renderListEmpty = () => (
+    <View style={styles.centerContainer}>
+      <Text style={styles.emptyIcon}>🛠️</Text>
+      <Text style={styles.statusText}>
+        {activeTab === 'my_offerings'
+          ? "You haven't created any services yet"
+          : 'No services available'}
+      </Text>
+      {activeTab === 'my_offerings' ? (
+        <Button 
+          mode="contained" 
+          onPress={handleCreateOffering}
+          style={styles.createButton}
+        >
+          Offer Your First Service
+        </Button>
+      ) : null}
+    </View>
+  );
 
-          {/* Error */}
-          {isError ? (
-            <View style={styles.centerContainer}>
-              <Text style={styles.errorText}>Failed to load services</Text>
-              <Button mode="contained" onPress={() => refetch()}>
-                Retry
-              </Button>
-            </View>
-          ) : null}
+  const renderListFooter = () => {
+    if (!isFetchingNextPage) return <View style={styles.fabSpacer} />;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" />
+        <Text style={styles.footerText}>Loading more...</Text>
+        <View style={styles.fabSpacer} />
+      </View>
+    );
+  };
 
-          {/* Empty */}
-          {!isLoading && !isError && offerings.length === 0 ? (
-            <View style={styles.centerContainer}>
-              <Text style={styles.emptyIcon}>🛠️</Text>
-              <Text style={styles.statusText}>
-                {activeTab === 'my_offerings'
-                  ? "You haven't created any services yet"
-                  : 'No services available'}
-              </Text>
-              {activeTab === 'my_offerings' ? (
-                <Button 
-                  mode="contained" 
-                  onPress={handleCreateOffering}
-                  style={styles.createButton}
-                >
-                  Offer Your First Service
-                </Button>
-              ) : null}
-            </View>
-          ) : null}
-
-          {/* Offerings List */}
-          {!isLoading && !isError && offerings.length > 0 ? (
-            <View>
-              {offerings.map((offering: Offering) => {
-                const statusColors = getStatusColor(offering.status);
-                const isMyOffering = activeTab === 'my_offerings';
-                
-                return (
-                  <Card
-                    key={offering.id}
-                    style={styles.card}
-                    onPress={() => router.push(`/offering/${offering.id}`)}
-                  >
-                    <Card.Content>
-                      {/* Header Row */}
-                      <View style={styles.cardHeader}>
-                        <View style={styles.providerSection}>
-                          <Avatar.Text 
-                            size={40} 
-                            label={offering.creator_name?.charAt(0).toUpperCase() || 'U'}
-                            style={styles.avatar}
-                          />
-                          <View style={styles.providerInfo}>
-                            <Text style={styles.providerName}>{offering.creator_name}</Text>
-                            {offering.creator_rating ? (
-                              <Text style={styles.rating}>
-                                ⭐ {offering.creator_rating.toFixed(1)} ({offering.creator_review_count || 0})
-                              </Text>
-                            ) : null}
-                          </View>
-                        </View>
-                        {isMyOffering ? (
-                          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                            <Text style={[styles.statusText2, { color: statusColors.text }]}>
-                              {offering.status.charAt(0).toUpperCase() + offering.status.slice(1)}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-
-                      {/* Title & Category */}
-                      <View style={styles.titleRow}>
-                        <Text style={styles.categoryEmoji}>{getCategoryEmoji(offering.category)}</Text>
-                        <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>
-                          {offering.title}
-                        </Text>
-                      </View>
-
-                      {/* Description */}
-                      <Text style={styles.description} numberOfLines={2}>
-                        {offering.description}
-                      </Text>
-
-                      {/* Footer */}
-                      <View style={styles.cardFooter}>
-                        <Text style={styles.price}>{getPriceLabel(offering)}</Text>
-                        <Text style={styles.location}>
-                          📍 {offering.location || 'Location'}
-                        </Text>
-                      </View>
-
-                      {/* Boost Badge */}
-                      {offering.is_boost_active ? (
-                        <View style={styles.boostBadge}>
-                          <Text style={styles.boostText}>⚡ Boosted</Text>
-                        </View>
-                      ) : null}
-                    </Card.Content>
-                  </Card>
-                );
-              })}
-            </View>
-          ) : null}
-
-          {/* Bottom spacer for FAB */}
-          <View style={styles.fabSpacer} />
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {renderListHeader()}
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.statusText}>Loading services...</Text>
         </View>
-      </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {renderListHeader()}
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>Failed to load services</Text>
+          <Button mode="contained" onPress={() => refetch()}>
+            Retry
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <FlatList
+        data={offerings}
+        renderItem={renderOfferingCard}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={renderListEmpty}
+        ListFooterComponent={renderListFooter}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        refreshing={false}
+        onRefresh={refetch}
+      />
 
       {/* Floating Action Button */}
       <FAB
@@ -301,19 +339,19 @@ const styles = StyleSheet.create({
   },
   categoriesRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   categoryChip: {
     marginRight: 8,
+    marginBottom: 8,
   },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
+  listContent: {
+    paddingHorizontal: 16,
   },
   centerContainer: {
     alignItems: 'center',
     paddingVertical: 48,
+    paddingHorizontal: 24,
   },
   statusText: {
     marginTop: 12,
@@ -414,6 +452,15 @@ const styles = StyleSheet.create({
     color: '#92400e',
     fontSize: 11,
     fontWeight: '600',
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  footerText: {
+    marginTop: 8,
+    color: '#6b7280',
+    fontSize: 12,
   },
   fabSpacer: {
     height: 80,
