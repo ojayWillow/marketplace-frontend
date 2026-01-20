@@ -1,12 +1,13 @@
 import { StateStorage } from 'zustand/middleware';
 
-// Platform detection
-const isReactNative = typeof navigator !== 'undefined' && navigator.product === 'ReactNative';
+// Platform detection - check for React Native environment
+// navigator.product is unreliable in Expo, so we check for window and document
+const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined' && typeof localStorage !== 'undefined';
 
 // Storage implementation
 let storage: StateStorage;
 
-if (isReactNative) {
+if (!isWeb) {
   // React Native: Use expo-secure-store
   let SecureStore: any;
   
@@ -14,33 +15,56 @@ if (isReactNative) {
     SecureStore = require('expo-secure-store');
   } catch (e) {
     console.warn('expo-secure-store not available, falling back to AsyncStorage');
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-    
-    storage = {
-      getItem: async (name: string) => {
-        const value = await AsyncStorage.getItem(name);
-        return value ?? null;
-      },
-      setItem: async (name: string, value: string) => {
-        await AsyncStorage.setItem(name, value);
-      },
-      removeItem: async (name: string) => {
-        await AsyncStorage.removeItem(name);
-      },
-    };
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      
+      storage = {
+        getItem: async (name: string) => {
+          const value = await AsyncStorage.getItem(name);
+          return value ?? null;
+        },
+        setItem: async (name: string, value: string) => {
+          await AsyncStorage.setItem(name, value);
+        },
+        removeItem: async (name: string) => {
+          await AsyncStorage.removeItem(name);
+        },
+      };
+    } catch (e2) {
+      // Fallback to no-op storage if nothing is available
+      console.warn('No storage available, auth will not persist');
+      storage = {
+        getItem: async () => null,
+        setItem: async () => {},
+        removeItem: async () => {},
+      };
+    }
   }
 
-  if (SecureStore) {
+  if (SecureStore && !storage) {
     storage = {
       getItem: async (name: string) => {
-        const value = await SecureStore.getItemAsync(name);
-        return value ?? null;
+        try {
+          const value = await SecureStore.getItemAsync(name);
+          return value ?? null;
+        } catch (e) {
+          console.warn('SecureStore getItem error:', e);
+          return null;
+        }
       },
       setItem: async (name: string, value: string) => {
-        await SecureStore.setItemAsync(name, value);
+        try {
+          await SecureStore.setItemAsync(name, value);
+        } catch (e) {
+          console.warn('SecureStore setItem error:', e);
+        }
       },
       removeItem: async (name: string) => {
-        await SecureStore.deleteItemAsync(name);
+        try {
+          await SecureStore.deleteItemAsync(name);
+        } catch (e) {
+          console.warn('SecureStore removeItem error:', e);
+        }
       },
     };
   }
@@ -48,14 +72,26 @@ if (isReactNative) {
   // Web: Use localStorage
   storage = {
     getItem: (name: string) => {
-      const value = localStorage.getItem(name);
-      return value ?? null;
+      try {
+        const value = localStorage.getItem(name);
+        return value ?? null;
+      } catch (e) {
+        return null;
+      }
     },
     setItem: (name: string, value: string) => {
-      localStorage.setItem(name, value);
+      try {
+        localStorage.setItem(name, value);
+      } catch (e) {
+        console.warn('localStorage setItem error:', e);
+      }
     },
     removeItem: (name: string) => {
-      localStorage.removeItem(name);
+      try {
+        localStorage.removeItem(name);
+      } catch (e) {
+        console.warn('localStorage removeItem error:', e);
+      }
     },
   };
 }
