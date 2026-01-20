@@ -11,10 +11,14 @@ export interface PublicUser {
   city?: string;
   country?: string;
   is_verified: boolean;
+  is_helper?: boolean;
+  skills?: string[];
+  hourly_rate?: number;
   reputation_score: number;
   completion_rate: number;
   reviews_count: number;
   average_rating: number;
+  completed_tasks_count?: number;
   created_at: string;
 }
 
@@ -25,6 +29,11 @@ export interface UserReview {
   reviewer_id: number;
   reviewer_name: string;
   reviewer_avatar?: string;
+  reviewer?: {
+    id: number;
+    username: string;
+    profile_picture_url?: string;
+  };
   created_at: string;
 }
 
@@ -35,6 +44,11 @@ export const getPublicUser = async (userId: number): Promise<PublicUser> => {
   const response = await api.get(`/api/auth/users/${userId}`);
   return response.data;
 };
+
+/**
+ * Alias for getPublicUser - Get public profile of a user
+ */
+export const getUserProfile = getPublicUser;
 
 /**
  * Get reviews for a user
