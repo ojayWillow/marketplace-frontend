@@ -10,23 +10,24 @@ type MainTab = 'jobs' | 'offerings';
 type JobFilter = 'all' | 'posted' | 'my_jobs' | 'applied';
 type OfferingFilter = 'all' | 'my_offerings';
 
-// Helper to shorten location - show only city or first part
+// Helper to shorten location - extract city name
 const shortenLocation = (location: string | undefined): string => {
-  if (!location) return 'Location';
-  // Try to extract city from address
+  if (!location) return '';
   const parts = location.split(',').map(p => p.trim());
-  // Usually city is 2nd or 3rd part, or just use first meaningful part
-  if (parts.length >= 2) {
-    // Find a part that looks like a city (not a street number, not a country)
-    for (const part of parts) {
-      // Skip parts that are just numbers or postal codes
-      if (/^[A-Za-z\u0080-\uFFFF\s]+$/.test(part) && part.length > 2 && !part.includes('Latvia')) {
-        return part;
-      }
-    }
-    return parts[1] || parts[0];
+  
+  // Try to find city (skip street addresses, postal codes, country)
+  for (const part of parts) {
+    // Skip if it's a street number/address or postal code or country
+    if (/^\d/.test(part)) continue; // Starts with number
+    if (/LV-\d+/.test(part)) continue; // Latvian postal code
+    if (part.toLowerCase() === 'latvia') continue;
+    if (part.length < 3) continue;
+    // Return first valid city-like name
+    return part;
   }
-  return location.length > 20 ? location.substring(0, 20) + '...' : location;
+  
+  // Fallback: just truncate
+  return location.length > 15 ? location.substring(0, 15) + '...' : location;
 };
 
 export default function TasksScreen() {
@@ -199,7 +200,7 @@ export default function TasksScreen() {
           {isLoading ? (
             <View style={styles.centerContainer}>
               <ActivityIndicator size="large" />
-              <Text style={styles.statusText}>Loading...</Text>
+              <Text style={styles.loadingText}>Loading...</Text>
             </View>
           ) : null}
 
@@ -216,7 +217,7 @@ export default function TasksScreen() {
             tasks.length === 0 ? (
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyIcon}>📋</Text>
-                <Text style={styles.statusText}>
+                <Text style={styles.emptyText}>
                   {jobFilter === 'posted' ? "No tasks posted yet" :
                    jobFilter === 'my_jobs' ? "No jobs assigned" :
                    jobFilter === 'applied' ? "No applications" : "No jobs available"}
@@ -225,9 +226,10 @@ export default function TasksScreen() {
             ) : (
               tasks.map((task: Task) => {
                 const statusColors = getStatusColor(task.status);
+                const shortLocation = shortenLocation(task.location);
                 return (
                   <Card key={task.id} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
-                    <Card.Content>
+                    <Card.Content style={styles.cardContent}>
                       {/* Header: Title + Status */}
                       <View style={styles.cardHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
@@ -242,10 +244,15 @@ export default function TasksScreen() {
                       {/* Description */}
                       <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
                       
-                      {/* Footer: Price + Location */}
+                      {/* Footer: Price + Location/Creator */}
                       <View style={styles.cardFooter}>
                         <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-                        <Text style={styles.footerRight}>👤 {task.creator_name || 'Anonymous'}</Text>
+                        <View style={styles.footerMeta}>
+                          {shortLocation ? (
+                            <Text style={styles.location}>📍 {shortLocation}</Text>
+                          ) : null}
+                          <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
+                        </View>
                       </View>
                     </Card.Content>
                   </Card>
@@ -259,7 +266,7 @@ export default function TasksScreen() {
             offerings.length === 0 ? (
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyIcon}>🛠️</Text>
-                <Text style={styles.statusText}>
+                <Text style={styles.emptyText}>
                   {offeringFilter === 'my_offerings' ? "No services listed yet" : "No services available"}
                 </Text>
               </View>
@@ -268,7 +275,7 @@ export default function TasksScreen() {
                 const statusColors = getStatusColor(offering.status || 'active');
                 return (
                   <Card key={offering.id} style={styles.card} onPress={() => router.push(`/offering/${offering.id}`)}>
-                    <Card.Content>
+                    <Card.Content style={styles.cardContent}>
                       {/* Header: Title + Status */}
                       <View style={styles.cardHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
@@ -289,7 +296,7 @@ export default function TasksScreen() {
                           {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
                            offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
                         </Text>
-                        <Text style={styles.footerRight}>👤 {offering.creator_name || 'Anonymous'}</Text>
+                        <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
                       </View>
                     </Card.Content>
                   </Card>
@@ -399,7 +406,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     paddingVertical: 48 
   },
-  statusText: { 
+  loadingText: { 
+    marginTop: 12, 
+    color: '#6b7280' 
+  },
+  emptyText: { 
     marginTop: 12, 
     color: '#6b7280', 
     textAlign: 'center' 
@@ -417,17 +428,23 @@ const styles = StyleSheet.create({
     marginBottom: 12, 
     backgroundColor: '#ffffff',
     borderRadius: 12,
+    elevation: 1,
+  },
+  cardContent: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   cardHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   cardTitle: { 
     fontWeight: '600',
     flex: 1,
     marginRight: 12,
+    color: '#1f2937',
   },
   statusBadge: { 
     paddingHorizontal: 10, 
@@ -441,12 +458,12 @@ const styles = StyleSheet.create({
   category: { 
     color: '#0ea5e9', 
     fontSize: 13,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   categoryOrange: { 
     color: '#f97316', 
     fontSize: 13,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   description: { 
     color: '#6b7280', 
@@ -468,7 +485,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  footerRight: { 
+  footerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  location: { 
+    color: '#9ca3af', 
+    fontSize: 13,
+  },
+  creator: { 
     color: '#9ca3af', 
     fontSize: 13 
   },
