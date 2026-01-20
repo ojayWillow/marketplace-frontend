@@ -11,6 +11,39 @@ import { haptic } from '../../utils/haptics';
 
 type ViewMode = 'map' | 'list';
 
+// Helper to calculate distance in km
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+// Helper to format time ago
+const formatTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return `${Math.floor(seconds / 604800)}w ago`;
+};
+
 export default function HomeScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -91,7 +124,7 @@ export default function HomeScreen() {
   };
 
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
-    haptic.light(); // Haptic on marker tap
+    haptic.light();
     if (task) {
       setSelectedTask(task);
       setSelectedOffering(null);
@@ -102,12 +135,12 @@ export default function HomeScreen() {
   };
 
   const handleViewModeToggle = () => {
-    haptic.selection(); // Haptic on toggle
+    haptic.selection();
     setViewMode(viewMode === 'map' ? 'list' : 'map');
   };
 
   const handleCardPress = (id: number, type: 'task' | 'offering') => {
-    haptic.light(); // Haptic on card tap
+    haptic.light();
     if (type === 'task') {
       router.push(`/task/${id}`);
     } else {
@@ -116,7 +149,7 @@ export default function HomeScreen() {
   };
 
   const handleRefresh = () => {
-    haptic.soft(); // Subtle haptic on pull-to-refresh
+    haptic.soft();
     refetch();
   };
 
@@ -255,7 +288,7 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Selected Task Card (Single Title) */}
+          {/* Selected Task Card - Improved */}
           {selectedTask && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -266,35 +299,68 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  <View style={styles.cardContentSingle}>
-                    <View style={{ flex: 1 }}>
-                      <Text variant="titleLarge" numberOfLines={1} style={styles.singleTitle}>
-                        {selectedTask.title}
-                      </Text>
-                      <Text variant="bodySmall" style={styles.category}>
-                        {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
-                      </Text>
-                    </View>
+                  {/* Category and Close */}
+                  <View style={styles.cardTopRow}>
+                    <Chip
+                      mode="flat"
+                      compact
+                      style={[
+                        styles.categoryChip,
+                        { backgroundColor: getMarkerColor(selectedTask.category) + '20' }
+                      ]}
+                      textStyle={{ color: getMarkerColor(selectedTask.category), fontWeight: '600' }}
+                    >
+                      {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
+                    </Chip>
                     <IconButton
                       icon="close"
                       size={20}
                       onPress={() => { haptic.soft(); setSelectedTask(null); }}
-                      style={styles.closeButton}
+                      style={styles.closeButtonTop}
                     />
                   </View>
-                  <Text variant="bodyMedium" numberOfLines={2} style={styles.description}>
-                    {selectedTask.description}
+
+                  {/* Title */}
+                  <Text variant="titleLarge" numberOfLines={2} style={styles.cardTitle}>
+                    {selectedTask.title}
                   </Text>
-                  <View style={styles.itemFooter}>
-                    <Text style={styles.budget}>€{selectedTask.budget?.toFixed(2) || '0.00'}</Text>
-                    <Text style={styles.location}>📍 {selectedTask.location || 'Location'}</Text>
+
+                  {/* Meta Info Row */}
+                  <View style={styles.metaRow}>
+                    {userLocation && selectedTask.latitude && selectedTask.longitude && (
+                      <View style={styles.metaItem}>
+                        <Text style={styles.metaIcon}>📍</Text>
+                        <Text style={styles.metaText}>
+                          {calculateDistance(
+                            userLocation.latitude,
+                            userLocation.longitude,
+                            selectedTask.latitude,
+                            selectedTask.longitude
+                          ).toFixed(1)} km away
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.metaItem}>
+                      <Text style={styles.metaIcon}>🕐</Text>
+                      <Text style={styles.metaText}>
+                        {formatTimeAgo(selectedTask.created_at)}
+                      </Text>
+                    </View>
                   </View>
+
+                  {/* Location */}
+                  <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
+                    📍 {selectedTask.location || 'Location not specified'}
+                  </Text>
+
+                  {/* Budget */}
+                  <Text style={styles.budgetLarge}>€{selectedTask.budget?.toFixed(2) || '0.00'}</Text>
                 </Card.Content>
               </Card>
             </View>
           )}
 
-          {/* Selected Offering Card (Single Title) */}
+          {/* Selected Offering Card - Improved */}
           {selectedOffering && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -305,32 +371,55 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  <View style={styles.cardContentSingle}>
-                    <Chip mode="flat" compact style={styles.boostChip}>⚡ Boosted</Chip>
-                    <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text variant="titleLarge" numberOfLines={1} style={styles.singleTitle}>
-                        {selectedOffering.title}
-                      </Text>
-                      <Text variant="bodySmall" style={styles.providerName}>
-                        by {selectedOffering.creator_name}
-                      </Text>
-                    </View>
+                  {/* Boost Badge and Close */}
+                  <View style={styles.cardTopRow}>
+                    <Chip mode="flat" compact style={styles.boostChip}>
+                      ⚡ Boosted Service
+                    </Chip>
                     <IconButton
                       icon="close"
                       size={20}
                       onPress={() => { haptic.soft(); setSelectedOffering(null); }}
-                      style={styles.closeButton}
+                      style={styles.closeButtonTop}
                     />
                   </View>
-                  <Text variant="bodyMedium" numberOfLines={2} style={styles.description}>
-                    {selectedOffering.description}
+
+                  {/* Title */}
+                  <Text variant="titleLarge" numberOfLines={2} style={styles.cardTitle}>
+                    {selectedOffering.title}
                   </Text>
-                  <View style={styles.itemFooter}>
-                    <Text style={styles.price}>
-                      {selectedOffering.price ? `€${selectedOffering.price}` : 'Negotiable'}
-                    </Text>
-                    <Text style={styles.location}>📍 {selectedOffering.location}</Text>
+
+                  {/* Provider */}
+                  <Text variant="bodyMedium" style={styles.providerText}>
+                    by {selectedOffering.creator_name}
+                  </Text>
+
+                  {/* Meta Info Row */}
+                  <View style={styles.metaRow}>
+                    {userLocation && selectedOffering.latitude && selectedOffering.longitude && (
+                      <View style={styles.metaItem}>
+                        <Text style={styles.metaIcon}>📍</Text>
+                        <Text style={styles.metaText}>
+                          {calculateDistance(
+                            userLocation.latitude,
+                            userLocation.longitude,
+                            selectedOffering.latitude,
+                            selectedOffering.longitude
+                          ).toFixed(1)} km away
+                        </Text>
+                      </View>
+                    )}
                   </View>
+
+                  {/* Location */}
+                  <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
+                    📍 {selectedOffering.location}
+                  </Text>
+
+                  {/* Price */}
+                  <Text style={styles.priceLarge}>
+                    {selectedOffering.price ? `€${selectedOffering.price}` : 'Negotiable'}
+                  </Text>
                 </Card.Content>
               </Card>
             </View>
@@ -471,53 +560,64 @@ const styles = StyleSheet.create({
   },
   selectedItemCard: {
     backgroundColor: '#ffffff',
+    borderRadius: 16,
   },
-  cardContentSingle: {
+  cardTopRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  singleTitle: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  closeButton: {
-    margin: 0,
+  categoryChip: {
+    height: 28,
   },
   boostChip: {
     height: 28,
     backgroundColor: '#fef3c7',
   },
-  category: {
-    color: '#0ea5e9',
-    marginTop: 2,
+  closeButtonTop: {
+    margin: 0,
   },
-  providerName: {
-    color: '#6b7280',
-    marginTop: 2,
+  cardTitle: {
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 8,
   },
-  description: {
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  itemFooter: {
+  metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  budget: {
+  metaIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  metaText: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  locationText: {
+    color: '#9ca3af',
+    marginBottom: 12,
+  },
+  providerText: {
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  budgetLarge: {
     color: '#0ea5e9',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 24,
   },
-  price: {
+  priceLarge: {
     color: '#f97316',
     fontWeight: 'bold',
-    fontSize: 18,
-  },
-  location: {
-    color: '#9ca3af',
-    fontSize: 13,
+    fontSize: 24,
   },
   statsBadge: {
     position: 'absolute',
@@ -567,10 +667,27 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  category: {
+    color: '#0ea5e9',
+    marginTop: 2,
+  },
+  description: {
+    color: '#6b7280',
+    marginBottom: 12,
+  },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  budget: {
+    color: '#0ea5e9',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  location: {
+    color: '#9ca3af',
+    fontSize: 13,
   },
   noLocationBadge: {
     fontSize: 10,
