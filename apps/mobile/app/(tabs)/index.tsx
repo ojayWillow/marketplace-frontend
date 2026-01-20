@@ -62,6 +62,7 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export default function HomeScreen() {
+  const mapRef = useRef<MapView>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
@@ -224,6 +225,23 @@ export default function HomeScreen() {
     setSelectedOffering(null);
   };
 
+  const handleMyLocation = async () => {
+    haptic.medium();
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }, 500);
+    }
+  };
+
+  const handleQuickPost = () => {
+    haptic.medium();
+    router.push('/listings/create');
+  };
+
   return (
     <View style={styles.container}>
       {/* Loading State */}
@@ -248,6 +266,7 @@ export default function HomeScreen() {
       {!isLoading && !isError && userLocation && (
         <View style={styles.mapContainer}>
           <MapView
+            ref={mapRef}
             style={styles.map}
             provider={PROVIDER_DEFAULT}
             initialRegion={{
@@ -329,6 +348,28 @@ export default function HomeScreen() {
             </BlurView>
           </SafeAreaView>
 
+          {/* Empty State Overlay on Map */}
+          {filteredTasks.length === 0 && !isLoading && (
+            <View style={styles.emptyMapOverlay}>
+              <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
+                <Text style={styles.emptyMapIcon}>🗺️</Text>
+                <Text style={styles.emptyMapText}>No jobs in this area</Text>
+                <Text style={styles.emptyMapSubtext}>Try zooming out or changing category</Text>
+              </BlurView>
+            </View>
+          )}
+
+          {/* My Location Button */}
+          <TouchableOpacity 
+            style={styles.myLocationButton} 
+            onPress={handleMyLocation}
+            activeOpacity={0.8}
+          >
+            <BlurView intensity={90} tint="light" style={styles.myLocationBlur}>
+              <Text style={styles.myLocationIcon}>📍</Text>
+            </BlurView>
+          </TouchableOpacity>
+
           {/* Selected Task Popup */}
           {selectedTask && (
             <View style={styles.selectedPopup}>
@@ -379,9 +420,19 @@ export default function HomeScreen() {
             {/* Drag Handle */}
             <View {...panResponder.panHandlers} style={styles.sheetHandle}>
               <View style={styles.handleBar} />
-              <Text style={styles.sheetTitle}>
-                {sortedTasks.length} job{sortedTasks.length !== 1 ? 's' : ''} nearby
-              </Text>
+              <View style={styles.sheetTitleRow}>
+                <Text style={styles.sheetTitle}>
+                  {sortedTasks.length} job{sortedTasks.length !== 1 ? 's' : ''} nearby
+                </Text>
+                <TouchableOpacity 
+                  style={styles.quickPostButton}
+                  onPress={handleQuickPost}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.quickPostIcon}>+</Text>
+                  <Text style={styles.quickPostText}>Post Job</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Job List */}
@@ -394,7 +445,13 @@ export default function HomeScreen() {
                 <View style={styles.emptySheet}>
                   <Text style={styles.emptyIcon}>💭</Text>
                   <Text style={styles.emptyText}>No jobs in this area</Text>
-                  <Text style={styles.emptySubtext}>Check back later</Text>
+                  <Text style={styles.emptySubtext}>Be the first to post one!</Text>
+                  <TouchableOpacity 
+                    style={styles.emptyPostButton}
+                    onPress={handleQuickPost}
+                  >
+                    <Text style={styles.emptyPostText}>+ Post a Job</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 sortedTasks.map((task) => (
@@ -522,6 +579,53 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: '#ffffff',
   },
+  // Empty state on map
+  emptyMapOverlay: {
+    position: 'absolute',
+    top: '35%',
+    left: 24,
+    right: 24,
+    alignItems: 'center',
+  },
+  emptyMapCard: {
+    paddingVertical: 20,
+    paddingHorizontal: 28,
+    borderRadius: 16,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  emptyMapIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  emptyMapText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  emptyMapSubtext: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 4,
+  },
+  // My Location button
+  myLocationButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 16,
+    zIndex: 10,
+  },
+  myLocationBlur: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  myLocationIcon: {
+    fontSize: 22,
+  },
   // Price markers
   priceMarker: {
     backgroundColor: '#ffffff',
@@ -623,18 +727,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 10,
     paddingBottom: 6,
+    paddingHorizontal: 16,
   },
   handleBar: {
     width: 40,
     height: 4,
     backgroundColor: '#d1d5db',
     borderRadius: 2,
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  sheetTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
   },
   sheetTitle: {
     fontSize: 15,
     fontWeight: '600',
     color: '#1f2937',
+  },
+  quickPostButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  quickPostIcon: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginRight: 4,
+  },
+  quickPostText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ffffff',
   },
   sheetContent: {
     flex: 1,
@@ -656,6 +786,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
     marginTop: 4,
+  },
+  emptyPostButton: {
+    marginTop: 16,
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  emptyPostText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
   },
   jobItem: {
     flexDirection: 'row',
