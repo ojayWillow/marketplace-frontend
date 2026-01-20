@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
+import { haptic } from '../../utils/haptics';
 
 type ViewMode = 'map' | 'list';
 
@@ -90,6 +91,7 @@ export default function HomeScreen() {
   };
 
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
+    haptic.light(); // Haptic on marker tap
     if (task) {
       setSelectedTask(task);
       setSelectedOffering(null);
@@ -99,11 +101,30 @@ export default function HomeScreen() {
     }
   };
 
+  const handleViewModeToggle = () => {
+    haptic.selection(); // Haptic on toggle
+    setViewMode(viewMode === 'map' ? 'list' : 'map');
+  };
+
+  const handleCardPress = (id: number, type: 'task' | 'offering') => {
+    haptic.light(); // Haptic on card tap
+    if (type === 'task') {
+      router.push(`/task/${id}`);
+    } else {
+      router.push(`/offering/${id}`);
+    }
+  };
+
+  const handleRefresh = () => {
+    haptic.soft(); // Subtle haptic on pull-to-refresh
+    refetch();
+  };
+
   const renderTaskCard = ({ item: task }: { item: Task }) => (
     <Card
       key={task.id}
       style={styles.listCard}
-      onPress={() => router.push(`/task/${task.id}`)}
+      onPress={() => handleCardPress(task.id, 'task')}
     >
       <Card.Content>
         <View style={styles.cardHeader}>
@@ -156,7 +177,7 @@ export default function HomeScreen() {
           <IconButton
             icon={viewMode === 'map' ? 'view-list' : 'map'}
             size={24}
-            onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+            onPress={handleViewModeToggle}
           />
         </View>
       </Surface>
@@ -173,7 +194,7 @@ export default function HomeScreen() {
       {isError && (
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>Failed to load tasks</Text>
-          <TouchableOpacity onPress={() => refetch()} style={styles.retryButton}>
+          <TouchableOpacity onPress={() => { haptic.medium(); refetch(); }} style={styles.retryButton}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -240,7 +261,7 @@ export default function HomeScreen() {
               <Card
                 style={styles.selectedItemCard}
                 onPress={() => {
-                  router.push(`/task/${selectedTask.id}`);
+                  handleCardPress(selectedTask.id, 'task');
                   setSelectedTask(null);
                 }}
               >
@@ -257,7 +278,7 @@ export default function HomeScreen() {
                     <IconButton
                       icon="close"
                       size={20}
-                      onPress={() => setSelectedTask(null)}
+                      onPress={() => { haptic.soft(); setSelectedTask(null); }}
                       style={styles.closeButton}
                     />
                   </View>
@@ -279,7 +300,7 @@ export default function HomeScreen() {
               <Card
                 style={styles.selectedItemCard}
                 onPress={() => {
-                  router.push(`/offering/${selectedOffering.id}`);
+                  handleCardPress(selectedOffering.id, 'offering');
                   setSelectedOffering(null);
                 }}
               >
@@ -297,7 +318,7 @@ export default function HomeScreen() {
                     <IconButton
                       icon="close"
                       size={20}
-                      onPress={() => setSelectedOffering(null)}
+                      onPress={() => { haptic.soft(); setSelectedOffering(null); }}
                       style={styles.closeButton}
                     />
                   </View>
@@ -321,7 +342,7 @@ export default function HomeScreen() {
               {tasksWithLocation.length} tasks • {boostedOfferings.length} services
             </Text>
             {tasksWithoutLocation.length > 0 && (
-              <TouchableOpacity onPress={() => setViewMode('list')} style={styles.viewAllButton}>
+              <TouchableOpacity onPress={() => { haptic.selection(); setViewMode('list'); }} style={styles.viewAllButton}>
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             )}
@@ -351,7 +372,7 @@ export default function HomeScreen() {
             }}
             onEndReachedThreshold={0.5}
             refreshing={false}
-            onRefresh={refetch}
+            onRefresh={handleRefresh}
           />
         </View>
       )}
