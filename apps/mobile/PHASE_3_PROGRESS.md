@@ -6,7 +6,7 @@ Phase 3 focuses on connecting the main tab screens to real API data and implemen
 
 ---
 
-## ✅ Completed (January 19, 2026)
+## ✅ Completed (January 19-20, 2026)
 
 ### Home Screen - Offerings Browser
 - ✅ **API Integration** - Connected to `offeringsAPI.getOfferings()`
@@ -44,6 +44,20 @@ Phase 3 focuses on connecting the main tab screens to real API data and implemen
 - ✅ **Empty States** - Friendly "no conversations" message
 - ✅ **User Avatars** - Displays first letter of username
 - ✅ **Last Message Preview** - Shows snippet of last message
+- ✅ **Navigation to Chat** - Tapping conversation opens chat screen
+
+### Conversation/Chat Screen (NEW - January 20, 2026)
+- ✅ **API Integration** - Connected to `getMessages()`, `sendMessage()`, `markAsRead()`
+- ✅ **Message Bubbles** - Own messages (blue, right) vs others (white, left)
+- ✅ **Real-time Polling** - Refreshes every 10 seconds for new messages
+- ✅ **Send Messages** - Text input with send button
+- ✅ **Auto-scroll** - Scrolls to newest message automatically
+- ✅ **Date Separators** - "Today", "Yesterday", or date for message groups
+- ✅ **Mark as Read** - Marks conversation read on open
+- ✅ **Pull-to-Refresh** - Manual refresh for latest messages
+- ✅ **Loading/Error/Empty States** - Full state handling
+- ✅ **Keyboard Handling** - KeyboardAvoidingView for iOS/Android
+- ✅ **User Avatar** - Shows sender avatar for other user's messages
 
 ---
 
@@ -56,6 +70,7 @@ Phase 3 focuses on connecting the main tab screens to real API data and implemen
 | `apps/mobile/app/(tabs)/index.tsx` | Home screen API integration | [99978c2](https://github.com/ojayWillow/marketplace-frontend/commit/99978c2578a0a4988a3402ac611815f74041cdfa) |
 | `apps/mobile/app/(tabs)/tasks.tsx` | Tasks screen API integration | [aee6f87](https://github.com/ojayWillow/marketplace-frontend/commit/aee6f8743ca8f5300b140a2b93147f458bb4927a) |
 | `apps/mobile/app/(tabs)/messages.tsx` | Messages screen API integration | [a8fea33](https://github.com/ojayWillow/marketplace-frontend/commit/a8fea3320db4b65a7cdf3de31ae6d14efad7e830) |
+| `apps/mobile/app/conversation/[id].tsx` | **Conversation chat screen** | [03adfac](https://github.com/ojayWillow/marketplace-frontend/commit/03adfacd95615328d95a530ad4c1b5475da62e24) |
 
 ### Key Features Implemented
 
@@ -96,19 +111,33 @@ Every screen has:
 - **Error State** - "Failed to load" + Retry button
 - **Empty State** - Context-specific message + emoji
 
+#### 4. Chat UI Pattern (NEW)
+```typescript
+// Message bubble styling based on sender
+<View style={[
+  styles.messageBubble,
+  isOwnMessage ? styles.ownMessage : styles.otherMessage,
+]}>
+  <Text style={isOwnMessage ? styles.ownMessageText : styles.otherMessageText}>
+    {message.content}
+  </Text>
+</View>
+```
+
 ---
 
 ## ⚠️ Known Limitations
 
-### Navigation Not Implemented
-- Tapping an offering/task/conversation does nothing yet
-- Detail screens don't exist (Phase 4)
-- Routes like `/offering/[id]` need to be created
+### Partially Implemented Navigation
+- ✅ Conversations → Chat screen works
+- ❌ Home → Offering detail (not yet)
+- ❌ Tasks list → Task detail (navigation exists but needs wiring)
 
 ### Missing Features (From Roadmap)
 - [ ] Infinite scroll pagination (currently limited to 20 items)
 - [ ] Advanced filtering options
 - [ ] Sort options (price, date, etc.)
+- [ ] Real-time WebSocket messaging (currently using polling)
 
 ---
 
@@ -146,16 +175,26 @@ EXPO_PUBLIC_API_URL=http://192.168.18.4:5000
    - ✅ Switch tabs (All/My Tasks/Applied) → Should filter
    - ✅ Open Messages tab → Should see conversations (if logged in)
    - ✅ Test when not logged in → Should show sign-in prompt
+   - ✅ **NEW:** Tap a conversation → Should open chat screen
+   - ✅ **NEW:** Send a message → Should appear in chat
+   - ✅ **NEW:** Pull to refresh in chat → Should reload messages
 
 ---
 
-## 🚀 Next Steps (Phase 3 Remaining)
+## 🚀 Next Steps (Phase 3/4 Remaining)
 
-### Detail Screens (Phase 4)
-1. Create offering detail screen
-2. Create task detail screen
-3. Create conversation/chat screen
-4. Add navigation from list items to details
+### Detail Screens Still Needed
+1. ❌ Create offering detail screen (`/offering/[id]`)
+2. ✅ Task detail screen exists (`/task/[id]`)
+3. ✅ **Conversation/chat screen complete** (`/conversation/[id]`)
+
+### Navigation Wiring
+1. Wire Home offerings to navigate to offering detail
+2. Wire Tasks list to navigate to task detail (may already work)
+
+### Create Screens (Phase 6)
+1. Create Task screen
+2. Create Offering screen
 
 ### Enhancements
 1. **Infinite Scroll** - Load more when reaching bottom
@@ -167,13 +206,15 @@ EXPO_PUBLIC_API_URL=http://192.168.18.4:5000
 
 ## 🎉 Achievements
 
-✅ **All 3 main screens connected to API**  
+✅ **All 3 main tab screens connected to API**  
 ✅ **Loading, error, and empty states everywhere**  
 ✅ **Pull-to-refresh works on all screens**  
 ✅ **Category and tab filtering functional**  
 ✅ **Search functionality working**  
 ✅ **Unread message badges**  
 ✅ **Real data from backend displays correctly**  
+✅ **Conversation/chat screen complete with send functionality**  
+✅ **Messages flow works end-to-end**  
 
 ---
 
@@ -181,15 +222,16 @@ EXPO_PUBLIC_API_URL=http://192.168.18.4:5000
 
 | Screen | UI | API | States | Refresh | Navigation |
 |--------|-----|-----|--------|---------|------------|
-| Home | ✅ | ✅ | ✅ | ✅ | ❌ Phase 4 |
-| Tasks | ✅ | ✅ | ✅ | ✅ | ❌ Phase 4 |
-| Messages | ✅ | ✅ | ✅ | ✅ | ❌ Phase 4 |
-| Profile | ✅ | ✅ | ✅ | N/A | ❌ Phase 4 |
+| Home | ✅ | ✅ | ✅ | ✅ | ❌ Need offering detail |
+| Tasks | ✅ | ✅ | ✅ | ✅ | ✅ Task detail exists |
+| Messages | ✅ | ✅ | ✅ | ✅ | ✅ Chat screen done |
+| Profile | ✅ | ✅ | ✅ | N/A | ❌ Edit profile |
+| Chat | ✅ | ✅ | ✅ | ✅ | N/A |
 
-**Phase 3 Status:** 🟡 **60% Complete**  
-**Estimated Remaining:** 2-3 days for detail screens
+**Phase 3 Status:** 🟡 **70% Complete**  
+**Estimated Remaining:** 1-2 days for offering detail + navigation wiring
 
 ---
 
-**Last Updated:** January 19, 2026  
+**Last Updated:** January 20, 2026  
 **Branch:** `feature/mobile-app-expo`
