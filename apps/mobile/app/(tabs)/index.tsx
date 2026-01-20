@@ -1,6 +1,6 @@
 import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, ActivityIndicator, Surface, IconButton, Card, Chip } from 'react-native-paper';
+import { Text, ActivityIndicator, Surface, IconButton, Card } from 'react-native-paper';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
@@ -99,7 +99,6 @@ export default function HomeScreen() {
 
   const allTasks = data?.pages.flatMap((page) => page.tasks) || [];
   const tasksWithLocation = allTasks.filter(t => t.latitude && t.longitude);
-  const tasksWithoutLocation = allTasks.filter(t => !t.latitude || !t.longitude);
   const totalCount = data?.pages[0]?.total || 0;
 
   // Filter boosted offerings with location
@@ -203,18 +202,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <Surface style={styles.header} elevation={2}>
-        <Text variant="headlineMedium" style={styles.title}>Quick Help</Text>
-        <View style={styles.headerRight}>
-          <IconButton
-            icon={viewMode === 'map' ? 'view-list' : 'map'}
-            size={24}
-            onPress={handleViewModeToggle}
-          />
-        </View>
-      </Surface>
-
       {/* Loading State */}
       {isLoading && (
         <View style={styles.centerContainer}>
@@ -288,7 +275,7 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Selected Task Card - Fixed Chip */}
+          {/* Selected Task Card */}
           {selectedTask && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -299,7 +286,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  {/* Category Badge - Using View instead of Chip */}
+                  {/* Category Badge */}
                   <View style={styles.cardTopRow}>
                     <View
                       style={[
@@ -362,7 +349,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Selected Offering Card - Fixed Chip */}
+          {/* Selected Offering Card */}
           {selectedOffering && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -373,7 +360,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  {/* Boost Badge - Using View */}
+                  {/* Boost Badge */}
                   <View style={styles.cardTopRow}>
                     <View style={styles.boostBadge}>
                       <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
@@ -427,33 +414,40 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Map Stats Badge */}
-          <View style={styles.statsBadge}>
-            <Text style={styles.statsText}>
-              {tasksWithLocation.length} tasks • {boostedOfferings.length} services
-            </Text>
-            {tasksWithoutLocation.length > 0 && (
-              <TouchableOpacity onPress={() => { haptic.selection(); setViewMode('list'); }} style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          {/* Toggle to List View Button */}
+          <TouchableOpacity 
+            style={styles.viewToggleButton} 
+            onPress={handleViewModeToggle}
+          >
+            <Text style={styles.viewToggleIcon}>📜</Text>
+            <Text style={styles.viewToggleText}>List</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       {/* List View with Infinite Scroll */}
       {!isLoading && !isError && viewMode === 'list' && (
         <View style={styles.listContainer}>
+          {/* List Header with back to map */}
+          <Surface style={styles.listHeader} elevation={1}>
+            <TouchableOpacity 
+              style={styles.backToMapButton} 
+              onPress={handleViewModeToggle}
+            >
+              <Text style={styles.backToMapIcon}>🗺️</Text>
+              <Text style={styles.backToMapText}>Map</Text>
+            </TouchableOpacity>
+            <Text variant="titleMedium" style={styles.listHeaderTitle}>
+              All Open Jobs ({totalCount})
+            </Text>
+            <View style={{ width: 60 }} />
+          </Surface>
+          
           <FlatList
             data={allTasks}
             renderItem={renderTaskCard}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}
-            ListHeaderComponent={
-              <Text variant="titleMedium" style={styles.listTitle}>
-                All Open Tasks ({totalCount})
-              </Text>
-            }
             ListEmptyComponent={renderListEmpty}
             ListFooterComponent={renderListFooter}
             onEndReached={() => {
@@ -475,20 +469,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  title: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  headerRight: {
-    flexDirection: 'row',
   },
   centerContainer: {
     flex: 1,
@@ -569,7 +549,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  // Custom Badge instead of Chip
   categoryBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -637,43 +616,65 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 24,
   },
-  statsBadge: {
+  viewToggleButton: {
     position: 'absolute',
     top: 16,
     right: 16,
     backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
-  statsText: {
+  viewToggleIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  viewToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1f2937',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  viewAllButton: {
-    marginTop: 4,
-  },
-  viewAllText: {
-    color: '#0ea5e9',
-    fontSize: 12,
-    fontWeight: '600',
   },
   listContainer: {
     flex: 1,
   },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+  },
+  listHeaderTitle: {
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  backToMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  backToMapIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  backToMapText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
   listContent: {
     padding: 16,
-  },
-  listTitle: {
-    fontWeight: '600',
-    marginBottom: 16,
-    color: '#1f2937',
   },
   listCard: {
     marginBottom: 12,
