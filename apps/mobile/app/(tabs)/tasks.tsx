@@ -1,14 +1,12 @@
 import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Card, Chip, ActivityIndicator, Button, Surface, FAB, SegmentedButtons } from 'react-native-paper';
+import { Text, Card, ActivityIndicator, Button, Surface, FAB, SegmentedButtons } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { getTasks, getCreatedTasks, getMyTasks, getMyApplications, getOfferings, getMyOfferings, useAuthStore, type Task, type TaskApplication, type Offering } from '@marketplace/shared';
+import { getTasks, getOfferings, useAuthStore, type Task, type Offering } from '@marketplace/shared';
 
-type MainTab = 'jobs' | 'offerings';
-type JobFilter = 'all' | 'posted' | 'my_jobs' | 'applied';
-type OfferingFilter = 'all' | 'my_offerings';
+type MainTab = 'jobs' | 'services';
 
 // Helper to shorten location - extract city name
 const shortenLocation = (location: string | undefined): string => {
@@ -17,78 +15,37 @@ const shortenLocation = (location: string | undefined): string => {
   
   // Try to find city (skip street addresses, postal codes, country)
   for (const part of parts) {
-    // Skip if it's a street number/address or postal code or country
-    if (/^\d/.test(part)) continue; // Starts with number
-    if (/LV-\d+/.test(part)) continue; // Latvian postal code
+    if (/^\d/.test(part)) continue;
+    if (/LV-\d+/.test(part)) continue;
     if (part.toLowerCase() === 'latvia') continue;
     if (part.length < 3) continue;
-    // Return first valid city-like name
     return part;
   }
   
-  // Fallback: just truncate
   return location.length > 15 ? location.substring(0, 15) + '...' : location;
 };
 
 export default function TasksScreen() {
   const [mainTab, setMainTab] = useState<MainTab>('jobs');
-  const [jobFilter, setJobFilter] = useState<JobFilter>('all');
-  const [offeringFilter, setOfferingFilter] = useState<OfferingFilter>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const { user, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
-  // Jobs query
+  // Browse Jobs query - only open jobs
   const jobsQuery = useQuery({
-    queryKey: ['tasks', jobFilter, user?.id],
-    queryFn: async () => {
-      if (jobFilter === 'posted' && user) {
-        return await getCreatedTasks();
-      } else if (jobFilter === 'my_jobs' && user) {
-        return await getMyTasks();
-      } else if (jobFilter === 'applied' && user) {
-        const response = await getMyApplications();
-        const pendingApps = response.applications.filter((app: TaskApplication) => app.status === 'pending');
-        return {
-          tasks: pendingApps.map((app: TaskApplication) => app.task).filter(Boolean) as Task[],
-          total: pendingApps.length,
-          page: 1,
-        };
-      } else {
-        return await getTasks({ page: 1, per_page: 20, status: 'open' });
-      }
-    },
-    enabled: mainTab === 'jobs' && (jobFilter === 'all' || !!user),
+    queryKey: ['tasks-browse'],
+    queryFn: () => getTasks({ page: 1, per_page: 20, status: 'open' }),
+    enabled: mainTab === 'jobs',
   });
 
-  // Offerings query
-  const offeringsQuery = useQuery({
-    queryKey: ['offerings', offeringFilter, user?.id],
-    queryFn: async () => {
-      if (offeringFilter === 'my_offerings' && user) {
-        return await getMyOfferings();
-      }
-      return await getOfferings({ page: 1, per_page: 20 });
-    },
-    enabled: mainTab === 'offerings' && (offeringFilter === 'all' || !!user),
+  // Browse Services query - all active services
+  const servicesQuery = useQuery({
+    queryKey: ['services-browse'],
+    queryFn: () => getOfferings({ page: 1, per_page: 20 }),
+    enabled: mainTab === 'services',
   });
 
   const tasks = jobsQuery.data?.tasks || [];
-  const offerings = offeringsQuery.data?.offerings || [];
-
-  const jobTabs: { id: JobFilter; label: string; requiresAuth: boolean }[] = [
-    { id: 'all', label: 'Browse', requiresAuth: false },
-    { id: 'my_jobs', label: '💼 My Jobs', requiresAuth: true },
-    { id: 'posted', label: 'Posted', requiresAuth: true },
-    { id: 'applied', label: 'Applied', requiresAuth: true },
-  ];
-
-  const offeringTabs: { id: OfferingFilter; label: string; requiresAuth: boolean }[] = [
-    { id: 'all', label: 'Browse', requiresAuth: false },
-    { id: 'my_offerings', label: '🛠️ My Services', requiresAuth: true },
-  ];
-
-  const visibleJobTabs = jobTabs.filter(tab => !tab.requiresAuth || isAuthenticated);
-  const visibleOfferingTabs = offeringTabs.filter(tab => !tab.requiresAuth || isAuthenticated);
+  const offerings = servicesQuery.data?.offerings || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -131,16 +88,17 @@ export default function TasksScreen() {
     }
   };
 
-  const isLoading = mainTab === 'jobs' ? jobsQuery.isLoading : offeringsQuery.isLoading;
-  const isError = mainTab === 'jobs' ? jobsQuery.isError : offeringsQuery.isError;
-  const refetch = mainTab === 'jobs' ? jobsQuery.refetch : offeringsQuery.refetch;
-  const isRefetching = mainTab === 'jobs' ? jobsQuery.isRefetching : offeringsQuery.isRefetching;
+  const isLoading = mainTab === 'jobs' ? jobsQuery.isLoading : servicesQuery.isLoading;
+  const isError = mainTab === 'jobs' ? jobsQuery.isError : servicesQuery.isError;
+  const refetch = mainTab === 'jobs' ? jobsQuery.refetch : servicesQuery.refetch;
+  const isRefetching = mainTab === 'jobs' ? jobsQuery.isRefetching : servicesQuery.isRefetching;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <Surface style={styles.header} elevation={1}>
-        <Text variant="headlineMedium" style={styles.title}>Work</Text>
+        <Text variant="headlineMedium" style={styles.title}>Find Work</Text>
+        <Text style={styles.subtitle}>Discover jobs and services near you</Text>
         
         {/* Main Tab Segmented Control */}
         <View style={styles.segmentContainer}>
@@ -149,44 +107,11 @@ export default function TasksScreen() {
             onValueChange={(value) => setMainTab(value as MainTab)}
             buttons={[
               { value: 'jobs', label: '📋 Jobs', style: mainTab === 'jobs' ? styles.segmentActive : {} },
-              { value: 'offerings', label: '🛠️ Services', style: mainTab === 'offerings' ? styles.segmentActive : {} },
+              { value: 'services', label: '🛠️ Services', style: mainTab === 'services' ? styles.segmentActive : {} },
             ]}
             style={styles.segmentedButtons}
           />
         </View>
-      </Surface>
-
-      {/* Filter Tabs */}
-      <Surface style={styles.tabContainer} elevation={1}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.tabsRow}>
-            {mainTab === 'jobs' ? (
-              visibleJobTabs.map((tab) => (
-                <Chip
-                  key={tab.id}
-                  selected={jobFilter === tab.id}
-                  onPress={() => setJobFilter(tab.id)}
-                  style={styles.tab}
-                  mode={jobFilter === tab.id ? 'flat' : 'outlined'}
-                >
-                  {tab.label}
-                </Chip>
-              ))
-            ) : (
-              visibleOfferingTabs.map((tab) => (
-                <Chip
-                  key={tab.id}
-                  selected={offeringFilter === tab.id}
-                  onPress={() => setOfferingFilter(tab.id)}
-                  style={styles.tab}
-                  mode={offeringFilter === tab.id ? 'flat' : 'outlined'}
-                >
-                  {tab.label}
-                </Chip>
-              ))
-            )}
-          </View>
-        </ScrollView>
       </Surface>
 
       <ScrollView
@@ -217,11 +142,8 @@ export default function TasksScreen() {
             tasks.length === 0 ? (
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyIcon}>📋</Text>
-                <Text style={styles.emptyText}>
-                  {jobFilter === 'posted' ? "No tasks posted yet" :
-                   jobFilter === 'my_jobs' ? "No jobs assigned" :
-                   jobFilter === 'applied' ? "No applications" : "No jobs available"}
-                </Text>
+                <Text style={styles.emptyText}>No jobs available</Text>
+                <Text style={styles.emptySubtext}>Check back later or post your own job</Text>
               </View>
             ) : (
               tasks.map((task: Task) => {
@@ -230,7 +152,6 @@ export default function TasksScreen() {
                 return (
                   <Card key={task.id} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
                     <Card.Content style={styles.cardContent}>
-                      {/* Header: Title + Status */}
                       <View style={styles.cardHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
@@ -238,13 +159,9 @@ export default function TasksScreen() {
                         </View>
                       </View>
                       
-                      {/* Category */}
                       <Text style={styles.category}>{task.category}</Text>
-                      
-                      {/* Description */}
                       <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
                       
-                      {/* Footer: Price + Location/Creator */}
                       <View style={styles.cardFooter}>
                         <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
                         <View style={styles.footerMeta}>
@@ -261,14 +178,13 @@ export default function TasksScreen() {
             )
           ) : null}
 
-          {/* Offerings List */}
-          {mainTab === 'offerings' && !isLoading && !isError ? (
+          {/* Services List */}
+          {mainTab === 'services' && !isLoading && !isError ? (
             offerings.length === 0 ? (
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyIcon}>🛠️</Text>
-                <Text style={styles.emptyText}>
-                  {offeringFilter === 'my_offerings' ? "No services listed yet" : "No services available"}
-                </Text>
+                <Text style={styles.emptyText}>No services available</Text>
+                <Text style={styles.emptySubtext}>Check back later or offer your own service</Text>
               </View>
             ) : (
               offerings.map((offering: Offering) => {
@@ -276,7 +192,6 @@ export default function TasksScreen() {
                 return (
                   <Card key={offering.id} style={styles.card} onPress={() => router.push(`/offering/${offering.id}`)}>
                     <Card.Content style={styles.cardContent}>
-                      {/* Header: Title + Status */}
                       <View style={styles.cardHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
@@ -284,13 +199,9 @@ export default function TasksScreen() {
                         </View>
                       </View>
                       
-                      {/* Category */}
                       <Text style={styles.categoryOrange}>{offering.category}</Text>
-                      
-                      {/* Description */}
                       <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{offering.description}</Text>
                       
-                      {/* Footer: Price + Creator */}
                       <View style={styles.cardFooter}>
                         <Text style={styles.priceOrange}>
                           {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
@@ -373,8 +284,11 @@ const styles = StyleSheet.create({
   },
   title: { 
     fontWeight: 'bold', 
-    color: '#1f2937', 
-    marginBottom: 12 
+    color: '#1f2937',
+  },
+  subtitle: {
+    color: '#6b7280',
+    marginBottom: 16,
   },
   segmentContainer: { 
     marginTop: 4 
@@ -384,17 +298,6 @@ const styles = StyleSheet.create({
   },
   segmentActive: { 
     backgroundColor: '#0ea5e9' 
-  },
-  tabContainer: { 
-    paddingHorizontal: 16, 
-    paddingVertical: 12, 
-    backgroundColor: '#ffffff' 
-  },
-  tabsRow: { 
-    flexDirection: 'row' 
-  },
-  tab: { 
-    marginRight: 8 
   },
   scrollView: { 
     flex: 1 
@@ -413,7 +316,13 @@ const styles = StyleSheet.create({
   emptyText: { 
     marginTop: 12, 
     color: '#6b7280', 
-    textAlign: 'center' 
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emptySubtext: {
+    marginTop: 4,
+    color: '#9ca3af',
+    fontSize: 14,
   },
   errorText: { 
     color: '#ef4444', 
@@ -423,7 +332,7 @@ const styles = StyleSheet.create({
     fontSize: 48 
   },
   
-  // Card Styles - Clean and Professional
+  // Card Styles
   card: { 
     marginBottom: 12, 
     backgroundColor: '#ffffff',
