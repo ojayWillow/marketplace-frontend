@@ -24,7 +24,7 @@ export default function TabsLayout() {
           height: 65,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: '500',
         },
       }}
@@ -62,6 +62,13 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
+        }}
+      />
+      {/* Hidden tabs - accessible via navigation but not in bottom bar */}
+      <Tabs.Screen
+        name="offerings"
+        options={{
+          href: null, // Hide from tab bar
         }}
       />
     </Tabs>
