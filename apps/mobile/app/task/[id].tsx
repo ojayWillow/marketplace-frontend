@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator, Card } from 'react-native-paper';
@@ -166,6 +166,10 @@ export default function TaskDetailScreen() {
       const url = `https://maps.google.com/?q=${task.latitude},${task.longitude}`;
       Linking.openURL(url);
     }
+  };
+
+  const handleViewProfile = (userId: number) => {
+    router.push(`/user/${userId}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -397,10 +401,14 @@ export default function TaskDetailScreen() {
           </View>
         </Surface>
 
-        {/* Creator */}
+        {/* Creator - Now Clickable */}
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Posted by</Text>
-          <View style={styles.creatorRow}>
+          <TouchableOpacity 
+            style={styles.creatorRow}
+            onPress={() => task.creator_id && handleViewProfile(task.creator_id)}
+            activeOpacity={0.7}
+          >
             <View style={styles.creatorAvatarContainer}>
               <Text style={styles.creatorAvatarText}>
                 {task.creator_name?.charAt(0).toUpperCase() || 'U'}
@@ -421,14 +429,18 @@ export default function TaskDetailScreen() {
                 </View>
               ) : null}
             </View>
-          </View>
+          </TouchableOpacity>
         </Surface>
 
-        {/* Assigned Helper */}
+        {/* Assigned Helper - Now Clickable */}
         {task.assigned_to_name && !isAssignedToMe ? (
           <Surface style={styles.section} elevation={0}>
             <Text variant="titleMedium" style={styles.sectionTitle}>Assigned to</Text>
-            <View style={styles.creatorRow}>
+            <TouchableOpacity 
+              style={styles.creatorRow}
+              onPress={() => task.assigned_to_id && handleViewProfile(task.assigned_to_id)}
+              activeOpacity={0.7}
+            >
               <View style={styles.helperAvatarContainer}>
                 <Text style={styles.helperAvatarText}>
                   {task.assigned_to_name?.charAt(0).toUpperCase() || 'U'}
@@ -439,7 +451,7 @@ export default function TaskDetailScreen() {
                   {task.assigned_to_name}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </Surface>
         ) : null}
 
