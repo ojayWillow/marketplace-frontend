@@ -9,6 +9,9 @@ interface AuthState {
   isAuthenticated: boolean;
   // Phone verification status
   isPhoneVerified: boolean;
+  // Hydration tracking
+  _hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   // Helpers
   needsPhoneVerification: () => boolean;
   // Actions
@@ -24,6 +27,9 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       isPhoneVerified: false,
+      _hasHydrated: false,
+
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
 
       // Check if user needs to verify phone
       needsPhoneVerification: () => {
@@ -64,6 +70,9 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         isPhoneVerified: state.isPhoneVerified,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
