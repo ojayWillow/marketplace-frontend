@@ -18,6 +18,7 @@
     "@formatjs/intl-pluralrules": "^5.2.14",
     "@marketplace/shared": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-native-community/datetimepicker": "^8.0.0",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.5",
     "expo": "~54.0.0",
