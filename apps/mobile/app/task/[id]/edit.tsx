@@ -398,7 +398,6 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
-    backgroundColor: '#ffffff',
   },
   textArea: {
     minHeight: 100,
