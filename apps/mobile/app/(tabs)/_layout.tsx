@@ -24,7 +24,7 @@ export default function TabsLayout() {
           height: 65,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '500',
         },
       }}
@@ -44,10 +44,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="offerings"
+        name="listings"
         options={{
-          title: 'Services',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🛠️" focused={focused} />,
+          title: 'Listings',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🛍️" focused={focused} />,
         }}
       />
       <Tabs.Screen
