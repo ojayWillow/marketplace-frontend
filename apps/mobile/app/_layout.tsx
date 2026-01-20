@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -33,26 +32,9 @@ const theme = {
 };
 
 export default function RootLayout() {
-  const [isReady, setIsReady] = useState(false);
-  const { isAuthenticated } = useAuthStore();
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
-  useEffect(() => {
-    // Give Zustand time to hydrate from async storage
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Also check if auth state changes (means hydration happened)
-  useEffect(() => {
-    if (isAuthenticated && !isReady) {
-      setIsReady(true);
-    }
-  }, [isAuthenticated, isReady]);
-
-  if (!isReady) {
+  if (!hasHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#0ea5e9" />
