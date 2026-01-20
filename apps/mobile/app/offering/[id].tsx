@@ -1,7 +1,7 @@
 import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, Chip, Avatar, ActivityIndicator, Divider } from 'react-native-paper';
+import { Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, type Offering } from '@marketplace/shared';
 
@@ -208,16 +208,16 @@ export default function OfferingDetailScreen() {
         {/* Header */}
         <Surface style={styles.header} elevation={1}>
           <View style={styles.headerTop}>
-            <Chip 
-              style={[styles.statusChip, { backgroundColor: getStatusColor(offering.status) }]}
-              textStyle={styles.statusText}
-            >
-              {offering.status.charAt(0).toUpperCase() + offering.status.slice(1)}
-            </Chip>
+            {/* Status Badge - Custom View */}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(offering.status) }]}>
+              <Text style={styles.statusBadgeText}>
+                {offering.status.charAt(0).toUpperCase() + offering.status.slice(1)}
+              </Text>
+            </View>
             {offering.is_boost_active ? (
-              <Chip style={styles.boostChip} textStyle={styles.boostText}>
-                ⚡ Boosted
-              </Chip>
+              <View style={styles.boostBadge}>
+                <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
+              </View>
             ) : null}
           </View>
           
@@ -232,11 +232,12 @@ export default function OfferingDetailScreen() {
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Service Provider</Text>
           <View style={styles.providerRow}>
-            <Avatar.Text 
-              size={56} 
-              label={offering.creator_name?.charAt(0).toUpperCase() || 'U'} 
-              style={styles.avatar}
-            />
+            {/* Custom Avatar */}
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>
+                {offering.creator_name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
             <View style={styles.providerInfo}>
               <Text variant="titleLarge" style={styles.providerName}>
                 {offering.creator_name || 'Unknown'}
@@ -259,9 +260,9 @@ export default function OfferingDetailScreen() {
                 </Text>
               ) : null}
               {isOwnOffering ? (
-                <Chip style={styles.ownBadge} textStyle={styles.ownBadgeText}>
+                <View style={styles.ownBadge}>
                   <Text style={styles.ownBadgeText}>Your service</Text>
-                </Chip>
+                </View>
               ) : null}
             </View>
           </View>
@@ -305,9 +306,9 @@ export default function OfferingDetailScreen() {
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Category</Text>
-              <Chip style={styles.categoryChip}>
-                <Text>{offering.category}</Text>
-              </Chip>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>{offering.category}</Text>
+              </View>
             </View>
             {offering.experience ? (
               <View style={styles.detailItem}>
@@ -332,7 +333,6 @@ export default function OfferingDetailScreen() {
           </View>
         </Surface>
 
-        {/* Spacer for bottom button */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -436,23 +436,31 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     marginBottom: 12,
+    gap: 8,
   },
-  statusChip: {
-    height: 28,
-    marginRight: 8,
+  // Custom Badges
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
   },
-  statusText: {
+  statusBadgeText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
   },
-  boostChip: {
+  boostBadge: {
     backgroundColor: '#fef3c7',
-    height: 28,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
   },
-  boostText: {
+  boostBadgeText: {
     color: '#92400e',
     fontSize: 12,
+    fontWeight: '600',
   },
   title: {
     fontWeight: 'bold',
@@ -477,9 +485,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  avatar: {
+  // Custom Avatar
+  avatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#f97316',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '600',
   },
   providerInfo: {
     flex: 1,
@@ -513,11 +532,15 @@ const styles = StyleSheet.create({
   ownBadge: {
     backgroundColor: '#dbeafe',
     alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     marginTop: 8,
   },
   ownBadgeText: {
     color: '#1d4ed8',
     fontSize: 11,
+    fontWeight: '500',
   },
   description: {
     color: '#4b5563',
@@ -559,8 +582,16 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     fontWeight: '500',
   },
-  categoryChip: {
+  categoryBadge: {
     backgroundColor: '#f3f4f6',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '500',
   },
   bottomSpacer: {
     height: 120,
