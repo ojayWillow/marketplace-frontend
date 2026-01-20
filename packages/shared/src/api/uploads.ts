@@ -24,11 +24,18 @@ const getApiUrl = (): string => {
 }
 
 /**
- * Upload a single image file
+ * Upload a single image file (web - File object)
  */
-export const uploadImage = async (file: File): Promise<UploadResponse> => {
+export const uploadImage = async (file: File | Blob, filename?: string): Promise<UploadResponse> => {
   const formData = new FormData();
-  formData.append('file', file);
+  
+  // Handle both File and Blob objects
+  if (file instanceof File) {
+    formData.append('file', file);
+  } else {
+    // For Blob (from React Native), create a file-like object
+    formData.append('file', file, filename || `upload_${Date.now()}.jpg`);
+  }
   
   const response = await api.post('/api/uploads', formData, {
     headers: {
@@ -40,6 +47,21 @@ export const uploadImage = async (file: File): Promise<UploadResponse> => {
 };
 
 /**
+ * Upload image from URI (React Native)
+ * Converts a local file URI to a blob and uploads it
+ */
+export const uploadImageFromUri = async (uri: string, filename?: string): Promise<UploadResponse> => {
+  // Fetch the image from the local URI
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  
+  // Generate filename from URI if not provided
+  const name = filename || uri.split('/').pop() || `image_${Date.now()}.jpg`;
+  
+  return uploadImage(blob, name);
+};
+
+/**
  * Upload multiple images
  */
 export const uploadImages = async (files: File[]): Promise<UploadResponse[]> => {
@@ -47,6 +69,20 @@ export const uploadImages = async (files: File[]): Promise<UploadResponse[]> => 
   
   for (const file of files) {
     const result = await uploadImage(file);
+    results.push(result);
+  }
+  
+  return results;
+};
+
+/**
+ * Upload multiple images from URIs (React Native)
+ */
+export const uploadImagesFromUris = async (uris: string[]): Promise<UploadResponse[]> => {
+  const results: UploadResponse[] = [];
+  
+  for (const uri of uris) {
+    const result = await uploadImageFromUri(uri);
     results.push(result);
   }
   
