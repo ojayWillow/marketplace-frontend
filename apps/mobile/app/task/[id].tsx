@@ -3,7 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, applyToTask, useAuthStore, type Task } from '@marketplace/shared';
+import { getTask, applyToTask, markTaskDone, cancelTask, useAuthStore, type Task } from '@marketplace/shared';
 import { useState } from 'react';
 
 export default function TaskDetailScreen() {
@@ -31,6 +31,32 @@ export default function TaskDetailScreen() {
     },
   });
 
+  const markDoneMutation = useMutation({
+    mutationFn: () => markTaskDone(taskId),
+    onSuccess: () => {
+      Alert.alert('Success', 'Task marked as done! Waiting for confirmation.');
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to mark task as done.';
+      Alert.alert('Error', message);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelTask(taskId),
+    onSuccess: () => {
+      Alert.alert('Cancelled', 'Task has been cancelled.');
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to cancel task.';
+      Alert.alert('Error', message);
+    },
+  });
+
   const handleApply = () => {
     if (!isAuthenticated) {
       Alert.alert(
@@ -54,6 +80,28 @@ export default function TaskDetailScreen() {
     );
   };
 
+  const handleMarkDone = () => {
+    Alert.alert(
+      'Mark as Done',
+      'Mark this task as completed? The task creator will need to confirm.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Mark Done', onPress: () => markDoneMutation.mutate() },
+      ]
+    );
+  };
+
+  const handleCancel = () => {
+    Alert.alert(
+      'Cancel Task',
+      'Are you sure you want to cancel this task?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes, Cancel', style: 'destructive', onPress: () => cancelMutation.mutate() },
+      ]
+    );
+  };
+
   const handleOpenMap = () => {
     if (task?.latitude && task?.longitude) {
       const url = `https://maps.google.com/?q=${task.latitude},${task.longitude}`;
@@ -66,6 +114,7 @@ export default function TaskDetailScreen() {
       case 'open': return '#10b981';
       case 'assigned': return '#f59e0b';
       case 'in_progress': return '#3b82f6';
+      case 'pending_confirmation': return '#8b5cf6';
       case 'completed': return '#6b7280';
       case 'cancelled': return '#ef4444';
       default: return '#6b7280';
@@ -77,6 +126,7 @@ export default function TaskDetailScreen() {
       case 'open': return 'Open';
       case 'assigned': return 'Assigned';
       case 'in_progress': return 'In Progress';
+      case 'pending_confirmation': return 'Pending Confirmation';
       case 'completed': return 'Completed';
       case 'cancelled': return 'Cancelled';
       default: return status;
@@ -84,7 +134,10 @@ export default function TaskDetailScreen() {
   };
 
   const isOwnTask = user?.id === task?.creator_id;
+  const isAssignedToMe = user?.id === task?.assigned_to_id;
   const canApply = isAuthenticated && !isOwnTask && task?.status === 'open';
+  const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
+  const canCancel = isOwnTask && task?.status === 'open';
 
   if (isLoading) {
     return (
@@ -224,9 +277,33 @@ export default function TaskDetailScreen() {
                   Your task
                 </Chip>
               )}
+              {isAssignedToMe && (
+                <Chip style={styles.assignedChip} textStyle={styles.assignedText}>
+                  Assigned to you
+                </Chip>
+              )}
             </View>
           </View>
         </Surface>
+
+        {/* Assigned Helper */}
+        {task.assigned_to_name && !isAssignedToMe && (
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Assigned to</Text>
+            <View style={styles.creatorRow}>
+              <Avatar.Text 
+                size={48} 
+                label={task.assigned_to_name?.charAt(0).toUpperCase() || 'U'} 
+                style={styles.helperAvatar}
+              />
+              <View style={styles.creatorInfo}>
+                <Text variant="titleMedium" style={styles.creatorName}>
+                  {task.assigned_to_name}
+                </Text>
+              </View>
+            </View>
+          </Surface>
+        )}
 
         {/* Spacer for bottom button */}
         <View style={styles.bottomSpacer} />
@@ -248,16 +325,43 @@ export default function TaskDetailScreen() {
         </Surface>
       )}
 
-      {/* Own Task Actions */}
+      {/* Own Task Actions - Open Status */}
       {isOwnTask && task.status === 'open' && (
+        <Surface style={styles.bottomBar} elevation={4}>
+          <View style={styles.buttonRow}>
+            <Button
+              mode="outlined"
+              onPress={handleCancel}
+              loading={cancelMutation.isPending}
+              disabled={cancelMutation.isPending}
+              textColor="#ef4444"
+              style={[styles.actionButton, styles.cancelButton]}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => router.push(`/task/${taskId}/applications`)}
+              style={styles.actionButton}
+            >
+              Applications ({task.pending_applications_count || 0})
+            </Button>
+          </View>
+        </Surface>
+      )}
+
+      {/* Worker Actions - Can Mark Done */}
+      {canMarkDone && (
         <Surface style={styles.bottomBar} elevation={4}>
           <Button
             mode="contained"
-            onPress={() => Alert.alert('Coming Soon', 'View applications feature coming soon!')}
+            onPress={handleMarkDone}
+            loading={markDoneMutation.isPending}
+            disabled={markDoneMutation.isPending}
             style={styles.applyButton}
             contentStyle={styles.applyButtonContent}
           >
-            View Applications ({task.pending_applications_count || 0})
+            Mark as Done
           </Button>
         </Surface>
       )}
@@ -389,6 +493,9 @@ const styles = StyleSheet.create({
   creatorAvatar: {
     backgroundColor: '#0ea5e9',
   },
+  helperAvatar: {
+    backgroundColor: '#10b981',
+  },
   creatorInfo: {
     flex: 1,
     gap: 4,
@@ -403,6 +510,15 @@ const styles = StyleSheet.create({
   },
   ownTaskText: {
     color: '#1d4ed8',
+    fontSize: 11,
+  },
+  assignedChip: {
+    backgroundColor: '#dcfce7',
+    alignSelf: 'flex-start',
+    height: 24,
+  },
+  assignedText: {
+    color: '#166534',
     fontSize: 11,
   },
   bottomSpacer: {
@@ -422,5 +538,16 @@ const styles = StyleSheet.create({
   },
   applyButtonContent: {
     paddingVertical: 8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
+  },
+  cancelButton: {
+    borderColor: '#fecaca',
   },
 });
