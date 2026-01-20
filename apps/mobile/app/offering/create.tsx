@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { createOffering, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
 import ImagePicker from '../../components/ImagePicker';
+import LocationPicker from '../../components/LocationPicker';
 
 const CATEGORIES = [
   { value: 'cleaning', label: '🧹 Cleaning' },
@@ -26,6 +27,12 @@ const PRICE_TYPES = [
   { value: 'negotiable', label: 'Negotiable' },
 ];
 
+interface LocationData {
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
 export default function CreateOfferingScreen() {
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
@@ -35,7 +42,7 @@ export default function CreateOfferingScreen() {
   const [category, setCategory] = useState('other');
   const [price, setPrice] = useState('');
   const [priceType, setPriceType] = useState<'hourly' | 'fixed' | 'negotiable'>('hourly');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState<LocationData | null>(null);
   const [availability, setAvailability] = useState('');
   const [experience, setExperience] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -59,13 +66,19 @@ export default function CreateOfferingScreen() {
         }
       }
 
+      if (!location) {
+        throw new Error('Location is required');
+      }
+
       return createOffering({
         title,
         description,
         category,
         price: price ? parseFloat(price) : undefined,
         price_type: priceType,
-        location,
+        location: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
         availability: availability || undefined,
         experience: experience || undefined,
         images: imageUrls.length > 0 ? imageUrls.join(',') : undefined,
@@ -73,6 +86,7 @@ export default function CreateOfferingScreen() {
     },
     onSuccess: (offering) => {
       queryClient.invalidateQueries({ queryKey: ['offerings'] });
+      queryClient.invalidateQueries({ queryKey: ['offerings-map'] });
       Alert.alert(
         'Service Created!',
         'Your service has been listed.',
@@ -80,7 +94,7 @@ export default function CreateOfferingScreen() {
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to create service.';
+      const message = error.response?.data?.error || error.message || 'Failed to create service.';
       Alert.alert('Error', message);
     },
   });
@@ -95,8 +109,8 @@ export default function CreateOfferingScreen() {
       Alert.alert('Required', 'Please describe your service.');
       return;
     }
-    if (!location.trim()) {
-      Alert.alert('Required', 'Please enter your service area.');
+    if (!location) {
+      Alert.alert('Required', 'Please select a location for your service.');
       return;
     }
 
@@ -220,15 +234,10 @@ export default function CreateOfferingScreen() {
 
           {/* Location */}
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Service Area *</Text>
-            <TextInput
-              mode="outlined"
-              placeholder="e.g., Riga, Riga and surroundings"
-              value={location}
-              onChangeText={setLocation}
-              style={styles.input}
-              outlineStyle={styles.inputOutline}
-              left={<TextInput.Icon icon="map-marker" />}
+            <LocationPicker
+              initialLocation={location || undefined}
+              onLocationSelect={setLocation}
+              label="Service Area *"
             />
           </Surface>
 
