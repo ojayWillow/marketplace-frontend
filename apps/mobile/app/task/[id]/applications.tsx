@@ -87,6 +87,10 @@ export default function TaskApplicationsScreen() {
     }
   };
 
+  const formatStatus = (status: string) => {
+    return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown';
+  };
+
   // Check if current user is the task owner
   const isOwner = user?.id === task?.creator_id;
 
@@ -135,11 +139,13 @@ export default function TaskApplicationsScreen() {
         {/* Task Summary */}
         <Surface style={styles.taskSummary} elevation={1}>
           <Text variant="titleMedium" style={styles.taskTitle} numberOfLines={2}>
-            {task?.title}
+            {task?.title || 'Task'}
           </Text>
           <View style={styles.taskMeta}>
             <Text style={styles.taskBudget}>€{task?.budget || 0}</Text>
-            <Chip style={styles.taskStatus}>{task?.status}</Chip>
+            <Chip style={styles.taskStatus}>
+              <Text>{formatStatus(task?.status || '')}</Text>
+            </Chip>
           </View>
         </Surface>
 
@@ -177,15 +183,15 @@ export default function TaskApplicationsScreen() {
                   />
                   <View style={styles.applicantInfo}>
                     <Text variant="titleMedium" style={styles.applicantName}>
-                      {application.applicant_name}
+                      {application.applicant_name || 'Unknown'}
                     </Text>
                     <View style={styles.applicantMeta}>
-                      {application.applicant_rating && (
+                      {application.applicant_rating != null && application.applicant_rating > 0 && (
                         <Text style={styles.rating}>
                           ⭐ {application.applicant_rating.toFixed(1)}
                         </Text>
                       )}
-                      {application.applicant_completed_tasks !== undefined && (
+                      {application.applicant_completed_tasks != null && (
                         <Text style={styles.completedTasks}>
                           ✓ {application.applicant_completed_tasks} tasks
                         </Text>
@@ -196,25 +202,27 @@ export default function TaskApplicationsScreen() {
                     style={[styles.statusChip, { backgroundColor: statusColors.bg }]}
                     textStyle={{ color: statusColors.text, fontSize: 11 }}
                   >
-                    {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                    <Text style={{ color: statusColors.text, fontSize: 11 }}>
+                      {formatStatus(application.status)}
+                    </Text>
                   </Chip>
                 </View>
 
                 {/* Message */}
-                {application.message && (
+                {application.message ? (
                   <View style={styles.messageContainer}>
                     <Text style={styles.messageLabel}>Message:</Text>
                     <Text style={styles.messageText}>{application.message}</Text>
                   </View>
-                )}
+                ) : null}
 
                 {/* Proposed Price */}
-                {application.proposed_price && (
+                {application.proposed_price != null && application.proposed_price > 0 ? (
                   <View style={styles.proposedPrice}>
                     <Text style={styles.proposedLabel}>Proposed price:</Text>
                     <Text style={styles.proposedValue}>€{application.proposed_price}</Text>
                   </View>
-                )}
+                ) : null}
 
                 {/* Applied Date */}
                 <Text style={styles.appliedDate}>
@@ -222,8 +230,8 @@ export default function TaskApplicationsScreen() {
                 </Text>
 
                 {/* Action Buttons - Only for pending applications */}
-                {isPending && (
-                  <>
+                {isPending ? (
+                  <View>
                     <Divider style={styles.divider} />
                     <View style={styles.actionButtons}>
                       <Button
@@ -245,8 +253,8 @@ export default function TaskApplicationsScreen() {
                         Accept
                       </Button>
                     </View>
-                  </>
-                )}
+                  </View>
+                ) : null}
               </Card.Content>
             </Card>
           );
@@ -354,12 +362,12 @@ const styles = StyleSheet.create({
   },
   applicantMeta: {
     flexDirection: 'row',
-    gap: 12,
     marginTop: 2,
   },
   rating: {
     color: '#f59e0b',
     fontSize: 13,
+    marginRight: 12,
   },
   completedTasks: {
     color: '#6b7280',
@@ -387,11 +395,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 12,
-    gap: 8,
   },
   proposedLabel: {
     color: '#6b7280',
     fontSize: 13,
+    marginRight: 8,
   },
   proposedValue: {
     color: '#059669',
@@ -408,10 +416,10 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 12,
   },
   actionButton: {
     flex: 1,
+    marginHorizontal: 4,
   },
   rejectButton: {
     borderColor: '#fecaca',
