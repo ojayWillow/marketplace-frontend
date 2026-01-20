@@ -1,87 +1,37 @@
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, Avatar, ActivityIndicator, Card, Divider } from 'react-native-paper';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { getPublicUser, getUserReviews, getOfferingsByUser, useAuthStore, type PublicUser, type UserReview } from '@marketplace/shared';
-import { startConversation } from '@marketplace/shared';
+import { Text, Button, Surface, Avatar, Chip, ActivityIndicator, Card } from 'react-native-paper';
+import { useQuery } from '@tanstack/react-query';
+import { getUserProfile, getUserReviewStats, reviewsApi, useAuthStore } from '@marketplace/shared';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = parseInt(id || '0', 10);
-  const { user: currentUser, isAuthenticated } = useAuthStore();
-
-  const { data: user, isLoading: userLoading, error: userError } = useQuery({
-    queryKey: ['publicUser', userId],
-    queryFn: () => getPublicUser(userId),
-    enabled: userId > 0,
-  });
-
-  const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
-    queryKey: ['userReviews', userId],
-    queryFn: () => getUserReviews(userId),
-    enabled: userId > 0,
-  });
-
-  const { data: offeringsData } = useQuery({
-    queryKey: ['userOfferings', userId],
-    queryFn: () => getOfferingsByUser(userId),
-    enabled: userId > 0,
-  });
-
-  const contactMutation = useMutation({
-    mutationFn: (message: string) => startConversation(userId, message),
-    onSuccess: (data) => {
-      router.push(`/conversation/${data.conversation_id}`);
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to start conversation.';
-      Alert.alert('Error', message);
-    },
-  });
-
-  const handleContact = () => {
-    if (!isAuthenticated) {
-      Alert.alert(
-        'Sign In Required',
-        'You need to sign in to send messages.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
-        ]
-      );
-      return;
-    }
-
-    Alert.prompt(
-      'Send Message',
-      `Send a message to ${user?.username || 'this user'}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Send', 
-          onPress: (message) => {
-            if (message && message.trim()) {
-              contactMutation.mutate(message.trim());
-            }
-          }
-        },
-      ],
-      'plain-text',
-      'Hi! I would like to connect with you.'
-    );
-  };
-
+  const { user: currentUser } = useAuthStore();
   const isOwnProfile = currentUser?.id === userId;
+
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => getUserProfile(userId),
+    enabled: userId > 0,
+  });
+
+  const { data: reviewStats } = useQuery({
+    queryKey: ['userReviewStats', userId],
+    queryFn: () => getUserReviewStats(userId),
+    enabled: userId > 0,
+  });
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ['userReviews', userId],
+    queryFn: () => reviewsApi.getUserReviews(userId),
+    enabled: userId > 0,
+  });
+
   const reviews = reviewsData?.reviews || [];
-  const offerings = offeringsData?.offerings || [];
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
-
-  if (userLoading) {
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Profile' }} />
@@ -92,11 +42,12 @@ export default function UserProfileScreen() {
     );
   }
 
-  if (userError || !user) {
+  if (error || !user) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Profile' }} />
         <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>👤</Text>
           <Text variant="headlineSmall" style={styles.errorText}>User not found</Text>
           <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
             Go Back
@@ -106,110 +57,95 @@ export default function UserProfileScreen() {
     );
   }
 
+  const displayName = user.first_name && user.last_name
+    ? `${user.first_name} ${user.last_name}`
+    : user.username;
+
+  const getInitials = () => {
+    if (user.first_name && user.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    return user.username?.[0]?.toUpperCase() || 'U';
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: user.username || 'Profile',
+          title: displayName,
           headerBackTitle: 'Back',
         }} 
       />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <Surface style={styles.header} elevation={1}>
+        {/* Header */}
+        <Surface style={styles.header} elevation={0}>
           <Avatar.Text 
-            size={80} 
-            label={user.username?.charAt(0).toUpperCase() || 'U'}
+            size={96} 
+            label={getInitials()} 
             style={styles.avatar}
           />
           
-          <Text variant="headlineSmall" style={styles.username}>
-            {user.username}
-          </Text>
+          <Text variant="headlineSmall" style={styles.name}>{displayName}</Text>
+          <Text style={styles.username}>@{user.username}</Text>
           
-          {user.first_name || user.last_name ? (
-            <Text style={styles.fullName}>
-              {[user.first_name, user.last_name].filter(Boolean).join(' ')}
-            </Text>
+          {user.is_helper ? (
+            <Chip style={styles.helperBadge} textStyle={styles.helperBadgeText}>
+              🛠️ Available for work
+            </Chip>
           ) : null}
           
-          {user.city || user.country ? (
-            <Text style={styles.location}>
-              📍 {[user.city, user.country].filter(Boolean).join(', ')}
-            </Text>
+          {user.bio ? (
+            <Text style={styles.bio}>{user.bio}</Text>
           ) : null}
 
-          {user.is_verified ? (
-            <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedText}>✅ Verified</Text>
-            </View>
+          {user.city ? (
+            <Text style={styles.location}>📍 {user.city}</Text>
           ) : null}
-
-          <Text style={styles.memberSince}>
-            Member since {formatDate(user.created_at)}
-          </Text>
         </Surface>
 
         {/* Stats */}
-        <Surface style={styles.statsContainer} elevation={0}>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {user.average_rating ? user.average_rating.toFixed(1) : '-'}
+        <Surface style={styles.statsSection} elevation={0}>
+          <View style={styles.statsContainer}>
+            <View style={styles.stat}>
+              <Text variant="headlineMedium" style={styles.statValue}>
+                {reviewStats?.average_rating?.toFixed(1) || '-'}
               </Text>
               <Text style={styles.statLabel}>⭐ Rating</Text>
             </View>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user.reviews_count || 0}</Text>
+            <View style={styles.stat}>
+              <Text variant="headlineMedium" style={styles.statValue}>
+                {reviewStats?.total_reviews || 0}
+              </Text>
               <Text style={styles.statLabel}>Reviews</Text>
             </View>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user.completion_rate || 0}%</Text>
-              <Text style={styles.statLabel}>Completion</Text>
+            <View style={styles.stat}>
+              <Text variant="headlineMedium" style={styles.statValue}>
+                {user.completed_tasks_count || 0}
+              </Text>
+              <Text style={styles.statLabel}>Completed</Text>
             </View>
           </View>
         </Surface>
 
-        {/* Bio */}
-        {user.bio ? (
+        {/* Skills */}
+        {user.is_helper && user.skills && user.skills.length > 0 ? (
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>About</Text>
-            <Text style={styles.bioText}>{user.bio}</Text>
-          </Surface>
-        ) : null}
-
-        {/* Services/Offerings */}
-        {offerings.length > 0 ? (
-          <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Services ({offerings.length})
-            </Text>
-            {offerings.slice(0, 3).map((offering) => (
-              <Card 
-                key={offering.id} 
-                style={styles.offeringCard}
-                onPress={() => router.push(`/offering/${offering.id}`)}
-              >
-                <Card.Content style={styles.offeringContent}>
-                  <View style={styles.offeringInfo}>
-                    <Text variant="titleSmall" numberOfLines={1}>{offering.title}</Text>
-                    <Text style={styles.offeringCategory}>{offering.category}</Text>
-                  </View>
-                  <Text style={styles.offeringPrice}>
-                    {offering.price ? `€${offering.price}` : 'Negotiable'}
-                    {offering.price_type === 'hourly' ? '/hr' : ''}
-                  </Text>
-                </Card.Content>
-              </Card>
-            ))}
-            {offerings.length > 3 ? (
-              <Button mode="text" onPress={() => {}}>
-                View all {offerings.length} services
-              </Button>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Skills</Text>
+            <View style={styles.skillsContainer}>
+              {user.skills.map((skill: string) => (
+                <Chip key={skill} style={styles.skillChip}>
+                  {skill}
+                </Chip>
+              ))}
+            </View>
+            {user.hourly_rate ? (
+              <Text style={styles.hourlyRate}>
+                💰 €{user.hourly_rate}/hour
+              </Text>
             ) : null}
           </Surface>
         ) : null}
@@ -217,63 +153,65 @@ export default function UserProfileScreen() {
         {/* Reviews */}
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>
-            Reviews ({reviews.length})
+            Reviews ({reviewStats?.total_reviews || 0})
           </Text>
           
-          {reviewsLoading ? (
-            <ActivityIndicator size="small" />
-          ) : reviews.length === 0 ? (
+          {reviews.length === 0 ? (
             <Text style={styles.noReviews}>No reviews yet</Text>
           ) : (
-            reviews.slice(0, 5).map((review: UserReview) => (
-              <View key={review.id} style={styles.reviewItem}>
-                <View style={styles.reviewHeader}>
-                  <Avatar.Text 
-                    size={36} 
-                    label={review.reviewer_name?.charAt(0).toUpperCase() || 'U'}
-                    style={styles.reviewerAvatar}
-                  />
-                  <View style={styles.reviewerInfo}>
-                    <Text style={styles.reviewerName}>{review.reviewer_name}</Text>
-                    <View style={styles.reviewRating}>
-                      <Text style={styles.stars}>
-                        {'⭐'.repeat(Math.round(review.rating))}
-                      </Text>
-                      <Text style={styles.reviewDate}>
-                        {formatDate(review.created_at)}
-                      </Text>
+            reviews.slice(0, 5).map((review: any) => (
+              <Card key={review.id} style={styles.reviewCard}>
+                <Card.Content>
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.reviewerInfo}>
+                      <Avatar.Text 
+                        size={36} 
+                        label={review.reviewer?.username?.[0]?.toUpperCase() || 'U'} 
+                        style={styles.reviewerAvatar}
+                      />
+                      <View>
+                        <Text style={styles.reviewerName}>
+                          {review.reviewer?.username || 'Anonymous'}
+                        </Text>
+                        <Text style={styles.reviewDate}>
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.ratingBadge}>
+                      <Text style={styles.ratingText}>⭐ {review.rating}</Text>
                     </View>
                   </View>
-                </View>
-                <Text style={styles.reviewContent}>{review.content}</Text>
-                {reviews.indexOf(review) < reviews.length - 1 ? (
-                  <Divider style={styles.reviewDivider} />
-                ) : null}
-              </View>
+                  {review.content ? (
+                    <Text style={styles.reviewContent}>{review.content}</Text>
+                  ) : null}
+                </Card.Content>
+              </Card>
             ))
           )}
         </Surface>
 
-        {/* Spacer */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+        {/* Action Buttons */}
+        {!isOwnProfile ? (
+          <Surface style={styles.actionsSection} elevation={0}>
+            <Button
+              mode="contained"
+              onPress={() => router.push(`/conversation/new?userId=${userId}`)}
+              style={styles.messageButton}
+              icon="message"
+            >
+              Send Message
+            </Button>
+          </Surface>
+        ) : null}
 
-      {/* Contact Button (not own profile) */}
-      {!isOwnProfile ? (
-        <Surface style={styles.bottomBar} elevation={4}>
-          <Button
-            mode="contained"
-            onPress={handleContact}
-            loading={contactMutation.isPending}
-            disabled={contactMutation.isPending}
-            style={styles.contactButton}
-            contentStyle={styles.contactButtonContent}
-            icon="message"
-          >
-            Send Message
-          </Button>
-        </Surface>
-      ) : null}
+        {/* Member Since */}
+        <View style={styles.footer}>
+          <Text style={styles.memberSince}>
+            Member since {new Date(user.created_at).toLocaleDateString()}
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -297,6 +235,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
   },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
   errorText: {
     color: '#6b7280',
     marginBottom: 16,
@@ -306,59 +248,59 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#ffffff',
-    padding: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
   avatar: {
     backgroundColor: '#0ea5e9',
     marginBottom: 16,
   },
-  username: {
+  name: {
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 4,
   },
-  fullName: {
+  username: {
     color: '#6b7280',
-    marginBottom: 4,
+    marginTop: 4,
+  },
+  helperBadge: {
+    backgroundColor: '#dcfce7',
+    marginTop: 12,
+  },
+  helperBadgeText: {
+    color: '#166534',
+  },
+  bio: {
+    color: '#4b5563',
+    marginTop: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   location: {
-    color: '#9ca3af',
-    fontSize: 14,
-    marginBottom: 8,
+    color: '#6b7280',
+    marginTop: 8,
   },
-  verifiedBadge: {
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  verifiedText: {
-    color: '#166534',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  memberSince: {
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-  statsContainer: {
+  statsSection: {
     backgroundColor: '#ffffff',
     marginTop: 12,
-    padding: 16,
+    paddingVertical: 20,
   },
-  statsRow: {
+  statsContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-around',
   },
-  statItem: {
+  stat: {
     alignItems: 'center',
-    flex: 1,
+    paddingHorizontal: 24,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#e5e7eb',
   },
   statValue: {
-    fontSize: 24,
     fontWeight: 'bold',
     color: '#1f2937',
   },
@@ -366,11 +308,6 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 13,
     marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#e5e7eb',
   },
   section: {
     backgroundColor: '#ffffff',
@@ -382,89 +319,79 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 16,
   },
-  bioText: {
-    color: '#4b5563',
-    lineHeight: 22,
-  },
-  offeringCard: {
-    marginBottom: 8,
-    backgroundColor: '#f9fafb',
-  },
-  offeringContent: {
+  skillsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
-  offeringInfo: {
-    flex: 1,
+  skillChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#f3f4f6',
   },
-  offeringCategory: {
-    color: '#6b7280',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  offeringPrice: {
-    color: '#f97316',
-    fontWeight: 'bold',
+  hourlyRate: {
+    marginTop: 12,
+    color: '#0ea5e9',
+    fontWeight: '600',
   },
   noReviews: {
     color: '#9ca3af',
-    textAlign: 'center',
-    paddingVertical: 24,
+    fontStyle: 'italic',
   },
-  reviewItem: {
-    marginBottom: 16,
+  reviewCard: {
+    marginBottom: 12,
+    backgroundColor: '#f9fafb',
   },
   reviewHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  reviewerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   reviewerAvatar: {
     backgroundColor: '#6b7280',
     marginRight: 12,
   },
-  reviewerInfo: {
-    flex: 1,
-  },
   reviewerName: {
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#1f2937',
-  },
-  reviewRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  stars: {
-    marginRight: 8,
   },
   reviewDate: {
     color: '#9ca3af',
     fontSize: 12,
   },
+  ratingBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  ratingText: {
+    color: '#92400e',
+    fontWeight: '600',
+    fontSize: 13,
+  },
   reviewContent: {
     color: '#4b5563',
     lineHeight: 20,
   },
-  reviewDivider: {
-    marginTop: 16,
-  },
-  bottomSpacer: {
-    height: 100,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  actionsSection: {
     backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 32,
+    padding: 20,
+    marginTop: 12,
   },
-  contactButton: {
+  messageButton: {
     borderRadius: 12,
   },
-  contactButtonContent: {
-    paddingVertical: 8,
+  footer: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  memberSince: {
+    color: '#9ca3af',
+    fontSize: 13,
   },
 });
