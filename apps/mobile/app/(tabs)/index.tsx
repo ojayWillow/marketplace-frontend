@@ -11,9 +11,9 @@ import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SHEET_MIN_HEIGHT = 120;
-const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45;
-const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.85;
+const SHEET_MIN_HEIGHT = 80;
+const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
+const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
 
 // Categories for filter
 const CATEGORIES = [
@@ -26,15 +26,6 @@ const CATEGORIES = [
   { key: 'tech', label: 'Tech', icon: '💻' },
   { key: 'beauty', label: 'Beauty', icon: '💅' },
   { key: 'other', label: 'Other', icon: '📋' },
-];
-
-// Radius options in km
-const RADIUS_OPTIONS = [
-  { value: 5, label: '5' },
-  { value: 20, label: '20' },
-  { value: 50, label: '50' },
-  { value: 100, label: '100' },
-  { value: null, label: '∞' },
 ];
 
 // Helper to calculate distance in km
@@ -77,36 +68,42 @@ export default function HomeScreen() {
   
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedRadius, setSelectedRadius] = useState<number | null>(20); // Default 20km
 
   // Bottom sheet animation
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
-  const lastGestureDy = useRef(0);
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        lastGestureDy.current = 0;
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 5;
       },
       onPanResponderMove: (_, gestureState) => {
         const newHeight = currentHeight.current - gestureState.dy;
-        if (newHeight >= SHEET_MIN_HEIGHT && newHeight <= SHEET_MAX_HEIGHT) {
-          sheetHeight.setValue(newHeight);
-        }
+        const clampedHeight = Math.min(Math.max(newHeight, SHEET_MIN_HEIGHT), SHEET_MAX_HEIGHT);
+        sheetHeight.setValue(clampedHeight);
       },
       onPanResponderRelease: (_, gestureState) => {
         const newHeight = currentHeight.current - gestureState.dy;
         let snapTo = SHEET_MIN_HEIGHT;
         
-        if (gestureState.vy < -0.5 || newHeight > SHEET_MID_HEIGHT) {
-          snapTo = gestureState.vy < -1 ? SHEET_MAX_HEIGHT : SHEET_MID_HEIGHT;
-        } else if (gestureState.vy > 0.5 || newHeight < SHEET_MID_HEIGHT * 0.7) {
+        // Determine snap point based on velocity and position
+        if (gestureState.vy < -0.5) {
+          // Fast swipe up
+          snapTo = newHeight > SHEET_MID_HEIGHT ? SHEET_MAX_HEIGHT : SHEET_MID_HEIGHT;
+        } else if (gestureState.vy > 0.5) {
+          // Fast swipe down
           snapTo = SHEET_MIN_HEIGHT;
         } else {
-          snapTo = SHEET_MID_HEIGHT;
+          // Slow drag - snap to nearest
+          if (newHeight < SHEET_MID_HEIGHT * 0.5) {
+            snapTo = SHEET_MIN_HEIGHT;
+          } else if (newHeight < (SHEET_MID_HEIGHT + SHEET_MAX_HEIGHT) / 2) {
+            snapTo = SHEET_MID_HEIGHT;
+          } else {
+            snapTo = SHEET_MAX_HEIGHT;
+          }
         }
         
         currentHeight.current = snapTo;
@@ -114,6 +111,7 @@ export default function HomeScreen() {
           toValue: snapTo,
           useNativeDriver: false,
           bounciness: 4,
+          speed: 12,
         }).start();
         haptic.selection();
       },
@@ -159,7 +157,7 @@ export default function HomeScreen() {
     o => o.is_boost_active && o.latitude && o.longitude
   );
 
-  // Filter tasks based on category and radius
+  // Filter tasks based on category (no radius filter anymore)
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       // Must have location for map
@@ -170,20 +168,9 @@ export default function HomeScreen() {
         return false;
       }
       
-      // Radius filter
-      if (selectedRadius && userLocation) {
-        const distance = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          task.latitude,
-          task.longitude
-        );
-        if (distance > selectedRadius) return false;
-      }
-      
       return true;
     });
-  }, [allTasks, selectedCategory, selectedRadius, userLocation]);
+  }, [allTasks, selectedCategory]);
 
   // Sort by distance for the list
   const sortedTasks = useMemo(() => {
@@ -237,13 +224,6 @@ export default function HomeScreen() {
     setSelectedOffering(null);
   };
 
-  const handleRadiusSelect = (radius: number | null) => {
-    haptic.selection();
-    setSelectedRadius(radius);
-    setSelectedTask(null);
-    setSelectedOffering(null);
-  };
-
   return (
     <View style={styles.container}>
       {/* Loading State */}
@@ -273,8 +253,8 @@ export default function HomeScreen() {
             initialRegion={{
               latitude: userLocation.latitude,
               longitude: userLocation.longitude,
-              latitudeDelta: selectedRadius ? selectedRadius * 0.02 : 0.5,
-              longitudeDelta: selectedRadius ? selectedRadius * 0.02 : 0.5,
+              latitudeDelta: 0.15,
+              longitudeDelta: 0.15,
             }}
             showsUserLocation
             showsMyLocationButton={false}
@@ -349,32 +329,6 @@ export default function HomeScreen() {
             </BlurView>
           </SafeAreaView>
 
-          {/* Distance Selector - Compact pill in corner */}
-          <View style={styles.distanceSelector}>
-            <BlurView intensity={90} tint="light" style={styles.distanceBlur}>
-              {RADIUS_OPTIONS.map((option, index) => (
-                <TouchableOpacity
-                  key={option.label}
-                  style={[
-                    styles.distanceOption,
-                    selectedRadius === option.value && styles.distanceOptionActive,
-                    index === 0 && styles.distanceOptionFirst,
-                    index === RADIUS_OPTIONS.length - 1 && styles.distanceOptionLast,
-                  ]}
-                  onPress={() => handleRadiusSelect(option.value)}
-                >
-                  <Text style={[
-                    styles.distanceText,
-                    selectedRadius === option.value && styles.distanceTextActive
-                  ]}>
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              <Text style={styles.distanceUnit}>km</Text>
-            </BlurView>
-          </View>
-
           {/* Selected Task Popup */}
           {selectedTask && (
             <View style={styles.selectedPopup}>
@@ -434,12 +388,13 @@ export default function HomeScreen() {
             <ScrollView 
               style={styles.sheetContent}
               showsVerticalScrollIndicator={false}
+              scrollEnabled={currentHeight.current > SHEET_MIN_HEIGHT}
             >
               {sortedTasks.length === 0 ? (
                 <View style={styles.emptySheet}>
                   <Text style={styles.emptyIcon}>💭</Text>
                   <Text style={styles.emptyText}>No jobs in this area</Text>
-                  <Text style={styles.emptySubtext}>Try expanding your search radius</Text>
+                  <Text style={styles.emptySubtext}>Check back later</Text>
                 </View>
               ) : (
                 sortedTasks.map((task) => (
@@ -567,49 +522,6 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: '#ffffff',
   },
-  // Distance selector
-  distanceSelector: {
-    position: 'absolute',
-    top: 100,
-    right: 12,
-    zIndex: 10,
-  },
-  distanceBlur: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    overflow: 'hidden',
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  distanceOption: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  distanceOptionActive: {
-    backgroundColor: '#0ea5e9',
-  },
-  distanceOptionFirst: {
-    marginLeft: 0,
-  },
-  distanceOptionLast: {
-    marginRight: 0,
-  },
-  distanceText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  distanceTextActive: {
-    color: '#ffffff',
-  },
-  distanceUnit: {
-    fontSize: 11,
-    color: '#9ca3af',
-    marginLeft: 2,
-    marginRight: 6,
-  },
   // Price markers
   priceMarker: {
     backgroundColor: '#ffffff',
@@ -640,7 +552,7 @@ const styles = StyleSheet.create({
   // Selected popup
   selectedPopup: {
     position: 'absolute',
-    top: 160,
+    top: 100,
     left: 16,
     right: 16,
   },
@@ -709,20 +621,18 @@ const styles = StyleSheet.create({
   },
   sheetHandle: {
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    paddingTop: 10,
+    paddingBottom: 6,
   },
   handleBar: {
     width: 40,
     height: 4,
     backgroundColor: '#d1d5db',
     borderRadius: 2,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sheetTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1f2937',
   },
