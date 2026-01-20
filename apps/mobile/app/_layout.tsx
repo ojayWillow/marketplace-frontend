@@ -1,9 +1,12 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@marketplace/shared';
 import { View, ActivityIndicator } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { useEffect, useRef } from 'react';
+import * as Notifications from 'expo-notifications';
+import { registerPushToken, setupNotificationListeners } from '../utils/pushNotifications';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +36,66 @@ const theme = {
 
 export default function RootLayout() {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const { token, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const segments = useSegments();
+  const notificationListener = useRef<(() => void) | null>(null);
+
+  // Register for push notifications when user logs in
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      // Register push token with backend
+      registerPushToken(token).then((success) => {
+        if (success) {
+          console.log('✅ Push notifications registered');
+        } else {
+          console.log('⚠️ Push notification registration failed');
+        }
+      });
+    }
+  }, [isAuthenticated, token]);
+
+  // Setup notification listeners
+  useEffect(() => {
+    // Setup listeners
+    const cleanup = setupNotificationListeners(
+      // When notification received in foreground
+      (notification) => {
+        console.log('📬 Notification received:', notification.request.content);
+      },
+      // When user taps notification
+      (response) => {
+        console.log('👆 Notification tapped:', response.notification.request.content);
+        handleNotificationTap(response);
+      }
+    );
+
+    notificationListener.current = cleanup;
+
+    return () => {
+      cleanup();
+    };
+  }, []);
+
+  // Handle notification tap - navigate to relevant screen
+  const handleNotificationTap = (response: Notifications.NotificationResponse) => {
+    const data = response.notification.request.content.data;
+    
+    if (!data) return;
+
+    // Navigate based on notification type
+    if (data.taskId) {
+      router.push(`/task/${data.taskId}`);
+    } else if (data.offeringId) {
+      router.push(`/offering/${data.offeringId}`);
+    } else if (data.conversationId) {
+      router.push(`/conversation/${data.conversationId}`);
+    } else if (data.type === 'message') {
+      router.push('/(tabs)/messages');
+    } else if (data.type === 'application') {
+      router.push('/(tabs)/');
+    }
+  };
 
   if (!hasHydrated) {
     return (
