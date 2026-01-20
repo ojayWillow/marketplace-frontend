@@ -4,7 +4,7 @@ import { Text, TextInput, Button, Surface, Chip } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask, uploadImage, useAuthStore } from '@marketplace/shared';
+import { createTask, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from '../../components/ImagePicker';
 
@@ -41,13 +41,9 @@ export default function CreateTaskScreen() {
       if (images.length > 0) {
         setUploading(true);
         try {
-          const uploadPromises = images.map(async (uri) => {
-            const response = await fetch(uri);
-            const blob = await response.blob();
-            const result = await uploadImage(blob, `task_${Date.now()}.jpg`);
-            return result.url;
-          });
-          imageUrls = await Promise.all(uploadPromises);
+          const uploadPromises = images.map((uri) => uploadImageFromUri(uri));
+          const results = await Promise.all(uploadPromises);
+          imageUrls = results.map(r => r.url);
         } catch (error) {
           console.error('Image upload error:', error);
           // Continue without images if upload fails
