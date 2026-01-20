@@ -1,9 +1,16 @@
 import { View, StyleSheet, Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Surface, Switch, Divider } from 'react-native-paper';
+import { Text, Surface, Switch, Divider, Button } from 'react-native-paper';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@marketplace/shared';
+import { 
+  registerPushToken, 
+  unregisterPushToken, 
+  requestPushPermissions,
+  sendTestNotification 
+} from '../../utils/pushNotifications';
 
 const NOTIFICATION_SETTINGS_KEY = '@marketplace_notification_settings';
 
@@ -28,6 +35,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 export default function NotificationSettingsScreen() {
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const { token, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     loadSettings();
@@ -52,11 +60,76 @@ export default function NotificationSettingsScreen() {
     
     try {
       await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(newSettings));
+      
+      // If toggling push notifications, register/unregister with backend
+      if (key === 'pushEnabled' && isAuthenticated && token) {
+        if (value) {
+          // Enable push notifications
+          const success = await registerPushToken(token);
+          if (!success) {
+            Alert.alert(
+              'Permission Required',
+              'Please enable notifications in your device settings to receive push notifications.',
+              [{ text: 'OK' }]
+            );
+            // Revert setting
+            const revertedSettings = { ...newSettings, pushEnabled: false };
+            setSettings(revertedSettings);
+            await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(revertedSettings));
+          } else {
+            Alert.alert('✅ Success', 'Push notifications enabled!');
+          }
+        } else {
+          // Disable push notifications
+          await unregisterPushToken(token);
+          Alert.alert('Push notifications disabled');
+        }
+      }
     } catch (e) {
       console.error('Failed to save notification settings:', e);
       Alert.alert('Error', 'Failed to save settings');
     }
   };
+
+  const handleTestNotification = async () => {
+    if (!isAuthenticated || !token) {
+      Alert.alert('Error', 'You must be logged in to test notifications');
+      return;
+    }
+
+    if (!settings.pushEnabled) {
+      Alert.alert('Push Disabled', 'Please enable push notifications first');
+      return;
+    }
+
+    try {
+      await sendTestNotification(token);
+      Alert.alert('✅ Test Sent!', 'Check your notifications in a few seconds');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send test notification');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <Stack.Screen 
+          options={{ 
+            headerShown: true, 
+            title: 'Notifications',
+            headerBackTitle: 'Back',
+          }} 
+        />
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyIcon}>🔔</Text>
+          <Text variant="titleLarge" style={styles.emptyTitle}>Sign In Required</Text>
+          <Text style={styles.emptyText}>
+            Please sign in to manage your notification preferences
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -162,7 +235,20 @@ export default function NotificationSettingsScreen() {
         </View>
       </Surface>
 
-      {/* Info */}
+      {/* Test Notification Button */}
+      {settings.pushEnabled && (
+        <View style={styles.testSection}>
+          <Button 
+            mode="outlined" 
+            onPress={handleTestNotification}
+            icon="bell-ring"
+          >
+            Send Test Notification
+          </Button>
+        </View>
+      )}
+
+      {/* Warning */}
       {!settings.pushEnabled && !settings.emailEnabled ? (
         <View style={styles.warningContainer}>
           <Text style={styles.warningText}>
@@ -184,6 +270,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptyText: {
+    color: '#6b7280',
+    textAlign: 'center',
   },
   section: {
     backgroundColor: '#ffffff',
@@ -217,6 +321,9 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: 13,
     color: '#9ca3af',
+  },
+  testSection: {
+    padding: 16,
   },
   warningContainer: {
     margin: 16,
