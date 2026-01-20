@@ -32,10 +32,12 @@ Expo-based React Native mobile app for the QuickHelp marketplace platform.
 - [x] Guest mode (browse without login)
 
 ## Phase 4: Task Features 🔄 IN PROGRESS
-- [ ] Task detail view
-- [ ] Create new task form
-- [ ] Task responses/applications
-- [ ] Task status management
+- [x] Task detail view
+- [x] Create new task form
+- [x] FAB button for task creation
+- [ ] Task responses/applications view
+- [ ] Accept/reject applications
+- [ ] Task status management (mark done, confirm, cancel)
 - [ ] Task search with filters
 - [ ] Map view for nearby tasks
 
@@ -54,9 +56,9 @@ Expo-based React Native mobile app for the QuickHelp marketplace platform.
 - [ ] Skills/categories selection
 
 ## Phase 7: Location & Maps
-- [ ] expo-location for device location
-- [ ] react-native-maps integration
-- [ ] Nearby tasks map view
+- [x] expo-location for device location (basic)
+- [x] react-native-maps integration (basic)
+- [ ] Nearby tasks map view (enhanced)
 - [ ] Location picker for task creation
 - [ ] Distance-based filtering
 
@@ -70,7 +72,7 @@ Expo-based React Native mobile app for the QuickHelp marketplace platform.
 ## Phase 9: Offline & Performance
 - [ ] Offline data caching
 - [ ] Image caching with expo-image
-- [ ] Pull-to-refresh on lists
+- [x] Pull-to-refresh on lists
 - [ ] Infinite scroll pagination
 - [ ] Skeleton loading states
 
@@ -90,10 +92,19 @@ Expo-based React Native mobile app for the QuickHelp marketplace platform.
 - **API**: Axios with shared client
 - **Storage**: expo-secure-store (auth), AsyncStorage (cache)
 - **Navigation**: Expo Router (file-based)
+- **Maps**: react-native-maps
+- **Location**: expo-location
 
 ## Known Issues
 - Phone authentication requires development build (not available in Expo Go)
 - Backend returns `token` field (not `access_token`) - handled in login
+- DateTimePicker requires native module (works in Expo Go)
+
+## Recent Changes (Jan 20, 2026)
+- Added task detail screen with apply functionality
+- Added create task form with categories, budget, location, deadline
+- Added FAB button on tasks screen
+- Added DateTimePicker for deadline selection
 
 ## Last Updated
 January 20, 2026
