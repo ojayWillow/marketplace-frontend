@@ -27,7 +27,7 @@ interface LocationData {
 }
 
 export default function CreateTaskScreen() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
 
   const [title, setTitle] = useState('');
@@ -84,8 +84,8 @@ export default function CreateTaskScreen() {
     },
     onError: (error: any) => {
       console.error('Create task error:', error);
-      console.error('Error details:', error.response?.data);
-      const message = error.response?.data?.message || error.message || 'Failed to create task. Please try again.';
+      console.error('Error response:', error.response?.data);
+      const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to create task. Please try again.';
       Alert.alert('Error', message);
     },
   });
@@ -107,6 +107,10 @@ export default function CreateTaskScreen() {
       Alert.alert('Required', 'Please select a location for your task.');
       return;
     }
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found. Please log in again.');
+      return;
+    }
 
     createMutation.mutate({
       title: title.trim(),
@@ -118,6 +122,7 @@ export default function CreateTaskScreen() {
       longitude: location.longitude,
       deadline: deadline?.toISOString(),
       is_urgent: isUrgent,
+      creator_id: user.id,  // REQUIRED BY BACKEND
     });
   };
 
@@ -155,11 +160,9 @@ export default function CreateTaskScreen() {
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Task Details</Text>
-              
+              <Text variant="titleMedium" style={styles.sectionTitle}>Task Title *</Text>
               <TextInput
                 mode="outlined"
-                label="Title *"
                 placeholder="What do you need help with?"
                 value={title}
                 onChangeText={setTitle}
@@ -167,15 +170,17 @@ export default function CreateTaskScreen() {
                 style={styles.input}
                 outlineStyle={styles.inputOutline}
               />
+            </Surface>
 
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Description *</Text>
               <TextInput
                 mode="outlined"
-                label="Description *"
                 placeholder="Describe your task in detail..."
                 value={description}
                 onChangeText={setDescription}
                 multiline
-                numberOfLines={4}
+                numberOfLines={5}
                 maxLength={1000}
                 style={styles.textArea}
                 outlineStyle={styles.inputOutline}
@@ -209,10 +214,9 @@ export default function CreateTaskScreen() {
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Budget</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Budget *</Text>
               <TextInput
                 mode="outlined"
-                label="Budget (€) *"
                 placeholder="0.00"
                 value={budget}
                 onChangeText={setBudget}
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 16,
+    padding: 16,
   },
   centerContainer: {
     flex: 1,
@@ -335,13 +339,14 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#ffffff',
-    padding: 20,
-    marginTop: 12,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   input: {
     backgroundColor: '#ffffff',
