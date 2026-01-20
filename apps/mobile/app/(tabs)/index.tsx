@@ -4,7 +4,7 @@ import { Text, ActivityIndicator, Surface, IconButton, Card, Chip } from 'react-
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
 
@@ -87,6 +87,16 @@ export default function HomeScreen() {
       other: '#6b7280',
     };
     return colors[category] || '#ef4444';
+  };
+
+  const handleMarkerPress = (task?: Task, offering?: Offering) => {
+    if (task) {
+      setSelectedTask(task);
+      setSelectedOffering(null);
+    } else if (offering) {
+      setSelectedOffering(offering);
+      setSelectedTask(null);
+    }
   };
 
   const renderTaskCard = ({ item: task }: { item: Task }) => (
@@ -193,13 +203,23 @@ export default function HomeScreen() {
                   longitude: task.longitude!,
                 }}
                 pinColor={getMarkerColor(task.category)}
-                title={task.title}
-                description={`Task - €${task.budget?.toFixed(2) || '0'}`}
-                onPress={() => {
-                  setSelectedTask(task);
-                  setSelectedOffering(null);
-                }}
-              />
+                onPress={() => handleMarkerPress(task, undefined)}
+              >
+                <Callout
+                  tooltip
+                  onPress={() => {
+                    router.push(`/task/${task.id}`);
+                  }}
+                >
+                  <View style={styles.calloutContainer}>
+                    <View style={styles.calloutBubble}>
+                      <Text style={styles.calloutPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
+                      <Text style={styles.calloutTitle} numberOfLines={1}>{task.title}</Text>
+                      <Text style={styles.calloutCategory}>{task.category}</Text>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
             ))}
 
             {/* Boosted Offering Markers */}
@@ -211,13 +231,28 @@ export default function HomeScreen() {
                   longitude: offering.longitude!,
                 }}
                 pinColor="#f97316" // Orange for boosted offerings
-                title={offering.title}
-                description={`Service - ${offering.price ? `€${offering.price}` : 'Negotiable'}`}
-                onPress={() => {
-                  setSelectedOffering(offering);
-                  setSelectedTask(null);
-                }}
-              />
+                onPress={() => handleMarkerPress(undefined, offering)}
+              >
+                <Callout
+                  tooltip
+                  onPress={() => {
+                    router.push(`/offering/${offering.id}`);
+                  }}
+                >
+                  <View style={styles.calloutContainer}>
+                    <View style={[styles.calloutBubble, styles.calloutBubbleOffering]}>
+                      <View style={styles.boostBadge}>
+                        <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
+                      </View>
+                      <Text style={styles.calloutPriceOffering}>
+                        {offering.price ? `€${offering.price}` : 'Negotiable'}
+                      </Text>
+                      <Text style={styles.calloutTitle} numberOfLines={1}>{offering.title}</Text>
+                      <Text style={styles.calloutProvider}>by {offering.creator_name}</Text>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
             ))}
           </MapView>
 
@@ -400,6 +435,71 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  // Custom Callout Styles
+  calloutContainer: {
+    alignItems: 'center',
+  },
+  calloutBubble: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    minWidth: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#0ea5e9',
+  },
+  calloutBubbleOffering: {
+    borderColor: '#f97316',
+  },
+  calloutPrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+    textAlign: 'center',
+  },
+  calloutPriceOffering: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f97316',
+    textAlign: 'center',
+  },
+  calloutTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  calloutCategory: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginTop: 2,
+    textAlign: 'center',
+    textTransform: 'capitalize',
+  },
+  calloutProvider: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  boostBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginBottom: 6,
+    alignSelf: 'center',
+  },
+  boostBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#92400e',
   },
   selectedItemContainer: {
     position: 'absolute',
