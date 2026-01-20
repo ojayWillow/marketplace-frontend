@@ -4,7 +4,7 @@ import { Text, ActivityIndicator, Surface, IconButton, Card, Chip } from 'react-
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
 
@@ -194,7 +194,7 @@ export default function HomeScreen() {
             showsUserLocation
             showsMyLocationButton
           >
-            {/* Task Markers */}
+            {/* Task Markers with Price Bubbles */}
             {tasksWithLocation.map((task) => (
               <Marker
                 key={`task-${task.id}`}
@@ -202,27 +202,19 @@ export default function HomeScreen() {
                   latitude: task.latitude!,
                   longitude: task.longitude!,
                 }}
-                pinColor={getMarkerColor(task.category)}
                 onPress={() => handleMarkerPress(task, undefined)}
+                tracksViewChanges={false}
               >
-                <Callout
-                  tooltip
-                  onPress={() => {
-                    router.push(`/task/${task.id}`);
-                  }}
-                >
-                  <View style={styles.calloutContainer}>
-                    <View style={styles.calloutBubble}>
-                      <Text style={styles.calloutPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
-                      <Text style={styles.calloutTitle} numberOfLines={1}>{task.title}</Text>
-                      <Text style={styles.calloutCategory}>{task.category}</Text>
-                    </View>
-                  </View>
-                </Callout>
+                <View style={[
+                  styles.priceMarker,
+                  { borderColor: getMarkerColor(task.category) }
+                ]}>
+                  <Text style={styles.priceMarkerText}>€{task.budget?.toFixed(0) || '0'}</Text>
+                </View>
               </Marker>
             ))}
 
-            {/* Boosted Offering Markers */}
+            {/* Boosted Offering Markers with Price Bubbles */}
             {boostedOfferings.map((offering) => (
               <Marker
                 key={`offering-${offering.id}`}
@@ -230,33 +222,19 @@ export default function HomeScreen() {
                   latitude: offering.latitude!,
                   longitude: offering.longitude!,
                 }}
-                pinColor="#f97316" // Orange for boosted offerings
                 onPress={() => handleMarkerPress(undefined, offering)}
+                tracksViewChanges={false}
               >
-                <Callout
-                  tooltip
-                  onPress={() => {
-                    router.push(`/offering/${offering.id}`);
-                  }}
-                >
-                  <View style={styles.calloutContainer}>
-                    <View style={[styles.calloutBubble, styles.calloutBubbleOffering]}>
-                      <View style={styles.boostBadge}>
-                        <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
-                      </View>
-                      <Text style={styles.calloutPriceOffering}>
-                        {offering.price ? `€${offering.price}` : 'Negotiable'}
-                      </Text>
-                      <Text style={styles.calloutTitle} numberOfLines={1}>{offering.title}</Text>
-                      <Text style={styles.calloutProvider}>by {offering.creator_name}</Text>
-                    </View>
-                  </View>
-                </Callout>
+                <View style={[styles.priceMarker, styles.priceMarkerOffering]}>
+                  <Text style={styles.priceMarkerTextOffering}>
+                    {offering.price ? `€${offering.price}` : '€'}
+                  </Text>
+                </View>
               </Marker>
             ))}
           </MapView>
 
-          {/* Selected Task Card */}
+          {/* Selected Task Card (Single Title) */}
           {selectedTask && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -267,10 +245,9 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  <View style={styles.selectedItemHeader}>
-                    <Chip mode="outlined" compact style={styles.typeChip}>Task</Chip>
-                    <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text variant="titleMedium" numberOfLines={1}>
+                  <View style={styles.cardContentSingle}>
+                    <View style={{ flex: 1 }}>
+                      <Text variant="titleLarge" numberOfLines={1} style={styles.singleTitle}>
                         {selectedTask.title}
                       </Text>
                       <Text variant="bodySmall" style={styles.category}>
@@ -281,6 +258,7 @@ export default function HomeScreen() {
                       icon="close"
                       size={20}
                       onPress={() => setSelectedTask(null)}
+                      style={styles.closeButton}
                     />
                   </View>
                   <Text variant="bodyMedium" numberOfLines={2} style={styles.description}>
@@ -295,7 +273,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Selected Offering Card */}
+          {/* Selected Offering Card (Single Title) */}
           {selectedOffering && (
             <View style={styles.selectedItemContainer}>
               <Card
@@ -306,10 +284,10 @@ export default function HomeScreen() {
                 }}
               >
                 <Card.Content>
-                  <View style={styles.selectedItemHeader}>
+                  <View style={styles.cardContentSingle}>
                     <Chip mode="flat" compact style={styles.boostChip}>⚡ Boosted</Chip>
                     <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text variant="titleMedium" numberOfLines={1}>
+                      <Text variant="titleLarge" numberOfLines={1} style={styles.singleTitle}>
                         {selectedOffering.title}
                       </Text>
                       <Text variant="bodySmall" style={styles.providerName}>
@@ -320,6 +298,7 @@ export default function HomeScreen() {
                       icon="close"
                       size={20}
                       onPress={() => setSelectedOffering(null)}
+                      style={styles.closeButton}
                     />
                   </View>
                   <Text variant="bodyMedium" numberOfLines={2} style={styles.description}>
@@ -436,70 +415,32 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  // Custom Callout Styles
-  calloutContainer: {
-    alignItems: 'center',
-  },
-  calloutBubble: {
+  // Custom Price Marker Bubbles
+  priceMarker: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 12,
-    minWidth: 140,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#0ea5e9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
-    borderWidth: 2,
-    borderColor: '#0ea5e9',
   },
-  calloutBubbleOffering: {
+  priceMarkerOffering: {
     borderColor: '#f97316',
   },
-  calloutPrice: {
-    fontSize: 20,
+  priceMarkerText: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#0ea5e9',
-    textAlign: 'center',
   },
-  calloutPriceOffering: {
-    fontSize: 20,
+  priceMarkerTextOffering: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#f97316',
-    textAlign: 'center',
-  },
-  calloutTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  calloutCategory: {
-    fontSize: 11,
-    color: '#6b7280',
-    marginTop: 2,
-    textAlign: 'center',
-    textTransform: 'capitalize',
-  },
-  calloutProvider: {
-    fontSize: 11,
-    color: '#6b7280',
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  boostBadge: {
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginBottom: 6,
-    alignSelf: 'center',
-  },
-  boostBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#92400e',
   },
   selectedItemContainer: {
     position: 'absolute',
@@ -510,13 +451,17 @@ const styles = StyleSheet.create({
   selectedItemCard: {
     backgroundColor: '#ffffff',
   },
-  selectedItemHeader: {
+  cardContentSingle: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  typeChip: {
-    height: 28,
+  singleTitle: {
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  closeButton: {
+    margin: 0,
   },
   boostChip: {
     height: 28,
@@ -542,12 +487,12 @@ const styles = StyleSheet.create({
   budget: {
     color: '#0ea5e9',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   price: {
     color: '#f97316',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   location: {
     color: '#9ca3af',
