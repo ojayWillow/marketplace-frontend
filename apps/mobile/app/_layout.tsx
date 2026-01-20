@@ -34,23 +34,23 @@ const theme = {
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Wait for Zustand to hydrate from storage
-    // The persist middleware handles this automatically
-    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
+    // Give Zustand time to hydrate from async storage
+    const timer = setTimeout(() => {
       setIsReady(true);
-    });
+    }, 100);
 
-    // If already hydrated (or no persist data), set ready
-    if (useAuthStore.persist.hasHydrated()) {
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Also check if auth state changes (means hydration happened)
+  useEffect(() => {
+    if (isAuthenticated && !isReady) {
       setIsReady(true);
     }
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+  }, [isAuthenticated, isReady]);
 
   if (!isReady) {
     return (
