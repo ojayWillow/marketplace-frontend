@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
+import { haptic } from '../../utils/haptics';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -21,12 +22,15 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
+      haptic.warning();
       setError('Please enter both email and password');
       return;
     }
 
     setLoading(true);
     setError('');
+    haptic.medium(); // Haptic on submit
+
     try {
       const response = await authApi.login({ email: email.trim(), password });
       
@@ -34,18 +38,26 @@ export default function LoginScreen() {
       const token = response.access_token || (response as any).token;
       
       if (!token) {
+        haptic.error();
         setError('Login failed: No token received from server');
         return;
       }
       
+      haptic.success(); // Success haptic
       setAuth(response.user, token);
       router.replace('/(tabs)');
     } catch (error: any) {
+      haptic.error(); // Error haptic
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    haptic.light();
+    router.push('/(auth)/forgot-password');
   };
 
   return (
@@ -102,7 +114,7 @@ export default function LoginScreen() {
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
                 />
               }
             />
@@ -110,7 +122,7 @@ export default function LoginScreen() {
             {/* Forgot Password */}
             <Button
               mode="text"
-              onPress={() => {}}
+              onPress={handleForgotPassword}
               disabled={loading}
               style={styles.forgotButton}
             >
@@ -147,6 +159,7 @@ export default function LoginScreen() {
                     style={styles.phoneButton}
                     contentStyle={styles.buttonContent}
                     icon="phone"
+                    onPress={() => haptic.light()}
                   >
                     Sign In with Phone
                   </Button>
@@ -160,7 +173,7 @@ export default function LoginScreen() {
                 Don't have an account?{' '}
               </Text>
               <Link href="/(auth)/register" asChild>
-                <Button mode="text" disabled={loading} compact>
+                <Button mode="text" disabled={loading} compact onPress={() => haptic.light()}>
                   Sign Up
                 </Button>
               </Link>
@@ -168,7 +181,7 @@ export default function LoginScreen() {
 
             {/* Browse as Guest */}
             <Link href="/(tabs)" asChild>
-              <Button mode="text" disabled={loading} style={styles.guestButton}>
+              <Button mode="text" disabled={loading} style={styles.guestButton} onPress={() => haptic.light()}>
                 Continue as Guest
               </Button>
             </Link>
@@ -183,7 +196,7 @@ export default function LoginScreen() {
         duration={4000}
         action={{
           label: 'Dismiss',
-          onPress: () => setError(''),
+          onPress: () => { haptic.soft(); setError(''); },
         }}
       >
         {error}
