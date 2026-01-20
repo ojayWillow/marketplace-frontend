@@ -29,12 +29,9 @@ export default function LoginScreen() {
     setError('');
     try {
       const response = await authApi.login({ email: email.trim(), password });
-      console.log('[Login] Response:', JSON.stringify(response, null, 2));
       
       // Handle both possible token field names from backend
       const token = response.access_token || (response as any).token;
-      console.log('[Login] Token extracted:', token ? 'yes' : 'no');
-      console.log('[Login] User:', response.user?.username);
       
       if (!token) {
         setError('Login failed: No token received from server');
@@ -42,15 +39,8 @@ export default function LoginScreen() {
       }
       
       setAuth(response.user, token);
-      
-      // Verify auth state was set
-      const state = useAuthStore.getState();
-      console.log('[Login] After setAuth - token:', state.token ? 'yes' : 'no');
-      console.log('[Login] After setAuth - isAuthenticated:', state.isAuthenticated);
-      
       router.replace('/(tabs)');
     } catch (error: any) {
-      console.log('[Login] Error:', error.response?.data || error.message);
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(message);
     } finally {
