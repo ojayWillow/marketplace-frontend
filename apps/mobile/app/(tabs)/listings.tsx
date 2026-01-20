@@ -1,12 +1,8 @@
-import { View, StyleSheet, Linking } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface } from 'react-native-paper';
+import { Text, Surface } from 'react-native-paper';
 
 export default function ListingsScreen() {
-  const handleOpenWeb = () => {
-    Linking.openURL('https://marketplace-frontend-tau-seven.vercel.app/listings');
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -23,18 +19,6 @@ export default function ListingsScreen() {
           <Text style={styles.comingSoonText}>
             Buy & sell classifieds are coming to the mobile app soon.
           </Text>
-          <Text style={styles.comingSoonSubtext}>
-            In the meantime, you can browse listings on our web version.
-          </Text>
-          
-          <Button
-            mode="contained"
-            onPress={handleOpenWeb}
-            style={styles.webButton}
-            icon="open-in-new"
-          >
-            Open Web Version
-          </Button>
         </View>
 
         {/* Features Preview */}
@@ -96,16 +80,6 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 8,
-  },
-  comingSoonSubtext: {
-    color: '#9ca3af',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  webButton: {
-    borderRadius: 12,
   },
   featuresCard: {
     backgroundColor: '#ffffff',
