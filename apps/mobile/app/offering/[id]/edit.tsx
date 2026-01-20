@@ -196,12 +196,11 @@ export default function EditOfferingScreen() {
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Service Title *</Text>
               <TextInput
-                mode="outlined"
+                mode="flat"
                 placeholder="e.g., Professional House Cleaning"
                 value={title}
                 onChangeText={setTitle}
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
+                style={styles.flatInput}
               />
             </Surface>
 
@@ -229,14 +228,13 @@ export default function EditOfferingScreen() {
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Description *</Text>
               <TextInput
-                mode="outlined"
+                mode="flat"
                 placeholder="Describe your service, what's included, your experience..."
                 value={description}
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={5}
-                style={styles.textArea}
-                outlineStyle={styles.inputOutline}
+                style={styles.flatTextArea}
               />
             </Surface>
 
@@ -263,13 +261,12 @@ export default function EditOfferingScreen() {
               <View style={styles.priceRow}>
                 <Text style={styles.euroSign}>€</Text>
                 <TextInput
-                  mode="outlined"
+                  mode="flat"
                   placeholder={priceType === 'negotiable' ? 'Starting from (optional)' : 'Enter price'}
                   value={price}
                   onChangeText={setPrice}
                   keyboardType="decimal-pad"
                   style={styles.priceInput}
-                  outlineStyle={styles.inputOutline}
                 />
                 {priceType === 'hourly' ? (
                   <Text style={styles.priceLabel}>/ hour</Text>
@@ -290,12 +287,11 @@ export default function EditOfferingScreen() {
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Availability</Text>
               <TextInput
-                mode="outlined"
+                mode="flat"
                 placeholder="e.g., Weekdays 9-18, Weekends by appointment"
                 value={availability}
                 onChangeText={setAvailability}
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
+                style={styles.flatInput}
               />
             </Surface>
 
@@ -303,12 +299,11 @@ export default function EditOfferingScreen() {
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Experience</Text>
               <TextInput
-                mode="outlined"
+                mode="flat"
                 placeholder="e.g., 5 years of experience, certified..."
                 value={experience}
                 onChangeText={setExperience}
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
+                style={styles.flatInput}
               />
             </Surface>
 
@@ -378,14 +373,15 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 12,
   },
-  input: {
-    backgroundColor: '#ffffff',
+  flatInput: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
   },
-  inputOutline: {
-    borderColor: '#e5e7eb',
-  },
-  textArea: {
-    backgroundColor: '#ffffff',
+  flatTextArea: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
     minHeight: 120,
   },
   categoriesRow: {
@@ -414,7 +410,9 @@ const styles = StyleSheet.create({
   },
   priceInput: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
   },
   priceLabel: {
     marginLeft: 8,
