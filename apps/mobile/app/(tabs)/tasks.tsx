@@ -1,6 +1,6 @@
 import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Card, Chip, ActivityIndicator, Button, Surface } from 'react-native-paper';
+import { Text, Card, Chip, ActivityIndicator, Button, Surface, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
@@ -10,7 +10,7 @@ type FilterTab = 'all' | 'my_tasks' | 'applied';
 
 export default function TasksScreen() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['tasks', activeTab, user?.id],
@@ -56,6 +56,14 @@ export default function TasksScreen() {
       case 'open': return 'Open';
       case 'in_progress': return 'In Progress';
       default: return 'Closed';
+    }
+  };
+
+  const handleCreateTask = () => {
+    if (!isAuthenticated) {
+      router.push('/(auth)/login');
+    } else {
+      router.push('/task/create');
     }
   };
 
@@ -121,6 +129,15 @@ export default function TasksScreen() {
                   ? "You haven't applied to any tasks yet"
                   : 'No tasks available'}
               </Text>
+              {activeTab === 'my_tasks' && (
+                <Button 
+                  mode="contained" 
+                  onPress={handleCreateTask}
+                  style={styles.createButton}
+                >
+                  Create Your First Task
+                </Button>
+              )}
             </View>
           )}
 
@@ -189,8 +206,19 @@ export default function TasksScreen() {
               })}
             </View>
           )}
+
+          {/* Bottom spacer for FAB */}
+          <View style={styles.fabSpacer} />
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={handleCreateTask}
+        label="New Task"
+      />
     </SafeAreaView>
   );
 }
@@ -233,6 +261,7 @@ const styles = StyleSheet.create({
   statusText: {
     marginTop: 12,
     color: '#6b7280',
+    textAlign: 'center',
   },
   errorText: {
     color: '#ef4444',
@@ -240,6 +269,9 @@ const styles = StyleSheet.create({
   },
   emptyIcon: {
     fontSize: 48,
+  },
+  createButton: {
+    marginTop: 16,
   },
   card: {
     marginBottom: 12,
@@ -302,5 +334,15 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     fontSize: 12,
     marginTop: 8,
+  },
+  fabSpacer: {
+    height: 80,
+  },
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#0ea5e9',
   },
 });
