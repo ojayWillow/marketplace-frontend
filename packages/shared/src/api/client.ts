@@ -19,7 +19,6 @@ const getApiUrl = (): string => {
 }
 
 const API_URL = getApiUrl()
-console.log('[API Client] Using API URL:', API_URL)
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -31,11 +30,7 @@ export const apiClient = axios.create({
 // Request interceptor - add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const state = useAuthStore.getState()
-    const token = state.token
-    console.log('[API Client] Request to:', config.url)
-    console.log('[API Client] Has token:', !!token)
-    console.log('[API Client] isAuthenticated:', state.isAuthenticated)
+    const token = useAuthStore.getState().token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -44,19 +39,16 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Response interceptor - handle 401 (but not for non-critical endpoints)
+// Response interceptor - handle 401
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log('[API Client] Error:', error.response?.status, error.config?.url)
-    // Only auto-logout on 401 for critical auth endpoints, not for optional features
     const url = error.config?.url || ''
     const isAuthEndpoint = url.includes('/auth/')
     const isOptionalEndpoint = url.includes('/tasks/my')
     
-    // Don't logout on 401 for auth endpoints (login/register) or optional endpoints
+    // Don't logout on 401 for auth endpoints or optional endpoints
     if (error.response?.status === 401 && !isAuthEndpoint && !isOptionalEndpoint) {
-      console.log('[API Client] 401 received, logging out')
       useAuthStore.getState().logout()
     }
     return Promise.reject(error)
