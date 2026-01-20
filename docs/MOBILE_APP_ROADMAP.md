@@ -35,11 +35,12 @@ Expo-based React Native mobile app for the QuickHelp marketplace platform.
 - [x] Task detail view
 - [x] Create new task form
 - [x] FAB button for task creation
-- [ ] Task responses/applications view
-- [ ] Accept/reject applications
-- [ ] Task status management (mark done, confirm, cancel)
+- [x] Task applications view (view who applied)
+- [x] Accept/reject applications
+- [x] Task status management (mark done, cancel)
 - [ ] Task search with filters
-- [ ] Map view for nearby tasks
+- [ ] Confirm task completion (creator side)
+- [ ] Dispute task
 
 ## Phase 5: Messaging Enhancements
 - [ ] Real-time message updates (polling or WebSocket)
@@ -101,10 +102,11 @@ Expo-based React Native mobile app for the QuickHelp marketplace platform.
 - DateTimePicker requires native module (works in Expo Go)
 
 ## Recent Changes (Jan 20, 2026)
-- Added task detail screen with apply functionality
-- Added create task form with categories, budget, location, deadline
-- Added FAB button on tasks screen
-- Added DateTimePicker for deadline selection
+- Added task applications screen (`/task/[id]/applications`)
+- Added accept/reject application functionality
+- Added task status actions (mark done, cancel)
+- Shows assigned helper on task detail
+- Task owner can view and manage applications
 
 ## Last Updated
 January 20, 2026
