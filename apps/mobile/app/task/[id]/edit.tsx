@@ -201,28 +201,26 @@ export default function EditTaskScreen() {
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Task Title *</Text>
               <TextInput
-                mode="outlined"
+                mode="flat"
                 placeholder="What do you need help with?"
                 value={title}
                 onChangeText={setTitle}
                 maxLength={100}
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
+                style={styles.flatInput}
               />
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Description *</Text>
               <TextInput
-                mode="outlined"
+                mode="flat"
                 placeholder="Describe your task in detail..."
                 value={description}
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={5}
                 maxLength={1000}
-                style={styles.textArea}
-                outlineStyle={styles.inputOutline}
+                style={styles.flatTextArea}
               />
             </Surface>
 
@@ -254,16 +252,17 @@ export default function EditTaskScreen() {
 
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Budget *</Text>
-              <TextInput
-                mode="outlined"
-                placeholder="0.00"
-                value={budget}
-                onChangeText={setBudget}
-                keyboardType="decimal-pad"
-                left={<TextInput.Affix text="€" />}
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
-              />
+              <View style={styles.budgetRow}>
+                <Text style={styles.euroSign}>€</Text>
+                <TextInput
+                  mode="flat"
+                  placeholder="0.00"
+                  value={budget}
+                  onChangeText={setBudget}
+                  keyboardType="decimal-pad"
+                  style={styles.budgetInput}
+                />
+              </View>
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
@@ -387,15 +386,32 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 12,
   },
-  input: {
-    backgroundColor: '#ffffff',
+  flatInput: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
   },
-  inputOutline: {
-    borderColor: '#e5e7eb',
-  },
-  textArea: {
-    backgroundColor: '#ffffff',
+  flatTextArea: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
     minHeight: 120,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  euroSign: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginRight: 8,
+  },
+  budgetInput: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
   },
   categoriesContainer: {
     flexDirection: 'row',
