@@ -4,7 +4,7 @@ import { Text, TextInput, Button, Surface, SegmentedButtons } from 'react-native
 import { Stack, router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { createOffering, uploadImage, useAuthStore } from '@marketplace/shared';
+import { createOffering, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
 import ImagePicker from '../../components/ImagePicker';
 
 const CATEGORIES = [
@@ -48,13 +48,9 @@ export default function CreateOfferingScreen() {
       if (images.length > 0) {
         setUploading(true);
         try {
-          const uploadPromises = images.map(async (uri) => {
-            const response = await fetch(uri);
-            const blob = await response.blob();
-            const result = await uploadImage(blob, `offering_${Date.now()}.jpg`);
-            return result.url;
-          });
-          imageUrls = await Promise.all(uploadPromises);
+          const uploadPromises = images.map((uri) => uploadImageFromUri(uri));
+          const results = await Promise.all(uploadPromises);
+          imageUrls = results.map(r => r.url);
         } catch (error) {
           console.error('Image upload error:', error);
           // Continue without images if upload fails
