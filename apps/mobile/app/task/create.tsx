@@ -84,7 +84,8 @@ export default function CreateTaskScreen() {
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to create task. Please try again.';
+      console.error('Create task error:', error);
+      const message = error.response?.data?.message || error.message || 'Failed to create task. Please try again.';
       Alert.alert('Error', message);
     },
   });
@@ -167,6 +168,9 @@ export default function CreateTaskScreen() {
                 placeholder="What do you need help with?"
                 maxLength={100}
                 style={styles.input}
+                outlineColor="#d1d5db"
+                activeOutlineColor="#0ea5e9"
+                textColor="#1f2937"
               />
 
               <TextInput
@@ -179,6 +183,9 @@ export default function CreateTaskScreen() {
                 numberOfLines={4}
                 maxLength={1000}
                 style={[styles.input, styles.textArea]}
+                outlineColor="#d1d5db"
+                activeOutlineColor="#0ea5e9"
+                textColor="#1f2937"
               />
             </Surface>
 
@@ -222,6 +229,9 @@ export default function CreateTaskScreen() {
                 placeholder="0.00"
                 left={<TextInput.Affix text="€" />}
                 style={styles.input}
+                outlineColor="#d1d5db"
+                activeOutlineColor="#0ea5e9"
+                textColor="#1f2937"
               />
             </Surface>
 
@@ -351,11 +361,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    marginBottom: 12,
-    backgroundColor: '#ffffff',
+    marginBottom: 16,
   },
   textArea: {
-    minHeight: 100,
+    minHeight: 120,
   },
   categoriesContainer: {
     flexDirection: 'row',
