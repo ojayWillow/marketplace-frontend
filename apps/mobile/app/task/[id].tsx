@@ -201,6 +201,7 @@ export default function TaskDetailScreen() {
   const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
   const canConfirm = isOwnTask && task?.status === 'pending_confirmation';
   const canCancel = isOwnTask && task?.status === 'open';
+  const canEdit = isOwnTask && task?.status === 'open';
   const canReview = (isOwnTask || isAssignedToMe) && task?.status === 'completed';
 
   if (isLoading) {
@@ -465,21 +466,30 @@ export default function TaskDetailScreen() {
       {/* Own Task Actions - Open Status */}
       {isOwnTask && task.status === 'open' ? (
         <Surface style={styles.bottomBar} elevation={4}>
-          <View style={styles.buttonRow}>
-            <Button
-              mode="outlined"
-              onPress={handleCancel}
-              loading={cancelMutation.isPending}
-              disabled={cancelMutation.isPending}
-              textColor="#ef4444"
-              style={[styles.actionButton, styles.cancelButton]}
-            >
-              Cancel
-            </Button>
+          <View style={styles.ownerActions}>
+            <View style={styles.buttonRow}>
+              <Button
+                mode="outlined"
+                onPress={handleCancel}
+                loading={cancelMutation.isPending}
+                disabled={cancelMutation.isPending}
+                textColor="#ef4444"
+                style={[styles.actionButton, styles.cancelButton]}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={() => router.push(`/task/${taskId}/edit`)}
+                style={styles.actionButton}
+              >
+                Edit
+              </Button>
+            </View>
             <Button
               mode="contained"
               onPress={() => router.push(`/task/${taskId}/applications`)}
-              style={styles.actionButton}
+              style={styles.fullWidthButton}
             >
               Applications ({task.pending_applications_count || 0})
             </Button>
@@ -723,7 +733,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   bottomSpacer: {
-    height: 100,
+    height: 120,
   },
   bottomBar: {
     position: 'absolute',
@@ -740,13 +750,19 @@ const styles = StyleSheet.create({
   applyButtonContent: {
     paddingVertical: 8,
   },
+  ownerActions: {
+    gap: 8,
+  },
   buttonRow: {
     flexDirection: 'row',
+    gap: 8,
   },
   actionButton: {
     flex: 1,
     borderRadius: 12,
-    marginHorizontal: 4,
+  },
+  fullWidthButton: {
+    borderRadius: 12,
   },
   cancelButton: {
     borderColor: '#fecaca',
