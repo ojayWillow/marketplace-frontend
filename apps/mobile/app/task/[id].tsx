@@ -1,9 +1,9 @@
 import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator } from 'react-native-paper';
+import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator, Card } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, applyToTask, markTaskDone, cancelTask, useAuthStore, type Task } from '@marketplace/shared';
+import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, useAuthStore, type Task } from '@marketplace/shared';
 import { useState } from 'react';
 
 export default function TaskDetailScreen() {
@@ -12,6 +12,7 @@ export default function TaskDetailScreen() {
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const [applyMessage, setApplyMessage] = useState('');
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
   const { data: task, isLoading, error } = useQuery({
     queryKey: ['task', taskId],
@@ -34,12 +35,39 @@ export default function TaskDetailScreen() {
   const markDoneMutation = useMutation({
     mutationFn: () => markTaskDone(taskId),
     onSuccess: () => {
-      Alert.alert('Success', 'Task marked as done! Waiting for confirmation.');
+      Alert.alert('Success', 'Task marked as done! Waiting for confirmation from the client.');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Failed to mark task as done.';
+      Alert.alert('Error', message);
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: () => confirmTaskCompletion(taskId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      // Show review prompt
+      setShowReviewPrompt(true);
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to confirm completion.';
+      Alert.alert('Error', message);
+    },
+  });
+
+  const disputeMutation = useMutation({
+    mutationFn: () => disputeTask(taskId, 'Work not completed satisfactorily'),
+    onSuccess: () => {
+      Alert.alert('Disputed', 'Task has been disputed. Please contact support.');
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to dispute task.';
       Alert.alert('Error', message);
     },
   });
@@ -83,10 +111,32 @@ export default function TaskDetailScreen() {
   const handleMarkDone = () => {
     Alert.alert(
       'Mark as Done',
-      'Mark this task as completed? The task creator will need to confirm.',
+      'Mark this task as completed? The client will need to confirm.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Mark Done', onPress: () => markDoneMutation.mutate() },
+      ]
+    );
+  };
+
+  const handleConfirmCompletion = () => {
+    Alert.alert(
+      'Confirm Completion',
+      'Confirm that this task has been completed satisfactorily?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Confirm', onPress: () => confirmMutation.mutate() },
+      ]
+    );
+  };
+
+  const handleDispute = () => {
+    Alert.alert(
+      'Dispute Task',
+      'Are you not satisfied with the work? This will open a dispute.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Dispute', style: 'destructive', onPress: () => disputeMutation.mutate() },
       ]
     );
   };
@@ -100,6 +150,16 @@ export default function TaskDetailScreen() {
         { text: 'Yes, Cancel', style: 'destructive', onPress: () => cancelMutation.mutate() },
       ]
     );
+  };
+
+  const handleLeaveReview = () => {
+    setShowReviewPrompt(false);
+    router.push(`/task/${taskId}/review`);
+  };
+
+  const handleSkipReview = () => {
+    setShowReviewPrompt(false);
+    Alert.alert('Task Completed!', 'You can leave a review later from the task details.');
   };
 
   const handleOpenMap = () => {
@@ -117,6 +177,7 @@ export default function TaskDetailScreen() {
       case 'pending_confirmation': return '#8b5cf6';
       case 'completed': return '#6b7280';
       case 'cancelled': return '#ef4444';
+      case 'disputed': return '#dc2626';
       default: return '#6b7280';
     }
   };
@@ -126,9 +187,10 @@ export default function TaskDetailScreen() {
       case 'open': return 'Open';
       case 'assigned': return 'Assigned';
       case 'in_progress': return 'In Progress';
-      case 'pending_confirmation': return 'Pending Confirmation';
+      case 'pending_confirmation': return 'Awaiting Confirmation';
       case 'completed': return 'Completed';
       case 'cancelled': return 'Cancelled';
+      case 'disputed': return 'Disputed';
       default: return status;
     }
   };
@@ -137,7 +199,9 @@ export default function TaskDetailScreen() {
   const isAssignedToMe = user?.id === task?.assigned_to_id;
   const canApply = isAuthenticated && !isOwnTask && task?.status === 'open';
   const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
+  const canConfirm = isOwnTask && task?.status === 'pending_confirmation';
   const canCancel = isOwnTask && task?.status === 'open';
+  const canReview = (isOwnTask || isAssignedToMe) && task?.status === 'completed';
 
   if (isLoading) {
     return (
@@ -164,6 +228,39 @@ export default function TaskDetailScreen() {
     );
   }
 
+  // Review Prompt Modal
+  if (showReviewPrompt) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ headerShown: true, title: 'Task Completed' }} />
+        <View style={styles.reviewPromptContainer}>
+          <Card style={styles.reviewPromptCard}>
+            <Card.Content>
+              <Text style={styles.reviewPromptIcon}>🎉</Text>
+              <Text variant="headlineSmall" style={styles.reviewPromptTitle}>
+                Task Completed!
+              </Text>
+              <Text style={styles.reviewPromptText}>
+                Great job! Would you like to leave a review for {isOwnTask ? task.assigned_to_name : task.creator_name}?
+              </Text>
+              <Text style={styles.reviewPromptHint}>
+                Reviews help build trust in the community.
+              </Text>
+            </Card.Content>
+            <Card.Actions style={styles.reviewPromptActions}>
+              <Button onPress={handleSkipReview} textColor="#6b7280">
+                Maybe Later
+              </Button>
+              <Button mode="contained" onPress={handleLeaveReview}>
+                Leave Review
+              </Button>
+            </Card.Actions>
+          </Card>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen 
@@ -184,11 +281,11 @@ export default function TaskDetailScreen() {
             >
               {getStatusLabel(task.status)}
             </Chip>
-            {task.is_urgent && (
+            {task.is_urgent ? (
               <Chip style={styles.urgentChip} textStyle={styles.urgentText}>
                 🔥 Urgent
               </Chip>
-            )}
+            ) : null}
           </View>
           
           <Text variant="headlineSmall" style={styles.title}>{task.title}</Text>
@@ -197,13 +294,51 @@ export default function TaskDetailScreen() {
             <Text variant="headlineMedium" style={styles.price}>
               €{task.budget || task.reward || 0}
             </Text>
-            {task.pending_applications_count !== undefined && task.pending_applications_count > 0 && (
+            {task.pending_applications_count != null && task.pending_applications_count > 0 ? (
               <Chip style={styles.applicationsChip}>
-                {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}
+                <Text>{task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}</Text>
               </Chip>
-            )}
+            ) : null}
           </View>
         </Surface>
+
+        {/* Pending Confirmation Notice */}
+        {task.status === 'pending_confirmation' && isOwnTask ? (
+          <Surface style={styles.noticeSection} elevation={0}>
+            <View style={styles.noticeContent}>
+              <Text style={styles.noticeIcon}>⏳</Text>
+              <View style={styles.noticeTextContainer}>
+                <Text variant="titleMedium" style={styles.noticeTitle}>Awaiting Your Confirmation</Text>
+                <Text style={styles.noticeText}>
+                  {task.assigned_to_name} has marked this task as done. Please confirm if the work is complete.
+                </Text>
+              </View>
+            </View>
+          </Surface>
+        ) : null}
+
+        {/* Completed - Review Notice */}
+        {task.status === 'completed' && canReview ? (
+          <Surface style={styles.completedSection} elevation={0}>
+            <View style={styles.noticeContent}>
+              <Text style={styles.noticeIcon}>✅</Text>
+              <View style={styles.noticeTextContainer}>
+                <Text variant="titleMedium" style={styles.noticeTitle}>Task Completed</Text>
+                <Text style={styles.noticeText}>
+                  This task was completed on {task.completed_at ? new Date(task.completed_at).toLocaleDateString() : 'recently'}.
+                </Text>
+                <Button 
+                  mode="outlined" 
+                  onPress={() => router.push(`/task/${taskId}/review`)}
+                  style={styles.reviewButton}
+                  compact
+                >
+                  Leave a Review
+                </Button>
+              </View>
+            </View>
+          </Surface>
+        ) : null}
 
         {/* Description */}
         <Surface style={styles.section} elevation={0}>
@@ -212,14 +347,14 @@ export default function TaskDetailScreen() {
         </Surface>
 
         {/* Location */}
-        {task.location && (
+        {task.location ? (
           <Surface style={styles.section} elevation={0}>
             <Text variant="titleMedium" style={styles.sectionTitle}>Location</Text>
             <View style={styles.locationRow}>
               <Text style={styles.locationIcon}>📍</Text>
               <Text style={styles.location}>{task.location}</Text>
             </View>
-            {task.latitude && task.longitude && (
+            {task.latitude && task.longitude ? (
               <Button 
                 mode="outlined" 
                 onPress={handleOpenMap}
@@ -228,9 +363,9 @@ export default function TaskDetailScreen() {
               >
                 Open in Maps
               </Button>
-            )}
+            ) : null}
           </Surface>
-        )}
+        ) : null}
 
         {/* Category & Details */}
         <Surface style={styles.section} elevation={0}>
@@ -238,24 +373,26 @@ export default function TaskDetailScreen() {
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Category</Text>
-              <Chip style={styles.categoryChip}>{task.category}</Chip>
+              <Chip style={styles.categoryChip}>
+                <Text>{task.category}</Text>
+              </Chip>
             </View>
-            {task.deadline && (
+            {task.deadline ? (
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Deadline</Text>
                 <Text style={styles.detailValue}>
                   {new Date(task.deadline).toLocaleDateString()}
                 </Text>
               </View>
-            )}
-            {task.created_at && (
+            ) : null}
+            {task.created_at ? (
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Posted</Text>
                 <Text style={styles.detailValue}>
                   {new Date(task.created_at).toLocaleDateString()}
                 </Text>
               </View>
-            )}
+            ) : null}
           </View>
         </Surface>
 
@@ -272,22 +409,22 @@ export default function TaskDetailScreen() {
               <Text variant="titleMedium" style={styles.creatorName}>
                 {task.creator_name || 'Unknown'}
               </Text>
-              {isOwnTask && (
+              {isOwnTask ? (
                 <Chip style={styles.ownTaskChip} textStyle={styles.ownTaskText}>
-                  Your task
+                  <Text style={styles.ownTaskText}>Your task</Text>
                 </Chip>
-              )}
-              {isAssignedToMe && (
+              ) : null}
+              {isAssignedToMe ? (
                 <Chip style={styles.assignedChip} textStyle={styles.assignedText}>
-                  Assigned to you
+                  <Text style={styles.assignedText}>Assigned to you</Text>
                 </Chip>
-              )}
+              ) : null}
             </View>
           </View>
         </Surface>
 
         {/* Assigned Helper */}
-        {task.assigned_to_name && !isAssignedToMe && (
+        {task.assigned_to_name && !isAssignedToMe ? (
           <Surface style={styles.section} elevation={0}>
             <Text variant="titleMedium" style={styles.sectionTitle}>Assigned to</Text>
             <View style={styles.creatorRow}>
@@ -303,14 +440,14 @@ export default function TaskDetailScreen() {
               </View>
             </View>
           </Surface>
-        )}
+        ) : null}
 
         {/* Spacer for bottom button */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* Apply Button */}
-      {canApply && (
+      {canApply ? (
         <Surface style={styles.bottomBar} elevation={4}>
           <Button
             mode="contained"
@@ -323,10 +460,10 @@ export default function TaskDetailScreen() {
             Apply for this Task
           </Button>
         </Surface>
-      )}
+      ) : null}
 
       {/* Own Task Actions - Open Status */}
-      {isOwnTask && task.status === 'open' && (
+      {isOwnTask && task.status === 'open' ? (
         <Surface style={styles.bottomBar} elevation={4}>
           <View style={styles.buttonRow}>
             <Button
@@ -348,10 +485,37 @@ export default function TaskDetailScreen() {
             </Button>
           </View>
         </Surface>
-      )}
+      ) : null}
+
+      {/* Owner Actions - Pending Confirmation */}
+      {canConfirm ? (
+        <Surface style={styles.bottomBar} elevation={4}>
+          <View style={styles.buttonRow}>
+            <Button
+              mode="outlined"
+              onPress={handleDispute}
+              loading={disputeMutation.isPending}
+              disabled={confirmMutation.isPending || disputeMutation.isPending}
+              textColor="#ef4444"
+              style={[styles.actionButton, styles.cancelButton]}
+            >
+              Dispute
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirmCompletion}
+              loading={confirmMutation.isPending}
+              disabled={confirmMutation.isPending || disputeMutation.isPending}
+              style={[styles.actionButton, styles.confirmButton]}
+            >
+              Confirm Complete
+            </Button>
+          </View>
+        </Surface>
+      ) : null}
 
       {/* Worker Actions - Can Mark Done */}
-      {canMarkDone && (
+      {canMarkDone ? (
         <Surface style={styles.bottomBar} elevation={4}>
           <Button
             mode="contained"
@@ -364,7 +528,7 @@ export default function TaskDetailScreen() {
             Mark as Done
           </Button>
         </Surface>
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -401,11 +565,11 @@ const styles = StyleSheet.create({
   },
   headerTop: {
     flexDirection: 'row',
-    gap: 8,
     marginBottom: 12,
   },
   statusChip: {
     height: 28,
+    marginRight: 8,
   },
   statusText: {
     color: '#ffffff',
@@ -437,6 +601,40 @@ const styles = StyleSheet.create({
   applicationsChip: {
     backgroundColor: '#e0f2fe',
   },
+  noticeSection: {
+    backgroundColor: '#fef3c7',
+    padding: 16,
+    marginTop: 12,
+  },
+  completedSection: {
+    backgroundColor: '#dcfce7',
+    padding: 16,
+    marginTop: 12,
+  },
+  noticeContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  noticeIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  noticeTextContainer: {
+    flex: 1,
+  },
+  noticeTitle: {
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  noticeText: {
+    color: '#4b5563',
+    lineHeight: 20,
+  },
+  reviewButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
   section: {
     backgroundColor: '#ffffff',
     padding: 20,
@@ -454,10 +652,10 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   locationIcon: {
     fontSize: 18,
+    marginRight: 8,
   },
   location: {
     color: '#4b5563',
@@ -474,6 +672,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   detailLabel: {
     color: '#6b7280',
@@ -488,17 +687,17 @@ const styles = StyleSheet.create({
   creatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
   creatorAvatar: {
     backgroundColor: '#0ea5e9',
+    marginRight: 12,
   },
   helperAvatar: {
     backgroundColor: '#10b981',
+    marginRight: 12,
   },
   creatorInfo: {
     flex: 1,
-    gap: 4,
   },
   creatorName: {
     color: '#1f2937',
@@ -507,6 +706,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbeafe',
     alignSelf: 'flex-start',
     height: 24,
+    marginTop: 4,
   },
   ownTaskText: {
     color: '#1d4ed8',
@@ -516,6 +716,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#dcfce7',
     alignSelf: 'flex-start',
     height: 24,
+    marginTop: 4,
   },
   assignedText: {
     color: '#166534',
@@ -541,13 +742,54 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 12,
   },
   actionButton: {
     flex: 1,
     borderRadius: 12,
+    marginHorizontal: 4,
   },
   cancelButton: {
     borderColor: '#fecaca',
+  },
+  confirmButton: {
+    backgroundColor: '#10b981',
+  },
+  // Review Prompt Styles
+  reviewPromptContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#f5f5f5',
+  },
+  reviewPromptCard: {
+    width: '100%',
+    maxWidth: 400,
+  },
+  reviewPromptIcon: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  reviewPromptTitle: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  reviewPromptText: {
+    textAlign: 'center',
+    color: '#4b5563',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  reviewPromptHint: {
+    textAlign: 'center',
+    color: '#9ca3af',
+    fontSize: 13,
+  },
+  reviewPromptActions: {
+    justifyContent: 'flex-end',
+    paddingTop: 8,
   },
 });
