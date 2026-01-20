@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '@marketplace/shared';
 import { View, ActivityIndicator } from 'react-native';
-import { PaperProvider, MD3LightTheme, configureFonts } from 'react-native-paper';
+import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,43 +36,20 @@ export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const hydrateAuth = async () => {
-      try {
-        const stored = await SecureStore.getItemAsync('auth-storage');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.state?.token && parsed.state?.user) {
-            useAuthStore.getState().setAuth(parsed.state.user, parsed.state.token);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to hydrate auth:', error);
-      } finally {
-        setIsReady(true);
-      }
-    };
-
-    hydrateAuth();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = useAuthStore.subscribe(async (state) => {
-      try {
-        const toStore = {
-          state: {
-            user: state.user,
-            token: state.token,
-            isAuthenticated: state.isAuthenticated,
-            isPhoneVerified: state.isPhoneVerified,
-          },
-        };
-        await SecureStore.setItemAsync('auth-storage', JSON.stringify(toStore));
-      } catch (error) {
-        console.error('Failed to persist auth:', error);
-      }
+    // Wait for Zustand to hydrate from storage
+    // The persist middleware handles this automatically
+    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
+      setIsReady(true);
     });
 
-    return () => unsubscribe();
+    // If already hydrated (or no persist data), set ready
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsReady(true);
+    }
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   if (!isReady) {
