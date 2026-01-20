@@ -49,7 +49,6 @@ export default function EditTaskScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Initialize form with task data
   useEffect(() => {
     if (task) {
       setTitle(task.title || '');
@@ -73,7 +72,6 @@ export default function EditTaskScreen() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: Parameters<typeof updateTask>[1]) => {
-      // Upload new images if any local URIs
       let imageUrls: string[] = images.filter(img => img.startsWith('http'));
       const localImages = images.filter(img => !img.startsWith('http'));
       
@@ -141,7 +139,6 @@ export default function EditTaskScreen() {
     });
   };
 
-  // Check authorization
   if (loadingTask) {
     return (
       <SafeAreaView style={styles.container}>
@@ -201,44 +198,34 @@ export default function EditTaskScreen() {
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
-            {/* Title */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Task Details</Text>
               
               <TextInput
+                mode="outlined"
                 label="Title *"
+                placeholder="What do you need help with?"
                 value={title}
                 onChangeText={setTitle}
-                mode="outlined"
-                placeholder="What do you need help with?"
                 maxLength={100}
                 style={styles.input}
-                outlineStyle={styles.outline}
-                contentStyle={styles.inputContent}
-                outlineColor="#d1d5db"
-                activeOutlineColor="#0ea5e9"
-                textColor="#1f2937"
+                outlineStyle={styles.inputOutline}
               />
 
               <TextInput
+                mode="outlined"
                 label="Description *"
+                placeholder="Describe your task in detail..."
                 value={description}
                 onChangeText={setDescription}
-                mode="outlined"
-                placeholder="Describe your task in detail..."
                 multiline
                 numberOfLines={4}
                 maxLength={1000}
-                style={[styles.input, styles.textArea]}
-                outlineStyle={styles.outline}
-                contentStyle={styles.inputContent}
-                outlineColor="#d1d5db"
-                activeOutlineColor="#0ea5e9"
-                textColor="#1f2937"
+                style={styles.textArea}
+                outlineStyle={styles.inputOutline}
               />
             </Surface>
 
-            {/* Images */}
             <Surface style={styles.section} elevation={0}>
               <ImagePicker
                 images={images}
@@ -248,7 +235,6 @@ export default function EditTaskScreen() {
               />
             </Surface>
 
-            {/* Category */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Category</Text>
               <View style={styles.categoriesContainer}>
@@ -266,27 +252,21 @@ export default function EditTaskScreen() {
               </View>
             </Surface>
 
-            {/* Budget */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Budget</Text>
               <TextInput
+                mode="outlined"
                 label="Budget (€) *"
+                placeholder="0.00"
                 value={budget}
                 onChangeText={setBudget}
-                mode="outlined"
                 keyboardType="decimal-pad"
-                placeholder="0.00"
                 left={<TextInput.Affix text="€" />}
                 style={styles.input}
-                outlineStyle={styles.outline}
-                contentStyle={styles.inputContent}
-                outlineColor="#d1d5db"
-                activeOutlineColor="#0ea5e9"
-                textColor="#1f2937"
+                outlineStyle={styles.inputOutline}
               />
             </Surface>
 
-            {/* Location */}
             <Surface style={styles.section} elevation={0}>
               <LocationPicker
                 initialLocation={location || undefined}
@@ -295,7 +275,6 @@ export default function EditTaskScreen() {
               />
             </Surface>
 
-            {/* Deadline */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Deadline (Optional)</Text>
               <Button
@@ -329,7 +308,6 @@ export default function EditTaskScreen() {
               )}
             </Surface>
 
-            {/* Urgent Toggle */}
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
@@ -346,12 +324,10 @@ export default function EditTaskScreen() {
               </View>
             </Surface>
 
-            {/* Spacer for button */}
             <View style={styles.bottomSpacer} />
           </View>
         </ScrollView>
 
-        {/* Submit Button */}
         <Surface style={styles.bottomBar} elevation={4}>
           <Button
             mode="contained"
@@ -412,16 +388,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: '#ffffff',
+  },
+  inputOutline: {
+    borderColor: '#e5e7eb',
   },
   textArea: {
+    backgroundColor: '#ffffff',
     minHeight: 120,
-  },
-  outline: {
-    borderRadius: 8,
-  },
-  inputContent: {
-    paddingHorizontal: 12,
   },
   categoriesContainer: {
     flexDirection: 'row',
