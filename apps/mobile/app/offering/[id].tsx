@@ -1,15 +1,18 @@
-import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
+import { Text, Button, Surface, ActivityIndicator, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, type Offering } from '@marketplace/shared';
+import { useState } from 'react';
 
 export default function OfferingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const offeringId = parseInt(id || '0', 10);
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
+  const [showContactDialog, setShowContactDialog] = useState(false);
+  const [contactMessage, setContactMessage] = useState('');
 
   const { data: offering, isLoading, error } = useQuery({
     queryKey: ['offering', offeringId],
@@ -20,6 +23,8 @@ export default function OfferingDetailScreen() {
   const contactMutation = useMutation({
     mutationFn: (message: string) => contactOfferingCreator(offeringId, message),
     onSuccess: (data) => {
+      setShowContactDialog(false);
+      setContactMessage('');
       router.push(`/conversation/${data.conversation_id}`);
     },
     onError: (error: any) => {
@@ -92,23 +97,18 @@ export default function OfferingDetailScreen() {
       return;
     }
 
-    Alert.prompt(
-      'Send Message',
-      `Send a message to ${offering?.creator_name}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Send', 
-          onPress: (message) => {
-            if (message && message.trim()) {
-              contactMutation.mutate(message.trim());
-            }
-          }
-        },
-      ],
-      'plain-text',
-      `Hi! I'm interested in your service: ${offering?.title}`
-    );
+    setContactMessage(`Hi! I'm interested in your service: ${offering?.title}`);
+    setShowContactDialog(true);
+  };
+
+  const handleSendMessage = () => {
+    if (contactMessage.trim()) {
+      contactMutation.mutate(contactMessage.trim());
+    }
+  };
+
+  const handleViewProfile = (userId: number) => {
+    router.push(`/user/${userId}`);
   };
 
   const handleDelete = () => {
@@ -228,10 +228,14 @@ export default function OfferingDetailScreen() {
           </Text>
         </Surface>
 
-        {/* Provider Card */}
+        {/* Provider Card - Now Clickable */}
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Service Provider</Text>
-          <View style={styles.providerRow}>
+          <TouchableOpacity 
+            style={styles.providerRow}
+            onPress={() => offering.creator_id && handleViewProfile(offering.creator_id)}
+            activeOpacity={0.7}
+          >
             {/* Custom Avatar */}
             <View style={styles.avatarContainer}>
               <Text style={styles.avatarText}>
@@ -265,7 +269,7 @@ export default function OfferingDetailScreen() {
                 </View>
               ) : null}
             </View>
-          </View>
+          </TouchableOpacity>
         </Surface>
 
         {/* Description */}
@@ -399,6 +403,35 @@ export default function OfferingDetailScreen() {
           </View>
         </Surface>
       ) : null}
+
+      {/* Contact Dialog */}
+      <Portal>
+        <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
+          <Dialog.Title>Send Message</Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.dialogSubtitle}>Send a message to {offering.creator_name}</Text>
+            <TextInput
+              mode="outlined"
+              value={contactMessage}
+              onChangeText={setContactMessage}
+              multiline
+              numberOfLines={4}
+              style={styles.dialogInput}
+              placeholder="Type your message..."
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowContactDialog(false)}>Cancel</Button>
+            <Button 
+              onPress={handleSendMessage} 
+              disabled={!contactMessage.trim() || contactMutation.isPending}
+              loading={contactMutation.isPending}
+            >
+              Send
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }
@@ -628,5 +661,12 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderColor: '#fecaca',
+  },
+  dialogSubtitle: {
+    color: '#6b7280',
+    marginBottom: 16,
+  },
+  dialogInput: {
+    minHeight: 100,
   },
 });
