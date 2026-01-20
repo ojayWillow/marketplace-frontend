@@ -209,19 +209,24 @@ export default function TasksScreen() {
                 return (
                   <Card key={task.id} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
                     <Card.Content>
+                      {/* Header: Title + Status */}
                       <View style={styles.cardHeader}>
-                        <View style={styles.cardTitleContainer}>
-                          <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
-                          {task.category ? <Text style={styles.category}>{task.category}</Text> : null}
-                        </View>
+                        <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                          <Text style={[styles.statusText2, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
+                          <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
                         </View>
                       </View>
+                      
+                      {/* Category */}
+                      <Text style={styles.category}>{task.category}</Text>
+                      
+                      {/* Description */}
                       <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
+                      
+                      {/* Footer: Price + Creator */}
                       <View style={styles.cardFooter}>
-                        <Text style={styles.budget}>€{task.budget?.toFixed(0) || '0'}</Text>
-                        <Text style={styles.location}>📍 {task.location || 'Location'}</Text>
+                        <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
+                        <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
                       </View>
                     </Card.Content>
                   </Card>
@@ -245,24 +250,27 @@ export default function TasksScreen() {
                 return (
                   <Card key={offering.id} style={styles.card} onPress={() => router.push(`/offering/${offering.id}`)}>
                     <Card.Content>
+                      {/* Header: Title + Status */}
                       <View style={styles.cardHeader}>
-                        <View style={styles.cardTitleContainer}>
-                          <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
-                          {offering.category ? <Text style={styles.categoryOrange}>{offering.category}</Text> : null}
-                        </View>
+                        <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                          <Text style={[styles.statusText2, { color: statusColors.text }]}>{getStatusLabel(offering.status || 'active')}</Text>
+                          <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(offering.status || 'active')}</Text>
                         </View>
                       </View>
+                      
+                      {/* Category */}
+                      <Text style={styles.categoryOrange}>{offering.category}</Text>
+                      
+                      {/* Description */}
                       <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{offering.description}</Text>
+                      
+                      {/* Footer: Price + Creator */}
                       <View style={styles.cardFooter}>
-                        <Text style={styles.budgetOrange}>
+                        <Text style={styles.priceOrange}>
                           {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
                            offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
                         </Text>
-                        {offering.creator_name ? (
-                          <Text style={styles.provider}>👤 {offering.creator_name}</Text>
-                        ) : null}
+                        <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
                       </View>
                     </Card.Content>
                   </Card>
@@ -329,46 +337,188 @@ export default function TasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { padding: 16, backgroundColor: '#ffffff' },
-  title: { fontWeight: 'bold', color: '#1f2937', marginBottom: 12 },
-  segmentContainer: { marginTop: 4 },
-  segmentedButtons: { backgroundColor: '#f3f4f6' },
-  segmentActive: { backgroundColor: '#0ea5e9' },
-  tabContainer: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#ffffff' },
-  tabsRow: { flexDirection: 'row' },
-  tab: { marginRight: 8 },
-  scrollView: { flex: 1 },
-  content: { padding: 16 },
-  centerContainer: { alignItems: 'center', paddingVertical: 48 },
-  statusText: { marginTop: 12, color: '#6b7280', textAlign: 'center' },
-  errorText: { color: '#ef4444', marginBottom: 12 },
-  emptyIcon: { fontSize: 48 },
-  card: { marginBottom: 12, backgroundColor: '#ffffff' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  cardTitleContainer: { flex: 1, marginRight: 8 },
-  cardTitle: { fontWeight: '600' },
-  category: { color: '#0ea5e9', fontSize: 12, marginTop: 2 },
-  categoryOrange: { color: '#f97316', fontSize: 12, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  statusText2: { fontSize: 11, fontWeight: '600' },
-  description: { color: '#6b7280', marginBottom: 12 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  budget: { color: '#0ea5e9', fontWeight: 'bold' },
-  budgetOrange: { color: '#f97316', fontWeight: 'bold' },
-  location: { color: '#9ca3af', fontSize: 13 },
-  provider: { color: '#9ca3af', fontSize: 13 },
-  fabSpacer: { height: 80 },
-  fab: { position: 'absolute', margin: 16, right: 0, bottom: 0, backgroundColor: '#0ea5e9' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#ffffff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  modalTitle: { fontWeight: 'bold', color: '#1f2937', textAlign: 'center' },
-  modalSubtitle: { color: '#6b7280', textAlign: 'center', marginTop: 4, marginBottom: 24 },
-  modalOption: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#f9fafb', borderRadius: 12, marginBottom: 12 },
-  modalOptionIcon: { fontSize: 32, marginRight: 16 },
-  modalOptionText: { flex: 1 },
-  modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
-  modalOptionDesc: { fontSize: 13, color: '#6b7280', marginTop: 2 },
-  modalArrow: { fontSize: 24, color: '#9ca3af' },
-  cancelButton: { marginTop: 8 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f5f5f5' 
+  },
+  header: { 
+    padding: 16, 
+    backgroundColor: '#ffffff' 
+  },
+  title: { 
+    fontWeight: 'bold', 
+    color: '#1f2937', 
+    marginBottom: 12 
+  },
+  segmentContainer: { 
+    marginTop: 4 
+  },
+  segmentedButtons: { 
+    backgroundColor: '#f3f4f6' 
+  },
+  segmentActive: { 
+    backgroundColor: '#0ea5e9' 
+  },
+  tabContainer: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 12, 
+    backgroundColor: '#ffffff' 
+  },
+  tabsRow: { 
+    flexDirection: 'row' 
+  },
+  tab: { 
+    marginRight: 8 
+  },
+  scrollView: { 
+    flex: 1 
+  },
+  content: { 
+    padding: 16 
+  },
+  centerContainer: { 
+    alignItems: 'center', 
+    paddingVertical: 48 
+  },
+  statusText: { 
+    marginTop: 12, 
+    color: '#6b7280', 
+    textAlign: 'center' 
+  },
+  errorText: { 
+    color: '#ef4444', 
+    marginBottom: 12 
+  },
+  emptyIcon: { 
+    fontSize: 48 
+  },
+  
+  // Card Styles - Clean and Professional
+  card: { 
+    marginBottom: 12, 
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cardTitle: { 
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 12,
+  },
+  statusBadge: { 
+    paddingHorizontal: 10, 
+    paddingVertical: 4, 
+    borderRadius: 12,
+  },
+  statusBadgeText: { 
+    fontSize: 12, 
+    fontWeight: '600' 
+  },
+  category: { 
+    color: '#0ea5e9', 
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  categoryOrange: { 
+    color: '#f97316', 
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  description: { 
+    color: '#6b7280', 
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  cardFooter: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center' 
+  },
+  price: { 
+    color: '#0ea5e9', 
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  priceOrange: { 
+    color: '#f97316', 
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  creator: { 
+    color: '#9ca3af', 
+    fontSize: 13 
+  },
+  
+  fabSpacer: { 
+    height: 80 
+  },
+  fab: { 
+    position: 'absolute', 
+    margin: 16, 
+    right: 0, 
+    bottom: 0, 
+    backgroundColor: '#0ea5e9' 
+  },
+  
+  // Modal Styles
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'flex-end' 
+  },
+  modalContent: { 
+    backgroundColor: '#ffffff', 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    padding: 24, 
+    paddingBottom: 40 
+  },
+  modalTitle: { 
+    fontWeight: 'bold', 
+    color: '#1f2937', 
+    textAlign: 'center' 
+  },
+  modalSubtitle: { 
+    color: '#6b7280', 
+    textAlign: 'center', 
+    marginTop: 4, 
+    marginBottom: 24 
+  },
+  modalOption: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16, 
+    backgroundColor: '#f9fafb', 
+    borderRadius: 12, 
+    marginBottom: 12 
+  },
+  modalOptionIcon: { 
+    fontSize: 32, 
+    marginRight: 16 
+  },
+  modalOptionText: { 
+    flex: 1 
+  },
+  modalOptionTitle: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: '#1f2937' 
+  },
+  modalOptionDesc: { 
+    fontSize: 13, 
+    color: '#6b7280', 
+    marginTop: 2 
+  },
+  modalArrow: { 
+    fontSize: 24, 
+    color: '#9ca3af' 
+  },
+  cancelButton: { 
+    marginTop: 8 
+  },
 });
