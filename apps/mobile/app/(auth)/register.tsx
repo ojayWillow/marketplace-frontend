@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
+import { haptic } from '../../utils/haptics';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -25,31 +26,38 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     // Validation
     if (!username.trim() || !email.trim() || !password.trim()) {
+      haptic.warning();
       setError('Please fill in all required fields');
       return;
     }
 
     if (password !== confirmPassword) {
+      haptic.warning();
       setError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
+      haptic.warning();
       setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
     setError('');
+    haptic.medium(); // Haptic on submit
+
     try {
       const response = await authApi.register({
         username: username.trim(),
         email: email.trim(),
         password,
       });
+      haptic.success(); // Success haptic
       setAuth(response.user, response.access_token);
       router.replace('/(tabs)');
     } catch (error: any) {
+      haptic.error(); // Error haptic
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
       setError(message);
     } finally {
@@ -124,7 +132,7 @@ export default function RegisterScreen() {
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
                 />
               }
             />
@@ -142,7 +150,7 @@ export default function RegisterScreen() {
               right={
                 <TextInput.Icon
                   icon={showConfirmPassword ? 'eye-off' : 'eye'}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onPress={() => { haptic.soft(); setShowConfirmPassword(!showConfirmPassword); }}
                 />
               }
             />
@@ -177,6 +185,7 @@ export default function RegisterScreen() {
                     style={styles.phoneButton}
                     contentStyle={styles.buttonContent}
                     icon="phone"
+                    onPress={() => haptic.light()}
                   >
                     Register with Phone
                   </Button>
@@ -190,7 +199,7 @@ export default function RegisterScreen() {
                 Already have an account?{' '}
               </Text>
               <Link href="/(auth)/login" asChild>
-                <Button mode="text" disabled={loading} compact>
+                <Button mode="text" disabled={loading} compact onPress={() => haptic.light()}>
                   Sign In
                 </Button>
               </Link>
@@ -211,7 +220,7 @@ export default function RegisterScreen() {
         duration={4000}
         action={{
           label: 'Dismiss',
-          onPress: () => setError(''),
+          onPress: () => { haptic.soft(); setError(''); },
         }}
       >
         {error}
