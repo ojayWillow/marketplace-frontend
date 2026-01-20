@@ -4,7 +4,8 @@ import { Text, TextInput, Button, Surface, SegmentedButtons } from 'react-native
 import { Stack, router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { createOffering, useAuthStore } from '@marketplace/shared';
+import { createOffering, uploadImage, useAuthStore } from '@marketplace/shared';
+import ImagePicker from '../../components/ImagePicker';
 
 const CATEGORIES = [
   { value: 'cleaning', label: '🧹 Cleaning' },
@@ -37,18 +38,43 @@ export default function CreateOfferingScreen() {
   const [location, setLocation] = useState('');
   const [availability, setAvailability] = useState('');
   const [experience, setExperience] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: () => createOffering({
-      title,
-      description,
-      category,
-      price: price ? parseFloat(price) : undefined,
-      price_type: priceType,
-      location,
-      availability: availability || undefined,
-      experience: experience || undefined,
-    }),
+    mutationFn: async () => {
+      // Upload images first if any
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        setUploading(true);
+        try {
+          const uploadPromises = images.map(async (uri) => {
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            const result = await uploadImage(blob, `offering_${Date.now()}.jpg`);
+            return result.url;
+          });
+          imageUrls = await Promise.all(uploadPromises);
+        } catch (error) {
+          console.error('Image upload error:', error);
+          // Continue without images if upload fails
+        } finally {
+          setUploading(false);
+        }
+      }
+
+      return createOffering({
+        title,
+        description,
+        category,
+        price: price ? parseFloat(price) : undefined,
+        price_type: priceType,
+        location,
+        availability: availability || undefined,
+        experience: experience || undefined,
+        images: imageUrls.length > 0 ? imageUrls.join(',') : undefined,
+      });
+    },
     onSuccess: (offering) => {
       queryClient.invalidateQueries({ queryKey: ['offerings'] });
       Alert.alert(
@@ -96,6 +122,8 @@ export default function CreateOfferingScreen() {
       </SafeAreaView>
     );
   }
+
+  const isLoading = createMutation.isPending || uploading;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -155,6 +183,17 @@ export default function CreateOfferingScreen() {
               style={styles.textArea}
               outlineStyle={styles.inputOutline}
             />
+          </Surface>
+
+          {/* Images */}
+          <Surface style={styles.section} elevation={0}>
+            <ImagePicker
+              images={images}
+              onImagesChange={setImages}
+              maxImages={5}
+              label="Portfolio Photos"
+            />
+            <Text style={styles.imageHint}>Show examples of your work</Text>
           </Surface>
 
           {/* Price */}
@@ -227,12 +266,12 @@ export default function CreateOfferingScreen() {
           <Button
             mode="contained"
             onPress={handleSubmit}
-            loading={createMutation.isPending}
-            disabled={createMutation.isPending}
+            loading={isLoading}
+            disabled={isLoading}
             style={styles.submitButton}
             contentStyle={styles.submitButtonContent}
           >
-            Create Service Listing
+            {uploading ? 'Uploading Images...' : 'Create Service Listing'}
           </Button>
 
           <View style={styles.bottomSpacer} />
@@ -279,6 +318,11 @@ const styles = StyleSheet.create({
   },
   categoryButton: {
     marginRight: 8,
+  },
+  imageHint: {
+    color: '#9ca3af',
+    fontSize: 13,
+    marginTop: -8,
   },
   segmentedButtons: {
     marginBottom: 12,
