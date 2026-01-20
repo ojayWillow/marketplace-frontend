@@ -308,7 +308,7 @@ export default function HomeScreen() {
                         styles.categoryChip,
                         { backgroundColor: getMarkerColor(selectedTask.category) + '20' }
                       ]}
-                      textStyle={{ color: getMarkerColor(selectedTask.category), fontWeight: '600' }}
+                      textStyle={{ color: getMarkerColor(selectedTask.category), fontWeight: '600', fontSize: 12 }}
                     >
                       {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
                     </Chip>
@@ -325,7 +325,7 @@ export default function HomeScreen() {
                     {selectedTask.title}
                   </Text>
 
-                  {/* Meta Info Row */}
+                  {/* Meta Info Row - Distance and Time (NO location icon here) */}
                   <View style={styles.metaRow}>
                     {userLocation && selectedTask.latitude && selectedTask.longitude && (
                       <View style={styles.metaItem}>
@@ -348,9 +348,9 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  {/* Location */}
+                  {/* Location Text (just text, no icon) */}
                   <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
-                    📍 {selectedTask.location || 'Location not specified'}
+                    {selectedTask.location || 'Location not specified'}
                   </Text>
 
                   {/* Budget */}
@@ -374,7 +374,7 @@ export default function HomeScreen() {
                   {/* Boost Badge and Close */}
                   <View style={styles.cardTopRow}>
                     <Chip mode="flat" compact style={styles.boostChip}>
-                      ⚡ Boosted Service
+                      ⚡ Boosted
                     </Chip>
                     <IconButton
                       icon="close"
@@ -411,9 +411,9 @@ export default function HomeScreen() {
                     )}
                   </View>
 
-                  {/* Location */}
+                  {/* Location Text (no icon) */}
                   <Text variant="bodySmall" style={styles.locationText} numberOfLines={1}>
-                    📍 {selectedOffering.location}
+                    {selectedOffering.location}
                   </Text>
 
                   {/* Price */}
@@ -569,10 +569,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   categoryChip: {
-    height: 28,
+    height: 26,
+    maxWidth: '70%',
   },
   boostChip: {
-    height: 28,
+    height: 26,
     backgroundColor: '#fef3c7',
   },
   closeButtonTop: {
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     gap: 16,
   },
   metaItem: {
@@ -604,6 +605,7 @@ const styles = StyleSheet.create({
   locationText: {
     color: '#9ca3af',
     marginBottom: 12,
+    fontSize: 13,
   },
   providerText: {
     color: '#6b7280',

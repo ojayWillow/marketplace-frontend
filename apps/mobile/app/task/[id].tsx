@@ -187,7 +187,7 @@ export default function TaskDetailScreen() {
       case 'open': return 'Open';
       case 'assigned': return 'Assigned';
       case 'in_progress': return 'In Progress';
-      case 'pending_confirmation': return 'Awaiting Confirmation';
+      case 'pending_confirmation': return 'Awaiting Confirm';
       case 'completed': return 'Completed';
       case 'cancelled': return 'Cancelled';
       case 'disputed': return 'Disputed';
@@ -279,11 +279,12 @@ export default function TaskDetailScreen() {
             <Chip 
               style={[styles.statusChip, { backgroundColor: getStatusColor(task.status) }]}
               textStyle={styles.statusText}
+              compact
             >
               {getStatusLabel(task.status)}
             </Chip>
             {task.is_urgent ? (
-              <Chip style={styles.urgentChip} textStyle={styles.urgentText}>
+              <Chip style={styles.urgentChip} textStyle={styles.urgentText} compact>
                 🔥 Urgent
               </Chip>
             ) : null}
@@ -576,23 +577,23 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     marginBottom: 12,
+    gap: 8,
   },
   statusChip: {
-    height: 28,
-    marginRight: 8,
+    height: 26,
   },
   statusText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   urgentChip: {
     backgroundColor: '#fef3c7',
-    height: 28,
+    height: 26,
   },
   urgentText: {
     color: '#92400e',
-    fontSize: 12,
+    fontSize: 11,
   },
   title: {
     fontWeight: 'bold',
