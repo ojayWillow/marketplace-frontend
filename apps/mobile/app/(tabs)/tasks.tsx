@@ -10,6 +10,25 @@ type MainTab = 'jobs' | 'offerings';
 type JobFilter = 'all' | 'posted' | 'my_jobs' | 'applied';
 type OfferingFilter = 'all' | 'my_offerings';
 
+// Helper to shorten location - show only city or first part
+const shortenLocation = (location: string | undefined): string => {
+  if (!location) return 'Location';
+  // Try to extract city from address
+  const parts = location.split(',').map(p => p.trim());
+  // Usually city is 2nd or 3rd part, or just use first meaningful part
+  if (parts.length >= 2) {
+    // Find a part that looks like a city (not a street number, not a country)
+    for (const part of parts) {
+      // Skip parts that are just numbers or postal codes
+      if (/^[A-Za-z\u0080-\uFFFF\s]+$/.test(part) && part.length > 2 && !part.includes('Latvia')) {
+        return part;
+      }
+    }
+    return parts[1] || parts[0];
+  }
+  return location.length > 20 ? location.substring(0, 20) + '...' : location;
+};
+
 export default function TasksScreen() {
   const [mainTab, setMainTab] = useState<MainTab>('jobs');
   const [jobFilter, setJobFilter] = useState<JobFilter>('all');
@@ -223,10 +242,10 @@ export default function TasksScreen() {
                       {/* Description */}
                       <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
                       
-                      {/* Footer: Price + Creator */}
+                      {/* Footer: Price + Location */}
                       <View style={styles.cardFooter}>
                         <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-                        <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
+                        <Text style={styles.footerRight}>👤 {task.creator_name || 'Anonymous'}</Text>
                       </View>
                     </Card.Content>
                   </Card>
@@ -270,7 +289,7 @@ export default function TasksScreen() {
                           {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
                            offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
                         </Text>
-                        <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
+                        <Text style={styles.footerRight}>👤 {offering.creator_name || 'Anonymous'}</Text>
                       </View>
                     </Card.Content>
                   </Card>
@@ -449,7 +468,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  creator: { 
+  footerRight: { 
     color: '#9ca3af', 
     fontSize: 13 
   },
