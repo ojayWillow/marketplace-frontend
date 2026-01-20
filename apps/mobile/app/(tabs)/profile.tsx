@@ -140,23 +140,41 @@ export default function ProfileScreen() {
           />
         </Surface>
 
-        {/* Activity Section */}
-        <Text style={styles.sectionLabel}>Activity</Text>
+        {/* My Activity Section */}
+        <Text style={styles.sectionLabel}>My Activity</Text>
         <Surface style={styles.menuContainer} elevation={0}>
           <MenuItem 
-            title="My Tasks" 
-            subtitle="Jobs you've posted or applied to"
+            title="Jobs I Posted" 
+            subtitle="Jobs you're looking for help with"
             icon="📋" 
-            onPress={() => router.push('/(tabs)/tasks')} 
+            onPress={() => router.push('/activity/posted-jobs')} 
+          />
+          <Divider />
+          <MenuItem 
+            title="My Applications" 
+            subtitle="Jobs you've applied for"
+            icon="📨" 
+            onPress={() => router.push('/activity/applications')} 
+          />
+          <Divider />
+          <MenuItem 
+            title="Jobs I'm Working On" 
+            subtitle="Jobs assigned to you"
+            icon="💼" 
+            onPress={() => router.push('/activity/my-jobs')} 
           />
           <Divider />
           <MenuItem 
             title="My Services" 
             subtitle="Services you offer"
             icon="🛠️" 
-            onPress={() => router.push('/(tabs)/offerings')} 
+            onPress={() => router.push('/activity/my-services')} 
           />
-          <Divider />
+        </Surface>
+
+        {/* Messages */}
+        <Text style={styles.sectionLabel}>Communication</Text>
+        <Surface style={styles.menuContainer} elevation={0}>
           <MenuItem 
             title="Messages" 
             icon="💬" 
