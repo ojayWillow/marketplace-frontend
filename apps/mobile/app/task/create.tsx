@@ -168,6 +168,8 @@ export default function CreateTaskScreen() {
                 placeholder="What do you need help with?"
                 maxLength={100}
                 style={styles.input}
+                outlineStyle={styles.outline}
+                contentStyle={styles.inputContent}
                 outlineColor="#d1d5db"
                 activeOutlineColor="#0ea5e9"
                 textColor="#1f2937"
@@ -183,6 +185,8 @@ export default function CreateTaskScreen() {
                 numberOfLines={4}
                 maxLength={1000}
                 style={[styles.input, styles.textArea]}
+                outlineStyle={styles.outline}
+                contentStyle={styles.inputContent}
                 outlineColor="#d1d5db"
                 activeOutlineColor="#0ea5e9"
                 textColor="#1f2937"
@@ -229,6 +233,8 @@ export default function CreateTaskScreen() {
                 placeholder="0.00"
                 left={<TextInput.Affix text="€" />}
                 style={styles.input}
+                outlineStyle={styles.outline}
+                contentStyle={styles.inputContent}
                 outlineColor="#d1d5db"
                 activeOutlineColor="#0ea5e9"
                 textColor="#1f2937"
@@ -365,6 +371,12 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
+  },
+  outline: {
+    borderRadius: 8,
+  },
+  inputContent: {
+    paddingHorizontal: 12,
   },
   categoriesContainer: {
     flexDirection: 'row',
