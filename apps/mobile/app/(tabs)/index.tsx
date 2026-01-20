@@ -1,6 +1,6 @@
 import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, ActivityIndicator, IconButton, Card, Surface } from 'react-native-paper';
+import { Text, ActivityIndicator, IconButton, Card } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { router } from 'expo-router';
@@ -8,6 +8,7 @@ import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
+import { BlurView } from 'expo-blur';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 120;
@@ -29,11 +30,11 @@ const CATEGORIES = [
 
 // Radius options in km
 const RADIUS_OPTIONS = [
-  { value: 5, label: '5 km' },
-  { value: 20, label: '20 km' },
-  { value: 50, label: '50 km' },
-  { value: 100, label: '100 km' },
-  { value: null, label: 'All' },
+  { value: 5, label: '5' },
+  { value: 20, label: '20' },
+  { value: 50, label: '50' },
+  { value: 100, label: '100' },
+  { value: null, label: '∞' },
 ];
 
 // Helper to calculate distance in km
@@ -76,7 +77,7 @@ export default function HomeScreen() {
   
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedRadius, setSelectedRadius] = useState<number | null>(5); // Default 5km
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(20); // Default 20km
 
   // Bottom sheet animation
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
@@ -244,62 +245,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Filters Header */}
-      <Surface style={styles.filtersContainer} elevation={2}>
-        {/* Distance Filter */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={styles.filterRow}
-        >
-          <Text style={styles.filterLabel}>📍</Text>
-          {RADIUS_OPTIONS.map((option) => (
-            <TouchableOpacity
-              key={option.label}
-              style={[
-                styles.filterChip,
-                selectedRadius === option.value && styles.filterChipActive
-              ]}
-              onPress={() => handleRadiusSelect(option.value)}
-            >
-              <Text style={[
-                styles.filterChipText,
-                selectedRadius === option.value && styles.filterChipTextActive
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Category Filter */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={styles.filterRow}
-        >
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.key}
-              style={[
-                styles.filterChip,
-                selectedCategory === cat.key && styles.filterChipActive
-              ]}
-              onPress={() => handleCategorySelect(cat.key)}
-            >
-              <Text style={styles.filterChipIcon}>{cat.icon}</Text>
-              <Text style={[
-                styles.filterChipText,
-                selectedCategory === cat.key && styles.filterChipTextActive
-              ]}>
-                {cat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </Surface>
-
+    <View style={styles.container}>
       {/* Loading State */}
       {isLoading && (
         <View style={styles.centerContainer}>
@@ -331,7 +277,7 @@ export default function HomeScreen() {
               longitudeDelta: selectedRadius ? selectedRadius * 0.02 : 0.5,
             }}
             showsUserLocation
-            showsMyLocationButton
+            showsMyLocationButton={false}
           >
             {/* Task Markers */}
             {filteredTasks.map((task) => (
@@ -372,6 +318,62 @@ export default function HomeScreen() {
               </Marker>
             ))}
           </MapView>
+
+          {/* Floating Category Bar - Transparent/Blur */}
+          <SafeAreaView style={styles.floatingHeader} edges={['top']}>
+            <BlurView intensity={80} tint="light" style={styles.categoryBarBlur}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerStyle={styles.categoryScroll}
+              >
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[
+                      styles.categoryChip,
+                      selectedCategory === cat.key && styles.categoryChipActive
+                    ]}
+                    onPress={() => handleCategorySelect(cat.key)}
+                  >
+                    <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                    <Text style={[
+                      styles.categoryText,
+                      selectedCategory === cat.key && styles.categoryTextActive
+                    ]}>
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </BlurView>
+          </SafeAreaView>
+
+          {/* Distance Selector - Compact pill in corner */}
+          <View style={styles.distanceSelector}>
+            <BlurView intensity={90} tint="light" style={styles.distanceBlur}>
+              {RADIUS_OPTIONS.map((option, index) => (
+                <TouchableOpacity
+                  key={option.label}
+                  style={[
+                    styles.distanceOption,
+                    selectedRadius === option.value && styles.distanceOptionActive,
+                    index === 0 && styles.distanceOptionFirst,
+                    index === RADIUS_OPTIONS.length - 1 && styles.distanceOptionLast,
+                  ]}
+                  onPress={() => handleRadiusSelect(option.value)}
+                >
+                  <Text style={[
+                    styles.distanceText,
+                    selectedRadius === option.value && styles.distanceTextActive
+                  ]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <Text style={styles.distanceUnit}>km</Text>
+            </BlurView>
+          </View>
 
           {/* Selected Task Popup */}
           {selectedTask && (
@@ -480,7 +482,7 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -488,44 +490,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  filtersContainer: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 8,
-  },
-  filterRow: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    alignItems: 'center',
-    gap: 8,
-  },
-  filterLabel: {
-    fontSize: 16,
-    marginRight: 4,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  filterChipActive: {
-    backgroundColor: '#0ea5e9',
-  },
-  filterChipIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  filterChipText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  filterChipTextActive: {
-    color: '#ffffff',
   },
   centerContainer: {
     flex: 1,
@@ -561,6 +525,92 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  // Floating category bar
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  categoryBarBlur: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  categoryScroll: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  categoryChipActive: {
+    backgroundColor: '#0ea5e9',
+  },
+  categoryIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  categoryText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  categoryTextActive: {
+    color: '#ffffff',
+  },
+  // Distance selector
+  distanceSelector: {
+    position: 'absolute',
+    top: 100,
+    right: 12,
+    zIndex: 10,
+  },
+  distanceBlur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    overflow: 'hidden',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  distanceOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  distanceOptionActive: {
+    backgroundColor: '#0ea5e9',
+  },
+  distanceOptionFirst: {
+    marginLeft: 0,
+  },
+  distanceOptionLast: {
+    marginRight: 0,
+  },
+  distanceText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  distanceTextActive: {
+    color: '#ffffff',
+  },
+  distanceUnit: {
+    fontSize: 11,
+    color: '#9ca3af',
+    marginLeft: 2,
+    marginRight: 6,
+  },
+  // Price markers
   priceMarker: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 12,
@@ -587,10 +637,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#f97316',
   },
-  // Selected popup (compact)
+  // Selected popup
   selectedPopup: {
     position: 'absolute',
-    top: 16,
+    top: 160,
     left: 16,
     right: 16,
   },
