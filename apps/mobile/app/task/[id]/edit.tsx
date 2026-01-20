@@ -1,6 +1,6 @@
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TextInput, Button, Surface, Chip, ActivityIndicator, useTheme } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, Chip, ActivityIndicator } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -31,7 +31,6 @@ export default function EditTaskScreen() {
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const theme = useTheme();
 
   const { data: task, isLoading: loadingTask } = useQuery({
     queryKey: ['task', taskId],
@@ -214,6 +213,8 @@ export default function EditTaskScreen() {
                 placeholder="What do you need help with?"
                 maxLength={100}
                 style={styles.input}
+                outlineStyle={styles.outline}
+                contentStyle={styles.inputContent}
                 outlineColor="#d1d5db"
                 activeOutlineColor="#0ea5e9"
                 textColor="#1f2937"
@@ -229,6 +230,8 @@ export default function EditTaskScreen() {
                 numberOfLines={4}
                 maxLength={1000}
                 style={[styles.input, styles.textArea]}
+                outlineStyle={styles.outline}
+                contentStyle={styles.inputContent}
                 outlineColor="#d1d5db"
                 activeOutlineColor="#0ea5e9"
                 textColor="#1f2937"
@@ -275,6 +278,8 @@ export default function EditTaskScreen() {
                 placeholder="0.00"
                 left={<TextInput.Affix text="€" />}
                 style={styles.input}
+                outlineStyle={styles.outline}
+                contentStyle={styles.inputContent}
                 outlineColor="#d1d5db"
                 activeOutlineColor="#0ea5e9"
                 textColor="#1f2937"
@@ -411,6 +416,12 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
+  },
+  outline: {
+    borderRadius: 8,
+  },
+  inputContent: {
+    paddingHorizontal: 12,
   },
   categoriesContainer: {
     flexDirection: 'row',
