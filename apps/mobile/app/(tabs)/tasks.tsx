@@ -4,7 +4,7 @@ import { Text, Card, Chip, ActivityIndicator, Button, Surface, FAB, SegmentedBut
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { getTasks, getCreatedTasks, getMyTasks, getMyApplications, getOfferings, useAuthStore, type Task, type TaskApplication, type Offering } from '@marketplace/shared';
+import { getTasks, getCreatedTasks, getMyTasks, getMyApplications, getOfferings, getMyOfferings, useAuthStore, type Task, type TaskApplication, type Offering } from '@marketplace/shared';
 
 type MainTab = 'jobs' | 'offerings';
 type JobFilter = 'all' | 'posted' | 'my_jobs' | 'applied';
@@ -45,7 +45,7 @@ export default function TasksScreen() {
     queryKey: ['offerings', offeringFilter, user?.id],
     queryFn: async () => {
       if (offeringFilter === 'my_offerings' && user) {
-        return await getOfferings({ provider_id: user.id });
+        return await getMyOfferings();
       }
       return await getOfferings({ page: 1, per_page: 20 });
     },
@@ -260,8 +260,8 @@ export default function TasksScreen() {
                           {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
                            offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
                         </Text>
-                        {offering.provider ? (
-                          <Text style={styles.provider}>👤 {offering.provider.username}</Text>
+                        {offering.creator_name ? (
+                          <Text style={styles.provider}>👤 {offering.creator_name}</Text>
                         ) : null}
                       </View>
                     </Card.Content>
