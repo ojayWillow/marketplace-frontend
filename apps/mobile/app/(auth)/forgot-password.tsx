@@ -3,8 +3,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, Surface } from 'react-native-paper';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../config/firebase';
 import { haptic } from '../../utils/haptics';
 
 export default function ForgotPasswordScreen() {
@@ -19,11 +17,9 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleSendResetEmail = async () => {
-    // Clear previous messages
     setError('');
     setSuccess(false);
 
-    // Validation
     if (!email) {
       haptic.warning();
       setError('Please enter your email address');
@@ -37,29 +33,22 @@ export default function ForgotPasswordScreen() {
     }
 
     setLoading(true);
-    haptic.medium(); // Haptic on submit
+    haptic.medium();
 
     try {
-      // Send password reset email via Firebase
-      await sendPasswordResetEmail(auth, email);
+      // TODO: Connect to backend password-reset endpoint
+      // await api.auth.requestPasswordReset(email);
       
-      haptic.success(); // Success haptic
+      // Simulate success for now
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      haptic.success();
       setSuccess(true);
       setError('');
-    } catch (err: any) {
-      haptic.error(); // Error haptic
+    } catch (err) {
+      haptic.error();
       console.error('Password reset error:', err);
-      
-      // Handle specific Firebase errors
-      if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email address');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many requests. Please try again later');
-      } else {
-        setError('Failed to send reset email. Please try again');
-      }
+      setError('Failed to send reset email. Please try again');
     } finally {
       setLoading(false);
     }
@@ -119,7 +108,7 @@ export default function ForgotPasswordScreen() {
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
-                  setError(''); // Clear error on input
+                  setError('');
                 }}
                 mode="outlined"
                 keyboardType="email-address"
