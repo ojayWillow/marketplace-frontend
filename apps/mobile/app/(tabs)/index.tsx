@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Card, Surface } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -75,10 +75,8 @@ export default function HomeScreen() {
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
   
   // Filters
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedRadius, setSelectedRadius] = useState<number | null>(5); // Default 5km
-  const [showFilters, setShowFilters] = useState(false);
 
   // Bottom sheet animation
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
@@ -103,10 +101,8 @@ export default function HomeScreen() {
         let snapTo = SHEET_MIN_HEIGHT;
         
         if (gestureState.vy < -0.5 || newHeight > SHEET_MID_HEIGHT) {
-          // Swiping up fast or past mid point
           snapTo = gestureState.vy < -1 ? SHEET_MAX_HEIGHT : SHEET_MID_HEIGHT;
         } else if (gestureState.vy > 0.5 || newHeight < SHEET_MID_HEIGHT * 0.7) {
-          // Swiping down fast or below threshold
           snapTo = SHEET_MIN_HEIGHT;
         } else {
           snapTo = SHEET_MID_HEIGHT;
@@ -162,19 +158,11 @@ export default function HomeScreen() {
     o => o.is_boost_active && o.latitude && o.longitude
   );
 
-  // Filter tasks based on search, category, and radius
+  // Filter tasks based on category and radius
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       // Must have location for map
       if (!task.latitude || !task.longitude) return false;
-      
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = task.title.toLowerCase().includes(query);
-        const matchesDesc = task.description?.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesDesc) return false;
-      }
       
       // Category filter
       if (selectedCategory !== 'all' && task.category !== selectedCategory) {
@@ -194,7 +182,7 @@ export default function HomeScreen() {
       
       return true;
     });
-  }, [allTasks, searchQuery, selectedCategory, selectedRadius, userLocation]);
+  }, [allTasks, selectedCategory, selectedRadius, userLocation]);
 
   // Sort by distance for the list
   const sortedTasks = useMemo(() => {
@@ -255,118 +243,62 @@ export default function HomeScreen() {
     setSelectedOffering(null);
   };
 
-  const activeFilterCount = (selectedCategory !== 'all' ? 1 : 0) + (selectedRadius !== 5 ? 1 : 0);
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Search & Filter Bar */}
-      <Surface style={styles.searchContainer} elevation={2}>
-        <View style={styles.searchRow}>
-          <View style={styles.searchInputContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search jobs..."
-              placeholderTextColor="#9ca3af"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={styles.clearIcon}>✕</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-          <TouchableOpacity 
-            style={[
-              styles.filterButton,
-              showFilters && styles.filterButtonActive
-            ]} 
-            onPress={() => { haptic.selection(); setShowFilters(!showFilters); }}
-          >
-            <Text style={styles.filterIcon}>⚙️</Text>
-            {activeFilterCount > 0 && (
-              <View style={styles.filterBadge}>
-                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+      {/* Filters Header */}
+      <Surface style={styles.filtersContainer} elevation={2}>
+        {/* Distance Filter */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.filterRow}
+        >
+          <Text style={styles.filterLabel}>📍</Text>
+          {RADIUS_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.label}
+              style={[
+                styles.filterChip,
+                selectedRadius === option.value && styles.filterChipActive
+              ]}
+              onPress={() => handleRadiusSelect(option.value)}
+            >
+              <Text style={[
+                styles.filterChipText,
+                selectedRadius === option.value && styles.filterChipTextActive
+              ]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        {/* Expandable Filters */}
-        {showFilters && (
-          <View style={styles.filtersExpanded}>
-            {/* Radius Filter */}
-            <Text style={styles.filterLabel}>Distance</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-              {RADIUS_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.label}
-                  style={[
-                    styles.filterChip,
-                    selectedRadius === option.value && styles.filterChipActive
-                  ]}
-                  onPress={() => handleRadiusSelect(option.value)}
-                >
-                  <Text style={[
-                    styles.filterChipText,
-                    selectedRadius === option.value && styles.filterChipTextActive
-                  ]}>
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Category Filter */}
-            <Text style={styles.filterLabel}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat.key}
-                  style={[
-                    styles.filterChip,
-                    selectedCategory === cat.key && styles.filterChipActive
-                  ]}
-                  onPress={() => handleCategorySelect(cat.key)}
-                >
-                  <Text style={styles.filterChipIcon}>{cat.icon}</Text>
-                  <Text style={[
-                    styles.filterChipText,
-                    selectedCategory === cat.key && styles.filterChipTextActive
-                  ]}>
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-      </Surface>
-
-      {/* Category Quick Filters (always visible) */}
-      <View style={styles.quickFilters}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickFiltersContent}>
+        {/* Category Filter */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.filterRow}
+        >
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat.key}
               style={[
-                styles.quickFilterChip,
-                selectedCategory === cat.key && styles.quickFilterChipActive
+                styles.filterChip,
+                selectedCategory === cat.key && styles.filterChipActive
               ]}
               onPress={() => handleCategorySelect(cat.key)}
             >
-              <Text style={styles.quickFilterIcon}>{cat.icon}</Text>
+              <Text style={styles.filterChipIcon}>{cat.icon}</Text>
               <Text style={[
-                styles.quickFilterText,
-                selectedCategory === cat.key && styles.quickFilterTextActive
+                styles.filterChipText,
+                selectedCategory === cat.key && styles.filterChipTextActive
               ]}>
                 {cat.label}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
+      </Surface>
 
       {/* Loading State */}
       {isLoading && (
@@ -557,120 +489,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  searchContainer: {
+  filtersContainer: {
     backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-  },
-  clearIcon: {
-    fontSize: 14,
-    color: '#9ca3af',
-    padding: 4,
-  },
-  filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: '#0ea5e9',
-  },
-  filterIcon: {
-    fontSize: 20,
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
-    width: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterBadgeText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  filtersExpanded: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  filterLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  filterScroll: {
-    marginBottom: 16,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
   },
-  filterChipActive: {
-    backgroundColor: '#0ea5e9',
-  },
-  filterChipIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  filterChipText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  filterChipTextActive: {
-    color: '#ffffff',
-  },
-  quickFilters: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  quickFiltersContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+  filterRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignItems: 'center',
     gap: 8,
   },
-  quickFilterChip: {
+  filterLabel: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f3f4f6',
@@ -679,19 +512,19 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginRight: 8,
   },
-  quickFilterChipActive: {
+  filterChipActive: {
     backgroundColor: '#0ea5e9',
   },
-  quickFilterIcon: {
-    fontSize: 12,
+  filterChipIcon: {
+    fontSize: 14,
     marginRight: 4,
   },
-  quickFilterText: {
-    fontSize: 13,
+  filterChipText: {
+    fontSize: 14,
     color: '#374151',
     fontWeight: '500',
   },
-  quickFilterTextActive: {
+  filterChipTextActive: {
     color: '#ffffff',
   },
   centerContainer: {
