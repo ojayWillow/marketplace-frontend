@@ -1,7 +1,7 @@
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, Surface, IconButton, Card } from 'react-native-paper';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
@@ -33,18 +33,33 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Fetch ALL open tasks (no radius limit)
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['tasks-map'],
-    queryFn: async () => {
-      // Get all open tasks without location filter
-      return await getTasks({ page: 1, per_page: 100, status: 'open' });
+  // Infinite query for list view with pagination
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['tasks-home'],
+    queryFn: async ({ pageParam = 1 }) => {
+      return await getTasks({ page: pageParam, per_page: 20, status: 'open' });
     },
+    getNextPageParam: (lastPage, allPages) => {
+      const currentPage = allPages.length;
+      const totalPages = Math.ceil(lastPage.total / 20);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  const tasks = data?.tasks || [];
-  const tasksWithLocation = tasks.filter(t => t.latitude && t.longitude);
-  const tasksWithoutLocation = tasks.filter(t => !t.latitude || !t.longitude);
+  // Flatten all pages of tasks
+  const allTasks = data?.pages.flatMap((page) => page.tasks) || [];
+  const tasksWithLocation = allTasks.filter(t => t.latitude && t.longitude);
+  const tasksWithoutLocation = allTasks.filter(t => !t.latitude || !t.longitude);
+  const totalCount = data?.pages[0]?.total || 0;
 
   // Get marker color based on category
   const getMarkerColor = (category: string) => {
@@ -57,6 +72,54 @@ export default function HomeScreen() {
     };
     return colors[category] || '#ef4444';
   };
+
+  const renderTaskCard = ({ item: task }: { item: Task }) => (
+    <Card
+      key={task.id}
+      style={styles.listCard}
+      onPress={() => router.push(`/task/${task.id}`)}
+    >
+      <Card.Content>
+        <View style={styles.cardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text variant="titleMedium" numberOfLines={1}>
+              {task.title}
+            </Text>
+            <Text variant="bodySmall" style={styles.category}>
+              {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
+            </Text>
+          </View>
+          {!task.latitude && (
+            <Text style={styles.noLocationBadge}>No location</Text>
+          )}
+        </View>
+        <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
+          {task.description}
+        </Text>
+        <View style={styles.cardFooter}>
+          <Text style={styles.budget}>€{task.budget?.toFixed(2) || '0.00'}</Text>
+          <Text style={styles.location}>📍 {task.location || 'Location not set'}</Text>
+        </View>
+      </Card.Content>
+    </Card>
+  );
+
+  const renderListFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" />
+        <Text style={styles.footerText}>Loading more...</Text>
+      </View>
+    );
+  };
+
+  const renderListEmpty = () => (
+    <View style={styles.centerContainer}>
+      <Text style={styles.emptyIcon}>📋</Text>
+      <Text style={styles.statusText}>No tasks available</Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -172,47 +235,30 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* List View - Show ALL tasks */}
+      {/* List View with Infinite Scroll */}
       {!isLoading && !isError && viewMode === 'list' && (
         <View style={styles.listContainer}>
-          <Text variant="titleMedium" style={styles.listTitle}>All Open Tasks ({tasks.length})</Text>
-          {tasks.length === 0 ? (
-            <View style={styles.centerContainer}>
-              <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={styles.statusText}>No tasks available</Text>
-            </View>
-          ) : (
-            tasks.map((task) => (
-              <Card
-                key={task.id}
-                style={styles.listCard}
-                onPress={() => router.push(`/task/${task.id}`)}
-              >
-                <Card.Content>
-                  <View style={styles.cardHeader}>
-                    <View style={{ flex: 1 }}>
-                      <Text variant="titleMedium" numberOfLines={1}>
-                        {task.title}
-                      </Text>
-                      <Text variant="bodySmall" style={styles.category}>
-                        {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-                      </Text>
-                    </View>
-                    {!task.latitude && (
-                      <Text style={styles.noLocationBadge}>No location</Text>
-                    )}
-                  </View>
-                  <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
-                    {task.description}
-                  </Text>
-                  <View style={styles.cardFooter}>
-                    <Text style={styles.budget}>€{task.budget?.toFixed(2) || '0.00'}</Text>
-                    <Text style={styles.location}>📍 {task.location || 'Location not set'}</Text>
-                  </View>
-                </Card.Content>
-              </Card>
-            ))
-          )}
+          <FlatList
+            data={allTasks}
+            renderItem={renderTaskCard}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              <Text variant="titleMedium" style={styles.listTitle}>
+                All Open Tasks ({totalCount})
+              </Text>
+            }
+            ListEmptyComponent={renderListEmpty}
+            ListFooterComponent={renderListFooter}
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            refreshing={false}
+            onRefresh={refetch}
+          />
         </View>
       )}
     </SafeAreaView>
@@ -340,6 +386,8 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
+  },
+  listContent: {
     padding: 16,
   },
   listTitle: {
@@ -369,5 +417,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  footerText: {
+    marginTop: 8,
+    color: '#6b7280',
+    fontSize: 12,
   },
 });
