@@ -12,7 +12,7 @@ import { BlurView } from 'expo-blur';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
-const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
+const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45; // Slightly higher for preview
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
 
 const CATEGORIES = [
@@ -228,13 +228,13 @@ export default function HomeScreen() {
   const handleJobItemPress = (task: Task) => {
     haptic.medium();
     
-    // Pan map to job location
+    // Pan map to job location with some offset to account for bottom sheet
     if (mapRef.current && task.latitude && task.longitude) {
       mapRef.current.animateToRegion({
-        latitude: task.latitude,
+        latitude: task.latitude + 0.008, // Offset up slightly so pin is visible above sheet
         longitude: task.longitude,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
+        latitudeDelta: 0.025,
+        longitudeDelta: 0.025,
       }, 800);
     }
     
@@ -243,8 +243,8 @@ export default function HomeScreen() {
     setSelectedTask(null);
     setSelectedOffering(null);
     
-    // Expand sheet to show details
-    animateSheetTo(SHEET_MAX_HEIGHT);
+    // Expand sheet to MID height (so map pin is visible)
+    animateSheetTo(SHEET_MID_HEIGHT);
     
     // Scroll to top of sheet content
     setTimeout(() => {
@@ -542,16 +542,18 @@ export default function HomeScreen() {
                   {focusedTask.description && (
                     <View style={styles.focusedSection}>
                       <Text style={styles.focusedSectionTitle}>Description</Text>
-                      <Text style={styles.focusedDescription}>{focusedTask.description}</Text>
+                      <Text style={styles.focusedDescription} numberOfLines={3}>{focusedTask.description}</Text>
                     </View>
                   )}
 
                   {focusedTask.location && (
                     <View style={styles.focusedSection}>
                       <Text style={styles.focusedSectionTitle}>Location</Text>
-                      <Text style={styles.focusedLocation}>📍 {focusedTask.location}</Text>
+                      <Text style={styles.focusedLocation} numberOfLines={2}>📍 {focusedTask.location}</Text>
                     </View>
                   )}
+
+                  <Text style={styles.swipeUpHint}>↑ Swipe up for more details</Text>
 
                   <Button
                     mode="contained"
@@ -1098,7 +1100,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   focusedCategoryBadge: {
     paddingHorizontal: 12,
@@ -1117,52 +1119,61 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   focusedTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 12,
-    lineHeight: 28,
+    marginBottom: 10,
+    lineHeight: 26,
   },
   focusedBudgetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
   focusedBudget: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#0ea5e9',
   },
   focusedMeta: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#9ca3af',
   },
   focusedSection: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   focusedSectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6b7280',
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   focusedDescription: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-  },
-  focusedLocation: {
     fontSize: 15,
     color: '#374151',
+    lineHeight: 22,
+  },
+  focusedLocation: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  swipeUpHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#9ca3af',
+    fontStyle: 'italic',
+    marginTop: 8,
+    marginBottom: 12,
   },
   viewDetailsButton: {
-    marginTop: 12,
+    marginTop: 8,
     borderRadius: 12,
   },
   sheetSpacer: {
