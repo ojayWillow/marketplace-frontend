@@ -33,6 +33,8 @@ export default function LocationPicker({
   );
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [geocodeError, setGeocodeError] = useState(false);
+  const [hasValidLocation, setHasValidLocation] = useState(!!initialLocation);
 
   // Request location permission on mount
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function LocationPicker({
   const handleUseCurrentLocation = async () => {
     try {
       setLoading(true);
+      setGeocodeError(false);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Please enable location permission.');
@@ -65,6 +68,7 @@ export default function LocationPicker({
       const addr = addresses[0];
       const formattedAddress = [
         addr.street,
+        addr.streetNumber,
         addr.city,
         addr.region,
         addr.country,
@@ -73,6 +77,8 @@ export default function LocationPicker({
       setMarker(coords);
       setRegion({ ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 });
       setAddress(formattedAddress);
+      setSearchQuery('');
+      setHasValidLocation(true);
       
       onLocationSelect({
         address: formattedAddress,
@@ -81,21 +87,32 @@ export default function LocationPicker({
       });
     } catch (error) {
       Alert.alert('Error', 'Could not get current location');
+      setGeocodeError(true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Search for address
+  // Search for address with validation
   const handleSearchAddress = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      Alert.alert('Required', 'Please enter an address to search');
+      return;
+    }
     
     try {
       setLoading(true);
+      setGeocodeError(false);
+      
       const results = await Location.geocodeAsync(searchQuery);
       
       if (results.length === 0) {
-        Alert.alert('Not Found', 'No results found for this address');
+        Alert.alert(
+          'Invalid Address', 
+          'Could not find this address. Please enter a valid street address with number.'
+        );
+        setGeocodeError(true);
+        setHasValidLocation(false);
         return;
       }
 
@@ -105,17 +122,53 @@ export default function LocationPicker({
         longitude: result.longitude,
       };
 
+      // Reverse geocode to validate and format address properly
+      let formattedAddress = searchQuery;
+      try {
+        const addresses = await Location.reverseGeocodeAsync(coords);
+        const addr = addresses[0];
+        
+        // Check if address has street number (indicates specific location)
+        if (!addr.streetNumber && !addr.street) {
+          Alert.alert(
+            'Address Too Vague',
+            'Please provide a more specific address with street name and number.'
+          );
+          setGeocodeError(true);
+          setHasValidLocation(false);
+          return;
+        }
+        
+        formattedAddress = [
+          addr.street,
+          addr.streetNumber,
+          addr.city,
+          addr.region,
+          addr.country,
+        ].filter(Boolean).join(', ');
+      } catch (err) {
+        // If reverse geocode fails, use search query
+        console.warn('Reverse geocode failed:', err);
+      }
+
       setMarker(coords);
       setRegion({ ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 });
-      setAddress(searchQuery);
+      setAddress(formattedAddress);
+      setSearchQuery('');
+      setHasValidLocation(true);
       
       onLocationSelect({
-        address: searchQuery,
+        address: formattedAddress,
         latitude: coords.latitude,
         longitude: coords.longitude,
       });
     } catch (error) {
-      Alert.alert('Error', 'Could not find this address');
+      Alert.alert(
+        'Geocoding Failed', 
+        'Could not find this address. Please check spelling and try again, or tap on the map to select location manually.'
+      );
+      setGeocodeError(true);
+      setHasValidLocation(false);
     } finally {
       setLoading(false);
     }
@@ -125,6 +178,7 @@ export default function LocationPicker({
   const handleMapPress = async (event: any) => {
     const coords = event.nativeEvent.coordinate;
     setMarker(coords);
+    setGeocodeError(false);
     
     try {
       // Reverse geocode to get address
@@ -132,12 +186,16 @@ export default function LocationPicker({
       const addr = addresses[0];
       const formattedAddress = [
         addr.street,
+        addr.streetNumber,
         addr.city,
         addr.region,
         addr.country,
       ].filter(Boolean).join(', ');
       
       setAddress(formattedAddress);
+      setSearchQuery('');
+      setHasValidLocation(true);
+      
       onLocationSelect({
         address: formattedAddress,
         latitude: coords.latitude,
@@ -145,8 +203,12 @@ export default function LocationPicker({
       });
     } catch (error) {
       // If reverse geocoding fails, still use the coordinates
+      const fallbackAddress = `Location (${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)})`;
+      setAddress(fallbackAddress);
+      setHasValidLocation(true);
+      
       onLocationSelect({
-        address: address || 'Selected location',
+        address: fallbackAddress,
         latitude: coords.latitude,
         longitude: coords.longitude,
       });
@@ -155,19 +217,30 @@ export default function LocationPicker({
 
   return (
     <View style={styles.container}>
-      <Text variant="titleMedium" style={styles.label}>{label}</Text>
+      <Text variant="titleMedium" style={styles.label}>
+        {label} <Text style={styles.required}>*</Text>
+      </Text>
       
       {/* Address Search */}
       <Surface style={styles.searchContainer} elevation={1}>
         <TextInput
           mode="outlined"
-          placeholder="Search for an address..."
+          placeholder="Enter street address (e.g., Brīvības iela 123, Rīga)"
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={(text) => {
+            setSearchQuery(text);
+            setGeocodeError(false);
+          }}
           onSubmitEditing={handleSearchAddress}
+          error={geocodeError}
           right={<TextInput.Icon icon="magnify" onPress={handleSearchAddress} />}
           style={styles.searchInput}
         />
+        {geocodeError && (
+          <Text style={styles.errorText}>
+            ⚠️ Please enter a valid address or select location on map
+          </Text>
+        )}
         <Button
           mode="outlined"
           onPress={handleUseCurrentLocation}
@@ -201,6 +274,7 @@ export default function LocationPicker({
                 coordinate={marker}
                 title="Selected Location"
                 description={address}
+                pinColor={hasValidLocation ? '#0ea5e9' : '#f59e0b'}
               />
             )}
           </MapView>
@@ -208,13 +282,19 @@ export default function LocationPicker({
       </Surface>
 
       {/* Selected Address Display */}
-      {address ? (
+      {address && hasValidLocation ? (
         <Surface style={styles.addressDisplay} elevation={1}>
-          <Text variant="bodySmall" style={styles.addressLabel}>Selected Address:</Text>
+          <View style={styles.addressHeader}>
+            <Text style={styles.checkmark}>✓</Text>
+            <Text variant="bodySmall" style={styles.addressLabel}>Selected Address:</Text>
+          </View>
           <Text variant="bodyMedium" style={styles.addressText}>{address}</Text>
         </Surface>
       ) : (
-        <Text style={styles.hint}>Tap on the map or search for an address to select a location</Text>
+        <View style={styles.hintContainer}>
+          <Text style={styles.hint}>📍 Tap on the map or search for an address</Text>
+          <Text style={styles.subHint}>Address with street number required</Text>
+        </View>
       )}
     </View>
   );
@@ -229,6 +309,10 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 4,
   },
+  required: {
+    color: '#ef4444',
+    fontWeight: 'bold',
+  },
   searchContainer: {
     padding: 12,
     backgroundColor: '#ffffff',
@@ -236,6 +320,12 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     marginBottom: 8,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 13,
+    marginBottom: 8,
+    marginTop: -4,
   },
   currentLocationBtn: {
     borderColor: '#0ea5e9',
@@ -261,21 +351,48 @@ const styles = StyleSheet.create({
   },
   addressDisplay: {
     padding: 12,
-    backgroundColor: '#f0f9ff',
+    backgroundColor: '#f0fdf4',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#86efac',
+  },
+  addressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  checkmark: {
+    color: '#16a34a',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   addressLabel: {
-    color: '#0369a1',
-    marginBottom: 4,
+    color: '#166534',
   },
   addressText: {
     color: '#1f2937',
     fontWeight: '500',
   },
+  hintContainer: {
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#fef3c7',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fde047',
+  },
   hint: {
-    color: '#6b7280',
-    fontSize: 13,
+    color: '#854d0e',
+    fontSize: 14,
+    fontWeight: '500',
     textAlign: 'center',
+  },
+  subHint: {
+    color: '#a16207',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
     fontStyle: 'italic',
   },
 });
