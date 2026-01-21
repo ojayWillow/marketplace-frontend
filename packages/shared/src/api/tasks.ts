@@ -34,6 +34,7 @@ export interface Task {
   updated_at?: string;
   completed_at?: string;
   pending_applications_count?: number; // Number of pending applications for this task
+  images?: string; // Comma-separated image URLs
 }
 
 export interface Helper {
@@ -86,6 +87,10 @@ export interface TasksParams {
   lang?: string; // Language for translation
 }
 
+export interface SearchTasksParams extends TasksParams {
+  q: string; // Search query
+}
+
 export interface GetTasksParams extends TasksParams {}
 
 export interface GetHelpersParams {
@@ -124,6 +129,20 @@ export const getTasks = async (params: TasksParams = {}): Promise<GetTasksRespon
     lang: params.lang || getCurrentLanguage(),
   };
   const response = await apiClient.get('/api/tasks', { params: paramsWithLang });
+  return response.data;
+};
+
+/**
+ * Search tasks with multilingual support
+ * Searches across original text and all translations (LV, EN, RU)
+ * Automatically includes current language for translation
+ */
+export const searchTasks = async (params: SearchTasksParams): Promise<GetTasksResponse> => {
+  const paramsWithLang = {
+    ...params,
+    lang: params.lang || getCurrentLanguage(),
+  };
+  const response = await apiClient.get('/api/tasks/search', { params: paramsWithLang });
   return response.data;
 };
 
