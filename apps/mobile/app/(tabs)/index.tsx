@@ -12,7 +12,7 @@ import { BlurView } from 'expo-blur';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
-const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45; // Slightly higher for preview
+const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
 
 const CATEGORIES = [
@@ -215,9 +215,31 @@ export default function HomeScreen() {
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
     haptic.light();
     if (task) {
-      setSelectedTask(task);
+      // Pan map to show marker at upper portion (above bottom sheet)
+      if (mapRef.current && task.latitude && task.longitude) {
+        const latitudeDelta = 0.025;
+        const longitudeDelta = 0.025;
+        const sheetCoverageRatio = SHEET_MID_HEIGHT / SCREEN_HEIGHT;
+        const targetMarkerPosition = 0.30;
+        const offsetRatio = (sheetCoverageRatio - targetMarkerPosition) * 0.8;
+        
+        mapRef.current.animateToRegion({
+          latitude: task.latitude + (latitudeDelta * offsetRatio),
+          longitude: task.longitude,
+          latitudeDelta: latitudeDelta,
+          longitudeDelta: longitudeDelta,
+        }, 800);
+      }
+      
+      // Show in bottom sheet (not popup)
+      setFocusedTaskId(task.id);
+      setSelectedTask(null);
       setSelectedOffering(null);
-      setFocusedTaskId(null);
+      animateSheetTo(SHEET_MID_HEIGHT);
+      
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      }, 100);
     } else if (offering) {
       setSelectedOffering(offering);
       setSelectedTask(null);
@@ -228,19 +250,12 @@ export default function HomeScreen() {
   const handleJobItemPress = (task: Task) => {
     haptic.medium();
     
-    // Calculate offset to position marker at upper 30% of screen (above bottom sheet)
-    // When sheet is at MID height (45% of screen), marker should be visible above it
-    // Formula: offset = (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * latitudeDelta * 0.35
-    // This pushes the marker up so it's positioned at ~30% from top
+    // Pan map to show marker at upper 30% of screen (above bottom sheet)
     if (mapRef.current && task.latitude && task.longitude) {
       const latitudeDelta = 0.025;
       const longitudeDelta = 0.025;
-      
-      // Calculate how much to shift marker upward (in latitude degrees)
-      // We want marker at 30% from top, and bottom sheet covers bottom 45%
-      // So we shift marker up by approximately 15% of the latitudeDelta
-      const sheetCoverageRatio = SHEET_MID_HEIGHT / SCREEN_HEIGHT; // ~0.45
-      const targetMarkerPosition = 0.30; // Position marker at 30% from top
+      const sheetCoverageRatio = SHEET_MID_HEIGHT / SCREEN_HEIGHT;
+      const targetMarkerPosition = 0.30;
       const offsetRatio = (sheetCoverageRatio - targetMarkerPosition) * 0.8;
       
       mapRef.current.animateToRegion({
@@ -256,7 +271,7 @@ export default function HomeScreen() {
     setSelectedTask(null);
     setSelectedOffering(null);
     
-    // Expand sheet to MID height (so map pin is visible)
+    // Expand sheet to MID height
     animateSheetTo(SHEET_MID_HEIGHT);
     
     // Scroll to top of sheet content
@@ -443,50 +458,6 @@ export default function HomeScreen() {
               <Text style={styles.myLocationIcon}>📍</Text>
             </BlurView>
           </TouchableOpacity>
-
-          {selectedTask && !focusedTaskId && (
-            <View style={styles.selectedPopup}>
-              <Card
-                style={styles.popupCard}
-                onPress={() => {
-                  handleViewFullDetails(selectedTask.id);
-                  setSelectedTask(null);
-                }}
-              >
-                <Card.Content style={styles.popupContent}>
-                  <View style={styles.popupHeader}>
-                    <View style={[
-                      styles.categoryDot,
-                      { backgroundColor: getMarkerColor(selectedTask.category) }
-                    ]} />
-                    <Text style={styles.popupCategory}>
-                      {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
-                    </Text>
-                    <IconButton
-                      icon="close"
-                      size={18}
-                      onPress={() => { haptic.soft(); setSelectedTask(null); }}
-                      style={styles.popupClose}
-                    />
-                  </View>
-                  <Text style={styles.popupTitle} numberOfLines={1}>{selectedTask.title}</Text>
-                  <View style={styles.popupFooter}>
-                    <Text style={styles.popupPrice}>€{selectedTask.budget?.toFixed(0) || '0'}</Text>
-                    {userLocation && (
-                      <Text style={styles.popupDistance}>
-                        {calculateDistance(
-                          userLocation.latitude,
-                          userLocation.longitude,
-                          selectedTask.latitude!,
-                          selectedTask.longitude!
-                        ).toFixed(1)} km
-                      </Text>
-                    )}
-                  </View>
-                </Card.Content>
-              </Card>
-            </View>
-          )}
 
           <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
             <View {...panResponder.panHandlers} style={styles.sheetHandle}>
@@ -916,60 +887,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#f97316',
-  },
-  selectedPopup: {
-    position: 'absolute',
-    top: 100,
-    left: 16,
-    right: 16,
-  },
-  popupCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    elevation: 4,
-  },
-  popupContent: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  popupHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  popupCategory: {
-    fontSize: 12,
-    color: '#6b7280',
-    flex: 1,
-  },
-  popupClose: {
-    margin: -8,
-  },
-  popupTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  popupFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  popupPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0ea5e9',
-  },
-  popupDistance: {
-    fontSize: 13,
-    color: '#9ca3af',
   },
   bottomSheet: {
     position: 'absolute',
