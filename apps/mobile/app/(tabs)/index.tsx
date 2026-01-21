@@ -1,6 +1,6 @@
 import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, ActivityIndicator, IconButton, Card } from 'react-native-paper';
+import { Text, ActivityIndicator, IconButton, Card, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { router } from 'expo-router';
@@ -68,6 +68,7 @@ const formatTimeAgo = (dateString: string): string => {
 
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
@@ -76,9 +77,20 @@ export default function HomeScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
+
+  const animateSheetTo = (height: number) => {
+    currentHeight.current = height;
+    Animated.spring(sheetHeight, {
+      toValue: height,
+      useNativeDriver: false,
+      bounciness: 4,
+      speed: 12,
+    }).start();
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -109,13 +121,7 @@ export default function HomeScreen() {
           }
         }
         
-        currentHeight.current = snapTo;
-        Animated.spring(sheetHeight, {
-          toValue: snapTo,
-          useNativeDriver: false,
-          bounciness: 4,
-          speed: 12,
-        }).start();
+        animateSheetTo(snapTo);
         haptic.selection();
       },
     })
@@ -211,19 +217,50 @@ export default function HomeScreen() {
     if (task) {
       setSelectedTask(task);
       setSelectedOffering(null);
+      setFocusedTaskId(null);
     } else if (offering) {
       setSelectedOffering(offering);
       setSelectedTask(null);
+      setFocusedTaskId(null);
     }
   };
 
-  const handleCardPress = (id: number, type: 'task' | 'offering') => {
-    haptic.light();
-    if (type === 'task') {
-      router.push(`/task/${id}`);
-    } else {
-      router.push(`/offering/${id}`);
+  const handleJobItemPress = (task: Task) => {
+    haptic.medium();
+    
+    // Pan map to job location
+    if (mapRef.current && task.latitude && task.longitude) {
+      mapRef.current.animateToRegion({
+        latitude: task.latitude,
+        longitude: task.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      }, 800);
     }
+    
+    // Set as focused job
+    setFocusedTaskId(task.id);
+    setSelectedTask(null);
+    setSelectedOffering(null);
+    
+    // Expand sheet to show details
+    animateSheetTo(SHEET_MAX_HEIGHT);
+    
+    // Scroll to top of sheet content
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  };
+
+  const handleViewFullDetails = (id: number) => {
+    haptic.light();
+    router.push(`/task/${id}`);
+  };
+
+  const handleCloseFocusedJob = () => {
+    haptic.soft();
+    setFocusedTaskId(null);
+    animateSheetTo(SHEET_MIN_HEIGHT);
   };
 
   const handleCategorySelect = (category: string) => {
@@ -231,6 +268,7 @@ export default function HomeScreen() {
     setSelectedCategory(category);
     setSelectedTask(null);
     setSelectedOffering(null);
+    setFocusedTaskId(null);
     setShowCategoryModal(false);
   };
 
@@ -271,6 +309,8 @@ export default function HomeScreen() {
 
   const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All Categories';
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
+  
+  const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
 
   return (
     <View style={styles.container}>
@@ -317,7 +357,8 @@ export default function HomeScreen() {
               >
                 <View style={[
                   styles.priceMarker,
-                  { borderColor: getMarkerColor(task.category) }
+                  { borderColor: getMarkerColor(task.category) },
+                  focusedTaskId === task.id && styles.priceMarkerFocused
                 ]}>
                   <Text style={styles.priceMarkerText}>€{task.budget?.toFixed(0) || '0'}</Text>
                 </View>
@@ -390,12 +431,12 @@ export default function HomeScreen() {
             </BlurView>
           </TouchableOpacity>
 
-          {selectedTask && (
+          {selectedTask && !focusedTaskId && (
             <View style={styles.selectedPopup}>
               <Card
                 style={styles.popupCard}
                 onPress={() => {
-                  handleCardPress(selectedTask.id, 'task');
+                  handleViewFullDetails(selectedTask.id);
                   setSelectedTask(null);
                 }}
               >
@@ -439,24 +480,89 @@ export default function HomeScreen() {
               <View style={styles.handleBar} />
               <View style={styles.sheetTitleRow}>
                 <Text style={styles.sheetTitle}>
-                  {sortedTasks.length} job{sortedTasks.length !== 1 ? 's' : ''} nearby
+                  {focusedTask ? 'Job Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.quickPostButton}
-                  onPress={handleCreatePress}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.quickPostIcon}>+</Text>
-                </TouchableOpacity>
+                {focusedTask && (
+                  <IconButton
+                    icon="close"
+                    size={20}
+                    onPress={handleCloseFocusedJob}
+                    style={styles.closeButton}
+                  />
+                )}
+                {!focusedTask && (
+                  <TouchableOpacity 
+                    style={styles.quickPostButton}
+                    onPress={handleCreatePress}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.quickPostIcon}>+</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
             <ScrollView 
+              ref={scrollRef}
               style={styles.sheetContent}
               showsVerticalScrollIndicator={false}
               scrollEnabled={currentHeight.current > SHEET_MIN_HEIGHT}
             >
-              {sortedTasks.length === 0 ? (
+              {focusedTask ? (
+                // Detailed Job View
+                <View style={styles.focusedJobContainer}>
+                  <View style={styles.focusedJobHeader}>
+                    <View style={[
+                      styles.focusedCategoryBadge,
+                      { backgroundColor: getMarkerColor(focusedTask.category) }
+                    ]}>
+                      <Text style={styles.focusedCategoryText}>
+                        {focusedTask.category.toUpperCase()}
+                      </Text>
+                    </View>
+                    {userLocation && (
+                      <Text style={styles.focusedDistance}>
+                        📍 {calculateDistance(
+                          userLocation.latitude,
+                          userLocation.longitude,
+                          focusedTask.latitude!,
+                          focusedTask.longitude!
+                        ).toFixed(1)} km away
+                      </Text>
+                    )}
+                  </View>
+
+                  <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
+                  
+                  <View style={styles.focusedBudgetRow}>
+                    <Text style={styles.focusedBudget}>€{focusedTask.budget?.toFixed(0) || '0'}</Text>
+                    <Text style={styles.focusedMeta}>{formatTimeAgo(focusedTask.created_at)}</Text>
+                  </View>
+
+                  {focusedTask.description && (
+                    <View style={styles.focusedSection}>
+                      <Text style={styles.focusedSectionTitle}>Description</Text>
+                      <Text style={styles.focusedDescription}>{focusedTask.description}</Text>
+                    </View>
+                  )}
+
+                  {focusedTask.location && (
+                    <View style={styles.focusedSection}>
+                      <Text style={styles.focusedSectionTitle}>Location</Text>
+                      <Text style={styles.focusedLocation}>📍 {focusedTask.location}</Text>
+                    </View>
+                  )}
+
+                  <Button
+                    mode="contained"
+                    onPress={() => handleViewFullDetails(focusedTask.id)}
+                    style={styles.viewDetailsButton}
+                    icon="arrow-right"
+                  >
+                    View Full Details
+                  </Button>
+                </View>
+              ) : sortedTasks.length === 0 ? (
                 <View style={styles.emptySheet}>
                   <Text style={styles.emptyIcon}>💭</Text>
                   <Text style={styles.emptyText}>No jobs found</Text>
@@ -473,7 +579,7 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={task.id}
                     style={styles.jobItem}
-                    onPress={() => handleCardPress(task.id, 'task')}
+                    onPress={() => handleJobItemPress(task)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.jobLeft}>
@@ -779,6 +885,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  priceMarkerFocused: {
+    borderWidth: 4,
+    transform: [{ scale: 1.2 }],
+  },
   priceMarkerOffering: {
     borderColor: '#f97316',
   },
@@ -884,6 +994,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f2937',
   },
+  closeButton: {
+    margin: -8,
+  },
   quickPostButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -976,6 +1089,81 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9ca3af',
     marginTop: 2,
+  },
+  // Focused job detail styles
+  focusedJobContainer: {
+    padding: 20,
+  },
+  focusedJobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  focusedCategoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  focusedCategoryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  focusedDistance: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  focusedTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
+    lineHeight: 28,
+  },
+  focusedBudgetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  focusedBudget: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+  },
+  focusedMeta: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  focusedSection: {
+    marginBottom: 20,
+  },
+  focusedSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  focusedDescription: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+  },
+  focusedLocation: {
+    fontSize: 15,
+    color: '#374151',
+  },
+  viewDetailsButton: {
+    marginTop: 12,
+    borderRadius: 12,
   },
   sheetSpacer: {
     height: 40,
