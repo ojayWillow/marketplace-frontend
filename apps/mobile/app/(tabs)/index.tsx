@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Card } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -15,7 +15,6 @@ const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
 
-// Categories for filter
 const CATEGORIES = [
   { key: 'all', label: 'All', icon: '🔍' },
   { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
@@ -28,7 +27,6 @@ const CATEGORIES = [
   { key: 'other', label: 'Other', icon: '📋' },
 ];
 
-// Helper to calculate distance in km
 const calculateDistance = (
   lat1: number,
   lon1: number,
@@ -48,7 +46,6 @@ const calculateDistance = (
   return R * c;
 };
 
-// Helper to format time ago
 const formatTimeAgo = (dateString: string): string => {
   const now = new Date();
   const date = new Date(dateString);
@@ -66,11 +63,9 @@ export default function HomeScreen() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
-  
-  // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Bottom sheet animation
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
 
@@ -89,15 +84,11 @@ export default function HomeScreen() {
         const newHeight = currentHeight.current - gestureState.dy;
         let snapTo = SHEET_MIN_HEIGHT;
         
-        // Determine snap point based on velocity and position
         if (gestureState.vy < -0.5) {
-          // Fast swipe up
           snapTo = newHeight > SHEET_MID_HEIGHT ? SHEET_MAX_HEIGHT : SHEET_MID_HEIGHT;
         } else if (gestureState.vy > 0.5) {
-          // Fast swipe down
           snapTo = SHEET_MIN_HEIGHT;
         } else {
-          // Slow drag - snap to nearest
           if (newHeight < SHEET_MID_HEIGHT * 0.5) {
             snapTo = SHEET_MIN_HEIGHT;
           } else if (newHeight < (SHEET_MID_HEIGHT + SHEET_MAX_HEIGHT) / 2) {
@@ -119,7 +110,6 @@ export default function HomeScreen() {
     })
   ).current;
 
-  // Request location permission on mount
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -136,7 +126,6 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Fetch all tasks
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
     queryFn: async () => {
@@ -144,7 +133,6 @@ export default function HomeScreen() {
     },
   });
 
-  // Fetch boosted offerings for map view
   const { data: offeringsData } = useQuery({
     queryKey: ['offerings-map'],
     queryFn: async () => {
@@ -158,22 +146,16 @@ export default function HomeScreen() {
     o => o.is_boost_active && o.latitude && o.longitude
   );
 
-  // Filter tasks based on category (no radius filter anymore)
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
-      // Must have location for map
       if (!task.latitude || !task.longitude) return false;
-      
-      // Category filter
       if (selectedCategory !== 'all' && task.category !== selectedCategory) {
         return false;
       }
-      
       return true;
     });
   }, [allTasks, selectedCategory]);
 
-  // Sort by distance for the list
   const sortedTasks = useMemo(() => {
     if (!userLocation) return filteredTasks;
     return [...filteredTasks].sort((a, b) => {
@@ -183,7 +165,6 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation]);
 
-  // Get marker color based on category
   const getMarkerColor = (category: string) => {
     const colors: Record<string, string> = {
       cleaning: '#10b981',
@@ -237,14 +218,25 @@ export default function HomeScreen() {
     }
   };
 
-  const handleQuickPost = () => {
+  const handleCreatePress = () => {
     haptic.medium();
-    router.push('/listings/create');
+    setShowCreateModal(true);
+  };
+
+  const handleCreateJob = () => {
+    haptic.light();
+    setShowCreateModal(false);
+    router.push('/task/create');
+  };
+
+  const handleCreateService = () => {
+    haptic.light();
+    setShowCreateModal(false);
+    router.push('/offering/create');
   };
 
   return (
     <View style={styles.container}>
-      {/* Loading State */}
       {isLoading && (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" />
@@ -252,7 +244,6 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Error State */}
       {isError && (
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>Failed to load jobs</Text>
@@ -262,7 +253,6 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Map View */}
       {!isLoading && !isError && userLocation && (
         <View style={styles.mapContainer}>
           <MapView
@@ -278,7 +268,6 @@ export default function HomeScreen() {
             showsUserLocation
             showsMyLocationButton={false}
           >
-            {/* Task Markers */}
             {filteredTasks.map((task) => (
               <Marker
                 key={`task-${task.id}`}
@@ -298,7 +287,6 @@ export default function HomeScreen() {
               </Marker>
             ))}
 
-            {/* Boosted Offering Markers */}
             {boostedOfferings.map((offering) => (
               <Marker
                 key={`offering-${offering.id}`}
@@ -318,7 +306,6 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Floating Category Bar - Transparent/Blur */}
           <SafeAreaView style={styles.floatingHeader} edges={['top']}>
             <BlurView intensity={80} tint="light" style={styles.categoryBarBlur}>
               <ScrollView 
@@ -348,7 +335,6 @@ export default function HomeScreen() {
             </BlurView>
           </SafeAreaView>
 
-          {/* Empty State Overlay on Map */}
           {filteredTasks.length === 0 && !isLoading && (
             <View style={styles.emptyMapOverlay}>
               <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
@@ -359,7 +345,6 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* My Location Button */}
           <TouchableOpacity 
             style={styles.myLocationButton} 
             onPress={handleMyLocation}
@@ -370,7 +355,6 @@ export default function HomeScreen() {
             </BlurView>
           </TouchableOpacity>
 
-          {/* Selected Task Popup */}
           {selectedTask && (
             <View style={styles.selectedPopup}>
               <Card
@@ -415,9 +399,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Slide-up Bottom Sheet */}
           <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
-            {/* Drag Handle */}
             <View {...panResponder.panHandlers} style={styles.sheetHandle}>
               <View style={styles.handleBar} />
               <View style={styles.sheetTitleRow}>
@@ -426,16 +408,14 @@ export default function HomeScreen() {
                 </Text>
                 <TouchableOpacity 
                   style={styles.quickPostButton}
-                  onPress={handleQuickPost}
+                  onPress={handleCreatePress}
                   activeOpacity={0.8}
                 >
                   <Text style={styles.quickPostIcon}>+</Text>
-                  <Text style={styles.quickPostText}>Post Job</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Job List */}
             <ScrollView 
               style={styles.sheetContent}
               showsVerticalScrollIndicator={false}
@@ -448,7 +428,7 @@ export default function HomeScreen() {
                   <Text style={styles.emptySubtext}>Be the first to post one!</Text>
                   <TouchableOpacity 
                     style={styles.emptyPostButton}
-                    onPress={handleQuickPost}
+                    onPress={handleCreatePress}
                   >
                     <Text style={styles.emptyPostText}>+ Post a Job</Text>
                   </TouchableOpacity>
@@ -494,6 +474,55 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
+
+      {/* Create Modal */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => { haptic.soft(); setShowCreateModal(false); }}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>What do you want to create?</Text>
+            
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={handleCreateJob}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalOptionIcon}>💼</Text>
+              <View style={styles.modalOptionText}>
+                <Text style={styles.modalOptionTitle}>Post a Job</Text>
+                <Text style={styles.modalOptionSubtitle}>Find someone to help you</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={handleCreateService}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalOptionIcon}>⚡</Text>
+              <View style={styles.modalOptionText}>
+                <Text style={styles.modalOptionTitle}>Offer a Service</Text>
+                <Text style={styles.modalOptionSubtitle}>Share your skills</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => { haptic.soft(); setShowCreateModal(false); }}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -537,7 +566,6 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  // Floating category bar
   floatingHeader: {
     position: 'absolute',
     top: 0,
@@ -579,7 +607,6 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: '#ffffff',
   },
-  // Empty state on map
   emptyMapOverlay: {
     position: 'absolute',
     top: '35%',
@@ -608,7 +635,6 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 4,
   },
-  // My Location button
   myLocationButton: {
     position: 'absolute',
     bottom: 100,
@@ -626,7 +652,6 @@ const styles = StyleSheet.create({
   myLocationIcon: {
     fontSize: 22,
   },
-  // Price markers
   priceMarker: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 12,
@@ -653,7 +678,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#f97316',
   },
-  // Selected popup
   selectedPopup: {
     position: 'absolute',
     top: 100,
@@ -708,7 +732,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9ca3af',
   },
-  // Bottom Sheet
   bottomSheet: {
     position: 'absolute',
     bottom: 0,
@@ -748,22 +771,16 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   quickPostButton: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#0ea5e9',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    width: 32,
+    height: 32,
     borderRadius: 16,
   },
   quickPostIcon: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginRight: 4,
-  },
-  quickPostText: {
-    fontSize: 13,
-    fontWeight: '600',
     color: '#ffffff',
   },
   sheetContent: {
@@ -848,5 +865,62 @@ const styles = StyleSheet.create({
   },
   sheetSpacer: {
     height: 40,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  modalOptionIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  modalOptionText: {
+    flex: 1,
+  },
+  modalOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  modalOptionSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  modalCancel: {
+    marginTop: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
   },
 });
