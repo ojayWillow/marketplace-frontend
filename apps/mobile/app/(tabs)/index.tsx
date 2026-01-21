@@ -69,7 +69,6 @@ const formatTimeAgo = (dateString: string): string => {
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const searchInputRef = useRef<TextInput>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -80,7 +79,6 @@ export default function HomeScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
-  const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
@@ -96,7 +94,7 @@ export default function HomeScreen() {
     
     searchDebounceRef.current = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-    }, 500); // 500ms debounce
+    }, 500);
     
     return () => {
       if (searchDebounceRef.current) {
@@ -172,7 +170,7 @@ export default function HomeScreen() {
     queryFn: async () => {
       return await getTasks({ page: 1, per_page: 100, status: 'open' });
     },
-    enabled: !debouncedSearchQuery, // Only fetch when not searching
+    enabled: !debouncedSearchQuery,
   });
 
   // Search query
@@ -202,12 +200,10 @@ export default function HomeScreen() {
     return allTasks.filter(task => {
       if (!task.latitude || !task.longitude) return false;
       
-      // Category filter
       if (selectedCategory !== 'all' && task.category !== selectedCategory) {
         return false;
       }
       
-      // Radius filter
       if (selectedRadius && userLocation) {
         const distance = calculateDistance(
           userLocation.latitude,
@@ -330,21 +326,6 @@ export default function HomeScreen() {
     setShowRadiusModal(false);
   };
 
-  const handleSearchOpen = () => {
-    haptic.light();
-    setShowSearchModal(true);
-    setTimeout(() => {
-      searchInputRef.current?.focus();
-    }, 100);
-  };
-
-  const handleSearchClose = () => {
-    haptic.soft();
-    setShowSearchModal(false);
-    setSearchQuery('');
-    setDebouncedSearchQuery('');
-  };
-
   const handleMyLocation = async () => {
     haptic.medium();
     if (userLocation && mapRef.current) {
@@ -451,8 +432,9 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Filter Buttons with Search */}
+          {/* Filter Buttons + Search Bar */}
           <SafeAreaView style={styles.floatingHeader} edges={['top']}>
+            {/* Top Row: Category + Radius */}
             <View style={styles.filterButtonsContainer}>
               <TouchableOpacity
                 style={styles.filterButton}
@@ -462,17 +444,6 @@ export default function HomeScreen() {
                 <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
                   <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
                   <Text style={styles.filterButtonIcon}>▼</Text>
-                </BlurView>
-              </TouchableOpacity>
-
-              {/* SEARCH BUTTON */}
-              <TouchableOpacity
-                style={styles.searchButton}
-                onPress={handleSearchOpen}
-                activeOpacity={0.8}
-              >
-                <BlurView intensity={80} tint="light" style={styles.searchButtonBlur}>
-                  <Text style={styles.searchButtonIcon}>🔍</Text>
                 </BlurView>
               </TouchableOpacity>
 
@@ -486,6 +457,32 @@ export default function HomeScreen() {
                   <Text style={styles.filterButtonIcon}>▼</Text>
                 </BlurView>
               </TouchableOpacity>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchBarContainer}>
+              <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search jobs..."
+                  placeholderTextColor="#9ca3af"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  returnKeyType="search"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity 
+                    onPress={() => { haptic.soft(); setSearchQuery(''); }}
+                    style={styles.searchClearButton}
+                  >
+                    <Text style={styles.searchClearIcon}>✕</Text>
+                  </TouchableOpacity>
+                )}
+                {isSearchLoading && (
+                  <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
+                )}
+              </BlurView>
             </View>
           </SafeAreaView>
 
@@ -547,7 +544,6 @@ export default function HomeScreen() {
               scrollEnabled={currentHeight.current > SHEET_MIN_HEIGHT}
             >
               {focusedTask ? (
-                // Detailed Job View
                 <View style={styles.focusedJobContainer}>
                   <View style={styles.focusedJobHeader}>
                     <View style={[
@@ -574,7 +570,7 @@ export default function HomeScreen() {
                   
                   <View style={styles.focusedBudgetRow}>
                     <Text style={styles.focusedBudget}>€{focusedTask.budget?.toFixed(0) || '0'}</Text>
-                    <Text style={styles.focusedMeta}>{formatTimeAgo(focusedTask.created_at)}</Text>
+                    <Text style={styles.focusedMeta}>{formatTimeAgo(focusedTask.created_at!)}</Text>
                   </View>
 
                   {focusedTask.description && (
@@ -634,7 +630,7 @@ export default function HomeScreen() {
                       <View style={styles.jobInfo}>
                         <Text style={styles.jobTitle} numberOfLines={1}>{task.title}</Text>
                         <Text style={styles.jobMeta}>
-                          {task.category} • {formatTimeAgo(task.created_at)}
+                          {task.category} • {formatTimeAgo(task.created_at!)}
                         </Text>
                       </View>
                     </View>
@@ -659,106 +655,6 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
-
-      {/* Search Modal */}
-      <Modal
-        visible={showSearchModal}
-        transparent
-        animationType="slide"
-        onRequestClose={handleSearchClose}
-      >
-        <SafeAreaView style={styles.searchModalContainer} edges={['top']}>
-          <View style={styles.searchModalHeader}>
-            <TouchableOpacity onPress={handleSearchClose} style={styles.searchBackButton}>
-              <Text style={styles.searchBackIcon}>←</Text>
-            </TouchableOpacity>
-            <TextInput
-              ref={searchInputRef}
-              style={styles.searchInput}
-              placeholder="Search jobs..."
-              placeholderTextColor="#9ca3af"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClearButton}>
-                <Text style={styles.searchClearIcon}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <ScrollView style={styles.searchResultsContainer}>
-            {isSearchLoading && (
-              <View style={styles.searchLoadingContainer}>
-                <ActivityIndicator size="large" color="#0ea5e9" />
-                <Text style={styles.searchLoadingText}>Searching...</Text>
-              </View>
-            )}
-
-            {!isSearchLoading && debouncedSearchQuery && sortedTasks.length === 0 && (
-              <View style={styles.searchEmptyContainer}>
-                <Text style={styles.searchEmptyIcon}>🔍</Text>
-                <Text style={styles.searchEmptyText}>No results found</Text>
-                <Text style={styles.searchEmptySubtext}>Try a different search term</Text>
-              </View>
-            )}
-
-            {!isSearchLoading && debouncedSearchQuery && sortedTasks.length > 0 && (
-              <View style={styles.searchResultsList}>
-                <Text style={styles.searchResultsCount}>
-                  {sortedTasks.length} result{sortedTasks.length !== 1 ? 's' : ''} found
-                </Text>
-                {sortedTasks.map((task) => (
-                  <TouchableOpacity
-                    key={task.id}
-                    style={styles.searchResultItem}
-                    onPress={() => {
-                      handleSearchClose();
-                      handleJobItemPress(task);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.searchResultHeader}>
-                      <View style={[
-                        styles.searchResultCategoryBadge,
-                        { backgroundColor: getMarkerColor(task.category) }
-                      ]}>
-                        <Text style={styles.searchResultCategoryText}>
-                          {task.category.toUpperCase()}
-                        </Text>
-                      </View>
-                      <Text style={styles.searchResultPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
-                    </View>
-                    <Text style={styles.searchResultTitle}>{task.title}</Text>
-                    {task.description && (
-                      <Text style={styles.searchResultDescription} numberOfLines={2}>
-                        {task.description}
-                      </Text>
-                    )}
-                    <View style={styles.searchResultFooter}>
-                      <Text style={styles.searchResultLocation} numberOfLines={1}>
-                        📍 {task.location}
-                      </Text>
-                      <Text style={styles.searchResultTime}>{formatTimeAgo(task.created_at)}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            {!debouncedSearchQuery && (
-              <View style={styles.searchHintsContainer}>
-                <Text style={styles.searchHintsTitle}>💡 Search Tips</Text>
-                <Text style={styles.searchHintText}>• Search in any language (LV, EN, RU)</Text>
-                <Text style={styles.searchHintText}>• Try keywords like "cleaning", "uzkopšana", "уборка"</Text>
-                <Text style={styles.searchHintText}>• Search by location, job type, or description</Text>
-              </View>
-            )}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
 
       {/* Category Modal */}
       <Modal
@@ -947,7 +843,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 8,
     gap: 8,
-    alignItems: 'center',
   },
   filterButton: {
     flex: 1,
@@ -972,24 +867,45 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginLeft: 8,
   },
-  // Search button styles
-  searchButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  // Search bar styles
+  searchBarContainer: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  searchBarBlur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  searchButtonBlur: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 10,
   },
-  searchButtonIcon: {
-    fontSize: 20,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1f2937',
+    paddingVertical: 0,
+  },
+  searchClearButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  searchClearIcon: {
+    fontSize: 16,
+    color: '#9ca3af',
+    fontWeight: '600',
+  },
+  searchLoader: {
+    marginLeft: 8,
   },
   emptyMapOverlay: {
     position: 'absolute',
-    top: '35%',
+    top: '40%',
     left: 24,
     right: 24,
     alignItems: 'center',
@@ -1196,7 +1112,6 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     marginTop: 2,
   },
-  // Focused job detail styles
   focusedJobContainer: {
     padding: 20,
   },
@@ -1283,151 +1198,6 @@ const styles = StyleSheet.create({
   sheetSpacer: {
     height: 40,
   },
-  // Search Modal Styles
-  searchModalContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  searchModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  searchBackButton: {
-    marginRight: 12,
-  },
-  searchBackIcon: {
-    fontSize: 24,
-    color: '#1f2937',
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    paddingVertical: 8,
-  },
-  searchClearButton: {
-    marginLeft: 12,
-  },
-  searchClearIcon: {
-    fontSize: 20,
-    color: '#9ca3af',
-  },
-  searchResultsContainer: {
-    flex: 1,
-  },
-  searchLoadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  searchLoadingText: {
-    marginTop: 12,
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  searchEmptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  searchEmptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  searchEmptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  searchEmptySubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-  },
-  searchResultsList: {
-    padding: 16,
-  },
-  searchResultsCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  searchResultItem: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  searchResultHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  searchResultCategoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  searchResultCategoryText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.5,
-  },
-  searchResultPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0ea5e9',
-  },
-  searchResultTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  searchResultDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  searchResultFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  searchResultLocation: {
-    fontSize: 13,
-    color: '#6b7280',
-    flex: 1,
-    marginRight: 8,
-  },
-  searchResultTime: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
-  searchHintsContainer: {
-    padding: 24,
-  },
-  searchHintsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  searchHintText: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1484,7 +1254,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#6b7280',
   },
-  // Filter modal styles
   filterModalContent: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
