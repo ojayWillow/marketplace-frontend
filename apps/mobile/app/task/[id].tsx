@@ -3,7 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator, Card } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, useAuthStore, type Task } from '@marketplace/shared';
+import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, useAuthStore, getImageUrl, type Task } from '@marketplace/shared';
 import { useState } from 'react';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -211,8 +211,12 @@ export default function TaskDetailScreen() {
   const canEdit = isOwnTask && task?.status === 'open';
   const canReview = (isOwnTask || isAssignedToMe) && task?.status === 'completed';
 
-  // Parse images from comma-separated string
-  const taskImages = task?.images ? task.images.split(',').filter(Boolean) : [];
+  // Parse images from comma-separated string and convert to full URLs
+  const taskImages = task?.images 
+    ? task.images.split(',').filter(Boolean).map(url => getImageUrl(url))
+    : [];
+
+  console.log('Task images:', taskImages); // Debug log
 
   if (isLoading) {
     return (
@@ -314,7 +318,7 @@ export default function TaskDetailScreen() {
           </View>
         </Surface>
 
-        {/* IMAGE GALLERY - NEW! */}
+        {/* IMAGE GALLERY */}
         {taskImages.length > 0 ? (
           <View style={styles.imageGalleryContainer}>
             <ScrollView 
@@ -674,7 +678,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  // IMAGE GALLERY STYLES - NEW!
+  // IMAGE GALLERY STYLES
   imageGalleryContainer: {
     backgroundColor: '#000000',
     marginTop: 12,
