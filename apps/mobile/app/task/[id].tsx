@@ -1,10 +1,14 @@
-import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator, Card } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, useAuthStore, type Task } from '@marketplace/shared';
 import { useState } from 'react';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IMAGE_WIDTH = SCREEN_WIDTH - 40; // Accounting for padding
+const IMAGE_HEIGHT = 240;
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -207,6 +211,9 @@ export default function TaskDetailScreen() {
   const canEdit = isOwnTask && task?.status === 'open';
   const canReview = (isOwnTask || isAssignedToMe) && task?.status === 'completed';
 
+  // Parse images from comma-separated string
+  const taskImages = task?.images ? task.images.split(',').filter(Boolean) : [];
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -306,6 +313,35 @@ export default function TaskDetailScreen() {
             ) : null}
           </View>
         </Surface>
+
+        {/* IMAGE GALLERY - NEW! */}
+        {taskImages.length > 0 ? (
+          <View style={styles.imageGalleryContainer}>
+            <ScrollView 
+              horizontal 
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageScrollView}
+            >
+              {taskImages.map((imageUrl, index) => (
+                <View key={index} style={styles.imageWrapper}>
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.taskImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            {taskImages.length > 1 ? (
+              <View style={styles.imageCounter}>
+                <Text style={styles.imageCounterText}>
+                  {taskImages.length} photo{taskImages.length !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* Pending Confirmation Notice */}
         {task.status === 'pending_confirmation' && isOwnTask ? (
@@ -637,6 +673,39 @@ const styles = StyleSheet.create({
     color: '#0369a1',
     fontSize: 12,
     fontWeight: '500',
+  },
+  // IMAGE GALLERY STYLES - NEW!
+  imageGalleryContainer: {
+    backgroundColor: '#000000',
+    marginTop: 12,
+    position: 'relative',
+  },
+  imageScrollView: {
+    width: SCREEN_WIDTH,
+  },
+  imageWrapper: {
+    width: SCREEN_WIDTH,
+    height: IMAGE_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  taskImage: {
+    width: SCREEN_WIDTH,
+    height: IMAGE_HEIGHT,
+  },
+  imageCounter: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  imageCounterText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   noticeSection: {
     backgroundColor: '#fef3c7',
