@@ -86,15 +86,25 @@ export default function HomeScreen() {
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
 
-  // Debounce search query
+  // Debounce search query - 300ms for snappier feel
   useEffect(() => {
+    // If search is cleared, reset immediately (no debounce)
+    if (!searchQuery.trim()) {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+      setDebouncedSearchQuery('');
+      return;
+    }
+    
+    // Otherwise debounce
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current);
     }
     
     searchDebounceRef.current = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 500);
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 300);
     
     return () => {
       if (searchDebounceRef.current) {
@@ -164,23 +174,24 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Regular tasks query
+  // Regular tasks query - always enabled
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
     queryFn: async () => {
       return await getTasks({ page: 1, per_page: 100, status: 'open' });
     },
-    enabled: !debouncedSearchQuery,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
-  // Search query
-  const { data: searchData, isLoading: isSearchLoading } = useQuery({
+  // Search query - only when there's a search term
+  const { data: searchData, isLoading: isSearchLoading, isFetching: isSearchFetching } = useQuery({
     queryKey: ['tasks-search', debouncedSearchQuery],
     queryFn: async () => {
       if (!debouncedSearchQuery.trim()) return null;
       return await searchTasks({ q: debouncedSearchQuery, page: 1, per_page: 100, status: 'open' });
     },
     enabled: !!debouncedSearchQuery.trim(),
+    staleTime: 10000, // Cache search results for 10 seconds
   });
 
   const { data: offeringsData } = useQuery({
@@ -188,9 +199,23 @@ export default function HomeScreen() {
     queryFn: async () => {
       return await getOfferings({ page: 1, per_page: 100, status: 'active' });
     },
+    staleTime: 30000,
   });
 
-  const allTasks = debouncedSearchQuery ? (searchData?.tasks || []) : (data?.tasks || []);
+  // Determine which tasks to show
+  const allTasks = useMemo(() => {
+    // If actively searching and have results, show search results
+    if (debouncedSearchQuery.trim() && searchData?.tasks) {
+      return searchData.tasks;
+    }
+    // If searching but still loading, show empty (loading indicator will show)
+    if (debouncedSearchQuery.trim() && isSearchFetching) {
+      return [];
+    }
+    // Default: show all tasks
+    return data?.tasks || [];
+  }, [debouncedSearchQuery, searchData, isSearchFetching, data]);
+  
   const offerings = offeringsData?.offerings || [];
   const boostedOfferings = offerings.filter(
     o => o.is_boost_active && o.latitude && o.longitude
@@ -355,10 +380,20 @@ export default function HomeScreen() {
     router.push('/offering/create');
   };
 
+  const handleClearSearch = () => {
+    haptic.soft();
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    setFocusedTaskId(null);
+  };
+
   const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All Categories';
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
+  
+  // Show loading state
+  const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
 
   return (
     <View style={styles.container}>
@@ -473,20 +508,20 @@ export default function HomeScreen() {
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity 
-                    onPress={() => { haptic.soft(); setSearchQuery(''); }}
+                    onPress={handleClearSearch}
                     style={styles.searchClearButton}
                   >
                     <Text style={styles.searchClearIcon}>✕</Text>
                   </TouchableOpacity>
                 )}
-                {isSearchLoading && (
+                {showSearchLoading && (
                   <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
                 )}
               </BlurView>
             </View>
           </SafeAreaView>
 
-          {filteredTasks.length === 0 && !isLoading && !isSearchLoading && (
+          {filteredTasks.length === 0 && !isLoading && !showSearchLoading && (
             <View style={styles.emptyMapOverlay}>
               <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
                 <Text style={styles.emptyMapIcon}>🗺️</Text>
