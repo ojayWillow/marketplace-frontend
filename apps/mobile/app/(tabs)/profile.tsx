@@ -8,7 +8,6 @@ import { useQuery } from '@tanstack/react-query';
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
 
-  // Fetch fresh user data with stats
   const { data: userData, isLoading: isLoadingUser } = useQuery({
     queryKey: ['user', user?.id],
     queryFn: () => getUserProfile(user!.id),
@@ -170,6 +169,14 @@ export default function ProfileScreen() {
             icon="🛠️" 
             onPress={() => router.push('/activity/my-services')} 
           />
+          <Divider />
+          <MenuItem 
+            title="Listings" 
+            subtitle="coming soon"
+            icon="🛒️" 
+            onPress={() => Alert.alert('Coming Soon', 'This feature is under development')} 
+            disabled
+          />
         </Surface>
 
         {/* Messages */}
@@ -234,27 +241,35 @@ function MenuItem({
   title, 
   subtitle,
   icon, 
-  onPress 
+  onPress,
+  disabled = false
 }: { 
   title: string; 
   subtitle?: string;
   icon: string; 
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.menuItem,
-        pressed && styles.menuItemPressed,
+        pressed && !disabled && styles.menuItemPressed,
+        disabled && styles.menuItemDisabled,
       ]}
     >
-      <Text style={styles.menuIcon}>{icon}</Text>
+      <Text style={[styles.menuIcon, disabled && styles.menuIconDisabled]}>{icon}</Text>
       <View style={styles.menuTextContainer}>
-        <Text style={styles.menuTitle}>{title}</Text>
-        {subtitle ? <Text style={styles.menuSubtitle}>{subtitle}</Text> : null}
+        <Text style={[styles.menuTitle, disabled && styles.menuTitleDisabled]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[styles.menuSubtitle, disabled && styles.menuSubtitleDisabled]}>
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
-      <Text style={styles.menuArrow}>›</Text>
+      {!disabled && <Text style={styles.menuArrow}>›</Text>}
     </Pressable>
   );
 }
@@ -383,10 +398,16 @@ const styles = StyleSheet.create({
   menuItemPressed: {
     backgroundColor: '#f9fafb',
   },
+  menuItemDisabled: {
+    opacity: 0.5,
+  },
   menuIcon: {
     fontSize: 20,
     marginRight: 16,
     width: 28,
+  },
+  menuIconDisabled: {
+    opacity: 0.5,
   },
   menuTextContainer: {
     flex: 1,
@@ -395,10 +416,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1f2937',
   },
+  menuTitleDisabled: {
+    color: '#9ca3af',
+  },
   menuSubtitle: {
     fontSize: 13,
     color: '#9ca3af',
     marginTop: 2,
+  },
+  menuSubtitleDisabled: {
+    color: '#d1d5db',
+    fontStyle: 'italic',
   },
   menuArrow: {
     fontSize: 24,
