@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Card, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { getTasks, getOfferings, type Task, type Offering } from '@marketplace/shared';
+import { getTasks, getOfferings, searchTasks, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 
@@ -69,6 +69,9 @@ const formatTimeAgo = (dateString: string): string => {
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const searchInputRef = useRef<TextInput>(null);
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
@@ -77,10 +80,30 @@ export default function HomeScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
+
+  // Debounce search query
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500); // 500ms debounce
+    
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   const animateSheetTo = (height: number) => {
     currentHeight.current = height;
@@ -143,11 +166,23 @@ export default function HomeScreen() {
     })();
   }, []);
 
+  // Regular tasks query
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
     queryFn: async () => {
       return await getTasks({ page: 1, per_page: 100, status: 'open' });
     },
+    enabled: !debouncedSearchQuery, // Only fetch when not searching
+  });
+
+  // Search query
+  const { data: searchData, isLoading: isSearchLoading } = useQuery({
+    queryKey: ['tasks-search', debouncedSearchQuery],
+    queryFn: async () => {
+      if (!debouncedSearchQuery.trim()) return null;
+      return await searchTasks({ q: debouncedSearchQuery, page: 1, per_page: 100, status: 'open' });
+    },
+    enabled: !!debouncedSearchQuery.trim(),
   });
 
   const { data: offeringsData } = useQuery({
@@ -157,7 +192,7 @@ export default function HomeScreen() {
     },
   });
 
-  const allTasks = data?.tasks || [];
+  const allTasks = debouncedSearchQuery ? (searchData?.tasks || []) : (data?.tasks || []);
   const offerings = offeringsData?.offerings || [];
   const boostedOfferings = offerings.filter(
     o => o.is_boost_active && o.latitude && o.longitude
@@ -215,25 +250,19 @@ export default function HomeScreen() {
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
     haptic.light();
     if (task) {
-      // CRITICAL: Move marker HIGHER on screen by SUBTRACTING from latitude
-      // Bottom sheet covers bottom 45% of screen
-      // We want marker at ~25% from top, so it's well above the sheet
       if (mapRef.current && task.latitude && task.longitude) {
         const latitudeDelta = 0.025;
         const longitudeDelta = 0.025;
-        
-        // SUBTRACT to move marker UP! (negative offset pushes view center down, marker goes up)
-        const offsetAmount = latitudeDelta * 0.25; // Move marker up by 25% of visible area
+        const offsetAmount = latitudeDelta * 0.25;
         
         mapRef.current.animateToRegion({
-          latitude: task.latitude - offsetAmount, // SUBTRACT = marker moves UP!
+          latitude: task.latitude - offsetAmount,
           longitude: task.longitude,
           latitudeDelta: latitudeDelta,
           longitudeDelta: longitudeDelta,
         }, 800);
       }
       
-      // Show in bottom sheet
       setFocusedTaskId(task.id);
       setSelectedTask(null);
       setSelectedOffering(null);
@@ -252,29 +281,24 @@ export default function HomeScreen() {
   const handleJobItemPress = (task: Task) => {
     haptic.medium();
     
-    // CRITICAL: Move marker HIGHER by SUBTRACTING from latitude
     if (mapRef.current && task.latitude && task.longitude) {
       const latitudeDelta = 0.025;
       const longitudeDelta = 0.025;
-      const offsetAmount = latitudeDelta * 0.25; // Move up by 25% of visible area
+      const offsetAmount = latitudeDelta * 0.25;
       
       mapRef.current.animateToRegion({
-        latitude: task.latitude - offsetAmount, // SUBTRACT = marker moves UP!
+        latitude: task.latitude - offsetAmount,
         longitude: task.longitude,
         latitudeDelta: latitudeDelta,
         longitudeDelta: longitudeDelta,
       }, 800);
     }
     
-    // Set as focused job
     setFocusedTaskId(task.id);
     setSelectedTask(null);
     setSelectedOffering(null);
-    
-    // Expand sheet to MID height
     animateSheetTo(SHEET_MID_HEIGHT);
     
-    // Scroll to top of sheet content
     setTimeout(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     }, 100);
@@ -304,6 +328,21 @@ export default function HomeScreen() {
     haptic.selection();
     setSelectedRadius(radius);
     setShowRadiusModal(false);
+  };
+
+  const handleSearchOpen = () => {
+    haptic.light();
+    setShowSearchModal(true);
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleSearchClose = () => {
+    haptic.soft();
+    setShowSearchModal(false);
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
   };
 
   const handleMyLocation = async () => {
@@ -342,7 +381,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {isLoading && (
+      {isLoading && !debouncedSearchQuery && (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" />
           <Text style={styles.statusText}>Loading jobs...</Text>
@@ -412,7 +451,7 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Filter Buttons */}
+          {/* Filter Buttons with Search */}
           <SafeAreaView style={styles.floatingHeader} edges={['top']}>
             <View style={styles.filterButtonsContainer}>
               <TouchableOpacity
@@ -423,6 +462,17 @@ export default function HomeScreen() {
                 <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
                   <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
                   <Text style={styles.filterButtonIcon}>▼</Text>
+                </BlurView>
+              </TouchableOpacity>
+
+              {/* SEARCH BUTTON */}
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearchOpen}
+                activeOpacity={0.8}
+              >
+                <BlurView intensity={80} tint="light" style={styles.searchButtonBlur}>
+                  <Text style={styles.searchButtonIcon}>🔍</Text>
                 </BlurView>
               </TouchableOpacity>
 
@@ -439,12 +489,16 @@ export default function HomeScreen() {
             </View>
           </SafeAreaView>
 
-          {filteredTasks.length === 0 && !isLoading && (
+          {filteredTasks.length === 0 && !isLoading && !isSearchLoading && (
             <View style={styles.emptyMapOverlay}>
               <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
                 <Text style={styles.emptyMapIcon}>🗺️</Text>
-                <Text style={styles.emptyMapText}>No jobs found</Text>
-                <Text style={styles.emptyMapSubtext}>Try adjusting filters</Text>
+                <Text style={styles.emptyMapText}>
+                  {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
+                </Text>
+                <Text style={styles.emptyMapSubtext}>
+                  {debouncedSearchQuery ? 'Try a different search' : 'Try adjusting filters'}
+                </Text>
               </BlurView>
             </View>
           )}
@@ -551,8 +605,12 @@ export default function HomeScreen() {
               ) : sortedTasks.length === 0 ? (
                 <View style={styles.emptySheet}>
                   <Text style={styles.emptyIcon}>💭</Text>
-                  <Text style={styles.emptyText}>No jobs found</Text>
-                  <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+                  <Text style={styles.emptyText}>
+                    {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
+                  </Text>
+                  <Text style={styles.emptySubtext}>
+                    {debouncedSearchQuery ? 'Try a different search term' : 'Try adjusting your filters'}
+                  </Text>
                   <TouchableOpacity 
                     style={styles.emptyPostButton}
                     onPress={handleCreatePress}
@@ -601,6 +659,106 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
+
+      {/* Search Modal */}
+      <Modal
+        visible={showSearchModal}
+        transparent
+        animationType="slide"
+        onRequestClose={handleSearchClose}
+      >
+        <SafeAreaView style={styles.searchModalContainer} edges={['top']}>
+          <View style={styles.searchModalHeader}>
+            <TouchableOpacity onPress={handleSearchClose} style={styles.searchBackButton}>
+              <Text style={styles.searchBackIcon}>←</Text>
+            </TouchableOpacity>
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Search jobs..."
+              placeholderTextColor="#9ca3af"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClearButton}>
+                <Text style={styles.searchClearIcon}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <ScrollView style={styles.searchResultsContainer}>
+            {isSearchLoading && (
+              <View style={styles.searchLoadingContainer}>
+                <ActivityIndicator size="large" color="#0ea5e9" />
+                <Text style={styles.searchLoadingText}>Searching...</Text>
+              </View>
+            )}
+
+            {!isSearchLoading && debouncedSearchQuery && sortedTasks.length === 0 && (
+              <View style={styles.searchEmptyContainer}>
+                <Text style={styles.searchEmptyIcon}>🔍</Text>
+                <Text style={styles.searchEmptyText}>No results found</Text>
+                <Text style={styles.searchEmptySubtext}>Try a different search term</Text>
+              </View>
+            )}
+
+            {!isSearchLoading && debouncedSearchQuery && sortedTasks.length > 0 && (
+              <View style={styles.searchResultsList}>
+                <Text style={styles.searchResultsCount}>
+                  {sortedTasks.length} result{sortedTasks.length !== 1 ? 's' : ''} found
+                </Text>
+                {sortedTasks.map((task) => (
+                  <TouchableOpacity
+                    key={task.id}
+                    style={styles.searchResultItem}
+                    onPress={() => {
+                      handleSearchClose();
+                      handleJobItemPress(task);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.searchResultHeader}>
+                      <View style={[
+                        styles.searchResultCategoryBadge,
+                        { backgroundColor: getMarkerColor(task.category) }
+                      ]}>
+                        <Text style={styles.searchResultCategoryText}>
+                          {task.category.toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={styles.searchResultPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
+                    </View>
+                    <Text style={styles.searchResultTitle}>{task.title}</Text>
+                    {task.description && (
+                      <Text style={styles.searchResultDescription} numberOfLines={2}>
+                        {task.description}
+                      </Text>
+                    )}
+                    <View style={styles.searchResultFooter}>
+                      <Text style={styles.searchResultLocation} numberOfLines={1}>
+                        📍 {task.location}
+                      </Text>
+                      <Text style={styles.searchResultTime}>{formatTimeAgo(task.created_at)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {!debouncedSearchQuery && (
+              <View style={styles.searchHintsContainer}>
+                <Text style={styles.searchHintsTitle}>💡 Search Tips</Text>
+                <Text style={styles.searchHintText}>• Search in any language (LV, EN, RU)</Text>
+                <Text style={styles.searchHintText}>• Try keywords like "cleaning", "uzkopšana", "уборка"</Text>
+                <Text style={styles.searchHintText}>• Search by location, job type, or description</Text>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
       {/* Category Modal */}
       <Modal
@@ -789,6 +947,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 8,
     gap: 8,
+    alignItems: 'center',
   },
   filterButton: {
     flex: 1,
@@ -812,6 +971,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#6b7280',
     marginLeft: 8,
+  },
+  // Search button styles
+  searchButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  searchButtonBlur: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButtonIcon: {
+    fontSize: 20,
   },
   emptyMapOverlay: {
     position: 'absolute',
@@ -1108,6 +1282,150 @@ const styles = StyleSheet.create({
   },
   sheetSpacer: {
     height: 40,
+  },
+  // Search Modal Styles
+  searchModalContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  searchModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  searchBackButton: {
+    marginRight: 12,
+  },
+  searchBackIcon: {
+    fontSize: 24,
+    color: '#1f2937',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+    paddingVertical: 8,
+  },
+  searchClearButton: {
+    marginLeft: 12,
+  },
+  searchClearIcon: {
+    fontSize: 20,
+    color: '#9ca3af',
+  },
+  searchResultsContainer: {
+    flex: 1,
+  },
+  searchLoadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  searchLoadingText: {
+    marginTop: 12,
+    color: '#6b7280',
+    fontSize: 14,
+  },
+  searchEmptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  searchEmptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  searchEmptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  searchEmptySubtext: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  searchResultsList: {
+    padding: 16,
+  },
+  searchResultsCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 12,
+  },
+  searchResultItem: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  searchResultHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  searchResultCategoryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  searchResultCategoryText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  searchResultPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+  },
+  searchResultTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  searchResultDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  searchResultFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  searchResultLocation: {
+    fontSize: 13,
+    color: '#6b7280',
+    flex: 1,
+    marginRight: 8,
+  },
+  searchResultTime: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  searchHintsContainer: {
+    padding: 24,
+  },
+  searchHintsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  searchHintText: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 8,
+    lineHeight: 20,
   },
   // Modal styles
   modalOverlay: {
