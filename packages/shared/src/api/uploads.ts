@@ -34,16 +34,18 @@ export const uploadImage = async (file: File | Blob, filename?: string): Promise
     formData.append('file', file);
   } else {
     // For Blob (from React Native), create a file-like object
-    formData.append('file', file, filename || `upload_${Date.now()}.jpg`);
+    const finalFilename = filename || `upload_${Date.now()}.jpg`;
+    formData.append('file', file, finalFilename);
   }
   
-  const response = await api.post('/api/uploads', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
-  return response.data;
+  try {
+    // DON'T set Content-Type header - let axios set it with boundary!
+    const response = await api.post('/api/uploads', formData);
+    return response.data;
+  } catch (error: any) {
+    console.error('Upload error:', error.response?.data || error.message);
+    throw error;
+  }
 };
 
 /**
@@ -51,14 +53,36 @@ export const uploadImage = async (file: File | Blob, filename?: string): Promise
  * Converts a local file URI to a blob and uploads it
  */
 export const uploadImageFromUri = async (uri: string, filename?: string): Promise<UploadResponse> => {
-  // Fetch the image from the local URI
-  const response = await fetch(uri);
-  const blob = await response.blob();
-  
-  // Generate filename from URI if not provided
-  const name = filename || uri.split('/').pop() || `image_${Date.now()}.jpg`;
-  
-  return uploadImage(blob, name);
+  try {
+    // Fetch the image from the local URI
+    const response = await fetch(uri);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image from URI: ${response.statusText}`);
+    }
+    
+    const blob = await response.blob();
+    
+    // Generate filename from URI if not provided
+    let name = filename;
+    if (!name) {
+      const uriParts = uri.split('/');
+      name = uriParts[uriParts.length - 1] || `image_${Date.now()}.jpg`;
+      
+      // Ensure proper file extension
+      if (!name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        // Try to determine from blob type
+        const ext = blob.type.split('/')[1] || 'jpg';
+        name = `${name}.${ext}`;
+      }
+    }
+    
+    console.log('Uploading image:', { uri, name, type: blob.type, size: blob.size });
+    
+    return await uploadImage(blob, name);
+  } catch (error: any) {
+    console.error('Image upload error:', error);
+    throw error;
+  }
 };
 
 /**
