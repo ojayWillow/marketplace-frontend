@@ -215,23 +215,25 @@ export default function HomeScreen() {
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
     haptic.light();
     if (task) {
-      // Pan map to show marker at upper portion (above bottom sheet)
+      // CRITICAL: Move marker HIGHER on screen by SUBTRACTING from latitude
+      // Bottom sheet covers bottom 45% of screen
+      // We want marker at ~25% from top, so it's well above the sheet
       if (mapRef.current && task.latitude && task.longitude) {
         const latitudeDelta = 0.025;
         const longitudeDelta = 0.025;
-        const sheetCoverageRatio = SHEET_MID_HEIGHT / SCREEN_HEIGHT;
-        const targetMarkerPosition = 0.30;
-        const offsetRatio = (sheetCoverageRatio - targetMarkerPosition) * 0.8;
+        
+        // SUBTRACT to move marker UP! (negative offset pushes view center down, marker goes up)
+        const offsetAmount = latitudeDelta * 0.25; // Move marker up by 25% of visible area
         
         mapRef.current.animateToRegion({
-          latitude: task.latitude + (latitudeDelta * offsetRatio),
+          latitude: task.latitude - offsetAmount, // SUBTRACT = marker moves UP!
           longitude: task.longitude,
           latitudeDelta: latitudeDelta,
           longitudeDelta: longitudeDelta,
         }, 800);
       }
       
-      // Show in bottom sheet (not popup)
+      // Show in bottom sheet
       setFocusedTaskId(task.id);
       setSelectedTask(null);
       setSelectedOffering(null);
@@ -250,16 +252,14 @@ export default function HomeScreen() {
   const handleJobItemPress = (task: Task) => {
     haptic.medium();
     
-    // Pan map to show marker at upper 30% of screen (above bottom sheet)
+    // CRITICAL: Move marker HIGHER by SUBTRACTING from latitude
     if (mapRef.current && task.latitude && task.longitude) {
       const latitudeDelta = 0.025;
       const longitudeDelta = 0.025;
-      const sheetCoverageRatio = SHEET_MID_HEIGHT / SCREEN_HEIGHT;
-      const targetMarkerPosition = 0.30;
-      const offsetRatio = (sheetCoverageRatio - targetMarkerPosition) * 0.8;
+      const offsetAmount = latitudeDelta * 0.25; // Move up by 25% of visible area
       
       mapRef.current.animateToRegion({
-        latitude: task.latitude + (latitudeDelta * offsetRatio),
+        latitude: task.latitude - offsetAmount, // SUBTRACT = marker moves UP!
         longitude: task.longitude,
         latitudeDelta: latitudeDelta,
         longitudeDelta: longitudeDelta,
