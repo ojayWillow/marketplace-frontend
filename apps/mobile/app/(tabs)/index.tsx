@@ -16,7 +16,7 @@ const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
 
 const CATEGORIES = [
-  { key: 'all', label: 'All', icon: '🔍' },
+  { key: 'all', label: 'All Categories', icon: '🔍' },
   { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
   { key: 'moving', label: 'Moving', icon: '📦' },
   { key: 'repairs', label: 'Repairs', icon: '🔧' },
@@ -25,6 +25,14 @@ const CATEGORIES = [
   { key: 'tech', label: 'Tech', icon: '💻' },
   { key: 'beauty', label: 'Beauty', icon: '💅' },
   { key: 'other', label: 'Other', icon: '📋' },
+];
+
+const RADIUS_OPTIONS = [
+  { key: 'all', label: 'All Areas', value: null },
+  { key: '5', label: '5 km', value: 5 },
+  { key: '10', label: '10 km', value: 10 },
+  { key: '20', label: '20 km', value: 20 },
+  { key: '50', label: '50 km', value: 50 },
 ];
 
 const calculateDistance = (
@@ -64,7 +72,10 @@ export default function HomeScreen() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showRadiusModal, setShowRadiusModal] = useState(false);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -149,12 +160,28 @@ export default function HomeScreen() {
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       if (!task.latitude || !task.longitude) return false;
+      
+      // Category filter
       if (selectedCategory !== 'all' && task.category !== selectedCategory) {
         return false;
       }
+      
+      // Radius filter
+      if (selectedRadius && userLocation) {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          task.latitude,
+          task.longitude
+        );
+        if (distance > selectedRadius) {
+          return false;
+        }
+      }
+      
       return true;
     });
-  }, [allTasks, selectedCategory]);
+  }, [allTasks, selectedCategory, selectedRadius, userLocation]);
 
   const sortedTasks = useMemo(() => {
     if (!userLocation) return filteredTasks;
@@ -204,6 +231,13 @@ export default function HomeScreen() {
     setSelectedCategory(category);
     setSelectedTask(null);
     setSelectedOffering(null);
+    setShowCategoryModal(false);
+  };
+
+  const handleRadiusSelect = (radius: number | null) => {
+    haptic.selection();
+    setSelectedRadius(radius);
+    setShowRadiusModal(false);
   };
 
   const handleMyLocation = async () => {
@@ -234,6 +268,9 @@ export default function HomeScreen() {
     setShowCreateModal(false);
     router.push('/offering/create');
   };
+
+  const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All Categories';
+  const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
 
   return (
     <View style={styles.container}>
@@ -306,41 +343,39 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
+          {/* Filter Buttons */}
           <SafeAreaView style={styles.floatingHeader} edges={['top']}>
-            <BlurView intensity={80} tint="light" style={styles.categoryBarBlur}>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false} 
-                contentContainerStyle={styles.categoryScroll}
+            <View style={styles.filterButtonsContainer}>
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+                activeOpacity={0.8}
               >
-                {CATEGORIES.map((cat) => (
-                  <TouchableOpacity
-                    key={cat.key}
-                    style={[
-                      styles.categoryChip,
-                      selectedCategory === cat.key && styles.categoryChipActive
-                    ]}
-                    onPress={() => handleCategorySelect(cat.key)}
-                  >
-                    <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                    <Text style={[
-                      styles.categoryText,
-                      selectedCategory === cat.key && styles.categoryTextActive
-                    ]}>
-                      {cat.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </BlurView>
+                <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+                  <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
+                  <Text style={styles.filterButtonIcon}>▼</Text>
+                </BlurView>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={() => { haptic.light(); setShowRadiusModal(true); }}
+                activeOpacity={0.8}
+              >
+                <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+                  <Text style={styles.filterButtonText}>{selectedRadiusLabel}</Text>
+                  <Text style={styles.filterButtonIcon}>▼</Text>
+                </BlurView>
+              </TouchableOpacity>
+            </View>
           </SafeAreaView>
 
           {filteredTasks.length === 0 && !isLoading && (
             <View style={styles.emptyMapOverlay}>
               <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
                 <Text style={styles.emptyMapIcon}>🗺️</Text>
-                <Text style={styles.emptyMapText}>No jobs in this area</Text>
-                <Text style={styles.emptyMapSubtext}>Try zooming out or changing category</Text>
+                <Text style={styles.emptyMapText}>No jobs found</Text>
+                <Text style={styles.emptyMapSubtext}>Try adjusting filters</Text>
               </BlurView>
             </View>
           )}
@@ -424,8 +459,8 @@ export default function HomeScreen() {
               {sortedTasks.length === 0 ? (
                 <View style={styles.emptySheet}>
                   <Text style={styles.emptyIcon}>💭</Text>
-                  <Text style={styles.emptyText}>No jobs in this area</Text>
-                  <Text style={styles.emptySubtext}>Be the first to post one!</Text>
+                  <Text style={styles.emptyText}>No jobs found</Text>
+                  <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
                   <TouchableOpacity 
                     style={styles.emptyPostButton}
                     onPress={handleCreatePress}
@@ -474,6 +509,90 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
+
+      {/* Category Modal */}
+      <Modal
+        visible={showCategoryModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => { haptic.soft(); setShowCategoryModal(false); }}
+        >
+          <View style={styles.filterModalContent}>
+            <Text style={styles.modalTitle}>Select Category</Text>
+            <ScrollView style={styles.filterOptionsScroll}>
+              {CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat.key}
+                  style={[
+                    styles.filterOption,
+                    selectedCategory === cat.key && styles.filterOptionActive
+                  ]}
+                  onPress={() => handleCategorySelect(cat.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.filterOptionIcon}>{cat.icon}</Text>
+                  <Text style={[
+                    styles.filterOptionText,
+                    selectedCategory === cat.key && styles.filterOptionTextActive
+                  ]}>
+                    {cat.label}
+                  </Text>
+                  {selectedCategory === cat.key && (
+                    <Text style={styles.filterOptionCheck}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Radius Modal */}
+      <Modal
+        visible={showRadiusModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRadiusModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => { haptic.soft(); setShowRadiusModal(false); }}
+        >
+          <View style={styles.filterModalContent}>
+            <Text style={styles.modalTitle}>Select Radius</Text>
+            <View style={styles.filterOptionsContainer}>
+              {RADIUS_OPTIONS.map((rad) => (
+                <TouchableOpacity
+                  key={rad.key}
+                  style={[
+                    styles.filterOption,
+                    selectedRadius === rad.value && styles.filterOptionActive
+                  ]}
+                  onPress={() => handleRadiusSelect(rad.value)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.filterOptionIcon}>📍</Text>
+                  <Text style={[
+                    styles.filterOptionText,
+                    selectedRadius === rad.value && styles.filterOptionTextActive
+                  ]}>
+                    {rad.label}
+                  </Text>
+                  {selectedRadius === rad.value && (
+                    <Text style={styles.filterOptionCheck}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Create Modal */}
       <Modal
@@ -573,39 +692,34 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
   },
-  categoryBarBlur: {
-    marginHorizontal: 12,
-    marginTop: 8,
-    borderRadius: 24,
+  filterButtonsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    gap: 8,
+  },
+  filterButton: {
+    flex: 1,
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  categoryScroll: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  categoryChip: {
+  filterButtonBlur: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  categoryChipActive: {
-    backgroundColor: '#0ea5e9',
-  },
-  categoryIcon: {
+  filterButtonText: {
     fontSize: 14,
-    marginRight: 6,
+    fontWeight: '600',
+    color: '#1f2937',
+    flex: 1,
   },
-  categoryText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  categoryTextActive: {
-    color: '#ffffff',
+  filterButtonIcon: {
+    fontSize: 10,
+    color: '#6b7280',
+    marginLeft: 8,
   },
   emptyMapOverlay: {
     position: 'absolute',
@@ -922,5 +1036,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#6b7280',
+  },
+  // Filter modal styles
+  filterModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+  },
+  filterOptionsScroll: {
+    maxHeight: 400,
+  },
+  filterOptionsContainer: {
+    maxHeight: 400,
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#f9fafb',
+  },
+  filterOptionActive: {
+    backgroundColor: '#e0f2fe',
+  },
+  filterOptionIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  filterOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  filterOptionTextActive: {
+    color: '#0ea5e9',
+    fontWeight: '600',
+  },
+  filterOptionCheck: {
+    fontSize: 18,
+    color: '#0ea5e9',
+    fontWeight: 'bold',
   },
 });
