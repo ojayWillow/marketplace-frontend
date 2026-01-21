@@ -44,13 +44,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="listings"
-        options={{
-          title: 'Listings',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🛍️" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
@@ -65,6 +58,12 @@ export default function TabsLayout() {
         }}
       />
       {/* Hidden tabs - accessible via navigation but not in bottom bar */}
+      <Tabs.Screen
+        name="listings"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
       <Tabs.Screen
         name="offerings"
         options={{
