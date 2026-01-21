@@ -50,18 +50,10 @@ export const uploadImage = async (file: File | Blob, filename?: string): Promise
 
 /**
  * Upload image from URI (React Native)
- * Converts a local file URI to a blob and uploads it
+ * Converts a local file URI to a proper file object for upload
  */
 export const uploadImageFromUri = async (uri: string, filename?: string): Promise<UploadResponse> => {
   try {
-    // Fetch the image from the local URI
-    const response = await fetch(uri);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image from URI: ${response.statusText}`);
-    }
-    
-    const blob = await response.blob();
-    
     // Generate filename from URI if not provided
     let name = filename;
     if (!name) {
@@ -70,17 +62,29 @@ export const uploadImageFromUri = async (uri: string, filename?: string): Promis
       
       // Ensure proper file extension
       if (!name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-        // Try to determine from blob type
-        const ext = blob.type.split('/')[1] || 'jpg';
-        name = `${name}.${ext}`;
+        name = `${name}.jpg`;
       }
     }
     
-    console.log('Uploading image:', { uri, name, type: blob.type, size: blob.size });
+    console.log('Uploading image from URI:', { uri, name });
     
-    return await uploadImage(blob, name);
+    // For React Native, create a file object that FormData can handle
+    // @ts-ignore - React Native FormData accepts this format
+    const fileObj: any = {
+      uri: uri,
+      type: 'image/jpeg', // You can make this dynamic based on file extension
+      name: name,
+    };
+    
+    const formData = new FormData();
+    // @ts-ignore - React Native FormData handles this correctly
+    formData.append('file', fileObj);
+    
+    const response = await api.post('/api/uploads', formData);
+    console.log('Upload successful:', response.data);
+    return response.data;
   } catch (error: any) {
-    console.error('Image upload error:', error);
+    console.error('Image upload error:', error.response?.data || error.message);
     throw error;
   }
 };
