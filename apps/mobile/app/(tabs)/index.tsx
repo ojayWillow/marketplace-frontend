@@ -228,13 +228,26 @@ export default function HomeScreen() {
   const handleJobItemPress = (task: Task) => {
     haptic.medium();
     
-    // Pan map to job location with some offset to account for bottom sheet
+    // Calculate offset to position marker at upper 30% of screen (above bottom sheet)
+    // When sheet is at MID height (45% of screen), marker should be visible above it
+    // Formula: offset = (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * latitudeDelta * 0.35
+    // This pushes the marker up so it's positioned at ~30% from top
     if (mapRef.current && task.latitude && task.longitude) {
+      const latitudeDelta = 0.025;
+      const longitudeDelta = 0.025;
+      
+      // Calculate how much to shift marker upward (in latitude degrees)
+      // We want marker at 30% from top, and bottom sheet covers bottom 45%
+      // So we shift marker up by approximately 15% of the latitudeDelta
+      const sheetCoverageRatio = SHEET_MID_HEIGHT / SCREEN_HEIGHT; // ~0.45
+      const targetMarkerPosition = 0.30; // Position marker at 30% from top
+      const offsetRatio = (sheetCoverageRatio - targetMarkerPosition) * 0.8;
+      
       mapRef.current.animateToRegion({
-        latitude: task.latitude + 0.008, // Offset up slightly so pin is visible above sheet
+        latitude: task.latitude + (latitudeDelta * offsetRatio),
         longitude: task.longitude,
-        latitudeDelta: 0.025,
-        longitudeDelta: 0.025,
+        latitudeDelta: latitudeDelta,
+        longitudeDelta: longitudeDelta,
       }, 800);
     }
     
