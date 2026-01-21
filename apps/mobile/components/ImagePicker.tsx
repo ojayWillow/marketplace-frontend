@@ -58,6 +58,8 @@ export default function ImagePicker({
         allowsMultipleSelection: true,
         selectionLimit: maxImages - images.length,
         quality: 0.8,
+        allowsEditing: false,  // Disable editing to avoid conversion issues
+        exif: false,  // Don't include EXIF data
         base64: false,
       });
 
@@ -65,9 +67,10 @@ export default function ImagePicker({
         const newImages = result.assets.map(asset => asset.uri);
         onImagesChange([...images, ...newImages].slice(0, maxImages));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      const message = error?.message || 'Failed to pick image. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -86,15 +89,18 @@ export default function ImagePicker({
     try {
       const result = await ExpoImagePicker.launchCameraAsync({
         quality: 0.8,
+        allowsEditing: false,
+        exif: false,
         base64: false,
       });
 
       if (!result.canceled && result.assets[0]) {
         onImagesChange([...images, result.assets[0].uri]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      const message = error?.message || 'Failed to take photo. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
