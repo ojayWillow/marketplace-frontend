@@ -22,18 +22,23 @@ const API_URL = getApiUrl()
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // DON'T set default Content-Type - let axios determine it based on the request body
+  // This allows FormData uploads to work correctly with multipart/form-data
 })
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and set Content-Type for JSON requests
 apiClient.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Only set Content-Type to JSON if not already set and body is not FormData
+    if (!config.headers['Content-Type'] && !(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json'
+    }
+    
     return config
   },
   (error) => Promise.reject(error)
