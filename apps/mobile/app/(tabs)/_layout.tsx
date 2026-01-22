@@ -30,7 +30,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
@@ -58,6 +58,12 @@ export default function TabsLayout() {
         }}
       />
       {/* Hidden tabs - accessible via navigation but not in bottom bar */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // Redirect to home
+        }}
+      />
       <Tabs.Screen
         name="listings"
         options={{
