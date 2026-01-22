@@ -25,7 +25,7 @@ import { clusterTasks, type Cluster } from './utils/clustering';
 import { calculateDistance } from './utils/distance';
 import { CATEGORIES, RADIUS_OPTIONS, getMarkerColor, getZoomLevel } from './utils/constants';
 import { styles } from './styles';
-import { haptic } from '../../../utils/haptics';
+import { haptic } from '../../../../utils/haptics';
 
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
