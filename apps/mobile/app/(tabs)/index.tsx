@@ -10,6 +10,7 @@ import { getTasks, getOfferings, searchTasks, type Task, type Offering } from '@
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 import { clusterItems, calculateDistance as calcDistance } from '../../utils/mapClustering';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
@@ -613,7 +614,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Show map immediately with default/cached location */}
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
@@ -678,54 +678,53 @@ export default function HomeScreen() {
         </MapView>
 
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
-          <View style={styles.filterButtonsContainer}>
+          <View style={styles.topRow}>
             <TouchableOpacity
-              style={styles.filterButton}
+              style={styles.categoryButton}
               onPress={() => { haptic.light(); setShowCategoryModal(true); }}
               activeOpacity={0.8}
             >
-              <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+              <BlurView intensity={80} tint="light" style={styles.categoryButtonBlur}>
                 <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
                 <Text style={styles.filterButtonIcon}>▼</Text>
               </BlurView>
             </TouchableOpacity>
 
+            <View style={styles.searchBarCompact}>
+              <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search..."
+                  placeholderTextColor="#9ca3af"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  returnKeyType="search"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
+                    <Text style={styles.searchClearIcon}>✕</Text>
+                  </TouchableOpacity>
+                )}
+                {showSearchLoading && (
+                  <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
+                )}
+              </BlurView>
+            </View>
+
             <TouchableOpacity
-              style={styles.filterButton}
+              style={styles.radiusButton}
               onPress={() => { haptic.light(); setShowRadiusModal(true); }}
               activeOpacity={0.8}
             >
-              <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+              <BlurView intensity={80} tint="light" style={styles.radiusButtonBlur}>
                 <Text style={styles.filterButtonText}>{selectedRadiusLabel}</Text>
                 <Text style={styles.filterButtonIcon}>▼</Text>
               </BlurView>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.searchBarContainer}>
-            <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
-              <Text style={styles.searchIcon}>🔍</Text>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search jobs..."
-                placeholderTextColor="#9ca3af"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                returnKeyType="search"
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
-                  <Text style={styles.searchClearIcon}>✕</Text>
-                </TouchableOpacity>
-              )}
-              {showSearchLoading && (
-                <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
-              )}
-            </BlurView>
-          </View>
         </SafeAreaView>
 
-        {/* Loading overlay - subtle, doesn't block UI */}
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <BlurView intensity={80} tint="light" style={styles.loadingCard}>
@@ -749,11 +748,9 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Google Maps style compass/navigation button */}
         <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
           <View style={styles.compassButton}>
-            {/* Compass arrow - blue triangular beam pointing up */}
-            <View style={styles.compassArrow} />
+            <Icon name="navigation" size={24} color="#4285F4" />
           </View>
         </TouchableOpacity>
 
@@ -799,7 +796,6 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {/* Category Modal */}
       <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCategoryModal(false); }}>
           <View style={styles.filterModalContent}>
@@ -825,7 +821,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Radius Modal */}
       <Modal visible={showRadiusModal} transparent animationType="fade" onRequestClose={() => setShowRadiusModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowRadiusModal(false); }}>
           <View style={styles.filterModalContent}>
@@ -851,7 +846,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Create Modal */}
       <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
           <View style={styles.modalContent}>
@@ -890,17 +884,54 @@ const styles = StyleSheet.create({
   mapContainer: { flex: 1, position: 'relative' },
   map: { flex: 1 },
   floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
-  filterButtonsContainer: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 8, gap: 8 },
+  
+  topRow: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 12, 
+    paddingTop: 8, 
+    gap: 8,
+    alignItems: 'center',
+  },
+  categoryButton: { 
+    flex: 1,
+    borderRadius: 12, 
+    overflow: 'hidden' 
+  },
+  categoryButtonBlur: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 12, 
+    paddingVertical: 12 
+  },
+  searchBarCompact: { 
+    flex: 1.5,
+    borderRadius: 12, 
+    overflow: 'hidden' 
+  },
+  radiusButton: { 
+    flex: 1,
+    borderRadius: 12, 
+    overflow: 'hidden' 
+  },
+  radiusButtonBlur: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 12, 
+    paddingVertical: 12 
+  },
+  
   filterButton: { flex: 1, borderRadius: 12, overflow: 'hidden' },
   filterButtonBlur: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  filterButtonText: { fontSize: 14, fontWeight: '600', color: '#1f2937', flex: 1 },
-  filterButtonIcon: { fontSize: 10, color: '#6b7280', marginLeft: 8 },
+  filterButtonText: { fontSize: 13, fontWeight: '600', color: '#1f2937', flex: 1 },
+  filterButtonIcon: { fontSize: 10, color: '#6b7280', marginLeft: 4 },
   searchBarContainer: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 },
-  searchBarBlur: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, overflow: 'hidden' },
-  searchIcon: { fontSize: 18, marginRight: 10 },
-  searchInput: { flex: 1, fontSize: 15, color: '#1f2937', paddingVertical: 0 },
-  searchClearButton: { marginLeft: 8, padding: 4 },
-  searchClearIcon: { fontSize: 16, color: '#9ca3af', fontWeight: '600' },
+  searchBarBlur: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, overflow: 'hidden' },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: '#1f2937', paddingVertical: 0 },
+  searchClearButton: { marginLeft: 4, padding: 4 },
+  searchClearIcon: { fontSize: 14, color: '#9ca3af', fontWeight: '600' },
   searchLoader: { marginLeft: 8 },
   loadingOverlay: { position: 'absolute', top: 140, left: 24, right: 24, alignItems: 'center' },
   loadingCard: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', overflow: 'hidden', gap: 10 },
@@ -911,7 +942,6 @@ const styles = StyleSheet.create({
   emptyMapText: { fontSize: 16, fontWeight: '600', color: '#374151' },
   emptyMapSubtext: { fontSize: 14, color: '#6b7280', marginTop: 4 },
   
-  // Google Maps style compass navigation button
   myLocationButton: { 
     position: 'absolute', 
     bottom: 100, 
@@ -930,18 +960,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-  },
-  compassArrow: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 20,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#4285F4', // Google blue
   },
   
   coinClusterContainer: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
