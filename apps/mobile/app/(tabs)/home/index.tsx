@@ -7,10 +7,10 @@ import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { BlurView } from 'expo-blur';
 import type { Task, Offering } from '@marketplace/shared';
 
-import { useLocation } from './hooks/useLocation';
-import { useMapData } from './hooks/useMapData';
-import { useBottomSheet } from './hooks/useBottomSheet';
-
+// Import from features folder (outside app/ to avoid Expo Router warnings)
+import { useLocation } from '../../../features/home/hooks/useLocation';
+import { useMapData } from '../../../features/home/hooks/useMapData';
+import { useBottomSheet } from '../../../features/home/hooks/useBottomSheet';
 import { 
   UserMarker, 
   JobCard, 
@@ -19,12 +19,10 @@ import {
   CategoryModal, 
   RadiusModal, 
   CreateModal 
-} from './components';
-
-import { clusterTasks, type Cluster } from './utils/clustering';
-import { calculateDistance } from './utils/distance';
-import { CATEGORIES, RADIUS_OPTIONS, getMarkerColor, getZoomLevel } from './utils/constants';
-import { styles } from './styles';
+} from '../../../features/home/components';
+import { clusterTasks, type Cluster } from '../../../features/home/utils/clustering';
+import { CATEGORIES, RADIUS_OPTIONS, getMarkerColor, getZoomLevel } from '../../../features/home/utils/constants';
+import { styles } from '../../../features/home/styles';
 import { haptic } from '../../../utils/haptics';
 
 export default function HomeScreen() {
