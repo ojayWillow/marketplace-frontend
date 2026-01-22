@@ -728,11 +728,13 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
-          <View style={styles.compassButton}>
-            <Icon name="navigation" size={24} color="#4285F4" />
-          </View>
-        </TouchableOpacity>
+        {sheetPosition === 'min' && (
+          <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
+            <View style={styles.compassButton}>
+              <Icon name="navigation" size={24} color="#4285F4" />
+            </View>
+          </TouchableOpacity>
+        )}
 
         <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
           <View {...panResponder.panHandlers} style={styles.sheetHandle}>
