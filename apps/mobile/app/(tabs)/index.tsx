@@ -13,7 +13,7 @@ import { BlurView } from 'expo-blur';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45;
-const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
+const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.85;
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
@@ -82,6 +82,7 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -115,6 +116,7 @@ export default function HomeScreen() {
 
   const animateSheetTo = (height: number) => {
     currentHeight.current = height;
+    setIsSheetExpanded(height > SHEET_MIN_HEIGHT);
     Animated.spring(sheetHeight, {
       toValue: height,
       useNativeDriver: false,
@@ -387,6 +389,13 @@ export default function HomeScreen() {
     setFocusedTaskId(null);
   };
 
+  const handleSheetTap = () => {
+    if (currentHeight.current === SHEET_MIN_HEIGHT) {
+      haptic.light();
+      animateSheetTo(SHEET_MID_HEIGHT);
+    }
+  };
+
   const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All Categories';
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
   
@@ -546,7 +555,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
-            <View {...panResponder.panHandlers} style={styles.sheetHandle}>
+            <TouchableOpacity 
+              activeOpacity={1} 
+              onPress={handleSheetTap}
+              {...panResponder.panHandlers} 
+              style={styles.sheetHandle}
+            >
               <View style={styles.handleBar} />
               <View style={styles.sheetTitleRow}>
                 <Text style={styles.sheetTitle}>
@@ -570,13 +584,15 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
 
             <ScrollView 
               ref={scrollRef}
               style={styles.sheetContent}
-              showsVerticalScrollIndicator={false}
-              scrollEnabled={currentHeight.current > SHEET_MIN_HEIGHT}
+              showsVerticalScrollIndicator={true}
+              scrollEnabled={isSheetExpanded}
+              nestedScrollEnabled={true}
+              contentContainerStyle={styles.sheetContentContainer}
             >
               {focusedTask ? (
                 <View style={styles.focusedJobContainer}>
@@ -1069,6 +1085,9 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     flex: 1,
+  },
+  sheetContentContainer: {
+    paddingBottom: 20,
   },
   emptySheet: {
     alignItems: 'center',
