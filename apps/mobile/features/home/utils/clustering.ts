@@ -1,5 +1,6 @@
 import type { Task } from '@marketplace/shared';
 import type { Region } from 'react-native-maps';
+import { SCREEN_WIDTH } from './constants';
 
 /**
  * Cluster type - represents either a single marker or a group of overlapping markers
@@ -13,59 +14,32 @@ export interface Cluster {
 }
 
 /**
- * Dynamic clustering threshold based on zoom level
- * 
- * At different zoom levels, we want different clustering behavior:
- * - Zoomed out (country level): cluster aggressively
- * - Mid zoom (city level): moderate clustering
- * - Zoomed in (neighborhood): minimal clustering, show individual markers
- */
-const getClusterThreshold = (latitudeDelta: number): { lat: number; lng: number } => {
-  // These multipliers control how aggressively markers cluster at each zoom level
-  // Higher = more aggressive clustering
-  
-  if (latitudeDelta > 5) {
-    // Very zoomed out (multiple countries) - very aggressive
-    return { lat: latitudeDelta * 0.15, lng: latitudeDelta * 0.15 };
-  } else if (latitudeDelta > 2) {
-    // Country level - aggressive clustering
-    return { lat: latitudeDelta * 0.12, lng: latitudeDelta * 0.12 };
-  } else if (latitudeDelta > 0.5) {
-    // Region level - moderate clustering
-    return { lat: latitudeDelta * 0.08, lng: latitudeDelta * 0.08 };
-  } else if (latitudeDelta > 0.1) {
-    // City level - light clustering
-    return { lat: latitudeDelta * 0.05, lng: latitudeDelta * 0.05 };
-  } else {
-    // Neighborhood level - minimal clustering (only truly overlapping)
-    return { lat: latitudeDelta * 0.03, lng: latitudeDelta * 0.03 };
-  }
-};
-
-/**
- * Smart clustering - groups markers based on zoom level
- * More aggressive when zoomed out, shows individual markers when zoomed in
+ * Simple clustering based on screen pixel distance
+ * Markers within ~60px of each other get clustered
  */
 export const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
   if (!region || tasks.length === 0) return [];
   
   const { latitudeDelta, longitudeDelta } = region;
   
-  // Get dynamic threshold based on current zoom
-  const threshold = getClusterThreshold(latitudeDelta);
+  // Convert ~60 screen pixels to map coordinates
+  // This gives consistent visual clustering regardless of zoom
+  const pixelThreshold = 60;
+  const latPerPixel = latitudeDelta / 800; // approximate screen height in map coords
+  const lngPerPixel = longitudeDelta / SCREEN_WIDTH;
+  
+  const thresholdLat = latPerPixel * pixelThreshold;
+  const thresholdLng = lngPerPixel * pixelThreshold;
   
   const clusters: Cluster[] = [];
   const processed = new Set<number>();
   
-  // Sort tasks by latitude for more consistent clustering
-  const sortedTasks = [...tasks].sort((a, b) => (b.latitude || 0) - (a.latitude || 0));
-  
-  for (const task of sortedTasks) {
+  for (const task of tasks) {
     if (processed.has(task.id)) continue;
     if (!task.latitude || !task.longitude) continue;
     
-    // Find markers that should cluster with this one
-    const overlappingTasks = sortedTasks.filter(t => {
+    // Find all markers close to this one
+    const nearbyTasks = tasks.filter(t => {
       if (processed.has(t.id)) return false;
       if (!t.latitude || !t.longitude) return false;
       if (t.id === task.id) return true;
@@ -73,13 +47,13 @@ export const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] =>
       const latDiff = Math.abs(t.latitude - task.latitude!);
       const lngDiff = Math.abs(t.longitude - task.longitude!);
       
-      return latDiff < threshold.lat && lngDiff < threshold.lng;
+      return latDiff < thresholdLat && lngDiff < thresholdLng;
     });
     
-    overlappingTasks.forEach(t => processed.add(t.id));
+    nearbyTasks.forEach(t => processed.add(t.id));
     
-    if (overlappingTasks.length === 1) {
-      // Single marker - no clustering needed
+    if (nearbyTasks.length === 1) {
+      // Single marker
       clusters.push({
         id: `single-${task.id}`,
         latitude: task.latitude,
@@ -88,15 +62,15 @@ export const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] =>
         isCluster: false,
       });
     } else {
-      // Multiple markers - create cluster at center point
-      const centerLat = overlappingTasks.reduce((sum, t) => sum + t.latitude!, 0) / overlappingTasks.length;
-      const centerLng = overlappingTasks.reduce((sum, t) => sum + t.longitude!, 0) / overlappingTasks.length;
+      // Cluster - place at center of all markers
+      const centerLat = nearbyTasks.reduce((sum, t) => sum + t.latitude!, 0) / nearbyTasks.length;
+      const centerLng = nearbyTasks.reduce((sum, t) => sum + t.longitude!, 0) / nearbyTasks.length;
       
       clusters.push({
-        id: `cluster-${task.id}-${overlappingTasks.length}`,
+        id: `cluster-${centerLat.toFixed(4)}-${centerLng.toFixed(4)}-${nearbyTasks.length}`,
         latitude: centerLat,
         longitude: centerLng,
-        tasks: overlappingTasks,
+        tasks: nearbyTasks,
         isCluster: true,
       });
     }
