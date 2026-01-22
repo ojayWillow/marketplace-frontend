@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Modal, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
-import { haptic } from '../../../../../utils/haptics';
+import { haptic } from '../../../../utils/haptics';
 import { styles } from '../styles';
 
 interface CreateModalProps {
