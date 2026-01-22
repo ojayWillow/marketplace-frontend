@@ -1,10 +1,10 @@
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuthStore } from '@marketplace/shared';
-import { View, ActivityIndicator, useColorScheme } from 'react-native';
+import { useAuthStore } from '../src/stores/authStore';
+import { View, useColorScheme, InteractionManager } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { registerPushToken, setupNotificationListeners } from '../utils/pushNotifications';
 import { useThemeStore } from '../src/stores/themeStore';
@@ -20,25 +20,38 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const { token, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const notificationListener = useRef<(() => void) | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
-  // Theme
+  // Theme - use system color scheme immediately, don't wait for hydration
   const systemColorScheme = useColorScheme();
   const { mode, _hasHydrated: themeHydrated } = useThemeStore();
   
-  // Determine active theme
-  const activeTheme = mode === 'system' 
-    ? (systemColorScheme === 'dark' ? 'dark' : 'light')
-    : mode;
+  // Determine active theme - use system as default until hydrated
+  const activeTheme = themeHydrated && mode !== 'system'
+    ? mode
+    : (systemColorScheme === 'dark' ? 'dark' : 'light');
   const theme = activeTheme === 'dark' ? darkTheme : lightTheme;
   const themeColors = colors[activeTheme];
 
-  // Register for push notifications when user logs in
+  // Mark as ready after first render completes
   useEffect(() => {
-    if (isAuthenticated && token) {
+    // Use InteractionManager to wait for animations/transitions to complete
+    const handle = InteractionManager.runAfterInteractions(() => {
+      setIsReady(true);
+    });
+    return () => handle.cancel();
+  }, []);
+
+  // Register for push notifications AFTER app is interactive
+  // This prevents blocking the initial render
+  useEffect(() => {
+    if (!isReady || !isAuthenticated || !token) return;
+    
+    // Defer push notification registration to not block UI
+    const handle = InteractionManager.runAfterInteractions(() => {
       registerPushToken(token).then((success) => {
         if (success) {
           console.log('✅ Push notifications registered');
@@ -46,10 +59,12 @@ export default function RootLayout() {
           console.log('⚠️ Push notification registration failed');
         }
       });
-    }
-  }, [isAuthenticated, token]);
+    });
+    
+    return () => handle.cancel();
+  }, [isReady, isAuthenticated, token]);
 
-  // Setup notification listeners
+  // Setup notification listeners - can run immediately as it's just event subscription
   useEffect(() => {
     const cleanup = setupNotificationListeners(
       (notification) => {
@@ -86,14 +101,9 @@ export default function RootLayout() {
     }
   };
 
-  // Wait for both auth and theme stores to hydrate
-  if (!hasHydrated || !themeHydrated) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeColors.background }}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
-      </View>
-    );
-  }
+  // NO LONGER BLOCKING ON HYDRATION
+  // The app renders immediately with system theme defaults
+  // Theme preference loads from storage and updates seamlessly
 
   return (
     <PaperProvider theme={theme}>

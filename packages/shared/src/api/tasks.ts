@@ -4,11 +4,30 @@
 import apiClient from './client';
 import i18n from '../i18n';
 
+// Default language - content is stored in this language, no translation needed
+const DEFAULT_LANGUAGE = 'lv';
+
 /**
  * Get current language code from i18n
  */
 export const getCurrentLanguage = (): string => {
-  return i18n.language?.substring(0, 2) || 'lv';
+  return i18n.language?.substring(0, 2) || DEFAULT_LANGUAGE;
+};
+
+/**
+ * Check if translation is needed (user's language differs from default)
+ */
+const needsTranslation = (): boolean => {
+  const currentLang = getCurrentLanguage();
+  return currentLang !== DEFAULT_LANGUAGE;
+};
+
+/**
+ * Get lang param only if translation is needed
+ * Returns undefined if no translation needed (backend skips translation)
+ */
+const getLangParam = (): string | undefined => {
+  return needsTranslation() ? getCurrentLanguage() : undefined;
 };
 
 export interface Task {
@@ -84,7 +103,7 @@ export interface TasksParams {
   latitude?: number;
   longitude?: number;
   radius?: number;
-  lang?: string; // Language for translation
+  lang?: string; // Language for translation - only send if different from default
 }
 
 export interface SearchTasksParams extends TasksParams {
@@ -120,29 +139,30 @@ export interface GetApplicationsResponse {
 }
 
 /**
- * Get all tasks with optional filtering, geolocation, and translation
- * Automatically includes current language for translation
+ * Get all tasks with optional filtering and geolocation
+ * Only requests translation if user's language differs from default (lv)
  */
 export const getTasks = async (params: TasksParams = {}): Promise<GetTasksResponse> => {
-  const paramsWithLang = {
+  const lang = getLangParam();
+  const requestParams = {
     ...params,
-    lang: params.lang || getCurrentLanguage(),
+    ...(lang && { lang }), // Only include lang if translation needed
   };
-  const response = await apiClient.get('/api/tasks', { params: paramsWithLang });
+  const response = await apiClient.get('/api/tasks', { params: requestParams });
   return response.data;
 };
 
 /**
  * Search tasks with multilingual support
  * Searches across original text and all translations (LV, EN, RU)
- * Automatically includes current language for translation
  */
 export const searchTasks = async (params: SearchTasksParams): Promise<GetTasksResponse> => {
-  const paramsWithLang = {
+  const lang = getLangParam();
+  const requestParams = {
     ...params,
-    lang: params.lang || getCurrentLanguage(),
+    ...(lang && { lang }),
   };
-  const response = await apiClient.get('/api/tasks/search', { params: paramsWithLang });
+  const response = await apiClient.get('/api/tasks/search', { params: requestParams });
   return response.data;
 };
 
@@ -156,44 +176,44 @@ export const getHelpers = async (params: GetHelpersParams = {}): Promise<GetHelp
 
 /**
  * Get tasks assigned to current user (as worker)
- * Automatically includes current language for translation
  */
 export const getMyTasks = async (): Promise<GetTasksResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get('/api/tasks/my', {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
 
 /**
  * Get tasks created by current user (as client)
- * Automatically includes current language for translation
  */
 export const getCreatedTasks = async (): Promise<GetTasksResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get('/api/tasks/created', {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
 
 /**
  * Get tasks by a specific user ID (public - only open tasks)
- * Automatically includes current language for translation
  */
 export const getTasksByUser = async (userId: number): Promise<GetTasksResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get(`/api/tasks/user/${userId}`, {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
 
 /**
  * Get a single task by ID
- * Automatically includes current language for translation
  */
 export const getTask = async (taskId: number): Promise<Task> => {
+  const lang = getLangParam();
   const response = await apiClient.get(`/api/tasks/${taskId}`, {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
@@ -272,11 +292,11 @@ export const rejectApplication = async (taskId: number, applicationId: number): 
 
 /**
  * Get my applications (as applicant)
- * Automatically includes current language for translation
  */
 export const getMyApplications = async (): Promise<GetApplicationsResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get('/api/tasks/my-applications', {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
