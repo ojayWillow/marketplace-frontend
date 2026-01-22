@@ -19,6 +19,10 @@ const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 // This is the minimum distance in degrees before clustering kicks in
 const OVERLAP_THRESHOLD_FACTOR = 0.025; // Very tight - only cluster when truly overlapping
 
+// Zoom level thresholds for user location visibility
+const ZOOM_FAR_THRESHOLD = 0.12;    // latitudeDelta > 0.12 = zoomed out (hide user marker)
+const ZOOM_CLOSE_THRESHOLD = 0.05;  // latitudeDelta <= 0.05 = zoomed in (full user marker)
+
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
   { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
@@ -136,6 +140,15 @@ const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
   return clusters;
 };
 
+// Determine zoom level category based on latitudeDelta
+type ZoomLevel = 'far' | 'mid' | 'close';
+const getZoomLevel = (latitudeDelta: number | undefined): ZoomLevel => {
+  if (!latitudeDelta) return 'mid';
+  if (latitudeDelta > ZOOM_FAR_THRESHOLD) return 'far';
+  if (latitudeDelta <= ZOOM_CLOSE_THRESHOLD) return 'close';
+  return 'mid';
+};
+
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
@@ -157,6 +170,9 @@ export default function HomeScreen() {
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
+
+  // Derive zoom level from map region
+  const zoomLevel = useMemo(() => getZoomLevel(mapRegion?.latitudeDelta), [mapRegion?.latitudeDelta]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -489,6 +505,32 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
 
+  // Render custom user location marker based on zoom level
+  const renderUserLocationMarker = () => {
+    if (!userLocation || zoomLevel === 'far') return null;
+    
+    return (
+      <Marker
+        coordinate={userLocation}
+        anchor={{ x: 0.5, y: 0.5 }}
+        tracksViewChanges={false}
+      >
+        {zoomLevel === 'close' ? (
+          // Full user marker with halo (zoomed in)
+          <View style={styles.userMarkerFull}>
+            <View style={styles.userMarkerHalo} />
+            <View style={styles.userMarkerDot} />
+          </View>
+        ) : (
+          // Subtle ring marker (mid zoom)
+          <View style={styles.userMarkerSubtle}>
+            <View style={styles.userMarkerRing} />
+          </View>
+        )}
+      </Marker>
+    );
+  };
+
   const renderJobItem = ({ item: task }: { item: Task }) => (
     <TouchableOpacity
       style={styles.jobItem}
@@ -614,9 +656,12 @@ export default function HomeScreen() {
               longitudeDelta: 0.15,
             }}
             onRegionChangeComplete={handleRegionChange}
-            showsUserLocation
+            showsUserLocation={false}
             showsMyLocationButton={false}
           >
+            {/* Custom user location marker - zoom aware */}
+            {renderUserLocationMarker()}
+
             {/* Task markers - individual or clustered */}
             {clusters.map((cluster) => (
               <Marker
@@ -626,10 +671,14 @@ export default function HomeScreen() {
                 tracksViewChanges={false}
               >
                 {cluster.isCluster ? (
-                  // Cluster marker - € symbol with count
-                  <View style={styles.clusterMarker}>
-                    <Text style={styles.clusterEuro}>€</Text>
-                    <Text style={styles.clusterCount}>{cluster.tasks.length}</Text>
+                  // Gold coin cluster marker
+                  <View style={styles.coinClusterContainer}>
+                    <View style={styles.coinCluster}>
+                      <Text style={styles.coinEuro}>€</Text>
+                    </View>
+                    <View style={styles.coinBadge}>
+                      <Text style={styles.coinBadgeText}>{cluster.tasks.length}</Text>
+                    </View>
                   </View>
                 ) : (
                   // Individual price marker
@@ -887,32 +936,104 @@ const styles = StyleSheet.create({
   myLocationButton: { position: 'absolute', bottom: 100, right: 16, zIndex: 10 },
   myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   myLocationIcon: { fontSize: 22 },
-  // Cluster marker - € with count below
-  clusterMarker: {
-    backgroundColor: '#0ea5e9',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
+  
+  // Gold coin cluster marker
+  coinClusterContainer: {
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+  },
+  coinCluster: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FCD34D', // Gold base
+    borderWidth: 3,
+    borderColor: '#F59E0B', // Darker gold border for depth
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#B45309',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
     shadowRadius: 4,
-    elevation: 5,
-    minWidth: 40,
+    elevation: 6,
   },
-  clusterEuro: {
-    color: '#ffffff',
-    fontSize: 14,
+  coinEuro: {
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#92400E', // Dark amber for € symbol
+    textShadowColor: 'rgba(251, 191, 36, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
-  clusterCount: {
-    color: '#ffffff',
+  coinBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#DC2626', // Red badge
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
+  },
+  coinBadgeText: {
     fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.9,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
+  
+  // Custom user location markers
+  userMarkerFull: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarkerHalo: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)', // Blue halo
+  },
+  userMarkerDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#3B82F6', // Blue dot
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  userMarkerSubtle: {
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarkerRing: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: 'rgba(59, 130, 246, 0.6)', // Semi-transparent blue ring
+  },
+  
   // Individual price markers
   priceMarker: {
     backgroundColor: '#ffffff',
