@@ -45,7 +45,7 @@ export default function LoginScreen() {
       
       haptic.success(); // Success haptic
       setAuth(response.user, token);
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)');
     } catch (error: any) {
       haptic.error(); // Error haptic
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
@@ -180,7 +180,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Browse as Guest */}
-            <Link href="/(tabs)/home" asChild>
+            <Link href="/(tabs)" asChild>
               <Button mode="text" disabled={loading} style={styles.guestButton} onPress={() => haptic.light()}>
                 Continue as Guest
               </Button>
