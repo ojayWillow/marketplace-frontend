@@ -12,8 +12,8 @@ import { BlurView } from 'expo-blur';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
-const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.45;
-const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.85;
+const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
+const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6; // Reduced to stay below filters
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
