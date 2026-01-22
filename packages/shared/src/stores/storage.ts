@@ -1,99 +1,60 @@
 import { StateStorage } from 'zustand/middleware';
 
 // Platform detection - check for React Native environment
-// navigator.product is unreliable in Expo, so we check for window and document
-const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined' && typeof localStorage !== 'undefined';
+// In React Native, window exists but document doesn't have the same properties
+const isWeb = typeof window !== 'undefined' && 
+              typeof document !== 'undefined' && 
+              typeof localStorage !== 'undefined';
 
-// Storage implementation
-let storage: StateStorage;
-
-if (!isWeb) {
-  // React Native: Use expo-secure-store
-  let SecureStore: any;
-  
-  try {
-    SecureStore = require('expo-secure-store');
-  } catch (e) {
-    console.warn('expo-secure-store not available, falling back to AsyncStorage');
-    try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      
-      storage = {
-        getItem: async (name: string) => {
-          const value = await AsyncStorage.getItem(name);
-          return value ?? null;
-        },
-        setItem: async (name: string, value: string) => {
-          await AsyncStorage.setItem(name, value);
-        },
-        removeItem: async (name: string) => {
-          await AsyncStorage.removeItem(name);
-        },
-      };
-    } catch (e2) {
-      // Fallback to no-op storage if nothing is available
-      console.warn('No storage available, auth will not persist');
-      storage = {
-        getItem: async () => null,
-        setItem: async () => {},
-        removeItem: async () => {},
-      };
-    }
-  }
-
-  if (SecureStore && !storage) {
-    storage = {
-      getItem: async (name: string) => {
+// Create the appropriate storage based on platform
+const createStorage = (): StateStorage => {
+  if (isWeb) {
+    // Web: Use localStorage
+    return {
+      getItem: (name: string) => {
         try {
-          const value = await SecureStore.getItemAsync(name);
+          const value = localStorage.getItem(name);
           return value ?? null;
         } catch (e) {
-          console.warn('SecureStore getItem error:', e);
           return null;
         }
       },
-      setItem: async (name: string, value: string) => {
+      setItem: (name: string, value: string) => {
         try {
-          await SecureStore.setItemAsync(name, value);
+          localStorage.setItem(name, value);
         } catch (e) {
-          console.warn('SecureStore setItem error:', e);
+          console.warn('localStorage setItem error:', e);
         }
       },
-      removeItem: async (name: string) => {
+      removeItem: (name: string) => {
         try {
-          await SecureStore.deleteItemAsync(name);
+          localStorage.removeItem(name);
         } catch (e) {
-          console.warn('SecureStore removeItem error:', e);
+          console.warn('localStorage removeItem error:', e);
         }
       },
     };
   }
-} else {
-  // Web: Use localStorage
-  storage = {
-    getItem: (name: string) => {
-      try {
-        const value = localStorage.getItem(name);
-        return value ?? null;
-      } catch (e) {
-        return null;
-      }
-    },
-    setItem: (name: string, value: string) => {
-      try {
-        localStorage.setItem(name, value);
-      } catch (e) {
-        console.warn('localStorage setItem error:', e);
-      }
-    },
-    removeItem: (name: string) => {
-      try {
-        localStorage.removeItem(name);
-      } catch (e) {
-        console.warn('localStorage removeItem error:', e);
-      }
-    },
-  };
-}
 
-export { storage };
+  // React Native: Will be overridden by mobile app's storage implementation
+  // This is a fallback that does nothing - the mobile app should provide
+  // its own storage via the storageAdapter pattern
+  return {
+    getItem: async () => null,
+    setItem: async () => {},
+    removeItem: async () => {},
+  };
+};
+
+export const storage = createStorage();
+
+// Allow mobile apps to override storage with their own implementation
+let customStorage: StateStorage | null = null;
+
+export const setStorageAdapter = (adapter: StateStorage) => {
+  customStorage = adapter;
+};
+
+export const getStorage = (): StateStorage => {
+  return customStorage || storage;
+};
