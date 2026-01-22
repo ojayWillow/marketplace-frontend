@@ -17,18 +17,13 @@ const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 
-// Default location (Riga) - used while getting actual location
 const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
-
-// Clustering - only when markers would actually overlap
 const OVERLAP_THRESHOLD_FACTOR = 0.025;
-
-// Zoom level thresholds for user location style
 const ZOOM_FAR_THRESHOLD = 0.12;
 const ZOOM_CLOSE_THRESHOLD = 0.05;
 
 const CATEGORIES = [
-  { key: 'all', label: 'All Categories', icon: '🔍' },
+  { key: 'all', label: 'All', icon: '🔍' },
   { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
   { key: 'moving', label: 'Moving', icon: '📦' },
   { key: 'repairs', label: 'Repairs', icon: '🔧' },
@@ -40,14 +35,13 @@ const CATEGORIES = [
 ];
 
 const RADIUS_OPTIONS = [
-  { key: 'all', label: 'All Areas', value: null },
+  { key: 'all', label: 'All', value: null },
   { key: '5', label: '5 km', value: 5 },
   { key: '10', label: '10 km', value: 10 },
   { key: '20', label: '20 km', value: 20 },
   { key: '50', label: '50 km', value: 50 },
 ];
 
-// Use optimized distance calculation from utility
 const calculateDistance = calcDistance;
 
 const formatTimeAgo = (dateString: string): string => {
@@ -62,7 +56,6 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
-// Type for clusters (matches the utility interface)
 interface Cluster {
   id: string;
   latitude: number;
@@ -84,8 +77,8 @@ export default function HomeScreen() {
   const listRef = useRef<FlatList>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const regionChangeTimeout = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
   
-  // Start with default location immediately, update when we get real location
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>(DEFAULT_LOCATION);
   const [hasRealLocation, setHasRealLocation] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -100,6 +93,7 @@ export default function HomeScreen() {
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
+  const [searchExpanded, setSearchExpanded] = useState(false);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -179,16 +173,11 @@ export default function HomeScreen() {
     })
   ).current;
 
-  // Get user location - use last known first, then get current
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        // Keep default location
-        return;
-      }
+      if (status !== 'granted') return;
 
-      // Try to get last known location first (instant)
       try {
         const lastKnown = await Location.getLastKnownPositionAsync({});
         if (lastKnown) {
@@ -198,7 +187,6 @@ export default function HomeScreen() {
           });
           setHasRealLocation(true);
           
-          // Animate map to last known location
           if (mapRef.current) {
             mapRef.current.animateToRegion({
               latitude: lastKnown.coords.latitude,
@@ -208,14 +196,11 @@ export default function HomeScreen() {
             }, 500);
           }
         }
-      } catch (e) {
-        // Ignore - will get current location
-      }
+      } catch (e) {}
 
-      // Then get accurate current location in background
       try {
         const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced, // Faster than High accuracy
+          accuracy: Location.Accuracy.Balanced,
         });
         setUserLocation({
           latitude: location.coords.latitude,
@@ -223,7 +208,6 @@ export default function HomeScreen() {
         });
         setHasRealLocation(true);
         
-        // Only animate if significantly different from last known
         if (mapRef.current) {
           mapRef.current.animateToRegion({
             latitude: location.coords.latitude,
@@ -238,7 +222,6 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Fetch tasks immediately (don't wait for location)
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
     queryFn: async () => {
@@ -313,14 +296,11 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation, hasRealLocation]);
 
-  // Use optimized clustering from utility
   const clusters = useMemo(() => {
     const clusterResults = clusterItems<Task>(filteredTasks, mapRegion, {
       overlapThresholdFactor: OVERLAP_THRESHOLD_FACTOR,
       minClusterSize: 2,
     });
-    
-    // Map from utility format to component format (items -> tasks)
     return clusterResults as Cluster[];
   }, [filteredTasks, mapRegion]);
 
@@ -338,7 +318,6 @@ export default function HomeScreen() {
     return colors[category] || '#ef4444';
   };
 
-  // Throttled region change handler - prevents excessive re-clustering during animations
   const handleRegionChange = useCallback((region: Region) => {
     if (regionChangeTimeout.current) {
       clearTimeout(regionChangeTimeout.current);
@@ -485,8 +464,19 @@ export default function HomeScreen() {
     setFocusedTaskId(null);
   };
 
-  const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All Categories';
-  const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
+  const handleSearchToggle = () => {
+    haptic.light();
+    if (searchExpanded) {
+      setSearchExpanded(false);
+      handleClearSearch();
+    } else {
+      setSearchExpanded(true);
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  };
+
+  const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All';
+  const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All';
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
@@ -679,49 +669,68 @@ export default function HomeScreen() {
 
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
           <View style={styles.topRow}>
-            <TouchableOpacity
-              style={styles.categoryButton}
-              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
-              activeOpacity={0.8}
-            >
-              <BlurView intensity={80} tint="light" style={styles.categoryButtonBlur}>
-                <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
-                <Text style={styles.filterButtonIcon}>▼</Text>
-              </BlurView>
-            </TouchableOpacity>
+            {!searchExpanded ? (
+              <>
+                <TouchableOpacity
+                  style={styles.categoryButton}
+                  onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+                  activeOpacity={0.8}
+                >
+                  <BlurView intensity={80} tint="light" style={styles.filterBlur}>
+                    <Text style={styles.filterText} numberOfLines={1}>{selectedCategoryLabel}</Text>
+                    <Text style={styles.filterIcon}>▼</Text>
+                  </BlurView>
+                </TouchableOpacity>
 
-            <View style={styles.searchBarCompact}>
-              <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
-                <Text style={styles.searchIcon}>🔍</Text>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search..."
-                  placeholderTextColor="#9ca3af"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  returnKeyType="search"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
-                    <Text style={styles.searchClearIcon}>✕</Text>
+                <TouchableOpacity
+                  style={styles.searchIconButton}
+                  onPress={handleSearchToggle}
+                  activeOpacity={0.8}
+                >
+                  <BlurView intensity={80} tint="light" style={styles.iconButtonBlur}>
+                    <Icon name="search" size={20} color="#374151" />
+                  </BlurView>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.radiusButton}
+                  onPress={() => { haptic.light(); setShowRadiusModal(true); }}
+                  activeOpacity={0.8}
+                >
+                  <BlurView intensity={80} tint="light" style={styles.filterBlur}>
+                    <Icon name="my-location" size={16} color="#374151" />
+                    <Text style={styles.filterText} numberOfLines={1}> {selectedRadiusLabel}</Text>
+                    <Text style={styles.filterIcon}>▼</Text>
+                  </BlurView>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.searchExpandedContainer}>
+                <BlurView intensity={80} tint="light" style={styles.searchExpandedBlur}>
+                  <Icon name="search" size={20} color="#374151" />
+                  <TextInput
+                    ref={searchInputRef}
+                    style={styles.searchInput}
+                    placeholder="Search jobs..."
+                    placeholderTextColor="#9ca3af"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    returnKeyType="search"
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
+                      <Icon name="close" size={18} color="#9ca3af" />
+                    </TouchableOpacity>
+                  )}
+                  {showSearchLoading && (
+                    <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
+                  )}
+                  <TouchableOpacity onPress={handleSearchToggle} style={styles.collapseButton}>
+                    <Icon name="expand-less" size={20} color="#374151" />
                   </TouchableOpacity>
-                )}
-                {showSearchLoading && (
-                  <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
-                )}
-              </BlurView>
-            </View>
-
-            <TouchableOpacity
-              style={styles.radiusButton}
-              onPress={() => { haptic.light(); setShowRadiusModal(true); }}
-              activeOpacity={0.8}
-            >
-              <BlurView intensity={80} tint="light" style={styles.radiusButtonBlur}>
-                <Text style={styles.filterButtonText}>{selectedRadiusLabel}</Text>
-                <Text style={styles.filterButtonIcon}>▼</Text>
-              </BlurView>
-            </TouchableOpacity>
+                </BlurView>
+              </View>
+            )}
           </View>
         </SafeAreaView>
 
@@ -876,11 +885,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  statusText: { marginTop: 12, color: '#6b7280', textAlign: 'center' },
-  errorText: { color: '#ef4444', marginBottom: 12, textAlign: 'center' },
-  retryButton: { backgroundColor: '#3b82f6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 8 },
-  retryText: { color: '#ffffff', fontWeight: '600' },
   mapContainer: { flex: 1, position: 'relative' },
   map: { flex: 1 },
   floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
@@ -895,45 +899,72 @@ const styles = StyleSheet.create({
   categoryButton: { 
     flex: 1,
     borderRadius: 12, 
-    overflow: 'hidden' 
-  },
-  categoryButtonBlur: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 12, 
-    paddingVertical: 12 
-  },
-  searchBarCompact: { 
-    flex: 1.5,
-    borderRadius: 12, 
-    overflow: 'hidden' 
+    overflow: 'hidden',
   },
   radiusButton: { 
     flex: 1,
     borderRadius: 12, 
-    overflow: 'hidden' 
+    overflow: 'hidden',
   },
-  radiusButtonBlur: { 
+  searchIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  iconButtonBlur: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBlur: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 12, 
-    paddingVertical: 12 
+    justifyContent: 'center',
+    paddingHorizontal: 10, 
+    paddingVertical: 12,
+    gap: 4,
+  },
+  filterText: { 
+    fontSize: 13, 
+    fontWeight: '600', 
+    color: '#1f2937',
+    flex: 1,
+  },
+  filterIcon: { 
+    fontSize: 9, 
+    color: '#6b7280',
+  },
+  searchExpandedContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  searchExpandedBlur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  searchInput: { 
+    flex: 1, 
+    fontSize: 15, 
+    color: '#1f2937', 
+    paddingVertical: 0,
+  },
+  searchClearButton: { 
+    padding: 4,
+  },
+  searchLoader: { 
+    marginLeft: 4,
+  },
+  collapseButton: {
+    padding: 4,
   },
   
-  filterButton: { flex: 1, borderRadius: 12, overflow: 'hidden' },
-  filterButtonBlur: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  filterButtonText: { fontSize: 13, fontWeight: '600', color: '#1f2937', flex: 1 },
-  filterButtonIcon: { fontSize: 10, color: '#6b7280', marginLeft: 4 },
-  searchBarContainer: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 },
-  searchBarBlur: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, overflow: 'hidden' },
-  searchIcon: { fontSize: 16, marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#1f2937', paddingVertical: 0 },
-  searchClearButton: { marginLeft: 4, padding: 4 },
-  searchClearIcon: { fontSize: 14, color: '#9ca3af', fontWeight: '600' },
-  searchLoader: { marginLeft: 8 },
-  loadingOverlay: { position: 'absolute', top: 140, left: 24, right: 24, alignItems: 'center' },
+  loadingOverlay: { position: 'absolute', top: 80, left: 24, right: 24, alignItems: 'center' },
   loadingCard: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', overflow: 'hidden', gap: 10 },
   loadingText: { fontSize: 14, color: '#374151', fontWeight: '500' },
   emptyMapOverlay: { position: 'absolute', top: '40%', left: 24, right: 24, alignItems: 'center' },
