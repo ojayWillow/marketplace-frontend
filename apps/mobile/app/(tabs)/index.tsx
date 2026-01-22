@@ -15,6 +15,14 @@ const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 
+// Clustering - only when markers would actually overlap
+// This is the minimum distance in degrees before clustering kicks in
+const OVERLAP_THRESHOLD_FACTOR = 0.025; // Very tight - only cluster when truly overlapping
+
+// Zoom level thresholds for user location style
+const ZOOM_FAR_THRESHOLD = 0.12;    // latitudeDelta > 0.12 = zoomed out (small dot)
+const ZOOM_CLOSE_THRESHOLD = 0.05;  // latitudeDelta <= 0.05 = zoomed in (full marker with halo)
+
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
   { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
@@ -66,6 +74,81 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
+// Smart clustering - only when markers would visually overlap
+interface Cluster {
+  id: string;
+  latitude: number;
+  longitude: number;
+  tasks: Task[];
+  isCluster: boolean;
+}
+
+const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
+  if (!region || tasks.length === 0) return [];
+  
+  const { latitudeDelta, longitudeDelta } = region;
+  
+  // Calculate overlap distance based on zoom - tighter threshold
+  // Only cluster when markers would actually overlap on screen
+  const overlapDistLat = latitudeDelta * OVERLAP_THRESHOLD_FACTOR;
+  const overlapDistLng = longitudeDelta * OVERLAP_THRESHOLD_FACTOR;
+  
+  const clusters: Cluster[] = [];
+  const processed = new Set<number>();
+  
+  for (const task of tasks) {
+    if (processed.has(task.id)) continue;
+    
+    // Find markers that would overlap with this one
+    const overlappingTasks = tasks.filter(t => {
+      if (processed.has(t.id)) return false;
+      if (t.id === task.id) return true;
+      
+      const latDiff = Math.abs(t.latitude! - task.latitude!);
+      const lngDiff = Math.abs(t.longitude! - task.longitude!);
+      
+      // Only group if they would visually overlap
+      return latDiff < overlapDistLat && lngDiff < overlapDistLng;
+    });
+    
+    overlappingTasks.forEach(t => processed.add(t.id));
+    
+    if (overlappingTasks.length === 1) {
+      // Single marker - no clustering needed
+      clusters.push({
+        id: `single-${task.id}`,
+        latitude: task.latitude!,
+        longitude: task.longitude!,
+        tasks: [task],
+        isCluster: false,
+      });
+    } else {
+      // Multiple overlapping markers - create cluster
+      const centerLat = overlappingTasks.reduce((sum, t) => sum + t.latitude!, 0) / overlappingTasks.length;
+      const centerLng = overlappingTasks.reduce((sum, t) => sum + t.longitude!, 0) / overlappingTasks.length;
+      
+      clusters.push({
+        id: `cluster-${task.id}`,
+        latitude: centerLat,
+        longitude: centerLng,
+        tasks: overlappingTasks,
+        isCluster: true,
+      });
+    }
+  }
+  
+  return clusters;
+};
+
+// Determine zoom level category based on latitudeDelta
+type ZoomLevel = 'far' | 'mid' | 'close';
+const getZoomLevel = (latitudeDelta: number | undefined): ZoomLevel => {
+  if (!latitudeDelta) return 'mid';
+  if (latitudeDelta > ZOOM_FAR_THRESHOLD) return 'far';
+  if (latitudeDelta <= ZOOM_CLOSE_THRESHOLD) return 'close';
+  return 'mid';
+};
+
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
@@ -83,9 +166,13 @@ export default function HomeScreen() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
+  const [mapRegion, setMapRegion] = useState<Region | null>(null);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
+
+  // Derive zoom level from map region
+  const zoomLevel = useMemo(() => getZoomLevel(mapRegion?.latitudeDelta), [mapRegion?.latitudeDelta]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -250,6 +337,11 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation]);
 
+  // Smart clustering - only when markers overlap
+  const clusters = useMemo(() => {
+    return clusterTasks(filteredTasks, mapRegion);
+  }, [filteredTasks, mapRegion]);
+
   const getMarkerColor = (category: string) => {
     const colors: Record<string, string> = {
       cleaning: '#10b981',
@@ -262,6 +354,38 @@ export default function HomeScreen() {
       other: '#6b7280',
     };
     return colors[category] || '#ef4444';
+  };
+
+  const handleRegionChange = useCallback((region: Region) => {
+    setMapRegion(region);
+  }, []);
+
+  const handleClusterPress = (cluster: Cluster) => {
+    haptic.light();
+    
+    if (cluster.isCluster) {
+      // Zoom into the cluster area
+      if (mapRef.current) {
+        const lats = cluster.tasks.map(t => t.latitude!);
+        const lngs = cluster.tasks.map(t => t.longitude!);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+        
+        const padding = 0.005;
+        mapRef.current.animateToRegion({
+          latitude: (minLat + maxLat) / 2,
+          longitude: (minLng + maxLng) / 2,
+          latitudeDelta: Math.max(maxLat - minLat + padding, 0.01),
+          longitudeDelta: Math.max(maxLng - minLng + padding, 0.01),
+        }, 400);
+      }
+    } else {
+      // Single marker - show details
+      const task = cluster.tasks[0];
+      handleMarkerPress(task, undefined);
+    }
   };
 
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
@@ -380,6 +504,37 @@ export default function HomeScreen() {
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
+
+  // Render custom user location marker based on zoom level - ALWAYS visible
+  const renderUserLocationMarker = () => {
+    if (!userLocation) return null;
+    
+    return (
+      <Marker
+        coordinate={userLocation}
+        anchor={{ x: 0.5, y: 0.5 }}
+        tracksViewChanges={false}
+      >
+        {zoomLevel === 'close' ? (
+          // Full user marker with halo (zoomed in)
+          <View style={styles.userMarkerFull}>
+            <View style={styles.userMarkerHalo} />
+            <View style={styles.userMarkerDot} />
+          </View>
+        ) : zoomLevel === 'mid' ? (
+          // Subtle ring marker (mid zoom)
+          <View style={styles.userMarkerSubtle}>
+            <View style={styles.userMarkerRing} />
+          </View>
+        ) : (
+          // Small dot marker (far zoom) - still visible but compact
+          <View style={styles.userMarkerFar}>
+            <View style={styles.userMarkerSmallDot} />
+          </View>
+        )}
+      </Marker>
+    );
+  };
 
   const renderJobItem = ({ item: task }: { item: Task }) => (
     <TouchableOpacity
@@ -505,26 +660,43 @@ export default function HomeScreen() {
               latitudeDelta: 0.15,
               longitudeDelta: 0.15,
             }}
-            showsUserLocation={true}
+            onRegionChangeComplete={handleRegionChange}
+            showsUserLocation={false}
             showsMyLocationButton={false}
           >
-            {/* Task markers - direct rendering, no clustering */}
-            {filteredTasks.map((task) => (
+            {/* Custom user location marker - always visible, zoom aware styling */}
+            {renderUserLocationMarker()}
+
+            {/* Task markers - individual or clustered */}
+            {clusters.map((cluster) => (
               <Marker
-                key={`task-${task.id}`}
-                coordinate={{ latitude: task.latitude!, longitude: task.longitude! }}
-                onPress={() => handleMarkerPress(task, undefined)}
+                key={cluster.id}
+                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                onPress={() => handleClusterPress(cluster)}
                 tracksViewChanges={false}
               >
-                <View style={[
-                  styles.priceMarker,
-                  { borderColor: getMarkerColor(task.category) },
-                  focusedTaskId === task.id && styles.priceMarkerFocused
-                ]}>
-                  <Text style={[styles.priceMarkerText, { color: getMarkerColor(task.category) }]}>
-                    €{task.budget?.toFixed(0) || '0'}
-                  </Text>
-                </View>
+                {cluster.isCluster ? (
+                  // Gold coin cluster marker
+                  <View style={styles.coinClusterContainer}>
+                    <View style={styles.coinCluster}>
+                      <Text style={styles.coinEuro}>€</Text>
+                    </View>
+                    <View style={styles.coinBadge}>
+                      <Text style={styles.coinBadgeText}>{cluster.tasks.length}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  // Individual price marker
+                  <View style={[
+                    styles.priceMarker,
+                    { borderColor: getMarkerColor(cluster.tasks[0].category) },
+                    focusedTaskId === cluster.tasks[0].id && styles.priceMarkerFocused
+                  ]}>
+                    <Text style={[styles.priceMarkerText, { color: getMarkerColor(cluster.tasks[0].category) }]}>
+                      €{cluster.tasks[0].budget?.toFixed(0) || '0'}
+                    </Text>
+                  </View>
+                )}
               </Marker>
             ))}
 
@@ -769,6 +941,124 @@ const styles = StyleSheet.create({
   myLocationButton: { position: 'absolute', bottom: 100, right: 16, zIndex: 10 },
   myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   myLocationIcon: { fontSize: 22 },
+  
+  // Gold coin cluster marker
+  coinClusterContainer: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coinCluster: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FCD34D', // Gold base
+    borderWidth: 3,
+    borderColor: '#F59E0B', // Darker gold border for depth
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#B45309',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  coinEuro: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#92400E', // Dark amber for € symbol
+    textShadowColor: 'rgba(251, 191, 36, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  coinBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#DC2626', // Red badge
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
+  },
+  coinBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  
+  // Custom user location markers - 3 zoom levels
+  userMarkerFull: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarkerHalo: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)', // Blue halo
+  },
+  userMarkerDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#3B82F6', // Blue dot
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  userMarkerSubtle: {
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarkerRing: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: 'rgba(59, 130, 246, 0.6)', // Semi-transparent blue ring
+  },
+  userMarkerFar: {
+    width: 12,
+    height: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarkerSmallDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#3B82F6', // Blue dot
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+  
+  // Individual price markers
   priceMarker: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 8,
