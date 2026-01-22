@@ -27,6 +27,9 @@ export default function TabsLayout() {
           fontSize: 11,
           fontWeight: '500',
         },
+        // PERFORMANCE: Enable lazy loading for all tabs
+        // Tabs will only render when first visited
+        lazy: true,
       }}
     >
       <Tabs.Screen
@@ -34,6 +37,8 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+          // Home tab loads eagerly since it's the default screen
+          lazy: false,
         }}
       />
       <Tabs.Screen
