@@ -138,7 +138,7 @@ export default function PhoneAuthScreen() {
       } else {
         setAuth(user, access_token);
         setStep('success');
-        setTimeout(() => router.replace('/(tabs)'), 1500);
+        setTimeout(() => router.replace('/(tabs)/home'), 1500);
       }
     } catch (err: any) {
       console.error('Verification error:', err);
@@ -179,7 +179,7 @@ export default function PhoneAuthScreen() {
 
       setAuth(user, access_token);
       setStep('success');
-      setTimeout(() => router.replace('/(tabs)'), 1500);
+      setTimeout(() => router.replace('/(tabs)/home'), 1500);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
