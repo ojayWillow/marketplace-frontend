@@ -7,10 +7,6 @@ export const SHEET_MIN_HEIGHT = 80;
 export const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 export const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 
-// Clustering - only when markers would actually overlap
-// This is the minimum distance in degrees before clustering kicks in
-export const OVERLAP_THRESHOLD_FACTOR = 0.025;
-
 // Zoom level thresholds for user location style
 export const ZOOM_FAR_THRESHOLD = 0.12;    // latitudeDelta > 0.12 = zoomed out (small dot)
 export const ZOOM_CLOSE_THRESHOLD = 0.05;  // latitudeDelta <= 0.05 = zoomed in (full marker with halo)
