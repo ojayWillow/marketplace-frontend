@@ -1,6 +1,6 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, PanResponder, Dimensions, Modal, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, ActivityIndicator, IconButton, Card, Button } from 'react-native-paper';
+import { Text, ActivityIndicator, IconButton, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { router } from 'expo-router';
@@ -68,7 +68,7 @@ const formatTimeAgo = (dateString: string): string => {
 
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const listRef = useRef<FlatList>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -82,14 +82,12 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
-  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
 
-  // Debounce search query - 300ms for snappier feel
   useEffect(() => {
-    // If search is cleared, reset immediately (no debounce)
     if (!searchQuery.trim()) {
       if (searchDebounceRef.current) {
         clearTimeout(searchDebounceRef.current);
@@ -98,7 +96,6 @@ export default function HomeScreen() {
       return;
     }
     
-    // Otherwise debounce
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current);
     }
@@ -116,7 +113,10 @@ export default function HomeScreen() {
 
   const animateSheetTo = (height: number) => {
     currentHeight.current = height;
-    setIsSheetExpanded(height > SHEET_MIN_HEIGHT);
+    if (height === SHEET_MIN_HEIGHT) setSheetPosition('min');
+    else if (height === SHEET_MID_HEIGHT) setSheetPosition('mid');
+    else setSheetPosition('max');
+    
     Animated.spring(sheetHeight, {
       toValue: height,
       useNativeDriver: false,
@@ -129,7 +129,7 @@ export default function HomeScreen() {
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 5;
+        return Math.abs(gestureState.dy) > 10;
       },
       onPanResponderMove: (_, gestureState) => {
         const newHeight = currentHeight.current - gestureState.dy;
@@ -176,24 +176,22 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Regular tasks query - always enabled
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
     queryFn: async () => {
       return await getTasks({ page: 1, per_page: 100, status: 'open' });
     },
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
   });
 
-  // Search query - only when there's a search term
-  const { data: searchData, isLoading: isSearchLoading, isFetching: isSearchFetching } = useQuery({
+  const { data: searchData, isFetching: isSearchFetching } = useQuery({
     queryKey: ['tasks-search', debouncedSearchQuery],
     queryFn: async () => {
       if (!debouncedSearchQuery.trim()) return null;
       return await searchTasks({ q: debouncedSearchQuery, page: 1, per_page: 100, status: 'open' });
     },
     enabled: !!debouncedSearchQuery.trim(),
-    staleTime: 10000, // Cache search results for 10 seconds
+    staleTime: 10000,
   });
 
   const { data: offeringsData } = useQuery({
@@ -204,17 +202,13 @@ export default function HomeScreen() {
     staleTime: 30000,
   });
 
-  // Determine which tasks to show
   const allTasks = useMemo(() => {
-    // If actively searching and have results, show search results
     if (debouncedSearchQuery.trim() && searchData?.tasks) {
       return searchData.tasks;
     }
-    // If searching but still loading, show empty (loading indicator will show)
     if (debouncedSearchQuery.trim() && isSearchFetching) {
       return [];
     }
-    // Default: show all tasks
     return data?.tasks || [];
   }, [debouncedSearchQuery, searchData, isSearchFetching, data]);
   
@@ -274,15 +268,11 @@ export default function HomeScreen() {
     haptic.light();
     if (task) {
       if (mapRef.current && task.latitude && task.longitude) {
-        const latitudeDelta = 0.025;
-        const longitudeDelta = 0.025;
-        const offsetAmount = latitudeDelta * 0.25;
-        
         mapRef.current.animateToRegion({
-          latitude: task.latitude - offsetAmount,
+          latitude: task.latitude - 0.006,
           longitude: task.longitude,
-          latitudeDelta: latitudeDelta,
-          longitudeDelta: longitudeDelta,
+          latitudeDelta: 0.025,
+          longitudeDelta: 0.025,
         }, 800);
       }
       
@@ -292,7 +282,7 @@ export default function HomeScreen() {
       animateSheetTo(SHEET_MID_HEIGHT);
       
       setTimeout(() => {
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
       }, 100);
     } else if (offering) {
       setSelectedOffering(offering);
@@ -305,15 +295,11 @@ export default function HomeScreen() {
     haptic.medium();
     
     if (mapRef.current && task.latitude && task.longitude) {
-      const latitudeDelta = 0.025;
-      const longitudeDelta = 0.025;
-      const offsetAmount = latitudeDelta * 0.25;
-      
       mapRef.current.animateToRegion({
-        latitude: task.latitude - offsetAmount,
+        latitude: task.latitude - 0.006,
         longitude: task.longitude,
-        latitudeDelta: latitudeDelta,
-        longitudeDelta: longitudeDelta,
+        latitudeDelta: 0.025,
+        longitudeDelta: 0.025,
       }, 800);
     }
     
@@ -323,7 +309,7 @@ export default function HomeScreen() {
     animateSheetTo(SHEET_MID_HEIGHT);
     
     setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 100);
   };
 
@@ -389,20 +375,105 @@ export default function HomeScreen() {
     setFocusedTaskId(null);
   };
 
-  const handleSheetTap = () => {
-    if (currentHeight.current === SHEET_MIN_HEIGHT) {
-      haptic.light();
-      animateSheetTo(SHEET_MID_HEIGHT);
-    }
-  };
-
   const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All Categories';
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
-  
-  // Show loading state
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
+
+  const renderJobItem = ({ item: task }: { item: Task }) => (
+    <TouchableOpacity
+      style={styles.jobItem}
+      onPress={() => handleJobItemPress(task)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.jobLeft}>
+        <View style={[styles.jobCategoryDot, { backgroundColor: getMarkerColor(task.category) }]} />
+        <View style={styles.jobInfo}>
+          <Text style={styles.jobTitle} numberOfLines={1}>{task.title}</Text>
+          <Text style={styles.jobMeta}>
+            {task.category} • {formatTimeAgo(task.created_at!)}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.jobRight}>
+        <Text style={styles.jobPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
+        {userLocation && (
+          <Text style={styles.jobDistance}>
+            {calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              task.latitude!,
+              task.longitude!
+            ).toFixed(1)} km
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderFocusedTask = () => {
+    if (!focusedTask) return null;
+    return (
+      <View style={styles.focusedJobContainer}>
+        <View style={styles.focusedJobHeader}>
+          <View style={[styles.focusedCategoryBadge, { backgroundColor: getMarkerColor(focusedTask.category) }]}>
+            <Text style={styles.focusedCategoryText}>{focusedTask.category.toUpperCase()}</Text>
+          </View>
+          {userLocation && (
+            <Text style={styles.focusedDistance}>
+              📍 {calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                focusedTask.latitude!,
+                focusedTask.longitude!
+              ).toFixed(1)} km away
+            </Text>
+          )}
+        </View>
+        <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
+        <View style={styles.focusedBudgetRow}>
+          <Text style={styles.focusedBudget}>€{focusedTask.budget?.toFixed(0) || '0'}</Text>
+          <Text style={styles.focusedMeta}>{formatTimeAgo(focusedTask.created_at!)}</Text>
+        </View>
+        {focusedTask.description && (
+          <View style={styles.focusedSection}>
+            <Text style={styles.focusedSectionTitle}>Description</Text>
+            <Text style={styles.focusedDescription} numberOfLines={3}>{focusedTask.description}</Text>
+          </View>
+        )}
+        {focusedTask.location && (
+          <View style={styles.focusedSection}>
+            <Text style={styles.focusedSectionTitle}>Location</Text>
+            <Text style={styles.focusedLocation} numberOfLines={2}>📍 {focusedTask.location}</Text>
+          </View>
+        )}
+        <Button
+          mode="contained"
+          onPress={() => handleViewFullDetails(focusedTask.id)}
+          style={styles.viewDetailsButton}
+          icon="arrow-right"
+        >
+          View Full Details
+        </Button>
+      </View>
+    );
+  };
+
+  const renderEmptyList = () => (
+    <View style={styles.emptySheet}>
+      <Text style={styles.emptyIcon}>💭</Text>
+      <Text style={styles.emptyText}>
+        {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
+      </Text>
+      <Text style={styles.emptySubtext}>
+        {debouncedSearchQuery ? 'Try a different search term' : 'Try adjusting your filters'}
+      </Text>
+      <TouchableOpacity style={styles.emptyPostButton} onPress={handleCreatePress}>
+        <Text style={styles.emptyPostText}>+ Post a Job</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -440,10 +511,7 @@ export default function HomeScreen() {
             {filteredTasks.map((task) => (
               <Marker
                 key={`task-${task.id}`}
-                coordinate={{
-                  latitude: task.latitude!,
-                  longitude: task.longitude!,
-                }}
+                coordinate={{ latitude: task.latitude!, longitude: task.longitude! }}
                 onPress={() => handleMarkerPress(task, undefined)}
                 tracksViewChanges={false}
               >
@@ -460,10 +528,7 @@ export default function HomeScreen() {
             {boostedOfferings.map((offering) => (
               <Marker
                 key={`offering-${offering.id}`}
-                coordinate={{
-                  latitude: offering.latitude!,
-                  longitude: offering.longitude!,
-                }}
+                coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }}
                 onPress={() => handleMarkerPress(undefined, offering)}
                 tracksViewChanges={false}
               >
@@ -476,9 +541,7 @@ export default function HomeScreen() {
             ))}
           </MapView>
 
-          {/* Filter Buttons + Search Bar */}
           <SafeAreaView style={styles.floatingHeader} edges={['top']}>
-            {/* Top Row: Category + Radius */}
             <View style={styles.filterButtonsContainer}>
               <TouchableOpacity
                 style={styles.filterButton}
@@ -503,7 +566,6 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
             <View style={styles.searchBarContainer}>
               <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
                 <Text style={styles.searchIcon}>🔍</Text>
@@ -516,10 +578,7 @@ export default function HomeScreen() {
                   returnKeyType="search"
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity 
-                    onPress={handleClearSearch}
-                    style={styles.searchClearButton}
-                  >
+                  <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
                     <Text style={styles.searchClearIcon}>✕</Text>
                   </TouchableOpacity>
                 )}
@@ -544,296 +603,129 @@ export default function HomeScreen() {
             </View>
           )}
 
-          <TouchableOpacity 
-            style={styles.myLocationButton} 
-            onPress={handleMyLocation}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
             <BlurView intensity={90} tint="light" style={styles.myLocationBlur}>
               <Text style={styles.myLocationIcon}>📍</Text>
             </BlurView>
           </TouchableOpacity>
 
           <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
-            <TouchableOpacity 
-              activeOpacity={1} 
-              onPress={handleSheetTap}
-              {...panResponder.panHandlers} 
-              style={styles.sheetHandle}
-            >
+            {/* Drag Handle - Only this area responds to pan gestures */}
+            <View {...panResponder.panHandlers} style={styles.sheetHandle}>
               <View style={styles.handleBar} />
               <View style={styles.sheetTitleRow}>
                 <Text style={styles.sheetTitle}>
                   {focusedTask ? 'Job Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
                 </Text>
                 {focusedTask && (
-                  <IconButton
-                    icon="close"
-                    size={20}
-                    onPress={handleCloseFocusedJob}
-                    style={styles.closeButton}
-                  />
+                  <IconButton icon="close" size={20} onPress={handleCloseFocusedJob} style={styles.closeButton} />
                 )}
                 {!focusedTask && (
-                  <TouchableOpacity 
-                    style={styles.quickPostButton}
-                    onPress={handleCreatePress}
-                    activeOpacity={0.8}
-                  >
+                  <TouchableOpacity style={styles.quickPostButton} onPress={handleCreatePress} activeOpacity={0.8}>
                     <Text style={styles.quickPostIcon}>+</Text>
                   </TouchableOpacity>
                 )}
               </View>
-            </TouchableOpacity>
+            </View>
 
-            <ScrollView 
-              ref={scrollRef}
-              style={styles.sheetContent}
-              showsVerticalScrollIndicator={true}
-              scrollEnabled={isSheetExpanded}
-              nestedScrollEnabled={true}
-              contentContainerStyle={styles.sheetContentContainer}
-            >
-              {focusedTask ? (
-                <View style={styles.focusedJobContainer}>
-                  <View style={styles.focusedJobHeader}>
-                    <View style={[
-                      styles.focusedCategoryBadge,
-                      { backgroundColor: getMarkerColor(focusedTask.category) }
-                    ]}>
-                      <Text style={styles.focusedCategoryText}>
-                        {focusedTask.category.toUpperCase()}
-                      </Text>
-                    </View>
-                    {userLocation && (
-                      <Text style={styles.focusedDistance}>
-                        📍 {calculateDistance(
-                          userLocation.latitude,
-                          userLocation.longitude,
-                          focusedTask.latitude!,
-                          focusedTask.longitude!
-                        ).toFixed(1)} km away
-                      </Text>
-                    )}
-                  </View>
-
-                  <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
-                  
-                  <View style={styles.focusedBudgetRow}>
-                    <Text style={styles.focusedBudget}>€{focusedTask.budget?.toFixed(0) || '0'}</Text>
-                    <Text style={styles.focusedMeta}>{formatTimeAgo(focusedTask.created_at!)}</Text>
-                  </View>
-
-                  {focusedTask.description && (
-                    <View style={styles.focusedSection}>
-                      <Text style={styles.focusedSectionTitle}>Description</Text>
-                      <Text style={styles.focusedDescription} numberOfLines={3}>{focusedTask.description}</Text>
-                    </View>
-                  )}
-
-                  {focusedTask.location && (
-                    <View style={styles.focusedSection}>
-                      <Text style={styles.focusedSectionTitle}>Location</Text>
-                      <Text style={styles.focusedLocation} numberOfLines={2}>📍 {focusedTask.location}</Text>
-                    </View>
-                  )}
-
-                  <Text style={styles.swipeUpHint}>↑ Swipe up for more details</Text>
-
-                  <Button
-                    mode="contained"
-                    onPress={() => handleViewFullDetails(focusedTask.id)}
-                    style={styles.viewDetailsButton}
-                    icon="arrow-right"
-                  >
-                    View Full Details
-                  </Button>
-                </View>
-              ) : sortedTasks.length === 0 ? (
-                <View style={styles.emptySheet}>
-                  <Text style={styles.emptyIcon}>💭</Text>
-                  <Text style={styles.emptyText}>
-                    {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
-                  </Text>
-                  <Text style={styles.emptySubtext}>
-                    {debouncedSearchQuery ? 'Try a different search term' : 'Try adjusting your filters'}
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.emptyPostButton}
-                    onPress={handleCreatePress}
-                  >
-                    <Text style={styles.emptyPostText}>+ Post a Job</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                sortedTasks.map((task) => (
-                  <TouchableOpacity
-                    key={task.id}
-                    style={styles.jobItem}
-                    onPress={() => handleJobItemPress(task)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.jobLeft}>
-                      <View style={[
-                        styles.jobCategoryDot,
-                        { backgroundColor: getMarkerColor(task.category) }
-                      ]} />
-                      <View style={styles.jobInfo}>
-                        <Text style={styles.jobTitle} numberOfLines={1}>{task.title}</Text>
-                        <Text style={styles.jobMeta}>
-                          {task.category} • {formatTimeAgo(task.created_at!)}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.jobRight}>
-                      <Text style={styles.jobPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
-                      {userLocation && (
-                        <Text style={styles.jobDistance}>
-                          {calculateDistance(
-                            userLocation.latitude,
-                            userLocation.longitude,
-                            task.latitude!,
-                            task.longitude!
-                          ).toFixed(1)} km
-                        </Text>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))
-              )}
-              <View style={styles.sheetSpacer} />
-            </ScrollView>
+            {/* Content - Scrollable FlatList */}
+            {focusedTask ? (
+              <FlatList
+                ref={listRef}
+                data={[focusedTask]}
+                renderItem={() => renderFocusedTask()}
+                keyExtractor={(item) => `focused-${item.id}`}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
+              />
+            ) : sortedTasks.length === 0 ? (
+              renderEmptyList()
+            ) : (
+              <FlatList
+                ref={listRef}
+                data={sortedTasks}
+                renderItem={renderJobItem}
+                keyExtractor={(item) => `task-${item.id}`}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={styles.listContent}
+              />
+            )}
           </Animated.View>
         </View>
       )}
 
       {/* Category Modal */}
-      <Modal
-        visible={showCategoryModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCategoryModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => { haptic.soft(); setShowCategoryModal(false); }}
-        >
+      <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCategoryModal(false); }}>
           <View style={styles.filterModalContent}>
             <Text style={styles.modalTitle}>Select Category</Text>
-            <ScrollView style={styles.filterOptionsScroll}>
-              {CATEGORIES.map((cat) => (
+            <FlatList
+              data={CATEGORIES}
+              keyExtractor={(item) => item.key}
+              renderItem={({ item: cat }) => (
                 <TouchableOpacity
-                  key={cat.key}
-                  style={[
-                    styles.filterOption,
-                    selectedCategory === cat.key && styles.filterOptionActive
-                  ]}
+                  style={[styles.filterOption, selectedCategory === cat.key && styles.filterOptionActive]}
                   onPress={() => handleCategorySelect(cat.key)}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.filterOptionIcon}>{cat.icon}</Text>
-                  <Text style={[
-                    styles.filterOptionText,
-                    selectedCategory === cat.key && styles.filterOptionTextActive
-                  ]}>
+                  <Text style={[styles.filterOptionText, selectedCategory === cat.key && styles.filterOptionTextActive]}>
                     {cat.label}
                   </Text>
-                  {selectedCategory === cat.key && (
-                    <Text style={styles.filterOptionCheck}>✓</Text>
-                  )}
+                  {selectedCategory === cat.key && <Text style={styles.filterOptionCheck}>✓</Text>}
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            />
           </View>
         </TouchableOpacity>
       </Modal>
 
       {/* Radius Modal */}
-      <Modal
-        visible={showRadiusModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowRadiusModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => { haptic.soft(); setShowRadiusModal(false); }}
-        >
+      <Modal visible={showRadiusModal} transparent animationType="fade" onRequestClose={() => setShowRadiusModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowRadiusModal(false); }}>
           <View style={styles.filterModalContent}>
             <Text style={styles.modalTitle}>Select Radius</Text>
-            <View style={styles.filterOptionsContainer}>
-              {RADIUS_OPTIONS.map((rad) => (
+            <FlatList
+              data={RADIUS_OPTIONS}
+              keyExtractor={(item) => item.key}
+              renderItem={({ item: rad }) => (
                 <TouchableOpacity
-                  key={rad.key}
-                  style={[
-                    styles.filterOption,
-                    selectedRadius === rad.value && styles.filterOptionActive
-                  ]}
+                  style={[styles.filterOption, selectedRadius === rad.value && styles.filterOptionActive]}
                   onPress={() => handleRadiusSelect(rad.value)}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.filterOptionIcon}>📍</Text>
-                  <Text style={[
-                    styles.filterOptionText,
-                    selectedRadius === rad.value && styles.filterOptionTextActive
-                  ]}>
+                  <Text style={[styles.filterOptionText, selectedRadius === rad.value && styles.filterOptionTextActive]}>
                     {rad.label}
                   </Text>
-                  {selectedRadius === rad.value && (
-                    <Text style={styles.filterOptionCheck}>✓</Text>
-                  )}
+                  {selectedRadius === rad.value && <Text style={styles.filterOptionCheck}>✓</Text>}
                 </TouchableOpacity>
-              ))}
-            </View>
+              )}
+            />
           </View>
         </TouchableOpacity>
       </Modal>
 
       {/* Create Modal */}
-      <Modal
-        visible={showCreateModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCreateModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => { haptic.soft(); setShowCreateModal(false); }}
-        >
+      <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>What do you want to create?</Text>
-            
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={handleCreateJob}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.modalOption} onPress={handleCreateJob} activeOpacity={0.7}>
               <Text style={styles.modalOptionIcon}>💼</Text>
               <View style={styles.modalOptionText}>
                 <Text style={styles.modalOptionTitle}>Post a Job</Text>
                 <Text style={styles.modalOptionSubtitle}>Find someone to help you</Text>
               </View>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={handleCreateService}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.modalOption} onPress={handleCreateService} activeOpacity={0.7}>
               <Text style={styles.modalOptionIcon}>⚡</Text>
               <View style={styles.modalOptionText}>
                 <Text style={styles.modalOptionTitle}>Offer a Service</Text>
                 <Text style={styles.modalOptionSubtitle}>Share your skills</Text>
               </View>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalCancel}
-              onPress={() => { haptic.soft(); setShowCreateModal(false); }}
-            >
+            <TouchableOpacity style={styles.modalCancel} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -844,513 +736,93 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  statusText: {
-    marginTop: 12,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#ef4444',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  retryText: {
-    color: '#ffffff',
-    fontWeight: '600',
-  },
-  mapContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  map: {
-    flex: 1,
-  },
-  floatingHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-  },
-  filterButtonsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    gap: 8,
-  },
-  filterButton: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  filterButtonBlur: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    flex: 1,
-  },
-  filterButtonIcon: {
-    fontSize: 10,
-    color: '#6b7280',
-    marginLeft: 8,
-  },
-  // Search bar styles
-  searchBarContainer: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  searchBarBlur: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  searchIcon: {
-    fontSize: 18,
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1f2937',
-    paddingVertical: 0,
-  },
-  searchClearButton: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  searchClearIcon: {
-    fontSize: 16,
-    color: '#9ca3af',
-    fontWeight: '600',
-  },
-  searchLoader: {
-    marginLeft: 8,
-  },
-  emptyMapOverlay: {
-    position: 'absolute',
-    top: '40%',
-    left: 24,
-    right: 24,
-    alignItems: 'center',
-  },
-  emptyMapCard: {
-    paddingVertical: 20,
-    paddingHorizontal: 28,
-    borderRadius: 16,
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  emptyMapIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  emptyMapText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  emptyMapSubtext: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  myLocationButton: {
-    position: 'absolute',
-    bottom: 100,
-    right: 16,
-    zIndex: 10,
-  },
-  myLocationBlur: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  myLocationIcon: {
-    fontSize: 22,
-  },
-  priceMarker: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: '#0ea5e9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  priceMarkerFocused: {
-    borderWidth: 4,
-    transform: [{ scale: 1.2 }],
-  },
-  priceMarkerOffering: {
-    borderColor: '#f97316',
-  },
-  priceMarkerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0ea5e9',
-  },
-  priceMarkerTextOffering: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#f97316',
-  },
-  bottomSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  sheetHandle: {
-    alignItems: 'center',
-    paddingTop: 10,
-    paddingBottom: 6,
-    paddingHorizontal: 16,
-  },
-  handleBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#d1d5db',
-    borderRadius: 2,
-    marginBottom: 10,
-  },
-  sheetTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  sheetTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  closeButton: {
-    margin: -8,
-  },
-  quickPostButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0ea5e9',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  quickPostIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  sheetContent: {
-    flex: 1,
-  },
-  sheetContentContainer: {
-    paddingBottom: 20,
-  },
-  emptySheet: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-    marginTop: 4,
-  },
-  emptyPostButton: {
-    marginTop: 16,
-    backgroundColor: '#0ea5e9',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  emptyPostText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  jobItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  jobLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  jobCategoryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 12,
-  },
-  jobInfo: {
-    flex: 1,
-  },
-  jobTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#1f2937',
-    marginBottom: 2,
-  },
-  jobMeta: {
-    fontSize: 13,
-    color: '#9ca3af',
-  },
-  jobRight: {
-    alignItems: 'flex-end',
-    marginLeft: 12,
-  },
-  jobPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0ea5e9',
-  },
-  jobDistance: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginTop: 2,
-  },
-  focusedJobContainer: {
-    padding: 20,
-  },
-  focusedJobHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  focusedCategoryBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  focusedCategoryText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.5,
-  },
-  focusedDistance: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  focusedTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 10,
-    lineHeight: 26,
-  },
-  focusedBudgetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  focusedBudget: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#0ea5e9',
-  },
-  focusedMeta: {
-    fontSize: 13,
-    color: '#9ca3af',
-  },
-  focusedSection: {
-    marginBottom: 14,
-  },
-  focusedSectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  focusedDescription: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-  },
-  focusedLocation: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 20,
-  },
-  swipeUpHint: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#9ca3af',
-    fontStyle: 'italic',
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  viewDetailsButton: {
-    marginTop: 8,
-    borderRadius: 12,
-  },
-  sheetSpacer: {
-    height: 40,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  modalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  modalOptionIcon: {
-    fontSize: 32,
-    marginRight: 16,
-  },
-  modalOptionText: {
-    flex: 1,
-  },
-  modalOptionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  modalOptionSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  modalCancel: {
-    marginTop: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  filterModalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '70%',
-  },
-  filterOptionsScroll: {
-    maxHeight: 400,
-  },
-  filterOptionsContainer: {
-    maxHeight: 400,
-  },
-  filterOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: '#f9fafb',
-  },
-  filterOptionActive: {
-    backgroundColor: '#e0f2fe',
-  },
-  filterOptionIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  filterOptionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  filterOptionTextActive: {
-    color: '#0ea5e9',
-    fontWeight: '600',
-  },
-  filterOptionCheck: {
-    fontSize: 18,
-    color: '#0ea5e9',
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  statusText: { marginTop: 12, color: '#6b7280', textAlign: 'center' },
+  errorText: { color: '#ef4444', marginBottom: 12, textAlign: 'center' },
+  retryButton: { backgroundColor: '#3b82f6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 8 },
+  retryText: { color: '#ffffff', fontWeight: '600' },
+  mapContainer: { flex: 1, position: 'relative' },
+  map: { flex: 1 },
+  floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
+  filterButtonsContainer: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 8, gap: 8 },
+  filterButton: { flex: 1, borderRadius: 12, overflow: 'hidden' },
+  filterButtonBlur: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  filterButtonText: { fontSize: 14, fontWeight: '600', color: '#1f2937', flex: 1 },
+  filterButtonIcon: { fontSize: 10, color: '#6b7280', marginLeft: 8 },
+  searchBarContainer: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 },
+  searchBarBlur: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, overflow: 'hidden' },
+  searchIcon: { fontSize: 18, marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 15, color: '#1f2937', paddingVertical: 0 },
+  searchClearButton: { marginLeft: 8, padding: 4 },
+  searchClearIcon: { fontSize: 16, color: '#9ca3af', fontWeight: '600' },
+  searchLoader: { marginLeft: 8 },
+  emptyMapOverlay: { position: 'absolute', top: '40%', left: 24, right: 24, alignItems: 'center' },
+  emptyMapCard: { paddingVertical: 20, paddingHorizontal: 28, borderRadius: 16, alignItems: 'center', overflow: 'hidden' },
+  emptyMapIcon: { fontSize: 32, marginBottom: 8 },
+  emptyMapText: { fontSize: 16, fontWeight: '600', color: '#374151' },
+  emptyMapSubtext: { fontSize: 14, color: '#6b7280', marginTop: 4 },
+  myLocationButton: { position: 'absolute', bottom: 100, right: 16, zIndex: 10 },
+  myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  myLocationIcon: { fontSize: 22 },
+  priceMarker: { backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 3, borderColor: '#0ea5e9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
+  priceMarkerFocused: { borderWidth: 4, transform: [{ scale: 1.2 }] },
+  priceMarkerOffering: { borderColor: '#f97316' },
+  priceMarkerText: { fontSize: 16, fontWeight: 'bold', color: '#0ea5e9' },
+  priceMarkerTextOffering: { fontSize: 16, fontWeight: 'bold', color: '#f97316' },
+  bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 },
+  sheetHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 16 },
+  handleBar: { width: 40, height: 5, backgroundColor: '#d1d5db', borderRadius: 3, marginBottom: 12 },
+  sheetTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+  sheetTitle: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
+  closeButton: { margin: -8 },
+  quickPostButton: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0ea5e9', width: 32, height: 32, borderRadius: 16 },
+  quickPostIcon: { fontSize: 20, fontWeight: 'bold', color: '#ffffff' },
+  listContent: { paddingBottom: 40 },
+  emptySheet: { alignItems: 'center', paddingVertical: 32 },
+  emptyIcon: { fontSize: 40, marginBottom: 12 },
+  emptyText: { fontSize: 16, fontWeight: '500', color: '#6b7280' },
+  emptySubtext: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
+  emptyPostButton: { marginTop: 16, backgroundColor: '#0ea5e9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+  jobItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  jobLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  jobCategoryDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
+  jobInfo: { flex: 1 },
+  jobTitle: { fontSize: 15, fontWeight: '500', color: '#1f2937', marginBottom: 2 },
+  jobMeta: { fontSize: 13, color: '#9ca3af' },
+  jobRight: { alignItems: 'flex-end', marginLeft: 12 },
+  jobPrice: { fontSize: 16, fontWeight: 'bold', color: '#0ea5e9' },
+  jobDistance: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  focusedJobContainer: { padding: 20 },
+  focusedJobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  focusedCategoryBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  focusedCategoryText: { fontSize: 11, fontWeight: '700', color: '#ffffff', letterSpacing: 0.5 },
+  focusedDistance: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
+  focusedTitle: { fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 10, lineHeight: 26 },
+  focusedBudgetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  focusedBudget: { fontSize: 26, fontWeight: 'bold', color: '#0ea5e9' },
+  focusedMeta: { fontSize: 13, color: '#9ca3af' },
+  focusedSection: { marginBottom: 14 },
+  focusedSectionTitle: { fontSize: 12, fontWeight: '600', color: '#6b7280', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  focusedDescription: { fontSize: 15, color: '#374151', lineHeight: 22 },
+  focusedLocation: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  viewDetailsButton: { marginTop: 16, borderRadius: 12 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 20, textAlign: 'center' },
+  modalOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', padding: 16, borderRadius: 12, marginBottom: 12 },
+  modalOptionIcon: { fontSize: 32, marginRight: 16 },
+  modalOptionText: { flex: 1 },
+  modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#1f2937', marginBottom: 4 },
+  modalOptionSubtitle: { fontSize: 14, color: '#6b7280' },
+  modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
+  modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
+  filterModalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '70%' },
+  filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: '#f9fafb' },
+  filterOptionActive: { backgroundColor: '#e0f2fe' },
+  filterOptionIcon: { fontSize: 20, marginRight: 12 },
+  filterOptionText: { flex: 1, fontSize: 16, color: '#1f2937', fontWeight: '500' },
+  filterOptionTextActive: { color: '#0ea5e9', fontWeight: '600' },
+  filterOptionCheck: { fontSize: 18, color: '#0ea5e9', fontWeight: 'bold' },
 });
