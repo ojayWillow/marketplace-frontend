@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 import { getTasks, getOfferings, searchTasks, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
+import { clusterItems, calculateDistance as calcDistance } from '../../utils/mapClustering';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
@@ -45,24 +46,8 @@ const RADIUS_OPTIONS = [
   { key: '50', label: '50 km', value: 50 },
 ];
 
-const calculateDistance = (
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+// Use optimized distance calculation from utility
+const calculateDistance = calcDistance;
 
 const formatTimeAgo = (dateString: string): string => {
   const now = new Date();
@@ -76,64 +61,14 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
-// Smart clustering - only when markers would visually overlap
+// Type for clusters (matches the utility interface)
 interface Cluster {
   id: string;
   latitude: number;
   longitude: number;
-  tasks: Task[];
+  items: Task[];
   isCluster: boolean;
 }
-
-const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
-  if (!region || tasks.length === 0) return [];
-  
-  const { latitudeDelta, longitudeDelta } = region;
-  const overlapDistLat = latitudeDelta * OVERLAP_THRESHOLD_FACTOR;
-  const overlapDistLng = longitudeDelta * OVERLAP_THRESHOLD_FACTOR;
-  
-  const clusters: Cluster[] = [];
-  const processed = new Set<number>();
-  
-  for (const task of tasks) {
-    if (processed.has(task.id)) continue;
-    
-    const overlappingTasks = tasks.filter(t => {
-      if (processed.has(t.id)) return false;
-      if (t.id === task.id) return true;
-      
-      const latDiff = Math.abs(t.latitude! - task.latitude!);
-      const lngDiff = Math.abs(t.longitude! - task.longitude!);
-      
-      return latDiff < overlapDistLat && lngDiff < overlapDistLng;
-    });
-    
-    overlappingTasks.forEach(t => processed.add(t.id));
-    
-    if (overlappingTasks.length === 1) {
-      clusters.push({
-        id: `single-${task.id}`,
-        latitude: task.latitude!,
-        longitude: task.longitude!,
-        tasks: [task],
-        isCluster: false,
-      });
-    } else {
-      const centerLat = overlappingTasks.reduce((sum, t) => sum + t.latitude!, 0) / overlappingTasks.length;
-      const centerLng = overlappingTasks.reduce((sum, t) => sum + t.longitude!, 0) / overlappingTasks.length;
-      
-      clusters.push({
-        id: `cluster-${task.id}`,
-        latitude: centerLat,
-        longitude: centerLng,
-        tasks: overlappingTasks,
-        isCluster: true,
-      });
-    }
-  }
-  
-  return clusters;
-};
 
 type ZoomLevel = 'far' | 'mid' | 'close';
 const getZoomLevel = (latitudeDelta: number | undefined): ZoomLevel => {
@@ -377,8 +312,15 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation, hasRealLocation]);
 
+  // Use optimized clustering from utility
   const clusters = useMemo(() => {
-    return clusterTasks(filteredTasks, mapRegion);
+    const clusterResults = clusterItems<Task>(filteredTasks, mapRegion, {
+      overlapThresholdFactor: OVERLAP_THRESHOLD_FACTOR,
+      minClusterSize: 2,
+    });
+    
+    // Map from utility format to component format (items -> tasks)
+    return clusterResults as Cluster[];
   }, [filteredTasks, mapRegion]);
 
   const getMarkerColor = (category: string) => {
@@ -410,8 +352,8 @@ export default function HomeScreen() {
     
     if (cluster.isCluster) {
       if (mapRef.current) {
-        const lats = cluster.tasks.map(t => t.latitude!);
-        const lngs = cluster.tasks.map(t => t.longitude!);
+        const lats = cluster.items.map(t => t.latitude!);
+        const lngs = cluster.items.map(t => t.longitude!);
         const minLat = Math.min(...lats);
         const maxLat = Math.max(...lats);
         const minLng = Math.min(...lngs);
@@ -426,7 +368,7 @@ export default function HomeScreen() {
         }, 400);
       }
     } else {
-      const task = cluster.tasks[0];
+      const task = cluster.items[0];
       handleMarkerPress(task, undefined);
     }
   };
@@ -702,17 +644,17 @@ export default function HomeScreen() {
                     <Text style={styles.coinEuro}>€</Text>
                   </View>
                   <View style={styles.coinBadge}>
-                    <Text style={styles.coinBadgeText}>{cluster.tasks.length}</Text>
+                    <Text style={styles.coinBadgeText}>{cluster.items.length}</Text>
                   </View>
                 </View>
               ) : (
                 <View style={[
                   styles.priceMarker,
-                  { borderColor: getMarkerColor(cluster.tasks[0].category) },
-                  focusedTaskId === cluster.tasks[0].id && styles.priceMarkerFocused
+                  { borderColor: getMarkerColor(cluster.items[0].category) },
+                  focusedTaskId === cluster.items[0].id && styles.priceMarkerFocused
                 ]}>
-                  <Text style={[styles.priceMarkerText, { color: getMarkerColor(cluster.tasks[0].category) }]}>
-                    €{cluster.tasks[0].budget?.toFixed(0) || '0'}
+                  <Text style={[styles.priceMarkerText, { color: getMarkerColor(cluster.items[0].category) }]}>
+                    €{cluster.items[0].budget?.toFixed(0) || '0'}
                   </Text>
                 </View>
               )}
