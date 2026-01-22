@@ -26,6 +26,11 @@ interface LocationData {
   longitude: number;
 }
 
+// Helper to check if an image is already on the server (not a local file)
+const isServerImage = (uri: string): boolean => {
+  return uri.startsWith('http') || uri.startsWith('/api/uploads');
+};
+
 export default function EditTaskScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
@@ -72,15 +77,19 @@ export default function EditTaskScreen() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: Parameters<typeof updateTask>[1]) => {
-      let imageUrls: string[] = images.filter(img => img.startsWith('http'));
-      const localImages = images.filter(img => !img.startsWith('http'));
+      // Separate existing server images from new local images
+      const existingServerImages: string[] = images.filter(isServerImage);
+      const newLocalImages: string[] = images.filter(img => !isServerImage(img));
       
-      if (localImages.length > 0) {
+      let finalImageUrls: string[] = existingServerImages;
+      
+      // Only upload new local images
+      if (newLocalImages.length > 0) {
         setUploading(true);
         try {
-          const uploadPromises = localImages.map((uri) => uploadImageFromUri(uri));
+          const uploadPromises = newLocalImages.map((uri) => uploadImageFromUri(uri));
           const results = await Promise.all(uploadPromises);
-          imageUrls = [...imageUrls, ...results.map(r => r.url)];
+          finalImageUrls = [...existingServerImages, ...results.map(r => r.url)];
         } catch (error) {
           console.error('Image upload error:', error);
         } finally {
@@ -90,7 +99,7 @@ export default function EditTaskScreen() {
       
       return updateTask(taskId, {
         ...data,
-        images: imageUrls.length > 0 ? imageUrls.join(',') : undefined,
+        images: finalImageUrls.length > 0 ? finalImageUrls.join(',') : undefined,
       });
     },
     onSuccess: () => {
