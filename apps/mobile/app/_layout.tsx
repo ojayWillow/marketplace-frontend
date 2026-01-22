@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuthStore } from '@marketplace/shared';
+import { useAuthStore } from '../src/stores/authStore';
 import { View, useColorScheme, InteractionManager } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef, useState } from 'react';
