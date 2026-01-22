@@ -2,12 +2,12 @@ import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Modal, Touchab
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { router } from 'expo-router';
 import { getTasks, getOfferings, useAuthStore, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 
-type MainTab = 'jobs' | 'services';
+type MainTab = 'all' | 'jobs' | 'services';
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
@@ -38,8 +38,13 @@ const shortenLocation = (location: string | undefined): string => {
   return location.length > 15 ? location.substring(0, 15) + '...' : location;
 };
 
+// Combined item type for mixed list
+type ListItem = 
+  | { type: 'job'; data: Task; createdAt: Date }
+  | { type: 'service'; data: Offering; createdAt: Date };
+
 export default function TasksScreen() {
-  const [mainTab, setMainTab] = useState<MainTab>('jobs');
+  const [mainTab, setMainTab] = useState<MainTab>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -49,14 +54,14 @@ export default function TasksScreen() {
   const jobsQuery = useQuery({
     queryKey: ['tasks-browse'],
     queryFn: () => getTasks({ page: 1, per_page: 20, status: 'open' }),
-    enabled: mainTab === 'jobs',
+    enabled: mainTab === 'jobs' || mainTab === 'all',
   });
 
   // Browse Services query - all active services
   const servicesQuery = useQuery({
     queryKey: ['services-browse'],
     queryFn: () => getOfferings({ page: 1, per_page: 20 }),
-    enabled: mainTab === 'services',
+    enabled: mainTab === 'services' || mainTab === 'all',
   });
 
   const allTasks = jobsQuery.data?.tasks || [];
@@ -70,6 +75,28 @@ export default function TasksScreen() {
   const offerings = selectedCategory === 'all'
     ? allOfferings
     : allOfferings.filter(o => o.category === selectedCategory);
+
+  // Combined and sorted list for "All" tab
+  const mixedItems = useMemo((): ListItem[] => {
+    if (mainTab !== 'all') return [];
+    
+    const jobItems: ListItem[] = tasks.map(task => ({
+      type: 'job' as const,
+      data: task,
+      createdAt: new Date(task.created_at || 0),
+    }));
+    
+    const serviceItems: ListItem[] = offerings.map(offering => ({
+      type: 'service' as const,
+      data: offering,
+      createdAt: new Date(offering.created_at || 0),
+    }));
+    
+    // Combine and sort by creation date (newest first)
+    return [...jobItems, ...serviceItems].sort((a, b) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }, [mainTab, tasks, offerings]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -128,42 +155,128 @@ export default function TasksScreen() {
     }
   };
 
-  const isLoading = mainTab === 'jobs' ? jobsQuery.isLoading : servicesQuery.isLoading;
-  const isError = mainTab === 'jobs' ? jobsQuery.isError : servicesQuery.isError;
-  const refetch = mainTab === 'jobs' ? jobsQuery.refetch : servicesQuery.refetch;
-  const isRefetching = mainTab === 'jobs' ? jobsQuery.isRefetching : servicesQuery.isRefetching;
+  const isLoading = mainTab === 'all' 
+    ? (jobsQuery.isLoading || servicesQuery.isLoading)
+    : mainTab === 'jobs' 
+      ? jobsQuery.isLoading 
+      : servicesQuery.isLoading;
+      
+  const isError = mainTab === 'all'
+    ? (jobsQuery.isError && servicesQuery.isError)
+    : mainTab === 'jobs'
+      ? jobsQuery.isError
+      : servicesQuery.isError;
+      
+  const refetch = () => {
+    if (mainTab === 'all' || mainTab === 'jobs') jobsQuery.refetch();
+    if (mainTab === 'all' || mainTab === 'services') servicesQuery.refetch();
+  };
+  
+  const isRefetching = mainTab === 'all'
+    ? (jobsQuery.isRefetching || servicesQuery.isRefetching)
+    : mainTab === 'jobs'
+      ? jobsQuery.isRefetching
+      : servicesQuery.isRefetching;
 
   const hasActiveFilter = selectedCategory !== 'all';
 
+  // Render a job card
+  const renderJobCard = (task: Task) => {
+    const statusColors = getStatusColor(task.status);
+    const shortLocation = shortenLocation(task.location);
+    return (
+      <Card key={`job-${task.id}`} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
+        <Card.Content style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
+            </View>
+          </View>
+          
+          <Text style={styles.category}>{task.category}</Text>
+          <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
+          
+          <View style={styles.cardFooter}>
+            <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
+            <View style={styles.footerMeta}>
+              {shortLocation ? (
+                <Text style={styles.location}>📍 {shortLocation}</Text>
+              ) : null}
+              <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  };
+
+  // Render a service card
+  const renderServiceCard = (offering: Offering) => {
+    const statusColors = getStatusColor(offering.status || 'active');
+    return (
+      <Card key={`service-${offering.id}`} style={styles.card} onPress={() => router.push(`/offering/${offering.id}`)}>
+        <Card.Content style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(offering.status || 'active')}</Text>
+            </View>
+          </View>
+          
+          <Text style={styles.categoryOrange}>{offering.category}</Text>
+          <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{offering.description}</Text>
+          
+          <View style={styles.cardFooter}>
+            <Text style={styles.priceOrange}>
+              {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
+               offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
+            </Text>
+            <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Compact Header with Tabs + Filter */}
+      {/* Compact Header with Centered Tabs + Filter */}
       <View style={styles.header}>
-        {/* Tab Pills */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[styles.tabPill, mainTab === 'jobs' && styles.tabPillActive]}
-            onPress={() => handleTabChange('jobs')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabPillText, mainTab === 'jobs' && styles.tabPillTextActive]}>Jobs</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabPill, mainTab === 'services' && styles.tabPillActive]}
-            onPress={() => handleTabChange('services')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabPillText, mainTab === 'services' && styles.tabPillTextActive]}>Services</Text>
-          </TouchableOpacity>
+        {/* Centered Tab Pills */}
+        <View style={styles.tabsWrapper}>
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity
+              style={[styles.tabPill, mainTab === 'all' && styles.tabPillActive]}
+              onPress={() => handleTabChange('all')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabPillText, mainTab === 'all' && styles.tabPillTextActive]}>All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabPill, mainTab === 'jobs' && styles.tabPillActive]}
+              onPress={() => handleTabChange('jobs')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabPillText, mainTab === 'jobs' && styles.tabPillTextActive]}>Jobs</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabPill, mainTab === 'services' && styles.tabPillActive]}
+              onPress={() => handleTabChange('services')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabPillText, mainTab === 'services' && styles.tabPillTextActive]}>Services</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Filter Button */}
+        {/* Filter Button - Burger Menu Style */}
         <TouchableOpacity
           style={[styles.filterButton, hasActiveFilter && styles.filterButtonActive]}
           onPress={handleFilterPress}
           activeOpacity={0.7}
         >
-          <Text style={styles.filterIcon}>⚙️</Text>
+          <Text style={styles.filterIcon}>☰</Text>
           {hasActiveFilter && <View style={styles.filterDot} />}
         </TouchableOpacity>
       </View>
@@ -203,6 +316,27 @@ export default function TasksScreen() {
             </View>
           ) : null}
 
+          {/* All Tab - Mixed List */}
+          {mainTab === 'all' && !isLoading && !isError ? (
+            mixedItems.length === 0 ? (
+              <View style={styles.centerContainer}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyText}>
+                  {hasActiveFilter ? 'Nothing in this category' : 'No jobs or services available'}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {hasActiveFilter ? 'Try a different filter' : 'Check back later or create your own'}
+                </Text>
+              </View>
+            ) : (
+              mixedItems.map((item) => 
+                item.type === 'job' 
+                  ? renderJobCard(item.data as Task)
+                  : renderServiceCard(item.data as Offering)
+              )
+            )
+          ) : null}
+
           {/* Jobs List */}
           {mainTab === 'jobs' && !isLoading && !isError ? (
             tasks.length === 0 ? (
@@ -216,35 +350,7 @@ export default function TasksScreen() {
                 </Text>
               </View>
             ) : (
-              tasks.map((task: Task) => {
-                const statusColors = getStatusColor(task.status);
-                const shortLocation = shortenLocation(task.location);
-                return (
-                  <Card key={task.id} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
-                    <Card.Content style={styles.cardContent}>
-                      <View style={styles.cardHeader}>
-                        <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
-                        <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                          <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
-                        </View>
-                      </View>
-                      
-                      <Text style={styles.category}>{task.category}</Text>
-                      <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
-                      
-                      <View style={styles.cardFooter}>
-                        <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-                        <View style={styles.footerMeta}>
-                          {shortLocation ? (
-                            <Text style={styles.location}>📍 {shortLocation}</Text>
-                          ) : null}
-                          <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
-                        </View>
-                      </View>
-                    </Card.Content>
-                  </Card>
-                );
-              })
+              tasks.map((task: Task) => renderJobCard(task))
             )
           ) : null}
 
@@ -261,32 +367,7 @@ export default function TasksScreen() {
                 </Text>
               </View>
             ) : (
-              offerings.map((offering: Offering) => {
-                const statusColors = getStatusColor(offering.status || 'active');
-                return (
-                  <Card key={offering.id} style={styles.card} onPress={() => router.push(`/offering/${offering.id}`)}>
-                    <Card.Content style={styles.cardContent}>
-                      <View style={styles.cardHeader}>
-                        <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
-                        <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                          <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(offering.status || 'active')}</Text>
-                        </View>
-                      </View>
-                      
-                      <Text style={styles.categoryOrange}>{offering.category}</Text>
-                      <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{offering.description}</Text>
-                      
-                      <View style={styles.cardFooter}>
-                        <Text style={styles.priceOrange}>
-                          {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
-                           offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
-                        </Text>
-                        <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
-                      </View>
-                    </Card.Content>
-                  </Card>
-                );
-              })
+              offerings.map((offering: Offering) => renderServiceCard(offering))
             )
           ) : null}
 
@@ -392,15 +473,20 @@ const styles = StyleSheet.create({
   header: { 
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
+    position: 'relative',
   },
   
-  // Tab Pills
+  // Tab Pills - Centered
+  tabsWrapper: {
+    flex: 1,
+    alignItems: 'center',
+  },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
@@ -408,9 +494,11 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   tabPill: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 17,
+    minWidth: 70,
+    alignItems: 'center',
   },
   tabPillActive: {
     backgroundColor: '#0ea5e9',
@@ -424,21 +512,23 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   
-  // Filter Button
+  // Filter Button - Positioned Right
   filterButton: {
+    position: 'absolute',
+    right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: '#f3f4f6',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
   filterButtonActive: {
     backgroundColor: '#e0f2fe',
   },
   filterIcon: {
-    fontSize: 20,
+    fontSize: 18,
+    color: '#374151',
   },
   filterDot: {
     position: 'absolute',
