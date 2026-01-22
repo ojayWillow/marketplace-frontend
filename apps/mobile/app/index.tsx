@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
         </View>
 
         {/* Browse as guest */}
-        <Link href="/(tabs)" asChild>
+        <Link href="/(tabs)/home" asChild>
           <Button mode="text" style={styles.guestButton}>
             Browse as Guest
           </Button>
