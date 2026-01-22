@@ -1,12 +1,14 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@marketplace/shared';
-import { View, ActivityIndicator } from 'react-native';
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { View, ActivityIndicator, useColorScheme } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { registerPushToken, setupNotificationListeners } from '../utils/pushNotifications';
+import { useThemeStore } from '../src/stores/themeStore';
+import { lightTheme, darkTheme, colors } from '../src/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,34 +19,26 @@ const queryClient = new QueryClient({
   },
 });
 
-// Custom theme matching your brand colors
-const theme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: '#0ea5e9', // sky-500
-    secondary: '#f59e0b', // amber-500
-    tertiary: '#10b981', // emerald-500
-    error: '#ef4444', // red-500
-    background: '#ffffff',
-    surface: '#f8fafc', // slate-50
-    surfaceVariant: '#f1f5f9', // slate-100
-    onSurface: '#0f172a', // slate-900
-    onSurfaceVariant: '#475569', // slate-600
-  },
-};
-
 export default function RootLayout() {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const { token, isAuthenticated } = useAuthStore();
   const router = useRouter();
-  const segments = useSegments();
   const notificationListener = useRef<(() => void) | null>(null);
+  
+  // Theme
+  const systemColorScheme = useColorScheme();
+  const { mode, _hasHydrated: themeHydrated } = useThemeStore();
+  
+  // Determine active theme
+  const activeTheme = mode === 'system' 
+    ? (systemColorScheme === 'dark' ? 'dark' : 'light')
+    : mode;
+  const theme = activeTheme === 'dark' ? darkTheme : lightTheme;
+  const themeColors = colors[activeTheme];
 
   // Register for push notifications when user logs in
   useEffect(() => {
     if (isAuthenticated && token) {
-      // Register push token with backend
       registerPushToken(token).then((success) => {
         if (success) {
           console.log('✅ Push notifications registered');
@@ -57,13 +51,10 @@ export default function RootLayout() {
 
   // Setup notification listeners
   useEffect(() => {
-    // Setup listeners
     const cleanup = setupNotificationListeners(
-      // When notification received in foreground
       (notification) => {
         console.log('📬 Notification received:', notification.request.content);
       },
-      // When user taps notification
       (response) => {
         console.log('👆 Notification tapped:', response.notification.request.content);
         handleNotificationTap(response);
@@ -77,13 +68,11 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Handle notification tap - navigate to relevant screen
   const handleNotificationTap = (response: Notifications.NotificationResponse) => {
     const data = response.notification.request.content.data;
     
     if (!data) return;
 
-    // Navigate based on notification type
     if (data.taskId) {
       router.push(`/task/${data.taskId}`);
     } else if (data.offeringId) {
@@ -97,9 +86,10 @@ export default function RootLayout() {
     }
   };
 
-  if (!hasHydrated) {
+  // Wait for both auth and theme stores to hydrate
+  if (!hasHydrated || !themeHydrated) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeColors.background }}>
         <ActivityIndicator size="large" color="#0ea5e9" />
       </View>
     );
@@ -108,10 +98,11 @@ export default function RootLayout() {
   return (
     <PaperProvider theme={theme}>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style="auto" />
+        <StatusBar style={themeColors.statusBar} />
         <Stack
           screenOptions={{
             headerShown: false,
+            contentStyle: { backgroundColor: themeColors.background },
           }}
         />
       </QueryClientProvider>
