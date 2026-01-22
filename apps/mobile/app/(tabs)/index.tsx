@@ -15,13 +15,15 @@ const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 
+// Default location (Riga) - used while getting actual location
+const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
+
 // Clustering - only when markers would actually overlap
-// This is the minimum distance in degrees before clustering kicks in
-const OVERLAP_THRESHOLD_FACTOR = 0.025; // Very tight - only cluster when truly overlapping
+const OVERLAP_THRESHOLD_FACTOR = 0.025;
 
 // Zoom level thresholds for user location style
-const ZOOM_FAR_THRESHOLD = 0.12;    // latitudeDelta > 0.12 = zoomed out (small dot)
-const ZOOM_CLOSE_THRESHOLD = 0.05;  // latitudeDelta <= 0.05 = zoomed in (full marker with halo)
+const ZOOM_FAR_THRESHOLD = 0.12;
+const ZOOM_CLOSE_THRESHOLD = 0.05;
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
@@ -87,9 +89,6 @@ const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
   if (!region || tasks.length === 0) return [];
   
   const { latitudeDelta, longitudeDelta } = region;
-  
-  // Calculate overlap distance based on zoom - tighter threshold
-  // Only cluster when markers would actually overlap on screen
   const overlapDistLat = latitudeDelta * OVERLAP_THRESHOLD_FACTOR;
   const overlapDistLng = longitudeDelta * OVERLAP_THRESHOLD_FACTOR;
   
@@ -99,7 +98,6 @@ const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
   for (const task of tasks) {
     if (processed.has(task.id)) continue;
     
-    // Find markers that would overlap with this one
     const overlappingTasks = tasks.filter(t => {
       if (processed.has(t.id)) return false;
       if (t.id === task.id) return true;
@@ -107,14 +105,12 @@ const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
       const latDiff = Math.abs(t.latitude! - task.latitude!);
       const lngDiff = Math.abs(t.longitude! - task.longitude!);
       
-      // Only group if they would visually overlap
       return latDiff < overlapDistLat && lngDiff < overlapDistLng;
     });
     
     overlappingTasks.forEach(t => processed.add(t.id));
     
     if (overlappingTasks.length === 1) {
-      // Single marker - no clustering needed
       clusters.push({
         id: `single-${task.id}`,
         latitude: task.latitude!,
@@ -123,7 +119,6 @@ const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
         isCluster: false,
       });
     } else {
-      // Multiple overlapping markers - create cluster
       const centerLat = overlappingTasks.reduce((sum, t) => sum + t.latitude!, 0) / overlappingTasks.length;
       const centerLng = overlappingTasks.reduce((sum, t) => sum + t.longitude!, 0) / overlappingTasks.length;
       
@@ -140,7 +135,6 @@ const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
   return clusters;
 };
 
-// Determine zoom level category based on latitudeDelta
 type ZoomLevel = 'far' | 'mid' | 'close';
 const getZoomLevel = (latitudeDelta: number | undefined): ZoomLevel => {
   if (!latitudeDelta) return 'mid';
@@ -154,7 +148,9 @@ export default function HomeScreen() {
   const listRef = useRef<FlatList>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  // Start with default location immediately, update when we get real location
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>(DEFAULT_LOCATION);
+  const [hasRealLocation, setHasRealLocation] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -171,7 +167,6 @@ export default function HomeScreen() {
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
 
-  // Derive zoom level from map region
   const zoomLevel = useMemo(() => getZoomLevel(mapRegion?.latitudeDelta), [mapRegion?.latitudeDelta]);
 
   useEffect(() => {
@@ -247,22 +242,66 @@ export default function HomeScreen() {
     })
   ).current;
 
+  // Get user location - use last known first, then get current
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setUserLocation({ latitude: 56.9496, longitude: 24.1052 });
+        // Keep default location
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({});
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+      // Try to get last known location first (instant)
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        if (lastKnown) {
+          setUserLocation({
+            latitude: lastKnown.coords.latitude,
+            longitude: lastKnown.coords.longitude,
+          });
+          setHasRealLocation(true);
+          
+          // Animate map to last known location
+          if (mapRef.current) {
+            mapRef.current.animateToRegion({
+              latitude: lastKnown.coords.latitude,
+              longitude: lastKnown.coords.longitude,
+              latitudeDelta: 0.15,
+              longitudeDelta: 0.15,
+            }, 500);
+          }
+        }
+      } catch (e) {
+        // Ignore - will get current location
+      }
+
+      // Then get accurate current location in background
+      try {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced, // Faster than High accuracy
+        });
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        setHasRealLocation(true);
+        
+        // Only animate if significantly different from last known
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.15,
+            longitudeDelta: 0.15,
+          }, 500);
+        }
+      } catch (e) {
+        console.log('Could not get current location:', e);
+      }
     })();
   }, []);
 
+  // Fetch tasks immediately (don't wait for location)
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['tasks-home'],
     queryFn: async () => {
@@ -312,7 +351,7 @@ export default function HomeScreen() {
         return false;
       }
       
-      if (selectedRadius && userLocation) {
+      if (selectedRadius && hasRealLocation) {
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
@@ -326,18 +365,17 @@ export default function HomeScreen() {
       
       return true;
     });
-  }, [allTasks, selectedCategory, selectedRadius, userLocation]);
+  }, [allTasks, selectedCategory, selectedRadius, userLocation, hasRealLocation]);
 
   const sortedTasks = useMemo(() => {
-    if (!userLocation) return filteredTasks;
+    if (!hasRealLocation) return filteredTasks;
     return [...filteredTasks].sort((a, b) => {
       const distA = calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude!, a.longitude!);
       const distB = calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude!, b.longitude!);
       return distA - distB;
     });
-  }, [filteredTasks, userLocation]);
+  }, [filteredTasks, userLocation, hasRealLocation]);
 
-  // Smart clustering - only when markers overlap
   const clusters = useMemo(() => {
     return clusterTasks(filteredTasks, mapRegion);
   }, [filteredTasks, mapRegion]);
@@ -364,7 +402,6 @@ export default function HomeScreen() {
     haptic.light();
     
     if (cluster.isCluster) {
-      // Zoom into the cluster area
       if (mapRef.current) {
         const lats = cluster.tasks.map(t => t.latitude!);
         const lngs = cluster.tasks.map(t => t.longitude!);
@@ -382,7 +419,6 @@ export default function HomeScreen() {
         }, 400);
       }
     } else {
-      // Single marker - show details
       const task = cluster.tasks[0];
       handleMarkerPress(task, undefined);
     }
@@ -465,7 +501,7 @@ export default function HomeScreen() {
 
   const handleMyLocation = async () => {
     haptic.medium();
-    if (userLocation && mapRef.current) {
+    if (mapRef.current) {
       mapRef.current.animateToRegion({
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
@@ -505,9 +541,8 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
 
-  // Render custom user location marker based on zoom level - ALWAYS visible
   const renderUserLocationMarker = () => {
-    if (!userLocation) return null;
+    if (!hasRealLocation) return null;
     
     return (
       <Marker
@@ -516,18 +551,15 @@ export default function HomeScreen() {
         tracksViewChanges={false}
       >
         {zoomLevel === 'close' ? (
-          // Full user marker with halo (zoomed in)
           <View style={styles.userMarkerFull}>
             <View style={styles.userMarkerHalo} />
             <View style={styles.userMarkerDot} />
           </View>
         ) : zoomLevel === 'mid' ? (
-          // Subtle ring marker (mid zoom)
           <View style={styles.userMarkerSubtle}>
             <View style={styles.userMarkerRing} />
           </View>
         ) : (
-          // Small dot marker (far zoom) - still visible but compact
           <View style={styles.userMarkerFar}>
             <View style={styles.userMarkerSmallDot} />
           </View>
@@ -553,7 +585,7 @@ export default function HomeScreen() {
       </View>
       <View style={styles.jobRight}>
         <Text style={styles.jobPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
-        {userLocation && (
+        {hasRealLocation && (
           <Text style={styles.jobDistance}>
             {calculateDistance(
               userLocation.latitude,
@@ -575,7 +607,7 @@ export default function HomeScreen() {
           <View style={[styles.focusedCategoryBadge, { backgroundColor: getMarkerColor(focusedTask.category) }]}>
             <Text style={styles.focusedCategoryText}>{focusedTask.category.toUpperCase()}</Text>
           </View>
-          {userLocation && (
+          {hasRealLocation && (
             <Text style={styles.focusedDistance}>
               📍 {calculateDistance(
                 userLocation.latitude,
@@ -632,203 +664,189 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {isLoading && !debouncedSearchQuery && (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.statusText}>Loading jobs...</Text>
-        </View>
-      )}
+      {/* Show map immediately with default/cached location */}
+      <View style={styles.mapContainer}>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_DEFAULT}
+          initialRegion={{
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+            latitudeDelta: 0.15,
+            longitudeDelta: 0.15,
+          }}
+          onRegionChangeComplete={handleRegionChange}
+          showsUserLocation={false}
+          showsMyLocationButton={false}
+        >
+          {renderUserLocationMarker()}
 
-      {isError && (
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load jobs</Text>
-          <TouchableOpacity onPress={() => { haptic.medium(); refetch(); }} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {!isLoading && !isError && userLocation && (
-        <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            initialRegion={{
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-              latitudeDelta: 0.15,
-              longitudeDelta: 0.15,
-            }}
-            onRegionChangeComplete={handleRegionChange}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-          >
-            {/* Custom user location marker - always visible, zoom aware styling */}
-            {renderUserLocationMarker()}
-
-            {/* Task markers - individual or clustered */}
-            {clusters.map((cluster) => (
-              <Marker
-                key={cluster.id}
-                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
-                onPress={() => handleClusterPress(cluster)}
-                tracksViewChanges={false}
-              >
-                {cluster.isCluster ? (
-                  // Gold coin cluster marker
-                  <View style={styles.coinClusterContainer}>
-                    <View style={styles.coinCluster}>
-                      <Text style={styles.coinEuro}>€</Text>
-                    </View>
-                    <View style={styles.coinBadge}>
-                      <Text style={styles.coinBadgeText}>{cluster.tasks.length}</Text>
-                    </View>
+          {clusters.map((cluster) => (
+            <Marker
+              key={cluster.id}
+              coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+              onPress={() => handleClusterPress(cluster)}
+              tracksViewChanges={false}
+            >
+              {cluster.isCluster ? (
+                <View style={styles.coinClusterContainer}>
+                  <View style={styles.coinCluster}>
+                    <Text style={styles.coinEuro}>€</Text>
                   </View>
-                ) : (
-                  // Individual price marker
-                  <View style={[
-                    styles.priceMarker,
-                    { borderColor: getMarkerColor(cluster.tasks[0].category) },
-                    focusedTaskId === cluster.tasks[0].id && styles.priceMarkerFocused
-                  ]}>
-                    <Text style={[styles.priceMarkerText, { color: getMarkerColor(cluster.tasks[0].category) }]}>
-                      €{cluster.tasks[0].budget?.toFixed(0) || '0'}
-                    </Text>
+                  <View style={styles.coinBadge}>
+                    <Text style={styles.coinBadgeText}>{cluster.tasks.length}</Text>
                   </View>
-                )}
-              </Marker>
-            ))}
-
-            {/* Boosted offerings */}
-            {boostedOfferings.map((offering) => (
-              <Marker
-                key={`offering-${offering.id}`}
-                coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }}
-                onPress={() => handleMarkerPress(undefined, offering)}
-                tracksViewChanges={false}
-              >
-                <View style={[styles.priceMarker, styles.priceMarkerOffering]}>
-                  <Text style={styles.priceMarkerTextOffering}>
-                    {offering.price ? `€${offering.price}` : '€'}
+                </View>
+              ) : (
+                <View style={[
+                  styles.priceMarker,
+                  { borderColor: getMarkerColor(cluster.tasks[0].category) },
+                  focusedTaskId === cluster.tasks[0].id && styles.priceMarkerFocused
+                ]}>
+                  <Text style={[styles.priceMarkerText, { color: getMarkerColor(cluster.tasks[0].category) }]}>
+                    €{cluster.tasks[0].budget?.toFixed(0) || '0'}
                   </Text>
                 </View>
-              </Marker>
-            ))}
-          </MapView>
+              )}
+            </Marker>
+          ))}
 
-          <SafeAreaView style={styles.floatingHeader} edges={['top']}>
-            <View style={styles.filterButtonsContainer}>
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={() => { haptic.light(); setShowCategoryModal(true); }}
-                activeOpacity={0.8}
-              >
-                <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
-                  <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
-                  <Text style={styles.filterButtonIcon}>▼</Text>
-                </BlurView>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={() => { haptic.light(); setShowRadiusModal(true); }}
-                activeOpacity={0.8}
-              >
-                <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
-                  <Text style={styles.filterButtonText}>{selectedRadiusLabel}</Text>
-                  <Text style={styles.filterButtonIcon}>▼</Text>
-                </BlurView>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.searchBarContainer}>
-              <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
-                <Text style={styles.searchIcon}>🔍</Text>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search jobs..."
-                  placeholderTextColor="#9ca3af"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  returnKeyType="search"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
-                    <Text style={styles.searchClearIcon}>✕</Text>
-                  </TouchableOpacity>
-                )}
-                {showSearchLoading && (
-                  <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
-                )}
-              </BlurView>
-            </View>
-          </SafeAreaView>
-
-          {filteredTasks.length === 0 && !isLoading && !showSearchLoading && (
-            <View style={styles.emptyMapOverlay}>
-              <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
-                <Text style={styles.emptyMapIcon}>🗺️</Text>
-                <Text style={styles.emptyMapText}>
-                  {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
+          {boostedOfferings.map((offering) => (
+            <Marker
+              key={`offering-${offering.id}`}
+              coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }}
+              onPress={() => handleMarkerPress(undefined, offering)}
+              tracksViewChanges={false}
+            >
+              <View style={[styles.priceMarker, styles.priceMarkerOffering]}>
+                <Text style={styles.priceMarkerTextOffering}>
+                  {offering.price ? `€${offering.price}` : '€'}
                 </Text>
-                <Text style={styles.emptyMapSubtext}>
-                  {debouncedSearchQuery ? 'Try a different search' : 'Try adjusting filters'}
-                </Text>
-              </BlurView>
-            </View>
-          )}
-
-          <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
-            <BlurView intensity={90} tint="light" style={styles.myLocationBlur}>
-              <Text style={styles.myLocationIcon}>📍</Text>
-            </BlurView>
-          </TouchableOpacity>
-
-          <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
-            {/* Drag Handle */}
-            <View {...panResponder.panHandlers} style={styles.sheetHandle}>
-              <View style={styles.handleBar} />
-              <View style={styles.sheetTitleRow}>
-                <Text style={styles.sheetTitle}>
-                  {focusedTask ? 'Job Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
-                </Text>
-                {focusedTask && (
-                  <IconButton icon="close" size={20} onPress={handleCloseFocusedJob} style={styles.closeButton} />
-                )}
-                {!focusedTask && (
-                  <TouchableOpacity style={styles.quickPostButton} onPress={handleCreatePress} activeOpacity={0.8}>
-                    <Text style={styles.quickPostIcon}>+</Text>
-                  </TouchableOpacity>
-                )}
               </View>
-            </View>
+            </Marker>
+          ))}
+        </MapView>
 
-            {/* Content */}
-            {focusedTask ? (
-              <FlatList
-                ref={listRef}
-                data={[focusedTask]}
-                renderItem={() => renderFocusedTask()}
-                keyExtractor={(item) => `focused-${item.id}`}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
+        <SafeAreaView style={styles.floatingHeader} edges={['top']}>
+          <View style={styles.filterButtonsContainer}>
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+              activeOpacity={0.8}
+            >
+              <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+                <Text style={styles.filterButtonText}>{selectedCategoryLabel}</Text>
+                <Text style={styles.filterButtonIcon}>▼</Text>
+              </BlurView>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => { haptic.light(); setShowRadiusModal(true); }}
+              activeOpacity={0.8}
+            >
+              <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+                <Text style={styles.filterButtonText}>{selectedRadiusLabel}</Text>
+                <Text style={styles.filterButtonIcon}>▼</Text>
+              </BlurView>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.searchBarContainer}>
+            <BlurView intensity={80} tint="light" style={styles.searchBarBlur}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search jobs..."
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
               />
-            ) : sortedTasks.length === 0 ? (
-              renderEmptyList()
-            ) : (
-              <FlatList
-                ref={listRef}
-                data={sortedTasks}
-                renderItem={renderJobItem}
-                keyExtractor={(item) => `task-${item.id}`}
-                showsVerticalScrollIndicator={true}
-                contentContainerStyle={styles.listContent}
-              />
-            )}
-          </Animated.View>
-        </View>
-      )}
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
+                  <Text style={styles.searchClearIcon}>✕</Text>
+                </TouchableOpacity>
+              )}
+              {showSearchLoading && (
+                <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
+              )}
+            </BlurView>
+          </View>
+        </SafeAreaView>
+
+        {/* Loading overlay - subtle, doesn't block UI */}
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <BlurView intensity={80} tint="light" style={styles.loadingCard}>
+              <ActivityIndicator size="small" color="#0ea5e9" />
+              <Text style={styles.loadingText}>Loading jobs...</Text>
+            </BlurView>
+          </View>
+        )}
+
+        {filteredTasks.length === 0 && !isLoading && !showSearchLoading && (
+          <View style={styles.emptyMapOverlay}>
+            <BlurView intensity={80} tint="light" style={styles.emptyMapCard}>
+              <Text style={styles.emptyMapIcon}>🗺️</Text>
+              <Text style={styles.emptyMapText}>
+                {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
+              </Text>
+              <Text style={styles.emptyMapSubtext}>
+                {debouncedSearchQuery ? 'Try a different search' : 'Try adjusting filters'}
+              </Text>
+            </BlurView>
+          </View>
+        )}
+
+        <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
+          <BlurView intensity={90} tint="light" style={styles.myLocationBlur}>
+            <Text style={styles.myLocationIcon}>📍</Text>
+          </BlurView>
+        </TouchableOpacity>
+
+        <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
+          <View {...panResponder.panHandlers} style={styles.sheetHandle}>
+            <View style={styles.handleBar} />
+            <View style={styles.sheetTitleRow}>
+              <Text style={styles.sheetTitle}>
+                {focusedTask ? 'Job Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
+              </Text>
+              {focusedTask && (
+                <IconButton icon="close" size={20} onPress={handleCloseFocusedJob} style={styles.closeButton} />
+              )}
+              {!focusedTask && (
+                <TouchableOpacity style={styles.quickPostButton} onPress={handleCreatePress} activeOpacity={0.8}>
+                  <Text style={styles.quickPostIcon}>+</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {focusedTask ? (
+            <FlatList
+              ref={listRef}
+              data={[focusedTask]}
+              renderItem={() => renderFocusedTask()}
+              keyExtractor={(item) => `focused-${item.id}`}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+            />
+          ) : sortedTasks.length === 0 ? (
+            renderEmptyList()
+          ) : (
+            <FlatList
+              ref={listRef}
+              data={sortedTasks}
+              renderItem={renderJobItem}
+              keyExtractor={(item) => `task-${item.id}`}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.listContent}
+            />
+          )}
+        </Animated.View>
+      </View>
 
       {/* Category Modal */}
       <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
@@ -933,6 +951,9 @@ const styles = StyleSheet.create({
   searchClearButton: { marginLeft: 8, padding: 4 },
   searchClearIcon: { fontSize: 16, color: '#9ca3af', fontWeight: '600' },
   searchLoader: { marginLeft: 8 },
+  loadingOverlay: { position: 'absolute', top: 140, left: 24, right: 24, alignItems: 'center' },
+  loadingCard: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', overflow: 'hidden', gap: 10 },
+  loadingText: { fontSize: 14, color: '#374151', fontWeight: '500' },
   emptyMapOverlay: { position: 'absolute', top: '40%', left: 24, right: 24, alignItems: 'center' },
   emptyMapCard: { paddingVertical: 20, paddingHorizontal: 28, borderRadius: 16, alignItems: 'center', overflow: 'hidden' },
   emptyMapIcon: { fontSize: 32, marginBottom: 8 },
@@ -942,153 +963,25 @@ const styles = StyleSheet.create({
   myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   myLocationIcon: { fontSize: 22 },
   
-  // Gold coin cluster marker
-  coinClusterContainer: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coinCluster: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FCD34D', // Gold base
-    borderWidth: 3,
-    borderColor: '#F59E0B', // Darker gold border for depth
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#B45309',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 6,
-  },
-  coinEuro: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#92400E', // Dark amber for € symbol
-    textShadowColor: 'rgba(251, 191, 36, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-  },
-  coinBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: '#DC2626', // Red badge
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 4,
-  },
-  coinBadgeText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
+  coinClusterContainer: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
+  coinCluster: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FCD34D', borderWidth: 3, borderColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B45309', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 6 },
+  coinEuro: { fontSize: 22, fontWeight: 'bold', color: '#92400E', textShadowColor: 'rgba(251, 191, 36, 0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+  coinBadge: { position: 'absolute', top: 0, right: 0, backgroundColor: '#DC2626', minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 4 },
+  coinBadgeText: { fontSize: 11, fontWeight: 'bold', color: '#ffffff' },
   
-  // Custom user location markers - 3 zoom levels
-  userMarkerFull: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userMarkerHalo: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(59, 130, 246, 0.2)', // Blue halo
-  },
-  userMarkerDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#3B82F6', // Blue dot
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  userMarkerSubtle: {
-    width: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userMarkerRing: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: 'rgba(59, 130, 246, 0.6)', // Semi-transparent blue ring
-  },
-  userMarkerFar: {
-    width: 12,
-    height: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userMarkerSmallDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3B82F6', // Blue dot
-    borderWidth: 1.5,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 2,
-  },
+  userMarkerFull: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  userMarkerHalo: { position: 'absolute', width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+  userMarkerDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#3B82F6', borderWidth: 2, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 3 },
+  userMarkerSubtle: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
+  userMarkerRing: { width: 14, height: 14, borderRadius: 7, backgroundColor: 'transparent', borderWidth: 2, borderColor: 'rgba(59, 130, 246, 0.6)' },
+  userMarkerFar: { width: 12, height: 12, alignItems: 'center', justifyContent: 'center' },
+  userMarkerSmallDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', borderWidth: 1.5, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1, elevation: 2 },
   
-  // Individual price markers
-  priceMarker: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#0ea5e9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  priceMarkerFocused: {
-    borderWidth: 3,
-    transform: [{ scale: 1.15 }],
-  },
-  priceMarkerOffering: {
-    borderColor: '#f97316',
-  },
-  priceMarkerText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#0ea5e9',
-  },
-  priceMarkerTextOffering: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#f97316',
-  },
+  priceMarker: { backgroundColor: '#ffffff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 2, borderColor: '#0ea5e9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3 },
+  priceMarkerFocused: { borderWidth: 3, transform: [{ scale: 1.15 }] },
+  priceMarkerOffering: { borderColor: '#f97316' },
+  priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: '#0ea5e9' },
+  priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: '#f97316' },
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 },
   sheetHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 16 },
   handleBar: { width: 40, height: 5, backgroundColor: '#d1d5db', borderRadius: 3, marginBottom: 12 },
