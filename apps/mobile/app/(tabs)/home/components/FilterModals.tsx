@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Modal, TouchableOpacity, FlatList } from 'react-native';
 import { Text } from 'react-native-paper';
-import { haptic } from '../../../utils/haptics';
+import { haptic } from '../../../../../utils/haptics';
 import { CATEGORIES, RADIUS_OPTIONS } from '../utils/constants';
 import { styles } from '../styles';
 
