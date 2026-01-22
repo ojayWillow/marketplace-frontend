@@ -1,156 +1,205 @@
 /**
- * Optimized map clustering using spatial grid algorithm
- * 
- * Performance:
- * - Old algorithm: O(n²) - checks every marker against every other marker
- * - New algorithm: O(n) - uses spatial grid for instant neighbor lookup
- * 
- * For 100 markers:
- * - Old: 10,000 comparisons
- * - New: ~100 comparisons
+ * Optimized Map Clustering Utility
+ * Uses spatial grid algorithm for O(n) performance instead of O(n²)
  */
 
-import { Region } from 'react-native-maps';
+import type { Region } from 'react-native-maps';
 
-export interface Task {
+export interface ClusterableItem {
   id: number;
-  latitude?: number;
-  longitude?: number;
-  category: string;
-  budget?: number;
-  [key: string]: any;
+  latitude: number;
+  longitude: number;
+  [key: string]: any; // Allow additional properties
 }
 
-export interface Cluster {
+export interface Cluster<T extends ClusterableItem> {
   id: string;
   latitude: number;
   longitude: number;
-  tasks: Task[];
+  items: T[];
   isCluster: boolean;
 }
 
-// Clustering threshold - only cluster when markers would visually overlap
-const OVERLAP_THRESHOLD_FACTOR = 0.025;
-
 /**
- * Fast spatial grid-based clustering
- * 
- * Algorithm:
- * 1. Create a grid overlaying the map region
- * 2. Hash each marker into grid cells
- * 3. Only check markers in same/adjacent cells for clustering
- * 
- * Result: Same visual output as before, but 10x faster
+ * Configuration for clustering behavior
  */
-export const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
-  if (!region || tasks.length === 0) return [];
-  
-  const { latitudeDelta, longitudeDelta } = region;
-  const overlapDistLat = latitudeDelta * OVERLAP_THRESHOLD_FACTOR;
-  const overlapDistLng = longitudeDelta * OVERLAP_THRESHOLD_FACTOR;
-  
-  // Create spatial grid for fast neighbor lookup
-  // Grid cell size = overlap distance (perfect for clustering)
-  const gridCellSizeLat = overlapDistLat;
-  const gridCellSizeLng = overlapDistLng;
-  
-  // Hash function: converts (lat, lng) to grid cell coordinates
-  const getGridCell = (lat: number, lng: number): string => {
-    const cellLat = Math.floor(lat / gridCellSizeLat);
-    const cellLng = Math.floor(lng / gridCellSizeLng);
-    return `${cellLat},${cellLng}`;
-  };
-  
-  // Build spatial grid: cell_key -> array of tasks in that cell
-  const grid = new Map<string, Task[]>();
-  
-  for (const task of tasks) {
-    if (!task.latitude || !task.longitude) continue;
-    
-    const cellKey = getGridCell(task.latitude, task.longitude);
-    if (!grid.has(cellKey)) {
-      grid.set(cellKey, []);
-    }
-    grid.get(cellKey)!.push(task);
-  }
-  
-  // Process each grid cell
-  const clusters: Cluster[] = [];
-  const processed = new Set<number>();
-  
-  for (const [cellKey, cellTasks] of grid.entries()) {
-    // Get adjacent cells (including current cell)
-    const [cellLat, cellLng] = cellKey.split(',').map(Number);
-    const adjacentCells: Task[] = [];
-    
-    // Check 3x3 grid around current cell (including self)
-    for (let dLat = -1; dLat <= 1; dLat++) {
-      for (let dLng = -1; dLng <= 1; dLng++) {
-        const adjKey = `${cellLat + dLat},${cellLng + dLng}`;
-        const adjTasks = grid.get(adjKey);
-        if (adjTasks) {
-          adjacentCells.push(...adjTasks);
-        }
-      }
-    }
-    
-    // Cluster tasks within this cell
-    for (const task of cellTasks) {
-      if (processed.has(task.id)) continue;
-      
-      // Find all overlapping tasks (only check adjacent cells, not all tasks!)
-      const overlappingTasks = adjacentCells.filter(t => {
-        if (processed.has(t.id)) return false;
-        if (t.id === task.id) return true;
-        
-        const latDiff = Math.abs(t.latitude! - task.latitude!);
-        const lngDiff = Math.abs(t.longitude! - task.longitude!);
-        
-        return latDiff < overlapDistLat && lngDiff < overlapDistLng;
-      });
-      
-      // Mark all as processed
-      overlappingTasks.forEach(t => processed.add(t.id));
-      
-      if (overlappingTasks.length === 1) {
-        // Single marker
-        clusters.push({
-          id: `single-${task.id}`,
-          latitude: task.latitude!,
-          longitude: task.longitude!,
-          tasks: [task],
-          isCluster: false,
-        });
-      } else {
-        // Cluster of multiple markers
-        const centerLat = overlappingTasks.reduce((sum, t) => sum + t.latitude!, 0) / overlappingTasks.length;
-        const centerLng = overlappingTasks.reduce((sum, t) => sum + t.longitude!, 0) / overlappingTasks.length;
-        
-        clusters.push({
-          id: `cluster-${task.id}`,
-          latitude: centerLat,
-          longitude: centerLng,
-          tasks: overlappingTasks,
-          isCluster: true,
-        });
-      }
-    }
-  }
-  
-  return clusters;
+export interface ClusterConfig {
+  /**
+   * Factor of region delta to use as overlap threshold
+   * Smaller = more aggressive clustering
+   * Default: 0.025 (2.5% of visible area)
+   */
+  overlapThresholdFactor?: number;
+
+  /**
+   * Minimum items required to form a cluster
+   * Default: 2
+   */
+  minClusterSize?: number;
+}
+
+const DEFAULT_CONFIG: Required<ClusterConfig> = {
+  overlapThresholdFactor: 0.025,
+  minClusterSize: 2,
 };
 
 /**
- * Calculate distance between two coordinates (Haversine formula)
- * Used for sorting by distance
+ * Spatial grid for fast neighbor lookup
+ * Divides the map into cells and stores items by cell
  */
-export const calculateDistance = (
+class SpatialGrid<T extends ClusterableItem> {
+  private grid: Map<string, T[]> = new Map();
+  private cellSizeLat: number;
+  private cellSizeLng: number;
+
+  constructor(cellSizeLat: number, cellSizeLng: number) {
+    this.cellSizeLat = cellSizeLat;
+    this.cellSizeLng = cellSizeLng;
+  }
+
+  /**
+   * Get cell key for a coordinate
+   */
+  private getCellKey(lat: number, lng: number): string {
+    const cellLat = Math.floor(lat / this.cellSizeLat);
+    const cellLng = Math.floor(lng / this.cellSizeLng);
+    return `${cellLat},${cellLng}`;
+  }
+
+  /**
+   * Add item to grid
+   */
+  add(item: T): void {
+    const key = this.getCellKey(item.latitude, item.longitude);
+    const cell = this.grid.get(key);
+    if (cell) {
+      cell.push(item);
+    } else {
+      this.grid.set(key, [item]);
+    }
+  }
+
+  /**
+   * Get nearby items (within 3x3 cell neighborhood)
+   * This ensures we catch items near cell boundaries
+   */
+  getNearby(lat: number, lng: number): T[] {
+    const centerKey = this.getCellKey(lat, lng);
+    const [centerLat, centerLng] = centerKey.split(',').map(Number);
+    const nearby: T[] = [];
+
+    // Check 3x3 grid around center cell
+    for (let dLat = -1; dLat <= 1; dLat++) {
+      for (let dLng = -1; dLng <= 1; dLng++) {
+        const key = `${centerLat + dLat},${centerLng + dLng}`;
+        const cell = this.grid.get(key);
+        if (cell) {
+          nearby.push(...cell);
+        }
+      }
+    }
+
+    return nearby;
+  }
+}
+
+/**
+ * Fast clustering algorithm using spatial grid
+ * Time complexity: O(n) average case, O(n*k) worst case where k is max items per cell
+ * Space complexity: O(n)
+ */
+export function clusterItems<T extends ClusterableItem>(
+  items: T[],
+  region: Region | null,
+  config: ClusterConfig = {}
+): Cluster<T>[] {
+  // Early return for edge cases
+  if (!region || items.length === 0) {
+    return [];
+  }
+
+  const { overlapThresholdFactor, minClusterSize } = { ...DEFAULT_CONFIG, ...config };
+
+  // Calculate overlap distance based on current zoom level
+  const { latitudeDelta, longitudeDelta } = region;
+  const overlapDistLat = latitudeDelta * overlapThresholdFactor;
+  const overlapDistLng = longitudeDelta * overlapThresholdFactor;
+
+  // Create spatial grid with cell size = overlap distance
+  // This ensures nearby items are in same or adjacent cells
+  const grid = new SpatialGrid<T>(overlapDistLat, overlapDistLng);
+
+  // Populate grid
+  for (const item of items) {
+    grid.add(item);
+  }
+
+  // Track processed items
+  const processed = new Set<number>();
+  const clusters: Cluster<T>[] = [];
+
+  // Process each item
+  for (const item of items) {
+    if (processed.has(item.id)) continue;
+
+    // Get nearby items from grid (fast lookup)
+    const nearbyItems = grid.getNearby(item.latitude, item.longitude);
+
+    // Find overlapping items
+    const overlappingItems: T[] = [];
+    for (const nearby of nearbyItems) {
+      if (processed.has(nearby.id)) continue;
+
+      const latDiff = Math.abs(nearby.latitude - item.latitude);
+      const lngDiff = Math.abs(nearby.longitude - item.longitude);
+
+      if (latDiff < overlapDistLat && lngDiff < overlapDistLng) {
+        overlappingItems.push(nearby);
+        processed.add(nearby.id);
+      }
+    }
+
+    // Create cluster or single marker
+    if (overlappingItems.length >= minClusterSize) {
+      // Calculate center of overlapping items
+      const centerLat =
+        overlappingItems.reduce((sum, t) => sum + t.latitude, 0) / overlappingItems.length;
+      const centerLng =
+        overlappingItems.reduce((sum, t) => sum + t.longitude, 0) / overlappingItems.length;
+
+      clusters.push({
+        id: `cluster-${item.id}`,
+        latitude: centerLat,
+        longitude: centerLng,
+        items: overlappingItems,
+        isCluster: true,
+      });
+    } else {
+      // Single item (no clustering)
+      clusters.push({
+        id: `single-${item.id}`,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        items: overlappingItems,
+        isCluster: false,
+      });
+    }
+  }
+
+  return clusters;
+}
+
+/**
+ * Helper to calculate distance between two points (Haversine formula)
+ * Used for validation/testing
+ */
+export function calculateDistance(
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number
-): number => {
-  const R = 6371; // Earth radius in km
+): number {
+  const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -161,4 +210,4 @@ export const calculateDistance = (
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
-};
+}
