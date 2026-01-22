@@ -357,11 +357,11 @@ export default function HomeScreen() {
     if (task) {
       if (mapRef.current && task.latitude && task.longitude) {
         mapRef.current.animateToRegion({
-          latitude: task.latitude - 0.003,
+          latitude: task.latitude,
           longitude: task.longitude,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.015,
-        }, 500);
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
+        }, 350);
       }
       
       setFocusedTaskId(task.id);
@@ -384,11 +384,11 @@ export default function HomeScreen() {
     
     if (mapRef.current && task.latitude && task.longitude) {
       mapRef.current.animateToRegion({
-        latitude: task.latitude - 0.003,
+        latitude: task.latitude,
         longitude: task.longitude,
-        latitudeDelta: 0.015,
-        longitudeDelta: 0.015,
-      }, 500);
+        latitudeDelta: 0.03,
+        longitudeDelta: 0.03,
+      }, 350);
     }
     
     setFocusedTaskId(task.id);
