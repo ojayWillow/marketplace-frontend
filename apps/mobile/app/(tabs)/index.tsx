@@ -356,11 +356,18 @@ export default function HomeScreen() {
     haptic.light();
     if (task) {
       if (mapRef.current && task.latitude && task.longitude) {
+        // Calculate offset to position marker above the sheet
+        // Sheet takes ~40% of screen, so shift marker to upper 30% of visible area
+        const visibleMapHeight = SCREEN_HEIGHT - SHEET_MID_HEIGHT;
+        const targetPositionRatio = 0.3; // Position marker at 30% from top of visible map
+        const latitudeDelta = 0.03;
+        const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.8;
+        
         mapRef.current.animateToRegion({
-          latitude: task.latitude,
+          latitude: task.latitude + latitudeOffset,
           longitude: task.longitude,
-          latitudeDelta: 0.03,
-          longitudeDelta: 0.03,
+          latitudeDelta: latitudeDelta,
+          longitudeDelta: latitudeDelta,
         }, 350);
       }
       
@@ -383,11 +390,15 @@ export default function HomeScreen() {
     haptic.medium();
     
     if (mapRef.current && task.latitude && task.longitude) {
+      // Calculate offset to position marker above the sheet
+      const latitudeDelta = 0.03;
+      const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.8;
+      
       mapRef.current.animateToRegion({
-        latitude: task.latitude,
+        latitude: task.latitude + latitudeOffset,
         longitude: task.longitude,
-        latitudeDelta: 0.03,
-        longitudeDelta: 0.03,
+        latitudeDelta: latitudeDelta,
+        longitudeDelta: latitudeDelta,
       }, 350);
     }
     
