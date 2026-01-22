@@ -147,6 +147,7 @@ export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const regionChangeTimeout = useRef<NodeJS.Timeout | null>(null);
   
   // Start with default location immediately, update when we get real location
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>(DEFAULT_LOCATION);
@@ -394,8 +395,14 @@ export default function HomeScreen() {
     return colors[category] || '#ef4444';
   };
 
+  // Throttled region change handler - prevents excessive re-clustering during animations
   const handleRegionChange = useCallback((region: Region) => {
-    setMapRegion(region);
+    if (regionChangeTimeout.current) {
+      clearTimeout(regionChangeTimeout.current);
+    }
+    regionChangeTimeout.current = setTimeout(() => {
+      setMapRegion(region);
+    }, 150);
   }, []);
 
   const handleClusterPress = (cluster: Cluster) => {
