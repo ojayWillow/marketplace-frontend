@@ -1,4 +1,4 @@
-import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -25,8 +25,8 @@ const CATEGORIES = [
 
 // Combined item type for mixed list
 type ListItem = 
-  | { type: 'job'; data: Task; createdAt: Date }
-  | { type: 'service'; data: Offering; createdAt: Date };
+  | { type: 'job'; data: Task; id: string }
+  | { type: 'service'; data: Offering; id: string };
 
 export default function TasksScreen() {
   const [mainTab, setMainTab] = useState<MainTab>('all');
@@ -67,26 +67,40 @@ export default function TasksScreen() {
     [allOfferings, selectedCategory]
   );
 
-  // Combined and sorted list for "All" tab
-  const mixedItems = useMemo((): ListItem[] => {
-    if (mainTab !== 'all') return [];
-    
-    const jobItems: ListItem[] = tasks.map(task => ({
-      type: 'job' as const,
-      data: task,
-      createdAt: new Date(task.created_at || 0),
-    }));
-    
-    const serviceItems: ListItem[] = offerings.map(offering => ({
-      type: 'service' as const,
-      data: offering,
-      createdAt: new Date(offering.created_at || 0),
-    }));
-    
-    // Combine and sort by creation date (newest first)
-    return [...jobItems, ...serviceItems].sort((a, b) => 
-      b.createdAt.getTime() - a.createdAt.getTime()
-    );
+  // Prepare data for FlatList based on active tab
+  const listData = useMemo((): ListItem[] => {
+    if (mainTab === 'all') {
+      // Mixed list - combine and sort by creation date
+      const jobItems: ListItem[] = tasks.map(task => ({
+        type: 'job' as const,
+        data: task,
+        id: `job-${task.id}`,
+      }));
+      
+      const serviceItems: ListItem[] = offerings.map(offering => ({
+        type: 'service' as const,
+        data: offering,
+        id: `service-${offering.id}`,
+      }));
+      
+      return [...jobItems, ...serviceItems].sort((a, b) => {
+        const aDate = new Date(a.type === 'job' ? a.data.created_at : a.data.created_at || 0).getTime();
+        const bDate = new Date(b.type === 'job' ? b.data.created_at : b.data.created_at || 0).getTime();
+        return bDate - aDate;
+      });
+    } else if (mainTab === 'jobs') {
+      return tasks.map(task => ({
+        type: 'job' as const,
+        data: task,
+        id: `task-${task.id}`,
+      }));
+    } else {
+      return offerings.map(offering => ({
+        type: 'service' as const,
+        data: offering,
+        id: `offering-${offering.id}`,
+      }));
+    }
   }, [mainTab, tasks, offerings]);
 
   // Stable callbacks with useCallback
@@ -149,6 +163,86 @@ export default function TasksScreen() {
 
   const hasActiveFilter = selectedCategory !== 'all';
 
+  // Render item for FlatList
+  const renderItem: ListRenderItem<ListItem> = useCallback(({ item }) => {
+    if (item.type === 'job') {
+      return <TaskCard task={item.data as Task} />;
+    }
+    return <OfferingCard offering={item.data as Offering} />;
+  }, []);
+
+  // Key extractor for FlatList
+  const keyExtractor = useCallback((item: ListItem) => item.id, []);
+
+  // List header component (filter banner + loading/error states)
+  const ListHeaderComponent = useCallback(() => (
+    <>
+      {hasActiveFilter && (
+        <TouchableOpacity style={styles.activeFilterBanner} onPress={handleFilterPress} activeOpacity={0.7}>
+          <Text style={styles.activeFilterText}>
+            {CATEGORIES.find(c => c.key === selectedCategory)?.icon} {CATEGORIES.find(c => c.key === selectedCategory)?.label}
+          </Text>
+          <TouchableOpacity onPress={handleClearFilter} style={styles.clearFilterButton}>
+            <Text style={styles.clearFilterText}>✕</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+
+      {isLoading && (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      )}
+
+      {isError && (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>Failed to load</Text>
+          <Button mode="contained" onPress={refetch}>Retry</Button>
+        </View>
+      )}
+    </>
+  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategory]);
+
+  // Empty component
+  const ListEmptyComponent = useCallback(() => {
+    if (isLoading || isError) return null;
+    
+    const getEmptyIcon = () => {
+      if (mainTab === 'services') return '🛠️';
+      return '📋';
+    };
+
+    const getEmptyText = () => {
+      if (hasActiveFilter) {
+        if (mainTab === 'all') return 'Nothing in this category';
+        if (mainTab === 'jobs') return 'No jobs in this category';
+        return 'No services in this category';
+      }
+      if (mainTab === 'all') return 'No jobs or services available';
+      if (mainTab === 'jobs') return 'No jobs available';
+      return 'No services available';
+    };
+
+    const getEmptySubtext = () => {
+      if (hasActiveFilter) return 'Try a different filter';
+      if (mainTab === 'all') return 'Check back later or create your own';
+      if (mainTab === 'jobs') return 'Check back later or post your own job';
+      return 'Check back later or offer your own service';
+    };
+
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyIcon}>{getEmptyIcon()}</Text>
+        <Text style={styles.emptyText}>{getEmptyText()}</Text>
+        <Text style={styles.emptySubtext}>{getEmptySubtext()}</Text>
+      </View>
+    );
+  }, [isLoading, isError, mainTab, hasActiveFilter]);
+
+  // Footer spacer for FAB
+  const ListFooterComponent = useCallback(() => <View style={styles.fabSpacer} />, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Compact Header with Centered Tabs + Filter */}
@@ -191,99 +285,24 @@ export default function TasksScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-        }
-      >
-        <View style={styles.content}>
-          {/* Active Filter Indicator */}
-          {hasActiveFilter && (
-            <TouchableOpacity style={styles.activeFilterBanner} onPress={handleFilterPress} activeOpacity={0.7}>
-              <Text style={styles.activeFilterText}>
-                {CATEGORIES.find(c => c.key === selectedCategory)?.icon} {CATEGORIES.find(c => c.key === selectedCategory)?.label}
-              </Text>
-              <TouchableOpacity onPress={handleClearFilter} style={styles.clearFilterButton}>
-                <Text style={styles.clearFilterText}>✕</Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          )}
-
-          {/* Loading */}
-          {isLoading ? (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" />
-              <Text style={styles.loadingText}>Loading...</Text>
-            </View>
-          ) : null}
-
-          {/* Error */}
-          {isError ? (
-            <View style={styles.centerContainer}>
-              <Text style={styles.errorText}>Failed to load</Text>
-              <Button mode="contained" onPress={refetch}>Retry</Button>
-            </View>
-          ) : null}
-
-          {/* All Tab - Mixed List */}
-          {mainTab === 'all' && !isLoading && !isError ? (
-            mixedItems.length === 0 ? (
-              <View style={styles.centerContainer}>
-                <Text style={styles.emptyIcon}>📋</Text>
-                <Text style={styles.emptyText}>
-                  {hasActiveFilter ? 'Nothing in this category' : 'No jobs or services available'}
-                </Text>
-                <Text style={styles.emptySubtext}>
-                  {hasActiveFilter ? 'Try a different filter' : 'Check back later or create your own'}
-                </Text>
-              </View>
-            ) : (
-              mixedItems.map((item) => 
-                item.type === 'job' 
-                  ? <TaskCard key={`job-${item.data.id}`} task={item.data as Task} />
-                  : <OfferingCard key={`service-${item.data.id}`} offering={item.data as Offering} />
-              )
-            )
-          ) : null}
-
-          {/* Jobs List */}
-          {mainTab === 'jobs' && !isLoading && !isError ? (
-            tasks.length === 0 ? (
-              <View style={styles.centerContainer}>
-                <Text style={styles.emptyIcon}>📋</Text>
-                <Text style={styles.emptyText}>
-                  {hasActiveFilter ? 'No jobs in this category' : 'No jobs available'}
-                </Text>
-                <Text style={styles.emptySubtext}>
-                  {hasActiveFilter ? 'Try a different filter' : 'Check back later or post your own job'}
-                </Text>
-              </View>
-            ) : (
-              tasks.map((task: Task) => <TaskCard key={`task-${task.id}`} task={task} />)
-            )
-          ) : null}
-
-          {/* Services List */}
-          {mainTab === 'services' && !isLoading && !isError ? (
-            offerings.length === 0 ? (
-              <View style={styles.centerContainer}>
-                <Text style={styles.emptyIcon}>🛠️</Text>
-                <Text style={styles.emptyText}>
-                  {hasActiveFilter ? 'No services in this category' : 'No services available'}
-                </Text>
-                <Text style={styles.emptySubtext}>
-                  {hasActiveFilter ? 'Try a different filter' : 'Check back later or offer your own service'}
-                </Text>
-              </View>
-            ) : (
-              offerings.map((offering: Offering) => <OfferingCard key={`offering-${offering.id}`} offering={offering} />)
-            )
-          ) : null}
-
-          <View style={styles.fabSpacer} />
-        </View>
-      </ScrollView>
+      {/* FlatList instead of ScrollView for virtualization */}
+      <FlatList
+        data={listData}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        ListFooterComponent={ListFooterComponent}
+        contentContainerStyle={styles.listContent}
+        refreshing={isRefetching}
+        onRefresh={refetch}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={8}
+        windowSize={5}
+      />
 
       {/* Floating Action Button */}
       <FAB
@@ -482,10 +501,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   
-  scrollView: { 
-    flex: 1 
-  },
-  content: { 
+  listContent: { 
     padding: 16 
   },
   centerContainer: { 
