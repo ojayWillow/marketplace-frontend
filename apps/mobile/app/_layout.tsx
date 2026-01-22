@@ -82,7 +82,7 @@ export default function RootLayout() {
     } else if (data.type === 'message') {
       router.push('/(tabs)/messages');
     } else if (data.type === 'application') {
-      router.push('/(tabs)/home');
+      router.push('/(tabs)');
     }
   };
 
