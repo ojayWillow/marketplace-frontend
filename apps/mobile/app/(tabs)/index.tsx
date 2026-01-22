@@ -19,9 +19,9 @@ const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 // This is the minimum distance in degrees before clustering kicks in
 const OVERLAP_THRESHOLD_FACTOR = 0.025; // Very tight - only cluster when truly overlapping
 
-// Zoom level thresholds for user location visibility
-const ZOOM_FAR_THRESHOLD = 0.12;    // latitudeDelta > 0.12 = zoomed out (hide user marker)
-const ZOOM_CLOSE_THRESHOLD = 0.05;  // latitudeDelta <= 0.05 = zoomed in (full user marker)
+// Zoom level thresholds for user location style
+const ZOOM_FAR_THRESHOLD = 0.12;    // latitudeDelta > 0.12 = zoomed out (small dot)
+const ZOOM_CLOSE_THRESHOLD = 0.05;  // latitudeDelta <= 0.05 = zoomed in (full marker with halo)
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
@@ -505,9 +505,9 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
 
-  // Render custom user location marker based on zoom level
+  // Render custom user location marker based on zoom level - ALWAYS visible
   const renderUserLocationMarker = () => {
-    if (!userLocation || zoomLevel === 'far') return null;
+    if (!userLocation) return null;
     
     return (
       <Marker
@@ -521,10 +521,15 @@ export default function HomeScreen() {
             <View style={styles.userMarkerHalo} />
             <View style={styles.userMarkerDot} />
           </View>
-        ) : (
+        ) : zoomLevel === 'mid' ? (
           // Subtle ring marker (mid zoom)
           <View style={styles.userMarkerSubtle}>
             <View style={styles.userMarkerRing} />
+          </View>
+        ) : (
+          // Small dot marker (far zoom) - still visible but compact
+          <View style={styles.userMarkerFar}>
+            <View style={styles.userMarkerSmallDot} />
           </View>
         )}
       </Marker>
@@ -659,7 +664,7 @@ export default function HomeScreen() {
             showsUserLocation={false}
             showsMyLocationButton={false}
           >
-            {/* Custom user location marker - zoom aware */}
+            {/* Custom user location marker - always visible, zoom aware styling */}
             {renderUserLocationMarker()}
 
             {/* Task markers - individual or clustered */}
@@ -992,7 +997,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   
-  // Custom user location markers
+  // Custom user location markers - 3 zoom levels
   userMarkerFull: {
     width: 24,
     height: 24,
@@ -1032,6 +1037,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: 'rgba(59, 130, 246, 0.6)', // Semi-transparent blue ring
+  },
+  userMarkerFar: {
+    width: 12,
+    height: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarkerSmallDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#3B82F6', // Blue dot
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
   },
   
   // Individual price markers
