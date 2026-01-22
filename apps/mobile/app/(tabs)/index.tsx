@@ -749,10 +749,12 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* Google Maps style compass/navigation button */}
         <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation} activeOpacity={0.8}>
-          <BlurView intensity={90} tint="light" style={styles.myLocationBlur}>
-            <Text style={styles.myLocationIcon}>📍</Text>
-          </BlurView>
+          <View style={styles.compassButton}>
+            {/* Compass arrow - blue triangular beam pointing up */}
+            <View style={styles.compassArrow} />
+          </View>
         </TouchableOpacity>
 
         <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
@@ -908,9 +910,39 @@ const styles = StyleSheet.create({
   emptyMapIcon: { fontSize: 32, marginBottom: 8 },
   emptyMapText: { fontSize: 16, fontWeight: '600', color: '#374151' },
   emptyMapSubtext: { fontSize: 14, color: '#6b7280', marginTop: 4 },
-  myLocationButton: { position: 'absolute', bottom: 100, right: 16, zIndex: 10 },
-  myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  myLocationIcon: { fontSize: 22 },
+  
+  // Google Maps style compass navigation button
+  myLocationButton: { 
+    position: 'absolute', 
+    bottom: 100, 
+    right: 16, 
+    zIndex: 10,
+  },
+  compassButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  compassArrow: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 20,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#4285F4', // Google blue
+  },
   
   coinClusterContainer: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   coinCluster: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FCD34D', borderWidth: 3, borderColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B45309', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 6 },
