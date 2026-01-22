@@ -5,11 +5,22 @@
 import apiClient from './client';
 import i18n from '../i18n';
 
+// Default language - content is stored in this language, no translation needed
+const DEFAULT_LANGUAGE = 'lv';
+
 /**
  * Get current language code from i18n
  */
 const getCurrentLanguage = (): string => {
-  return i18n.language?.substring(0, 2) || 'lv';
+  return i18n.language?.substring(0, 2) || DEFAULT_LANGUAGE;
+};
+
+/**
+ * Get lang param only if translation is needed
+ */
+const getLangParam = (): string | undefined => {
+  const currentLang = getCurrentLanguage();
+  return currentLang !== DEFAULT_LANGUAGE ? currentLang : undefined;
 };
 
 export interface Offering {
@@ -51,7 +62,7 @@ export interface GetOfferingsParams {
   longitude?: number;
   radius?: number;
   boosted_only?: boolean;
-  lang?: string; // Language for translation
+  lang?: string; // Language for translation - only send if different from default
 }
 
 export interface GetOfferingsResponse {
@@ -68,58 +79,63 @@ export interface BoostOfferingResponse {
 }
 
 /**
- * Get all offerings with optional filtering, geolocation, and translation
- * Automatically includes current language for translation
+ * Get all offerings with optional filtering and geolocation
+ * Only requests translation if user's language differs from default (lv)
  */
 export const getOfferings = async (params: GetOfferingsParams = {}): Promise<GetOfferingsResponse> => {
-  const paramsWithLang = {
+  const lang = getLangParam();
+  const requestParams = {
     ...params,
-    lang: params.lang || getCurrentLanguage(),
+    ...(lang && { lang }),
   };
-  const response = await apiClient.get('/api/offerings', { params: paramsWithLang });
+  const response = await apiClient.get('/api/offerings', { params: requestParams });
   return response.data;
 };
 
 /**
  * Get only boosted offerings (for map display)
- * Automatically includes current language for translation
  */
 export const getBoostedOfferings = async (params: Omit<GetOfferingsParams, 'boosted_only'> = {}): Promise<GetOfferingsResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get('/api/offerings', { 
-    params: { ...params, boosted_only: true, lang: getCurrentLanguage() } 
+    params: { 
+      ...params, 
+      boosted_only: true,
+      ...(lang && { lang }),
+    } 
   });
   return response.data;
 };
 
 /**
  * Get offerings created by current user
- * Automatically includes current language for translation
  */
 export const getMyOfferings = async (): Promise<GetOfferingsResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get('/api/offerings/my', {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
 
 /**
  * Get offerings by a specific user ID (public)
- * Automatically includes current language for translation
  */
 export const getOfferingsByUser = async (userId: number): Promise<GetOfferingsResponse> => {
+  const lang = getLangParam();
   const response = await apiClient.get(`/api/offerings/user/${userId}`, {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
 
 /**
  * Get a single offering by ID
- * Automatically includes current language for translation
  */
 export const getOffering = async (offeringId: number): Promise<Offering> => {
+  const lang = getLangParam();
   const response = await apiClient.get(`/api/offerings/${offeringId}`, {
-    params: { lang: getCurrentLanguage() }
+    params: lang ? { lang } : {}
   });
   return response.data;
 };
