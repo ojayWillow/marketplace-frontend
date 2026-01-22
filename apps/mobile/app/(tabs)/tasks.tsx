@@ -1,12 +1,25 @@
-import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Modal } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Card, ActivityIndicator, Button, Surface, FAB, SegmentedButtons } from 'react-native-paper';
+import { Text, Card, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { getTasks, getOfferings, useAuthStore, type Task, type Offering } from '@marketplace/shared';
+import { haptic } from '../../utils/haptics';
 
 type MainTab = 'jobs' | 'services';
+
+const CATEGORIES = [
+  { key: 'all', label: 'All Categories', icon: '🔍' },
+  { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
+  { key: 'moving', label: 'Moving', icon: '📦' },
+  { key: 'repairs', label: 'Repairs', icon: '🔧' },
+  { key: 'delivery', label: 'Delivery', icon: '🚗' },
+  { key: 'tutoring', label: 'Tutoring', icon: '📚' },
+  { key: 'tech', label: 'Tech', icon: '💻' },
+  { key: 'beauty', label: 'Beauty', icon: '💅' },
+  { key: 'other', label: 'Other', icon: '📋' },
+];
 
 // Helper to shorten location - extract city name
 const shortenLocation = (location: string | undefined): string => {
@@ -28,6 +41,8 @@ const shortenLocation = (location: string | undefined): string => {
 export default function TasksScreen() {
   const [mainTab, setMainTab] = useState<MainTab>('jobs');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const { isAuthenticated } = useAuthStore();
 
   // Browse Jobs query - only open jobs
@@ -44,8 +59,17 @@ export default function TasksScreen() {
     enabled: mainTab === 'services',
   });
 
-  const tasks = jobsQuery.data?.tasks || [];
-  const offerings = servicesQuery.data?.offerings || [];
+  const allTasks = jobsQuery.data?.tasks || [];
+  const allOfferings = servicesQuery.data?.offerings || [];
+
+  // Filter by category
+  const tasks = selectedCategory === 'all' 
+    ? allTasks 
+    : allTasks.filter(t => t.category === selectedCategory);
+  
+  const offerings = selectedCategory === 'all'
+    ? allOfferings
+    : allOfferings.filter(o => o.category === selectedCategory);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,6 +99,22 @@ export default function TasksScreen() {
     }
   };
 
+  const handleTabChange = (tab: MainTab) => {
+    haptic.selection();
+    setMainTab(tab);
+  };
+
+  const handleFilterPress = () => {
+    haptic.light();
+    setShowFilterModal(true);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    haptic.selection();
+    setSelectedCategory(category);
+    setShowFilterModal(false);
+  };
+
   const handleCreate = (type: 'task' | 'offering') => {
     setShowCreateModal(false);
     if (!isAuthenticated) {
@@ -93,26 +133,40 @@ export default function TasksScreen() {
   const refetch = mainTab === 'jobs' ? jobsQuery.refetch : servicesQuery.refetch;
   const isRefetching = mainTab === 'jobs' ? jobsQuery.isRefetching : servicesQuery.isRefetching;
 
+  const hasActiveFilter = selectedCategory !== 'all';
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <Surface style={styles.header} elevation={1}>
-        <Text variant="headlineMedium" style={styles.title}>Find Work</Text>
-        <Text style={styles.subtitle}>Discover jobs and services near you</Text>
-        
-        {/* Main Tab Segmented Control */}
-        <View style={styles.segmentContainer}>
-          <SegmentedButtons
-            value={mainTab}
-            onValueChange={(value) => setMainTab(value as MainTab)}
-            buttons={[
-              { value: 'jobs', label: '📋 Jobs', style: mainTab === 'jobs' ? styles.segmentActive : {} },
-              { value: 'services', label: '🛠️ Services', style: mainTab === 'services' ? styles.segmentActive : {} },
-            ]}
-            style={styles.segmentedButtons}
-          />
+      {/* Compact Header with Tabs + Filter */}
+      <View style={styles.header}>
+        {/* Tab Pills */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[styles.tabPill, mainTab === 'jobs' && styles.tabPillActive]}
+            onPress={() => handleTabChange('jobs')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabPillText, mainTab === 'jobs' && styles.tabPillTextActive]}>Jobs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabPill, mainTab === 'services' && styles.tabPillActive]}
+            onPress={() => handleTabChange('services')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabPillText, mainTab === 'services' && styles.tabPillTextActive]}>Services</Text>
+          </TouchableOpacity>
         </View>
-      </Surface>
+
+        {/* Filter Button */}
+        <TouchableOpacity
+          style={[styles.filterButton, hasActiveFilter && styles.filterButtonActive]}
+          onPress={handleFilterPress}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.filterIcon}>⚙️</Text>
+          {hasActiveFilter && <View style={styles.filterDot} />}
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -121,6 +175,18 @@ export default function TasksScreen() {
         }
       >
         <View style={styles.content}>
+          {/* Active Filter Indicator */}
+          {hasActiveFilter && (
+            <TouchableOpacity style={styles.activeFilterBanner} onPress={handleFilterPress} activeOpacity={0.7}>
+              <Text style={styles.activeFilterText}>
+                {CATEGORIES.find(c => c.key === selectedCategory)?.icon} {CATEGORIES.find(c => c.key === selectedCategory)?.label}
+              </Text>
+              <TouchableOpacity onPress={() => { haptic.soft(); setSelectedCategory('all'); }} style={styles.clearFilterButton}>
+                <Text style={styles.clearFilterText}>✕</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          )}
+
           {/* Loading */}
           {isLoading ? (
             <View style={styles.centerContainer}>
@@ -142,8 +208,12 @@ export default function TasksScreen() {
             tasks.length === 0 ? (
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyIcon}>📋</Text>
-                <Text style={styles.emptyText}>No jobs available</Text>
-                <Text style={styles.emptySubtext}>Check back later or post your own job</Text>
+                <Text style={styles.emptyText}>
+                  {hasActiveFilter ? 'No jobs in this category' : 'No jobs available'}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {hasActiveFilter ? 'Try a different filter' : 'Check back later or post your own job'}
+                </Text>
               </View>
             ) : (
               tasks.map((task: Task) => {
@@ -183,8 +253,12 @@ export default function TasksScreen() {
             offerings.length === 0 ? (
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyIcon}>🛠️</Text>
-                <Text style={styles.emptyText}>No services available</Text>
-                <Text style={styles.emptySubtext}>Check back later or offer your own service</Text>
+                <Text style={styles.emptyText}>
+                  {hasActiveFilter ? 'No services in this category' : 'No services available'}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {hasActiveFilter ? 'Try a different filter' : 'Check back later or offer your own service'}
+                </Text>
               </View>
             ) : (
               offerings.map((offering: Offering) => {
@@ -224,8 +298,43 @@ export default function TasksScreen() {
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => setShowCreateModal(true)}
+        onPress={() => { haptic.medium(); setShowCreateModal(true); }}
       />
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => { haptic.soft(); setShowFilterModal(false); }}
+        >
+          <View style={styles.filterModalContent}>
+            <Text style={styles.filterModalTitle}>Filter by Category</Text>
+            <FlatList
+              data={CATEGORIES}
+              keyExtractor={(item) => item.key}
+              renderItem={({ item: cat }) => (
+                <TouchableOpacity
+                  style={[styles.filterOption, selectedCategory === cat.key && styles.filterOptionActive]}
+                  onPress={() => handleCategorySelect(cat.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.filterOptionIcon}>{cat.icon}</Text>
+                  <Text style={[styles.filterOptionText, selectedCategory === cat.key && styles.filterOptionTextActive]}>
+                    {cat.label}
+                  </Text>
+                  {selectedCategory === cat.key && <Text style={styles.filterOptionCheck}>✓</Text>}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Create Modal */}
       <Modal
@@ -278,27 +387,101 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#f5f5f5' 
   },
+  
+  // Compact Header
   header: { 
-    padding: 16, 
-    backgroundColor: '#ffffff' 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
   },
-  title: { 
-    fontWeight: 'bold', 
-    color: '#1f2937',
+  
+  // Tab Pills
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 20,
+    padding: 3,
   },
-  subtitle: {
+  tabPill: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 17,
+  },
+  tabPillActive: {
+    backgroundColor: '#0ea5e9',
+  },
+  tabPillText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#6b7280',
-    marginBottom: 16,
   },
-  segmentContainer: { 
-    marginTop: 4 
+  tabPillTextActive: {
+    color: '#ffffff',
   },
-  segmentedButtons: { 
-    backgroundColor: '#f3f4f6' 
+  
+  // Filter Button
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  segmentActive: { 
-    backgroundColor: '#0ea5e9' 
+  filterButtonActive: {
+    backgroundColor: '#e0f2fe',
   },
+  filterIcon: {
+    fontSize: 20,
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0ea5e9',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+  },
+  
+  // Active Filter Banner
+  activeFilterBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  activeFilterText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#0369a1',
+  },
+  clearFilterButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearFilterText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  
   scrollView: { 
     flex: 1 
   },
@@ -423,14 +606,16 @@ const styles = StyleSheet.create({
   modalOverlay: { 
     flex: 1, 
     backgroundColor: 'rgba(0,0,0,0.5)', 
-    justifyContent: 'flex-end' 
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
   },
   modalContent: { 
     backgroundColor: '#ffffff', 
-    borderTopLeftRadius: 24, 
-    borderTopRightRadius: 24, 
+    borderRadius: 20, 
     padding: 24, 
-    paddingBottom: 40 
+    width: '100%',
+    maxWidth: 400,
   },
   modalTitle: { 
     fontWeight: 'bold', 
@@ -474,5 +659,53 @@ const styles = StyleSheet.create({
   },
   cancelButton: { 
     marginTop: 8 
+  },
+  
+  // Filter Modal
+  filterModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#f9fafb',
+  },
+  filterOptionActive: {
+    backgroundColor: '#e0f2fe',
+  },
+  filterOptionIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  filterOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  filterOptionTextActive: {
+    color: '#0ea5e9',
+    fontWeight: '600',
+  },
+  filterOptionCheck: {
+    fontSize: 18,
+    color: '#0ea5e9',
+    fontWeight: 'bold',
   },
 });
