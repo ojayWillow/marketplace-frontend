@@ -4,9 +4,14 @@ import { Text, Avatar, Surface, Divider, Button, ActivityIndicator } from 'react
 import { router } from 'expo-router';
 import { useAuthStore, getUserProfile, getUserReviewStats } from '@marketplace/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { getActiveTheme, mode } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const { data: userData, isLoading: isLoadingUser } = useQuery({
     queryKey: ['user', user?.id],
@@ -38,13 +43,20 @@ export default function ProfileScreen() {
     );
   };
 
+  // Get appearance label
+  const getAppearanceLabel = () => {
+    if (mode === 'system') return 'System';
+    if (mode === 'dark') return 'Dark';
+    return 'Light';
+  };
+
   if (!isAuthenticated || !user) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
         <View style={styles.centerContainer}>
-          <Avatar.Icon size={80} icon="account" style={styles.guestAvatar} />
-          <Text variant="headlineSmall" style={styles.notLoggedInTitle}>Not Logged In</Text>
-          <Text style={styles.notLoggedInSubtitle}>
+          <Avatar.Icon size={80} icon="account" style={[styles.guestAvatar, { backgroundColor: themeColors.border }]} />
+          <Text variant="headlineSmall" style={[styles.notLoggedInTitle, { color: themeColors.text }]}>Not Logged In</Text>
+          <Text style={[styles.notLoggedInSubtitle, { color: themeColors.textSecondary }]}>
             Sign in to access your profile, listings, and messages
           </Text>
           <Button
@@ -63,10 +75,10 @@ export default function ProfileScreen() {
   const isLoading = isLoadingUser || isLoadingStats;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
       <ScrollView style={styles.scrollView}>
         {/* Header */}
-        <Surface style={styles.header} elevation={1}>
+        <Surface style={[styles.header, { backgroundColor: themeColors.card }]} elevation={1}>
           <Pressable 
             onPress={() => router.push('/profile/edit')}
             style={styles.avatarContainer}
@@ -76,20 +88,20 @@ export default function ProfileScreen() {
               label={user.username?.charAt(0).toUpperCase() || 'U'}
               style={styles.avatar}
             />
-            <View style={styles.editBadge}>
+            <View style={[styles.editBadge, { backgroundColor: themeColors.card }]}>
               <Text style={styles.editBadgeText}>✏️</Text>
             </View>
           </Pressable>
           
-          <Text variant="headlineSmall" style={styles.name}>
+          <Text variant="headlineSmall" style={[styles.name, { color: themeColors.text }]}>
             {user.first_name && user.last_name
               ? `${user.first_name} ${user.last_name}`
               : user.username}
           </Text>
-          <Text style={styles.username}>@{user.username}</Text>
+          <Text style={[styles.username, { color: themeColors.textSecondary }]}>@{user.username}</Text>
           
           {displayUser.bio ? (
-            <Text style={styles.bio} numberOfLines={2}>{displayUser.bio}</Text>
+            <Text style={[styles.bio, { color: themeColors.textSecondary }]} numberOfLines={2}>{displayUser.bio}</Text>
           ) : null}
           
           {/* Stats */}
@@ -100,115 +112,134 @@ export default function ProfileScreen() {
           ) : (
             <View style={styles.statsContainer}>
               <View style={styles.stat}>
-                <Text variant="titleLarge" style={styles.statValue}>
+                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
                   {reviewStats?.average_rating?.toFixed(1) || '-'}
                 </Text>
-                <Text style={styles.statLabel}>⭐ Rating</Text>
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>⭐ Rating</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
               <View style={styles.stat}>
-                <Text variant="titleLarge" style={styles.statValue}>
+                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
                   {reviewStats?.total_reviews || 0}
                 </Text>
-                <Text style={styles.statLabel}>Reviews</Text>
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Reviews</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
               <View style={styles.stat}>
-                <Text variant="titleLarge" style={styles.statValue}>
+                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
                   {displayUser.completed_tasks_count || 0}
                 </Text>
-                <Text style={styles.statLabel}>Completed</Text>
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Completed</Text>
               </View>
             </View>
           )}
         </Surface>
 
         {/* Account Section */}
-        <Text style={styles.sectionLabel}>Account</Text>
-        <Surface style={styles.menuContainer} elevation={0}>
+        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Account</Text>
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Edit Profile" 
             icon="✏️" 
-            onPress={() => router.push('/profile/edit')} 
+            onPress={() => router.push('/profile/edit')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="My Public Profile" 
             icon="👤" 
-            onPress={() => router.push(`/user/${user.id}`)} 
+            onPress={() => router.push(`/user/${user.id}`)}
+            themeColors={themeColors}
           />
         </Surface>
 
         {/* My Activity Section */}
-        <Text style={styles.sectionLabel}>My Activity</Text>
-        <Surface style={styles.menuContainer} elevation={0}>
+        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>My Activity</Text>
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Jobs I Posted" 
             subtitle="Jobs you're looking for help with"
             icon="📋" 
-            onPress={() => router.push('/activity/posted-jobs')} 
+            onPress={() => router.push('/activity/posted-jobs')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="My Applications" 
             subtitle="Jobs you've applied for"
             icon="📨" 
-            onPress={() => router.push('/activity/applications')} 
+            onPress={() => router.push('/activity/applications')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Jobs I'm Working On" 
             subtitle="Jobs assigned to you"
             icon="💼" 
-            onPress={() => router.push('/activity/my-jobs')} 
+            onPress={() => router.push('/activity/my-jobs')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="My Services" 
             subtitle="Services you offer"
             icon="🛠️" 
-            onPress={() => router.push('/activity/my-services')} 
+            onPress={() => router.push('/activity/my-services')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Listings" 
             subtitle="coming soon"
             icon="🛒️" 
             onPress={() => Alert.alert('Coming Soon', 'This feature is under development')} 
             disabled
+            themeColors={themeColors}
           />
         </Surface>
 
         {/* Messages */}
-        <Text style={styles.sectionLabel}>Communication</Text>
-        <Surface style={styles.menuContainer} elevation={0}>
+        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Communication</Text>
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Messages" 
             icon="💬" 
-            onPress={() => router.push('/(tabs)/messages')} 
+            onPress={() => router.push('/(tabs)/messages')}
+            themeColors={themeColors}
           />
         </Surface>
 
         {/* Settings Section */}
-        <Text style={styles.sectionLabel}>Settings</Text>
-        <Surface style={styles.menuContainer} elevation={0}>
+        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Settings</Text>
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+          <MenuItem 
+            title="Appearance" 
+            icon="🎨" 
+            subtitle={getAppearanceLabel()}
+            onPress={() => router.push('/settings/appearance')}
+            themeColors={themeColors}
+          />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Notifications" 
             icon="🔔" 
-            onPress={() => router.push('/settings/notifications')} 
+            onPress={() => router.push('/settings/notifications')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Language" 
             icon="🌐" 
             subtitle="English"
-            onPress={() => router.push('/settings/language')} 
+            onPress={() => router.push('/settings/language')}
+            themeColors={themeColors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Help & Support" 
             icon="❓" 
-            onPress={() => Alert.alert('Help & Support', 'Contact us at support@quickhelp.lv')} 
+            onPress={() => Alert.alert('Help & Support', 'Contact us at support@quickhelp.lv')}
+            themeColors={themeColors}
           />
         </Surface>
 
@@ -227,10 +258,10 @@ export default function ProfileScreen() {
 
         {/* Account Info */}
         <View style={styles.footer}>
-          <Text style={styles.memberSince}>
+          <Text style={[styles.memberSince, { color: themeColors.textMuted }]}>
             Member since {new Date(user.created_at).toLocaleDateString()}
           </Text>
-          <Text style={styles.version}>App version 1.0.0</Text>
+          <Text style={[styles.version, { color: themeColors.textMuted }]}>App version 1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -242,13 +273,15 @@ function MenuItem({
   subtitle,
   icon, 
   onPress,
-  disabled = false
+  disabled = false,
+  themeColors,
 }: { 
   title: string; 
   subtitle?: string;
   icon: string; 
   onPress: () => void;
   disabled?: boolean;
+  themeColors: typeof colors.light;
 }) {
   return (
     <Pressable
@@ -256,20 +289,20 @@ function MenuItem({
       disabled={disabled}
       style={({ pressed }) => [
         styles.menuItem,
-        pressed && !disabled && styles.menuItemPressed,
+        pressed && !disabled && { backgroundColor: themeColors.backgroundSecondary },
         disabled && styles.menuItemDisabled,
       ]}
     >
       <Text style={[styles.menuIcon, disabled && styles.menuIconDisabled]}>{icon}</Text>
       <View style={styles.menuTextContainer}>
-        <Text style={[styles.menuTitle, disabled && styles.menuTitleDisabled]}>{title}</Text>
+        <Text style={[styles.menuTitle, { color: themeColors.text }, disabled && { color: themeColors.textMuted }]}>{title}</Text>
         {subtitle ? (
-          <Text style={[styles.menuSubtitle, disabled && styles.menuSubtitleDisabled]}>
+          <Text style={[styles.menuSubtitle, { color: themeColors.textMuted }, disabled && styles.menuSubtitleDisabled]}>
             {subtitle}
           </Text>
         ) : null}
       </View>
-      {!disabled && <Text style={styles.menuArrow}>›</Text>}
+      {!disabled && <Text style={[styles.menuArrow, { color: themeColors.textMuted }]}>›</Text>}
     </Pressable>
   );
 }
@@ -277,7 +310,6 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
@@ -289,7 +321,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   guestAvatar: {
-    backgroundColor: '#e5e7eb',
     marginBottom: 16,
   },
   notLoggedInTitle: {
@@ -297,7 +328,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   notLoggedInSubtitle: {
-    color: '#6b7280',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -305,7 +335,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   header: {
-    backgroundColor: '#ffffff',
     paddingVertical: 32,
     paddingHorizontal: 24,
     alignItems: 'center',
@@ -321,7 +350,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     width: 28,
     height: 28,
@@ -338,14 +366,11 @@ const styles = StyleSheet.create({
   },
   name: {
     fontWeight: 'bold',
-    color: '#1f2937',
   },
   username: {
-    color: '#6b7280',
     marginTop: 4,
   },
   bio: {
-    color: '#4b5563',
     marginTop: 12,
     textAlign: 'center',
     paddingHorizontal: 24,
@@ -366,37 +391,29 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 32,
-    backgroundColor: '#e5e7eb',
   },
   statValue: {
     fontWeight: 'bold',
-    color: '#1f2937',
   },
   statLabel: {
-    color: '#6b7280',
     fontSize: 12,
     marginTop: 4,
   },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6b7280',
     marginTop: 24,
     marginBottom: 8,
     marginHorizontal: 16,
     textTransform: 'uppercase',
   },
   menuContainer: {
-    backgroundColor: '#ffffff',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-  },
-  menuItemPressed: {
-    backgroundColor: '#f9fafb',
   },
   menuItemDisabled: {
     opacity: 0.5,
@@ -414,23 +431,16 @@ const styles = StyleSheet.create({
   },
   menuTitle: {
     fontSize: 16,
-    color: '#1f2937',
-  },
-  menuTitleDisabled: {
-    color: '#9ca3af',
   },
   menuSubtitle: {
     fontSize: 13,
-    color: '#9ca3af',
     marginTop: 2,
   },
   menuSubtitleDisabled: {
-    color: '#d1d5db',
     fontStyle: 'italic',
   },
   menuArrow: {
     fontSize: 24,
-    color: '#9ca3af',
   },
   logoutContainer: {
     marginTop: 24,
@@ -445,11 +455,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   memberSince: {
-    color: '#9ca3af',
     fontSize: 13,
   },
   version: {
-    color: '#d1d5db',
     fontSize: 12,
     marginTop: 4,
   },
