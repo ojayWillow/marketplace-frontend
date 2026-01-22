@@ -1,11 +1,13 @@
 import { View, ScrollView, RefreshControl, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Card, ActivityIndicator, Button, FAB } from 'react-native-paper';
+import { Text, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { router } from 'expo-router';
 import { getTasks, getOfferings, useAuthStore, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
+import TaskCard from '../../components/TaskCard';
+import OfferingCard from '../../components/OfferingCard';
 
 type MainTab = 'all' | 'jobs' | 'services';
 
@@ -20,23 +22,6 @@ const CATEGORIES = [
   { key: 'beauty', label: 'Beauty', icon: '💅' },
   { key: 'other', label: 'Other', icon: '📋' },
 ];
-
-// Helper to shorten location - extract city name
-const shortenLocation = (location: string | undefined): string => {
-  if (!location) return '';
-  const parts = location.split(',').map(p => p.trim());
-  
-  // Try to find city (skip street addresses, postal codes, country)
-  for (const part of parts) {
-    if (/^\d/.test(part)) continue;
-    if (/LV-\d+/.test(part)) continue;
-    if (part.toLowerCase() === 'latvia') continue;
-    if (part.length < 3) continue;
-    return part;
-  }
-  
-  return location.length > 15 ? location.substring(0, 15) + '...' : location;
-};
 
 // Combined item type for mixed list
 type ListItem = 
@@ -67,14 +52,20 @@ export default function TasksScreen() {
   const allTasks = jobsQuery.data?.tasks || [];
   const allOfferings = servicesQuery.data?.offerings || [];
 
-  // Filter by category
-  const tasks = selectedCategory === 'all' 
-    ? allTasks 
-    : allTasks.filter(t => t.category === selectedCategory);
+  // Filter by category (memoized to prevent unnecessary recalculations)
+  const tasks = useMemo(() => 
+    selectedCategory === 'all' 
+      ? allTasks 
+      : allTasks.filter(t => t.category === selectedCategory),
+    [allTasks, selectedCategory]
+  );
   
-  const offerings = selectedCategory === 'all'
-    ? allOfferings
-    : allOfferings.filter(o => o.category === selectedCategory);
+  const offerings = useMemo(() => 
+    selectedCategory === 'all'
+      ? allOfferings
+      : allOfferings.filter(o => o.category === selectedCategory),
+    [allOfferings, selectedCategory]
+  );
 
   // Combined and sorted list for "All" tab
   const mixedItems = useMemo((): ListItem[] => {
@@ -98,51 +89,24 @@ export default function TasksScreen() {
     );
   }, [mainTab, tasks, offerings]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return { bg: '#dcfce7', text: '#166534' };
-      case 'assigned': return { bg: '#fef3c7', text: '#92400e' };
-      case 'in_progress': return { bg: '#dbeafe', text: '#1e40af' };
-      case 'pending_confirmation': return { bg: '#f3e8ff', text: '#7c3aed' };
-      case 'completed': return { bg: '#f3f4f6', text: '#374151' };
-      case 'cancelled': return { bg: '#fee2e2', text: '#991b1b' };
-      case 'active': return { bg: '#dcfce7', text: '#166534' };
-      case 'paused': return { bg: '#fef3c7', text: '#92400e' };
-      default: return { bg: '#f3f4f6', text: '#374151' };
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'open': return 'Open';
-      case 'assigned': return 'Assigned';
-      case 'in_progress': return 'In Progress';
-      case 'pending_confirmation': return 'Pending';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      case 'active': return 'Active';
-      case 'paused': return 'Paused';
-      default: return status;
-    }
-  };
-
-  const handleTabChange = (tab: MainTab) => {
+  // Stable callbacks with useCallback
+  const handleTabChange = useCallback((tab: MainTab) => {
     haptic.selection();
     setMainTab(tab);
-  };
+  }, []);
 
-  const handleFilterPress = () => {
+  const handleFilterPress = useCallback(() => {
     haptic.light();
     setShowFilterModal(true);
-  };
+  }, []);
 
-  const handleCategorySelect = (category: string) => {
+  const handleCategorySelect = useCallback((category: string) => {
     haptic.selection();
     setSelectedCategory(category);
     setShowFilterModal(false);
-  };
+  }, []);
 
-  const handleCreate = (type: 'task' | 'offering') => {
+  const handleCreate = useCallback((type: 'task' | 'offering') => {
     setShowCreateModal(false);
     if (!isAuthenticated) {
       router.push('/(auth)/login');
@@ -153,7 +117,12 @@ export default function TasksScreen() {
     } else {
       router.push('/offering/create');
     }
-  };
+  }, [isAuthenticated]);
+
+  const handleClearFilter = useCallback(() => {
+    haptic.soft();
+    setSelectedCategory('all');
+  }, []);
 
   const isLoading = mainTab === 'all' 
     ? (jobsQuery.isLoading || servicesQuery.isLoading)
@@ -167,10 +136,10 @@ export default function TasksScreen() {
       ? jobsQuery.isError
       : servicesQuery.isError;
       
-  const refetch = () => {
+  const refetch = useCallback(() => {
     if (mainTab === 'all' || mainTab === 'jobs') jobsQuery.refetch();
     if (mainTab === 'all' || mainTab === 'services') servicesQuery.refetch();
-  };
+  }, [mainTab, jobsQuery, servicesQuery]);
   
   const isRefetching = mainTab === 'all'
     ? (jobsQuery.isRefetching || servicesQuery.isRefetching)
@@ -179,65 +148,6 @@ export default function TasksScreen() {
       : servicesQuery.isRefetching;
 
   const hasActiveFilter = selectedCategory !== 'all';
-
-  // Render a job card
-  const renderJobCard = (task: Task) => {
-    const statusColors = getStatusColor(task.status);
-    const shortLocation = shortenLocation(task.location);
-    return (
-      <Card key={`job-${task.id}`} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
-        <Card.Content style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-              <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
-            </View>
-          </View>
-          
-          <Text style={styles.category}>{task.category}</Text>
-          <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{task.description}</Text>
-          
-          <View style={styles.cardFooter}>
-            <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-            <View style={styles.footerMeta}>
-              {shortLocation ? (
-                <Text style={styles.location}>📍 {shortLocation}</Text>
-              ) : null}
-              <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  };
-
-  // Render a service card
-  const renderServiceCard = (offering: Offering) => {
-    const statusColors = getStatusColor(offering.status || 'active');
-    return (
-      <Card key={`service-${offering.id}`} style={styles.card} onPress={() => router.push(`/offering/${offering.id}`)}>
-        <Card.Content style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{offering.title}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-              <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(offering.status || 'active')}</Text>
-            </View>
-          </View>
-          
-          <Text style={styles.categoryOrange}>{offering.category}</Text>
-          <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>{offering.description}</Text>
-          
-          <View style={styles.cardFooter}>
-            <Text style={styles.priceOrange}>
-              {offering.price_type === 'hourly' ? `€${offering.price}/hr` :
-               offering.price_type === 'fixed' ? `€${offering.price}` : 'Negotiable'}
-            </Text>
-            <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -294,7 +204,7 @@ export default function TasksScreen() {
               <Text style={styles.activeFilterText}>
                 {CATEGORIES.find(c => c.key === selectedCategory)?.icon} {CATEGORIES.find(c => c.key === selectedCategory)?.label}
               </Text>
-              <TouchableOpacity onPress={() => { haptic.soft(); setSelectedCategory('all'); }} style={styles.clearFilterButton}>
+              <TouchableOpacity onPress={handleClearFilter} style={styles.clearFilterButton}>
                 <Text style={styles.clearFilterText}>✕</Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -312,7 +222,7 @@ export default function TasksScreen() {
           {isError ? (
             <View style={styles.centerContainer}>
               <Text style={styles.errorText}>Failed to load</Text>
-              <Button mode="contained" onPress={() => refetch()}>Retry</Button>
+              <Button mode="contained" onPress={refetch}>Retry</Button>
             </View>
           ) : null}
 
@@ -331,8 +241,8 @@ export default function TasksScreen() {
             ) : (
               mixedItems.map((item) => 
                 item.type === 'job' 
-                  ? renderJobCard(item.data as Task)
-                  : renderServiceCard(item.data as Offering)
+                  ? <TaskCard key={`job-${item.data.id}`} task={item.data as Task} />
+                  : <OfferingCard key={`service-${item.data.id}`} offering={item.data as Offering} />
               )
             )
           ) : null}
@@ -350,7 +260,7 @@ export default function TasksScreen() {
                 </Text>
               </View>
             ) : (
-              tasks.map((task: Task) => renderJobCard(task))
+              tasks.map((task: Task) => <TaskCard key={`task-${task.id}`} task={task} />)
             )
           ) : null}
 
@@ -367,7 +277,7 @@ export default function TasksScreen() {
                 </Text>
               </View>
             ) : (
-              offerings.map((offering: Offering) => renderServiceCard(offering))
+              offerings.map((offering: Offering) => <OfferingCard key={`offering-${offering.id}`} offering={offering} />)
             )
           ) : null}
 
@@ -426,7 +336,7 @@ export default function TasksScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setShowCreateModal(false)}>
           <View style={styles.modalContent}>
-            <Text variant="titleLarge" style={styles.modalTitle}>Create New</Text>
+            <Text style={styles.modalTitle}>Create New</Text>
             <Text style={styles.modalSubtitle}>What would you like to create?</Text>
             
             <Pressable
@@ -434,7 +344,7 @@ export default function TasksScreen() {
               onPress={() => handleCreate('task')}
             >
               <Text style={styles.modalOptionIcon}>📋</Text>
-              <View style={styles.modalOptionText}>
+              <View style={styles.modalOptionTextWrapper}>
                 <Text style={styles.modalOptionTitle}>Post a Job</Text>
                 <Text style={styles.modalOptionDesc}>Find someone to help you</Text>
               </View>
@@ -446,7 +356,7 @@ export default function TasksScreen() {
               onPress={() => handleCreate('offering')}
             >
               <Text style={styles.modalOptionIcon}>🛠️</Text>
-              <View style={styles.modalOptionText}>
+              <View style={styles.modalOptionTextWrapper}>
                 <Text style={styles.modalOptionTitle}>Offer a Service</Text>
                 <Text style={styles.modalOptionDesc}>Advertise your skills</Text>
               </View>
@@ -605,82 +515,6 @@ const styles = StyleSheet.create({
     fontSize: 48 
   },
   
-  // Card Styles
-  card: { 
-    marginBottom: 12, 
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    elevation: 1,
-  },
-  cardContent: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  cardTitle: { 
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 12,
-    color: '#1f2937',
-  },
-  statusBadge: { 
-    paddingHorizontal: 10, 
-    paddingVertical: 4, 
-    borderRadius: 12,
-  },
-  statusBadgeText: { 
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
-  category: { 
-    color: '#0ea5e9', 
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  categoryOrange: { 
-    color: '#f97316', 
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  description: { 
-    color: '#6b7280', 
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  cardFooter: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
-  },
-  price: { 
-    color: '#0ea5e9', 
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  priceOrange: { 
-    color: '#f97316', 
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  footerMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  location: { 
-    color: '#9ca3af', 
-    fontSize: 13,
-  },
-  creator: { 
-    color: '#9ca3af', 
-    fontSize: 13 
-  },
-  
   fabSpacer: { 
     height: 80 
   },
@@ -708,6 +542,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   modalTitle: { 
+    fontSize: 20,
     fontWeight: 'bold', 
     color: '#1f2937', 
     textAlign: 'center' 
@@ -730,7 +565,7 @@ const styles = StyleSheet.create({
     fontSize: 32, 
     marginRight: 16 
   },
-  modalOptionText: { 
+  modalOptionTextWrapper: { 
     flex: 1 
   },
   modalOptionTitle: { 
