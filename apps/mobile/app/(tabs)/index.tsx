@@ -2,9 +2,9 @@ import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, D
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getTasks, getOfferings, searchTasks, type Task, type Offering } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
@@ -13,7 +13,11 @@ import { BlurView } from 'expo-blur';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
-const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6; // Reduced to stay below filters
+const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
+
+// Clustering configuration
+const CLUSTER_RADIUS = 50; // pixels
+const MIN_ZOOM_FOR_INDIVIDUAL_MARKERS = 0.05; // latitudeDelta threshold
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
@@ -66,6 +70,66 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
+// Simple clustering algorithm
+interface Cluster {
+  id: string;
+  latitude: number;
+  longitude: number;
+  tasks: Task[];
+  isCluster: boolean;
+}
+
+const clusterTasks = (tasks: Task[], region: Region): Cluster[] => {
+  if (!region || tasks.length === 0) return [];
+  
+  const { latitudeDelta, longitudeDelta } = region;
+  
+  // If zoomed in enough, show individual markers
+  if (latitudeDelta < MIN_ZOOM_FOR_INDIVIDUAL_MARKERS) {
+    return tasks.map(task => ({
+      id: `single-${task.id}`,
+      latitude: task.latitude!,
+      longitude: task.longitude!,
+      tasks: [task],
+      isCluster: false,
+    }));
+  }
+  
+  // Calculate cluster distance based on zoom level
+  const clusterDistanceLat = latitudeDelta * 0.08;
+  const clusterDistanceLng = longitudeDelta * 0.08;
+  
+  const clusters: Cluster[] = [];
+  const processed = new Set<number>();
+  
+  for (const task of tasks) {
+    if (processed.has(task.id)) continue;
+    
+    const nearbyTasks = tasks.filter(t => {
+      if (processed.has(t.id)) return false;
+      const latDiff = Math.abs(t.latitude! - task.latitude!);
+      const lngDiff = Math.abs(t.longitude! - task.longitude!);
+      return latDiff < clusterDistanceLat && lngDiff < clusterDistanceLng;
+    });
+    
+    nearbyTasks.forEach(t => processed.add(t.id));
+    
+    // Calculate center of cluster
+    const centerLat = nearbyTasks.reduce((sum, t) => sum + t.latitude!, 0) / nearbyTasks.length;
+    const centerLng = nearbyTasks.reduce((sum, t) => sum + t.longitude!, 0) / nearbyTasks.length;
+    
+    clusters.push({
+      id: `cluster-${task.id}`,
+      latitude: centerLat,
+      longitude: centerLng,
+      tasks: nearbyTasks,
+      isCluster: nearbyTasks.length > 1,
+    });
+  }
+  
+  return clusters;
+};
+
 export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
@@ -83,6 +147,7 @@ export default function HomeScreen() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
+  const [mapRegion, setMapRegion] = useState<Region | null>(null);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -250,6 +315,12 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation]);
 
+  // Cluster markers based on current zoom level
+  const clusters = useMemo(() => {
+    if (!mapRegion) return [];
+    return clusterTasks(filteredTasks, mapRegion);
+  }, [filteredTasks, mapRegion]);
+
   const getMarkerColor = (category: string) => {
     const colors: Record<string, string> = {
       cleaning: '#10b981',
@@ -264,16 +335,48 @@ export default function HomeScreen() {
     return colors[category] || '#ef4444';
   };
 
+  const handleRegionChange = useCallback((region: Region) => {
+    setMapRegion(region);
+  }, []);
+
+  const handleClusterPress = (cluster: Cluster) => {
+    haptic.light();
+    
+    if (cluster.isCluster) {
+      // Zoom into the cluster area
+      if (mapRef.current) {
+        const lats = cluster.tasks.map(t => t.latitude!);
+        const lngs = cluster.tasks.map(t => t.longitude!);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+        
+        const padding = 0.01;
+        mapRef.current.animateToRegion({
+          latitude: (minLat + maxLat) / 2,
+          longitude: (minLng + maxLng) / 2,
+          latitudeDelta: Math.max(maxLat - minLat + padding, 0.02),
+          longitudeDelta: Math.max(maxLng - minLng + padding, 0.02),
+        }, 500);
+      }
+    } else {
+      // Single marker - show details
+      const task = cluster.tasks[0];
+      handleMarkerPress(task, undefined);
+    }
+  };
+
   const handleMarkerPress = (task?: Task, offering?: Offering) => {
     haptic.light();
     if (task) {
       if (mapRef.current && task.latitude && task.longitude) {
         mapRef.current.animateToRegion({
-          latitude: task.latitude - 0.006,
+          latitude: task.latitude - 0.003,
           longitude: task.longitude,
-          latitudeDelta: 0.025,
-          longitudeDelta: 0.025,
-        }, 800);
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        }, 500);
       }
       
       setFocusedTaskId(task.id);
@@ -296,11 +399,11 @@ export default function HomeScreen() {
     
     if (mapRef.current && task.latitude && task.longitude) {
       mapRef.current.animateToRegion({
-        latitude: task.latitude - 0.006,
+        latitude: task.latitude - 0.003,
         longitude: task.longitude,
-        latitudeDelta: 0.025,
-        longitudeDelta: 0.025,
-      }, 800);
+        latitudeDelta: 0.015,
+        longitudeDelta: 0.015,
+      }, 500);
     }
     
     setFocusedTaskId(task.id);
@@ -475,6 +578,16 @@ export default function HomeScreen() {
     </View>
   );
 
+  // Get dominant category color for cluster
+  const getClusterColor = (tasks: Task[]) => {
+    const categoryCount: Record<string, number> = {};
+    tasks.forEach(t => {
+      categoryCount[t.category] = (categoryCount[t.category] || 0) + 1;
+    });
+    const dominant = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+    return dominant ? getMarkerColor(dominant[0]) : '#0ea5e9';
+  };
+
   return (
     <View style={styles.container}>
       {isLoading && !debouncedSearchQuery && (
@@ -505,26 +618,39 @@ export default function HomeScreen() {
               latitudeDelta: 0.15,
               longitudeDelta: 0.15,
             }}
+            onRegionChangeComplete={handleRegionChange}
             showsUserLocation
             showsMyLocationButton={false}
           >
-            {filteredTasks.map((task) => (
+            {/* Clustered task markers */}
+            {clusters.map((cluster) => (
               <Marker
-                key={`task-${task.id}`}
-                coordinate={{ latitude: task.latitude!, longitude: task.longitude! }}
-                onPress={() => handleMarkerPress(task, undefined)}
+                key={cluster.id}
+                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                onPress={() => handleClusterPress(cluster)}
                 tracksViewChanges={false}
               >
-                <View style={[
-                  styles.priceMarker,
-                  { borderColor: getMarkerColor(task.category) },
-                  focusedTaskId === task.id && styles.priceMarkerFocused
-                ]}>
-                  <Text style={styles.priceMarkerText}>€{task.budget?.toFixed(0) || '0'}</Text>
-                </View>
+                {cluster.isCluster ? (
+                  // Cluster marker - shows count
+                  <View style={[styles.clusterMarker, { backgroundColor: getClusterColor(cluster.tasks) }]}>
+                    <Text style={styles.clusterText}>{cluster.tasks.length}</Text>
+                  </View>
+                ) : (
+                  // Individual price marker
+                  <View style={[
+                    styles.priceMarker,
+                    { borderColor: getMarkerColor(cluster.tasks[0].category) },
+                    focusedTaskId === cluster.tasks[0].id && styles.priceMarkerFocused
+                  ]}>
+                    <Text style={[styles.priceMarkerText, { color: getMarkerColor(cluster.tasks[0].category) }]}>
+                      €{cluster.tasks[0].budget?.toFixed(0) || '0'}
+                    </Text>
+                  </View>
+                )}
               </Marker>
             ))}
 
+            {/* Boosted offerings */}
             {boostedOfferings.map((offering) => (
               <Marker
                 key={`offering-${offering.id}`}
@@ -610,7 +736,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
-            {/* Drag Handle - Only this area responds to pan gestures */}
+            {/* Drag Handle */}
             <View {...panResponder.panHandlers} style={styles.sheetHandle}>
               <View style={styles.handleBar} />
               <View style={styles.sheetTitleRow}>
@@ -628,7 +754,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Content - Scrollable FlatList */}
+            {/* Content */}
             {focusedTask ? (
               <FlatList
                 ref={listRef}
@@ -765,11 +891,56 @@ const styles = StyleSheet.create({
   myLocationButton: { position: 'absolute', bottom: 100, right: 16, zIndex: 10 },
   myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   myLocationIcon: { fontSize: 22 },
-  priceMarker: { backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 3, borderColor: '#0ea5e9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
-  priceMarkerFocused: { borderWidth: 4, transform: [{ scale: 1.2 }] },
-  priceMarkerOffering: { borderColor: '#f97316' },
-  priceMarkerText: { fontSize: 16, fontWeight: 'bold', color: '#0ea5e9' },
-  priceMarkerTextOffering: { fontSize: 16, fontWeight: 'bold', color: '#f97316' },
+  // Cluster marker styles
+  clusterMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  clusterText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  // Smaller price markers
+  priceMarker: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#0ea5e9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  priceMarkerFocused: {
+    borderWidth: 3,
+    transform: [{ scale: 1.15 }],
+  },
+  priceMarkerOffering: {
+    borderColor: '#f97316',
+  },
+  priceMarkerText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+  },
+  priceMarkerTextOffering: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#f97316',
+  },
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 },
   sheetHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 16 },
   handleBar: { width: 40, height: 5, backgroundColor: '#d1d5db', borderRadius: 3, marginBottom: 12 },
