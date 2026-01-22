@@ -336,6 +336,7 @@ export default function HomeScreen() {
         {/* Floating Header with Filters + Search */}
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
           <View style={styles.filterButtonsContainer}>
+            {/* Category Filter */}
             <TouchableOpacity
               style={styles.filterButton}
               onPress={() => { haptic.light(); setShowCategoryModal(true); }}
@@ -347,24 +348,27 @@ export default function HomeScreen() {
               </BlurView>
             </TouchableOpacity>
 
+            {/* Search Button (compact bubble) */}
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onClear={handleClearSearch}
+              isLoading={showSearchLoading}
+            />
+
+            {/* Radius Filter with icon */}
             <TouchableOpacity
               style={styles.filterButton}
               onPress={() => { haptic.light(); setShowRadiusModal(true); }}
               activeOpacity={0.8}
             >
               <BlurView intensity={80} tint="light" style={styles.filterButtonBlur}>
+                <Text style={styles.filterButtonPrefix}>◎</Text>
                 <Text style={styles.filterButtonText}>{selectedRadiusLabel}</Text>
                 <Text style={styles.filterButtonIcon}>▼</Text>
               </BlurView>
             </TouchableOpacity>
           </View>
-
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onClear={handleClearSearch}
-            isLoading={showSearchLoading}
-          />
         </SafeAreaView>
 
         {/* Empty map overlay */}

@@ -55,7 +55,8 @@ export const styles = StyleSheet.create({
     flexDirection: 'row', 
     paddingHorizontal: 12, 
     paddingTop: 8, 
-    gap: 8 
+    gap: 8,
+    alignItems: 'center',
   },
   filterButton: { 
     flex: 1, 
@@ -66,11 +67,11 @@ export const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'space-between', 
-    paddingHorizontal: 16, 
+    paddingHorizontal: 14, 
     paddingVertical: 12 
   },
   filterButtonText: { 
-    fontSize: 14, 
+    fontSize: 13, 
     fontWeight: '600', 
     color: '#1f2937', 
     flex: 1 
@@ -78,20 +79,42 @@ export const styles = StyleSheet.create({
   filterButtonIcon: { 
     fontSize: 10, 
     color: '#6b7280', 
-    marginLeft: 8 
+    marginLeft: 6 
+  },
+  filterButtonPrefix: {
+    fontSize: 14,
+    marginRight: 6,
   },
 
-  // ==================== Search Bar ====================
+  // ==================== Search Bubble (Compact) ====================
+  searchBubble: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  searchBubbleBlur: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  searchBubbleIcon: {
+    fontSize: 20,
+  },
+
+  // ==================== Search Bar (Expanded) ====================
   searchBarContainer: { 
-    paddingHorizontal: 12, 
-    paddingTop: 8, 
-    paddingBottom: 4 
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    zIndex: 20,
   },
   searchBarBlur: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     paddingHorizontal: 16, 
-    paddingVertical: 10, 
+    paddingVertical: 12, 
     borderRadius: 12, 
     overflow: 'hidden' 
   },
