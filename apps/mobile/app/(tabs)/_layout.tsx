@@ -59,12 +59,6 @@ export default function TabsLayout() {
       />
       {/* Hidden tabs - accessible via navigation but not in bottom bar */}
       <Tabs.Screen
-        name="index"
-        options={{
-          href: null, // Redirect to home
-        }}
-      />
-      <Tabs.Screen
         name="listings"
         options={{
           href: null, // Hide from tab bar
