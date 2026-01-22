@@ -35,7 +35,7 @@ const CATEGORIES = [
 ];
 
 const RADIUS_OPTIONS = [
-  { key: 'all', label: 'All', value: null },
+  { key: 'all', label: 'All Areas', value: null },
   { key: '5', label: '5 km', value: 5 },
   { key: '10', label: '10 km', value: 10 },
   { key: '20', label: '20 km', value: 20 },
@@ -87,13 +87,12 @@ export default function HomeScreen() {
   const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
-  const [searchExpanded, setSearchExpanded] = useState(false);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -425,7 +424,6 @@ export default function HomeScreen() {
   const handleRadiusSelect = (radius: number | null) => {
     haptic.selection();
     setSelectedRadius(radius);
-    setShowRadiusModal(false);
   };
 
   const handleMyLocation = async () => {
@@ -464,19 +462,9 @@ export default function HomeScreen() {
     setFocusedTaskId(null);
   };
 
-  const handleSearchToggle = () => {
-    haptic.light();
-    if (searchExpanded) {
-      setSearchExpanded(false);
-      handleClearSearch();
-    } else {
-      setSearchExpanded(true);
-      setTimeout(() => searchInputRef.current?.focus(), 100);
-    }
-  };
-
   const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All';
-  const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All';
+  const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
+  const hasActiveFilters = selectedRadius !== null;
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
@@ -669,68 +657,50 @@ export default function HomeScreen() {
 
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
           <View style={styles.topRow}>
-            {!searchExpanded ? (
-              <>
-                <TouchableOpacity
-                  style={styles.categoryButton}
-                  onPress={() => { haptic.light(); setShowCategoryModal(true); }}
-                  activeOpacity={0.8}
-                >
-                  <BlurView intensity={80} tint="light" style={styles.filterBlur}>
-                    <Text style={styles.filterText} numberOfLines={1}>{selectedCategoryLabel}</Text>
-                    <Text style={styles.filterIcon}>▼</Text>
-                  </BlurView>
-                </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.categoryButton}
+              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+              activeOpacity={0.8}
+            >
+              <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
+                <Text style={styles.categoryText} numberOfLines={1}>{selectedCategoryLabel}</Text>
+                <Icon name="expand-more" size={16} color="#6b7280" />
+              </BlurView>
+            </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.searchIconButton}
-                  onPress={handleSearchToggle}
-                  activeOpacity={0.8}
-                >
-                  <BlurView intensity={80} tint="light" style={styles.iconButtonBlur}>
-                    <Icon name="search" size={20} color="#374151" />
-                  </BlurView>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.radiusButton}
-                  onPress={() => { haptic.light(); setShowRadiusModal(true); }}
-                  activeOpacity={0.8}
-                >
-                  <BlurView intensity={80} tint="light" style={styles.filterBlur}>
-                    <Icon name="my-location" size={16} color="#374151" />
-                    <Text style={styles.filterText} numberOfLines={1}> {selectedRadiusLabel}</Text>
-                    <Text style={styles.filterIcon}>▼</Text>
-                  </BlurView>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <View style={styles.searchExpandedContainer}>
-                <BlurView intensity={80} tint="light" style={styles.searchExpandedBlur}>
-                  <Icon name="search" size={20} color="#374151" />
-                  <TextInput
-                    ref={searchInputRef}
-                    style={styles.searchInput}
-                    placeholder="Search jobs..."
-                    placeholderTextColor="#9ca3af"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    returnKeyType="search"
-                  />
-                  {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
-                      <Icon name="close" size={18} color="#9ca3af" />
-                    </TouchableOpacity>
-                  )}
-                  {showSearchLoading && (
-                    <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
-                  )}
-                  <TouchableOpacity onPress={handleSearchToggle} style={styles.collapseButton}>
-                    <Icon name="expand-less" size={20} color="#374151" />
+            <View style={styles.searchBar}>
+              <BlurView intensity={80} tint="light" style={styles.searchBlur}>
+                <Icon name="search" size={20} color="#9ca3af" />
+                <TextInput
+                  ref={searchInputRef}
+                  style={styles.searchInput}
+                  placeholder="Search jobs..."
+                  placeholderTextColor="#9ca3af"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  returnKeyType="search"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
+                    <Icon name="close" size={18} color="#9ca3af" />
                   </TouchableOpacity>
-                </BlurView>
-              </View>
-            )}
+                )}
+                {showSearchLoading && (
+                  <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
+                )}
+              </BlurView>
+            </View>
+
+            <TouchableOpacity
+              style={styles.filtersButton}
+              onPress={() => { haptic.light(); setShowFiltersModal(true); }}
+              activeOpacity={0.8}
+            >
+              <BlurView intensity={80} tint="light" style={styles.filtersBlur}>
+                <Icon name="tune" size={20} color={hasActiveFilters ? '#0ea5e9' : '#374151'} />
+                {hasActiveFilters && <View style={styles.filterDot} />}
+              </BlurView>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
 
@@ -830,10 +800,12 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      <Modal visible={showRadiusModal} transparent animationType="fade" onRequestClose={() => setShowRadiusModal(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowRadiusModal(false); }}>
+      <Modal visible={showFiltersModal} transparent animationType="fade" onRequestClose={() => setShowFiltersModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowFiltersModal(false); }}>
           <View style={styles.filterModalContent}>
-            <Text style={styles.modalTitle}>Select Radius</Text>
+            <Text style={styles.modalTitle}>Filters</Text>
+            
+            <Text style={styles.filterSectionTitle}>Radius</Text>
             <FlatList
               data={RADIUS_OPTIONS}
               keyExtractor={(item) => item.key}
@@ -843,7 +815,7 @@ export default function HomeScreen() {
                   onPress={() => handleRadiusSelect(rad.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.filterOptionIcon}>📍</Text>
+                  <Icon name="my-location" size={20} color={selectedRadius === rad.value ? '#0ea5e9' : '#6b7280'} />
                   <Text style={[styles.filterOptionText, selectedRadius === rad.value && styles.filterOptionTextActive]}>
                     {rad.label}
                   </Text>
@@ -851,6 +823,29 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               )}
             />
+
+            <View style={styles.filterActions}>
+              <TouchableOpacity 
+                style={styles.clearFiltersButton} 
+                onPress={() => { 
+                  haptic.light(); 
+                  setSelectedRadius(null);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.clearFiltersText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.applyFiltersButton} 
+                onPress={() => { 
+                  haptic.selection(); 
+                  setShowFiltersModal(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.applyFiltersText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -897,55 +892,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryButton: { 
-    flex: 1,
-    borderRadius: 12, 
-    overflow: 'hidden',
-  },
-  radiusButton: { 
-    flex: 1,
-    borderRadius: 12, 
-    overflow: 'hidden',
-  },
-  searchIconButton: {
-    width: 44,
+    width: 100,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 12, 
     overflow: 'hidden',
   },
-  iconButtonBlur: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterBlur: { 
+  categoryBlur: { 
+    flex: 1,
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center',
-    paddingHorizontal: 10, 
-    paddingVertical: 12,
+    paddingHorizontal: 10,
     gap: 4,
   },
-  filterText: { 
+  categoryText: { 
     fontSize: 13, 
     fontWeight: '600', 
     color: '#1f2937',
     flex: 1,
   },
-  filterIcon: { 
-    fontSize: 9, 
-    color: '#6b7280',
-  },
-  searchExpandedContainer: {
+  searchBar: {
     flex: 1,
+    height: 44,
     borderRadius: 12,
     overflow: 'hidden',
   },
-  searchExpandedBlur: {
+  searchBlur: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 10,
     gap: 8,
   },
   searchInput: { 
@@ -960,8 +936,26 @@ const styles = StyleSheet.create({
   searchLoader: { 
     marginLeft: 4,
   },
-  collapseButton: {
-    padding: 4,
+  filtersButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  filtersBlur: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0ea5e9',
   },
   
   loadingOverlay: { position: 'absolute', top: 80, left: 24, right: 24, alignItems: 'center' },
@@ -1061,10 +1055,16 @@ const styles = StyleSheet.create({
   modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
   modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
   filterModalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '70%' },
-  filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: '#f9fafb' },
+  filterSectionTitle: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginTop: 8, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: '#f9fafb' },
   filterOptionActive: { backgroundColor: '#e0f2fe' },
   filterOptionIcon: { fontSize: 20, marginRight: 12 },
-  filterOptionText: { flex: 1, fontSize: 16, color: '#1f2937', fontWeight: '500' },
+  filterOptionText: { flex: 1, fontSize: 16, color: '#1f2937', fontWeight: '500', marginLeft: 8 },
   filterOptionTextActive: { color: '#0ea5e9', fontWeight: '600' },
   filterOptionCheck: { fontSize: 18, color: '#0ea5e9', fontWeight: 'bold' },
+  filterActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  clearFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#f3f4f6', alignItems: 'center' },
+  clearFiltersText: { fontSize: 15, fontWeight: '600', color: '#6b7280' },
+  applyFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#0ea5e9', alignItems: 'center' },
+  applyFiltersText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
 });
