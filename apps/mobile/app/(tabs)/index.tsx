@@ -10,14 +10,14 @@ import { getTasks, getOfferings, searchTasks, type Task, type Offering } from '@
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
 const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 
-// Clustering configuration
-const CLUSTER_RADIUS = 50; // pixels
-const MIN_ZOOM_FOR_INDIVIDUAL_MARKERS = 0.05; // latitudeDelta threshold
+// Clustering - only when markers would actually overlap
+// This is the minimum distance in degrees before clustering kicks in
+const OVERLAP_THRESHOLD_FACTOR = 0.025; // Very tight - only cluster when truly overlapping
 
 const CATEGORIES = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
@@ -70,7 +70,7 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
-// Simple clustering algorithm
+// Smart clustering - only when markers would visually overlap
 interface Cluster {
   id: string;
   latitude: number;
@@ -79,25 +79,15 @@ interface Cluster {
   isCluster: boolean;
 }
 
-const clusterTasks = (tasks: Task[], region: Region): Cluster[] => {
+const clusterTasks = (tasks: Task[], region: Region | null): Cluster[] => {
   if (!region || tasks.length === 0) return [];
   
   const { latitudeDelta, longitudeDelta } = region;
   
-  // If zoomed in enough, show individual markers
-  if (latitudeDelta < MIN_ZOOM_FOR_INDIVIDUAL_MARKERS) {
-    return tasks.map(task => ({
-      id: `single-${task.id}`,
-      latitude: task.latitude!,
-      longitude: task.longitude!,
-      tasks: [task],
-      isCluster: false,
-    }));
-  }
-  
-  // Calculate cluster distance based on zoom level
-  const clusterDistanceLat = latitudeDelta * 0.08;
-  const clusterDistanceLng = longitudeDelta * 0.08;
+  // Calculate overlap distance based on zoom - tighter threshold
+  // Only cluster when markers would actually overlap on screen
+  const overlapDistLat = latitudeDelta * OVERLAP_THRESHOLD_FACTOR;
+  const overlapDistLng = longitudeDelta * OVERLAP_THRESHOLD_FACTOR;
   
   const clusters: Cluster[] = [];
   const processed = new Set<number>();
@@ -105,26 +95,42 @@ const clusterTasks = (tasks: Task[], region: Region): Cluster[] => {
   for (const task of tasks) {
     if (processed.has(task.id)) continue;
     
-    const nearbyTasks = tasks.filter(t => {
+    // Find markers that would overlap with this one
+    const overlappingTasks = tasks.filter(t => {
       if (processed.has(t.id)) return false;
+      if (t.id === task.id) return true;
+      
       const latDiff = Math.abs(t.latitude! - task.latitude!);
       const lngDiff = Math.abs(t.longitude! - task.longitude!);
-      return latDiff < clusterDistanceLat && lngDiff < clusterDistanceLng;
+      
+      // Only group if they would visually overlap
+      return latDiff < overlapDistLat && lngDiff < overlapDistLng;
     });
     
-    nearbyTasks.forEach(t => processed.add(t.id));
+    overlappingTasks.forEach(t => processed.add(t.id));
     
-    // Calculate center of cluster
-    const centerLat = nearbyTasks.reduce((sum, t) => sum + t.latitude!, 0) / nearbyTasks.length;
-    const centerLng = nearbyTasks.reduce((sum, t) => sum + t.longitude!, 0) / nearbyTasks.length;
-    
-    clusters.push({
-      id: `cluster-${task.id}`,
-      latitude: centerLat,
-      longitude: centerLng,
-      tasks: nearbyTasks,
-      isCluster: nearbyTasks.length > 1,
-    });
+    if (overlappingTasks.length === 1) {
+      // Single marker - no clustering needed
+      clusters.push({
+        id: `single-${task.id}`,
+        latitude: task.latitude!,
+        longitude: task.longitude!,
+        tasks: [task],
+        isCluster: false,
+      });
+    } else {
+      // Multiple overlapping markers - create cluster
+      const centerLat = overlappingTasks.reduce((sum, t) => sum + t.latitude!, 0) / overlappingTasks.length;
+      const centerLng = overlappingTasks.reduce((sum, t) => sum + t.longitude!, 0) / overlappingTasks.length;
+      
+      clusters.push({
+        id: `cluster-${task.id}`,
+        latitude: centerLat,
+        longitude: centerLng,
+        tasks: overlappingTasks,
+        isCluster: true,
+      });
+    }
   }
   
   return clusters;
@@ -315,9 +321,8 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation]);
 
-  // Cluster markers based on current zoom level
+  // Smart clustering - only when markers overlap
   const clusters = useMemo(() => {
-    if (!mapRegion) return [];
     return clusterTasks(filteredTasks, mapRegion);
   }, [filteredTasks, mapRegion]);
 
@@ -352,13 +357,13 @@ export default function HomeScreen() {
         const minLng = Math.min(...lngs);
         const maxLng = Math.max(...lngs);
         
-        const padding = 0.01;
+        const padding = 0.005;
         mapRef.current.animateToRegion({
           latitude: (minLat + maxLat) / 2,
           longitude: (minLng + maxLng) / 2,
-          latitudeDelta: Math.max(maxLat - minLat + padding, 0.02),
-          longitudeDelta: Math.max(maxLng - minLng + padding, 0.02),
-        }, 500);
+          latitudeDelta: Math.max(maxLat - minLat + padding, 0.01),
+          longitudeDelta: Math.max(maxLng - minLng + padding, 0.01),
+        }, 400);
       }
     } else {
       // Single marker - show details
@@ -578,16 +583,6 @@ export default function HomeScreen() {
     </View>
   );
 
-  // Get dominant category color for cluster
-  const getClusterColor = (tasks: Task[]) => {
-    const categoryCount: Record<string, number> = {};
-    tasks.forEach(t => {
-      categoryCount[t.category] = (categoryCount[t.category] || 0) + 1;
-    });
-    const dominant = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
-    return dominant ? getMarkerColor(dominant[0]) : '#0ea5e9';
-  };
-
   return (
     <View style={styles.container}>
       {isLoading && !debouncedSearchQuery && (
@@ -622,7 +617,7 @@ export default function HomeScreen() {
             showsUserLocation
             showsMyLocationButton={false}
           >
-            {/* Clustered task markers */}
+            {/* Task markers - individual or clustered */}
             {clusters.map((cluster) => (
               <Marker
                 key={cluster.id}
@@ -631,9 +626,10 @@ export default function HomeScreen() {
                 tracksViewChanges={false}
               >
                 {cluster.isCluster ? (
-                  // Cluster marker - shows count
-                  <View style={[styles.clusterMarker, { backgroundColor: getClusterColor(cluster.tasks) }]}>
-                    <Text style={styles.clusterText}>{cluster.tasks.length}</Text>
+                  // Cluster marker - € symbol with count
+                  <View style={styles.clusterMarker}>
+                    <Text style={styles.clusterEuro}>€</Text>
+                    <Text style={styles.clusterCount}>{cluster.tasks.length}</Text>
                   </View>
                 ) : (
                   // Individual price marker
@@ -891,12 +887,12 @@ const styles = StyleSheet.create({
   myLocationButton: { position: 'absolute', bottom: 100, right: 16, zIndex: 10 },
   myLocationBlur: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   myLocationIcon: { fontSize: 22 },
-  // Cluster marker styles
+  // Cluster marker - € with count below
   clusterMarker: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     backgroundColor: '#0ea5e9',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -904,13 +900,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    minWidth: 40,
   },
-  clusterText: {
+  clusterEuro: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Smaller price markers
+  clusterCount: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.9,
+  },
+  // Individual price markers
   priceMarker: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 8,
