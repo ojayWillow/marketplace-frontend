@@ -462,7 +462,7 @@ export default function HomeScreen() {
     setFocusedTaskId(null);
   };
 
-  const selectedCategoryLabel = CATEGORIES.find(c => c.key === selectedCategory)?.label || 'All';
+  const selectedCategoryData = CATEGORIES.find(c => c.key === selectedCategory);
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
   const hasActiveFilters = selectedRadius !== null;
   
@@ -577,7 +577,7 @@ export default function HomeScreen() {
 
   const renderEmptyList = () => (
     <View style={styles.emptySheet}>
-      <Text style={styles.emptyIcon}>💭</Text>
+      <Text style={styles.emptyIcon}>💬</Text>
       <Text style={styles.emptyText}>
         {debouncedSearchQuery ? 'No results found' : 'No jobs found'}
       </Text>
@@ -663,7 +663,8 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
-                <Text style={styles.categoryText} numberOfLines={1}>{selectedCategoryLabel}</Text>
+                <Text style={styles.categoryEmoji}>{selectedCategoryData?.icon || '🔍'}</Text>
+                <Text style={styles.categoryText} numberOfLines={1}>Categories</Text>
                 <Icon name="expand-more" size={16} color="#6b7280" />
               </BlurView>
             </TouchableOpacity>
@@ -892,7 +893,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryButton: { 
-    width: 100,
+    width: 120,
     height: 44,
     borderRadius: 12, 
     overflow: 'hidden',
@@ -902,11 +903,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     gap: 4,
   },
+  categoryEmoji: {
+    fontSize: 16,
+  },
   categoryText: { 
-    fontSize: 13, 
+    fontSize: 12, 
     fontWeight: '600', 
     color: '#1f2937',
     flex: 1,
