@@ -1,8 +1,8 @@
 import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip } from 'react-native-paper';
-import { router } from 'expo-router';
-import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl } from '@marketplace/shared';
+import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip, IconButton, Badge } from 'react-native-paper';
+import { router, Stack } from 'expo-router';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
@@ -28,12 +28,20 @@ export default function ProfileScreen() {
     enabled: !!user?.id,
   });
 
+  const { data: unreadData, refetch: refetchUnread } = useQuery({
+    queryKey: ['unreadCount'],
+    queryFn: getUnreadCount,
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
   // Refetch profile data when screen comes into focus (after editing)
   useFocusEffect(
     useCallback(() => {
       refetchUser();
       refetchStats();
-    }, [refetchUser, refetchStats])
+      refetchUnread();
+    }, [refetchUser, refetchStats, refetchUnread])
   );
 
   const handleLogout = () => {
@@ -56,9 +64,12 @@ export default function ProfileScreen() {
     );
   };
 
+  const unreadCount = unreadData?.unread_count || 0;
+
   if (!isAuthenticated || !user) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
+        <Stack.Screen options={{ headerShown: true, title: 'Profile' }} />
         <View style={styles.centerContainer}>
           <Avatar.Icon size={80} icon="account" style={[styles.guestAvatar, { backgroundColor: themeColors.border }]} />
           <Text variant="headlineSmall" style={[styles.notLoggedInTitle, { color: themeColors.text }]}>Not Logged In</Text>
@@ -91,6 +102,28 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
+      <Stack.Screen 
+        options={{ 
+          headerShown: true, 
+          title: 'Profile',
+          headerRight: () => (
+            <Pressable onPress={() => router.push('/notifications')} style={styles.bellContainer}>
+              <IconButton
+                icon="bell-outline"
+                size={24}
+                onPress={() => router.push('/notifications')}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badgeContainer}>
+                  <Badge size={18} style={styles.badge}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                </View>
+              )}
+            </Pressable>
+          ),
+        }} 
+      />
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <Surface style={[styles.header, { backgroundColor: themeColors.card }]} elevation={1}>
@@ -279,6 +312,18 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  bellContainer: {
+    position: 'relative',
+    marginRight: -8,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+  badge: {
+    backgroundColor: '#ef4444',
   },
   centerContainer: {
     flex: 1,
