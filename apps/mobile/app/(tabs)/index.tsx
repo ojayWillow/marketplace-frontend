@@ -501,36 +501,52 @@ export default function HomeScreen() {
     );
   };
 
-  const renderJobItem = ({ item: task }: { item: Task }) => (
-    <TouchableOpacity
-      style={styles.jobItem}
-      onPress={() => handleJobItemPress(task)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.jobLeft}>
-        <View style={[styles.jobCategoryDot, { backgroundColor: getMarkerColor(task.category) }]} />
-        <View style={styles.jobInfo}>
-          <Text style={styles.jobTitle} numberOfLines={1}>{task.title}</Text>
-          <Text style={styles.jobMeta}>
-            {getCategoryByKey(task.category)?.label || task.category} • {formatTimeAgo(task.created_at!)}
-          </Text>
+  const renderJobItem = ({ item: task }: { item: Task }) => {
+    const categoryData = getCategoryByKey(task.category);
+    const distance = hasRealLocation
+      ? calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          task.latitude!,
+          task.longitude!
+        )
+      : null;
+
+    return (
+      <TouchableOpacity
+        style={styles.jobCard}
+        onPress={() => handleJobItemPress(task)}
+        activeOpacity={0.7}
+      >
+        {/* Category Icon Badge */}
+        <View style={[styles.categoryIconBadge, { backgroundColor: getMarkerColor(task.category) }]}>
+          <Text style={styles.categoryIconText}>{categoryData?.icon || '📋'}</Text>
         </View>
-      </View>
-      <View style={styles.jobRight}>
-        <Text style={styles.jobPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
-        {hasRealLocation && (
-          <Text style={styles.jobDistance}>
-            {calculateDistance(
-              userLocation.latitude,
-              userLocation.longitude,
-              task.latitude!,
-              task.longitude!
-            ).toFixed(1)} km
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+
+        {/* Job Content */}
+        <View style={styles.jobCardContent}>
+          <View style={styles.jobCardRow1}>
+            <Text style={styles.jobCardTitle} numberOfLines={1}>
+              {task.title}
+            </Text>
+            <Text style={styles.jobCardPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
+          </View>
+
+          <View style={styles.jobCardRow2}>
+            <Text style={styles.jobCardCategory}>{categoryData?.label || task.category}</Text>
+            <Text style={styles.jobCardDot}>•</Text>
+            <Text style={styles.jobCardTime}>{formatTimeAgo(task.created_at!)}</Text>
+            {distance !== null && (
+              <>
+                <Text style={styles.jobCardDot}>•</Text>
+                <Text style={styles.jobCardDistance}>📍 {distance.toFixed(1)} km</Text>
+              </>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderFocusedTask = () => {
     if (!focusedTask) return null;
@@ -1052,15 +1068,71 @@ const styles = StyleSheet.create({
   emptySubtext: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
   emptyPostButton: { marginTop: 16, backgroundColor: '#0ea5e9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
-  jobItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  jobLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  jobCategoryDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
-  jobInfo: { flex: 1 },
-  jobTitle: { fontSize: 15, fontWeight: '500', color: '#1f2937', marginBottom: 2 },
-  jobMeta: { fontSize: 13, color: '#9ca3af' },
-  jobRight: { alignItems: 'flex-end', marginLeft: 12 },
-  jobPrice: { fontSize: 16, fontWeight: 'bold', color: '#0ea5e9' },
-  jobDistance: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  
+  // NEW PROFESSIONAL JOB CARD DESIGN
+  jobCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    backgroundColor: '#ffffff',
+  },
+  categoryIconBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  categoryIconText: {
+    fontSize: 24,
+  },
+  jobCardContent: {
+    flex: 1,
+  },
+  jobCardRow1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  jobCardTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginRight: 8,
+  },
+  jobCardPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0ea5e9',
+  },
+  jobCardRow2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  jobCardCategory: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  jobCardDot: {
+    fontSize: 13,
+    color: '#d1d5db',
+    marginHorizontal: 6,
+  },
+  jobCardTime: {
+    fontSize: 13,
+    color: '#9ca3af',
+  },
+  jobCardDistance: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  
   focusedJobContainer: { padding: 20 },
   focusedJobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   focusedCategoryBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
