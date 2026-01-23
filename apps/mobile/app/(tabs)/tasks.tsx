@@ -9,6 +9,8 @@ import { getTasks, getOfferings, useAuthStore, type Task, type Offering, CATEGOR
 import { haptic } from '../../utils/haptics';
 import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 type MainTab = 'all' | 'jobs' | 'services';
 
@@ -48,6 +50,9 @@ export default function TasksScreen() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>(DEFAULT_LOCATION);
   const [hasRealLocation, setHasRealLocation] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   // Get user location on mount
   useEffect(() => {
@@ -232,6 +237,369 @@ export default function TasksScreen() {
   const selectedCategoryData = getCategoryByKey(selectedCategory);
   const selectedDifficultyData = DIFFICULTY_OPTIONS.find(d => d.value === selectedDifficulty);
 
+  // Styles moved inside component to react to theme
+  const styles = StyleSheet.create({
+    container: { 
+      flex: 1, 
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    
+    // Compact Header
+    header: { 
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: themeColors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: themeColors.border,
+      position: 'relative',
+    },
+    
+    // Tab Pills - Centered
+    tabsWrapper: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    tabsContainer: {
+      flexDirection: 'row',
+      backgroundColor: themeColors.backgroundSecondary,
+      borderRadius: 20,
+      padding: 3,
+    },
+    tabPill: {
+      paddingHorizontal: 18,
+      paddingVertical: 8,
+      borderRadius: 17,
+      minWidth: 70,
+      alignItems: 'center',
+    },
+    tabPillActive: {
+      backgroundColor: '#0ea5e9',
+    },
+    tabPillText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+    },
+    tabPillTextActive: {
+      color: '#ffffff',
+    },
+    
+    // Filter Button - Positioned Right
+    filterButton: {
+      position: 'absolute',
+      right: 16,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: themeColors.backgroundSecondary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    filterButtonActive: {
+      backgroundColor: '#e0f2fe',
+    },
+    filterIcon: {
+      fontSize: 18,
+      color: themeColors.text,
+    },
+    filterDot: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#0ea5e9',
+      borderWidth: 1.5,
+      borderColor: themeColors.card,
+    },
+    
+    // Active Filter Banner
+    activeFilterBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: '#e0f2fe',
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 12,
+      marginBottom: 12,
+    },
+    activeFilterContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
+    },
+    activeFilterChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    difficultyDotSmall: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    activeFilterText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: '#0369a1',
+    },
+    clearFilterButton: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: '#0ea5e9',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    clearFilterText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: '#ffffff',
+    },
+    
+    listContent: { 
+      padding: 16 
+    },
+    centerContainer: { 
+      alignItems: 'center', 
+      paddingVertical: 48 
+    },
+    loadingText: { 
+      marginTop: 12, 
+      color: themeColors.textSecondary,
+    },
+    emptyText: { 
+      marginTop: 12, 
+      color: themeColors.textSecondary,
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    emptySubtext: {
+      marginTop: 4,
+      color: themeColors.textMuted,
+      fontSize: 14,
+    },
+    errorText: { 
+      color: '#ef4444', 
+      marginBottom: 12 
+    },
+    emptyIcon: { 
+      fontSize: 48 
+    },
+    
+    fabSpacer: { 
+      height: 80 
+    },
+    fab: { 
+      position: 'absolute', 
+      margin: 16, 
+      right: 0, 
+      bottom: 0, 
+      backgroundColor: '#0ea5e9' 
+    },
+    
+    // Modal Styles
+    modalOverlay: { 
+      flex: 1, 
+      backgroundColor: 'rgba(0,0,0,0.5)', 
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    modalContent: { 
+      backgroundColor: themeColors.card,
+      borderRadius: 20, 
+      padding: 24, 
+      width: '100%',
+      maxWidth: 400,
+    },
+    modalTitle: { 
+      fontSize: 20,
+      fontWeight: 'bold', 
+      color: themeColors.text,
+      textAlign: 'center' 
+    },
+    modalSubtitle: { 
+      color: themeColors.textSecondary,
+      textAlign: 'center', 
+      marginTop: 4, 
+      marginBottom: 24 
+    },
+    modalOption: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      padding: 16, 
+      backgroundColor: themeColors.backgroundSecondary,
+      borderRadius: 12, 
+      marginBottom: 12 
+    },
+    modalOptionIcon: { 
+      fontSize: 32, 
+      marginRight: 16 
+    },
+    modalOptionTextWrapper: { 
+      flex: 1 
+    },
+    modalOptionTitle: { 
+      fontSize: 16, 
+      fontWeight: '600', 
+      color: themeColors.text,
+    },
+    modalOptionDesc: { 
+      fontSize: 13, 
+      color: themeColors.textSecondary,
+      marginTop: 2 
+    },
+    modalArrow: { 
+      fontSize: 24, 
+      color: themeColors.textMuted,
+    },
+    cancelButton: { 
+      marginTop: 8 
+    },
+    
+    // Filter Modal
+    filterModalContent: {
+      backgroundColor: themeColors.card,
+      borderRadius: 20,
+      padding: 20,
+      width: '100%',
+      maxWidth: 400,
+      maxHeight: '85%',
+    },
+    filterModalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: themeColors.text,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    filterSectionTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+      marginTop: 8,
+      marginBottom: 12,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    
+    // Difficulty Segment Control
+    segmentContainer: {
+      flexDirection: 'row',
+      backgroundColor: themeColors.backgroundSecondary,
+      borderRadius: 12,
+      padding: 4,
+      marginBottom: 16,
+    },
+    segmentButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      borderRadius: 10,
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    segmentButtonActive: {
+      backgroundColor: themeColors.card,
+    },
+    segmentDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    segmentText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: themeColors.textSecondary,
+    },
+    
+    // Category ScrollView
+    categoryScrollView: {
+      maxHeight: 280,
+    },
+    
+    // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
+    categoryWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    categoryPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: themeColors.backgroundSecondary,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: themeColors.border,
+    },
+    categoryPillActive: {
+      backgroundColor: '#e0f2fe',
+      borderColor: '#0ea5e9',
+    },
+    categoryPillIcon: {
+      fontSize: 16,
+      marginRight: 6,
+    },
+    categoryPillLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    categoryPillLabelActive: {
+      color: '#0369a1',
+      fontWeight: '700',
+    },
+    categoryPillCheck: {
+      fontSize: 14,
+      color: '#0ea5e9',
+      fontWeight: 'bold',
+      marginLeft: 6,
+    },
+    
+    // Filter Actions
+    filterActions: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 16,
+    },
+    clearFiltersButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: themeColors.backgroundSecondary,
+      alignItems: 'center',
+    },
+    clearFiltersText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+    },
+    applyFiltersButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: '#0ea5e9',
+      alignItems: 'center',
+    },
+    applyFiltersText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: '#ffffff',
+    },
+  });
+
   // Render item for FlatList
   const renderItem: ListRenderItem<ListItem> = useCallback(({ item }) => {
     if (item.type === 'job') {
@@ -281,7 +649,7 @@ export default function TasksScreen() {
         </View>
       )}
     </>
-  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategoryData, selectedCategory, selectedDifficultyData, selectedDifficulty]);
+  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategoryData, selectedCategory, selectedDifficultyData, selectedDifficulty, styles]);
 
   // Empty component
   const ListEmptyComponent = useCallback(() => {
@@ -317,10 +685,10 @@ export default function TasksScreen() {
         <Text style={styles.emptySubtext}>{getEmptySubtext()}</Text>
       </View>
     );
-  }, [isLoading, isError, mainTab, hasActiveFilter]);
+  }, [isLoading, isError, mainTab, hasActiveFilter, styles]);
 
   // Footer spacer for FAB
-  const ListFooterComponent = useCallback(() => <View style={styles.fabSpacer} />, []);
+  const ListFooterComponent = useCallback(() => <View style={styles.fabSpacer} />, [styles]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -535,365 +903,3 @@ export default function TasksScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f5f5f5' 
-  },
-  
-  // Compact Header
-  header: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-    position: 'relative',
-  },
-  
-  // Tab Pills - Centered
-  tabsWrapper: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    padding: 3,
-  },
-  tabPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 17,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  tabPillActive: {
-    backgroundColor: '#0ea5e9',
-  },
-  tabPillText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  tabPillTextActive: {
-    color: '#ffffff',
-  },
-  
-  // Filter Button - Positioned Right
-  filterButton: {
-    position: 'absolute',
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: '#e0f2fe',
-  },
-  filterIcon: {
-    fontSize: 18,
-    color: '#374151',
-  },
-  filterDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#0ea5e9',
-    borderWidth: 1.5,
-    borderColor: '#ffffff',
-  },
-  
-  // Active Filter Banner
-  activeFilterBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#e0f2fe',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  activeFilterContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  activeFilterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  difficultyDotSmall: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  activeFilterText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#0369a1',
-  },
-  clearFilterButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#0ea5e9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clearFilterText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  
-  listContent: { 
-    padding: 16 
-  },
-  centerContainer: { 
-    alignItems: 'center', 
-    paddingVertical: 48 
-  },
-  loadingText: { 
-    marginTop: 12, 
-    color: '#6b7280' 
-  },
-  emptyText: { 
-    marginTop: 12, 
-    color: '#6b7280', 
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  emptySubtext: {
-    marginTop: 4,
-    color: '#9ca3af',
-    fontSize: 14,
-  },
-  errorText: { 
-    color: '#ef4444', 
-    marginBottom: 12 
-  },
-  emptyIcon: { 
-    fontSize: 48 
-  },
-  
-  fabSpacer: { 
-    height: 80 
-  },
-  fab: { 
-    position: 'absolute', 
-    margin: 16, 
-    right: 0, 
-    bottom: 0, 
-    backgroundColor: '#0ea5e9' 
-  },
-  
-  // Modal Styles
-  modalOverlay: { 
-    flex: 1, 
-    backgroundColor: 'rgba(0,0,0,0.5)', 
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: { 
-    backgroundColor: '#ffffff', 
-    borderRadius: 20, 
-    padding: 24, 
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: { 
-    fontSize: 20,
-    fontWeight: 'bold', 
-    color: '#1f2937', 
-    textAlign: 'center' 
-  },
-  modalSubtitle: { 
-    color: '#6b7280', 
-    textAlign: 'center', 
-    marginTop: 4, 
-    marginBottom: 24 
-  },
-  modalOption: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    padding: 16, 
-    backgroundColor: '#f9fafb', 
-    borderRadius: 12, 
-    marginBottom: 12 
-  },
-  modalOptionIcon: { 
-    fontSize: 32, 
-    marginRight: 16 
-  },
-  modalOptionTextWrapper: { 
-    flex: 1 
-  },
-  modalOptionTitle: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: '#1f2937' 
-  },
-  modalOptionDesc: { 
-    fontSize: 13, 
-    color: '#6b7280', 
-    marginTop: 2 
-  },
-  modalArrow: { 
-    fontSize: 24, 
-    color: '#9ca3af' 
-  },
-  cancelButton: { 
-    marginTop: 8 
-  },
-  
-  // Filter Modal
-  filterModalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '85%',
-  },
-  filterModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  filterSectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginTop: 8,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  
-  // Difficulty Segment Control
-  segmentContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
-  },
-  segmentButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  segmentButtonActive: {
-    backgroundColor: '#ffffff',
-  },
-  segmentDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  
-  // Category ScrollView
-  categoryScrollView: {
-    maxHeight: 280,
-  },
-  
-  // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
-  categoryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-  },
-  categoryPillActive: {
-    backgroundColor: '#e0f2fe',
-    borderColor: '#0ea5e9',
-  },
-  categoryPillIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  categoryPillLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  categoryPillLabelActive: {
-    color: '#0369a1',
-    fontWeight: '700',
-  },
-  categoryPillCheck: {
-    fontSize: 14,
-    color: '#0ea5e9',
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
-  
-  // Filter Actions
-  filterActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  clearFiltersButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-  },
-  clearFiltersText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  applyFiltersButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#0ea5e9',
-    alignItems: 'center',
-  },
-  applyFiltersText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-});
