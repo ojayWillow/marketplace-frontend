@@ -42,30 +42,15 @@ const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefin
 const extractCity = (location: string | undefined): string => {
   if (!location) return '';
   
-  // Split by comma and get parts
   const parts = location.split(',').map(p => p.trim());
   
-  // If only one part, it's probably already just the city
   if (parts.length === 1) return parts[0];
-  
-  // Common patterns:
-  // "Street, City, Country" -> get City (index 1)
-  // "Street, Postal, City, Country" -> get City (before last, skip postal codes)
-  // "City, Country" -> get City (index 0)
-  // "Street, City, Region, Country" -> get City (index 1)
-  
-  // If 2 parts, first is usually city (e.g., "Riga, Latvia")
   if (parts.length === 2) return parts[0];
   
-  // If 3+ parts, usually index 1 is the city (after street/building)
-  // But skip if it looks like a postal code (all numbers)
   if (parts.length >= 3) {
-    // Check if parts[1] is a postal code (contains mostly digits)
     if (parts[1].match(/^\d+$/)) {
-      // Postal code detected, city is at index 2
       return parts[2];
     }
-    // Otherwise city is at index 1
     return parts[1];
   }
   
@@ -88,31 +73,11 @@ const formatLocationDisplay = (task: Task): string => {
   return '';
 };
 
-// Helper to render star rating
-const renderStars = (rating: number): string => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-  let stars = '';
-  
-  for (let i = 0; i < 5; i++) {
-    if (i < fullStars) {
-      stars += '★';
-    } else if (i === fullStars && hasHalfStar) {
-      stars += '⯨';
-    } else {
-      stars += '☆';
-    }
-  }
-  
-  return stars;
-};
-
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const difficulty = getDifficultyIndicator(task.difficulty);
   const timeAgo = formatTimeAgo(task.created_at);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
-  const hasRating = task.creator_rating != null;
-  const reviewCount = task.creator_review_count ?? 0;
+  const hasRating = (task.creator_rating ?? 0) > 0;
   const categoryData = getCategoryByKey(task.category);
   const locationDisplay = formatLocationDisplay(task);
 
@@ -140,7 +105,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           {task.title}
         </Text>
         
-        {/* Row 3: Creator - Avatar + Name | Stars (count) | City - ALL ON ONE LINE */}
+        {/* Row 3: Creator with Avatar + Name + City + Rating */}
         <View style={styles.row3}>
           {task.creator_avatar ? (
             <Image 
@@ -157,28 +122,19 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           <Text style={styles.creatorName} numberOfLines={1}>
             {task.creator_name || 'Anonymous'}
           </Text>
-          
-          {/* Separator if rating or city exists */}
-          {(hasRating || task.creator_city) && (
-            <Text style={styles.separator}>|</Text>
-          )}
-          
-          {/* Rating with stars */}
-          {hasRating && (
-            <Text style={styles.rating}>
-              <Text style={styles.stars}>{renderStars(task.creator_rating!)}</Text>
-              {' '}({reviewCount})
-            </Text>
-          )}
-          
-          {/* Separator before city */}
-          {hasRating && task.creator_city && (
-            <Text style={styles.separator}>|</Text>
-          )}
-          
-          {/* City */}
           {task.creator_city && (
-            <Text style={styles.creatorCity} numberOfLines={1}>{task.creator_city}</Text>
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.creatorCity} numberOfLines={1}>{task.creator_city}</Text>
+            </>
+          )}
+          {hasRating && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.rating}>
+                ⭐ {task.creator_rating?.toFixed(1)} ({task.creator_review_count})
+              </Text>
+            </>
           )}
         </View>
         
@@ -226,7 +182,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
 
 // Memoize with custom comparison
 export default memo(TaskCard, (prevProps, nextProps) => {
-  // Re-render if task data changed
   return (
     prevProps.task.id === nextProps.task.id &&
     prevProps.task.status === nextProps.task.status &&
@@ -272,22 +227,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   
-  // Row 3: Creator Info - Avatar + Name | Stars (count) | City
+  // Row 3: Creator Info
   row3: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    flexWrap: 'wrap',
   },
   avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     marginRight: 6,
   },
   avatarPlaceholder: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#0ea5e9',
     justifyContent: 'center',
     alignItems: 'center',
@@ -295,33 +251,28 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
   },
   creatorName: {
     fontSize: 13,
     fontWeight: '500',
     color: '#1f2937',
-    flexShrink: 1,
+    maxWidth: 100,
   },
-  separator: {
-    fontSize: 12,
+  dot: {
+    fontSize: 13,
     color: '#d1d5db',
     marginHorizontal: 6,
   },
-  rating: {
-    fontSize: 11,
-    color: '#6b7280',
-    flexShrink: 0,
-  },
-  stars: {
-    color: '#fbbf24', // Yellow color for stars
-    fontSize: 10,
-  },
   creatorCity: {
+    fontSize: 13,
+    color: '#6b7280',
+    maxWidth: 80,
+  },
+  rating: {
     fontSize: 12,
     color: '#6b7280',
-    flexShrink: 1,
   },
   
   // Row 4: Description
