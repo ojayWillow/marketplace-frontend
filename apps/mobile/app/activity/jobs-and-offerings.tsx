@@ -5,10 +5,10 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore, getMyPostedTasks, getMyApplications, getMyAssignedTasks, getMyOfferings } from '@marketplace/shared';
-import TaskCard from '../../../components/TaskCard';
-import OfferingCard from '../../../components/OfferingCard';
-import { useThemeStore } from '../../../src/stores/themeStore';
-import { colors } from '../../../src/theme';
+import TaskCard from '../../components/TaskCard';
+import OfferingCard from '../../components/OfferingCard';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 type TabValue = 'posted' | 'applications' | 'assigned' | 'services';
 
