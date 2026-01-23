@@ -30,6 +30,13 @@ const RADIUS_OPTIONS = [
   { key: '50', label: '50 km', value: 50 },
 ];
 
+const DIFFICULTY_OPTIONS = [
+  { key: 'all', label: 'All', value: null, color: '#6b7280' },
+  { key: 'easy', label: 'Easy', value: 'easy', color: '#10b981' },
+  { key: 'medium', label: 'Medium', value: 'medium', color: '#f59e0b' },
+  { key: 'hard', label: 'Hard', value: 'hard', color: '#ef4444' },
+];
+
 const calculateDistance = calcDistance;
 
 const formatTimeAgo = (dateString: string): string => {
@@ -91,6 +98,7 @@ export default function HomeScreen() {
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -288,9 +296,13 @@ export default function HomeScreen() {
         }
       }
       
+      if (selectedDifficulty && task.difficulty !== selectedDifficulty) {
+        return false;
+      }
+      
       return true;
     });
-  }, [allTasks, selectedCategory, selectedRadius, userLocation, hasRealLocation]);
+  }, [allTasks, selectedCategory, selectedRadius, selectedDifficulty, userLocation, hasRealLocation]);
 
   const sortedTasks = useMemo(() => {
     if (!hasRealLocation) return filteredTasks;
@@ -448,6 +460,11 @@ export default function HomeScreen() {
     setSelectedRadius(radius);
   };
 
+  const handleDifficultySelect = (difficulty: string | null) => {
+    haptic.selection();
+    setSelectedDifficulty(difficulty);
+  };
+
   const handleMyLocation = async () => {
     haptic.medium();
     if (mapRef.current) {
@@ -486,7 +503,7 @@ export default function HomeScreen() {
 
   const selectedCategoryData = getCategoryByKey(selectedCategory);
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
-  const hasActiveFilters = selectedRadius !== null;
+  const hasActiveFilters = selectedRadius !== null || selectedDifficulty !== null;
   const hasActiveCategory = selectedCategory !== 'all';
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
@@ -736,11 +753,10 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
-                <Text style={styles.categoryEmoji}>{selectedCategoryData?.icon || '🔍'}</Text>
-                <Text style={styles.categoryText} numberOfLines={1}>
-                  {hasActiveCategory ? selectedCategoryData?.label : 'Categories'}
+                <Text style={styles.categoryButtonText} numberOfLines={1}>
+                  {hasActiveCategory ? selectedCategoryData?.label : 'Category'}
                 </Text>
-                <Icon name="expand-more" size={16} color="#6b7280" />
+                <Icon name="expand-more" size={18} color="#6b7280" />
               </BlurView>
             </TouchableOpacity>
 
@@ -888,12 +904,40 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* FILTERS MODAL (Radius) */}
+      {/* FILTERS MODAL (Radius + Difficulty) */}
       <Modal visible={showFiltersModal} transparent animationType="fade" onRequestClose={() => setShowFiltersModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowFiltersModal(false); }}>
           <View style={styles.filterModalContent}>
             <Text style={styles.modalTitle}>Filters</Text>
             
+            {/* Difficulty Segment */}
+            <Text style={styles.filterSectionTitle}>Difficulty</Text>
+            <View style={styles.segmentContainer}>
+              {DIFFICULTY_OPTIONS.map((diff) => (
+                <TouchableOpacity
+                  key={diff.key}
+                  style={[
+                    styles.segmentButton,
+                    selectedDifficulty === diff.value && styles.segmentButtonActive,
+                    selectedDifficulty === diff.value && { backgroundColor: diff.color + '20', borderColor: diff.color }
+                  ]}
+                  onPress={() => handleDifficultySelect(diff.value)}
+                  activeOpacity={0.7}
+                >
+                  {diff.value && (
+                    <View style={[styles.segmentDot, { backgroundColor: diff.color }]} />
+                  )}
+                  <Text style={[
+                    styles.segmentText,
+                    selectedDifficulty === diff.value && { color: diff.color, fontWeight: '600' }
+                  ]}>
+                    {diff.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Radius Options */}
             <Text style={styles.filterSectionTitle}>Radius</Text>
             <FlatList
               data={RADIUS_OPTIONS}
@@ -920,6 +964,7 @@ export default function HomeScreen() {
                 onPress={() => { 
                   haptic.light(); 
                   setSelectedRadius(null);
+                  setSelectedDifficulty(null);
                 }}
                 activeOpacity={0.7}
               >
@@ -983,7 +1028,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryButton: { 
-    width: 120,
+    minWidth: 100,
     height: 44,
     borderRadius: 12, 
     overflow: 'hidden',
@@ -997,17 +1042,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     gap: 4,
   },
-  categoryEmoji: {
-    fontSize: 16,
-  },
-  categoryText: { 
-    fontSize: 12, 
+  categoryButtonText: { 
+    fontSize: 14, 
     fontWeight: '600', 
     color: '#1f2937',
-    flex: 1,
   },
   searchBar: {
     flex: 1,
@@ -1383,8 +1424,42 @@ const styles = StyleSheet.create({
   },
   
   // Filter Modal Styles
-  filterModalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '70%' },
+  filterModalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '80%' },
   filterSectionTitle: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginTop: 8, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+  // Difficulty Segment Control
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+  },
+  segmentButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#ffffff',
+  },
+  segmentDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  
   filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: '#f9fafb' },
   filterOptionActive: { backgroundColor: '#e0f2fe' },
   filterOptionIcon: { fontSize: 20, marginRight: 12 },
