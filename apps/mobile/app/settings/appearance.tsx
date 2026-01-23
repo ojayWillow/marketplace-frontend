@@ -1,7 +1,7 @@
 import { View, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Surface, RadioButton } from 'react-native-paper';
-import { Stack } from 'expo-router';
+import { Text, Surface, RadioButton, Appbar } from 'react-native-paper';
+import { router } from 'expo-router';
 import { useThemeStore, ThemeMode } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 
@@ -32,15 +32,11 @@ export default function AppearanceSettingsScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['bottom']}>
-      <Stack.Screen
-        options={{
-          title: 'Appearance',
-          headerStyle: { backgroundColor: themeColors.card },
-          headerTintColor: themeColors.text,
-          headerShadowVisible: false,
-        }}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top', 'bottom']}>
+      <Appbar.Header style={{ backgroundColor: themeColors.card }}>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Appearance" titleStyle={{ color: themeColors.text }} />
+      </Appbar.Header>
 
       <View style={styles.content}>
         <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>
