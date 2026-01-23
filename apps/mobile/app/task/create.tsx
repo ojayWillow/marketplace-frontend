@@ -297,7 +297,7 @@ export default function CreateTaskScreen() {
         </Surface>
       </KeyboardAvoidingView>
 
-      {/* CATEGORY MODAL - COMPACT 3 COLUMN PILL GRID */}
+      {/* CATEGORY MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
       <Modal
         visible={showCategoryModal}
         transparent
@@ -312,7 +312,7 @@ export default function CreateTaskScreen() {
           <View style={styles.categoryModalContent}>
             <Text style={styles.modalTitle}>Select Category</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.categoryGrid}>
+              <View style={styles.categoryWrap}>
                 {FORM_CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.key}
@@ -327,7 +327,7 @@ export default function CreateTaskScreen() {
                     <Text style={[
                       styles.categoryPillLabel,
                       category === cat.key && styles.categoryPillLabelActive
-                    ]} numberOfLines={1}>
+                    ]}>
                       {cat.label}
                     </Text>
                     {category === cat.key && (
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '70%',
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 20,
@@ -499,20 +499,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // COMPACT 3 COLUMN PILL GRID
-  categoryGrid: {
+  // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
+  categoryWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
     gap: 8,
   },
   categoryPill: {
-    width: '31.5%',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9fafb',
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 14,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: '#e5e7eb',
@@ -523,22 +521,21 @@ const styles = StyleSheet.create({
   },
   categoryPillIcon: {
     fontSize: 16,
-    marginRight: 4,
+    marginRight: 6,
   },
   categoryPillLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
-    flex: 1,
   },
   categoryPillLabelActive: {
     color: '#0369a1',
     fontWeight: '700',
   },
   categoryPillCheck: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#0ea5e9',
     fontWeight: 'bold',
-    marginLeft: 2,
+    marginLeft: 6,
   },
 });
