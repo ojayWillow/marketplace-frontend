@@ -284,7 +284,7 @@ export default function TaskDetailScreen() {
         <Stack.Screen options={{ headerShown: true, title: 'Task Completed' }} />
         <View style={styles.reviewPromptContainer}>
           <Card style={styles.reviewPromptCard}>
-            <Card.Content>
+            <Card.Content style={styles.reviewPromptContent}>
               <Text style={styles.reviewPromptIcon}>🎉</Text>
               <Text variant="headlineSmall" style={styles.reviewPromptTitle}>
                 Task Completed!
@@ -991,6 +991,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
   },
+  reviewPromptContent: {
+    alignItems: 'center',
+  },
   reviewPromptIcon: {
     fontSize: 48,
     textAlign: 'center',
@@ -1014,7 +1017,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   reviewPromptActions: {
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     paddingTop: 8,
   },
 });
