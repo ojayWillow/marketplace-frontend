@@ -27,6 +27,10 @@ export interface Task {
   is_urgent?: boolean;
   creator_id: number;
   creator_name?: string;
+  creator_avatar?: string;
+  creator_city?: string;
+  creator_rating?: number;
+  creator_review_count?: number;
   assigned_to_id?: number;
   assigned_to_name?: string;
   deadline?: string;
