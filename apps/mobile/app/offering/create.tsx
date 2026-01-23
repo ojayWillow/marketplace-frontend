@@ -1,25 +1,13 @@
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, Surface, SegmentedButtons } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { createOffering, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
+import { createOffering, uploadImageFromUri, useAuthStore, FORM_CATEGORIES, getCategoryByKey } from '@marketplace/shared';
 import ImagePicker from '../../components/ImagePicker';
 import LocationPicker from '../../components/LocationPicker';
-
-const CATEGORIES = [
-  { value: 'cleaning', label: '🧹 Cleaning' },
-  { value: 'repair', label: '🔧 Repair' },
-  { value: 'delivery', label: '🚚 Delivery' },
-  { value: 'tutoring', label: '📚 Tutoring' },
-  { value: 'beauty', label: '💇 Beauty' },
-  { value: 'tech', label: '💻 Tech' },
-  { value: 'gardening', label: '🌱 Gardening' },
-  { value: 'moving', label: '📦 Moving' },
-  { value: 'pet_care', label: '🐾 Pet Care' },
-  { value: 'other', label: '💼 Other' },
-];
+import { haptic } from '../../utils/haptics';
 
 const PRICE_TYPES = [
   { value: 'hourly', label: 'Per Hour' },
@@ -40,6 +28,7 @@ export default function CreateOfferingScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('other');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [price, setPrice] = useState('');
   const [priceType, setPriceType] = useState<'hourly' | 'fixed' | 'negotiable'>('hourly');
   const [location, setLocation] = useState<LocationData | null>(null);
@@ -47,6 +36,8 @@ export default function CreateOfferingScreen() {
   const [experience, setExperience] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  const selectedCategoryData = getCategoryByKey(category);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -98,6 +89,12 @@ export default function CreateOfferingScreen() {
       Alert.alert('Error', message);
     },
   });
+
+  const handleCategorySelect = (categoryKey: string) => {
+    haptic.selection();
+    setCategory(categoryKey);
+    setShowCategoryModal(false);
+  };
 
   const handleSubmit = () => {
     // Validation
@@ -159,24 +156,18 @@ export default function CreateOfferingScreen() {
             />
           </Surface>
 
-          {/* Category */}
+          {/* Category Picker - Opens Modal */}
           <Surface style={styles.section} elevation={0}>
             <Text variant="titleMedium" style={styles.sectionTitle}>Category *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.categoriesRow}>
-                {CATEGORIES.map((cat) => (
-                  <Button
-                    key={cat.value}
-                    mode={category === cat.value ? 'contained' : 'outlined'}
-                    onPress={() => setCategory(cat.value)}
-                    style={styles.categoryButton}
-                    compact
-                  >
-                    {cat.label}
-                  </Button>
-                ))}
-              </View>
-            </ScrollView>
+            <TouchableOpacity 
+              style={styles.categorySelector}
+              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '💼'}</Text>
+              <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || 'Select category'}</Text>
+              <Text style={styles.categorySelectorArrow}>›</Text>
+            </TouchableOpacity>
           </Surface>
 
           {/* Description */}
@@ -277,6 +268,52 @@ export default function CreateOfferingScreen() {
           <View style={styles.bottomSpacer} />
         </View>
       </ScrollView>
+
+      {/* CATEGORY MODAL - 3 COLUMN GRID */}
+      <Modal
+        visible={showCategoryModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => { haptic.soft(); setShowCategoryModal(false); }}
+        >
+          <View style={styles.categoryModalContent}>
+            <Text style={styles.modalTitle}>Select Category</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.categoryGrid}>
+                {FORM_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[
+                      styles.categoryCard,
+                      category === cat.key && styles.categoryCardActive
+                    ]}
+                    onPress={() => handleCategorySelect(cat.key)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.categoryCardIcon}>{cat.icon}</Text>
+                    <Text style={[
+                      styles.categoryCardLabel,
+                      category === cat.key && styles.categoryCardLabelActive
+                    ]} numberOfLines={2}>
+                      {cat.label}
+                    </Text>
+                    {category === cat.key && (
+                      <View style={styles.categoryCheckBadge}>
+                        <Text style={styles.categoryCheckText}>✓</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -314,12 +351,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 120,
   },
-  categoriesRow: {
+  
+  // Category Selector (Button that opens modal)
+  categorySelector: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
-  categoryButton: {
-    marginRight: 8,
+  categorySelectorIcon: {
+    fontSize: 24,
+    marginRight: 12,
   },
+  categorySelectorText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  categorySelectorArrow: {
+    fontSize: 24,
+    color: '#9ca3af',
+  },
+  
   imageHint: {
     color: '#9ca3af',
     fontSize: 13,
@@ -359,6 +416,7 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 40,
   },
+  
   // Auth prompt styles
   authPrompt: {
     flex: 1,
@@ -382,5 +440,83 @@ const styles = StyleSheet.create({
   },
   authButton: {
     minWidth: 150,
+  },
+  
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  categoryModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  
+  // 3-COLUMN GRID
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  categoryCard: {
+    width: '31%',
+    aspectRatio: 0.9,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  categoryCardActive: {
+    backgroundColor: '#fff7ed',
+    borderColor: '#f97316',
+  },
+  categoryCardIcon: {
+    fontSize: 28,
+    marginBottom: 6,
+  },
+  categoryCardLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  categoryCardLabelActive: {
+    color: '#c2410c',
+    fontWeight: '700',
+  },
+  categoryCheckBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#f97316',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryCheckText: {
+    fontSize: 11,
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
 });
