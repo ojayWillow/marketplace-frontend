@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView, Image } from 'react-native';
+<![CDATA[import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -879,19 +879,37 @@ export default function HomeScreen() {
     modalContent: { backgroundColor: themeColors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
     modalTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 20, textAlign: 'center' },
     
-    // NEW: Gradient Modal Options with contextual colors
+    // IMPROVED: Wider, more appealing modal buttons with gradient
     modalOption: { 
       flexDirection: 'row', 
       alignItems: 'center', 
-      padding: 16, 
-      borderRadius: 12, 
-      marginBottom: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 24,
+      borderRadius: 16, 
+      marginBottom: 16,
       overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
     },
-    modalOptionIcon: { fontSize: 32, marginRight: 16, zIndex: 2 },
+    modalOptionIcon: { 
+      fontSize: 40, 
+      marginRight: 20, 
+      zIndex: 2 
+    },
     modalOptionText: { flex: 1, zIndex: 2 },
-    modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#ffffff', marginBottom: 4 },
-    modalOptionSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.9)' },
+    modalOptionTitle: { 
+      fontSize: 18, 
+      fontWeight: '700', 
+      color: '#ffffff', 
+      marginBottom: 4 
+    },
+    modalOptionSubtitle: { 
+      fontSize: 15, 
+      color: 'rgba(255,255,255,0.95)' 
+    },
     modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
     modalCancelText: { fontSize: 16, fontWeight: '600', color: themeColors.textSecondary },
     
@@ -1464,7 +1482,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* CREATE MODAL - With Blue/Orange gradient options */}
+      {/* CREATE MODAL - With Blue/Orange gradient options - NOW WIDER & MORE APPEALING! */}
       <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
           <View style={styles.modalContent}>
@@ -1476,7 +1494,7 @@ export default function HomeScreen() {
                 colors={['#0ea5e9', '#0284c7']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 12 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 16 }}
               />
               <Text style={styles.modalOptionIcon}>💼</Text>
               <View style={styles.modalOptionText}>
@@ -1491,7 +1509,7 @@ export default function HomeScreen() {
                 colors={['#f97316', '#ea580c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 12 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 16 }}
               />
               <Text style={styles.modalOptionIcon}>⚡</Text>
               <View style={styles.modalOptionText}>
@@ -1509,3 +1527,4 @@ export default function HomeScreen() {
     </View>
   );
 }
+]]>
