@@ -17,7 +17,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top', 'bottom']}>
       <Stack.Screen 
         options={{ 
           title: 'Settings',
