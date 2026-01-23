@@ -1222,25 +1222,25 @@ export default function HomeScreen() {
                 <Text style={styles.categoryButtonText} numberOfLines={1}>
                   {hasActiveCategory ? selectedCategoryData?.label : 'Category'}
                 </Text>
-                <Icon name="expand-more" size={18} color="#6b7280" />
+                <Icon name="expand-more" size={18} color={themeColors.textMuted} />
               </BlurView>
             </TouchableOpacity>
 
             <View style={styles.searchBar}>
               <BlurView intensity={80} tint="light" style={styles.searchBlur}>
-                <Icon name="search" size={20} color="#9ca3af" />
+                <Icon name="search" size={20} color={themeColors.textMuted} />
                 <TextInput
                   ref={searchInputRef}
                   style={styles.searchInput}
                   placeholder="Search jobs..."
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={themeColors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   returnKeyType="search"
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity onPress={handleClearSearch} style={styles.searchClearButton}>
-                    <Icon name="close" size={18} color="#9ca3af" />
+                    <Icon name="close" size={18} color={themeColors.textMuted} />
                   </TouchableOpacity>
                 )}
                 {showSearchLoading && (
@@ -1255,7 +1255,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <BlurView intensity={80} tint="light" style={styles.filtersBlur}>
-                <Icon name="tune" size={20} color={hasActiveFilters ? '#0ea5e9' : '#374151'} />
+                <Icon name="tune" size={20} color={hasActiveFilters ? '#0ea5e9' : themeColors.text} />
                 {hasActiveFilters && <View style={styles.filterDot} />}
               </BlurView>
             </TouchableOpacity>
@@ -1415,7 +1415,7 @@ export default function HomeScreen() {
                   onPress={() => handleRadiusSelect(rad.value)}
                   activeOpacity={0.7}
                 >
-                  <Icon name="my-location" size={20} color={selectedRadius === rad.value ? '#0ea5e9' : '#6b7280'} />
+                  <Icon name="my-location" size={20} color={selectedRadius === rad.value ? '#0ea5e9' : themeColors.textSecondary} />
                   <Text style={[styles.filterOptionText, selectedRadius === rad.value && styles.filterOptionTextActive]}>
                     {rad.label}
                   </Text>
