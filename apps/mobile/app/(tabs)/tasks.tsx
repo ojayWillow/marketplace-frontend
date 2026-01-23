@@ -19,6 +19,13 @@ type ListItem =
 
 const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
 
+const DIFFICULTY_OPTIONS = [
+  { key: 'all', label: 'All', value: null, color: '#6b7280' },
+  { key: 'easy', label: 'Easy', value: 'easy', color: '#10b981' },
+  { key: 'medium', label: 'Medium', value: 'medium', color: '#f59e0b' },
+  { key: 'hard', label: 'Hard', value: 'hard', color: '#ef4444' },
+];
+
 // Calculate distance between two coordinates (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Earth's radius in km
@@ -37,6 +44,7 @@ export default function TasksScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>(DEFAULT_LOCATION);
   const [hasRealLocation, setHasRealLocation] = useState(false);
   const { isAuthenticated } = useAuthStore();
@@ -79,11 +87,16 @@ export default function TasksScreen() {
   const allTasks = jobsQuery.data?.tasks || [];
   const allOfferings = servicesQuery.data?.offerings || [];
 
-  // Add distance to tasks and filter by category (memoized)
+  // Add distance to tasks and filter by category + difficulty (memoized)
   const tasks = useMemo(() => {
     let filtered = selectedCategory === 'all' 
       ? allTasks 
       : allTasks.filter(t => t.category === selectedCategory);
+    
+    // Filter by difficulty
+    if (selectedDifficulty) {
+      filtered = filtered.filter(t => t.difficulty === selectedDifficulty);
+    }
     
     // Add distance to each task if location available
     if (hasRealLocation) {
@@ -102,7 +115,7 @@ export default function TasksScreen() {
     }
     
     return filtered;
-  }, [allTasks, selectedCategory, userLocation, hasRealLocation]);
+  }, [allTasks, selectedCategory, selectedDifficulty, userLocation, hasRealLocation]);
   
   const offerings = useMemo(() => 
     selectedCategory === 'all'
@@ -161,6 +174,15 @@ export default function TasksScreen() {
   const handleCategorySelect = useCallback((category: string) => {
     haptic.selection();
     setSelectedCategory(category);
+  }, []);
+
+  const handleDifficultySelect = useCallback((difficulty: string | null) => {
+    haptic.selection();
+    setSelectedDifficulty(difficulty);
+  }, []);
+
+  const handleApplyFilters = useCallback(() => {
+    haptic.selection();
     setShowFilterModal(false);
   }, []);
 
@@ -180,6 +202,7 @@ export default function TasksScreen() {
   const handleClearFilter = useCallback(() => {
     haptic.soft();
     setSelectedCategory('all');
+    setSelectedDifficulty(null);
   }, []);
 
   const isLoading = mainTab === 'all' 
@@ -205,8 +228,9 @@ export default function TasksScreen() {
       ? jobsQuery.isRefetching
       : servicesQuery.isRefetching;
 
-  const hasActiveFilter = selectedCategory !== 'all';
+  const hasActiveFilter = selectedCategory !== 'all' || selectedDifficulty !== null;
   const selectedCategoryData = getCategoryByKey(selectedCategory);
+  const selectedDifficultyData = DIFFICULTY_OPTIONS.find(d => d.value === selectedDifficulty);
 
   // Render item for FlatList
   const renderItem: ListRenderItem<ListItem> = useCallback(({ item }) => {
@@ -222,11 +246,21 @@ export default function TasksScreen() {
   // List header component (filter banner + loading/error states)
   const ListHeaderComponent = useCallback(() => (
     <>
-      {hasActiveFilter && selectedCategoryData && (
+      {hasActiveFilter && (
         <TouchableOpacity style={styles.activeFilterBanner} onPress={handleFilterPress} activeOpacity={0.7}>
-          <Text style={styles.activeFilterText}>
-            {selectedCategoryData.icon} {selectedCategoryData.label}
-          </Text>
+          <View style={styles.activeFilterContent}>
+            {selectedCategoryData && selectedCategory !== 'all' && (
+              <Text style={styles.activeFilterText}>
+                {selectedCategoryData.icon} {selectedCategoryData.label}
+              </Text>
+            )}
+            {selectedDifficultyData && selectedDifficulty && (
+              <View style={styles.activeFilterChip}>
+                <View style={[styles.difficultyDotSmall, { backgroundColor: selectedDifficultyData.color }]} />
+                <Text style={styles.activeFilterText}>{selectedDifficultyData.label}</Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity onPress={handleClearFilter} style={styles.clearFilterButton}>
             <Text style={styles.clearFilterText}>✕</Text>
           </TouchableOpacity>
@@ -247,7 +281,7 @@ export default function TasksScreen() {
         </View>
       )}
     </>
-  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategoryData]);
+  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategoryData, selectedCategory, selectedDifficultyData, selectedDifficulty]);
 
   // Empty component
   const ListEmptyComponent = useCallback(() => {
@@ -260,8 +294,8 @@ export default function TasksScreen() {
 
     const getEmptyText = () => {
       if (hasActiveFilter) {
-        if (mainTab === 'all') return 'Nothing in this category';
-        if (mainTab === 'jobs') return 'No jobs in this category';
+        if (mainTab === 'all') return 'Nothing matches your filters';
+        if (mainTab === 'jobs') return 'No jobs match your filters';
         return 'No services in this category';
       }
       if (mainTab === 'all') return 'No jobs or services available';
@@ -270,7 +304,7 @@ export default function TasksScreen() {
     };
 
     const getEmptySubtext = () => {
-      if (hasActiveFilter) return 'Try a different filter';
+      if (hasActiveFilter) return 'Try different filters';
       if (mainTab === 'all') return 'Check back later or create your own';
       if (mainTab === 'jobs') return 'Check back later or post your own job';
       return 'Check back later or offer your own service';
@@ -356,7 +390,7 @@ export default function TasksScreen() {
         onPress={() => { haptic.medium(); setShowCreateModal(true); }}
       />
 
-      {/* FILTER MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
+      {/* FILTER MODAL - Category + Difficulty */}
       <Modal
         visible={showFilterModal}
         transparent
@@ -369,8 +403,42 @@ export default function TasksScreen() {
           onPress={() => { haptic.soft(); setShowFilterModal(false); }}
         >
           <View style={styles.filterModalContent}>
-            <Text style={styles.filterModalTitle}>Filter by Category</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.filterModalTitle}>Filters</Text>
+            
+            {/* Difficulty Segment - Only show when Jobs or All tab */}
+            {(mainTab === 'jobs' || mainTab === 'all') && (
+              <>
+                <Text style={styles.filterSectionTitle}>Difficulty</Text>
+                <View style={styles.segmentContainer}>
+                  {DIFFICULTY_OPTIONS.map((diff) => (
+                    <TouchableOpacity
+                      key={diff.key}
+                      style={[
+                        styles.segmentButton,
+                        selectedDifficulty === diff.value && styles.segmentButtonActive,
+                        selectedDifficulty === diff.value && { backgroundColor: diff.color + '20', borderColor: diff.color }
+                      ]}
+                      onPress={() => handleDifficultySelect(diff.value)}
+                      activeOpacity={0.7}
+                    >
+                      {diff.value && (
+                        <View style={[styles.segmentDot, { backgroundColor: diff.color }]} />
+                      )}
+                      <Text style={[
+                        styles.segmentText,
+                        selectedDifficulty === diff.value && { color: diff.color, fontWeight: '600' }
+                      ]}>
+                        {diff.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+            
+            {/* Category Section */}
+            <Text style={styles.filterSectionTitle}>Category</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.categoryScrollView}>
               <View style={styles.categoryWrap}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
@@ -396,6 +464,28 @@ export default function TasksScreen() {
                 ))}
               </View>
             </ScrollView>
+            
+            {/* Action Buttons */}
+            <View style={styles.filterActions}>
+              <TouchableOpacity 
+                style={styles.clearFiltersButton} 
+                onPress={() => { 
+                  haptic.light(); 
+                  setSelectedCategory('all');
+                  setSelectedDifficulty(null);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.clearFiltersText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.applyFiltersButton} 
+                onPress={handleApplyFilters}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.applyFiltersText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -536,6 +626,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
   },
+  activeFilterContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  difficultyDotSmall: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   activeFilterText: {
     fontSize: 14,
     fontWeight: '500',
@@ -656,21 +762,68 @@ const styles = StyleSheet.create({
     marginTop: 8 
   },
   
-  // Filter Modal - FLEXIBLE WRAP PILLS WITH FULL NAMES
+  // Filter Modal
   filterModalContent: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
   filterModalTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
+  },
+  filterSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginTop: 8,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  
+  // Difficulty Segment Control
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+  },
+  segmentButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#ffffff',
+  },
+  segmentDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  
+  // Category ScrollView
+  categoryScrollView: {
+    maxHeight: 280,
   },
   
   // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
@@ -711,5 +864,36 @@ const styles = StyleSheet.create({
     color: '#0ea5e9',
     fontWeight: 'bold',
     marginLeft: 6,
+  },
+  
+  // Filter Actions
+  filterActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  clearFiltersButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+  },
+  clearFiltersText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  applyFiltersButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+  },
+  applyFiltersText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });
