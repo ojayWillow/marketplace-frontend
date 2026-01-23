@@ -54,7 +54,7 @@ export default function SettingsScreen() {
 
         {/* Support */}
         <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Support</Text>
-        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+        <Surface style={[styles.menuContainer, styles.menuContainerWithMargin, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Help & Support" 
             icon="❓" 
@@ -137,7 +137,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   menuContainer: {
-    marginTop: 16,
+    // No marginTop for first section - it's directly under header
+  },
+  menuContainerWithMargin: {
+    marginTop: 12,
   },
   menuItem: {
     flexDirection: 'row',
