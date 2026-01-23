@@ -38,12 +38,32 @@ const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefin
   }
 };
 
+// Helper to shorten location (city name or first part of address)
+const formatLocation = (location: string | undefined): string => {
+  if (!location) return '';
+  
+  // If it's a full address, try to extract city or first meaningful part
+  const parts = location.split(',');
+  if (parts.length > 1) {
+    // Return the city part (usually second or third part)
+    const city = parts[parts.length - 2]?.trim() || parts[0]?.trim();
+    return city;
+  }
+  
+  // If already short, return as is
+  if (location.length <= 20) return location;
+  
+  // Otherwise truncate
+  return location.substring(0, 20) + '...';
+};
+
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const difficulty = getDifficultyIndicator(task.difficulty);
   const timeAgo = formatTimeAgo(task.created_at);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
   const hasRating = (task.creator_rating ?? 0) > 0;
   const categoryData = getCategoryByKey(task.category);
+  const locationDisplay = formatLocation(task.location);
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -109,20 +129,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           </Text>
         )}
         
-        {/* Row 5: Distance + Time + Applicants + Difficulty */}
+        {/* Row 5: Location + Time + Applicants + Difficulty */}
         <View style={styles.row5}>
-          {task.distance !== undefined && task.distance !== null && (
+          {/* Show distance if available, otherwise show location */}
+          {task.distance !== undefined && task.distance !== null ? (
             <>
-              <Text style={styles.metaText}>{task.distance.toFixed(1)} km</Text>
+              <Text style={styles.metaText}>📍 {task.distance.toFixed(1)} km</Text>
               <Text style={styles.metaDot}>•</Text>
             </>
-          )}
+          ) : locationDisplay ? (
+            <>
+              <Text style={styles.metaText}>📍 {locationDisplay}</Text>
+              <Text style={styles.metaDot}>•</Text>
+            </>
+          ) : null}
+          
           {timeAgo && (
             <>
               <Text style={styles.metaText}>{timeAgo}</Text>
               <Text style={styles.metaDot}>•</Text>
             </>
           )}
+          
           {hasApplicants && (
             <>
               <Text style={styles.metaText}>
@@ -131,6 +159,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
               <Text style={styles.metaDot}>•</Text>
             </>
           )}
+          
           <View style={styles.difficultyBadge}>
             <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
             <Text style={styles.difficultyText}>{difficulty.label}</Text>
