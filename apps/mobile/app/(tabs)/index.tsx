@@ -30,10 +30,6 @@ const RADIUS_OPTIONS = [
   { key: '50', label: '50 km', value: 50 },
 ];
 
-// Image gallery dimensions for focused task preview
-const PREVIEW_IMAGE_WIDTH = SCREEN_WIDTH - 40;
-const PREVIEW_IMAGE_HEIGHT = 160;
-
 const calculateDistance = calcDistance;
 
 const formatTimeAgo = (dateString: string): string => {
@@ -48,28 +44,12 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
-// Format deadline for display
-const formatDeadline = (dateString: string | undefined): string | null => {
-  if (!dateString) return null;
-  const deadline = new Date(dateString);
-  const now = new Date();
-  const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (diffDays < 0) return 'Overdue';
-  if (diffDays === 0) return 'Due today';
-  if (diffDays === 1) return 'Due tomorrow';
-  if (diffDays <= 7) return `Due in ${diffDays} days`;
-  return deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
-
-// Get difficulty indicator
-const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
-  switch (difficulty) {
-    case 'easy': return { color: '#10b981', label: 'Easy' };
-    case 'hard': return { color: '#ef4444', label: 'Hard' };
-    case 'medium':
-    default: return { color: '#f59e0b', label: 'Medium' };
-  }
+// Format date for stats row (e.g., "8 Jan")
+const formatPostedDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  return `${day} ${month}`;
 };
 
 interface Cluster {
@@ -109,7 +89,6 @@ export default function HomeScreen() {
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -397,7 +376,6 @@ export default function HomeScreen() {
       setFocusedTaskId(task.id);
       setSelectedTask(null);
       setSelectedOffering(null);
-      setActiveImageIndex(0);
       animateSheetTo(SHEET_MID_HEIGHT);
       
       setTimeout(() => {
@@ -428,7 +406,6 @@ export default function HomeScreen() {
     setFocusedTaskId(task.id);
     setSelectedTask(null);
     setSelectedOffering(null);
-    setActiveImageIndex(0);
     animateSheetTo(SHEET_MID_HEIGHT);
     
     setTimeout(() => {
@@ -444,7 +421,6 @@ export default function HomeScreen() {
   const handleCloseFocusedJob = () => {
     haptic.soft();
     setFocusedTaskId(null);
-    setActiveImageIndex(0);
     animateSheetTo(SHEET_MIN_HEIGHT);
   };
 
@@ -496,12 +472,6 @@ export default function HomeScreen() {
     setSearchQuery('');
     setDebouncedSearchQuery('');
     setFocusedTaskId(null);
-  };
-
-  const handleImageScroll = (event: any) => {
-    const contentOffset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffset / PREVIEW_IMAGE_WIDTH);
-    setActiveImageIndex(index);
   };
 
   const selectedCategoryData = getCategoryByKey(selectedCategory);
@@ -586,15 +556,7 @@ export default function HomeScreen() {
     if (!focusedTask) return null;
     const categoryData = getCategoryByKey(focusedTask.category);
     const categoryColor = getMarkerColor(focusedTask.category);
-    const hasRating = (focusedTask.creator_rating ?? 0) > 0;
-    const difficulty = getDifficultyIndicator(focusedTask.difficulty);
-    const deadlineText = formatDeadline(focusedTask.deadline);
-    const hasApplicants = (focusedTask.pending_applications_count ?? 0) > 0;
-    
-    // Parse images from comma-separated string
-    const taskImages = focusedTask.images 
-      ? focusedTask.images.split(',').filter(Boolean).map(url => getImageUrl(url))
-      : [];
+    const applicantsCount = focusedTask.pending_applications_count ?? 0;
 
     const distanceKm = hasRealLocation
       ? calculateDistance(
@@ -602,175 +564,73 @@ export default function HomeScreen() {
           userLocation.longitude,
           focusedTask.latitude!,
           focusedTask.longitude!
-        ).toFixed(1)
+        ).toFixed(0)
       : null;
     
+    // Extract city from location (first part before comma)
+    const city = focusedTask.location?.split(',')[0]?.trim() || focusedTask.creator_city || '';
+    
     return (
-      <View style={styles.focusedJobContainer}>
-        {/* IMAGE GALLERY */}
-        {taskImages.length > 0 && (
-          <View style={styles.previewImageContainer}>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={handleImageScroll}
-              scrollEventThrottle={16}
-              style={styles.previewImageScroll}
-            >
-              {taskImages.map((imageUrl, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: imageUrl }}
-                  style={styles.previewImage}
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
-            {taskImages.length > 1 && (
-              <View style={styles.previewImageDots}>
-                {taskImages.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.previewImageDot,
-                      activeImageIndex === index && styles.previewImageDotActive
-                    ]}
-                  />
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Header Row: Category Badge (LEFT) | Distance (RIGHT) */}
-        <View style={styles.focusedHeaderRow}>
+      <View style={styles.focusedCard}>
+        {/* Row 1: Category Badge (left) + Price (right) */}
+        <View style={styles.focusedTopRow}>
           <View style={[styles.focusedCategoryBadge, { backgroundColor: categoryColor }]}>
+            <Text style={styles.focusedCategoryIcon}>{categoryData?.icon || '📋'}</Text>
             <Text style={styles.focusedCategoryText}>
-              {categoryData?.label?.toUpperCase() || focusedTask.category.toUpperCase()}
+              {categoryData?.label || focusedTask.category}
             </Text>
           </View>
-          {distanceKm && (
-            <View style={styles.focusedDistanceContainer}>
-              <Icon name="place" size={16} color="#6b7280" />
-              <Text style={styles.focusedDistanceText}>{distanceKm} km away</Text>
-            </View>
-          )}
         </View>
 
-        {/* Meta Row: Time + Difficulty (LEFT) | Price (RIGHT) */}
-        <View style={styles.focusedMetaRow}>
-          <View style={styles.focusedMetaLeft}>
-            <Icon name="schedule" size={14} color="#6b7280" />
-            <Text style={styles.focusedTimeText}>{formatTimeAgo(focusedTask.created_at!)}</Text>
-            <Text style={styles.focusedMetaDot}>•</Text>
-            <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
-            <Text style={styles.focusedDifficultyText}>{difficulty.label}</Text>
-          </View>
-          <Text style={[styles.focusedPrice, { color: categoryColor }]}>
-            €{focusedTask.budget?.toFixed(0) || '0'}
-          </Text>
-        </View>
+        {/* Row 2: Price - big and centered */}
+        <Text style={[styles.focusedPrice, { color: categoryColor }]}>
+          €{focusedTask.budget?.toFixed(0) || '0'}
+        </Text>
 
-        {/* Title */}
-        <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
+        {/* Row 3: Title */}
+        <Text style={styles.focusedTitle} numberOfLines={2}>
+          {focusedTask.title}
+        </Text>
 
-        {/* Quick Info Row - Only show if deadline or applicants exist */}
-        {(deadlineText || hasApplicants) && (
-          <View style={styles.quickInfoRow}>
-            {deadlineText && (
-              <View style={styles.quickInfoItem}>
-                <Icon name="event" size={16} color="#4b5563" />
-                <Text style={styles.quickInfoText}>{deadlineText}</Text>
-              </View>
-            )}
-            {hasApplicants && (
-              <View style={styles.quickInfoItem}>
-                <Icon name="people" size={16} color="#4b5563" />
-                <Text style={styles.quickInfoText}>
-                  {focusedTask.pending_applications_count} applicant{focusedTask.pending_applications_count !== 1 ? 's' : ''}
-                </Text>
-              </View>
-            )}
+        {/* Row 4: Stats row - Distance | Posted | Applicants */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>DISTANCE</Text>
+            <Text style={styles.statValue}>{distanceKm ? `${distanceKm}km` : '—'}</Text>
           </View>
-        )}
-
-        {/* Section: Posted by */}
-        <View style={styles.focusedSection}>
-          <View style={styles.focusedSectionHeader}>
-            <Icon name="person" size={18} color="#4b5563" />
-            <Text style={styles.focusedSectionTitle}>POSTED BY</Text>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>POSTED</Text>
+            <Text style={styles.statValue}>{formatPostedDate(focusedTask.created_at!)}</Text>
           </View>
-          <View style={styles.focusedPosterRow}>
-            {focusedTask.creator_avatar ? (
-              <Image 
-                source={{ uri: getImageUrl(focusedTask.creator_avatar) }} 
-                style={styles.focusedPosterAvatar}
-              />
-            ) : (
-              <View style={[styles.focusedPosterAvatarPlaceholder, { backgroundColor: categoryColor }]}>
-                <Text style={styles.focusedPosterAvatarText}>
-                  {focusedTask.creator_name?.charAt(0).toUpperCase() || 'U'}
-                </Text>
-              </View>
-            )}
-            <View style={styles.focusedPosterInfo}>
-              <View style={styles.focusedPosterNameRow}>
-                <Text style={styles.focusedPosterName}>{focusedTask.creator_name || 'Anonymous'}</Text>
-                {focusedTask.creator_city && (
-                  <>
-                    <Text style={styles.focusedPosterDot}>•</Text>
-                    <Text style={styles.focusedPosterCity}>{focusedTask.creator_city}</Text>
-                  </>
-                )}
-              </View>
-              {hasRating && (
-                <Text style={styles.focusedPosterRating}>
-                  ⭐ {focusedTask.creator_rating?.toFixed(1)} ({focusedTask.creator_review_count} reviews)
-                </Text>
-              )}
-            </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>APPLICANTS</Text>
+            <Text style={styles.statValue}>{applicantsCount}</Text>
           </View>
         </View>
 
-        {/* Section Divider */}
-        <View style={styles.sectionDivider} />
-
-        {/* Section: Description */}
-        {focusedTask.description && (
-          <>
-            <View style={styles.focusedSection}>
-              <View style={styles.focusedSectionHeader}>
-                <Icon name="description" size={18} color="#4b5563" />
-                <Text style={styles.focusedSectionTitle}>DESCRIPTION</Text>
-              </View>
-              <Text style={styles.focusedDescription} numberOfLines={3}>{focusedTask.description}</Text>
-            </View>
-            <View style={styles.sectionDivider} />
-          </>
-        )}
-
-        {/* Section: Location */}
-        {focusedTask.location && (
-          <View style={styles.focusedSection}>
-            <View style={styles.focusedSectionHeader}>
-              <Icon name="place" size={18} color="#4b5563" />
-              <Text style={styles.focusedSectionTitle}>LOCATION</Text>
-            </View>
-            <Text style={styles.focusedLocation} numberOfLines={2}>{focusedTask.location}</Text>
+        {/* Row 5: Location + User */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoItem}>
+            <Icon name="place" size={18} color="#ef4444" />
+            <Text style={styles.infoText} numberOfLines={1}>{city || 'Location not set'}</Text>
           </View>
-        )}
+          <View style={styles.infoItem}>
+            <Icon name="person" size={18} color="#3b82f6" />
+            <Text style={styles.infoText} numberOfLines={1}>{focusedTask.creator_name || 'Anonymous'}</Text>
+          </View>
+        </View>
 
-        {/* Button */}
-        <Button
-          mode="contained"
+        {/* Row 6: Button */}
+        <TouchableOpacity
+          style={[styles.viewButton, { backgroundColor: categoryColor }]}
           onPress={() => handleViewFullDetails(focusedTask.id)}
-          style={[styles.viewDetailsButton, { backgroundColor: categoryColor }]}
-          labelStyle={styles.viewDetailsButtonLabel}
-          icon="arrow-right"
+          activeOpacity={0.8}
         >
-          View Full Details
-        </Button>
+          <Text style={styles.viewButtonText}>View and apply</Text>
+          <Icon name="arrow-forward" size={18} color="#ffffff" />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -1232,7 +1092,7 @@ const styles = StyleSheet.create({
   priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: '#0ea5e9' },
   priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: '#f97316' },
   
-  // Bottom Sheet - Enhanced with shadow and rounded corners
+  // Bottom Sheet
   bottomSheet: { 
     position: 'absolute', 
     bottom: 0, 
@@ -1248,7 +1108,6 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   sheetHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 16 },
-  // Thicker, darker handle bar
   handleBar: { 
     width: 44, 
     height: 6, 
@@ -1333,242 +1192,121 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   
-  // FOCUSED JOB DETAILS
-  focusedJobContainer: { 
-    padding: 20,
+  // FOCUSED JOB CARD - Minimalist like web version
+  focusedCard: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   
-  // Preview Image Gallery
-  previewImageContainer: {
-    marginHorizontal: -20,
-    marginTop: -20,
+  // Top row: Category badge
+  focusedTopRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     marginBottom: 16,
-    position: 'relative',
   },
-  previewImageScroll: {
-    width: SCREEN_WIDTH,
-  },
-  previewImage: {
-    width: PREVIEW_IMAGE_WIDTH,
-    height: PREVIEW_IMAGE_HEIGHT,
-    marginHorizontal: 20,
-    borderRadius: 12,
-  },
-  previewImageDots: {
+  focusedCategoryBadge: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     gap: 6,
   },
-  previewImageDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#d1d5db',
-  },
-  previewImageDotActive: {
-    backgroundColor: '#0ea5e9',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  
-  // Header Row: Category Badge + Distance
-  focusedHeaderRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 12,
-  },
-  focusedCategoryBadge: { 
-    paddingHorizontal: 14, 
-    paddingVertical: 7, 
-    borderRadius: 14,
-  },
-  focusedCategoryText: { 
-    fontSize: 12, 
-    fontWeight: '700', 
-    color: '#ffffff', 
-    letterSpacing: 0.5,
-  },
-  focusedDistanceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  focusedDistanceText: { 
-    fontSize: 14, 
-    color: '#4b5563', 
-    fontWeight: '500',
-  },
-  
-  // Meta Row: Time + Difficulty | Price
-  focusedMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  focusedMetaLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  focusedTimeText: {
+  focusedCategoryIcon: {
     fontSize: 14,
-    color: '#4b5563',
-    fontWeight: '500',
   },
-  focusedMetaDot: {
-    fontSize: 14,
-    color: '#d1d5db',
-  },
-  difficultyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  focusedDifficultyText: {
-    fontSize: 14,
-    color: '#4b5563',
-    fontWeight: '500',
-  },
-  focusedPrice: {
-    fontSize: 28,
-    fontWeight: '800',
-  },
-  
-  // Title - Larger with tighter line spacing
-  focusedTitle: { 
-    fontSize: 24, 
-    fontWeight: '700', 
-    color: '#111827', 
-    marginBottom: 14, 
-    lineHeight: 30,
-    letterSpacing: -0.3,
-  },
-  
-  // Quick Info Row (Deadline, Applicants) - only when items exist
-  quickInfoRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-  },
-  quickInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  quickInfoText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  
-  // Sections
-  focusedSection: { 
-    marginBottom: 14,
-  },
-  focusedSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 6,
-  },
-  focusedSectionTitle: { 
-    fontSize: 12, 
-    fontWeight: '700', 
-    color: '#6b7280', 
-    letterSpacing: 0.8,
-  },
-  
-  // Section Divider
-  sectionDivider: {
-    height: 1,
-    backgroundColor: '#f3f4f6',
-    marginVertical: 4,
-  },
-  
-  // Posted by section
-  focusedPosterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  focusedPosterAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 12,
-  },
-  focusedPosterAvatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  focusedPosterAvatarText: {
-    fontSize: 18,
+  focusedCategoryText: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#ffffff',
   },
-  focusedPosterInfo: {
-    flex: 1,
+  
+  // Price - big and centered
+  focusedPrice: {
+    fontSize: 42,
+    fontWeight: '800',
+    marginBottom: 8,
   },
-  focusedPosterNameRow: {
+  
+  // Title - centered
+  focusedTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  
+  // Stats row: Distance | Posted | Applicants
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 14,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    marginBottom: 16,
   },
-  focusedPosterName: {
-    fontSize: 16,
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 10,
     fontWeight: '600',
-    color: '#111827',
+    color: '#9ca3af',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  focusedPosterDot: {
-    fontSize: 14,
-    color: '#d1d5db',
-    marginHorizontal: 6,
+  statValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#374151',
   },
-  focusedPosterCity: {
-    fontSize: 14,
-    color: '#4b5563',
-  },
-  focusedPosterRating: {
-    fontSize: 14,
-    color: '#4b5563',
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: '#e5e7eb',
   },
   
-  // Description & Location - Improved contrast
-  focusedDescription: { 
-    fontSize: 15, 
-    color: '#374151', 
-    lineHeight: 23,
+  // Info row: Location + User
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+    marginBottom: 20,
   },
-  focusedLocation: { 
-    fontSize: 15, 
-    color: '#374151', 
-    lineHeight: 22,
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#4b5563',
+    fontWeight: '500',
+    maxWidth: 120,
   },
   
-  // View Details Button
-  viewDetailsButton: { 
-    marginTop: 18, 
-    borderRadius: 14,
-    paddingVertical: 4,
+  // View button
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
   },
-  viewDetailsButtonLabel: {
+  viewButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    color: '#ffffff',
   },
   
   // Modal Base Styles
