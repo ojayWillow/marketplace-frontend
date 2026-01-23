@@ -1,15 +1,28 @@
 import { Stack } from 'expo-router';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function AuthLayout() {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+
   return (
     <Stack
       screenOptions={{
         headerShown: true,
         headerBackTitle: 'Back',
         headerStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: themeColors.card,
+        },
+        headerTintColor: themeColors.text,
+        headerTitleStyle: {
+          color: themeColors.text,
         },
         headerShadowVisible: false,
+        contentStyle: {
+          backgroundColor: themeColors.backgroundSecondary,
+        },
       }}
     >
       <Stack.Screen
