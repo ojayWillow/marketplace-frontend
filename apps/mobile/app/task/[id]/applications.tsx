@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, Alert, RefreshControl } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Avatar, Card, Chip, ActivityIndicator, Divider } from 'react-native-paper';
@@ -78,6 +78,10 @@ export default function TaskApplicationsScreen() {
     );
   };
 
+  const handleViewProfile = (applicantId: number) => {
+    router.push(`/user/${applicantId}`);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return { bg: '#fef3c7', text: '#92400e' };
@@ -143,9 +147,11 @@ export default function TaskApplicationsScreen() {
           </Text>
           <View style={styles.taskMeta}>
             <Text style={styles.taskBudget}>€{task?.budget || 0}</Text>
-            <Chip style={styles.taskStatus}>
-              <Text>{formatStatus(task?.status || '')}</Text>
-            </Chip>
+            <View style={[styles.statusBadge, { backgroundColor: task?.status === 'open' ? '#dcfce7' : '#f3f4f6' }]}>
+              <Text style={[styles.statusBadgeText, { color: task?.status === 'open' ? '#166534' : '#6b7280' }]}>
+                {formatStatus(task?.status || '')}
+              </Text>
+            </View>
           </View>
         </Surface>
 
@@ -176,42 +182,64 @@ export default function TaskApplicationsScreen() {
               <Card.Content>
                 {/* Applicant Header */}
                 <View style={styles.applicantHeader}>
-                  <Avatar.Text
-                    size={48}
-                    label={application.applicant_name?.charAt(0).toUpperCase() || 'U'}
-                    style={styles.avatar}
-                  />
+                  <View style={styles.avatarContainer}>
+                    <Text style={styles.avatarText}>
+                      {application.applicant_name?.charAt(0).toUpperCase() || 'U'}
+                    </Text>
+                  </View>
                   <View style={styles.applicantInfo}>
                     <Text variant="titleMedium" style={styles.applicantName}>
                       {application.applicant_name || 'Unknown'}
                     </Text>
-                    <View style={styles.applicantMeta}>
-                      {application.applicant_rating != null && application.applicant_rating > 0 && (
-                        <Text style={styles.rating}>
-                          ⭐ {application.applicant_rating.toFixed(1)}
-                        </Text>
-                      )}
-                      {application.applicant_completed_tasks != null && (
-                        <Text style={styles.completedTasks}>
-                          ✓ {application.applicant_completed_tasks} tasks
-                        </Text>
-                      )}
-                    </View>
+                    {application.applicant_city ? (
+                      <Text style={styles.cityText}>📍 {application.applicant_city}</Text>
+                    ) : null}
                   </View>
-                  <Chip
-                    style={[styles.statusChip, { backgroundColor: statusColors.bg }]}
-                    textStyle={{ color: statusColors.text, fontSize: 11 }}
-                  >
-                    <Text style={{ color: statusColors.text, fontSize: 11 }}>
+                  <View style={[styles.statusBadgeSmall, { backgroundColor: statusColors.bg }]}>
+                    <Text style={[styles.statusBadgeSmallText, { color: statusColors.text }]}>
                       {formatStatus(application.status)}
                     </Text>
-                  </Chip>
+                  </View>
                 </View>
+
+                {/* Stats Row */}
+                <View style={styles.statsRow}>
+                  {application.applicant_rating != null && application.applicant_rating > 0 ? (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statIcon}>⭐</Text>
+                      <Text style={styles.statText}>{application.applicant_rating.toFixed(1)}</Text>
+                      {application.applicant_review_count != null && application.applicant_review_count > 0 ? (
+                        <Text style={styles.statSubtext}>({application.applicant_review_count})</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                  {application.applicant_completed_tasks != null ? (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statIcon}>✓</Text>
+                      <Text style={styles.statText}>{application.applicant_completed_tasks} tasks</Text>
+                    </View>
+                  ) : null}
+                  {application.applicant_member_since ? (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statIcon}>👤</Text>
+                      <Text style={styles.statText}>
+                        Since {new Date(application.applicant_member_since).getFullYear()}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Bio */}
+                {application.applicant_bio ? (
+                  <View style={styles.bioContainer}>
+                    <Text style={styles.bioText} numberOfLines={3}>{application.applicant_bio}</Text>
+                  </View>
+                ) : null}
 
                 {/* Message */}
                 {application.message ? (
                   <View style={styles.messageContainer}>
-                    <Text style={styles.messageLabel}>Message:</Text>
+                    <Text style={styles.messageLabel}>Application message:</Text>
                     <Text style={styles.messageText}>{application.message}</Text>
                   </View>
                 ) : null}
@@ -226,33 +254,47 @@ export default function TaskApplicationsScreen() {
 
                 {/* Applied Date */}
                 <Text style={styles.appliedDate}>
-                  Applied {new Date(application.created_at).toLocaleDateString()}
+                  Applied {new Date(application.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </Text>
+
+                <Divider style={styles.divider} />
+
+                {/* View Profile Button (Always shown) */}
+                <Button
+                  mode="text"
+                  onPress={() => handleViewProfile(application.applicant_id)}
+                  style={styles.viewProfileButton}
+                  icon="account"
+                  compact
+                >
+                  View Full Profile
+                </Button>
 
                 {/* Action Buttons - Only for pending applications */}
                 {isPending ? (
-                  <View>
-                    <Divider style={styles.divider} />
-                    <View style={styles.actionButtons}>
-                      <Button
-                        mode="outlined"
-                        onPress={() => handleReject(application)}
-                        disabled={isMutating}
-                        textColor="#ef4444"
-                        style={[styles.actionButton, styles.rejectButton]}
-                      >
-                        Reject
-                      </Button>
-                      <Button
-                        mode="contained"
-                        onPress={() => handleAccept(application)}
-                        disabled={isMutating}
-                        loading={acceptMutation.isPending}
-                        style={styles.actionButton}
-                      >
-                        Accept
-                      </Button>
-                    </View>
+                  <View style={styles.actionButtons}>
+                    <Button
+                      mode="outlined"
+                      onPress={() => handleReject(application)}
+                      disabled={isMutating}
+                      textColor="#ef4444"
+                      style={[styles.actionButton, styles.rejectButton]}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      mode="contained"
+                      onPress={() => handleAccept(application)}
+                      disabled={isMutating}
+                      loading={acceptMutation.isPending}
+                      style={styles.actionButton}
+                    >
+                      Accept
+                    </Button>
                   </View>
                 ) : null}
               </Card.Content>
@@ -311,8 +353,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-  taskStatus: {
-    backgroundColor: '#f3f4f6',
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   countContainer: {
     padding: 16,
@@ -348,9 +396,20 @@ const styles = StyleSheet.create({
   applicantHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  avatar: {
+  avatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#0ea5e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '600',
   },
   applicantInfo: {
     flex: 1,
@@ -359,42 +418,78 @@ const styles = StyleSheet.create({
   applicantName: {
     fontWeight: '600',
     color: '#1f2937',
+    marginBottom: 2,
   },
-  applicantMeta: {
-    flexDirection: 'row',
-    marginTop: 2,
-  },
-  rating: {
-    color: '#f59e0b',
-    fontSize: 13,
-    marginRight: 12,
-  },
-  completedTasks: {
+  cityText: {
     color: '#6b7280',
     fontSize: 13,
   },
-  statusChip: {
-    height: 24,
+  statusBadgeSmall: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    minWidth: 80,
+    alignItems: 'center',
   },
-  messageContainer: {
-    marginTop: 16,
+  statusBadgeSmallText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+    gap: 16,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  statText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  statSubtext: {
+    color: '#9ca3af',
+    fontSize: 12,
+    marginLeft: 2,
+  },
+  bioContainer: {
     backgroundColor: '#f9fafb',
     padding: 12,
     borderRadius: 8,
+    marginBottom: 12,
+  },
+  bioText: {
+    color: '#4b5563',
+    lineHeight: 20,
+    fontSize: 13,
+  },
+  messageContainer: {
+    backgroundColor: '#eff6ff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
   },
   messageLabel: {
-    color: '#6b7280',
+    color: '#1e40af',
     fontSize: 12,
-    marginBottom: 4,
+    fontWeight: '600',
+    marginBottom: 6,
   },
   messageText: {
-    color: '#374151',
+    color: '#1e3a8a',
     lineHeight: 20,
   },
   proposedPrice: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    marginBottom: 8,
   },
   proposedLabel: {
     color: '#6b7280',
@@ -404,22 +499,24 @@ const styles = StyleSheet.create({
   proposedValue: {
     color: '#059669',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 16,
   },
   appliedDate: {
     color: '#9ca3af',
     fontSize: 12,
-    marginTop: 12,
   },
   divider: {
-    marginVertical: 16,
+    marginVertical: 12,
+  },
+  viewProfileButton: {
+    marginBottom: 8,
   },
   actionButtons: {
     flexDirection: 'row',
+    gap: 8,
   },
   actionButton: {
     flex: 1,
-    marginHorizontal: 4,
   },
   rejectButton: {
     borderColor: '#fecaca',
