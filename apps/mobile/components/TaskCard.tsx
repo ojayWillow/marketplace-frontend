@@ -4,6 +4,7 @@ import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Task } from '@marketplace/shared';
 import { getImageUrl, getCategoryByKey } from '@marketplace/shared';
+import StarRating from './StarRating';
 
 interface TaskCardProps {
   task: Task;
@@ -131,9 +132,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           {hasRating && (
             <>
               <Text style={styles.dot}>•</Text>
-              <Text style={styles.rating}>
-                ⭐ {task.creator_rating?.toFixed(1)} ({task.creator_review_count})
-              </Text>
+              <StarRating 
+                rating={task.creator_rating || 0} 
+                reviewCount={task.creator_review_count}
+                size={12}
+                showCount={true}
+              />
             </>
           )}
         </View>
@@ -269,10 +273,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6b7280',
     maxWidth: 80,
-  },
-  rating: {
-    fontSize: 12,
-    color: '#6b7280',
   },
   
   // Row 4: Description
