@@ -1,24 +1,48 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
-
-// Simple icon components using emoji (works cross-platform)
-const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => (
-  <View style={[styles.iconContainer, focused && styles.iconFocused]}>
-    <Text style={styles.iconEmoji}>{emoji}</Text>
-  </View>
-);
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function TabsLayout() {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+
+  // Simple icon components using emoji (works cross-platform)
+  const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => {
+    const iconStyles = StyleSheet.create({
+      iconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      iconFocused: {
+        backgroundColor: activeTheme === 'dark' ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+      },
+      iconEmoji: {
+        fontSize: 20,
+      },
+    });
+
+    return (
+      <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
+        <Text style={iconStyles.iconEmoji}>{emoji}</Text>
+      </View>
+    );
+  };
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#0ea5e9',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: themeColors.primaryAccent,
+        tabBarInactiveTintColor: themeColors.tabBarInactive,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: themeColors.tabBar,
           borderTopWidth: 1,
-          borderTopColor: '#f3f4f6',
+          borderTopColor: themeColors.border,
           paddingTop: 8,
           paddingBottom: 8,
           height: 65,
@@ -78,19 +102,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconFocused: {
-    backgroundColor: '#e0f2fe',
-  },
-  iconEmoji: {
-    fontSize: 20,
-  },
-});

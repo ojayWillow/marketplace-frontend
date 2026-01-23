@@ -1,8 +1,77 @@
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Surface } from 'react-native-paper';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function ListingsScreen() {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    header: {
+      padding: 16,
+      backgroundColor: themeColors.card,
+    },
+    title: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+    },
+    content: {
+      flex: 1,
+      padding: 16,
+    },
+    comingSoonContainer: {
+      alignItems: 'center',
+      paddingVertical: 48,
+    },
+    emoji: {
+      fontSize: 64,
+      marginBottom: 16,
+    },
+    comingSoonTitle: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+      marginBottom: 12,
+    },
+    comingSoonText: {
+      color: themeColors.textSecondary,
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    featuresCard: {
+      backgroundColor: themeColors.card,
+      borderRadius: 16,
+      padding: 20,
+      marginTop: 24,
+    },
+    featuresTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      fontSize: 16,
+      marginBottom: 16,
+    },
+    featureItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    featureIcon: {
+      fontSize: 20,
+      marginRight: 12,
+      width: 28,
+    },
+    featureText: {
+      color: themeColors.textSecondary,
+      fontSize: 15,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -45,66 +114,3 @@ export default function ListingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  title: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  comingSoonContainer: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  comingSoonTitle: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  comingSoonText: {
-    color: '#4b5563',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  featuresCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 24,
-  },
-  featuresTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  featureIcon: {
-    fontSize: 20,
-    marginRight: 12,
-    width: 28,
-  },
-  featureText: {
-    color: '#4b5563',
-    fontSize: 15,
-  },
-});

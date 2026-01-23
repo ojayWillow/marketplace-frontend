@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
@@ -1161,6 +1162,7 @@ export default function HomeScreen() {
           ref={mapRef}
           style={styles.map}
           provider={PROVIDER_DEFAULT}
+          customMapStyle={activeTheme === 'dark' ? darkMapStyle : lightMapStyle}
           initialRegion={{
             latitude: userLocation.latitude,
             longitude: userLocation.longitude,
