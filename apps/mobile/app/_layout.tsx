@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/stores/authStore';
-import { View, useColorScheme, InteractionManager } from 'react-native';
+import { View, useColorScheme, InteractionManager, Appearance } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
@@ -28,6 +28,7 @@ export default function RootLayout() {
   // Theme - use system color scheme immediately, don't wait for hydration
   const systemColorScheme = useColorScheme();
   const { mode, _hasHydrated: themeHydrated } = useThemeStore();
+  const [, forceUpdate] = useState({});
   
   // Determine active theme - use system as default until hydrated
   const activeTheme = themeHydrated && mode !== 'system'
@@ -35,6 +36,23 @@ export default function RootLayout() {
     : (systemColorScheme === 'dark' ? 'dark' : 'light');
   const theme = activeTheme === 'dark' ? darkTheme : lightTheme;
   const themeColors = colors[activeTheme];
+
+  // Listen for system appearance changes when in system mode
+  useEffect(() => {
+    if (mode !== 'system') return;
+    
+    const subscription = Appearance.addChangeListener(() => {
+      // Force re-render when system theme changes
+      forceUpdate({});
+    });
+
+    return () => subscription.remove();
+  }, [mode]);
+
+  // Force re-render when theme mode changes manually
+  useEffect(() => {
+    forceUpdate({});
+  }, [mode]);
 
   // Mark as ready after first render completes
   useEffect(() => {
