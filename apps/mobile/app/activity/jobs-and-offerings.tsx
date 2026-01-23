@@ -4,7 +4,7 @@ import { Text, Appbar, SegmentedButtons } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuthStore, getMyPostedTasks, getMyApplications, getMyAssignedTasks, getMyOfferings } from '@marketplace/shared';
+import { useAuthStore, getCreatedTasks, getMyApplications, getMyTasks, getMyOfferings } from '@marketplace/shared';
 import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
 import { useThemeStore } from '../../src/stores/themeStore';
@@ -20,29 +20,35 @@ export default function JobsAndOfferingsScreen() {
   const [activeTab, setActiveTab] = useState<TabValue>('posted');
 
   // Fetch data for all tabs
-  const { data: postedJobs = [], isLoading: isLoadingPosted } = useQuery({
+  const { data: postedJobsData, isLoading: isLoadingPosted } = useQuery({
     queryKey: ['myPostedTasks'],
-    queryFn: getMyPostedTasks,
+    queryFn: getCreatedTasks,
     enabled: !!user,
   });
 
-  const { data: applications = [], isLoading: isLoadingApplications } = useQuery({
+  const { data: applicationsData, isLoading: isLoadingApplications } = useQuery({
     queryKey: ['myApplications'],
     queryFn: getMyApplications,
     enabled: !!user,
   });
 
-  const { data: assignedJobs = [], isLoading: isLoadingAssigned } = useQuery({
+  const { data: assignedJobsData, isLoading: isLoadingAssigned } = useQuery({
     queryKey: ['myAssignedTasks'],
-    queryFn: getMyAssignedTasks,
+    queryFn: getMyTasks,
     enabled: !!user,
   });
 
-  const { data: myServices = [], isLoading: isLoadingServices } = useQuery({
+  const { data: myServicesData, isLoading: isLoadingServices } = useQuery({
     queryKey: ['myOfferings'],
     queryFn: getMyOfferings,
     enabled: !!user,
   });
+
+  // Extract arrays from API responses
+  const postedJobs = postedJobsData?.tasks || [];
+  const applications = applicationsData?.applications || [];
+  const assignedJobs = assignedJobsData?.tasks || [];
+  const myServices = myServicesData?.offerings || [];
 
   const getActiveData = () => {
     switch (activeTab) {
@@ -133,6 +139,10 @@ export default function JobsAndOfferingsScreen() {
           renderItem={({ item }) => {
             if (activeTab === 'services') {
               return <OfferingCard offering={item} />;
+            }
+            // For applications tab, the item is a TaskApplication with nested task
+            if (activeTab === 'applications' && item.task) {
+              return <TaskCard task={item.task} />;
             }
             return <TaskCard task={item} />;
           }}
