@@ -69,7 +69,19 @@ export default function ProfileScreen() {
   if (!isAuthenticated || !user) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
-        <Stack.Screen options={{ headerShown: true, title: 'Profile' }} />
+        <Stack.Screen 
+          options={{ 
+            headerShown: true, 
+            title: 'Profile',
+            headerStyle: {
+              backgroundColor: themeColors.card,
+            },
+            headerTintColor: themeColors.text,
+            headerTitleStyle: {
+              color: themeColors.text,
+            },
+          }} 
+        />
         <View style={styles.centerContainer}>
           <Avatar.Icon size={80} icon="account" style={[styles.guestAvatar, { backgroundColor: themeColors.border }]} />
           <Text variant="headlineSmall" style={[styles.notLoggedInTitle, { color: themeColors.text }]}>Not Logged In</Text>
@@ -106,12 +118,20 @@ export default function ProfileScreen() {
         options={{ 
           headerShown: true, 
           title: 'Profile',
+          headerStyle: {
+            backgroundColor: themeColors.card,
+          },
+          headerTintColor: themeColors.text,
+          headerTitleStyle: {
+            color: themeColors.text,
+          },
           headerRight: () => (
             <Pressable onPress={() => router.push('/notifications')} style={styles.bellContainer}>
               <IconButton
                 icon="bell-outline"
                 size={24}
                 onPress={() => router.push('/notifications')}
+                iconColor={themeColors.text}
               />
               {unreadCount > 0 && (
                 <View style={styles.badgeContainer}>
