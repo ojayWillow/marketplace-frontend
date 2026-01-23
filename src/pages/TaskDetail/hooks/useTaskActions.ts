@@ -34,9 +34,7 @@ export const useTaskActions = ({
 
   // Helper to invalidate all task-related caches
   const invalidateTaskCaches = async () => {
-    // Invalidate ALL task details (all languages) to ensure fresh data
     await queryClient.invalidateQueries({ queryKey: taskKeys.details() });
-    // Also invalidate task lists so "My Jobs" shows correct status
     await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     await queryClient.invalidateQueries({ queryKey: taskKeys.all });
   };
@@ -46,8 +44,15 @@ export const useTaskActions = ({
       setActionLoading(true);
       await markTaskDone(taskId);
       toast.success('Task marked as done! Waiting for creator confirmation.');
+      
+      // Invalidate and refetch
       await invalidateTaskCaches();
-      refetchTask();
+      await refetchTask();
+      
+      // Navigate back to My Work after 1.5 seconds
+      setTimeout(() => {
+        navigate('/profile');
+      }, 1500);
     } catch (error: any) {
       console.error('Error marking task done:', error);
       toast.error(error?.response?.data?.error || 'Failed to mark task as done');
@@ -57,7 +62,6 @@ export const useTaskActions = ({
   };
 
   const handleConfirmDone = async () => {
-    // Double-check status before making the request
     if (task?.status !== 'pending_confirmation') {
       toast.error('Task is not pending confirmation');
       await invalidateTaskCaches();
@@ -70,13 +74,16 @@ export const useTaskActions = ({
       await confirmTaskCompletion(taskId);
       toast.success('Task completed! You can now leave a review.');
       
-      // Invalidate ALL task caches and refetch
       await invalidateTaskCaches();
       await refetchTask();
+      
+      // Navigate to profile after 1.5 seconds
+      setTimeout(() => {
+        navigate('/profile');
+      }, 1500);
     } catch (error: any) {
       console.error('Error confirming task:', error);
       toast.error(error?.response?.data?.error || 'Failed to confirm task');
-      // Refetch to get correct state even on error
       await invalidateTaskCaches();
       refetchTask();
     } finally {
