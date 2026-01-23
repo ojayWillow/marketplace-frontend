@@ -1,58 +1,48 @@
 import React, { memo, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Task } from '@marketplace/shared';
+import { getImageUrl } from '@marketplace/shared';
 
 interface TaskCardProps {
   task: Task;
   onPress?: (task: Task) => void;
 }
 
-// Helper to shorten location - extract city name
-const shortenLocation = (location: string | undefined): string => {
-  if (!location) return '';
-  const parts = location.split(',').map(p => p.trim());
+// Helper to format time ago
+const formatTimeAgo = (dateString: string | undefined): string => {
+  if (!dateString) return '';
   
-  // Try to find city (skip street addresses, postal codes, country)
-  for (const part of parts) {
-    if (/^\d/.test(part)) continue;
-    if (/LV-\d+/.test(part)) continue;
-    if (part.toLowerCase() === 'latvia') continue;
-    if (part.length < 3) continue;
-    return part;
-  }
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
   
-  return location.length > 15 ? location.substring(0, 15) + '...' : location;
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return past.toLocaleDateString();
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'open': return { bg: '#dcfce7', text: '#166534' };
-    case 'assigned': return { bg: '#fef3c7', text: '#92400e' };
-    case 'in_progress': return { bg: '#dbeafe', text: '#1e40af' };
-    case 'pending_confirmation': return { bg: '#f3e8ff', text: '#7c3aed' };
-    case 'completed': return { bg: '#f3f4f6', text: '#374151' };
-    case 'cancelled': return { bg: '#fee2e2', text: '#991b1b' };
-    default: return { bg: '#f3f4f6', text: '#374151' };
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'open': return 'Open';
-    case 'assigned': return 'Assigned';
-    case 'in_progress': return 'In Progress';
-    case 'pending_confirmation': return 'Pending';
-    case 'completed': return 'Completed';
-    case 'cancelled': return 'Cancelled';
-    default: return status;
+// Helper to get difficulty color indicator
+const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+  switch (difficulty) {
+    case 'easy': return { color: '#10b981', label: 'Easy' };  // Green
+    case 'hard': return { color: '#ef4444', label: 'Hard' };  // Red
+    case 'medium':
+    default: return { color: '#f59e0b', label: 'Medium' }; // Yellow/Orange
   }
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
-  const statusColors = getStatusColor(task.status);
-  const shortLocation = shortenLocation(task.location);
+  const difficulty = getDifficultyIndicator(task.difficulty);
+  const timeAgo = formatTimeAgo(task.created_at);
+  const hasApplicants = (task.pending_applications_count ?? 0) > 0;
+  const hasRating = (task.creator_rating ?? 0) > 0;
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -65,29 +55,74 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   return (
     <Card style={styles.card} onPress={handlePress}>
       <Card.Content style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>
-            {task.title}
-          </Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-            <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>
-              {getStatusLabel(task.status)}
-            </Text>
-          </View>
+        {/* Row 1: Category + Price */}
+        <View style={styles.row1}>
+          <Text style={styles.category}>💼 {task.category}</Text>
+          <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
         </View>
         
-        <Text style={styles.category}>{task.category}</Text>
-        <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
+        {/* Row 2: Title */}
+        <Text variant="titleMedium" numberOfLines={1} style={styles.title}>
+          {task.title}
+        </Text>
+        
+        {/* Row 3: Creator with Avatar + Location + Rating */}
+        <View style={styles.row3}>
+          {task.creator_avatar ? (
+            <Image 
+              source={{ uri: getImageUrl(task.creator_avatar) }} 
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {task.creator_name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.creatorName} numberOfLines={1}>
+            {task.creator_name || 'Anonymous'}
+          </Text>
+          {task.creator_city && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.creatorCity} numberOfLines={1}>{task.creator_city}</Text>
+            </>
+          )}
+          {hasRating && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.rating}>
+                ⭐ {task.creator_rating?.toFixed(1)} ({task.creator_review_count})
+              </Text>
+            </>
+          )}
+        </View>
+        
+        {/* Row 4: Description Preview */}
+        <Text variant="bodySmall" style={styles.description} numberOfLines={2}>
           {task.description}
         </Text>
         
-        <View style={styles.cardFooter}>
-          <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-          <View style={styles.footerMeta}>
-            {shortLocation ? (
-              <Text style={styles.location}>📍 {shortLocation}</Text>
-            ) : null}
-            <Text style={styles.creator}>👤 {task.creator_name || 'Anonymous'}</Text>
+        {/* Row 5: Distance + Time + Applicants + Difficulty */}
+        <View style={styles.row5}>
+          {task.distance !== undefined && (
+            <Text style={styles.metaText}>{task.distance.toFixed(1)} km</Text>
+          )}
+          {task.distance !== undefined && <Text style={styles.metaDot}>•</Text>}
+          <Text style={styles.metaText}>{timeAgo}</Text>
+          {hasApplicants && (
+            <>
+              <Text style={styles.metaDot}>•</Text>
+              <Text style={styles.metaText}>
+                👤 {task.pending_applications_count}
+              </Text>
+            </>
+          )}
+          <Text style={styles.metaDot}>•</Text>
+          <View style={styles.difficultyBadge}>
+            <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
+            <Text style={styles.difficultyText}>{difficulty.label}</Text>
           </View>
         </View>
       </Card.Content>
@@ -97,10 +132,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
 
 // Memoize with custom comparison
 export default memo(TaskCard, (prevProps, nextProps) => {
-  // Only re-render if task ID or status changed
+  // Re-render if task data changed
   return (
     prevProps.task.id === nextProps.task.id &&
     prevProps.task.status === nextProps.task.status &&
+    prevProps.task.pending_applications_count === nextProps.task.pending_applications_count &&
     prevProps.onPress === nextProps.onPress
   );
 });
@@ -116,58 +152,115 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  
+  // Row 1: Category + Price
+  row1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
-  },
-  cardTitle: { 
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 12,
-    color: '#1f2937',
-  },
-  statusBadge: { 
-    paddingHorizontal: 10, 
-    paddingVertical: 4, 
-    borderRadius: 12,
-  },
-  statusBadgeText: { 
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
-  category: { 
-    color: '#0ea5e9', 
-    fontSize: 13,
     marginBottom: 6,
   },
-  description: { 
-    color: '#6b7280', 
-    marginBottom: 12,
-    lineHeight: 20,
+  category: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6b7280',
   },
-  cardFooter: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
+  price: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0ea5e9',
   },
-  price: { 
-    color: '#0ea5e9', 
-    fontWeight: 'bold',
-    fontSize: 16,
+  
+  // Row 2: Title
+  title: {
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
   },
-  footerMeta: {
+  
+  // Row 3: Creator Info
+  row3: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    marginBottom: 8,
+    flexWrap: 'wrap',
   },
-  location: { 
-    color: '#9ca3af', 
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  avatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0ea5e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  creatorName: {
     fontSize: 13,
+    fontWeight: '500',
+    color: '#1f2937',
+    maxWidth: 100,
   },
-  creator: { 
-    color: '#9ca3af', 
-    fontSize: 13 
+  dot: {
+    fontSize: 13,
+    color: '#d1d5db',
+    marginHorizontal: 6,
+  },
+  creatorCity: {
+    fontSize: 13,
+    color: '#6b7280',
+    maxWidth: 80,
+  },
+  rating: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  
+  // Row 4: Description
+  description: {
+    color: '#6b7280',
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  
+  // Row 5: Meta Info
+  row5: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  metaDot: {
+    fontSize: 12,
+    color: '#d1d5db',
+    marginHorizontal: 6,
+  },
+  difficultyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  difficultyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
+  },
+  difficultyText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '500',
   },
 });
