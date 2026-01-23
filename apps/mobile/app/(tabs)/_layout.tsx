@@ -3,17 +3,35 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 
-// Simple icon components using emoji (works cross-platform)
-const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => (
-  <View style={[styles.iconContainer, focused && styles.iconFocused]}>
-    <Text style={styles.iconEmoji}>{emoji}</Text>
-  </View>
-);
-
 export default function TabsLayout() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+
+  // Simple icon components using emoji (works cross-platform)
+  const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => {
+    const iconStyles = StyleSheet.create({
+      iconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      iconFocused: {
+        backgroundColor: activeTheme === 'dark' ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+      },
+      iconEmoji: {
+        fontSize: 20,
+      },
+    });
+
+    return (
+      <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
+        <Text style={iconStyles.iconEmoji}>{emoji}</Text>
+      </View>
+    );
+  };
 
   return (
     <Tabs
@@ -84,19 +102,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconFocused: {
-    backgroundColor: '#e0f2fe',
-  },
-  iconEmoji: {
-    fontSize: 20,
-  },
-});
