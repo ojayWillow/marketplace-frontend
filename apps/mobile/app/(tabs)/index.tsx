@@ -52,6 +52,16 @@ const formatPostedDate = (dateString: string): string => {
   return `${day} ${month}`;
 };
 
+// Get difficulty indicator
+const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+  switch (difficulty) {
+    case 'easy': return { color: '#10b981', label: 'Easy' };
+    case 'hard': return { color: '#ef4444', label: 'Hard' };
+    case 'medium':
+    default: return { color: '#f59e0b', label: 'Medium' };
+  }
+};
+
 interface Cluster {
   id: string;
   latitude: number;
@@ -557,6 +567,7 @@ export default function HomeScreen() {
     const categoryData = getCategoryByKey(focusedTask.category);
     const categoryColor = getMarkerColor(focusedTask.category);
     const applicantsCount = focusedTask.pending_applications_count ?? 0;
+    const difficulty = getDifficultyIndicator(focusedTask.difficulty);
 
     const distanceKm = hasRealLocation
       ? calculateDistance(
@@ -580,19 +591,17 @@ export default function HomeScreen() {
               {categoryData?.label || focusedTask.category}
             </Text>
           </View>
+          <Text style={[styles.focusedPrice, { color: categoryColor }]}>
+            €{focusedTask.budget?.toFixed(0) || '0'}
+          </Text>
         </View>
 
-        {/* Row 2: Price - big and centered */}
-        <Text style={[styles.focusedPrice, { color: categoryColor }]}>
-          €{focusedTask.budget?.toFixed(0) || '0'}
-        </Text>
-
-        {/* Row 3: Title */}
+        {/* Row 2: Title */}
         <Text style={styles.focusedTitle} numberOfLines={2}>
           {focusedTask.title}
         </Text>
 
-        {/* Row 4: Stats row - Distance | Posted | Applicants */}
+        {/* Row 3: Stats row - Distance | Posted | Applicants | Username */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>DISTANCE</Text>
@@ -608,21 +617,26 @@ export default function HomeScreen() {
             <Text style={styles.statLabel}>APPLICANTS</Text>
             <Text style={styles.statValue}>{applicantsCount}</Text>
           </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>BY</Text>
+            <Text style={styles.statValue} numberOfLines={1}>{focusedTask.creator_name || 'Anon'}</Text>
+          </View>
         </View>
 
-        {/* Row 5: Location + User */}
+        {/* Row 4: Location | Difficulty */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
             <Icon name="place" size={18} color="#ef4444" />
             <Text style={styles.infoText} numberOfLines={1}>{city || 'Location not set'}</Text>
           </View>
           <View style={styles.infoItem}>
-            <Icon name="person" size={18} color="#3b82f6" />
-            <Text style={styles.infoText} numberOfLines={1}>{focusedTask.creator_name || 'Anonymous'}</Text>
+            <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
+            <Text style={styles.infoText}>{difficulty.label}</Text>
           </View>
         </View>
 
-        {/* Row 6: Button */}
+        {/* Row 5: Button */}
         <TouchableOpacity
           style={[styles.viewButton, { backgroundColor: categoryColor }]}
           onPress={() => handleViewFullDetails(focusedTask.id)}
@@ -1192,19 +1206,18 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   
-  // FOCUSED JOB CARD - Minimalist like web version
+  // FOCUSED JOB CARD - Minimalist layout
   focusedCard: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    alignItems: 'center',
   },
   
-  // Top row: Category badge
+  // Top row: Category badge (left) + Price (right)
   focusedTopRow: {
-    width: '100%',
     flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   focusedCategoryBadge: {
     flexDirection: 'row',
@@ -1222,64 +1235,60 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
   },
-  
-  // Price - big and centered
   focusedPrice: {
-    fontSize: 42,
+    fontSize: 28,
     fontWeight: '800',
-    marginBottom: 8,
   },
   
-  // Title - centered
+  // Title
   focusedTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#1f2937',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 24,
+    marginBottom: 16,
+    lineHeight: 26,
   },
   
-  // Stats row: Distance | Posted | Applicants
+  // Stats row: Distance | Posted | Applicants | Username
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     width: '100%',
-    paddingVertical: 14,
+    paddingVertical: 12,
     backgroundColor: '#f9fafb',
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   statItem: {
     flex: 1,
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
     color: '#9ca3af',
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statValue: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
     color: '#374151',
   },
   statDivider: {
     width: 1,
-    height: 28,
+    height: 24,
     backgroundColor: '#e5e7eb',
   },
   
-  // Info row: Location + User
+  // Info row: Location | Difficulty
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
   infoItem: {
     flexDirection: 'row',
@@ -1290,7 +1299,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4b5563',
     fontWeight: '500',
-    maxWidth: 120,
+  },
+  difficultyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   
   // View button
