@@ -6,7 +6,8 @@ import { useAuthStore, getUserProfile, getUserReviewStats } from '@marketplace/s
 import { useQuery } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
-import StarRating from '../../components/StarRating';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -14,17 +15,25 @@ export default function ProfileScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
-  const { data: userData, isLoading: isLoadingUser } = useQuery({
+  const { data: userData, isLoading: isLoadingUser, refetch: refetchUser } = useQuery({
     queryKey: ['user', user?.id],
     queryFn: () => getUserProfile(user!.id),
     enabled: !!user?.id,
   });
 
-  const { data: reviewStats, isLoading: isLoadingStats } = useQuery({
+  const { data: reviewStats, isLoading: isLoadingStats, refetch: refetchStats } = useQuery({
     queryKey: ['userReviewStats', user?.id],
     queryFn: () => getUserReviewStats(user!.id),
     enabled: !!user?.id,
   });
+
+  // Refetch profile data when screen comes into focus (after editing)
+  useFocusEffect(
+    useCallback(() => {
+      refetchUser();
+      refetchStats();
+    }, [refetchUser, refetchStats])
+  );
 
   const handleLogout = () => {
     Alert.alert(
@@ -113,12 +122,8 @@ export default function ProfileScreen() {
               <View style={styles.stat}>
                 {reviewStats?.average_rating && reviewStats.average_rating > 0 ? (
                   <View style={styles.statRatingContainer}>
-                    <StarRating 
-                      rating={reviewStats.average_rating} 
-                      size={18}
-                      showCount={false}
-                    />
-                    <Text style={[styles.statRatingValue, { color: themeColors.text }]}>
+                    <Text style={styles.starEmoji}>⭐</Text>
+                    <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
                       {reviewStats.average_rating.toFixed(1)}
                     </Text>
                   </View>
@@ -344,11 +349,10 @@ const styles = StyleSheet.create({
   statRatingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
-  statRatingValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  starEmoji: {
+    fontSize: 20,
   },
   statLabel: {
     fontSize: 12,
