@@ -1,0 +1,520 @@
+import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip, IconButton, Badge } from 'react-native-paper';
+import { router, Stack } from 'expo-router';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount } from '@marketplace/shared';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+
+export default function ProfileScreen() {
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+
+  const { data: userData, isLoading: isLoadingUser, refetch: refetchUser } = useQuery({
+    queryKey: ['user', user?.id],
+    queryFn: () => getUserProfile(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const { data: reviewStats, isLoading: isLoadingStats, refetch: refetchStats } = useQuery({
+    queryKey: ['userReviewStats', user?.id],
+    queryFn: () => getUserReviewStats(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const { data: unreadData, refetch: refetchUnread } = useQuery({
+    queryKey: ['unreadCount'],
+    queryFn: getUnreadCount,
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Refetch profile data when screen comes into focus (after editing)
+  useFocusEffect(
+    useCallback(() => {
+      refetchUser();
+      refetchStats();
+      refetchUnread();
+    }, [refetchUser, refetchStats, refetchUnread])
+  );
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            // Clear all cached data to prevent showing previous user's data
+            queryClient.clear();
+            logout();
+            router.replace('/');
+          },
+        },
+      ]
+    );
+  };
+
+  const unreadCount = unreadData?.unread_count || 0;
+
+  if (!isAuthenticated || !user) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
+        <Stack.Screen 
+          options={{ 
+            headerShown: true, 
+            title: 'Profile',
+            headerStyle: {
+              backgroundColor: themeColors.card,
+            },
+            headerTintColor: themeColors.text,
+            headerTitleStyle: {
+              color: themeColors.text,
+            },
+          }} 
+        />
+        <View style={styles.centerContainer}>
+          <Avatar.Icon size={80} icon="account" style={[styles.guestAvatar, { backgroundColor: themeColors.border }]} />
+          <Text variant="headlineSmall" style={[styles.notLoggedInTitle, { color: themeColors.text }]}>Not Logged In</Text>
+          <Text style={[styles.notLoggedInSubtitle, { color: themeColors.textSecondary }]}>
+            Sign in to access your profile, listings, and messages
+          </Text>
+          <Button
+            mode="contained"
+            onPress={() => router.push('/(auth)/login')}
+            style={styles.signInButton}
+          >
+            Sign In
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const displayUser = userData || user;
+  const isLoading = isLoadingUser || isLoadingStats;
+
+  // Get profile picture URL
+  const profilePictureUrl = displayUser.profile_picture_url || displayUser.avatar_url;
+  const fullProfilePictureUrl = profilePictureUrl ? getImageUrl(profilePictureUrl) : null;
+
+  // Parse skills - could be string or array
+  const userSkills = displayUser.skills 
+    ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()))
+    : [];
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
+      <Stack.Screen 
+        options={{ 
+          headerShown: true, 
+          title: 'Profile',
+          headerStyle: {
+            backgroundColor: themeColors.card,
+          },
+          headerTintColor: themeColors.text,
+          headerTitleStyle: {
+            color: themeColors.text,
+          },
+          headerRight: () => (
+            <Pressable onPress={() => router.push('/notifications')} style={styles.bellContainer}>
+              <IconButton
+                icon="bell-outline"
+                size={24}
+                onPress={() => router.push('/notifications')}
+                iconColor={themeColors.text}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badgeContainer}>
+                  <Badge size={18} style={styles.badge}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                </View>
+              )}
+            </Pressable>
+          ),
+        }} 
+      />
+      <ScrollView style={styles.scrollView}>
+        {/* Header */}
+        <Surface style={[styles.header, { backgroundColor: themeColors.card }]} elevation={1}>
+          <Pressable 
+            onPress={() => router.push('/profile/edit')}
+            style={styles.avatarContainer}
+          >
+            {fullProfilePictureUrl ? (
+              <Avatar.Image
+                size={96}
+                source={{ uri: fullProfilePictureUrl }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Avatar.Text
+                size={96}
+                label={user.username?.charAt(0).toUpperCase() || 'U'}
+                style={styles.avatar}
+              />
+            )}
+            <View style={[styles.editBadge, { backgroundColor: themeColors.card }]}>
+              <Text style={styles.editBadgeText}>✏️</Text>
+            </View>
+          </Pressable>
+          
+          <Text variant="headlineSmall" style={[styles.name, { color: themeColors.text }]}>
+            {user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`
+              : user.username}
+          </Text>
+          <Text style={[styles.username, { color: themeColors.textSecondary }]}>@{user.username}</Text>
+          
+          {displayUser.bio ? (
+            <Text style={[styles.bio, { color: themeColors.textSecondary }]} numberOfLines={2}>{displayUser.bio}</Text>
+          ) : null}
+          
+          {/* Stats */}
+          {isLoading ? (
+            <View style={styles.statsLoading}>
+              <ActivityIndicator size="small" color="#0ea5e9" />
+            </View>
+          ) : (
+            <View style={styles.statsContainer}>
+              <View style={styles.stat}>
+                {reviewStats?.average_rating && reviewStats.average_rating > 0 ? (
+                  <View style={styles.statRatingContainer}>
+                    <Text style={styles.starEmoji}>⭐</Text>
+                    <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
+                      {reviewStats.average_rating.toFixed(1)}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>-</Text>
+                )}
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Rating</Text>
+              </View>
+              <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
+              <View style={styles.stat}>
+                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
+                  {reviewStats?.total_reviews || 0}
+                </Text>
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Reviews</Text>
+              </View>
+              <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
+              <View style={styles.stat}>
+                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
+                  {displayUser.completed_tasks_count || 0}
+                </Text>
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Completed</Text>
+              </View>
+            </View>
+          )}
+        </Surface>
+
+        {/* Skills Section */}
+        {userSkills.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Skills & Expertise</Text>
+            <Surface style={[styles.skillsContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+              <View style={styles.skillsChipsContainer}>
+                {userSkills.map((skill: string, index: number) => (
+                  <Chip 
+                    key={index} 
+                    mode="outlined" 
+                    style={styles.skillChip}
+                    textStyle={styles.skillChipText}
+                  >
+                    {skill}
+                  </Chip>
+                ))}
+              </View>
+            </Surface>
+          </>
+        )}
+
+        {/* My Activity Section - SINGLE ITEM */}
+        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>My Activity</Text>
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+          <MenuItem 
+            title="Jobs & Offerings" 
+            subtitle="View all your jobs and services"
+            icon="📄" 
+            onPress={() => router.push('/activity/jobs-and-offerings')}
+            themeColors={themeColors}
+          />
+        </Surface>
+
+        {/* Settings - Single Button */}
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card, marginTop: 24 }]} elevation={0}>
+          <MenuItem 
+            title="Settings" 
+            subtitle="Appearance, notifications, language"
+            icon="⚙️" 
+            onPress={() => router.push('/settings')}
+            themeColors={themeColors}
+          />
+        </Surface>
+
+        {/* Logout */}
+        <View style={styles.logoutContainer}>
+          <Button
+            mode="outlined"
+            onPress={handleLogout}
+            textColor="#ef4444"
+            style={styles.logoutButton}
+            icon="logout"
+          >
+            Logout
+          </Button>
+        </View>
+
+        {/* Account Info */}
+        <View style={styles.footer}>
+          <Text style={[styles.memberSince, { color: themeColors.textMuted }]}>
+            Member since {new Date(user.created_at).toLocaleDateString()}
+          </Text>
+          <Text style={[styles.version, { color: themeColors.textMuted }]}>App version 1.0.0</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function MenuItem({ 
+  title, 
+  subtitle,
+  icon, 
+  onPress,
+  disabled = false,
+  themeColors,
+}: { 
+  title: string; 
+  subtitle?: string;
+  icon: string; 
+  onPress: () => void;
+  disabled?: boolean;
+  themeColors: typeof colors.light;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.menuItem,
+        pressed && !disabled && { backgroundColor: themeColors.backgroundSecondary },
+        disabled && styles.menuItemDisabled,
+      ]}
+    >
+      <Text style={[styles.menuIcon, disabled && styles.menuIconDisabled]}>{icon}</Text>
+      <View style={styles.menuTextContainer}>
+        <Text style={[styles.menuTitle, { color: themeColors.text }, disabled && { color: themeColors.textMuted }]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[styles.menuSubtitle, { color: themeColors.textMuted }, disabled && styles.menuSubtitleDisabled]}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {!disabled && <Text style={[styles.menuArrow, { color: themeColors.textMuted }]}>›</Text>}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  bellContainer: {
+    position: 'relative',
+    marginRight: -8,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+  badge: {
+    backgroundColor: '#ef4444',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  guestAvatar: {
+    marginBottom: 16,
+  },
+  notLoggedInTitle: {
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  notLoggedInSubtitle: {
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  signInButton: {
+    paddingHorizontal: 24,
+  },
+  header: {
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatar: {
+    backgroundColor: '#0ea5e9',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    borderRadius: 12,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  editBadgeText: {
+    fontSize: 14,
+  },
+  name: {
+    fontWeight: 'bold',
+  },
+  username: {
+    marginTop: 4,
+  },
+  bio: {
+    marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  statsLoading: {
+    marginTop: 24,
+    paddingVertical: 16,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  stat: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+  },
+  statValue: {
+    fontWeight: 'bold',
+  },
+  statRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  starEmoji: {
+    fontSize: 20,
+  },
+  statLabel: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 24,
+    marginBottom: 8,
+    marginHorizontal: 16,
+    textTransform: 'uppercase',
+  },
+  skillsContainer: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  skillsChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  skillChip: {
+    marginRight: 0,
+    marginBottom: 0,
+    height: 32,
+  },
+  skillChipText: {
+    fontSize: 13,
+  },
+  menuContainer: {
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  menuItemDisabled: {
+    opacity: 0.5,
+  },
+  menuIcon: {
+    fontSize: 20,
+    marginRight: 16,
+    width: 28,
+  },
+  menuIconDisabled: {
+    opacity: 0.5,
+  },
+  menuTextContainer: {
+    flex: 1,
+  },
+  menuTitle: {
+    fontSize: 16,
+  },
+  menuSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  menuSubtitleDisabled: {
+    fontStyle: 'italic',
+  },
+  menuArrow: {
+    fontSize: 24,
+  },
+  logoutContainer: {
+    marginTop: 24,
+    marginHorizontal: 16,
+  },
+  logoutButton: {
+    borderColor: '#fecaca',
+  },
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  memberSince: {
+    fontSize: 13,
+  },
+  version: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+});
