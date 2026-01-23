@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useAuthStore, getUserProfile, getUserReviewStats } from '@marketplace/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +11,7 @@ import { useCallback } from 'react';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
+  const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
@@ -45,6 +46,8 @@ export default function ProfileScreen() {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
+            // Clear all cached data to prevent showing previous user's data
+            queryClient.clear();
             logout();
             router.replace('/');
           },
