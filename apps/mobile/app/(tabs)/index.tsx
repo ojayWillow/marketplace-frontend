@@ -13,6 +13,7 @@ import { clusterItems, calculateDistance as calcDistance } from '../../utils/map
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
@@ -23,6 +24,10 @@ const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
 const OVERLAP_THRESHOLD_FACTOR = 0.025;
 const ZOOM_FAR_THRESHOLD = 0.12;
 const ZOOM_CLOSE_THRESHOLD = 0.05;
+
+// Theme colors for Jobs vs Offerings
+const JOB_COLOR = '#0ea5e9';      // Sky blue
+const OFFERING_COLOR = '#f97316';  // Orange
 
 const RADIUS_OPTIONS = [
   { key: 'all', label: 'All Areas', value: null },
@@ -53,7 +58,6 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(seconds / 604800)}w ago`;
 };
 
-// Format date for stats row (e.g., "8 Jan")
 const formatPostedDate = (dateString: string): string => {
   const date = new Date(dateString);
   const day = date.getDate();
@@ -61,7 +65,6 @@ const formatPostedDate = (dateString: string): string => {
   return `${day} ${month}`;
 };
 
-// Get difficulty indicator
 const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
   switch (difficulty) {
     case 'easy': return { color: '#10b981', label: 'Easy' };
@@ -348,7 +351,7 @@ export default function HomeScreen() {
       beauty: '#ec4899',
       other: '#6b7280',
     };
-    return colors[category] || '#0ea5e9';
+    return colors[category] || JOB_COLOR;
   };
 
   const handleRegionChange = useCallback((region: Region) => {
@@ -515,7 +518,7 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
 
-  // STYLES MOVED INSIDE COMPONENT TO REACT TO THEME
+  // STYLES
   const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: themeColors.backgroundSecondary },
     mapContainer: { flex: 1, position: 'relative' },
@@ -537,7 +540,7 @@ export default function HomeScreen() {
     },
     categoryButtonActive: {
       borderWidth: 2,
-      borderColor: '#0ea5e9',
+      borderColor: JOB_COLOR,
     },
     categoryBlur: { 
       flex: 1,
@@ -596,7 +599,7 @@ export default function HomeScreen() {
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: '#0ea5e9',
+      backgroundColor: JOB_COLOR,
     },
     
     loadingOverlay: { position: 'absolute', top: 80, left: 24, right: 24, alignItems: 'center' },
@@ -642,11 +645,11 @@ export default function HomeScreen() {
     userMarkerFar: { width: 12, height: 12, alignItems: 'center', justifyContent: 'center' },
     userMarkerSmallDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', borderWidth: 1.5, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1, elevation: 2 },
     
-    priceMarker: { backgroundColor: themeColors.card, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 2, borderColor: '#0ea5e9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3 },
+    priceMarker: { backgroundColor: themeColors.card, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 2, borderColor: JOB_COLOR, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3 },
     priceMarkerFocused: { borderWidth: 3, transform: [{ scale: 1.15 }] },
-    priceMarkerOffering: { borderColor: '#f97316' },
-    priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: '#0ea5e9' },
-    priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: '#f97316' },
+    priceMarkerOffering: { borderColor: OFFERING_COLOR },
+    priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: JOB_COLOR },
+    priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: OFFERING_COLOR },
     
     // Bottom Sheet
     bottomSheet: { 
@@ -674,14 +677,29 @@ export default function HomeScreen() {
     sheetTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
     sheetTitle: { fontSize: 17, fontWeight: '700', color: themeColors.text },
     closeButton: { margin: -8 },
-    quickPostButton: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0ea5e9', width: 32, height: 32, borderRadius: 16 },
-    quickPostIcon: { fontSize: 20, fontWeight: 'bold', color: '#ffffff' },
+    
+    // SPLIT GRADIENT BUTTON - Blue + Orange!
+    quickPostButton: { 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      width: 40, 
+      height: 40, 
+      borderRadius: 20,
+      overflow: 'hidden',
+    },
+    quickPostIcon: { 
+      fontSize: 24, 
+      fontWeight: 'bold', 
+      color: '#ffffff',
+      zIndex: 2,
+    },
+    
     listContent: { paddingBottom: 40 },
     emptySheet: { alignItems: 'center', paddingVertical: 32 },
     emptyIcon: { fontSize: 40, marginBottom: 12 },
     emptyText: { fontSize: 16, fontWeight: '500', color: themeColors.textSecondary },
     emptySubtext: { fontSize: 14, color: themeColors.textMuted, marginTop: 4 },
-    emptyPostButton: { marginTop: 16, backgroundColor: '#0ea5e9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+    emptyPostButton: { marginTop: 16, backgroundColor: JOB_COLOR, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
     emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
     
     // Job Card in list
@@ -740,7 +758,7 @@ export default function HomeScreen() {
     jobCardPrice: {
       fontSize: 18,
       fontWeight: '700',
-      color: '#0ea5e9',
+      color: JOB_COLOR,
     },
     jobCardDistance: {
       fontSize: 12,
@@ -748,13 +766,11 @@ export default function HomeScreen() {
       marginTop: 2,
     },
     
-    // FOCUSED JOB CARD - Minimalist layout
+    // FOCUSED JOB CARD
     focusedCard: {
       paddingHorizontal: 20,
       paddingVertical: 16,
     },
-    
-    // Top row: Category badge (left) + Price (right)
     focusedTopRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -781,8 +797,6 @@ export default function HomeScreen() {
       fontSize: 28,
       fontWeight: '800',
     },
-    
-    // Title
     focusedTitle: {
       fontSize: 20,
       fontWeight: '700',
@@ -790,8 +804,6 @@ export default function HomeScreen() {
       marginBottom: 16,
       lineHeight: 26,
     },
-    
-    // Stats row: Distance | Posted | Applicants
     statsRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -823,8 +835,6 @@ export default function HomeScreen() {
       height: 24,
       backgroundColor: themeColors.border,
     },
-    
-    // Info row: Username | Location | Difficulty (same line)
     infoRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -848,8 +858,6 @@ export default function HomeScreen() {
       height: 8,
       borderRadius: 4,
     },
-    
-    // View button
     viewButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -869,11 +877,20 @@ export default function HomeScreen() {
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
     modalContent: { backgroundColor: themeColors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
     modalTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 20, textAlign: 'center' },
-    modalOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: themeColors.backgroundSecondary, padding: 16, borderRadius: 12, marginBottom: 12 },
-    modalOptionIcon: { fontSize: 32, marginRight: 16 },
-    modalOptionText: { flex: 1 },
-    modalOptionTitle: { fontSize: 16, fontWeight: '600', color: themeColors.text, marginBottom: 4 },
-    modalOptionSubtitle: { fontSize: 14, color: themeColors.textSecondary },
+    
+    // NEW: Gradient Modal Options with contextual colors
+    modalOption: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      padding: 16, 
+      borderRadius: 12, 
+      marginBottom: 12,
+      overflow: 'hidden',
+    },
+    modalOptionIcon: { fontSize: 32, marginRight: 16, zIndex: 2 },
+    modalOptionText: { flex: 1, zIndex: 2 },
+    modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#ffffff', marginBottom: 4 },
+    modalOptionSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.9)' },
     modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
     modalCancelText: { fontSize: 16, fontWeight: '600', color: themeColors.textSecondary },
     
@@ -903,7 +920,7 @@ export default function HomeScreen() {
     },
     categoryPillActive: {
       backgroundColor: '#e0f2fe',
-      borderColor: '#0ea5e9',
+      borderColor: JOB_COLOR,
     },
     categoryPillIcon: {
       fontSize: 16,
@@ -920,7 +937,7 @@ export default function HomeScreen() {
     },
     categoryPillCheck: {
       fontSize: 14,
-      color: '#0ea5e9',
+      color: JOB_COLOR,
       fontWeight: 'bold',
       marginLeft: 6,
     },
@@ -928,8 +945,6 @@ export default function HomeScreen() {
     // Filter Modal Styles
     filterModalContent: { backgroundColor: themeColors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '80%' },
     filterSectionTitle: { fontSize: 14, fontWeight: '600', color: themeColors.textSecondary, marginTop: 8, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
-    
-    // Difficulty Segment Control
     segmentContainer: {
       flexDirection: 'row',
       backgroundColor: themeColors.backgroundSecondary,
@@ -961,17 +976,16 @@ export default function HomeScreen() {
       fontWeight: '500',
       color: themeColors.textSecondary,
     },
-    
     filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: themeColors.backgroundSecondary },
     filterOptionActive: { backgroundColor: '#e0f2fe' },
     filterOptionIcon: { fontSize: 20, marginRight: 12 },
     filterOptionText: { flex: 1, fontSize: 16, color: themeColors.text, fontWeight: '500', marginLeft: 8 },
-    filterOptionTextActive: { color: '#0ea5e9', fontWeight: '600' },
-    filterOptionCheck: { fontSize: 18, color: '#0ea5e9', fontWeight: 'bold' },
+    filterOptionTextActive: { color: JOB_COLOR, fontWeight: '600' },
+    filterOptionCheck: { fontSize: 18, color: JOB_COLOR, fontWeight: 'bold' },
     filterActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
     clearFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: themeColors.backgroundSecondary, alignItems: 'center' },
     clearFiltersText: { fontSize: 15, fontWeight: '600', color: themeColors.textSecondary },
-    applyFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#0ea5e9', alignItems: 'center' },
+    applyFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: JOB_COLOR, alignItems: 'center' },
     applyFiltersText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
   });
 
@@ -1061,12 +1075,10 @@ export default function HomeScreen() {
         ).toFixed(0)
       : null;
     
-    // Extract city from location (first part before comma)
     const city = focusedTask.location?.split(',')[0]?.trim() || focusedTask.creator_city || '';
     
     return (
       <View style={styles.focusedCard}>
-        {/* Row 1: Category Badge (left) + Price (right) */}
         <View style={styles.focusedTopRow}>
           <View style={[styles.focusedCategoryBadge, { backgroundColor: categoryColor }]}>
             <Text style={styles.focusedCategoryIcon}>{categoryData?.icon || '📋'}</Text>
@@ -1079,12 +1091,10 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Row 2: Title */}
         <Text style={styles.focusedTitle} numberOfLines={2}>
           {focusedTask.title}
         </Text>
 
-        {/* Row 3: Stats row - Distance | Posted | Applicants */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>DISTANCE</Text>
@@ -1102,7 +1112,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Row 4: Username | Location | Difficulty */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
             <Icon name="person" size={16} color="#3b82f6" />
@@ -1118,7 +1127,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Row 5: Button */}
         <TouchableOpacity
           style={[styles.viewButton, { backgroundColor: categoryColor }]}
           onPress={() => handleViewFullDetails(focusedTask.id)}
@@ -1244,7 +1252,7 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 )}
                 {showSearchLoading && (
-                  <ActivityIndicator size="small" color="#0ea5e9" style={styles.searchLoader} />
+                  <ActivityIndicator size="small" color={JOB_COLOR} style={styles.searchLoader} />
                 )}
               </BlurView>
             </View>
@@ -1255,7 +1263,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <BlurView intensity={80} tint="light" style={styles.filtersBlur}>
-                <Icon name="tune" size={20} color={hasActiveFilters ? '#0ea5e9' : themeColors.text} />
+                <Icon name="tune" size={20} color={hasActiveFilters ? JOB_COLOR : themeColors.text} />
                 {hasActiveFilters && <View style={styles.filterDot} />}
               </BlurView>
             </TouchableOpacity>
@@ -1265,7 +1273,7 @@ export default function HomeScreen() {
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <BlurView intensity={80} tint="light" style={styles.loadingCard}>
-              <ActivityIndicator size="small" color="#0ea5e9" />
+              <ActivityIndicator size="small" color={JOB_COLOR} />
               <Text style={styles.loadingText}>Loading jobs...</Text>
             </BlurView>
           </View>
@@ -1305,6 +1313,13 @@ export default function HomeScreen() {
               )}
               {!focusedTask && (
                 <TouchableOpacity style={styles.quickPostButton} onPress={handleCreatePress} activeOpacity={0.8}>
+                  {/* SPLIT GRADIENT: Blue + Orange */}
+                  <LinearGradient
+                    colors={[JOB_COLOR, OFFERING_COLOR]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ position: 'absolute', width: '100%', height: '100%' }}
+                  />
                   <Text style={styles.quickPostIcon}>+</Text>
                 </TouchableOpacity>
               )}
@@ -1335,7 +1350,6 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {/* CATEGORY MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
       <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCategoryModal(false); }}>
           <View style={styles.categoryModalContent}>
@@ -1370,13 +1384,11 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* FILTERS MODAL (Radius + Difficulty) */}
       <Modal visible={showFiltersModal} transparent animationType="fade" onRequestClose={() => setShowFiltersModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowFiltersModal(false); }}>
           <View style={styles.filterModalContent}>
             <Text style={styles.modalTitle}>Filters</Text>
             
-            {/* Difficulty Segment */}
             <Text style={styles.filterSectionTitle}>Difficulty</Text>
             <View style={styles.segmentContainer}>
               {DIFFICULTY_OPTIONS.map((diff) => (
@@ -1403,7 +1415,6 @@ export default function HomeScreen() {
               ))}
             </View>
             
-            {/* Radius Options */}
             <Text style={styles.filterSectionTitle}>Radius</Text>
             <FlatList
               data={RADIUS_OPTIONS}
@@ -1415,7 +1426,7 @@ export default function HomeScreen() {
                   onPress={() => handleRadiusSelect(rad.value)}
                   activeOpacity={0.7}
                 >
-                  <Icon name="my-location" size={20} color={selectedRadius === rad.value ? '#0ea5e9' : themeColors.textSecondary} />
+                  <Icon name="my-location" size={20} color={selectedRadius === rad.value ? JOB_COLOR : themeColors.textSecondary} />
                   <Text style={[styles.filterOptionText, selectedRadius === rad.value && styles.filterOptionTextActive]}>
                     {rad.label}
                   </Text>
@@ -1451,25 +1462,42 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* CREATE MODAL */}
+      {/* CREATE MODAL - With Blue/Orange gradient options */}
       <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>What do you want to create?</Text>
+            
+            {/* POST JOB - Blue Gradient */}
             <TouchableOpacity style={styles.modalOption} onPress={handleCreateJob} activeOpacity={0.7}>
+              <LinearGradient
+                colors={['#0ea5e9', '#0284c7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 12 }}
+              />
               <Text style={styles.modalOptionIcon}>💼</Text>
               <View style={styles.modalOptionText}>
                 <Text style={styles.modalOptionTitle}>Post a Job</Text>
                 <Text style={styles.modalOptionSubtitle}>Find someone to help you</Text>
               </View>
             </TouchableOpacity>
+            
+            {/* OFFER SERVICE - Orange Gradient */}
             <TouchableOpacity style={styles.modalOption} onPress={handleCreateService} activeOpacity={0.7}>
+              <LinearGradient
+                colors={['#f97316', '#ea580c']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 12 }}
+              />
               <Text style={styles.modalOptionIcon}>⚡</Text>
               <View style={styles.modalOptionText}>
                 <Text style={styles.modalOptionTitle}>Offer a Service</Text>
                 <Text style={styles.modalOptionSubtitle}>Share your skills</Text>
               </View>
             </TouchableOpacity>
+            
             <TouchableOpacity style={styles.modalCancel} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
