@@ -2,7 +2,7 @@ import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip } from 'react-native-paper';
 import { router } from 'expo-router';
-import { useAuthStore, getUserProfile, getUserReviewStats } from '@marketplace/shared';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
@@ -80,6 +80,10 @@ export default function ProfileScreen() {
   const displayUser = userData || user;
   const isLoading = isLoadingUser || isLoadingStats;
 
+  // Get profile picture URL
+  const profilePictureUrl = displayUser.profile_picture_url || displayUser.avatar_url;
+  const fullProfilePictureUrl = profilePictureUrl ? getImageUrl(profilePictureUrl) : null;
+
   // Parse skills - could be string or array
   const userSkills = displayUser.skills 
     ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()))
@@ -94,11 +98,19 @@ export default function ProfileScreen() {
             onPress={() => router.push('/profile/edit')}
             style={styles.avatarContainer}
           >
-            <Avatar.Text
-              size={96}
-              label={user.username?.charAt(0).toUpperCase() || 'U'}
-              style={styles.avatar}
-            />
+            {fullProfilePictureUrl ? (
+              <Avatar.Image
+                size={96}
+                source={{ uri: fullProfilePictureUrl }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Avatar.Text
+                size={96}
+                label={user.username?.charAt(0).toUpperCase() || 'U'}
+                style={styles.avatar}
+              />
+            )}
             <View style={[styles.editBadge, { backgroundColor: themeColors.card }]}>
               <Text style={styles.editBadgeText}>✏️</Text>
             </View>
