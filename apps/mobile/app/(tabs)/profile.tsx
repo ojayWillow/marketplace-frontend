@@ -9,7 +9,7 @@ import { colors } from '../../src/theme';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { getActiveTheme, mode } = useThemeStore();
+  const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -41,13 +41,6 @@ export default function ProfileScreen() {
         },
       ]
     );
-  };
-
-  // Get appearance label
-  const getAppearanceLabel = () => {
-    if (mode === 'system') return 'System';
-    if (mode === 'dark') return 'Dark';
-    return 'Light';
   };
 
   if (!isAuthenticated || !user) {
@@ -140,15 +133,9 @@ export default function ProfileScreen() {
         <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Edit Profile" 
+            subtitle="Photo, bio, skills & location"
             icon="✏️" 
             onPress={() => router.push('/profile/edit')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="My Public Profile" 
-            icon="👤" 
-            onPress={() => router.push(`/user/${user.id}`)}
             themeColors={themeColors}
           />
         </Surface>
@@ -190,55 +177,21 @@ export default function ProfileScreen() {
           <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Listings" 
-            subtitle="coming soon"
-            icon="🛒️" 
+            subtitle="Coming soon"
+            icon="🛒" 
             onPress={() => Alert.alert('Coming Soon', 'This feature is under development')} 
             disabled
             themeColors={themeColors}
           />
         </Surface>
 
-        {/* Messages */}
-        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Communication</Text>
-        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+        {/* Settings - Single Button */}
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card, marginTop: 24 }]} elevation={0}>
           <MenuItem 
-            title="Messages" 
-            icon="💬" 
-            onPress={() => router.push('/(tabs)/messages')}
-            themeColors={themeColors}
-          />
-        </Surface>
-
-        {/* Settings Section */}
-        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Settings</Text>
-        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
-          <MenuItem 
-            title="Appearance" 
-            icon="🎨" 
-            subtitle={getAppearanceLabel()}
-            onPress={() => router.push('/settings/appearance')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="Notifications" 
-            icon="🔔" 
-            onPress={() => router.push('/settings/notifications')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="Language" 
-            icon="🌐" 
-            subtitle="English"
-            onPress={() => router.push('/settings/language')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="Help & Support" 
-            icon="❓" 
-            onPress={() => Alert.alert('Help & Support', 'Contact us at support@quickhelp.lv')}
+            title="Settings" 
+            subtitle="Appearance, notifications, language"
+            icon="⚙️" 
+            onPress={() => router.push('/settings')}
             themeColors={themeColors}
           />
         </Surface>
