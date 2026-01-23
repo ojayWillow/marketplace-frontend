@@ -52,8 +52,11 @@ export default function JobsAndOfferingsScreen() {
   const assignedJobs = assignedJobsData?.tasks || [];
   const myServices = myServicesData?.offerings || [];
 
-  // Combine applications + assigned for "My Work" tab
-  const myWork = [...applications, ...assignedJobs];
+  // Combine applications + assigned for "My Work" tab with type markers
+  const myWork = [
+    ...applications.map((item: any) => ({ ...item, _type: 'application' })),
+    ...assignedJobs.map((item: any) => ({ ...item, _type: 'task' }))
+  ];
 
   // Apply filters
   const getFilteredData = (data: any[]) => {
@@ -180,13 +183,19 @@ export default function JobsAndOfferingsScreen() {
       ) : (
         <FlatList
           data={data}
-          keyExtractor={(item) => `${activeTab}-${item.id}`}
+          keyExtractor={(item) => {
+            // Create unique keys based on type and ID
+            if (activeTab === 'work') {
+              return item._type === 'application' ? `app-${item.id}` : `task-${item.id}`;
+            }
+            return `${activeTab}-${item.id}`;
+          }}
           renderItem={({ item }) => {
             if (activeTab === 'services') {
               return <OfferingCard offering={item} />;
             }
             // For work tab, check if item is an application with nested task
-            if (activeTab === 'work' && item.task) {
+            if (activeTab === 'work' && item._type === 'application' && item.task) {
               return <TaskCard task={item.task} />;
             }
             return <TaskCard task={item} />;
