@@ -24,6 +24,7 @@ export default function CreateTaskScreen() {
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
   const [category, setCategory] = useState('other');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [location, setLocation] = useState<LocationData | null>(null);
   const [deadline, setDeadline] = useState<Date | null>(null);
@@ -116,6 +117,7 @@ export default function CreateTaskScreen() {
       description: description.trim(),
       budget: parseFloat(budget),
       category,
+      difficulty,
       location: location.address,
       latitude: location.latitude,
       longitude: location.longitude,
@@ -219,6 +221,61 @@ export default function CreateTaskScreen() {
                   keyboardType="decimal-pad"
                   style={styles.budgetInput}
                 />
+              </View>
+            </Surface>
+
+            {/* Difficulty Selector */}
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Difficulty</Text>
+              <Text style={styles.sectionHint}>How challenging is this task?</Text>
+              <View style={styles.difficultyRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.difficultyOption,
+                    difficulty === 'easy' && styles.difficultyOptionActive,
+                    { borderColor: '#10b981' }
+                  ]}
+                  onPress={() => { haptic.selection(); setDifficulty('easy'); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.difficultyDot, { backgroundColor: '#10b981' }]} />
+                  <Text style={[
+                    styles.difficultyLabel,
+                    difficulty === 'easy' && styles.difficultyLabelActive
+                  ]}>Easy</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.difficultyOption,
+                    difficulty === 'medium' && styles.difficultyOptionActive,
+                    { borderColor: '#f59e0b' }
+                  ]}
+                  onPress={() => { haptic.selection(); setDifficulty('medium'); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.difficultyDot, { backgroundColor: '#f59e0b' }]} />
+                  <Text style={[
+                    styles.difficultyLabel,
+                    difficulty === 'medium' && styles.difficultyLabelActive
+                  ]}>Medium</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.difficultyOption,
+                    difficulty === 'hard' && styles.difficultyOptionActive,
+                    { borderColor: '#ef4444' }
+                  ]}
+                  onPress={() => { haptic.selection(); setDifficulty('hard'); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.difficultyDot, { backgroundColor: '#ef4444' }]} />
+                  <Text style={[
+                    styles.difficultyLabel,
+                    difficulty === 'hard' && styles.difficultyLabelActive
+                  ]}>Hard</Text>
+                </TouchableOpacity>
               </View>
             </Surface>
 
@@ -387,6 +444,11 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 12,
   },
+  sectionHint: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 12,
+  },
   flatInput: {
     backgroundColor: '#f9fafb',
     borderRadius: 8,
@@ -438,6 +500,40 @@ const styles = StyleSheet.create({
   categorySelectorArrow: {
     fontSize: 24,
     color: '#9ca3af',
+  },
+  
+  // Difficulty Selector
+  difficultyRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  difficultyOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    backgroundColor: '#f9fafb',
+  },
+  difficultyOptionActive: {
+    backgroundColor: '#ffffff',
+  },
+  difficultyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  difficultyLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  difficultyLabelActive: {
+    color: '#1f2937',
   },
   
   dateButton: {
