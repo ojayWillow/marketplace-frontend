@@ -28,11 +28,16 @@ import {
   type Message,
   type Conversation,
 } from '@marketplace/shared';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const conversationId = parseInt(id);
   const { user } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
   const [messageText, setMessageText] = useState('');
@@ -137,12 +142,176 @@ export default function ConversationScreen() {
     return currentDate !== prevDate;
   };
 
+  // Dynamic styles based on theme
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.background,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    statusText: {
+      marginTop: 12,
+      color: themeColors.textSecondary,
+    },
+    errorText: {
+      color: activeTheme === 'dark' ? themeColors.error : '#ef4444',
+      marginBottom: 12,
+      fontSize: 16,
+    },
+    retryButton: {
+      backgroundColor: activeTheme === 'dark' ? themeColors.primaryAccent : '#0ea5e9',
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: '#ffffff',
+      fontWeight: '600',
+    },
+    messagesContainer: {
+      flex: 1,
+    },
+    messagesContent: {
+      padding: 16,
+      flexGrow: 1,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    emptyIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 8,
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+    },
+    dateSeparator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 16,
+    },
+    dateLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: themeColors.border,
+    },
+    dateText: {
+      paddingHorizontal: 12,
+      fontSize: 12,
+      color: themeColors.textMuted,
+      fontWeight: '500',
+    },
+    messageBubbleContainer: {
+      flexDirection: 'row',
+      marginBottom: 8,
+      alignItems: 'flex-end',
+    },
+    ownMessageContainer: {
+      justifyContent: 'flex-end',
+    },
+    otherMessageContainer: {
+      justifyContent: 'flex-start',
+    },
+    messageAvatar: {
+      backgroundColor: activeTheme === 'dark' ? themeColors.secondaryAccent : '#6b7280',
+      marginRight: 8,
+    },
+    messageBubble: {
+      maxWidth: '75%',
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 18,
+    },
+    ownMessage: {
+      backgroundColor: activeTheme === 'dark' ? themeColors.primaryAccent : '#0ea5e9',
+      borderBottomRightRadius: 4,
+      // Purple glow effect in dark mode
+      ...(activeTheme === 'dark' && {
+        shadowColor: themeColors.primaryAccent,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+      }),
+    },
+    otherMessage: {
+      backgroundColor: themeColors.card,
+      borderBottomLeftRadius: 4,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
+    messageText: {
+      fontSize: 15,
+      lineHeight: 20,
+    },
+    ownMessageText: {
+      color: '#ffffff',
+    },
+    otherMessageText: {
+      color: themeColors.text,
+    },
+    messageTime: {
+      fontSize: 11,
+      marginTop: 4,
+    },
+    ownMessageTime: {
+      color: 'rgba(255, 255, 255, 0.7)',
+      textAlign: 'right',
+    },
+    otherMessageTime: {
+      color: themeColors.textMuted,
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      padding: 12,
+      paddingBottom: 8,
+      backgroundColor: themeColors.card,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    textInput: {
+      flex: 1,
+      marginRight: 8,
+      maxHeight: 100,
+      backgroundColor: themeColors.card,
+      color: themeColors.text,
+    },
+    textInputOutline: {
+      borderRadius: 20,
+      borderColor: themeColors.border,
+    },
+    sendButton: {
+      marginBottom: 4,
+      backgroundColor: activeTheme === 'dark' ? themeColors.primaryAccent : undefined,
+    },
+  });
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ title: 'Loading...', headerShown: true }} />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={activeTheme === 'dark' ? themeColors.primaryAccent : undefined} />
           <Text style={styles.statusText}>Loading messages...</Text>
         </View>
       </SafeAreaView>
@@ -263,6 +432,7 @@ export default function ConversationScreen() {
           <TextInput
             style={styles.textInput}
             placeholder="Type a message..."
+            placeholderTextColor={themeColors.textMuted}
             value={messageText}
             onChangeText={setMessageText}
             multiline
@@ -270,6 +440,7 @@ export default function ConversationScreen() {
             mode="outlined"
             outlineStyle={styles.textInputOutline}
             dense
+            textColor={themeColors.text}
           />
           <IconButton
             icon="send"
@@ -279,161 +450,10 @@ export default function ConversationScreen() {
             disabled={!messageText.trim() || sendMutation.isPending}
             loading={sendMutation.isPending}
             style={styles.sendButton}
+            iconColor="#ffffff"
           />
         </Surface>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  statusText: {
-    marginTop: 12,
-    color: '#6b7280',
-  },
-  errorText: {
-    color: '#ef4444',
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  retryButton: {
-    backgroundColor: '#0ea5e9',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-  },
-  messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  dateSeparator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dateLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dateText: {
-    paddingHorizontal: 12,
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  messageBubbleContainer: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    alignItems: 'flex-end',
-  },
-  ownMessageContainer: {
-    justifyContent: 'flex-end',
-  },
-  otherMessageContainer: {
-    justifyContent: 'flex-start',
-  },
-  messageAvatar: {
-    backgroundColor: '#6b7280',
-    marginRight: 8,
-  },
-  messageBubble: {
-    maxWidth: '75%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-  },
-  ownMessage: {
-    backgroundColor: '#0ea5e9',
-    borderBottomRightRadius: 4,
-  },
-  otherMessage: {
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  messageText: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  ownMessageText: {
-    color: '#ffffff',
-  },
-  otherMessageText: {
-    color: '#1f2937',
-  },
-  messageTime: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  ownMessageTime: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'right',
-  },
-  otherMessageTime: {
-    color: '#9ca3af',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
-    paddingBottom: 8,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-  },
-  textInput: {
-    flex: 1,
-    marginRight: 8,
-    maxHeight: 100,
-    backgroundColor: '#ffffff',
-  },
-  textInputOutline: {
-    borderRadius: 20,
-  },
-  sendButton: {
-    marginBottom: 4,
-  },
-});

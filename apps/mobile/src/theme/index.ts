@@ -31,28 +31,28 @@ export const lightTheme = {
   },
 };
 
-// Dark theme
+// Dark theme - Midnight Violet Premium
 export const darkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    ...brandColors,
-    primary: '#38bdf8', // sky-400 (brighter for dark mode)
-    secondary: '#fbbf24', // amber-400
-    tertiary: '#34d399', // emerald-400
-    background: '#0f172a', // slate-900
-    surface: '#1e293b', // slate-800
-    surfaceVariant: '#334155', // slate-700
-    onSurface: '#f1f5f9', // slate-100
-    onSurfaceVariant: '#94a3b8', // slate-400
-    outline: '#475569', // slate-600
+    primary: '#8b5cf6', // vibrant violet
+    secondary: '#6366f1', // indigo
+    tertiary: '#10b981', // emerald (pops on purple)
+    error: '#ef4444', // red-500
+    background: '#0a0814', // deep purple-black
+    surface: '#12101f', // dark purple card
+    surfaceVariant: '#1a1828', // elevated violet
+    onSurface: '#f8f7fc', // white with lavender hint
+    onSurfaceVariant: '#c4b5fd', // soft violet-gray
+    outline: '#2d2440', // violet border
     elevation: {
       level0: 'transparent',
-      level1: '#1e293b',
-      level2: '#273548',
-      level3: '#334155',
-      level4: '#3f4f63',
-      level5: '#475569',
+      level1: '#12101f',
+      level2: '#1a1828',
+      level3: '#221e30',
+      level4: '#2a2538',
+      level5: '#322c40',
     },
   },
 };
@@ -70,18 +70,32 @@ export const colors = {
     tabBar: '#ffffff',
     tabBarInactive: '#94a3b8',
     statusBar: 'dark' as const,
+    // Accents
+    primaryAccent: '#0ea5e9',
+    secondaryAccent: '#f59e0b',
+    success: '#10b981',
   },
   dark: {
-    text: '#f1f5f9',
-    textSecondary: '#94a3b8',
-    textMuted: '#64748b',
-    background: '#0f172a',
-    backgroundSecondary: '#1e293b',
-    card: '#1e293b',
-    border: '#334155',
-    tabBar: '#1e293b',
-    tabBarInactive: '#64748b',
+    text: '#f8f7fc', // white with lavender
+    textSecondary: '#c4b5fd', // soft violet-tinted gray
+    textMuted: '#8b7fb8', // muted purple-gray
+    background: '#0a0814', // deep purple-black
+    backgroundSecondary: '#12101f', // dark purple
+    card: '#12101f', // dark purple card
+    border: '#2d2440', // violet border
+    tabBar: '#12101f',
+    tabBarInactive: '#8b7fb8',
     statusBar: 'light' as const,
+    // Accents - Violet theme
+    primaryAccent: '#8b5cf6', // vibrant violet
+    secondaryAccent: '#6366f1', // indigo
+    highlight: '#a78bfa', // light purple for selected
+    success: '#10b981', // emerald
+    warning: '#f59e0b', // amber
+    error: '#ef4444', // red
+    // Special effects
+    glow: 'rgba(139, 92, 246, 0.2)', // purple glow
+    elevated: '#1a1828', // elevated card
   },
 };
 
