@@ -93,6 +93,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const timeAgo = formatTimeAgo(task.created_at);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
   const hasRating = (task.creator_rating ?? 0) > 0;
+  const reviewCount = task.creator_review_count ?? 0;
   const categoryData = getCategoryByKey(task.category);
   const locationDisplay = formatLocationDisplay(task);
 
@@ -120,7 +121,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           {task.title}
         </Text>
         
-        {/* Row 3: Creator with Avatar + Location + Rating */}
+        {/* Row 3: Creator - Name • Rating • City (Option A) */}
         <View style={styles.row3}>
           {task.creator_avatar ? (
             <Image 
@@ -137,18 +138,27 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           <Text style={styles.creatorName} numberOfLines={1}>
             {task.creator_name || 'Anonymous'}
           </Text>
+          
+          {/* Rating - show after name */}
+          {hasRating ? (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.rating}>
+                ⭐ {task.creator_rating?.toFixed(1)} ({reviewCount})
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.newUser}>New</Text>
+            </>
+          )}
+          
+          {/* City - show last */}
           {task.creator_city && (
             <>
               <Text style={styles.dot}>•</Text>
               <Text style={styles.creatorCity} numberOfLines={1}>{task.creator_city}</Text>
-            </>
-          )}
-          {hasRating && (
-            <>
-              <Text style={styles.dot}>•</Text>
-              <Text style={styles.rating}>
-                ⭐ {task.creator_rating?.toFixed(1)} ({task.creator_review_count})
-              </Text>
             </>
           )}
         </View>
@@ -243,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   
-  // Row 3: Creator Info
+  // Row 3: Creator Info - Name • Rating • City
   row3: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -281,14 +291,21 @@ const styles = StyleSheet.create({
     color: '#d1d5db',
     marginHorizontal: 6,
   },
+  rating: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  newUser: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
   creatorCity: {
     fontSize: 13,
     color: '#6b7280',
     maxWidth: 80,
-  },
-  rating: {
-    fontSize: 12,
-    color: '#6b7280',
   },
   
   // Row 4: Description
