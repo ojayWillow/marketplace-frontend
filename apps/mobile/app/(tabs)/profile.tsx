@@ -1,11 +1,12 @@
 import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Avatar, Surface, Divider, Button, ActivityIndicator } from 'react-native-paper';
+import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useAuthStore, getUserProfile, getUserReviewStats } from '@marketplace/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import StarRating from '../../components/StarRating';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -67,6 +68,11 @@ export default function ProfileScreen() {
   const displayUser = userData || user;
   const isLoading = isLoadingUser || isLoadingStats;
 
+  // Parse skills - could be string or array
+  const userSkills = displayUser.skills 
+    ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()))
+    : [];
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
       <ScrollView style={styles.scrollView}>
@@ -105,10 +111,21 @@ export default function ProfileScreen() {
           ) : (
             <View style={styles.statsContainer}>
               <View style={styles.stat}>
-                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
-                  {reviewStats?.average_rating?.toFixed(1) || '-'}
-                </Text>
-                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>⭐ Rating</Text>
+                {reviewStats?.average_rating && reviewStats.average_rating > 0 ? (
+                  <View style={styles.statRatingContainer}>
+                    <StarRating 
+                      rating={reviewStats.average_rating} 
+                      size={18}
+                      showCount={false}
+                    />
+                    <Text style={[styles.statRatingValue, { color: themeColors.text }]}>
+                      {reviewStats.average_rating.toFixed(1)}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>-</Text>
+                )}
+                <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Rating</Text>
               </View>
               <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
               <View style={styles.stat}>
@@ -128,59 +145,35 @@ export default function ProfileScreen() {
           )}
         </Surface>
 
-        {/* Account Section */}
-        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Account</Text>
-        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
-          <MenuItem 
-            title="Edit Profile" 
-            subtitle="Photo, bio, skills & location"
-            icon="✏️" 
-            onPress={() => router.push('/profile/edit')}
-            themeColors={themeColors}
-          />
-        </Surface>
+        {/* Skills Section */}
+        {userSkills.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Skills & Expertise</Text>
+            <Surface style={[styles.skillsContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+              <View style={styles.skillsChipsContainer}>
+                {userSkills.map((skill: string, index: number) => (
+                  <Chip 
+                    key={index} 
+                    mode="outlined" 
+                    style={styles.skillChip}
+                    textStyle={styles.skillChipText}
+                  >
+                    {skill}
+                  </Chip>
+                ))}
+              </View>
+            </Surface>
+          </>
+        )}
 
-        {/* My Activity Section */}
+        {/* My Activity Section - SINGLE ITEM */}
         <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>My Activity</Text>
         <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
-            title="Jobs I Posted" 
-            subtitle="Jobs you're looking for help with"
-            icon="📋" 
-            onPress={() => router.push('/activity/posted-jobs')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="My Applications" 
-            subtitle="Jobs you've applied for"
-            icon="📨" 
-            onPress={() => router.push('/activity/applications')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="Jobs I'm Working On" 
-            subtitle="Jobs assigned to you"
-            icon="💼" 
-            onPress={() => router.push('/activity/my-jobs')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="My Services" 
-            subtitle="Services you offer"
-            icon="🛠️" 
-            onPress={() => router.push('/activity/my-services')}
-            themeColors={themeColors}
-          />
-          <Divider style={{ backgroundColor: themeColors.border }} />
-          <MenuItem 
-            title="Listings" 
-            subtitle="Coming soon"
-            icon="🛒" 
-            onPress={() => Alert.alert('Coming Soon', 'This feature is under development')} 
-            disabled
+            title="Jobs & Offerings" 
+            subtitle="View all your jobs and services"
+            icon="📄" 
+            onPress={() => router.push('/activity/jobs-and-offerings')}
             themeColors={themeColors}
           />
         </Surface>
@@ -348,6 +341,15 @@ const styles = StyleSheet.create({
   statValue: {
     fontWeight: 'bold',
   },
+  statRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statRatingValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   statLabel: {
     fontSize: 12,
     marginTop: 4,
@@ -359,6 +361,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginHorizontal: 16,
     textTransform: 'uppercase',
+  },
+  skillsContainer: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  skillsChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  skillChip: {
+    marginRight: 0,
+    marginBottom: 0,
+    height: 32,
+  },
+  skillChipText: {
+    fontSize: 13,
   },
   menuContainer: {
   },
