@@ -786,7 +786,7 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {/* CATEGORY MODAL - 3 COLUMN GRID */}
+      {/* CATEGORY MODAL - COMPACT 3 COLUMN PILL GRID */}
       <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCategoryModal(false); }}>
           <View style={styles.categoryModalContent}>
@@ -797,23 +797,21 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={cat.key}
                     style={[
-                      styles.categoryCard,
-                      selectedCategory === cat.key && styles.categoryCardActive
+                      styles.categoryPill,
+                      selectedCategory === cat.key && styles.categoryPillActive
                     ]}
                     onPress={() => handleCategorySelect(cat.key)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.categoryCardIcon}>{cat.icon}</Text>
+                    <Text style={styles.categoryPillIcon}>{cat.icon}</Text>
                     <Text style={[
-                      styles.categoryCardLabel,
-                      selectedCategory === cat.key && styles.categoryCardLabelActive
-                    ]} numberOfLines={2}>
+                      styles.categoryPillLabel,
+                      selectedCategory === cat.key && styles.categoryPillLabelActive
+                    ]} numberOfLines={1}>
                       {cat.label}
                     </Text>
                     {selectedCategory === cat.key && (
-                      <View style={styles.categoryCheckBadge}>
-                        <Text style={styles.categoryCheckText}>✓</Text>
-                      </View>
+                      <Text style={styles.categoryPillCheck}>✓</Text>
                     )}
                   </TouchableOpacity>
                 ))}
@@ -1090,66 +1088,55 @@ const styles = StyleSheet.create({
   modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
   modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
   
-  // Category Modal with 3-COLUMN GRID
+  // Category Modal - COMPACT 3 COLUMN PILL GRID
   categoryModalContent: { 
     backgroundColor: '#ffffff', 
     borderRadius: 20, 
-    padding: 24, 
+    padding: 20, 
     width: '100%', 
     maxWidth: 400, 
-    maxHeight: '80%' 
+    maxHeight: '70%' 
   },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
-  categoryCard: {
-    width: '31%',
-    aspectRatio: 0.9,
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 8,
+  categoryPill: {
+    width: '31.5%',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative',
+    backgroundColor: '#f9fafb',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
   },
-  categoryCardActive: {
+  categoryPillActive: {
     backgroundColor: '#e0f2fe',
     borderColor: '#0ea5e9',
   },
-  categoryCardIcon: {
-    fontSize: 28,
-    marginBottom: 6,
+  categoryPillIcon: {
+    fontSize: 16,
+    marginRight: 4,
   },
-  categoryCardLabel: {
+  categoryPillLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: '#374151',
-    textAlign: 'center',
+    flex: 1,
   },
-  categoryCardLabelActive: {
+  categoryPillLabelActive: {
     color: '#0369a1',
     fontWeight: '700',
   },
-  categoryCheckBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#0ea5e9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryCheckText: {
-    fontSize: 11,
-    color: '#ffffff',
+  categoryPillCheck: {
+    fontSize: 12,
+    color: '#0ea5e9',
     fontWeight: 'bold',
+    marginLeft: 2,
   },
   
   // Filter Modal Styles
