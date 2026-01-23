@@ -601,7 +601,7 @@ export default function HomeScreen() {
           {focusedTask.title}
         </Text>
 
-        {/* Row 3: Stats row - Distance | Posted | Applicants | Username */}
+        {/* Row 3: Stats row - Distance | Posted | Applicants */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>DISTANCE</Text>
@@ -617,18 +617,17 @@ export default function HomeScreen() {
             <Text style={styles.statLabel}>APPLICANTS</Text>
             <Text style={styles.statValue}>{applicantsCount}</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>BY</Text>
-            <Text style={styles.statValue} numberOfLines={1}>{focusedTask.creator_name || 'Anon'}</Text>
-          </View>
         </View>
 
-        {/* Row 4: Location | Difficulty */}
+        {/* Row 4: Username | Location | Difficulty */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Icon name="place" size={18} color="#ef4444" />
-            <Text style={styles.infoText} numberOfLines={1}>{city || 'Location not set'}</Text>
+            <Icon name="person" size={16} color="#3b82f6" />
+            <Text style={styles.infoText} numberOfLines={1}>{focusedTask.creator_name || 'Anon'}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Icon name="place" size={16} color="#ef4444" />
+            <Text style={styles.infoText} numberOfLines={1}>{city || 'N/A'}</Text>
           </View>
           <View style={styles.infoItem}>
             <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
@@ -1249,7 +1248,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   
-  // Stats row: Distance | Posted | Applicants | Username
+  // Stats row: Distance | Posted | Applicants
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1272,7 +1271,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#374151',
   },
@@ -1282,7 +1281,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5e7eb',
   },
   
-  // Info row: Location | Difficulty
+  // Info row: Username | Location | Difficulty (same line)
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1293,17 +1292,18 @@ const styles = StyleSheet.create({
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#4b5563',
     fontWeight: '500',
+    maxWidth: 90,
   },
   difficultyDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   
   // View button
