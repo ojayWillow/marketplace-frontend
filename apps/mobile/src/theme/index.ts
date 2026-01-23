@@ -1,6 +1,6 @@
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
-// Light theme - Royal Purple Premium
+// Light theme - FULLY PURPLE IMMERSION (No white anywhere!)
 export const lightTheme = {
   ...MD3LightTheme,
   colors: {
@@ -9,8 +9,8 @@ export const lightTheme = {
     secondary: '#a855f7', // Bright purple secondary
     tertiary: '#10b981', // emerald (works with purple)
     error: '#dc2626', // red-600 (stronger)
-    background: '#faf5ff', // lightest purple tint
-    surface: '#ffffff', // pure white cards
+    background: '#f5f3ff', // light purple (NO WHITE!)
+    surface: '#faf5ff', // very light purple cards (NO WHITE!)
     surfaceVariant: '#f3e8ff', // light purple surface
     onSurface: '#1e1b4b', // deep indigo-black
     onSurfaceVariant: '#5b21b6', // purple-tinted text
@@ -18,11 +18,11 @@ export const lightTheme = {
     outlineVariant: '#ddd6fe', // softer purple border
     elevation: {
       level0: 'transparent',
-      level1: '#ffffff',
-      level2: '#fefbff',
-      level3: '#faf5ff',
-      level4: '#f5f3ff',
-      level5: '#f3e8ff',
+      level1: '#faf5ff',
+      level2: '#f5f3ff',
+      level3: '#f3e8ff',
+      level4: '#ede9fe',
+      level5: '#e9d5ff',
     },
   },
 };
@@ -61,19 +61,20 @@ export const colors = {
     textSecondary: '#6b21a8', // purple-tinted secondary
     textMuted: '#9333ea', // muted purple
     
-    // Backgrounds
-    background: '#faf5ff', // lightest purple tint
-    backgroundSecondary: '#f5f3ff', // light purple
-    card: '#ffffff', // pure white cards
+    // Backgrounds - ALL PURPLE TINTED!
+    background: '#f5f3ff', // light purple (NO WHITE!)
+    backgroundSecondary: '#faf5ff', // very light purple
+    card: '#faf5ff', // very light purple cards (NO WHITE!)
     
     // Borders
     border: '#e9d5ff', // light purple border
     borderLight: '#f3e8ff', // very light purple
     
-    // UI Elements
-    tabBar: '#ffffff',
+    // UI Elements - ALL PURPLE!
+    tabBar: '#f5f3ff', // purple tab bar
     tabBarInactive: '#9333ea',
     statusBar: 'dark' as const,
+    header: '#f5f3ff', // purple header (NO WHITE!)
     
     // Accent colors - Royal Purple system
     primaryAccent: '#7c3aed', // Royal Purple (main buttons)
@@ -92,7 +93,7 @@ export const colors = {
     info: '#6366f1', // indigo
     
     // Input states
-    inputBackground: '#ffffff',
+    inputBackground: '#faf5ff', // light purple
     inputBorder: '#e9d5ff',
     inputFocus: '#a855f7', // bright purple on focus
     inputPlaceholder: '#9333ea',
@@ -116,6 +117,7 @@ export const colors = {
     tabBar: '#12101f',
     tabBarInactive: '#8b7fb8',
     statusBar: 'light' as const,
+    header: '#0a0814', // dark purple header
     
     // Accent colors - Violet theme
     primaryAccent: '#8b5cf6', // vibrant violet
