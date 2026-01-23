@@ -133,13 +133,13 @@ const JobPreviewCard = ({
           </span>
         </div>
 
-        {/* Creator - CLICKABLE with avatar, name, rating, and city */}
+        {/* Creator - CLICKABLE with avatar and all info on ONE line */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCreatorClick();
           }}
-          className="flex items-start gap-2 text-sm mb-4 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
+          className="flex items-center gap-2 text-sm mb-4 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
         >
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
@@ -154,17 +154,22 @@ const JobPreviewCard = ({
             )}
           </div>
           
-          {/* Name, Rating, City - stacked */}
-          <div className="flex-1 text-left min-w-0">
+          {/* All info on ONE line: Name | Stars (count) | City */}
+          <div className="flex items-center gap-2 flex-1 min-w-0 text-sm">
             {/* Name */}
-            <div className="font-medium text-gray-900 truncate">
+            <span className="font-medium text-gray-900 truncate">
               {task.creator_name || t('common.anonymous', 'Anonymous')}
-            </div>
+            </span>
             
-            {/* Rating with stars */}
+            {/* Separator */}
+            {(task.creator_rating !== undefined && task.creator_rating > 0) || task.creator_city ? (
+              <span className="text-gray-300 flex-shrink-0">|</span>
+            ) : null}
+            
+            {/* Rating with stars - inline */}
             {task.creator_rating !== undefined && task.creator_rating > 0 && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <div className="flex text-sm">
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex text-xs">
                   {renderStars(task.creator_rating)}
                 </div>
                 <span className="text-xs text-gray-500">
@@ -173,15 +178,20 @@ const JobPreviewCard = ({
               </div>
             )}
             
+            {/* Separator before city */}
+            {task.creator_city && (task.creator_rating !== undefined && task.creator_rating > 0) ? (
+              <span className="text-gray-300 flex-shrink-0">|</span>
+            ) : null}
+            
             {/* City */}
             {task.creator_city && (
-              <div className="text-xs text-gray-500 truncate mt-0.5">
+              <span className="text-xs text-gray-500 truncate">
                 {task.creator_city}
-              </div>
+              </span>
             )}
           </div>
           
-          <span className="text-gray-400 text-xs flex-shrink-0 mt-1">→</span>
+          <span className="text-gray-400 text-xs flex-shrink-0">→</span>
         </button>
 
         {/* Action buttons */}
