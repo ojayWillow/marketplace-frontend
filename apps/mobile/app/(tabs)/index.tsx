@@ -11,6 +11,8 @@ import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 import { clusterItems, calculateDistance as calcDistance } from '../../utils/mapClustering';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_MIN_HEIGHT = 80;
@@ -86,6 +88,10 @@ const getZoomLevel = (latitudeDelta: number | undefined): ZoomLevel => {
 };
 
 export default function HomeScreen() {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+  
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -508,6 +514,466 @@ export default function HomeScreen() {
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
+
+  // STYLES MOVED INSIDE COMPONENT TO REACT TO THEME
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: themeColors.backgroundSecondary },
+    mapContainer: { flex: 1, position: 'relative' },
+    map: { flex: 1 },
+    floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
+    
+    topRow: { 
+      flexDirection: 'row', 
+      paddingHorizontal: 12, 
+      paddingTop: 8, 
+      gap: 8,
+      alignItems: 'center',
+    },
+    categoryButton: { 
+      minWidth: 100,
+      height: 44,
+      borderRadius: 12, 
+      overflow: 'hidden',
+    },
+    categoryButtonActive: {
+      borderWidth: 2,
+      borderColor: '#0ea5e9',
+    },
+    categoryBlur: { 
+      flex: 1,
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+      gap: 4,
+    },
+    categoryButtonText: { 
+      fontSize: 14, 
+      fontWeight: '600', 
+      color: themeColors.text,
+    },
+    searchBar: {
+      flex: 1,
+      height: 44,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    searchBlur: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      gap: 8,
+    },
+    searchInput: { 
+      flex: 1, 
+      fontSize: 15, 
+      color: themeColors.text,
+      paddingVertical: 0,
+    },
+    searchClearButton: { 
+      padding: 4,
+    },
+    searchLoader: { 
+      marginLeft: 4,
+    },
+    filtersButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    filtersBlur: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    filterDot: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#0ea5e9',
+    },
+    
+    loadingOverlay: { position: 'absolute', top: 80, left: 24, right: 24, alignItems: 'center' },
+    loadingCard: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', overflow: 'hidden', gap: 10 },
+    loadingText: { fontSize: 14, color: themeColors.text, fontWeight: '500' },
+    emptyMapOverlay: { position: 'absolute', top: '40%', left: 24, right: 24, alignItems: 'center' },
+    emptyMapCard: { paddingVertical: 20, paddingHorizontal: 28, borderRadius: 16, alignItems: 'center', overflow: 'hidden' },
+    emptyMapIcon: { fontSize: 32, marginBottom: 8 },
+    emptyMapText: { fontSize: 16, fontWeight: '600', color: themeColors.text },
+    emptyMapSubtext: { fontSize: 14, color: themeColors.textSecondary, marginTop: 4 },
+    
+    myLocationButton: { 
+      position: 'absolute', 
+      bottom: 100, 
+      right: 16, 
+      zIndex: 10,
+    },
+    compassButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: themeColors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    
+    coinClusterContainer: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
+    coinCluster: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FCD34D', borderWidth: 3, borderColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B45309', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 6 },
+    coinEuro: { fontSize: 22, fontWeight: 'bold', color: '#92400E', textShadowColor: 'rgba(251, 191, 36, 0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+    coinBadge: { position: 'absolute', top: 0, right: 0, backgroundColor: '#DC2626', minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 4 },
+    coinBadgeText: { fontSize: 11, fontWeight: 'bold', color: '#ffffff' },
+    
+    userMarkerFull: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+    userMarkerHalo: { position: 'absolute', width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+    userMarkerDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#3B82F6', borderWidth: 2, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 3 },
+    userMarkerSubtle: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
+    userMarkerRing: { width: 14, height: 14, borderRadius: 7, backgroundColor: 'transparent', borderWidth: 2, borderColor: 'rgba(59, 130, 246, 0.6)' },
+    userMarkerFar: { width: 12, height: 12, alignItems: 'center', justifyContent: 'center' },
+    userMarkerSmallDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', borderWidth: 1.5, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1, elevation: 2 },
+    
+    priceMarker: { backgroundColor: themeColors.card, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 2, borderColor: '#0ea5e9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3 },
+    priceMarkerFocused: { borderWidth: 3, transform: [{ scale: 1.15 }] },
+    priceMarkerOffering: { borderColor: '#f97316' },
+    priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: '#0ea5e9' },
+    priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: '#f97316' },
+    
+    // Bottom Sheet
+    bottomSheet: { 
+      position: 'absolute', 
+      bottom: 0, 
+      left: 0, 
+      right: 0, 
+      backgroundColor: themeColors.card,
+      borderTopLeftRadius: 24, 
+      borderTopRightRadius: 24, 
+      shadowColor: '#000', 
+      shadowOffset: { width: 0, height: -6 }, 
+      shadowOpacity: 0.15, 
+      shadowRadius: 12, 
+      elevation: 12,
+    },
+    sheetHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 16 },
+    handleBar: { 
+      width: 44, 
+      height: 6, 
+      backgroundColor: themeColors.textMuted,
+      borderRadius: 3, 
+      marginBottom: 12,
+    },
+    sheetTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+    sheetTitle: { fontSize: 17, fontWeight: '700', color: themeColors.text },
+    closeButton: { margin: -8 },
+    quickPostButton: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0ea5e9', width: 32, height: 32, borderRadius: 16 },
+    quickPostIcon: { fontSize: 20, fontWeight: 'bold', color: '#ffffff' },
+    listContent: { paddingBottom: 40 },
+    emptySheet: { alignItems: 'center', paddingVertical: 32 },
+    emptyIcon: { fontSize: 40, marginBottom: 12 },
+    emptyText: { fontSize: 16, fontWeight: '500', color: themeColors.textSecondary },
+    emptySubtext: { fontSize: 14, color: themeColors.textMuted, marginTop: 4 },
+    emptyPostButton: { marginTop: 16, backgroundColor: '#0ea5e9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+    emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+    
+    // Job Card in list
+    jobCard: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: themeColors.border,
+      backgroundColor: themeColors.card,
+    },
+    jobCardLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    jobCategoryDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: 12,
+    },
+    jobCardContent: {
+      flex: 1,
+    },
+    jobCardRow1: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    jobCardCategory: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+      fontWeight: '500',
+    },
+    jobCardDot: {
+      fontSize: 13,
+      color: themeColors.border,
+      marginHorizontal: 6,
+    },
+    jobCardTime: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+    },
+    jobCardTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    jobCardRight: {
+      alignItems: 'flex-end',
+      marginLeft: 16,
+    },
+    jobCardPrice: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#0ea5e9',
+    },
+    jobCardDistance: {
+      fontSize: 12,
+      color: themeColors.textSecondary,
+      marginTop: 2,
+    },
+    
+    // FOCUSED JOB CARD - Minimalist layout
+    focusedCard: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    
+    // Top row: Category badge (left) + Price (right)
+    focusedTopRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    focusedCategoryBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      gap: 6,
+    },
+    focusedCategoryIcon: {
+      fontSize: 14,
+    },
+    focusedCategoryText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#ffffff',
+    },
+    focusedPrice: {
+      fontSize: 28,
+      fontWeight: '800',
+    },
+    
+    // Title
+    focusedTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: themeColors.text,
+      marginBottom: 16,
+      lineHeight: 26,
+    },
+    
+    // Stats row: Distance | Posted | Applicants
+    statsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      paddingVertical: 12,
+      backgroundColor: themeColors.backgroundSecondary,
+      borderRadius: 12,
+      marginBottom: 12,
+    },
+    statItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    statLabel: {
+      fontSize: 9,
+      fontWeight: '600',
+      color: themeColors.textMuted,
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    statValue: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: themeColors.text,
+    },
+    statDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: themeColors.border,
+    },
+    
+    // Info row: Username | Location | Difficulty (same line)
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+      paddingHorizontal: 4,
+    },
+    infoItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    infoText: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+      fontWeight: '500',
+      maxWidth: 90,
+    },
+    difficultyDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    
+    // View button
+    viewButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      paddingVertical: 14,
+      borderRadius: 12,
+      gap: 8,
+    },
+    viewButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#ffffff',
+    },
+    
+    // Modal Base Styles
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modalContent: { backgroundColor: themeColors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
+    modalTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 20, textAlign: 'center' },
+    modalOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: themeColors.backgroundSecondary, padding: 16, borderRadius: 12, marginBottom: 12 },
+    modalOptionIcon: { fontSize: 32, marginRight: 16 },
+    modalOptionText: { flex: 1 },
+    modalOptionTitle: { fontSize: 16, fontWeight: '600', color: themeColors.text, marginBottom: 4 },
+    modalOptionSubtitle: { fontSize: 14, color: themeColors.textSecondary },
+    modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
+    modalCancelText: { fontSize: 16, fontWeight: '600', color: themeColors.textSecondary },
+    
+    // Category Modal
+    categoryModalContent: { 
+      backgroundColor: themeColors.card,
+      borderRadius: 20, 
+      padding: 20, 
+      width: '100%', 
+      maxWidth: 400, 
+      maxHeight: '80%' 
+    },
+    categoryWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    categoryPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: themeColors.backgroundSecondary,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: themeColors.border,
+    },
+    categoryPillActive: {
+      backgroundColor: '#e0f2fe',
+      borderColor: '#0ea5e9',
+    },
+    categoryPillIcon: {
+      fontSize: 16,
+      marginRight: 6,
+    },
+    categoryPillLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    categoryPillLabelActive: {
+      color: '#0369a1',
+      fontWeight: '700',
+    },
+    categoryPillCheck: {
+      fontSize: 14,
+      color: '#0ea5e9',
+      fontWeight: 'bold',
+      marginLeft: 6,
+    },
+    
+    // Filter Modal Styles
+    filterModalContent: { backgroundColor: themeColors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '80%' },
+    filterSectionTitle: { fontSize: 14, fontWeight: '600', color: themeColors.textSecondary, marginTop: 8, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+    
+    // Difficulty Segment Control
+    segmentContainer: {
+      flexDirection: 'row',
+      backgroundColor: themeColors.backgroundSecondary,
+      borderRadius: 12,
+      padding: 4,
+      marginBottom: 16,
+    },
+    segmentButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      borderRadius: 10,
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    segmentButtonActive: {
+      backgroundColor: themeColors.card,
+    },
+    segmentDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    segmentText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: themeColors.textSecondary,
+    },
+    
+    filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: themeColors.backgroundSecondary },
+    filterOptionActive: { backgroundColor: '#e0f2fe' },
+    filterOptionIcon: { fontSize: 20, marginRight: 12 },
+    filterOptionText: { flex: 1, fontSize: 16, color: themeColors.text, fontWeight: '500', marginLeft: 8 },
+    filterOptionTextActive: { color: '#0ea5e9', fontWeight: '600' },
+    filterOptionCheck: { fontSize: 18, color: '#0ea5e9', fontWeight: 'bold' },
+    filterActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+    clearFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: themeColors.backgroundSecondary, alignItems: 'center' },
+    clearFiltersText: { fontSize: 15, fontWeight: '600', color: themeColors.textSecondary },
+    applyFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#0ea5e9', alignItems: 'center' },
+    applyFiltersText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  });
 
   const renderUserLocationMarker = () => {
     if (!hasRealLocation) return null;
@@ -1013,462 +1479,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  mapContainer: { flex: 1, position: 'relative' },
-  map: { flex: 1 },
-  floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
-  
-  topRow: { 
-    flexDirection: 'row', 
-    paddingHorizontal: 12, 
-    paddingTop: 8, 
-    gap: 8,
-    alignItems: 'center',
-  },
-  categoryButton: { 
-    minWidth: 100,
-    height: 44,
-    borderRadius: 12, 
-    overflow: 'hidden',
-  },
-  categoryButtonActive: {
-    borderWidth: 2,
-    borderColor: '#0ea5e9',
-  },
-  categoryBlur: { 
-    flex: 1,
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    gap: 4,
-  },
-  categoryButtonText: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    color: '#1f2937',
-  },
-  searchBar: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  searchBlur: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  searchInput: { 
-    flex: 1, 
-    fontSize: 15, 
-    color: '#1f2937', 
-    paddingVertical: 0,
-  },
-  searchClearButton: { 
-    padding: 4,
-  },
-  searchLoader: { 
-    marginLeft: 4,
-  },
-  filtersButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  filtersBlur: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  filterDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#0ea5e9',
-  },
-  
-  loadingOverlay: { position: 'absolute', top: 80, left: 24, right: 24, alignItems: 'center' },
-  loadingCard: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', overflow: 'hidden', gap: 10 },
-  loadingText: { fontSize: 14, color: '#374151', fontWeight: '500' },
-  emptyMapOverlay: { position: 'absolute', top: '40%', left: 24, right: 24, alignItems: 'center' },
-  emptyMapCard: { paddingVertical: 20, paddingHorizontal: 28, borderRadius: 16, alignItems: 'center', overflow: 'hidden' },
-  emptyMapIcon: { fontSize: 32, marginBottom: 8 },
-  emptyMapText: { fontSize: 16, fontWeight: '600', color: '#374151' },
-  emptyMapSubtext: { fontSize: 14, color: '#6b7280', marginTop: 4 },
-  
-  myLocationButton: { 
-    position: 'absolute', 
-    bottom: 100, 
-    right: 16, 
-    zIndex: 10,
-  },
-  compassButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  
-  coinClusterContainer: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
-  coinCluster: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FCD34D', borderWidth: 3, borderColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B45309', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 6 },
-  coinEuro: { fontSize: 22, fontWeight: 'bold', color: '#92400E', textShadowColor: 'rgba(251, 191, 36, 0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
-  coinBadge: { position: 'absolute', top: 0, right: 0, backgroundColor: '#DC2626', minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 4 },
-  coinBadgeText: { fontSize: 11, fontWeight: 'bold', color: '#ffffff' },
-  
-  userMarkerFull: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  userMarkerHalo: { position: 'absolute', width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(59, 130, 246, 0.2)' },
-  userMarkerDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#3B82F6', borderWidth: 2, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 3 },
-  userMarkerSubtle: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
-  userMarkerRing: { width: 14, height: 14, borderRadius: 7, backgroundColor: 'transparent', borderWidth: 2, borderColor: 'rgba(59, 130, 246, 0.6)' },
-  userMarkerFar: { width: 12, height: 12, alignItems: 'center', justifyContent: 'center' },
-  userMarkerSmallDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', borderWidth: 1.5, borderColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1, elevation: 2 },
-  
-  priceMarker: { backgroundColor: '#ffffff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 2, borderColor: '#0ea5e9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3 },
-  priceMarkerFocused: { borderWidth: 3, transform: [{ scale: 1.15 }] },
-  priceMarkerOffering: { borderColor: '#f97316' },
-  priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: '#0ea5e9' },
-  priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: '#f97316' },
-  
-  // Bottom Sheet
-  bottomSheet: { 
-    position: 'absolute', 
-    bottom: 0, 
-    left: 0, 
-    right: 0, 
-    backgroundColor: '#ffffff', 
-    borderTopLeftRadius: 24, 
-    borderTopRightRadius: 24, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: -6 }, 
-    shadowOpacity: 0.15, 
-    shadowRadius: 12, 
-    elevation: 12,
-  },
-  sheetHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 16 },
-  handleBar: { 
-    width: 44, 
-    height: 6, 
-    backgroundColor: '#9ca3af', 
-    borderRadius: 3, 
-    marginBottom: 12,
-  },
-  sheetTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-  sheetTitle: { fontSize: 17, fontWeight: '700', color: '#1f2937' },
-  closeButton: { margin: -8 },
-  quickPostButton: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0ea5e9', width: 32, height: 32, borderRadius: 16 },
-  quickPostIcon: { fontSize: 20, fontWeight: 'bold', color: '#ffffff' },
-  listContent: { paddingBottom: 40 },
-  emptySheet: { alignItems: 'center', paddingVertical: 32 },
-  emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyText: { fontSize: 16, fontWeight: '500', color: '#6b7280' },
-  emptySubtext: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
-  emptyPostButton: { marginTop: 16, backgroundColor: '#0ea5e9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
-  
-  // Job Card in list
-  jobCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-    backgroundColor: '#ffffff',
-  },
-  jobCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  jobCategoryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 12,
-  },
-  jobCardContent: {
-    flex: 1,
-  },
-  jobCardRow1: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  jobCardCategory: {
-    fontSize: 13,
-    color: '#4b5563',
-    fontWeight: '500',
-  },
-  jobCardDot: {
-    fontSize: 13,
-    color: '#d1d5db',
-    marginHorizontal: 6,
-  },
-  jobCardTime: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  jobCardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  jobCardRight: {
-    alignItems: 'flex-end',
-    marginLeft: 16,
-  },
-  jobCardPrice: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0ea5e9',
-  },
-  jobCardDistance: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  
-  // FOCUSED JOB CARD - Minimalist layout
-  focusedCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  
-  // Top row: Category badge (left) + Price (right)
-  focusedTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  focusedCategoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-  },
-  focusedCategoryIcon: {
-    fontSize: 14,
-  },
-  focusedCategoryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  focusedPrice: {
-    fontSize: 28,
-    fontWeight: '800',
-  },
-  
-  // Title
-  focusedTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 16,
-    lineHeight: 26,
-  },
-  
-  // Stats row: Distance | Posted | Applicants
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingVertical: 12,
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: '#9ca3af',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#e5e7eb',
-  },
-  
-  // Info row: Username | Location | Difficulty (same line)
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#4b5563',
-    fontWeight: '500',
-    maxWidth: 90,
-  },
-  difficultyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  
-  // View button
-  viewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  viewButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  
-  // Modal Base Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 20, textAlign: 'center' },
-  modalOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', padding: 16, borderRadius: 12, marginBottom: 12 },
-  modalOptionIcon: { fontSize: 32, marginRight: 16 },
-  modalOptionText: { flex: 1 },
-  modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#1f2937', marginBottom: 4 },
-  modalOptionSubtitle: { fontSize: 14, color: '#6b7280' },
-  modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
-  modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
-  
-  // Category Modal
-  categoryModalContent: { 
-    backgroundColor: '#ffffff', 
-    borderRadius: 20, 
-    padding: 20, 
-    width: '100%', 
-    maxWidth: 400, 
-    maxHeight: '80%' 
-  },
-  categoryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-  },
-  categoryPillActive: {
-    backgroundColor: '#e0f2fe',
-    borderColor: '#0ea5e9',
-  },
-  categoryPillIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  categoryPillLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  categoryPillLabelActive: {
-    color: '#0369a1',
-    fontWeight: '700',
-  },
-  categoryPillCheck: {
-    fontSize: 14,
-    color: '#0ea5e9',
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
-  
-  // Filter Modal Styles
-  filterModalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '80%' },
-  filterSectionTitle: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginTop: 8, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
-  
-  // Difficulty Segment Control
-  segmentContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
-  },
-  segmentButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  segmentButtonActive: {
-    backgroundColor: '#ffffff',
-  },
-  segmentDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  
-  filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: '#f9fafb' },
-  filterOptionActive: { backgroundColor: '#e0f2fe' },
-  filterOptionIcon: { fontSize: 20, marginRight: 12 },
-  filterOptionText: { flex: 1, fontSize: 16, color: '#1f2937', fontWeight: '500', marginLeft: 8 },
-  filterOptionTextActive: { color: '#0ea5e9', fontWeight: '600' },
-  filterOptionCheck: { fontSize: 18, color: '#0ea5e9', fontWeight: 'bold' },
-  filterActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  clearFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#f3f4f6', alignItems: 'center' },
-  clearFiltersText: { fontSize: 15, fontWeight: '600', color: '#6b7280' },
-  applyFiltersButton: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#0ea5e9', alignItems: 'center' },
-  applyFiltersText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
-});
