@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { getTasks, getOfferings, searchTasks, type Task, type Offering } from '@marketplace/shared';
+import { getTasks, getOfferings, searchTasks, type Task, type Offering, CATEGORIES, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 import { clusterItems, calculateDistance as calcDistance } from '../../utils/mapClustering';
@@ -21,18 +21,6 @@ const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
 const OVERLAP_THRESHOLD_FACTOR = 0.025;
 const ZOOM_FAR_THRESHOLD = 0.12;
 const ZOOM_CLOSE_THRESHOLD = 0.05;
-
-const CATEGORIES = [
-  { key: 'all', label: 'All', icon: '🔍' },
-  { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
-  { key: 'moving', label: 'Moving', icon: '📦' },
-  { key: 'repairs', label: 'Repairs', icon: '🔧' },
-  { key: 'delivery', label: 'Delivery', icon: '🚗' },
-  { key: 'tutoring', label: 'Tutoring', icon: '📚' },
-  { key: 'tech', label: 'Tech', icon: '💻' },
-  { key: 'beauty', label: 'Beauty', icon: '💅' },
-  { key: 'other', label: 'Other', icon: '📋' },
-];
 
 const RADIUS_OPTIONS = [
   { key: 'all', label: 'All Areas', value: null },
@@ -307,14 +295,24 @@ export default function HomeScreen() {
     const colors: Record<string, string> = {
       cleaning: '#10b981',
       moving: '#3b82f6',
-      repairs: '#f59e0b',
+      'heavy-lifting': '#ef4444',
+      assembly: '#f59e0b',
+      mounting: '#8b5cf6',
+      handyman: '#6366f1',
+      plumbing: '#06b6d4',
+      electrical: '#eab308',
+      painting: '#ec4899',
+      gardening: '#22c55e',
+      'car-wash': '#3b82f6',
+      delivery: '#f97316',
+      shopping: '#a855f7',
+      'pet-care': '#f472b6',
       tutoring: '#8b5cf6',
-      delivery: '#ec4899',
-      beauty: '#a855f7',
-      tech: '#06b6d4',
+      'tech-help': '#06b6d4',
+      beauty: '#ec4899',
       other: '#6b7280',
     };
-    return colors[category] || '#ef4444';
+    return colors[category] || '#0ea5e9';
   };
 
   const handleRegionChange = useCallback((region: Region) => {
@@ -356,7 +354,6 @@ export default function HomeScreen() {
     haptic.light();
     if (task) {
       if (mapRef.current && task.latitude && task.longitude) {
-        // Position marker in center of visible map area above sheet
         const latitudeDelta = 0.03;
         const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.4;
         
@@ -387,7 +384,6 @@ export default function HomeScreen() {
     haptic.medium();
     
     if (mapRef.current && task.latitude && task.longitude) {
-      // Position marker in center of visible map area above sheet
       const latitudeDelta = 0.03;
       const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.4;
       
@@ -470,9 +466,10 @@ export default function HomeScreen() {
     setFocusedTaskId(null);
   };
 
-  const selectedCategoryData = CATEGORIES.find(c => c.key === selectedCategory);
+  const selectedCategoryData = getCategoryByKey(selectedCategory);
   const selectedRadiusLabel = RADIUS_OPTIONS.find(r => r.value === selectedRadius)?.label || 'All Areas';
   const hasActiveFilters = selectedRadius !== null;
+  const hasActiveCategory = selectedCategory !== 'all';
   
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
@@ -515,7 +512,7 @@ export default function HomeScreen() {
         <View style={styles.jobInfo}>
           <Text style={styles.jobTitle} numberOfLines={1}>{task.title}</Text>
           <Text style={styles.jobMeta}>
-            {task.category} • {formatTimeAgo(task.created_at!)}
+            {getCategoryByKey(task.category)?.label || task.category} • {formatTimeAgo(task.created_at!)}
           </Text>
         </View>
       </View>
@@ -537,11 +534,12 @@ export default function HomeScreen() {
 
   const renderFocusedTask = () => {
     if (!focusedTask) return null;
+    const categoryData = getCategoryByKey(focusedTask.category);
     return (
       <View style={styles.focusedJobContainer}>
         <View style={styles.focusedJobHeader}>
           <View style={[styles.focusedCategoryBadge, { backgroundColor: getMarkerColor(focusedTask.category) }]}>
-            <Text style={styles.focusedCategoryText}>{focusedTask.category.toUpperCase()}</Text>
+            <Text style={styles.focusedCategoryText}>{categoryData?.label?.toUpperCase() || focusedTask.category.toUpperCase()}</Text>
           </View>
           {hasRealLocation && (
             <Text style={styles.focusedDistance}>
@@ -666,13 +664,15 @@ export default function HomeScreen() {
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
           <View style={styles.topRow}>
             <TouchableOpacity
-              style={styles.categoryButton}
+              style={[styles.categoryButton, hasActiveCategory && styles.categoryButtonActive]}
               onPress={() => { haptic.light(); setShowCategoryModal(true); }}
               activeOpacity={0.8}
             >
               <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
                 <Text style={styles.categoryEmoji}>{selectedCategoryData?.icon || '🔍'}</Text>
-                <Text style={styles.categoryText} numberOfLines={1}>Categories</Text>
+                <Text style={styles.categoryText} numberOfLines={1}>
+                  {hasActiveCategory ? selectedCategoryData?.label : 'Categories'}
+                </Text>
                 <Icon name="expand-more" size={16} color="#6b7280" />
               </BlurView>
             </TouchableOpacity>
@@ -786,31 +786,44 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
+      {/* CATEGORY MODAL - 3 COLUMN GRID */}
       <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCategoryModal(false); }}>
-          <View style={styles.filterModalContent}>
+          <View style={styles.categoryModalContent}>
             <Text style={styles.modalTitle}>Select Category</Text>
-            <FlatList
-              data={CATEGORIES}
-              keyExtractor={(item) => item.key}
-              renderItem={({ item: cat }) => (
-                <TouchableOpacity
-                  style={[styles.filterOption, selectedCategory === cat.key && styles.filterOptionActive]}
-                  onPress={() => handleCategorySelect(cat.key)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.filterOptionIcon}>{cat.icon}</Text>
-                  <Text style={[styles.filterOptionText, selectedCategory === cat.key && styles.filterOptionTextActive]}>
-                    {cat.label}
-                  </Text>
-                  {selectedCategory === cat.key && <Text style={styles.filterOptionCheck}>✓</Text>}
-                </TouchableOpacity>
-              )}
-            />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.categoryGrid}>
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[
+                      styles.categoryCard,
+                      selectedCategory === cat.key && styles.categoryCardActive
+                    ]}
+                    onPress={() => handleCategorySelect(cat.key)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.categoryCardIcon}>{cat.icon}</Text>
+                    <Text style={[
+                      styles.categoryCardLabel,
+                      selectedCategory === cat.key && styles.categoryCardLabelActive
+                    ]} numberOfLines={2}>
+                      {cat.label}
+                    </Text>
+                    {selectedCategory === cat.key && (
+                      <View style={styles.categoryCheckBadge}>
+                        <Text style={styles.categoryCheckText}>✓</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
 
+      {/* FILTERS MODAL (Radius) */}
       <Modal visible={showFiltersModal} transparent animationType="fade" onRequestClose={() => setShowFiltersModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowFiltersModal(false); }}>
           <View style={styles.filterModalContent}>
@@ -820,6 +833,7 @@ export default function HomeScreen() {
             <FlatList
               data={RADIUS_OPTIONS}
               keyExtractor={(item) => item.key}
+              scrollEnabled={false}
               renderItem={({ item: rad }) => (
                 <TouchableOpacity
                   style={[styles.filterOption, selectedRadius === rad.value && styles.filterOptionActive]}
@@ -861,6 +875,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
+      {/* CREATE MODAL */}
       <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCreateModal(false); }}>
           <View style={styles.modalContent}>
@@ -907,6 +922,10 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12, 
     overflow: 'hidden',
+  },
+  categoryButtonActive: {
+    borderWidth: 2,
+    borderColor: '#0ea5e9',
   },
   categoryBlur: { 
     flex: 1,
@@ -1058,6 +1077,8 @@ const styles = StyleSheet.create({
   focusedDescription: { fontSize: 15, color: '#374151', lineHeight: 22 },
   focusedLocation: { fontSize: 14, color: '#374151', lineHeight: 20 },
   viewDetailsButton: { marginTop: 16, borderRadius: 12 },
+  
+  // Modal Base Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 20, textAlign: 'center' },
@@ -1068,6 +1089,70 @@ const styles = StyleSheet.create({
   modalOptionSubtitle: { fontSize: 14, color: '#6b7280' },
   modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
   modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
+  
+  // Category Modal with 3-COLUMN GRID
+  categoryModalContent: { 
+    backgroundColor: '#ffffff', 
+    borderRadius: 20, 
+    padding: 24, 
+    width: '100%', 
+    maxWidth: 400, 
+    maxHeight: '80%' 
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  categoryCard: {
+    width: '31%',
+    aspectRatio: 0.9,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  categoryCardActive: {
+    backgroundColor: '#e0f2fe',
+    borderColor: '#0ea5e9',
+  },
+  categoryCardIcon: {
+    fontSize: 28,
+    marginBottom: 6,
+  },
+  categoryCardLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  categoryCardLabelActive: {
+    color: '#0369a1',
+    fontWeight: '700',
+  },
+  categoryCheckBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryCheckText: {
+    fontSize: 11,
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  
+  // Filter Modal Styles
   filterModalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, maxHeight: '70%' },
   filterSectionTitle: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginTop: 8, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   filterOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, marginBottom: 8, backgroundColor: '#f9fafb' },
