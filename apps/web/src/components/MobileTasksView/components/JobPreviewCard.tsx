@@ -35,6 +35,9 @@ const JobPreviewCard = ({
   const categoryLabel = getCategoryLabel(task.category);
   const applicantsCount = task.pending_applications_count || 0;
 
+  // Check if rating exists (not null/undefined)
+  const hasRating = task.creator_rating != null;
+
   // Render star rating
   const renderStars = (rating: number) => {
     const stars = [];
@@ -161,16 +164,16 @@ const JobPreviewCard = ({
               {task.creator_name || t('common.anonymous', 'Anonymous')}
             </span>
             
-            {/* Separator */}
-            {(task.creator_rating !== undefined && task.creator_rating > 0) || task.creator_city ? (
+            {/* Separator - only show if there's rating or city */}
+            {(hasRating || task.creator_city) && (
               <span className="text-gray-300 flex-shrink-0">|</span>
-            ) : null}
+            )}
             
-            {/* Rating with stars - inline */}
-            {task.creator_rating !== undefined && task.creator_rating > 0 && (
+            {/* Rating with stars - inline (check for not null/undefined) */}
+            {hasRating && (
               <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="flex text-xs">
-                  {renderStars(task.creator_rating)}
+                  {renderStars(task.creator_rating!)}
                 </div>
                 <span className="text-xs text-gray-500">
                   ({task.creator_review_count || 0})
@@ -178,10 +181,10 @@ const JobPreviewCard = ({
               </div>
             )}
             
-            {/* Separator before city */}
-            {task.creator_city && (task.creator_rating !== undefined && task.creator_rating > 0) ? (
+            {/* Separator before city - only if both rating and city exist */}
+            {hasRating && task.creator_city && (
               <span className="text-gray-300 flex-shrink-0">|</span>
-            ) : null}
+            )}
             
             {/* City */}
             {task.creator_city && (
