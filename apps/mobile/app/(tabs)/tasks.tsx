@@ -2,8 +2,9 @@ import { View, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList, ListRen
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { router } from 'expo-router';
+import * as Location from 'expo-location';
 import { getTasks, getOfferings, useAuthStore, type Task, type Offering, CATEGORIES, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import TaskCard from '../../components/TaskCard';
@@ -16,12 +17,50 @@ type ListItem =
   | { type: 'job'; data: Task; id: string }
   | { type: 'service'; data: Offering; id: string };
 
+const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
+
+// Calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function TasksScreen() {
   const [mainTab, setMainTab] = useState<MainTab>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>(DEFAULT_LOCATION);
+  const [hasRealLocation, setHasRealLocation] = useState(false);
   const { isAuthenticated } = useAuthStore();
+
+  // Get user location on mount
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+
+      try {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        setHasRealLocation(true);
+      } catch (e) {
+        console.log('Could not get location:', e);
+      }
+    })();
+  }, []);
 
   // Browse Jobs query - only open jobs
   const jobsQuery = useQuery({
@@ -40,13 +79,30 @@ export default function TasksScreen() {
   const allTasks = jobsQuery.data?.tasks || [];
   const allOfferings = servicesQuery.data?.offerings || [];
 
-  // Filter by category (memoized to prevent unnecessary recalculations)
-  const tasks = useMemo(() => 
-    selectedCategory === 'all' 
+  // Add distance to tasks and filter by category (memoized)
+  const tasks = useMemo(() => {
+    let filtered = selectedCategory === 'all' 
       ? allTasks 
-      : allTasks.filter(t => t.category === selectedCategory),
-    [allTasks, selectedCategory]
-  );
+      : allTasks.filter(t => t.category === selectedCategory);
+    
+    // Add distance to each task if location available
+    if (hasRealLocation) {
+      filtered = filtered.map(task => {
+        if (task.latitude && task.longitude) {
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            task.latitude,
+            task.longitude
+          );
+          return { ...task, distance };
+        }
+        return task;
+      });
+    }
+    
+    return filtered;
+  }, [allTasks, selectedCategory, userLocation, hasRealLocation]);
   
   const offerings = useMemo(() => 
     selectedCategory === 'all'
@@ -263,7 +319,7 @@ export default function TasksScreen() {
           </View>
         </View>
 
-        {/* Filter Button - Burger Menu Style */}
+        {/* Filter Button - Positioned Right */}
         <TouchableOpacity
           style={[styles.filterButton, hasActiveFilter && styles.filterButtonActive]}
           onPress={handleFilterPress}
