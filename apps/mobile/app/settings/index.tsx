@@ -1,7 +1,7 @@
 import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Surface, Divider } from 'react-native-paper';
-import { router, Stack } from 'expo-router';
+import { Text, Surface, Divider, Appbar } from 'react-native-paper';
+import { router } from 'expo-router';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 
@@ -17,14 +17,12 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top', 'bottom']}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Settings',
-          headerStyle: { backgroundColor: themeColors.card },
-          headerTintColor: themeColors.text,
-        }} 
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top']}>
+      <Appbar.Header style={{ backgroundColor: themeColors.card }}>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Settings" titleStyle={{ color: themeColors.text }} />
+      </Appbar.Header>
+      
       <ScrollView style={styles.scrollView}>
         {/* Appearance */}
         <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
@@ -54,7 +52,7 @@ export default function SettingsScreen() {
 
         {/* Support */}
         <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Support</Text>
-        <Surface style={[styles.menuContainer, styles.menuContainerWithMargin, { backgroundColor: themeColors.card }]} elevation={0}>
+        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Help & Support" 
             icon="❓" 
@@ -137,10 +135,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   menuContainer: {
-    // No marginTop for first section - it's directly under header
-  },
-  menuContainerWithMargin: {
-    marginTop: 12,
+    // Removed all margin top
   },
   menuItem: {
     flexDirection: 'row',
