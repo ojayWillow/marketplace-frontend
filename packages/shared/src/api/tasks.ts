@@ -59,6 +59,8 @@ export interface Task {
   completed_at?: string;
   pending_applications_count?: number; // Number of pending applications for this task
   images?: string; // Comma-separated image URLs
+  has_applied?: boolean; // Whether current user has applied (if authenticated)
+  user_application?: TaskApplication | null; // Current user's application (if exists)
 }
 
 export interface Helper {
@@ -214,6 +216,7 @@ export const getTasksByUser = async (userId: number): Promise<GetTasksResponse> 
 
 /**
  * Get a single task by ID
+ * Returns has_applied and user_application if authenticated
  */
 export const getTask = async (taskId: number): Promise<Task> => {
   const lang = getLangParam();
