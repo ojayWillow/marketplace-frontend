@@ -1,32 +1,73 @@
 import React, { memo, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Offering } from '@marketplace/shared';
+import { getImageUrl, getCategoryByKey } from '@marketplace/shared';
 
 interface OfferingCardProps {
   offering: Offering;
   onPress?: (offering: Offering) => void;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active': return { bg: '#dcfce7', text: '#166534' };
-    case 'paused': return { bg: '#fef3c7', text: '#92400e' };
-    default: return { bg: '#f3f4f6', text: '#374151' };
-  }
+// Helper to format time ago
+const formatTimeAgo = (dateString: string | undefined): string => {
+  if (!dateString) return '';
+  
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return past.toLocaleDateString();
 };
 
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'active': return 'Active';
-    case 'paused': return 'Paused';
-    default: return status;
+// Helper to extract just the city name from location string
+const extractCity = (location: string | undefined): string => {
+  if (!location) return '';
+  
+  const parts = location.split(',').map(p => p.trim());
+  
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return parts[0];
+  
+  if (parts.length >= 3) {
+    if (parts[1].match(/^\d+$/)) {
+      return parts[2];
+    }
+    return parts[1];
   }
+  
+  return parts[0];
+};
+
+// Helper to format location display (distance + city)
+const formatLocationDisplay = (offering: Offering): string => {
+  const hasDistance = (offering as any).distance !== undefined && (offering as any).distance !== null;
+  const city = extractCity(offering.location) || offering.creator_city;
+  
+  if (hasDistance && city) {
+    return `${(offering as any).distance.toFixed(1)} km, ${city}`;
+  } else if (hasDistance) {
+    return `${(offering as any).distance.toFixed(1)} km`;
+  } else if (city) {
+    return city;
+  }
+  
+  return '';
 };
 
 const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
-  const statusColors = getStatusColor(offering.status || 'active');
+  const timeAgo = formatTimeAgo(offering.created_at);
+  const hasRating = (offering.creator_rating ?? 0) > 0;
+  const categoryData = getCategoryByKey(offering.category);
+  const locationDisplay = formatLocationDisplay(offering);
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -48,25 +89,71 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
   return (
     <Card style={styles.card} onPress={handlePress}>
       <Card.Content style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>
-            {offering.title}
+        {/* Row 1: Category + Price */}
+        <View style={styles.row1}>
+          <Text style={styles.category}>
+            {categoryData?.icon || '🛠️'} {categoryData?.label || offering.category}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-            <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>
-              {getStatusLabel(offering.status || 'active')}
-            </Text>
-          </View>
+          <Text style={styles.price}>{getPriceText()}</Text>
         </View>
         
-        <Text style={styles.category}>{offering.category}</Text>
-        <Text variant="bodyMedium" style={styles.description} numberOfLines={2}>
-          {offering.description}
+        {/* Row 2: Title */}
+        <Text variant="titleMedium" numberOfLines={1} style={styles.title}>
+          {offering.title}
         </Text>
         
-        <View style={styles.cardFooter}>
-          <Text style={styles.price}>{getPriceText()}</Text>
-          <Text style={styles.creator}>👤 {offering.creator_name || 'Anonymous'}</Text>
+        {/* Row 3: Creator with Avatar + Name + City + Rating */}
+        <View style={styles.row3}>
+          {offering.creator_avatar ? (
+            <Image 
+              source={{ uri: getImageUrl(offering.creator_avatar) }} 
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {offering.creator_name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.creatorName} numberOfLines={1}>
+            {offering.creator_name || 'Anonymous'}
+          </Text>
+          {offering.creator_city && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.creatorCity} numberOfLines={1}>{offering.creator_city}</Text>
+            </>
+          )}
+          {hasRating && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.rating}>
+                ⭐ {offering.creator_rating?.toFixed(1)} ({offering.creator_review_count})
+              </Text>
+            </>
+          )}
+        </View>
+        
+        {/* Row 4: Description Preview */}
+        {offering.description && (
+          <Text variant="bodySmall" style={styles.description} numberOfLines={2}>
+            {offering.description}
+          </Text>
+        )}
+        
+        {/* Row 5: Location + Time */}
+        <View style={styles.row5}>
+          {locationDisplay && (
+            <>
+              <Text style={styles.metaText}>📍 {locationDisplay}</Text>
+              <Text style={styles.metaDot}>•</Text>
+            </>
+          )}
+          
+          {timeAgo && (
+            <Text style={styles.metaText}>{timeAgo}</Text>
+          )}
         </View>
       </Card.Content>
     </Card>
@@ -75,7 +162,6 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
 
 // Memoize with custom comparison
 export default memo(OfferingCard, (prevProps, nextProps) => {
-  // Only re-render if offering ID or status changed
   return (
     prevProps.offering.id === nextProps.offering.id &&
     prevProps.offering.status === nextProps.offering.status &&
@@ -94,49 +180,100 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  
+  // Row 1: Category + Price
+  row1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
-  },
-  cardTitle: { 
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 12,
-    color: '#1f2937',
-  },
-  statusBadge: { 
-    paddingHorizontal: 10, 
-    paddingVertical: 4, 
-    borderRadius: 12,
-  },
-  statusBadgeText: { 
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
-  category: { 
-    color: '#f97316', 
-    fontSize: 13,
     marginBottom: 6,
   },
-  description: { 
-    color: '#6b7280', 
-    marginBottom: 12,
-    lineHeight: 20,
+  category: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6b7280',
   },
-  cardFooter: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
+  price: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#f97316',
   },
-  price: { 
-    color: '#f97316', 
-    fontWeight: 'bold',
-    fontSize: 16,
+  
+  // Row 2: Title
+  title: {
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
   },
-  creator: { 
-    color: '#9ca3af', 
-    fontSize: 13 
+  
+  // Row 3: Creator Info
+  row3: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  avatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f97316',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  creatorName: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1f2937',
+    maxWidth: 100,
+  },
+  dot: {
+    fontSize: 13,
+    color: '#d1d5db',
+    marginHorizontal: 6,
+  },
+  creatorCity: {
+    fontSize: 13,
+    color: '#6b7280',
+    maxWidth: 80,
+  },
+  rating: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  
+  // Row 4: Description
+  description: {
+    color: '#6b7280',
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  
+  // Row 5: Meta Info
+  row5: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  metaDot: {
+    fontSize: 12,
+    color: '#d1d5db',
+    marginHorizontal: 6,
   },
 });
