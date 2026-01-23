@@ -1,4 +1,4 @@
-import { View, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList, ListRenderItem } from 'react-native';
+import { View, StyleSheet, Pressable, Modal, TouchableOpacity, FlatList, ListRenderItem, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -300,7 +300,7 @@ export default function TasksScreen() {
         onPress={() => { haptic.medium(); setShowCreateModal(true); }}
       />
 
-      {/* Filter Modal - 3 COLUMN GRID */}
+      {/* FILTER MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
       <Modal
         visible={showFilterModal}
         transparent
@@ -314,34 +314,32 @@ export default function TasksScreen() {
         >
           <View style={styles.filterModalContent}>
             <Text style={styles.filterModalTitle}>Filter by Category</Text>
-            
-            {/* 3-COLUMN GRID */}
-            <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat.key}
-                  style={[
-                    styles.categoryCard,
-                    selectedCategory === cat.key && styles.categoryCardActive
-                  ]}
-                  onPress={() => handleCategorySelect(cat.key)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                  <Text style={[
-                    styles.categoryLabel,
-                    selectedCategory === cat.key && styles.categoryLabelActive
-                  ]} numberOfLines={2}>
-                    {cat.label}
-                  </Text>
-                  {selectedCategory === cat.key && (
-                    <View style={styles.categoryCheckBadge}>
-                      <Text style={styles.categoryCheckText}>✓</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.categoryWrap}>
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[
+                      styles.categoryPill,
+                      selectedCategory === cat.key && styles.categoryPillActive
+                    ]}
+                    onPress={() => handleCategorySelect(cat.key)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.categoryPillIcon}>{cat.icon}</Text>
+                    <Text style={[
+                      styles.categoryPillLabel,
+                      selectedCategory === cat.key && styles.categoryPillLabelActive
+                    ]}>
+                      {cat.label}
+                    </Text>
+                    {selectedCategory === cat.key && (
+                      <Text style={styles.categoryPillCheck}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -602,11 +600,11 @@ const styles = StyleSheet.create({
     marginTop: 8 
   },
   
-  // Filter Modal with GRID
+  // Filter Modal - FLEXIBLE WRAP PILLS WITH FULL NAMES
   filterModalContent: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
     width: '100%',
     maxWidth: 400,
     maxHeight: '80%',
@@ -619,57 +617,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // 3-COLUMN GRID STYLES
-  categoryGrid: {
+  // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
+  categoryWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
-  categoryCard: {
-    width: '31%', // 3 columns with gap
-    aspectRatio: 0.9, // Slightly taller than wide
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 8,
+  categoryPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative',
+    backgroundColor: '#f9fafb',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
   },
-  categoryCardActive: {
+  categoryPillActive: {
     backgroundColor: '#e0f2fe',
     borderColor: '#0ea5e9',
   },
-  categoryIcon: {
-    fontSize: 28,
-    marginBottom: 6,
+  categoryPillIcon: {
+    fontSize: 16,
+    marginRight: 6,
   },
-  categoryLabel: {
-    fontSize: 11,
+  categoryPillLabel: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
-    textAlign: 'center',
   },
-  categoryLabelActive: {
+  categoryPillLabelActive: {
     color: '#0369a1',
     fontWeight: '700',
   },
-  categoryCheckBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#0ea5e9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryCheckText: {
-    fontSize: 11,
-    color: '#ffffff',
+  categoryPillCheck: {
+    fontSize: 14,
+    color: '#0ea5e9',
     fontWeight: 'bold',
+    marginLeft: 6,
   },
 });
