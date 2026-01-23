@@ -4,6 +4,7 @@ import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Offering } from '@marketplace/shared';
 import { getImageUrl, getCategoryByKey } from '@marketplace/shared';
+import StarRating from './StarRating';
 
 interface OfferingCardProps {
   offering: Offering;
@@ -128,9 +129,12 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
           {hasRating && (
             <>
               <Text style={styles.dot}>•</Text>
-              <Text style={styles.rating}>
-                ⭐ {offering.creator_rating?.toFixed(1)} ({offering.creator_review_count})
-              </Text>
+              <StarRating 
+                rating={offering.creator_rating || 0} 
+                reviewCount={offering.creator_review_count}
+                size={12}
+                showCount={true}
+              />
             </>
           )}
         </View>
@@ -248,10 +252,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6b7280',
     maxWidth: 80,
-  },
-  rating: {
-    fontSize: 12,
-    color: '#6b7280',
   },
   
   // Row 4: Description
