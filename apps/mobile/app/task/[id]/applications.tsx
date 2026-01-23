@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Avatar, Card, Chip, ActivityIndicator, Divider } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask, getTaskApplications, acceptApplication, rejectApplication, useAuthStore, type TaskApplication } from '@marketplace/shared';
+import { useEffect } from 'react';
 
 export default function TaskApplicationsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -17,6 +18,24 @@ export default function TaskApplicationsScreen() {
     queryFn: () => getTask(taskId),
     enabled: taskId > 0,
   });
+
+  // Redirect to task detail if status is pending_confirmation
+  useEffect(() => {
+    if (task && task.status === 'pending_confirmation') {
+      // Show alert and navigate to task detail
+      Alert.alert(
+        'Task Awaiting Confirmation',
+        'The worker has marked this task as done. Please review and confirm completion.',
+        [
+          {
+            text: 'Review Task',
+            onPress: () => router.replace(`/task/${taskId}`),
+          },
+        ],
+        { cancelable: false }
+      );
+    }
+  }, [task?.status, taskId]);
 
   // Fetch applications
   const { data: applicationsData, isLoading: applicationsLoading, refetch, isRefetching } = useQuery({
@@ -118,6 +137,27 @@ export default function TaskApplicationsScreen() {
           <Text style={styles.subText}>Only the task owner can view applications.</Text>
           <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
             Go Back
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // If task is no longer open, show notice
+  if (task && !['open', 'assigned', 'in_progress'].includes(task.status)) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ headerShown: true, title: 'Applications' }} />
+        <View style={styles.centerContainer}>
+          <Text style={styles.noticeIcon}>ℹ️</Text>
+          <Text variant="headlineSmall" style={styles.errorText}>
+            Task No Longer Accepting Applications
+          </Text>
+          <Text style={styles.subText}>
+            This task is currently: {formatStatus(task.status)}
+          </Text>
+          <Button mode="contained" onPress={() => router.push(`/task/${taskId}`)} style={styles.backButton}>
+            View Task Details
           </Button>
         </View>
       </SafeAreaView>
@@ -286,8 +326,8 @@ export default function TaskApplicationsScreen() {
                   View Full Profile
                 </Button>
 
-                {/* Action Buttons - Only for pending applications */}
-                {isPending ? (
+                {/* Action Buttons - Only for pending applications AND task is still open */}
+                {isPending && task?.status === 'open' ? (
                   <View style={styles.actionButtons}>
                     <Button
                       mode="outlined"
@@ -334,9 +374,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
   },
+  noticeIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
   errorText: {
     color: '#6b7280',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subText: {
     color: '#9ca3af',
