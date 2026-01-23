@@ -176,10 +176,20 @@ export default function TaskApplicationsScreen() {
           const statusColors = getStatusColor(application.status);
           const isPending = application.status === 'pending';
           const isMutating = acceptMutation.isPending || rejectMutation.isPending;
+          
+          const hasRating = application.applicant_rating != null && application.applicant_rating > 0;
+          const reviewCount = application.applicant_review_count || 0;
 
           return (
             <Card key={application.id} style={styles.applicationCard}>
               <Card.Content>
+                {/* Status Badge - Top Right Corner */}
+                <View style={[styles.statusBadgeCorner, { backgroundColor: statusColors.bg }]}>
+                  <Text style={[styles.statusBadgeCornerText, { color: statusColors.text }]}>
+                    {formatStatus(application.status)}
+                  </Text>
+                </View>
+
                 {/* Applicant Header */}
                 <View style={styles.applicantHeader}>
                   <View style={styles.avatarContainer}>
@@ -188,31 +198,33 @@ export default function TaskApplicationsScreen() {
                     </Text>
                   </View>
                   <View style={styles.applicantInfo}>
-                    <Text variant="titleMedium" style={styles.applicantName}>
+                    {/* Name - Higher up */}
+                    <Text variant="titleLarge" style={styles.applicantName}>
                       {application.applicant_name || 'Unknown'}
                     </Text>
+                    
+                    {/* Rating directly under name */}
+                    {hasRating ? (
+                      <View style={styles.ratingRow}>
+                        <Text style={styles.ratingStars}>⭐⭐⭐⭐⭐</Text>
+                        <Text style={styles.ratingValue}>{application.applicant_rating.toFixed(1)}</Text>
+                        {reviewCount > 0 ? (
+                          <Text style={styles.reviewCount}>({reviewCount} reviews)</Text>
+                        ) : null}
+                      </View>
+                    ) : (
+                      <Text style={styles.noRating}>No reviews yet</Text>
+                    )}
+                    
+                    {/* City - Below rating */}
                     {application.applicant_city ? (
                       <Text style={styles.cityText}>📍 {application.applicant_city}</Text>
                     ) : null}
-                  </View>
-                  <View style={[styles.statusBadgeSmall, { backgroundColor: statusColors.bg }]}>
-                    <Text style={[styles.statusBadgeSmallText, { color: statusColors.text }]}>
-                      {formatStatus(application.status)}
-                    </Text>
                   </View>
                 </View>
 
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
-                  {application.applicant_rating != null && application.applicant_rating > 0 ? (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statIcon}>⭐</Text>
-                      <Text style={styles.statText}>{application.applicant_rating.toFixed(1)}</Text>
-                      {application.applicant_review_count != null && application.applicant_review_count > 0 ? (
-                        <Text style={styles.statSubtext}>({application.applicant_review_count})</Text>
-                      ) : null}
-                    </View>
-                  ) : null}
                   {application.applicant_completed_tasks != null ? (
                     <View style={styles.statItem}>
                       <Text style={styles.statIcon}>✓</Text>
@@ -392,11 +404,27 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     backgroundColor: '#ffffff',
+    position: 'relative',
+  },
+  // Status Badge in Corner
+  statusBadgeCorner: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  statusBadgeCornerText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   applicantHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingRight: 90, // Space for status badge
   },
   avatarContainer: {
     width: 56,
@@ -405,6 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0ea5e9',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 4,
   },
   avatarText: {
     color: '#ffffff',
@@ -416,24 +445,40 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   applicantName: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 2,
+    marginBottom: 6,
+    fontSize: 18,
+  },
+  // Rating Row - directly under name
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  ratingStars: {
+    fontSize: 14,
+    marginRight: 6,
+    color: '#f59e0b',
+  },
+  ratingValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#f59e0b',
+    marginRight: 4,
+  },
+  reviewCount: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  noRating: {
+    fontSize: 13,
+    color: '#9ca3af',
+    marginBottom: 4,
   },
   cityText: {
     color: '#6b7280',
     fontSize: 13,
-  },
-  statusBadgeSmall: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  statusBadgeSmallText: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   statsRow: {
     flexDirection: 'row',
@@ -453,11 +498,6 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 13,
     fontWeight: '500',
-  },
-  statSubtext: {
-    color: '#9ca3af',
-    fontSize: 12,
-    marginLeft: 2,
   },
   bioContainer: {
     backgroundColor: '#f9fafb',
