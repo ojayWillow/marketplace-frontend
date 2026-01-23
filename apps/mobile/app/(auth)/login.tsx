@@ -6,6 +6,8 @@ import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
 import { haptic } from '../../utils/haptics';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -19,6 +21,9 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
   const theme = useTheme();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -60,6 +65,105 @@ export default function LoginScreen() {
     router.push('/(auth)/forgot-password');
   };
 
+  // Dynamic styles based on theme
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.background,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 32,
+    },
+    title: {
+      fontWeight: 'bold',
+      marginBottom: 8,
+      color: themeColors.text,
+    },
+    subtitle: {
+      marginBottom: 24,
+      color: themeColors.textSecondary,
+    },
+    infoBanner: {
+      marginBottom: 24,
+      borderRadius: 12,
+      backgroundColor: activeTheme === 'dark' ? themeColors.card : '#f3e8ff',
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
+    infoBannerText: {
+      color: themeColors.text,
+      lineHeight: 20,
+    },
+    input: {
+      marginBottom: 16,
+      backgroundColor: themeColors.inputBackground || themeColors.card,
+    },
+    forgotButton: {
+      alignSelf: 'flex-end',
+      marginBottom: 24,
+    },
+    loginButton: {
+      borderRadius: 12,
+      marginBottom: 16,
+      backgroundColor: themeColors.primaryAccent,
+      // Premium gradient effect (visual enhancement)
+      shadowColor: themeColors.primaryAccent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    buttonContent: {
+      paddingVertical: 8,
+    },
+    divider: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 16,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: themeColors.border,
+    },
+    dividerText: {
+      marginHorizontal: 16,
+      color: themeColors.textMuted,
+    },
+    phoneButton: {
+      borderRadius: 12,
+      marginBottom: 16,
+      borderColor: themeColors.primaryAccent,
+      borderWidth: 1.5,
+    },
+    phoneButtonText: {
+      color: themeColors.primaryAccent,
+    },
+    registerRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    registerText: {
+      color: themeColors.textSecondary,
+    },
+    guestButton: {
+      marginTop: 32,
+    },
+    guestButtonText: {
+      color: themeColors.textMuted,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
@@ -69,18 +173,18 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
             {/* Header */}
-            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+            <Text variant="headlineLarge" style={styles.title}>
               Welcome Back
             </Text>
-            <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            <Text variant="bodyMedium" style={styles.subtitle}>
               Sign in to continue
             </Text>
 
             {/* Expo Go Info Banner */}
             {isExpoGo && (
-              <Card style={[styles.infoBanner, { backgroundColor: theme.colors.secondaryContainer }]}>
+              <Card style={styles.infoBanner} elevation={0}>
                 <Card.Content>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
+                  <Text variant="bodySmall" style={styles.infoBannerText}>
                     📱 Running in Expo Go - Email login only. Phone authentication will be available in production builds.
                   </Text>
                 </Card.Content>
@@ -98,7 +202,11 @@ export default function LoginScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              left={<TextInput.Icon icon="email" />}
+              outlineColor={themeColors.inputBorder || themeColors.border}
+              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
             />
 
             {/* Password Input */}
@@ -110,10 +218,15 @@ export default function LoginScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              left={<TextInput.Icon icon="lock" />}
+              outlineColor={themeColors.inputBorder || themeColors.border}
+              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
+                  color={themeColors.textMuted}
                   onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
                 />
               }
@@ -125,6 +238,7 @@ export default function LoginScreen() {
               onPress={handleForgotPassword}
               disabled={loading}
               style={styles.forgotButton}
+              textColor={themeColors.primaryAccent}
             >
               Forgot Password?
             </Button>
@@ -137,6 +251,8 @@ export default function LoginScreen() {
               disabled={loading}
               style={styles.loginButton}
               contentStyle={styles.buttonContent}
+              buttonColor={themeColors.primaryAccent}
+              textColor="#ffffff"
             >
               {loading ? 'Signing In...' : 'Sign In with Email'}
             </Button>
@@ -145,11 +261,11 @@ export default function LoginScreen() {
             {isPhoneAuthAvailable && (
               <>
                 <View style={styles.divider}>
-                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
-                  <Text variant="bodySmall" style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>
+                  <View style={styles.dividerLine} />
+                  <Text variant="bodySmall" style={styles.dividerText}>
                     or
                   </Text>
-                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
+                  <View style={styles.dividerLine} />
                 </View>
 
                 <Link href="/(auth)/phone" asChild>
@@ -159,6 +275,7 @@ export default function LoginScreen() {
                     style={styles.phoneButton}
                     contentStyle={styles.buttonContent}
                     icon="phone"
+                    textColor={themeColors.primaryAccent}
                     onPress={() => haptic.light()}
                   >
                     Sign In with Phone
@@ -169,11 +286,17 @@ export default function LoginScreen() {
 
             {/* Register Link */}
             <View style={styles.registerRow}>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              <Text variant="bodyMedium" style={styles.registerText}>
                 Don't have an account?{' '}
               </Text>
               <Link href="/(auth)/register" asChild>
-                <Button mode="text" disabled={loading} compact onPress={() => haptic.light()}>
+                <Button 
+                  mode="text" 
+                  disabled={loading} 
+                  compact 
+                  textColor={themeColors.primaryAccent}
+                  onPress={() => haptic.light()}
+                >
                   Sign Up
                 </Button>
               </Link>
@@ -181,7 +304,13 @@ export default function LoginScreen() {
 
             {/* Browse as Guest */}
             <Link href="/(tabs)" asChild>
-              <Button mode="text" disabled={loading} style={styles.guestButton} onPress={() => haptic.light()}>
+              <Button 
+                mode="text" 
+                disabled={loading} 
+                style={styles.guestButton} 
+                textColor={themeColors.textMuted}
+                onPress={() => haptic.light()}
+              >
                 Continue as Guest
               </Button>
             </Link>
@@ -204,71 +333,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    marginBottom: 24,
-  },
-  infoBanner: {
-    marginBottom: 24,
-    borderRadius: 12,
-  },
-  input: {
-    marginBottom: 16,
-  },
-  forgotButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  loginButton: {
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-  },
-  phoneButton: {
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  guestButton: {
-    marginTop: 32,
-  },
-});

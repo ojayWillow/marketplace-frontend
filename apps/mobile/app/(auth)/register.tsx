@@ -6,6 +6,8 @@ import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
 import { haptic } from '../../utils/haptics';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -22,6 +24,9 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
   const theme = useTheme();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const handleRegister = async () => {
     // Validation
@@ -65,6 +70,99 @@ export default function RegisterScreen() {
     }
   };
 
+  // Dynamic styles based on theme
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.background,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingVertical: 32,
+    },
+    content: {
+      flex: 1,
+    },
+    title: {
+      fontWeight: 'bold',
+      marginBottom: 8,
+      color: themeColors.text,
+    },
+    subtitle: {
+      marginBottom: 24,
+      color: themeColors.textSecondary,
+    },
+    infoBanner: {
+      marginBottom: 24,
+      borderRadius: 12,
+      backgroundColor: activeTheme === 'dark' ? themeColors.card : '#f3e8ff',
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
+    infoBannerText: {
+      color: themeColors.text,
+      lineHeight: 20,
+    },
+    input: {
+      marginBottom: 16,
+      backgroundColor: themeColors.inputBackground || themeColors.card,
+    },
+    registerButton: {
+      borderRadius: 12,
+      marginTop: 8,
+      marginBottom: 16,
+      backgroundColor: themeColors.primaryAccent,
+      shadowColor: themeColors.primaryAccent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    buttonContent: {
+      paddingVertical: 8,
+    },
+    divider: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 16,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: themeColors.border,
+    },
+    dividerText: {
+      marginHorizontal: 16,
+      color: themeColors.textMuted,
+    },
+    phoneButton: {
+      borderRadius: 12,
+      marginBottom: 16,
+      borderColor: themeColors.primaryAccent,
+      borderWidth: 1.5,
+    },
+    loginRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    loginText: {
+      color: themeColors.textSecondary,
+    },
+    terms: {
+      textAlign: 'center',
+      marginTop: 32,
+      paddingHorizontal: 16,
+      color: themeColors.textMuted,
+      fontSize: 12,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
@@ -74,18 +172,18 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
             {/* Header */}
-            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+            <Text variant="headlineLarge" style={styles.title}>
               Create Account
             </Text>
-            <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            <Text variant="bodyLarge" style={styles.subtitle}>
               Join the marketplace community
             </Text>
 
             {/* Expo Go Info Banner */}
             {isExpoGo && (
-              <Card style={[styles.infoBanner, { backgroundColor: theme.colors.secondaryContainer }]}>
+              <Card style={styles.infoBanner} elevation={0}>
                 <Card.Content>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
+                  <Text variant="bodySmall" style={styles.infoBannerText}>
                     📱 Running in Expo Go - Email registration only. Phone registration will be available in production builds.
                   </Text>
                 </Card.Content>
@@ -102,7 +200,11 @@ export default function RegisterScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              left={<TextInput.Icon icon="account" />}
+              outlineColor={themeColors.inputBorder || themeColors.border}
+              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              left={<TextInput.Icon icon="account" color={themeColors.primaryAccent} />}
             />
 
             {/* Email Input */}
@@ -116,7 +218,11 @@ export default function RegisterScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              left={<TextInput.Icon icon="email" />}
+              outlineColor={themeColors.inputBorder || themeColors.border}
+              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
             />
 
             {/* Password Input */}
@@ -128,10 +234,15 @@ export default function RegisterScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              left={<TextInput.Icon icon="lock" />}
+              outlineColor={themeColors.inputBorder || themeColors.border}
+              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
+                  color={themeColors.textMuted}
                   onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
                 />
               }
@@ -146,10 +257,15 @@ export default function RegisterScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              left={<TextInput.Icon icon="lock-check" />}
+              outlineColor={themeColors.inputBorder || themeColors.border}
+              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              left={<TextInput.Icon icon="lock-check" color={themeColors.primaryAccent} />}
               right={
                 <TextInput.Icon
                   icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                  color={themeColors.textMuted}
                   onPress={() => { haptic.soft(); setShowConfirmPassword(!showConfirmPassword); }}
                 />
               }
@@ -163,6 +279,8 @@ export default function RegisterScreen() {
               disabled={loading}
               style={styles.registerButton}
               contentStyle={styles.buttonContent}
+              buttonColor={themeColors.primaryAccent}
+              textColor="#ffffff"
             >
               {loading ? 'Creating Account...' : 'Create Account with Email'}
             </Button>
@@ -171,11 +289,11 @@ export default function RegisterScreen() {
             {isPhoneAuthAvailable && (
               <>
                 <View style={styles.divider}>
-                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
-                  <Text variant="bodySmall" style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>
+                  <View style={styles.dividerLine} />
+                  <Text variant="bodySmall" style={styles.dividerText}>
                     or
                   </Text>
-                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outlineVariant }]} />
+                  <View style={styles.dividerLine} />
                 </View>
 
                 <Link href="/(auth)/phone" asChild>
@@ -185,6 +303,7 @@ export default function RegisterScreen() {
                     style={styles.phoneButton}
                     contentStyle={styles.buttonContent}
                     icon="phone"
+                    textColor={themeColors.primaryAccent}
                     onPress={() => haptic.light()}
                   >
                     Register with Phone
@@ -195,18 +314,24 @@ export default function RegisterScreen() {
 
             {/* Login Link */}
             <View style={styles.loginRow}>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              <Text variant="bodyMedium" style={styles.loginText}>
                 Already have an account?{' '}
               </Text>
               <Link href="/(auth)/login" asChild>
-                <Button mode="text" disabled={loading} compact onPress={() => haptic.light()}>
+                <Button 
+                  mode="text" 
+                  disabled={loading} 
+                  compact
+                  textColor={themeColors.primaryAccent}
+                  onPress={() => haptic.light()}
+                >
                   Sign In
                 </Button>
               </Link>
             </View>
 
             {/* Terms */}
-            <Text variant="bodySmall" style={[styles.terms, { color: theme.colors.onSurfaceVariant }]}>
+            <Text variant="bodySmall" style={styles.terms}>
               By creating an account, you agree to our Terms of Service and Privacy Policy
             </Text>
           </View>
@@ -228,70 +353,3 @@ export default function RegisterScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    marginBottom: 24,
-  },
-  infoBanner: {
-    marginBottom: 24,
-    borderRadius: 12,
-  },
-  input: {
-    marginBottom: 16,
-  },
-  registerButton: {
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-  },
-  phoneButton: {
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  terms: {
-    textAlign: 'center',
-    marginTop: 32,
-    paddingHorizontal: 16,
-  },
-});
