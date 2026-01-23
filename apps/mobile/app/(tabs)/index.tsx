@@ -786,13 +786,13 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {/* CATEGORY MODAL - COMPACT 3 COLUMN PILL GRID */}
+      {/* CATEGORY MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
       <Modal visible={showCategoryModal} transparent animationType="fade" onRequestClose={() => setShowCategoryModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { haptic.soft(); setShowCategoryModal(false); }}>
           <View style={styles.categoryModalContent}>
             <Text style={styles.modalTitle}>Select Category</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.categoryGrid}>
+              <View style={styles.categoryWrap}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.key}
@@ -807,7 +807,7 @@ export default function HomeScreen() {
                     <Text style={[
                       styles.categoryPillLabel,
                       selectedCategory === cat.key && styles.categoryPillLabelActive
-                    ]} numberOfLines={1}>
+                    ]}>
                       {cat.label}
                     </Text>
                     {selectedCategory === cat.key && (
@@ -1088,28 +1088,26 @@ const styles = StyleSheet.create({
   modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
   modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
   
-  // Category Modal - COMPACT 3 COLUMN PILL GRID
+  // Category Modal - FLEXIBLE WRAP PILLS WITH FULL NAMES
   categoryModalContent: { 
     backgroundColor: '#ffffff', 
     borderRadius: 20, 
     padding: 20, 
     width: '100%', 
     maxWidth: 400, 
-    maxHeight: '70%' 
+    maxHeight: '80%' 
   },
-  categoryGrid: {
+  categoryWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
     gap: 8,
   },
   categoryPill: {
-    width: '31.5%',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9fafb',
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 14,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: '#e5e7eb',
@@ -1120,23 +1118,22 @@ const styles = StyleSheet.create({
   },
   categoryPillIcon: {
     fontSize: 16,
-    marginRight: 4,
+    marginRight: 6,
   },
   categoryPillLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
-    flex: 1,
   },
   categoryPillLabelActive: {
     color: '#0369a1',
     fontWeight: '700',
   },
   categoryPillCheck: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#0ea5e9',
     fontWeight: 'bold',
-    marginLeft: 2,
+    marginLeft: 6,
   },
   
   // Filter Modal Styles
