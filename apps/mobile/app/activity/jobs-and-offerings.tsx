@@ -2,7 +2,7 @@ import { View, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Appbar, SegmentedButtons, Chip } from 'react-native-paper';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore, getCreatedTasks, getMyApplications, getMyTasks, getMyOfferings } from '@marketplace/shared';
 import TaskCard from '../../components/TaskCard';
@@ -51,6 +51,15 @@ export default function JobsAndOfferingsScreen() {
   const applications = applicationsData?.applications || [];
   const assignedJobs = assignedJobsData?.tasks || [];
   const myServices = myServicesData?.offerings || [];
+
+  // Debug logging
+  useEffect(() => {
+    console.log('=== Jobs & Offerings Debug ===');
+    console.log('Applications:', applications.length, applications);
+    console.log('Assigned Jobs:', assignedJobs.length, assignedJobs);
+    console.log('Posted Jobs:', postedJobs.length);
+    console.log('Services:', myServices.length);
+  }, [applications, assignedJobs, postedJobs, myServices]);
 
   // Combine applications + assigned for "My Work" tab with type markers
   const myWork = [
@@ -104,6 +113,14 @@ export default function JobsAndOfferingsScreen() {
   };
 
   const data = getActiveData();
+
+  // Debug current tab data
+  useEffect(() => {
+    console.log(`Active Tab: ${activeTab}, Filter: ${filter}, Data Count: ${data.length}`);
+    if (activeTab === 'work') {
+      console.log('My Work Data:', data);
+    }
+  }, [activeTab, filter, data.length]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top']}>
