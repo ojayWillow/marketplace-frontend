@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import type { Offering } from '@marketplace/shared';
 import { getImageUrl, getCategoryByKey } from '@marketplace/shared';
 import StarRating from './StarRating';
+import { useThemeStore } from '../src/stores/themeStore';
+import { colors } from '../src/theme';
 
 interface OfferingCardProps {
   offering: Offering;
@@ -65,6 +67,10 @@ const formatLocationDisplay = (offering: Offering): string => {
 };
 
 const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+  
   const timeAgo = formatTimeAgo(offering.created_at);
   const hasRating = (offering.creator_rating ?? 0) > 0;
   const categoryData = getCategoryByKey(offering.category);
@@ -86,6 +92,111 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
     }
     return 'Negotiable';
   };
+
+  const styles = StyleSheet.create({
+    card: { 
+      marginBottom: 12, 
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      elevation: 1,
+    },
+    cardContent: {
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    
+    // Row 1: Category + Price
+    row1: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    category: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: themeColors.textSecondary,
+    },
+    price: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#f97316', // Orange for services - keep consistent
+    },
+    
+    // Row 2: Title
+    title: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 8,
+    },
+    
+    // Row 3: Creator Info
+    row3: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+      flexWrap: 'wrap',
+    },
+    avatar: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      marginRight: 6,
+    },
+    avatarPlaceholder: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: '#f97316',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 6,
+    },
+    avatarText: {
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    creatorName: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: themeColors.text,
+      maxWidth: 100,
+    },
+    dot: {
+      fontSize: 13,
+      color: themeColors.border,
+      marginHorizontal: 6,
+    },
+    creatorCity: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+      maxWidth: 80,
+    },
+    
+    // Row 4: Description
+    description: {
+      color: themeColors.textSecondary,
+      lineHeight: 18,
+      marginBottom: 10,
+    },
+    
+    // Row 5: Meta Info
+    row5: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    },
+    metaText: {
+      fontSize: 12,
+      color: themeColors.textMuted,
+    },
+    metaDot: {
+      fontSize: 12,
+      color: themeColors.border,
+      marginHorizontal: 6,
+    },
+  });
 
   return (
     <Card style={styles.card} onPress={handlePress}>
@@ -171,109 +282,4 @@ export default memo(OfferingCard, (prevProps, nextProps) => {
     prevProps.offering.status === nextProps.offering.status &&
     prevProps.onPress === nextProps.onPress
   );
-});
-
-const styles = StyleSheet.create({
-  card: { 
-    marginBottom: 12, 
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    elevation: 1,
-  },
-  cardContent: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  
-  // Row 1: Category + Price
-  row1: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  category: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#f97316',
-  },
-  
-  // Row 2: Title
-  title: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  
-  // Row 3: Creator Info
-  row3: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    flexWrap: 'wrap',
-  },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 6,
-  },
-  avatarPlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#f97316',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  creatorName: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#1f2937',
-    maxWidth: 100,
-  },
-  dot: {
-    fontSize: 13,
-    color: '#d1d5db',
-    marginHorizontal: 6,
-  },
-  creatorCity: {
-    fontSize: 13,
-    color: '#6b7280',
-    maxWidth: 80,
-  },
-  
-  // Row 4: Description
-  description: {
-    color: '#6b7280',
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  
-  // Row 5: Meta Info
-  row5: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  metaText: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
-  metaDot: {
-    fontSize: 12,
-    color: '#d1d5db',
-    marginHorizontal: 6,
-  },
 });
