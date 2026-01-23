@@ -88,11 +88,30 @@ const formatLocationDisplay = (task: Task): string => {
   return '';
 };
 
+// Helper to render star rating
+const renderStars = (rating: number): string => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  let stars = '';
+  
+  for (let i = 0; i < 5; i++) {
+    if (i < fullStars) {
+      stars += '★';
+    } else if (i === fullStars && hasHalfStar) {
+      stars += '⯨';
+    } else {
+      stars += '☆';
+    }
+  }
+  
+  return stars;
+};
+
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const difficulty = getDifficultyIndicator(task.difficulty);
   const timeAgo = formatTimeAgo(task.created_at);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
-  const hasRating = (task.creator_rating ?? 0) > 0;
+  const hasRating = task.creator_rating != null;
   const reviewCount = task.creator_review_count ?? 0;
   const categoryData = getCategoryByKey(task.category);
   const locationDisplay = formatLocationDisplay(task);
@@ -121,7 +140,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           {task.title}
         </Text>
         
-        {/* Row 3: Creator - Name • Rating • City (Option A) */}
+        {/* Row 3: Creator - Avatar + Name | Stars (count) | City - ALL ON ONE LINE */}
         <View style={styles.row3}>
           {task.creator_avatar ? (
             <Image 
@@ -139,27 +158,27 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
             {task.creator_name || 'Anonymous'}
           </Text>
           
-          {/* Rating - show after name */}
-          {hasRating ? (
-            <>
-              <Text style={styles.dot}>•</Text>
-              <Text style={styles.rating}>
-                ⭐ {task.creator_rating?.toFixed(1)} ({reviewCount})
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.dot}>•</Text>
-              <Text style={styles.newUser}>New</Text>
-            </>
+          {/* Separator if rating or city exists */}
+          {(hasRating || task.creator_city) && (
+            <Text style={styles.separator}>|</Text>
           )}
           
-          {/* City - show last */}
+          {/* Rating with stars */}
+          {hasRating && (
+            <Text style={styles.rating}>
+              <Text style={styles.stars}>{renderStars(task.creator_rating!)}</Text>
+              {' '}({reviewCount})
+            </Text>
+          )}
+          
+          {/* Separator before city */}
+          {hasRating && task.creator_city && (
+            <Text style={styles.separator}>|</Text>
+          )}
+          
+          {/* City */}
           {task.creator_city && (
-            <>
-              <Text style={styles.dot}>•</Text>
-              <Text style={styles.creatorCity} numberOfLines={1}>{task.creator_city}</Text>
-            </>
+            <Text style={styles.creatorCity} numberOfLines={1}>{task.creator_city}</Text>
           )}
         </View>
         
@@ -253,23 +272,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   
-  // Row 3: Creator Info - Name • Rating • City
+  // Row 3: Creator Info - Avatar + Name | Stars (count) | City
   row3: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    flexWrap: 'wrap',
   },
   avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     marginRight: 6,
   },
   avatarPlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#0ea5e9',
     justifyContent: 'center',
     alignItems: 'center',
@@ -277,35 +295,33 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
   },
   creatorName: {
     fontSize: 13,
     fontWeight: '500',
     color: '#1f2937',
-    maxWidth: 100,
+    flexShrink: 1,
   },
-  dot: {
-    fontSize: 13,
+  separator: {
+    fontSize: 12,
     color: '#d1d5db',
     marginHorizontal: 6,
   },
   rating: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
     color: '#6b7280',
+    flexShrink: 0,
   },
-  newUser: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9ca3af',
-    fontStyle: 'italic',
+  stars: {
+    color: '#fbbf24', // Yellow color for stars
+    fontSize: 10,
   },
   creatorCity: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6b7280',
-    maxWidth: 80,
+    flexShrink: 1,
   },
   
   // Row 4: Description
