@@ -4,9 +4,14 @@ import { Text, ActivityIndicator, Button, Surface, Avatar, Badge } from 'react-n
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { getConversations, useAuthStore, type Conversation } from '@marketplace/shared';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function MessagesScreen() {
   const { user, isAuthenticated } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['conversations', user?.id],
@@ -17,6 +22,113 @@ export default function MessagesScreen() {
   });
 
   const conversations = data?.conversations || [];
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    header: {
+      padding: 16,
+      backgroundColor: themeColors.card,
+    },
+    title: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 80,
+      paddingHorizontal: 24,
+    },
+    emptyIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    signInTitle: {
+      fontWeight: '600',
+      marginBottom: 8,
+      textAlign: 'center',
+      color: themeColors.text,
+    },
+    signInSubtitle: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    signInButton: {
+      paddingHorizontal: 24,
+    },
+    statusText: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+    },
+    errorText: {
+      color: '#ef4444',
+      marginBottom: 12,
+    },
+    listContainer: {
+      backgroundColor: themeColors.card,
+    },
+    conversationItem: {
+      flexDirection: 'row',
+      padding: 16,
+      alignItems: 'center',
+    },
+    conversationBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: themeColors.border,
+    },
+    conversationPressed: {
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    avatar: {
+      marginRight: 12,
+      backgroundColor: '#0ea5e9',
+    },
+    conversationContent: {
+      flex: 1,
+    },
+    conversationHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    username: {
+      flex: 1,
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    time: {
+      fontSize: 12,
+      color: themeColors.textMuted,
+      marginLeft: 8,
+    },
+    messageRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    lastMessage: {
+      flex: 1,
+      fontSize: 14,
+      color: themeColors.textSecondary,
+    },
+    unreadMessage: {
+      color: themeColors.text,
+      fontWeight: '500',
+    },
+    badge: {
+      backgroundColor: '#0ea5e9',
+      marginLeft: 8,
+    },
+  });
 
   // Not logged in
   if (!isAuthenticated) {
@@ -160,108 +272,3 @@ function formatMessageTime(timestamp: string): string {
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  title: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 24,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  signInTitle: {
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  signInSubtitle: {
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  signInButton: {
-    paddingHorizontal: 24,
-  },
-  statusText: {
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#ef4444',
-    marginBottom: 12,
-  },
-  listContainer: {
-    backgroundColor: '#ffffff',
-  },
-  conversationItem: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'center',
-  },
-  conversationBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  conversationPressed: {
-    backgroundColor: '#f9fafb',
-  },
-  avatar: {
-    marginRight: 12,
-    backgroundColor: '#0ea5e9',
-  },
-  conversationContent: {
-    flex: 1,
-  },
-  conversationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  username: {
-    flex: 1,
-    fontWeight: '600',
-  },
-  time: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginLeft: 8,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  lastMessage: {
-    flex: 1,
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  unreadMessage: {
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  badge: {
-    backgroundColor: '#0ea5e9',
-    marginLeft: 8,
-  },
-});
