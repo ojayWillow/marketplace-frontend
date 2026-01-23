@@ -11,8 +11,13 @@ import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type MainTab = 'all' | 'jobs' | 'services';
+
+// Theme colors for Jobs vs Offerings
+const JOB_COLOR = '#0ea5e9';      // Sky blue
+const OFFERING_COLOR = '#f97316';  // Orange
 
 // Combined item type for mixed list
 type ListItem = 
@@ -276,7 +281,7 @@ export default function TasksScreen() {
       alignItems: 'center',
     },
     tabPillActive: {
-      backgroundColor: '#0ea5e9',
+      backgroundColor: JOB_COLOR,
     },
     tabPillText: {
       fontSize: 14,
@@ -312,7 +317,7 @@ export default function TasksScreen() {
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: '#0ea5e9',
+      backgroundColor: JOB_COLOR,
       borderWidth: 1.5,
       borderColor: themeColors.card,
     },
@@ -353,7 +358,7 @@ export default function TasksScreen() {
       width: 24,
       height: 24,
       borderRadius: 12,
-      backgroundColor: '#0ea5e9',
+      backgroundColor: JOB_COLOR,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -396,15 +401,36 @@ export default function TasksScreen() {
     fabSpacer: { 
       height: 80 
     },
-    fab: { 
-      position: 'absolute', 
-      margin: 16, 
-      right: 0, 
-      bottom: 0, 
-      backgroundColor: '#0ea5e9' 
+    
+    // GRADIENT FAB - Custom
+    fabContainer: {
+      position: 'absolute',
+      right: 16,
+      bottom: 16,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    fabButton: {
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    fabIcon: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: '#ffffff',
+      zIndex: 2,
     },
     
-    // Modal Styles
+    // Modal Styles - WITH GRADIENTS!
     modalOverlay: { 
       flex: 1, 
       backgroundColor: 'rgba(0,0,0,0.5)', 
@@ -423,42 +449,35 @@ export default function TasksScreen() {
       fontSize: 20,
       fontWeight: 'bold', 
       color: themeColors.text,
-      textAlign: 'center' 
-    },
-    modalSubtitle: { 
-      color: themeColors.textSecondary,
-      textAlign: 'center', 
-      marginTop: 4, 
-      marginBottom: 24 
+      textAlign: 'center',
+      marginBottom: 20,
     },
     modalOption: { 
       flexDirection: 'row', 
       alignItems: 'center', 
       padding: 16, 
-      backgroundColor: themeColors.backgroundSecondary,
       borderRadius: 12, 
-      marginBottom: 12 
+      marginBottom: 12,
+      overflow: 'hidden',
     },
     modalOptionIcon: { 
       fontSize: 32, 
-      marginRight: 16 
+      marginRight: 16,
+      zIndex: 2,
     },
     modalOptionTextWrapper: { 
-      flex: 1 
+      flex: 1,
+      zIndex: 2,
     },
     modalOptionTitle: { 
       fontSize: 16, 
       fontWeight: '600', 
-      color: themeColors.text,
+      color: '#ffffff',
     },
     modalOptionDesc: { 
       fontSize: 13, 
-      color: themeColors.textSecondary,
+      color: 'rgba(255,255,255,0.9)',
       marginTop: 2 
-    },
-    modalArrow: { 
-      fontSize: 24, 
-      color: themeColors.textMuted,
     },
     cancelButton: { 
       marginTop: 8 
@@ -546,7 +565,7 @@ export default function TasksScreen() {
     },
     categoryPillActive: {
       backgroundColor: '#e0f2fe',
-      borderColor: '#0ea5e9',
+      borderColor: JOB_COLOR,
     },
     categoryPillIcon: {
       fontSize: 16,
@@ -563,7 +582,7 @@ export default function TasksScreen() {
     },
     categoryPillCheck: {
       fontSize: 14,
-      color: '#0ea5e9',
+      color: JOB_COLOR,
       fontWeight: 'bold',
       marginLeft: 6,
     },
@@ -590,7 +609,7 @@ export default function TasksScreen() {
       flex: 1,
       paddingVertical: 12,
       borderRadius: 12,
-      backgroundColor: '#0ea5e9',
+      backgroundColor: JOB_COLOR,
       alignItems: 'center',
     },
     applyFiltersText: {
@@ -751,12 +770,21 @@ export default function TasksScreen() {
         windowSize={5}
       />
 
-      {/* Floating Action Button */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
+      {/* GRADIENT FAB - Blue to Orange Split! */}
+      <TouchableOpacity 
+        style={styles.fabContainer} 
         onPress={() => { haptic.medium(); setShowCreateModal(true); }}
-      />
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={[JOB_COLOR, OFFERING_COLOR]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fabButton}
+        >
+          <Text style={styles.fabIcon}>+</Text>
+        </LinearGradient>
+      </TouchableOpacity>
 
       {/* FILTER MODAL - Category + Difficulty */}
       <Modal
@@ -858,47 +886,64 @@ export default function TasksScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Create Modal */}
+      {/* CREATE MODAL - With Blue/Orange Gradient Options */}
       <Modal
         visible={showCreateModal}
         transparent
         animationType="fade"
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowCreateModal(false)}>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => { haptic.soft(); setShowCreateModal(false); }}
+        >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New</Text>
-            <Text style={styles.modalSubtitle}>What would you like to create?</Text>
+            <Text style={styles.modalTitle}>What do you want to create?</Text>
             
-            <Pressable
+            {/* POST JOB - Blue Gradient */}
+            <TouchableOpacity
               style={styles.modalOption}
               onPress={() => handleCreate('task')}
+              activeOpacity={0.7}
             >
-              <Text style={styles.modalOptionIcon}>📋</Text>
+              <LinearGradient
+                colors={['#0ea5e9', '#0284c7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 12 }}
+              />
+              <Text style={styles.modalOptionIcon}>💼</Text>
               <View style={styles.modalOptionTextWrapper}>
                 <Text style={styles.modalOptionTitle}>Post a Job</Text>
                 <Text style={styles.modalOptionDesc}>Find someone to help you</Text>
               </View>
-              <Text style={styles.modalArrow}>›</Text>
-            </Pressable>
+            </TouchableOpacity>
             
-            <Pressable
+            {/* OFFER SERVICE - Orange Gradient */}
+            <TouchableOpacity
               style={styles.modalOption}
               onPress={() => handleCreate('offering')}
+              activeOpacity={0.7}
             >
-              <Text style={styles.modalOptionIcon}>🛠️</Text>
+              <LinearGradient
+                colors={['#f97316', '#ea580c']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 12 }}
+              />
+              <Text style={styles.modalOptionIcon}>⚡</Text>
               <View style={styles.modalOptionTextWrapper}>
                 <Text style={styles.modalOptionTitle}>Offer a Service</Text>
-                <Text style={styles.modalOptionDesc}>Advertise your skills</Text>
+                <Text style={styles.modalOptionDesc}>Share your skills</Text>
               </View>
-              <Text style={styles.modalArrow}>›</Text>
-            </Pressable>
+            </TouchableOpacity>
 
-            <Button mode="text" onPress={() => setShowCreateModal(false)} style={styles.cancelButton}>
+            <Button mode="text" onPress={() => { haptic.soft(); setShowCreateModal(false); }} style={styles.cancelButton}>
               Cancel
             </Button>
           </View>
-        </Pressable>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
