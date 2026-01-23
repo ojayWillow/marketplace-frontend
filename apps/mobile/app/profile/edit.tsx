@@ -1,14 +1,16 @@
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Pressable, Image } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, TextInput, Avatar, Switch, Chip, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, useAuthStore } from '@marketplace/shared';
+import { authApi, useAuthStore, getImageUrl } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 
 const SKILL_OPTIONS = [
   'Cleaning', 'Moving', 'Handyman', 'Gardening', 'Delivery',
-  'Pet Care', 'Tutoring', 'Tech Support', 'Cooking', 'Driving'
+  'Pet Care', 'Tutoring', 'Tech Support', 'Cooking', 'Driving',
+  'Plumbing', 'Electrical', 'Painting', 'Assembly', 'Shopping'
 ];
 
 export default function EditProfileScreen() {
@@ -24,6 +26,8 @@ export default function EditProfileScreen() {
   const [isHelper, setIsHelper] = useState(false);
   const [hourlyRate, setHourlyRate] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [avatarChanged, setAvatarChanged] = useState(false);
 
   // Load current profile
   const { data: profile, isLoading } = useQuery({
@@ -42,17 +46,20 @@ export default function EditProfileScreen() {
       setIsHelper(profile.is_helper || false);
       setHourlyRate(profile.hourly_rate?.toString() || '');
       setSkills(profile.skills || []);
+      if (profile.avatar_url) {
+        setAvatarUri(getImageUrl(profile.avatar_url));
+      }
     }
   }, [profile]);
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => authApi.updateProfile(data),
     onSuccess: (response) => {
-      // Update local user state
       if (response.user) {
         setUser(response.user);
       }
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user'] });
       Alert.alert('Success', 'Profile updated successfully!', [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -63,7 +70,58 @@ export default function EditProfileScreen() {
     },
   });
 
-  const handleSave = () => {
+  const pickImage = async () => {
+    // Ask user to choose camera or gallery
+    Alert.alert(
+      'Change Profile Photo',
+      'Choose an option',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+              return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.8,
+            });
+            if (!result.canceled && result.assets[0]) {
+              setAvatarUri(result.assets[0].uri);
+              setAvatarChanged(true);
+            }
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Permission needed', 'Gallery permission is required to select photos.');
+              return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.8,
+            });
+            if (!result.canceled && result.assets[0]) {
+              setAvatarUri(result.assets[0].uri);
+              setAvatarChanged(true);
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleSave = async () => {
     const data: any = {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
@@ -76,6 +134,30 @@ export default function EditProfileScreen() {
     if (isHelper) {
       data.hourly_rate = hourlyRate ? parseFloat(hourlyRate) : null;
       data.skills = skills;
+    }
+
+    // If avatar changed, upload it first
+    if (avatarChanged && avatarUri) {
+      try {
+        const formData = new FormData();
+        const filename = avatarUri.split('/').pop() || 'avatar.jpg';
+        const match = /\.([\w]+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        formData.append('avatar', {
+          uri: avatarUri,
+          name: filename,
+          type,
+        } as any);
+
+        const uploadResponse = await authApi.uploadAvatar(formData);
+        if (uploadResponse.avatar_url) {
+          data.avatar_url = uploadResponse.avatar_url;
+        }
+      } catch (error: any) {
+        console.error('Avatar upload error:', error);
+        Alert.alert('Error', 'Failed to upload profile photo. Profile will be saved without the new photo.');
+      }
     }
 
     updateMutation.mutate(data);
@@ -121,11 +203,21 @@ export default function EditProfileScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Avatar Section */}
         <Surface style={styles.avatarSection} elevation={0}>
-          <Avatar.Text 
-            size={80} 
-            label={getInitials()} 
-            style={styles.avatar}
-          />
+          <Pressable onPress={pickImage} style={styles.avatarContainer}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <Avatar.Text 
+                size={100} 
+                label={getInitials()} 
+                style={styles.avatar}
+              />
+            )}
+            <View style={styles.cameraIcon}>
+              <Text style={styles.cameraIconText}>📷</Text>
+            </View>
+          </Pressable>
+          <Text style={styles.changePhotoText}>Tap to change photo</Text>
           <Text style={styles.username}>@{profile?.username}</Text>
           <Text style={styles.email}>{profile?.email}</Text>
         </Surface>
@@ -182,7 +274,33 @@ export default function EditProfileScreen() {
             onChangeText={setCity}
             style={styles.input}
             outlineStyle={styles.inputOutline}
+            placeholder="e.g. Riga"
           />
+        </Surface>
+
+        {/* Skills Section - Always visible */}
+        <Surface style={styles.section} elevation={0}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Your Skills</Text>
+          <Text style={styles.skillsDescription}>
+            Select skills you can help others with
+          </Text>
+          <View style={styles.skillsContainer}>
+            {SKILL_OPTIONS.map((skill) => (
+              <Chip
+                key={skill}
+                selected={skills.includes(skill)}
+                onPress={() => toggleSkill(skill)}
+                style={[
+                  styles.skillChip,
+                  skills.includes(skill) && styles.skillChipSelected
+                ]}
+                textStyle={skills.includes(skill) ? styles.skillChipTextSelected : undefined}
+                mode={skills.includes(skill) ? 'flat' : 'outlined'}
+              >
+                {skill}
+              </Chip>
+            ))}
+          </View>
         </Surface>
 
         {/* Helper Settings */}
@@ -191,7 +309,7 @@ export default function EditProfileScreen() {
             <View style={styles.helperTextContainer}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Helper Mode</Text>
               <Text style={styles.helperDescription}>
-                Enable to appear as available for jobs
+                Enable to appear as available for hire
               </Text>
             </View>
             <Switch
@@ -213,21 +331,6 @@ export default function EditProfileScreen() {
                 outlineStyle={styles.inputOutline}
                 placeholder="e.g. 15"
               />
-
-              <Text style={styles.skillsLabel}>Your Skills</Text>
-              <View style={styles.skillsContainer}>
-                {SKILL_OPTIONS.map((skill) => (
-                  <Chip
-                    key={skill}
-                    selected={skills.includes(skill)}
-                    onPress={() => toggleSkill(skill)}
-                    style={styles.skillChip}
-                    mode={skills.includes(skill) ? 'flat' : 'outlined'}
-                  >
-                    {skill}
-                  </Chip>
-                ))}
-              </View>
             </View>
           ) : null}
         </Surface>
@@ -272,9 +375,41 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     paddingHorizontal: 16,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 8,
+  },
   avatar: {
     backgroundColor: '#0ea5e9',
-    marginBottom: 12,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cameraIconText: {
+    fontSize: 16,
+  },
+  changePhotoText: {
+    color: '#0ea5e9',
+    fontSize: 14,
+    marginBottom: 8,
   },
   username: {
     color: '#6b7280',
@@ -309,6 +444,26 @@ const styles = StyleSheet.create({
   inputOutline: {
     borderColor: '#e5e7eb',
   },
+  skillsDescription: {
+    color: '#6b7280',
+    fontSize: 13,
+    marginBottom: 16,
+    marginTop: -8,
+  },
+  skillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  skillChip: {
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  skillChipSelected: {
+    backgroundColor: '#0ea5e9',
+  },
+  skillChipTextSelected: {
+    color: '#ffffff',
+  },
   helperHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -328,19 +483,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-  },
-  skillsLabel: {
-    color: '#6b7280',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  skillsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  skillChip: {
-    marginRight: 8,
-    marginBottom: 8,
   },
   bottomSpacer: {
     height: 100,
