@@ -38,23 +38,44 @@ const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefin
   }
 };
 
-// Helper to shorten location (city name or first part of address)
-const formatLocation = (location: string | undefined): string => {
+// Helper to extract city from location string
+const extractCity = (location: string | undefined): string => {
   if (!location) return '';
   
-  // If it's a full address, try to extract city or first meaningful part
-  const parts = location.split(',');
-  if (parts.length > 1) {
-    // Return the city part (usually second or third part)
-    const city = parts[parts.length - 2]?.trim() || parts[0]?.trim();
+  // If it's a full address, try to extract city
+  // Format is usually: "Street, City, Country" or "Street, Postal, City, Country"
+  const parts = location.split(',').map(p => p.trim());
+  
+  if (parts.length >= 2) {
+    // Try to get the city (usually second-to-last or third-to-last part)
+    // Filter out postal codes (numeric)
+    const nonPostalParts = parts.filter(p => !p.match(/^\d+$/));
+    if (nonPostalParts.length >= 2) {
+      // Return second-to-last part (usually the city)
+      return nonPostalParts[nonPostalParts.length - 2];
+    }
+    // Fallback to second part
+    return parts[1];
+  }
+  
+  // If short, return as is
+  return parts[0];
+};
+
+// Helper to format location display (distance + city)
+const formatLocationDisplay = (task: Task): string => {
+  const hasDistance = task.distance !== undefined && task.distance !== null;
+  const city = extractCity(task.location);
+  
+  if (hasDistance && city) {
+    return `${task.distance.toFixed(1)} km, ${city}`;
+  } else if (hasDistance) {
+    return `${task.distance.toFixed(1)} km`;
+  } else if (city) {
     return city;
   }
   
-  // If already short, return as is
-  if (location.length <= 20) return location;
-  
-  // Otherwise truncate
-  return location.substring(0, 20) + '...';
+  return '';
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
@@ -63,7 +84,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
   const hasRating = (task.creator_rating ?? 0) > 0;
   const categoryData = getCategoryByKey(task.category);
-  const locationDisplay = formatLocation(task.location);
+  const locationDisplay = formatLocationDisplay(task);
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -129,20 +150,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
           </Text>
         )}
         
-        {/* Row 5: Location + Time + Applicants + Difficulty */}
+        {/* Row 5: Location (distance + city) + Time + Applicants + Difficulty */}
         <View style={styles.row5}>
-          {/* Show distance if available, otherwise show location */}
-          {task.distance !== undefined && task.distance !== null ? (
-            <>
-              <Text style={styles.metaText}>📍 {task.distance.toFixed(1)} km</Text>
-              <Text style={styles.metaDot}>•</Text>
-            </>
-          ) : locationDisplay ? (
+          {locationDisplay && (
             <>
               <Text style={styles.metaText}>📍 {locationDisplay}</Text>
               <Text style={styles.metaDot}>•</Text>
             </>
-          ) : null}
+          )}
           
           {timeAgo && (
             <>
