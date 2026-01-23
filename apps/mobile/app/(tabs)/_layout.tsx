@@ -1,5 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 // Simple icon components using emoji (works cross-platform)
 const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => (
@@ -9,16 +11,20 @@ const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => (
 );
 
 export default function TabsLayout() {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#0ea5e9',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: themeColors.primaryAccent,
+        tabBarInactiveTintColor: themeColors.tabBarInactive,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: themeColors.tabBar,
           borderTopWidth: 1,
-          borderTopColor: '#f3f4f6',
+          borderTopColor: themeColors.border,
           paddingTop: 8,
           paddingBottom: 8,
           height: 65,
