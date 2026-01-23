@@ -518,31 +518,27 @@ export default function HomeScreen() {
         onPress={() => handleJobItemPress(task)}
         activeOpacity={0.7}
       >
-        {/* Category Icon Badge */}
-        <View style={[styles.categoryIconBadge, { backgroundColor: getMarkerColor(task.category) }]}>
-          <Text style={styles.categoryIconText}>{categoryData?.icon || '📋'}</Text>
-        </View>
-
-        {/* Job Content */}
-        <View style={styles.jobCardContent}>
-          <View style={styles.jobCardRow1}>
+        <View style={styles.jobCardLeft}>
+          <View style={[styles.jobCategoryDot, { backgroundColor: getMarkerColor(task.category) }]} />
+          <View style={styles.jobCardContent}>
+            <View style={styles.jobCardRow1}>
+              <Text style={styles.jobCardCategory}>
+                {categoryData?.icon || '📋'} {categoryData?.label || task.category}
+              </Text>
+              <Text style={styles.jobCardDot}>•</Text>
+              <Text style={styles.jobCardTime}>{formatTimeAgo(task.created_at!)}</Text>
+            </View>
             <Text style={styles.jobCardTitle} numberOfLines={1}>
               {task.title}
             </Text>
-            <Text style={styles.jobCardPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
           </View>
+        </View>
 
-          <View style={styles.jobCardRow2}>
-            <Text style={styles.jobCardCategory}>{categoryData?.label || task.category}</Text>
-            <Text style={styles.jobCardDot}>•</Text>
-            <Text style={styles.jobCardTime}>{formatTimeAgo(task.created_at!)}</Text>
-            {distance !== null && (
-              <>
-                <Text style={styles.jobCardDot}>•</Text>
-                <Text style={styles.jobCardDistance}>📍 {distance.toFixed(1)} km</Text>
-              </>
-            )}
-          </View>
+        <View style={styles.jobCardRight}>
+          <Text style={styles.jobCardPrice}>€{task.budget?.toFixed(0) || '0'}</Text>
+          {distance !== null && (
+            <Text style={styles.jobCardDistance}>{distance.toFixed(1)} km</Text>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -1069,55 +1065,40 @@ const styles = StyleSheet.create({
   emptyPostButton: { marginTop: 16, backgroundColor: '#0ea5e9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
   
-  // NEW PROFESSIONAL JOB CARD DESIGN
+  // REFINED JOB CARD - Small emoji, distance under price
   jobCard: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
     backgroundColor: '#ffffff',
   },
-  categoryIconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  jobCardLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    flex: 1,
   },
-  categoryIconText: {
-    fontSize: 24,
+  jobCategoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 12,
   },
   jobCardContent: {
     flex: 1,
   },
   jobCardRow1: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
-  },
-  jobCardTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginRight: 8,
-  },
-  jobCardPrice: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0ea5e9',
-  },
-  jobCardRow2: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   jobCardCategory: {
     fontSize: 13,
     color: '#6b7280',
+    fontWeight: '500',
   },
   jobCardDot: {
     fontSize: 13,
@@ -1128,9 +1109,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9ca3af',
   },
+  jobCardTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  jobCardRight: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
+  },
+  jobCardPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0ea5e9',
+  },
   jobCardDistance: {
     fontSize: 12,
     color: '#9ca3af',
+    marginTop: 2,
   },
   
   focusedJobContainer: { padding: 20 },
