@@ -3,7 +3,7 @@ import { View, StyleSheet, Image } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Task } from '@marketplace/shared';
-import { getImageUrl } from '@marketplace/shared';
+import { getImageUrl, getCategoryByKey } from '@marketplace/shared';
 
 interface TaskCardProps {
   task: Task;
@@ -43,6 +43,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const timeAgo = formatTimeAgo(task.created_at);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
   const hasRating = (task.creator_rating ?? 0) > 0;
+  const categoryData = getCategoryByKey(task.category);
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -57,8 +58,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       <Card.Content style={styles.cardContent}>
         {/* Row 1: Category + Price */}
         <View style={styles.row1}>
-          <Text style={styles.category}>💼 {task.category}</Text>
-          <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
+          <Text style={styles.category}>
+            {categoryData?.icon || '📋'} {categoryData?.label || task.category}
+          </Text>
+          <Text style={styles.price}>€{task.budget?.toFixed(0) || task.reward?.toFixed(0) || '0'}</Text>
         </View>
         
         {/* Row 2: Title */}
@@ -100,26 +103,34 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
         </View>
         
         {/* Row 4: Description Preview */}
-        <Text variant="bodySmall" style={styles.description} numberOfLines={2}>
-          {task.description}
-        </Text>
+        {task.description && (
+          <Text variant="bodySmall" style={styles.description} numberOfLines={2}>
+            {task.description}
+          </Text>
+        )}
         
         {/* Row 5: Distance + Time + Applicants + Difficulty */}
         <View style={styles.row5}>
-          {task.distance !== undefined && (
-            <Text style={styles.metaText}>{task.distance.toFixed(1)} km</Text>
+          {task.distance !== undefined && task.distance !== null && (
+            <>
+              <Text style={styles.metaText}>{task.distance.toFixed(1)} km</Text>
+              <Text style={styles.metaDot}>•</Text>
+            </>
           )}
-          {task.distance !== undefined && <Text style={styles.metaDot}>•</Text>}
-          <Text style={styles.metaText}>{timeAgo}</Text>
+          {timeAgo && (
+            <>
+              <Text style={styles.metaText}>{timeAgo}</Text>
+              <Text style={styles.metaDot}>•</Text>
+            </>
+          )}
           {hasApplicants && (
             <>
-              <Text style={styles.metaDot}>•</Text>
               <Text style={styles.metaText}>
                 👤 {task.pending_applications_count}
               </Text>
+              <Text style={styles.metaDot}>•</Text>
             </>
           )}
-          <Text style={styles.metaDot}>•</Text>
           <View style={styles.difficultyBadge}>
             <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
             <Text style={styles.difficultyText}>{difficulty.label}</Text>
