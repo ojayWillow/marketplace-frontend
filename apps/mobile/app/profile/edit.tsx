@@ -45,7 +45,16 @@ export default function EditProfileScreen() {
       setCity(profile.city || '');
       setIsHelper(profile.is_helper || false);
       setHourlyRate(profile.hourly_rate?.toString() || '');
-      setSkills(profile.skills || []);
+      
+      // Handle skills - could be array or comma-separated string
+      if (profile.skills) {
+        if (Array.isArray(profile.skills)) {
+          setSkills(profile.skills);
+        } else if (typeof profile.skills === 'string') {
+          setSkills(profile.skills.split(',').map(s => s.trim()).filter(Boolean));
+        }
+      }
+      
       if (profile.avatar_url) {
         setAvatarUri(getImageUrl(profile.avatar_url));
       }
@@ -65,8 +74,16 @@ export default function EditProfileScreen() {
       ]);
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to update profile.';
-      Alert.alert('Error', message);
+      console.error('Profile update error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      const message = error.response?.data?.error 
+        || error.response?.data?.message 
+        || error.message
+        || 'Failed to update profile.';
+      
+      Alert.alert('Error', `Failed to update profile: ${message}`);
     },
   });
 
@@ -122,19 +139,26 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
+    // Build the data object
     const data: any = {
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      bio: bio.trim(),
-      phone: phone.trim(),
-      city: city.trim(),
+      first_name: firstName.trim() || null,
+      last_name: lastName.trim() || null,
+      bio: bio.trim() || null,
+      phone: phone.trim() || null,
+      city: city.trim() || null,
       is_helper: isHelper,
     };
 
+    // Always send skills (even if empty)
+    data.skills = skills;
+
     if (isHelper) {
       data.hourly_rate = hourlyRate ? parseFloat(hourlyRate) : null;
-      data.skills = skills;
+    } else {
+      data.hourly_rate = null;
     }
+
+    console.log('Saving profile data:', JSON.stringify(data, null, 2));
 
     // If avatar changed, upload it first
     if (avatarChanged && avatarUri) {
@@ -150,12 +174,16 @@ export default function EditProfileScreen() {
           type,
         } as any);
 
+        console.log('Uploading avatar...');
         const uploadResponse = await authApi.uploadAvatar(formData);
+        console.log('Avatar uploaded:', uploadResponse);
+        
         if (uploadResponse.avatar_url) {
           data.avatar_url = uploadResponse.avatar_url;
         }
       } catch (error: any) {
         console.error('Avatar upload error:', error);
+        console.error('Avatar error response:', error.response?.data);
         Alert.alert('Error', 'Failed to upload profile photo. Profile will be saved without the new photo.');
       }
     }
