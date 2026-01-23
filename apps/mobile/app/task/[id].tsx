@@ -3,7 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator, Card } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, useAuthStore, getImageUrl, type Task } from '@marketplace/shared';
+import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, type Task } from '@marketplace/shared';
 import { useState } from 'react';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -29,9 +29,28 @@ export default function TaskDetailScreen() {
     onSuccess: () => {
       Alert.alert('Success', 'Your application has been submitted!');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['myApplications'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Failed to apply. Please try again.';
+      Alert.alert('Error', message);
+    },
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: () => {
+      if (!task?.user_application?.id) {
+        throw new Error('No application to withdraw');
+      }
+      return withdrawApplication(taskId, task.user_application.id);
+    },
+    onSuccess: () => {
+      Alert.alert('Success', 'Application withdrawn');
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['myApplications'] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to withdraw application';
       Alert.alert('Error', message);
     },
   });
@@ -107,6 +126,17 @@ export default function TaskDetailScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Apply', onPress: () => applyMutation.mutate() },
+      ]
+    );
+  };
+
+  const handleWithdraw = () => {
+    Alert.alert(
+      'Withdraw Application',
+      'Are you sure you want to withdraw your application?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Withdraw', style: 'destructive', onPress: () => withdrawMutation.mutate() },
       ]
     );
   };
@@ -204,7 +234,12 @@ export default function TaskDetailScreen() {
 
   const isOwnTask = user?.id === task?.creator_id;
   const isAssignedToMe = user?.id === task?.assigned_to_id;
-  const canApply = isAuthenticated && !isOwnTask && task?.status === 'open';
+  
+  // Use backend's has_applied field instead of just checking status
+  const canApply = isAuthenticated && !isOwnTask && task?.status === 'open' && !task?.has_applied;
+  const hasApplied = task?.has_applied && task?.user_application?.status === 'pending';
+  const canWithdraw = hasApplied;
+  
   const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
   const canConfirm = isOwnTask && task?.status === 'pending_confirmation';
   const canCancel = isOwnTask && task?.status === 'open';
@@ -345,6 +380,21 @@ export default function TaskDetailScreen() {
               </View>
             ) : null}
           </View>
+        ) : null}
+
+        {/* Application Status Notice */}
+        {hasApplied ? (
+          <Surface style={styles.appliedSection} elevation={0}>
+            <View style={styles.noticeContent}>
+              <Text style={styles.noticeIcon}>✅</Text>
+              <View style={styles.noticeTextContainer}>
+                <Text variant="titleMedium" style={styles.noticeTitle}>Application Submitted</Text>
+                <Text style={styles.noticeText}>
+                  You have applied for this task. Waiting for the client to review your application.
+                </Text>
+              </View>
+            </View>
+          </Surface>
         ) : null}
 
         {/* Pending Confirmation Notice */}
@@ -510,6 +560,23 @@ export default function TaskDetailScreen() {
             contentStyle={styles.applyButtonContent}
           >
             Apply for this Task
+          </Button>
+        </Surface>
+      ) : null}
+
+      {/* Withdraw Application Button */}
+      {canWithdraw ? (
+        <Surface style={styles.bottomBar} elevation={4}>
+          <Button
+            mode="outlined"
+            onPress={handleWithdraw}
+            loading={withdrawMutation.isPending}
+            disabled={withdrawMutation.isPending}
+            textColor="#ef4444"
+            style={[styles.applyButton, styles.withdrawButton]}
+            contentStyle={styles.applyButtonContent}
+          >
+            Withdraw Application
           </Button>
         </Surface>
       ) : null}
@@ -711,6 +778,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  appliedSection: {
+    backgroundColor: '#dbeafe',
+    padding: 16,
+    marginTop: 12,
+  },
   noticeSection: {
     backgroundColor: '#fef3c7',
     padding: 16,
@@ -884,6 +956,9 @@ const styles = StyleSheet.create({
   },
   applyButtonContent: {
     paddingVertical: 8,
+  },
+  withdrawButton: {
+    borderColor: '#fecaca',
   },
   ownerActions: {
     gap: 8,
