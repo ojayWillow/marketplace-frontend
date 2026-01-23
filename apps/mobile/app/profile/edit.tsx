@@ -3,7 +3,7 @@ import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, TextInput, Avatar, Switch, Chip, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, useAuthStore, getImageUrl } from '@marketplace/shared';
+import { authApi, useAuthStore, getImageUrl, uploadImageFromUri } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -163,23 +163,12 @@ export default function EditProfileScreen() {
     // If avatar changed, upload it first
     if (avatarChanged && avatarUri) {
       try {
-        const formData = new FormData();
-        const filename = avatarUri.split('/').pop() || 'avatar.jpg';
-        const match = /\.([\w]+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        console.log('Uploading avatar from URI:', avatarUri);
+        const uploadResponse = await uploadImageFromUri(avatarUri);
+        console.log('Avatar uploaded successfully:', uploadResponse);
         
-        formData.append('avatar', {
-          uri: avatarUri,
-          name: filename,
-          type,
-        } as any);
-
-        console.log('Uploading avatar...');
-        const uploadResponse = await authApi.uploadAvatar(formData);
-        console.log('Avatar uploaded:', uploadResponse);
-        
-        if (uploadResponse.avatar_url) {
-          data.avatar_url = uploadResponse.avatar_url;
+        if (uploadResponse.url) {
+          data.avatar_url = uploadResponse.url;
         }
       } catch (error: any) {
         console.error('Avatar upload error:', error);
