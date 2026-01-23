@@ -14,7 +14,7 @@ const SKILL_OPTIONS = [
 ];
 
 export default function EditProfileScreen() {
-  const { user, setUser } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   
   // Form state
@@ -65,7 +65,7 @@ export default function EditProfileScreen() {
     mutationFn: (data: any) => authApi.updateProfile(data),
     onSuccess: (response) => {
       if (response.user) {
-        setUser(response.user);
+        updateUser(response.user);
       }
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['user'] });
