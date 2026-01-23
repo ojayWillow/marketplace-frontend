@@ -30,9 +30,11 @@ export const TaskActionButtons = ({
 }: TaskActionButtonsProps) => {
   const hasApplied = (task as any).has_applied;
   const userApplication = (task as any).user_application;
-  const canApply = isAuthenticated && !isCreator && task.status === 'open' && !hasApplied;
   const canMarkDone = isAssigned && (task.status === 'assigned' || task.status === 'in_progress');
   const canEdit = isCreator && task.status === 'open';
+  
+  // FIX: Only show apply if NOT assigned and task is open
+  const canApply = isAuthenticated && !isCreator && !isAssigned && task.status === 'open' && !hasApplied;
 
   // Get application status label
   const getApplicationStatusLabel = (status: string) => {
@@ -64,41 +66,12 @@ export const TaskActionButtons = ({
       )}
 
       <div className="flex gap-4">
-        {/* Visitor View - Apply button at the bottom */}
-        {canApply && !showApplicationForm && (
-          <button
-            onClick={onShowApplicationForm}
-            className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
-          >
-            ✓ Apply for This Job
-          </button>
-        )}
-        
-        {/* Owner View */}
-        {isCreator && canEdit && (
-          <>
-            <Link
-              to={`/tasks/${task.id}/edit`}
-              className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg text-center"
-            >
-              ✏️ Edit Task
-            </Link>
-            <button
-              onClick={onCancel}
-              disabled={actionLoading}
-              className="px-8 py-4 border border-gray-300 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium"
-            >
-              🗑️ Cancel Task
-            </button>
-          </>
-        )}
-
-        {/* Worker marking done */}
+        {/* Worker marking done - PRIORITY #1 */}
         {canMarkDone && (
           <button
             onClick={onMarkDone}
             disabled={actionLoading}
-            className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-lg"
+            className="flex-1 bg-green-500 text-white py-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold text-lg"
           >
             {actionLoading ? 'Processing...' : '✓ Mark as Done'}
           </button>
@@ -122,6 +95,35 @@ export const TaskActionButtons = ({
               ⚠️ Dispute
             </button>
           </>
+        )}
+        
+        {/* Owner Edit/Cancel View */}
+        {isCreator && canEdit && (
+          <>
+            <Link
+              to={`/tasks/${task.id}/edit`}
+              className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg text-center"
+            >
+              ✏️ Edit Task
+            </Link>
+            <button
+              onClick={onCancel}
+              disabled={actionLoading}
+              className="px-8 py-4 border border-gray-300 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium"
+            >
+              🗑️ Cancel Task
+            </button>
+          </>
+        )}
+
+        {/* Visitor View - Apply button */}
+        {canApply && !showApplicationForm && (
+          <button
+            onClick={onShowApplicationForm}
+            className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
+          >
+            ✓ Apply for This Job
+          </button>
         )}
 
         {/* Login prompt */}

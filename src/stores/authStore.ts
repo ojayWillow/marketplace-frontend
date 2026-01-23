@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { queryClient } from '../lib/queryClient'
 import type { User } from '../api/types'
 
 interface AuthState {
@@ -46,13 +47,17 @@ export const useAuthStore = create<AuthState>()(
           isPhoneVerified: userData.phone_verified ?? state.isPhoneVerified,
         })),
       
-      logout: () =>
+      logout: () => {
+        // Clear all cached data to prevent showing previous user's data
+        queryClient.clear()
+        
         set({
           user: null,
           token: null,
           isAuthenticated: false,
           isPhoneVerified: false,
-        }),
+        })
+      },
     }),
     {
       name: 'auth-storage',
