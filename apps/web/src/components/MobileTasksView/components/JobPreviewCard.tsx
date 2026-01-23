@@ -33,7 +33,25 @@ const JobPreviewCard = ({
   const budget = task.budget || task.reward || 0;
   const categoryIcon = getCategoryIcon(task.category);
   const categoryLabel = getCategoryLabel(task.category);
-  const applicantsCount = task.applications_count || 0;
+  const applicantsCount = task.pending_applications_count || 0;
+
+  // Render star rating
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<span key={i} className="text-yellow-400">★</span>);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(<span key={i} className="text-yellow-400">⯨</span>);
+      } else {
+        stars.push(<span key={i} className="text-gray-300">★</span>);
+      }
+    }
+    return stars;
+  };
 
   return (
     <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
@@ -115,17 +133,55 @@ const JobPreviewCard = ({
           </span>
         </div>
 
-        {/* Posted by - CLICKABLE */}
+        {/* Creator - CLICKABLE with avatar, name, rating, and city */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCreatorClick();
           }}
-          className="flex items-center gap-2 text-sm text-blue-600 mb-4 hover:underline active:opacity-70"
+          className="flex items-start gap-2 text-sm mb-4 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
         >
-          <span>👤</span>
-          <span className="font-medium">{task.creator_name || 'Anonymous'}</span>
-          <span className="text-gray-400">→</span>
+          {/* Avatar */}
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
+            {task.creator_avatar ? (
+              <img 
+                src={task.creator_avatar} 
+                alt={task.creator_name || 'User'} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{(task.creator_name || 'U')[0].toUpperCase()}</span>
+            )}
+          </div>
+          
+          {/* Name, Rating, City - stacked */}
+          <div className="flex-1 text-left min-w-0">
+            {/* Name */}
+            <div className="font-medium text-gray-900 truncate">
+              {task.creator_name || t('common.anonymous', 'Anonymous')}
+            </div>
+            
+            {/* Rating with stars */}
+            {task.creator_rating !== undefined && task.creator_rating > 0 && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <div className="flex text-sm">
+                  {renderStars(task.creator_rating)}
+                </div>
+                <span className="text-xs text-gray-500">
+                  ({task.creator_review_count || 0})
+                </span>
+              </div>
+            )}
+            
+            {/* City */}
+            {task.creator_city && (
+              <div className="text-xs text-gray-500 truncate mt-0.5">
+                {task.creator_city}
+              </div>
+            )}
+          </div>
+          
+          <span className="text-gray-400 text-xs flex-shrink-0 mt-1">→</span>
         </button>
 
         {/* Action buttons */}
