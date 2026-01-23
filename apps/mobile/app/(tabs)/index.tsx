@@ -30,6 +30,10 @@ const RADIUS_OPTIONS = [
   { key: '50', label: '50 km', value: 50 },
 ];
 
+// Image gallery dimensions for focused task preview
+const PREVIEW_IMAGE_WIDTH = SCREEN_WIDTH - 40;
+const PREVIEW_IMAGE_HEIGHT = 160;
+
 const calculateDistance = calcDistance;
 
 const formatTimeAgo = (dateString: string): string => {
@@ -42,6 +46,30 @@ const formatTimeAgo = (dateString: string): string => {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
   return `${Math.floor(seconds / 604800)}w ago`;
+};
+
+// Format deadline for display
+const formatDeadline = (dateString: string | undefined): string | null => {
+  if (!dateString) return null;
+  const deadline = new Date(dateString);
+  const now = new Date();
+  const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) return 'Overdue';
+  if (diffDays === 0) return 'Due today';
+  if (diffDays === 1) return 'Due tomorrow';
+  if (diffDays <= 7) return `Due in ${diffDays} days`;
+  return deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Get difficulty indicator
+const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+  switch (difficulty) {
+    case 'easy': return { color: '#10b981', label: 'Easy' };
+    case 'hard': return { color: '#ef4444', label: 'Hard' };
+    case 'medium':
+    default: return { color: '#f59e0b', label: 'Medium' };
+  }
 };
 
 interface Cluster {
@@ -81,6 +109,7 @@ export default function HomeScreen() {
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
@@ -368,6 +397,7 @@ export default function HomeScreen() {
       setFocusedTaskId(task.id);
       setSelectedTask(null);
       setSelectedOffering(null);
+      setActiveImageIndex(0); // Reset image index when selecting new task
       animateSheetTo(SHEET_MID_HEIGHT);
       
       setTimeout(() => {
@@ -398,6 +428,7 @@ export default function HomeScreen() {
     setFocusedTaskId(task.id);
     setSelectedTask(null);
     setSelectedOffering(null);
+    setActiveImageIndex(0); // Reset image index when selecting new task
     animateSheetTo(SHEET_MID_HEIGHT);
     
     setTimeout(() => {
@@ -413,6 +444,7 @@ export default function HomeScreen() {
   const handleCloseFocusedJob = () => {
     haptic.soft();
     setFocusedTaskId(null);
+    setActiveImageIndex(0);
     animateSheetTo(SHEET_MIN_HEIGHT);
   };
 
@@ -464,6 +496,12 @@ export default function HomeScreen() {
     setSearchQuery('');
     setDebouncedSearchQuery('');
     setFocusedTaskId(null);
+  };
+
+  const handleImageScroll = (event: any) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffset / PREVIEW_IMAGE_WIDTH);
+    setActiveImageIndex(index);
   };
 
   const selectedCategoryData = getCategoryByKey(selectedCategory);
@@ -548,9 +586,53 @@ export default function HomeScreen() {
     if (!focusedTask) return null;
     const categoryData = getCategoryByKey(focusedTask.category);
     const hasRating = (focusedTask.creator_rating ?? 0) > 0;
+    const difficulty = getDifficultyIndicator(focusedTask.difficulty);
+    const deadlineText = formatDeadline(focusedTask.deadline);
+    const hasApplicants = (focusedTask.pending_applications_count ?? 0) > 0;
+    
+    // Parse images from comma-separated string
+    const taskImages = focusedTask.images 
+      ? focusedTask.images.split(',').filter(Boolean).map(url => getImageUrl(url))
+      : [];
     
     return (
       <View style={styles.focusedJobContainer}>
+        {/* IMAGE GALLERY */}
+        {taskImages.length > 0 && (
+          <View style={styles.previewImageContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleImageScroll}
+              scrollEventThrottle={16}
+              style={styles.previewImageScroll}
+            >
+              {taskImages.map((imageUrl, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: imageUrl }}
+                  style={styles.previewImage}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            {taskImages.length > 1 && (
+              <View style={styles.previewImageDots}>
+                {taskImages.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.previewImageDot,
+                      activeImageIndex === index && styles.previewImageDotActive
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Header: Badge + Distance */}
         <View style={styles.focusedJobHeader}>
           <View style={[styles.focusedCategoryBadge, { backgroundColor: getMarkerColor(focusedTask.category) }]}>
@@ -582,6 +664,28 @@ export default function HomeScreen() {
 
         {/* Title */}
         <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
+
+        {/* Quick Info Row: Deadline, Applicants, Difficulty */}
+        <View style={styles.quickInfoRow}>
+          {deadlineText && (
+            <View style={styles.quickInfoItem}>
+              <Text style={styles.quickInfoIcon}>📅</Text>
+              <Text style={styles.quickInfoText}>{deadlineText}</Text>
+            </View>
+          )}
+          {hasApplicants && (
+            <View style={styles.quickInfoItem}>
+              <Text style={styles.quickInfoIcon}>👤</Text>
+              <Text style={styles.quickInfoText}>
+                {focusedTask.pending_applications_count} applicant{focusedTask.pending_applications_count !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+          <View style={styles.quickInfoItem}>
+            <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
+            <Text style={styles.quickInfoText}>{difficulty.label}</Text>
+          </View>
+        </View>
 
         {/* Section: Posted by */}
         <View style={styles.focusedSection}>
@@ -1196,6 +1300,43 @@ const styles = StyleSheet.create({
   focusedJobContainer: { 
     padding: 20,
   },
+  
+  // Preview Image Gallery
+  previewImageContainer: {
+    marginHorizontal: -20,
+    marginTop: -20,
+    marginBottom: 16,
+    position: 'relative',
+  },
+  previewImageScroll: {
+    width: SCREEN_WIDTH,
+  },
+  previewImage: {
+    width: PREVIEW_IMAGE_WIDTH,
+    height: PREVIEW_IMAGE_HEIGHT,
+    marginHorizontal: 20,
+    borderRadius: 12,
+  },
+  previewImageDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+  },
+  previewImageDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#d1d5db',
+  },
+  previewImageDotActive: {
+    backgroundColor: '#0ea5e9',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  
   focusedJobHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -1256,8 +1397,39 @@ const styles = StyleSheet.create({
     fontSize: 22, 
     fontWeight: '700', 
     color: '#1f2937', 
-    marginBottom: 16, 
+    marginBottom: 12, 
     lineHeight: 28,
+  },
+  
+  // Quick Info Row (Deadline, Applicants, Difficulty)
+  quickInfoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9fafb',
+    borderRadius: 10,
+  },
+  quickInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickInfoIcon: {
+    fontSize: 14,
+  },
+  quickInfoText: {
+    fontSize: 13,
+    color: '#4b5563',
+    fontWeight: '500',
+  },
+  difficultyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   
   // Sections
