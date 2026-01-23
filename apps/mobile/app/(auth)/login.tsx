@@ -1,6 +1,6 @@
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useState } from 'react';
-import { Link, router, Stack } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
@@ -34,12 +34,10 @@ export default function LoginScreen() {
 
     setLoading(true);
     setError('');
-    haptic.medium(); // Haptic on submit
+    haptic.medium();
 
     try {
       const response = await authApi.login({ email: email.trim(), password });
-      
-      // Handle both possible token field names from backend
       const token = response.access_token || (response as any).token;
       
       if (!token) {
@@ -48,11 +46,11 @@ export default function LoginScreen() {
         return;
       }
       
-      haptic.success(); // Success haptic
+      haptic.success();
       setAuth(response.user, token);
       router.replace('/(tabs)');
     } catch (error: any) {
-      haptic.error(); // Error haptic
+      haptic.error();
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(message);
     } finally {
@@ -65,7 +63,6 @@ export default function LoginScreen() {
     router.push('/(auth)/forgot-password');
   };
 
-  // Dynamic styles based on theme
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -94,7 +91,7 @@ export default function LoginScreen() {
     infoBanner: {
       marginBottom: 24,
       borderRadius: 12,
-      backgroundColor: activeTheme === 'dark' ? themeColors.card : '#f3e8ff',
+      backgroundColor: activeTheme === 'dark' ? themeColors.card : themeColors.backgroundSecondary,
       borderWidth: 1,
       borderColor: themeColors.border,
     },
@@ -104,7 +101,7 @@ export default function LoginScreen() {
     },
     input: {
       marginBottom: 16,
-      backgroundColor: themeColors.inputBackground || themeColors.card,
+      backgroundColor: themeColors.card,
     },
     forgotButton: {
       alignSelf: 'flex-end',
@@ -114,12 +111,6 @@ export default function LoginScreen() {
       borderRadius: 12,
       marginBottom: 16,
       backgroundColor: themeColors.primaryAccent,
-      // Premium gradient effect (visual enhancement)
-      shadowColor: themeColors.primaryAccent,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
     },
     buttonContent: {
       paddingVertical: 8,
@@ -142,10 +133,6 @@ export default function LoginScreen() {
       borderRadius: 12,
       marginBottom: 16,
       borderColor: themeColors.primaryAccent,
-      borderWidth: 1.5,
-    },
-    phoneButtonText: {
-      color: themeColors.primaryAccent,
     },
     registerRow: {
       flexDirection: 'row',
@@ -159,27 +146,16 @@ export default function LoginScreen() {
     guestButton: {
       marginTop: 32,
     },
-    guestButtonText: {
-      color: themeColors.textMuted,
-    },
   });
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Hide default header - it's white! */}
-      <Stack.Screen 
-        options={{ 
-          headerShown: false 
-        }} 
-      />
-      
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
-            {/* Header */}
             <Text variant="headlineLarge" style={styles.title}>
               Welcome Back
             </Text>
@@ -187,7 +163,6 @@ export default function LoginScreen() {
               Sign in to continue
             </Text>
 
-            {/* Expo Go Info Banner */}
             {isExpoGo && (
               <Card style={styles.infoBanner} elevation={0}>
                 <Card.Content>
@@ -198,7 +173,6 @@ export default function LoginScreen() {
               </Card>
             )}
 
-            {/* Email Input */}
             <TextInput
               label="Email"
               value={email}
@@ -209,14 +183,13 @@ export default function LoginScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              outlineColor={themeColors.inputBorder || themeColors.border}
-              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              outlineColor={themeColors.border}
+              activeOutlineColor={themeColors.primaryAccent}
               textColor={themeColors.text}
-              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              placeholderTextColor={themeColors.textMuted}
               left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
             />
 
-            {/* Password Input */}
             <TextInput
               label="Password"
               value={password}
@@ -225,10 +198,10 @@ export default function LoginScreen() {
               disabled={loading}
               mode="outlined"
               style={styles.input}
-              outlineColor={themeColors.inputBorder || themeColors.border}
-              activeOutlineColor={themeColors.inputFocus || themeColors.primaryAccent}
+              outlineColor={themeColors.border}
+              activeOutlineColor={themeColors.primaryAccent}
               textColor={themeColors.text}
-              placeholderTextColor={themeColors.inputPlaceholder || themeColors.textMuted}
+              placeholderTextColor={themeColors.textMuted}
               left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
               right={
                 <TextInput.Icon
@@ -239,7 +212,6 @@ export default function LoginScreen() {
               }
             />
 
-            {/* Forgot Password */}
             <Button
               mode="text"
               onPress={handleForgotPassword}
@@ -250,7 +222,6 @@ export default function LoginScreen() {
               Forgot Password?
             </Button>
 
-            {/* Login Button */}
             <Button
               mode="contained"
               onPress={handleLogin}
@@ -264,7 +235,6 @@ export default function LoginScreen() {
               {loading ? 'Signing In...' : 'Sign In with Email'}
             </Button>
 
-            {/* Phone Login Option - Only in Production */}
             {isPhoneAuthAvailable && (
               <>
                 <View style={styles.divider}>
@@ -291,7 +261,6 @@ export default function LoginScreen() {
               </>
             )}
 
-            {/* Register Link */}
             <View style={styles.registerRow}>
               <Text variant="bodyMedium" style={styles.registerText}>
                 Don't have an account?{' '}
@@ -309,7 +278,6 @@ export default function LoginScreen() {
               </Link>
             </View>
 
-            {/* Browse as Guest */}
             <Link href="/(tabs)" asChild>
               <Button 
                 mode="text" 
@@ -325,7 +293,6 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Error Snackbar */}
       <Snackbar
         visible={!!error}
         onDismiss={() => setError('')}
