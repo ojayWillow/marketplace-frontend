@@ -98,22 +98,18 @@ export default function JobsAndOfferingsScreen() {
             {
               value: 'posted',
               label: 'Posted',
-              icon: '📋',
             },
             {
               value: 'applications',
               label: 'Applied',
-              icon: '📨',
             },
             {
               value: 'assigned',
               label: 'Working',
-              icon: '💼',
             },
             {
               value: 'services',
               label: 'Services',
-              icon: '🛠️',
             },
           ]}
           style={styles.segmentedButtons}
