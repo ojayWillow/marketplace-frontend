@@ -4,24 +4,12 @@ import { Text, ActivityIndicator, Button, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useCallback } from 'react';
 import { router } from 'expo-router';
-import { getTasks, getOfferings, useAuthStore, type Task, type Offering } from '@marketplace/shared';
+import { getTasks, getOfferings, useAuthStore, type Task, type Offering, CATEGORIES, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
 
 type MainTab = 'all' | 'jobs' | 'services';
-
-const CATEGORIES = [
-  { key: 'all', label: 'All Categories', icon: '🔍' },
-  { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
-  { key: 'moving', label: 'Moving', icon: '📦' },
-  { key: 'repairs', label: 'Repairs', icon: '🔧' },
-  { key: 'delivery', label: 'Delivery', icon: '🚗' },
-  { key: 'tutoring', label: 'Tutoring', icon: '📚' },
-  { key: 'tech', label: 'Tech', icon: '💻' },
-  { key: 'beauty', label: 'Beauty', icon: '💅' },
-  { key: 'other', label: 'Other', icon: '📋' },
-];
 
 // Combined item type for mixed list
 type ListItem = 
@@ -162,6 +150,7 @@ export default function TasksScreen() {
       : servicesQuery.isRefetching;
 
   const hasActiveFilter = selectedCategory !== 'all';
+  const selectedCategoryData = getCategoryByKey(selectedCategory);
 
   // Render item for FlatList
   const renderItem: ListRenderItem<ListItem> = useCallback(({ item }) => {
@@ -177,10 +166,10 @@ export default function TasksScreen() {
   // List header component (filter banner + loading/error states)
   const ListHeaderComponent = useCallback(() => (
     <>
-      {hasActiveFilter && (
+      {hasActiveFilter && selectedCategoryData && (
         <TouchableOpacity style={styles.activeFilterBanner} onPress={handleFilterPress} activeOpacity={0.7}>
           <Text style={styles.activeFilterText}>
-            {CATEGORIES.find(c => c.key === selectedCategory)?.icon} {CATEGORIES.find(c => c.key === selectedCategory)?.label}
+            {selectedCategoryData.icon} {selectedCategoryData.label}
           </Text>
           <TouchableOpacity onPress={handleClearFilter} style={styles.clearFilterButton}>
             <Text style={styles.clearFilterText}>✕</Text>
@@ -202,7 +191,7 @@ export default function TasksScreen() {
         </View>
       )}
     </>
-  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategory]);
+  ), [hasActiveFilter, isLoading, isError, handleFilterPress, handleClearFilter, refetch, selectedCategoryData]);
 
   // Empty component
   const ListEmptyComponent = useCallback(() => {
@@ -311,7 +300,7 @@ export default function TasksScreen() {
         onPress={() => { haptic.medium(); setShowCreateModal(true); }}
       />
 
-      {/* Filter Modal */}
+      {/* Filter Modal - 3 COLUMN GRID */}
       <Modal
         visible={showFilterModal}
         transparent
@@ -325,23 +314,34 @@ export default function TasksScreen() {
         >
           <View style={styles.filterModalContent}>
             <Text style={styles.filterModalTitle}>Filter by Category</Text>
-            <FlatList
-              data={CATEGORIES}
-              keyExtractor={(item) => item.key}
-              renderItem={({ item: cat }) => (
+            
+            {/* 3-COLUMN GRID */}
+            <View style={styles.categoryGrid}>
+              {CATEGORIES.map((cat) => (
                 <TouchableOpacity
-                  style={[styles.filterOption, selectedCategory === cat.key && styles.filterOptionActive]}
+                  key={cat.key}
+                  style={[
+                    styles.categoryCard,
+                    selectedCategory === cat.key && styles.categoryCardActive
+                  ]}
                   onPress={() => handleCategorySelect(cat.key)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.filterOptionIcon}>{cat.icon}</Text>
-                  <Text style={[styles.filterOptionText, selectedCategory === cat.key && styles.filterOptionTextActive]}>
+                  <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                  <Text style={[
+                    styles.categoryLabel,
+                    selectedCategory === cat.key && styles.categoryLabelActive
+                  ]} numberOfLines={2}>
                     {cat.label}
                   </Text>
-                  {selectedCategory === cat.key && <Text style={styles.filterOptionCheck}>✓</Text>}
+                  {selectedCategory === cat.key && (
+                    <View style={styles.categoryCheckBadge}>
+                      <Text style={styles.categoryCheckText}>✓</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -602,14 +602,14 @@ const styles = StyleSheet.create({
     marginTop: 8 
   },
   
-  // Filter Modal
+  // Filter Modal with GRID
   filterModalContent: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 24,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '70%',
+    maxHeight: '80%',
   },
   filterModalTitle: {
     fontSize: 20,
@@ -618,35 +618,58 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  filterOption: {
+  
+  // 3-COLUMN GRID STYLES
+  categoryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  categoryCard: {
+    width: '31%', // 3 columns with gap
+    aspectRatio: 0.9, // Slightly taller than wide
     backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
   },
-  filterOptionActive: {
+  categoryCardActive: {
     backgroundColor: '#e0f2fe',
+    borderColor: '#0ea5e9',
   },
-  filterOptionIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  categoryIcon: {
+    fontSize: 28,
+    marginBottom: 6,
   },
-  filterOptionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  filterOptionTextActive: {
-    color: '#0ea5e9',
+  categoryLabel: {
+    fontSize: 11,
     fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
   },
-  filterOptionCheck: {
-    fontSize: 18,
-    color: '#0ea5e9',
+  categoryLabelActive: {
+    color: '#0369a1',
+    fontWeight: '700',
+  },
+  categoryCheckBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryCheckText: {
+    fontSize: 11,
+    color: '#ffffff',
     fontWeight: 'bold',
   },
 });
