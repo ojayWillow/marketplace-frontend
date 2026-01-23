@@ -27,7 +27,7 @@ const StarRating: React.FC<StarRatingProps> = ({
     // Full stars
     for (let i = 0; i < fullStars; i++) {
       stars.push(
-        <Text key={`full-${i}`} style={[styles.star, { fontSize: size, color }]}>
+        <Text key={`full-${i}`} style={[styles.star, { fontSize: size, color, lineHeight: size + 2 }]}>
           ★
         </Text>
       );
@@ -36,7 +36,7 @@ const StarRating: React.FC<StarRatingProps> = ({
     // Half star
     if (hasHalfStar) {
       stars.push(
-        <Text key="half" style={[styles.star, { fontSize: size, color }]}>
+        <Text key="half" style={[styles.star, { fontSize: size, color, lineHeight: size + 2 }]}>
           ⯨
         </Text>
       );
@@ -45,7 +45,7 @@ const StarRating: React.FC<StarRatingProps> = ({
     // Empty stars
     for (let i = 0; i < emptyStars; i++) {
       stars.push(
-        <Text key={`empty-${i}`} style={[styles.star, { fontSize: size, color: '#d1d5db' }]}>
+        <Text key={`empty-${i}`} style={[styles.star, { fontSize: size, color: '#d1d5db', lineHeight: size + 2 }]}>
           ☆
         </Text>
       );
@@ -60,7 +60,7 @@ const StarRating: React.FC<StarRatingProps> = ({
         {renderStars()}
       </View>
       {showCount && reviewCount !== undefined && reviewCount > 0 && (
-        <Text style={[styles.count, { fontSize: size * 0.85 }]}>
+        <Text style={[styles.count, { fontSize: size * 0.85, lineHeight: size + 2 }]}>
           ({reviewCount})
         </Text>
       )}
@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   star: {
-    lineHeight: 16,
     marginRight: 1,
   },
   count: {
