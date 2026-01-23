@@ -38,27 +38,37 @@ const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefin
   }
 };
 
-// Helper to extract city from location string
+// Helper to extract just the city name from location string
 const extractCity = (location: string | undefined): string => {
   if (!location) return '';
   
-  // If it's a full address, try to extract city
-  // Format is usually: "Street, City, Country" or "Street, Postal, City, Country"
+  // Split by comma and get parts
   const parts = location.split(',').map(p => p.trim());
   
-  if (parts.length >= 2) {
-    // Try to get the city (usually second-to-last or third-to-last part)
-    // Filter out postal codes (numeric)
-    const nonPostalParts = parts.filter(p => !p.match(/^\d+$/));
-    if (nonPostalParts.length >= 2) {
-      // Return second-to-last part (usually the city)
-      return nonPostalParts[nonPostalParts.length - 2];
+  // If only one part, it's probably already just the city
+  if (parts.length === 1) return parts[0];
+  
+  // Common patterns:
+  // "Street, City, Country" -> get City (index 1)
+  // "Street, Postal, City, Country" -> get City (before last, skip postal codes)
+  // "City, Country" -> get City (index 0)
+  // "Street, City, Region, Country" -> get City (index 1)
+  
+  // If 2 parts, first is usually city (e.g., "Riga, Latvia")
+  if (parts.length === 2) return parts[0];
+  
+  // If 3+ parts, usually index 1 is the city (after street/building)
+  // But skip if it looks like a postal code (all numbers)
+  if (parts.length >= 3) {
+    // Check if parts[1] is a postal code (contains mostly digits)
+    if (parts[1].match(/^\d+$/)) {
+      // Postal code detected, city is at index 2
+      return parts[2];
     }
-    // Fallback to second part
+    // Otherwise city is at index 1
     return parts[1];
   }
   
-  // If short, return as is
   return parts[0];
 };
 
