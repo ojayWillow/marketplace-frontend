@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { getTasks, getOfferings, searchTasks, type Task, type Offering, CATEGORIES, getCategoryByKey } from '@marketplace/shared';
+import { getTasks, getOfferings, searchTasks, type Task, type Offering, CATEGORIES, getCategoryByKey, getImageUrl } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 import { clusterItems, calculateDistance as calcDistance } from '../../utils/mapClustering';
@@ -547,8 +547,11 @@ export default function HomeScreen() {
   const renderFocusedTask = () => {
     if (!focusedTask) return null;
     const categoryData = getCategoryByKey(focusedTask.category);
+    const hasRating = (focusedTask.creator_rating ?? 0) > 0;
+    
     return (
       <View style={styles.focusedJobContainer}>
+        {/* Header: Badge + Distance */}
         <View style={styles.focusedJobHeader}>
           <View style={[styles.focusedCategoryBadge, { backgroundColor: getMarkerColor(focusedTask.category) }]}>
             <Text style={styles.focusedCategoryText}>{categoryData?.label?.toUpperCase() || focusedTask.category.toUpperCase()}</Text>
@@ -564,23 +567,83 @@ export default function HomeScreen() {
             </Text>
           )}
         </View>
-        <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
-        <View style={styles.focusedBudgetRow}>
-          <Text style={styles.focusedBudget}>€{focusedTask.budget?.toFixed(0) || '0'}</Text>
-          <Text style={styles.focusedMeta}>{formatTimeAgo(focusedTask.created_at!)}</Text>
+
+        {/* Row: Category + Time (LEFT) | Price (RIGHT) */}
+        <View style={styles.focusedMetaRow}>
+          <View style={styles.focusedMetaLeft}>
+            <Text style={styles.focusedCategory}>
+              {categoryData?.icon || '📋'} {categoryData?.label || focusedTask.category}
+            </Text>
+            <Text style={styles.focusedMetaDot}>•</Text>
+            <Text style={styles.focusedTime}>{formatTimeAgo(focusedTask.created_at!)}</Text>
+          </View>
+          <Text style={styles.focusedPrice}>€{focusedTask.budget?.toFixed(0) || '0'}</Text>
         </View>
+
+        {/* Title */}
+        <Text style={styles.focusedTitle}>{focusedTask.title}</Text>
+
+        {/* Section: Posted by */}
+        <View style={styles.focusedSection}>
+          <View style={styles.focusedSectionHeader}>
+            <Text style={styles.focusedSectionIcon}>👤</Text>
+            <Text style={styles.focusedSectionTitle}>Posted by</Text>
+          </View>
+          <View style={styles.focusedPosterRow}>
+            {focusedTask.creator_avatar ? (
+              <Image 
+                source={{ uri: getImageUrl(focusedTask.creator_avatar) }} 
+                style={styles.focusedPosterAvatar}
+              />
+            ) : (
+              <View style={styles.focusedPosterAvatarPlaceholder}>
+                <Text style={styles.focusedPosterAvatarText}>
+                  {focusedTask.creator_name?.charAt(0).toUpperCase() || 'U'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.focusedPosterInfo}>
+              <View style={styles.focusedPosterNameRow}>
+                <Text style={styles.focusedPosterName}>{focusedTask.creator_name || 'Anonymous'}</Text>
+                {focusedTask.creator_city && (
+                  <>
+                    <Text style={styles.focusedPosterDot}>•</Text>
+                    <Text style={styles.focusedPosterCity}>{focusedTask.creator_city}</Text>
+                  </>
+                )}
+              </View>
+              {hasRating && (
+                <Text style={styles.focusedPosterRating}>
+                  ⭐ {focusedTask.creator_rating?.toFixed(1)} ({focusedTask.creator_review_count} reviews)
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Section: Description */}
         {focusedTask.description && (
           <View style={styles.focusedSection}>
-            <Text style={styles.focusedSectionTitle}>Description</Text>
+            <View style={styles.focusedSectionHeader}>
+              <Text style={styles.focusedSectionIcon}>📄</Text>
+              <Text style={styles.focusedSectionTitle}>Description</Text>
+            </View>
             <Text style={styles.focusedDescription} numberOfLines={3}>{focusedTask.description}</Text>
           </View>
         )}
+
+        {/* Section: Location */}
         {focusedTask.location && (
           <View style={styles.focusedSection}>
-            <Text style={styles.focusedSectionTitle}>Location</Text>
-            <Text style={styles.focusedLocation} numberOfLines={2}>📍 {focusedTask.location}</Text>
+            <View style={styles.focusedSectionHeader}>
+              <Text style={styles.focusedSectionIcon}>📍</Text>
+              <Text style={styles.focusedSectionTitle}>Location</Text>
+            </View>
+            <Text style={styles.focusedLocation} numberOfLines={2}>{focusedTask.location}</Text>
           </View>
         )}
+
+        {/* Button */}
         <Button
           mode="contained"
           onPress={() => handleViewFullDetails(focusedTask.id)}
@@ -1129,20 +1192,163 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   
-  focusedJobContainer: { padding: 20 },
-  focusedJobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  focusedCategoryBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  focusedCategoryText: { fontSize: 11, fontWeight: '700', color: '#ffffff', letterSpacing: 0.5 },
-  focusedDistance: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
-  focusedTitle: { fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 10, lineHeight: 26 },
-  focusedBudgetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  focusedBudget: { fontSize: 26, fontWeight: 'bold', color: '#0ea5e9' },
-  focusedMeta: { fontSize: 13, color: '#9ca3af' },
-  focusedSection: { marginBottom: 14 },
-  focusedSectionTitle: { fontSize: 12, fontWeight: '600', color: '#6b7280', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  focusedDescription: { fontSize: 15, color: '#374151', lineHeight: 22 },
-  focusedLocation: { fontSize: 14, color: '#374151', lineHeight: 20 },
-  viewDetailsButton: { marginTop: 16, borderRadius: 12 },
+  // NEW FOCUSED JOB DESIGN
+  focusedJobContainer: { 
+    padding: 20,
+  },
+  focusedJobHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 12,
+  },
+  focusedCategoryBadge: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 12,
+  },
+  focusedCategoryText: { 
+    fontSize: 11, 
+    fontWeight: '700', 
+    color: '#ffffff', 
+    letterSpacing: 0.5,
+  },
+  focusedDistance: { 
+    fontSize: 13, 
+    color: '#6b7280', 
+    fontWeight: '500',
+  },
+  
+  // Meta Row: Category + Time | Price
+  focusedMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  focusedMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  focusedCategory: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  focusedMetaDot: {
+    fontSize: 13,
+    color: '#d1d5db',
+    marginHorizontal: 8,
+  },
+  focusedTime: {
+    fontSize: 13,
+    color: '#9ca3af',
+  },
+  focusedPrice: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0ea5e9',
+  },
+  
+  // Title
+  focusedTitle: { 
+    fontSize: 22, 
+    fontWeight: '700', 
+    color: '#1f2937', 
+    marginBottom: 16, 
+    lineHeight: 28,
+  },
+  
+  // Sections
+  focusedSection: { 
+    marginBottom: 16,
+  },
+  focusedSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  focusedSectionIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  focusedSectionTitle: { 
+    fontSize: 13, 
+    fontWeight: '600', 
+    color: '#6b7280', 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5,
+  },
+  
+  // Posted by section
+  focusedPosterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  focusedPosterAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  focusedPosterAvatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  focusedPosterAvatarText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  focusedPosterInfo: {
+    flex: 1,
+  },
+  focusedPosterNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  focusedPosterName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  focusedPosterDot: {
+    fontSize: 13,
+    color: '#d1d5db',
+    marginHorizontal: 6,
+  },
+  focusedPosterCity: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  focusedPosterRating: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  
+  // Description & Location
+  focusedDescription: { 
+    fontSize: 15, 
+    color: '#374151', 
+    lineHeight: 22,
+  },
+  focusedLocation: { 
+    fontSize: 14, 
+    color: '#374151', 
+    lineHeight: 20,
+  },
+  
+  viewDetailsButton: { 
+    marginTop: 16, 
+    borderRadius: 12,
+  },
   
   // Modal Base Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
