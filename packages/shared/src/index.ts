@@ -39,3 +39,6 @@ export { default as i18n } from './i18n';
 
 // Type exports
 export * from './types';
+
+// Constants exports
+export * from './constants/categories';
