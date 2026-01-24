@@ -3,15 +3,10 @@ import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, TextInput, Avatar, Switch, Chip, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, useAuthStore, getImageUrl, uploadImageFromUri } from '@marketplace/shared';
+import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, skillsApi, type UserSkill } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-
-const SKILL_OPTIONS = [
-  'Cleaning', 'Moving', 'Handyman', 'Gardening', 'Delivery',
-  'Pet Care', 'Tutoring', 'Tech Support', 'Cooking', 'Driving',
-  'Plumbing', 'Electrical', 'Painting', 'Assembly', 'Shopping'
-];
+import { SkillsSelector } from '../../components/SkillsSelector';
 
 export default function EditProfileScreen() {
   const { user, updateUser } = useAuthStore();
@@ -25,14 +20,28 @@ export default function EditProfileScreen() {
   const [city, setCity] = useState('');
   const [isHelper, setIsHelper] = useState(false);
   const [hourlyRate, setHourlyRate] = useState('');
-  const [skills, setSkills] = useState<string[]>([]);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [avatarChanged, setAvatarChanged] = useState(false);
+  const [skillsSelectorVisible, setSkillsSelectorVisible] = useState(false);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
 
   // Load current profile
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => authApi.getProfile(),
+  });
+
+  // Load all available skills from backend
+  const { data: allSkillsData, isLoading: skillsLoading } = useQuery({
+    queryKey: ['skills', 'all'],
+    queryFn: () => skillsApi.getAllSkills(),
+  });
+
+  // Load user's current skills from backend
+  const { data: userSkillsData, isLoading: userSkillsLoading } = useQuery({
+    queryKey: ['user-skills'],
+    queryFn: () => skillsApi.getMySkills(),
+    enabled: !!user,
   });
 
   // Initialize form with profile data
@@ -46,20 +55,34 @@ export default function EditProfileScreen() {
       setIsHelper(profile.is_helper || false);
       setHourlyRate(profile.hourly_rate?.toString() || '');
       
-      // Handle skills - could be array or comma-separated string
-      if (profile.skills) {
-        if (Array.isArray(profile.skills)) {
-          setSkills(profile.skills);
-        } else if (typeof profile.skills === 'string') {
-          setSkills(profile.skills.split(',').map(s => s.trim()).filter(Boolean));
-        }
-      }
-      
       if (profile.avatar_url) {
         setAvatarUri(getImageUrl(profile.avatar_url));
       }
     }
   }, [profile]);
+
+  // Initialize selected skills from user's skills
+  useEffect(() => {
+    if (userSkillsData?.skills) {
+      const skillIds = userSkillsData.skills.map((us: UserSkill) => us.skill_id);
+      setSelectedSkillIds(skillIds);
+    }
+  }, [userSkillsData]);
+
+  // Mutations for managing skills
+  const addSkillMutation = useMutation({
+    mutationFn: (skillId: number) => skillsApi.addSkill({ skill_id: skillId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-skills'] });
+    },
+  });
+
+  const removeSkillMutation = useMutation({
+    mutationFn: (userSkillId: number) => skillsApi.removeSkill(userSkillId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-skills'] });
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => authApi.updateProfile(data),
@@ -75,20 +98,15 @@ export default function EditProfileScreen() {
     },
     onError: (error: any) => {
       console.error('Profile update error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      
       const message = error.response?.data?.error 
         || error.response?.data?.message 
         || error.message
         || 'Failed to update profile.';
-      
       Alert.alert('Error', `Failed to update profile: ${message}`);
     },
   });
 
   const pickImage = async () => {
-    // Ask user to choose camera or gallery
     Alert.alert(
       'Change Profile Photo',
       'Choose an option',
@@ -139,7 +157,6 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
-    // Build the data object
     const data: any = {
       first_name: firstName.trim() || null,
       last_name: lastName.trim() || null,
@@ -149,30 +166,21 @@ export default function EditProfileScreen() {
       is_helper: isHelper,
     };
 
-    // Always send skills (even if empty)
-    data.skills = skills;
-
     if (isHelper) {
       data.hourly_rate = hourlyRate ? parseFloat(hourlyRate) : null;
     } else {
       data.hourly_rate = null;
     }
 
-    console.log('Saving profile data:', JSON.stringify(data, null, 2));
-
     // If avatar changed, upload it first
     if (avatarChanged && avatarUri) {
       try {
-        console.log('Uploading avatar from URI:', avatarUri);
         const uploadResponse = await uploadImageFromUri(avatarUri);
-        console.log('Avatar uploaded successfully:', uploadResponse);
-        
         if (uploadResponse.url) {
           data.avatar_url = uploadResponse.url;
         }
       } catch (error: any) {
         console.error('Avatar upload error:', error);
-        console.error('Avatar error response:', error.response?.data);
         Alert.alert('Error', 'Failed to upload profile photo. Profile will be saved without the new photo.');
       }
     }
@@ -180,11 +188,33 @@ export default function EditProfileScreen() {
     updateMutation.mutate(data);
   };
 
-  const toggleSkill = (skill: string) => {
-    if (skills.includes(skill)) {
-      setSkills(skills.filter(s => s !== skill));
-    } else {
-      setSkills([...skills, skill]);
+  const handleSkillsSave = async (newSkillIds: number[]) => {
+    const currentSkillIds = userSkillsData?.skills.map((us: UserSkill) => us.skill_id) || [];
+    
+    // Find skills to add (in new but not in current)
+    const toAdd = newSkillIds.filter(id => !currentSkillIds.includes(id));
+    
+    // Find skills to remove (in current but not in new)
+    const toRemove = currentSkillIds.filter(id => !newSkillIds.includes(id));
+    
+    try {
+      // Add new skills
+      for (const skillId of toAdd) {
+        await addSkillMutation.mutateAsync(skillId);
+      }
+      
+      // Remove old skills
+      for (const skillId of toRemove) {
+        const userSkill = userSkillsData?.skills.find((us: UserSkill) => us.skill_id === skillId);
+        if (userSkill) {
+          await removeSkillMutation.mutateAsync(userSkill.id);
+        }
+      }
+      
+      setSelectedSkillIds(newSkillIds);
+    } catch (error) {
+      console.error('Error updating skills:', error);
+      Alert.alert('Error', 'Failed to update some skills');
     }
   };
 
@@ -196,7 +226,7 @@ export default function EditProfileScreen() {
     return profile?.username?.[0]?.toUpperCase() || 'U';
   };
 
-  if (isLoading) {
+  if (isLoading || skillsLoading || userSkillsLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Edit Profile' }} />
@@ -206,6 +236,9 @@ export default function EditProfileScreen() {
       </SafeAreaView>
     );
   }
+
+  const allSkills = allSkillsData?.skills || [];
+  const userSkills = userSkillsData?.skills || [];
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -295,29 +328,40 @@ export default function EditProfileScreen() {
           />
         </Surface>
 
-        {/* Skills Section - Always visible */}
+        {/* Skills Section */}
         <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Your Skills</Text>
-          <Text style={styles.skillsDescription}>
-            Select skills you can help others with
-          </Text>
-          <View style={styles.skillsContainer}>
-            {SKILL_OPTIONS.map((skill) => (
-              <Chip
-                key={skill}
-                selected={skills.includes(skill)}
-                onPress={() => toggleSkill(skill)}
-                style={[
-                  styles.skillChip,
-                  skills.includes(skill) && styles.skillChipSelected
-                ]}
-                textStyle={skills.includes(skill) ? styles.skillChipTextSelected : undefined}
-                mode={skills.includes(skill) ? 'flat' : 'outlined'}
-              >
-                {skill}
-              </Chip>
-            ))}
+          <View style={styles.skillsHeader}>
+            <View>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Your Skills</Text>
+              <Text style={styles.skillsDescription}>
+                {userSkills.length} skills selected
+              </Text>
+            </View>
+            <Button
+              mode="outlined"
+              onPress={() => setSkillsSelectorVisible(true)}
+              icon="plus"
+              compact
+            >
+              Manage
+            </Button>
           </View>
+          
+          {userSkills.length > 0 ? (
+            <View style={styles.skillsContainer}>
+              {userSkills.map((userSkill: UserSkill) => (
+                <Chip
+                  key={userSkill.id}
+                  style={styles.skillChip}
+                  mode="flat"
+                >
+                  {userSkill.skill?.name || 'Unknown'}
+                </Chip>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>No skills added yet. Tap "Manage" to add skills.</Text>
+          )}
         </Surface>
 
         {/* Helper Settings */}
@@ -352,7 +396,6 @@ export default function EditProfileScreen() {
           ) : null}
         </Surface>
 
-        {/* Bottom spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -369,6 +412,15 @@ export default function EditProfileScreen() {
           Save Changes
         </Button>
       </Surface>
+
+      {/* Skills Selector Modal */}
+      <SkillsSelector
+        visible={skillsSelectorVisible}
+        selectedSkills={selectedSkillIds}
+        onDismiss={() => setSkillsSelectorVisible(false)}
+        onSave={handleSkillsSave}
+        allSkills={allSkills}
+      />
     </SafeAreaView>
   );
 }
@@ -461,25 +513,29 @@ const styles = StyleSheet.create({
   inputOutline: {
     borderColor: '#e5e7eb',
   },
+  skillsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
   skillsDescription: {
     color: '#6b7280',
     fontSize: 13,
-    marginBottom: 16,
-    marginTop: -8,
+    marginTop: -12,
   },
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   skillChip: {
-    marginRight: 8,
-    marginBottom: 8,
+    backgroundColor: '#e0f2fe',
   },
-  skillChipSelected: {
-    backgroundColor: '#0ea5e9',
-  },
-  skillChipTextSelected: {
-    color: '#ffffff',
+  emptyText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   helperHeader: {
     flexDirection: 'row',
