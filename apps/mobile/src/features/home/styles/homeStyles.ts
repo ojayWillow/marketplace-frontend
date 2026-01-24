@@ -208,14 +208,68 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     
     // Modal Base Styles
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-    modalContent: { backgroundColor: themeColors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400 },
-    modalTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 20, textAlign: 'center' },
+    modalContent: { backgroundColor: themeColors.card, borderRadius: 24, padding: 24, width: '100%', maxWidth: 400 },
+    modalTitle: { fontSize: 22, fontWeight: '700', color: themeColors.text, marginBottom: 24, textAlign: 'center' },
     
+    // New Card Grid Styles for Create Modal
+    modalGrid: {
+      flexDirection: 'row',
+      gap: 16,
+      marginBottom: 16,
+    },
+    modalCard: {
+      flex: 1,
+      aspectRatio: 1,
+      borderRadius: 20,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    modalCardGradient: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+    },
+    modalCardContent: {
+      flex: 1,
+      padding: 20,
+      justifyContent: 'flex-end',
+      zIndex: 2,
+    },
+    modalCardIconContainer: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    modalCardIcon: {
+      fontSize: 32,
+    },
+    modalCardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#ffffff',
+      marginBottom: 4,
+    },
+    modalCardSubtitle: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.9)',
+      fontWeight: '500',
+    },
+    
+    // Legacy styles (kept for compatibility)
     modalOption: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 24, borderRadius: 16, marginBottom: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
     modalOptionIcon: { fontSize: 40, marginRight: 20, zIndex: 2 },
     modalOptionText: { flex: 1, zIndex: 2 },
     modalOptionTitle: { fontSize: 18, fontWeight: '700', color: '#ffffff', marginBottom: 4 },
     modalOptionSubtitle: { fontSize: 15, color: 'rgba(255,255,255,0.95)' },
+    
     modalCancel: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
     modalCancelText: { fontSize: 16, fontWeight: '600', color: themeColors.textSecondary },
     
