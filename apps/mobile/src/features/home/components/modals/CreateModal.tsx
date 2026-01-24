@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { haptic } from '../../../../utils/haptics';
+import { haptic } from '../../../../../utils/haptics';
 import { JOB_COLOR, OFFERING_COLOR } from '../../constants';
 
 interface CreateModalProps {

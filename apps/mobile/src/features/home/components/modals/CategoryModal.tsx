@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { CATEGORIES } from '@marketplace/shared';
-import { haptic } from '../../../../utils/haptics';
+import { haptic } from '../../../../../utils/haptics';
 
 interface CategoryModalProps {
   visible: boolean;

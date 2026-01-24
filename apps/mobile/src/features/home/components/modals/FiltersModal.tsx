@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, TouchableOpacity, View, FlatList } from 'react-native';
 import { Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { haptic } from '../../../../utils/haptics';
+import { haptic } from '../../../../../utils/haptics';
 import { JOB_COLOR, RADIUS_OPTIONS, DIFFICULTY_OPTIONS } from '../../constants';
 
 interface FiltersModalProps {
