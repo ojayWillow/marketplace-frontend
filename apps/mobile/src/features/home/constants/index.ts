@@ -1,5 +1,5 @@
 import { Dimensions } from 'react-native';
-import { calculateDistance as calcDistance } from '../../../utils/mapClustering';
+import { calculateDistance as calcDistance } from '../../../../utils/mapClustering';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
