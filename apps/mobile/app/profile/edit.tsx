@@ -3,15 +3,9 @@ import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, TextInput, Avatar, Switch, Chip, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, useAuthStore, getImageUrl, uploadImageFromUri } from '@marketplace/shared';
+import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, FORM_CATEGORIES, normalizeCategory } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-
-const SKILL_OPTIONS = [
-  'Cleaning', 'Moving', 'Handyman', 'Gardening', 'Delivery',
-  'Pet Care', 'Tutoring', 'Tech Support', 'Cooking', 'Driving',
-  'Plumbing', 'Electrical', 'Painting', 'Assembly', 'Shopping'
-];
 
 export default function EditProfileScreen() {
   const { user, updateUser } = useAuthStore();
@@ -47,12 +41,16 @@ export default function EditProfileScreen() {
       setHourlyRate(profile.hourly_rate?.toString() || '');
       
       // Handle skills - could be array or comma-separated string
+      // Also normalize legacy category names to new ones
       if (profile.skills) {
+        let skillsArray: string[] = [];
         if (Array.isArray(profile.skills)) {
-          setSkills(profile.skills);
+          skillsArray = profile.skills;
         } else if (typeof profile.skills === 'string') {
-          setSkills(profile.skills.split(',').map(s => s.trim()).filter(Boolean));
+          skillsArray = profile.skills.split(',').map(s => s.trim()).filter(Boolean);
         }
+        // Normalize legacy skills to new category keys
+        setSkills(skillsArray.map(s => normalizeCategory(s.toLowerCase().replace(/\s+/g, '-'))));
       }
       
       if (profile.avatar_url) {
@@ -143,8 +141,8 @@ export default function EditProfileScreen() {
       is_helper: isHelper,
     };
 
-    // Always send skills (even if empty)
-    data.skills = skills;
+    // Always send skills (even if empty) - store as comma-separated string
+    data.skills = skills.join(',');
 
     if (isHelper) {
       data.hourly_rate = hourlyRate ? parseFloat(hourlyRate) : null;
@@ -168,11 +166,11 @@ export default function EditProfileScreen() {
     updateMutation.mutate(data);
   };
 
-  const toggleSkill = (skill: string) => {
-    if (skills.includes(skill)) {
-      setSkills(skills.filter(s => s !== skill));
+  const toggleSkill = (skillKey: string) => {
+    if (skills.includes(skillKey)) {
+      setSkills(skills.filter(s => s !== skillKey));
     } else {
-      setSkills([...skills, skill]);
+      setSkills([...skills, skillKey]);
     }
   };
 
@@ -287,22 +285,23 @@ export default function EditProfileScreen() {
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Your Skills</Text>
           <Text style={styles.skillsDescription}>
-            Select skills you can help others with
+            Select the categories you can help with
           </Text>
           <View style={styles.skillsContainer}>
-            {SKILL_OPTIONS.map((skill) => (
+            {FORM_CATEGORIES.map((category) => (
               <Chip
-                key={skill}
-                selected={skills.includes(skill)}
-                onPress={() => toggleSkill(skill)}
+                key={category.key}
+                selected={skills.includes(category.key)}
+                onPress={() => toggleSkill(category.key)}
                 style={[
                   styles.skillChip,
-                  skills.includes(skill) && styles.skillChipSelected
+                  skills.includes(category.key) && styles.skillChipSelected
                 ]}
-                textStyle={skills.includes(skill) ? styles.skillChipTextSelected : undefined}
-                mode={skills.includes(skill) ? 'flat' : 'outlined'}
+                textStyle={skills.includes(category.key) ? styles.skillChipTextSelected : undefined}
+                mode={skills.includes(category.key) ? 'flat' : 'outlined'}
+                icon={() => <Text style={styles.skillIcon}>{category.icon}</Text>}
               >
-                {skill}
+                {category.label}
               </Chip>
             ))}
           </View>
@@ -467,6 +466,10 @@ const styles = StyleSheet.create({
   },
   skillChipTextSelected: {
     color: '#ffffff',
+  },
+  skillIcon: {
+    fontSize: 14,
+    marginRight: 2,
   },
   helperHeader: {
     flexDirection: 'row',
