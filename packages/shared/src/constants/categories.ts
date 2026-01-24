@@ -1,35 +1,32 @@
-// Shared categories for Jobs and Offerings
+// Unified categories for Jobs and Offerings
 // Used across web and mobile apps
+// Designed for quick-help gig platform - simple, clear categories
 
 export interface Category {
   key: string;
   label: string;
   icon: string;
+  description: string;
 }
 
-// Complete category list (21 categories including 'all')
+// Complete category list (15 categories + 'all' for filters)
 export const CATEGORIES: Category[] = [
-  { key: 'all', label: 'All Categories', icon: '🔍' },
-  { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
-  { key: 'moving', label: 'Moving', icon: '📦' },
-  { key: 'heavy-lifting', label: 'Heavy Lifting', icon: '💪' },
-  { key: 'assembly', label: 'Assembly', icon: '🔧' },
-  { key: 'mounting', label: 'Mounting', icon: '🖼️' },
-  { key: 'handyman', label: 'Handyman', icon: '🛠️' },
-  { key: 'plumbing', label: 'Plumbing', icon: '🚿' },
-  { key: 'electrical', label: 'Electrical', icon: '⚡' },
-  { key: 'painting', label: 'Painting', icon: '🎨' },
-  { key: 'gardening', label: 'Gardening', icon: '🌿' },
-  { key: 'car-wash', label: 'Car Wash', icon: '🚗' },
-  { key: 'delivery', label: 'Delivery', icon: '🚚' },
-  { key: 'shopping', label: 'Shopping', icon: '🛒' },
-  { key: 'pet-care', label: 'Pet Care', icon: '🐕' },
-  { key: 'tutoring', label: 'Tutoring', icon: '📚' },
-  { key: 'tech-help', label: 'Tech Help', icon: '💻' },
-  { key: 'beauty', label: 'Beauty', icon: '💇' },
-  { key: 'hospitality', label: 'Hospitality', icon: '🍽️' },
-  { key: 'construction', label: 'Construction', icon: '👷' },
-  { key: 'other', label: 'Other', icon: '📋' },
+  { key: 'all', label: 'All Categories', icon: '🔍', description: 'Show all categories' },
+  { key: 'cleaning', label: 'Cleaning', icon: '🧹', description: 'House cleaning, deep cleaning, organizing' },
+  { key: 'moving', label: 'Moving & Lifting', icon: '📦', description: 'Moving, heavy lifting, transporting' },
+  { key: 'assembly', label: 'Assembly', icon: '🔧', description: 'Furniture assembly, IKEA, mounting' },
+  { key: 'handyman', label: 'Handyman', icon: '🛠️', description: 'Repairs, fixes, small construction' },
+  { key: 'plumbing', label: 'Plumbing', icon: '🚿', description: 'Pipes, faucets, drains' },
+  { key: 'electrical', label: 'Electrical', icon: '⚡', description: 'Wiring, lighting, outlets' },
+  { key: 'painting', label: 'Painting', icon: '🎨', description: 'Wall painting, touch-ups, decorating' },
+  { key: 'outdoor', label: 'Outdoor', icon: '🌿', description: 'Gardening, yard work, snow removal' },
+  { key: 'delivery', label: 'Delivery & Errands', icon: '🚚', description: 'Delivery, shopping, errands' },
+  { key: 'care', label: 'Care', icon: '🤝', description: 'Pet care, childcare, elderly care' },
+  { key: 'tutoring', label: 'Tutoring', icon: '📚', description: 'Teaching, lessons, homework help' },
+  { key: 'tech', label: 'Tech Help', icon: '💻', description: 'Computer, phone, tech support' },
+  { key: 'beauty', label: 'Beauty', icon: '💇', description: 'Hair, makeup, styling' },
+  { key: 'events', label: 'Events', icon: '🎉', description: 'Party setup, catering, entertainment' },
+  { key: 'other', label: 'Other', icon: '📋', description: 'Everything else' },
 ];
 
 // Categories for create/edit forms (excludes 'all')
@@ -48,4 +45,38 @@ export const getCategoryIcon = (key: string): string => {
 // Get label for a category
 export const getCategoryLabel = (key: string): string => {
   return getCategoryByKey(key)?.label || key;
+};
+
+// Get description for a category
+export const getCategoryDescription = (key: string): string => {
+  return getCategoryByKey(key)?.description || '';
+};
+
+// Legacy mapping - maps old category keys to new ones
+// Use this for backward compatibility with existing data
+export const LEGACY_CATEGORY_MAP: Record<string, string> = {
+  'heavy-lifting': 'moving',
+  'mounting': 'assembly',
+  'construction': 'handyman',
+  'repair': 'handyman',
+  'gardening': 'outdoor',
+  'car-wash': 'outdoor',
+  'snow-removal': 'outdoor',
+  'pet-care': 'care',
+  'babysitting': 'care',
+  'childcare': 'care',
+  'elderly-care': 'care',
+  'shopping': 'delivery',
+  'errands': 'delivery',
+  'tech-help': 'tech',
+  'hospitality': 'events',
+  'music': 'events',
+  'photography': 'other',
+  'translation': 'other',
+  'fitness': 'other',
+};
+
+// Normalize category - converts legacy keys to new ones
+export const normalizeCategory = (key: string): string => {
+  return LEGACY_CATEGORY_MAP[key] || key;
 };
