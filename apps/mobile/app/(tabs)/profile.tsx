@@ -140,9 +140,9 @@ export default function ProfileScreen() {
           </SafeAreaView>
         </LinearGradient>
 
-        {/* Avatar - overlapping gradient */}
+        {/* Avatar - overlapping gradient, clean without edit badge */}
         <View style={styles.avatarWrapper}>
-          <Pressable onPress={() => router.push('/profile/edit')} style={styles.avatarContainer}>
+          <View style={styles.avatarContainer}>
             {fullProfilePictureUrl ? (
               <Avatar.Image
                 size={100}
@@ -156,10 +156,7 @@ export default function ProfileScreen() {
                 style={styles.avatar}
               />
             )}
-            <View style={[styles.editBadge, { backgroundColor: themeColors.card }]}>
-              <Text style={styles.editBadgeText}>✏️</Text>
-            </View>
-          </Pressable>
+          </View>
         </View>
 
         {/* Name & Location */}
@@ -175,6 +172,20 @@ export default function ProfileScreen() {
               {displayUser.bio}
             </Text>
           )}
+        </View>
+
+        {/* Edit Profile Button */}
+        <View style={styles.editProfileContainer}>
+          <Button
+            mode="outlined"
+            onPress={() => router.push('/profile/edit')}
+            style={styles.editProfileButton}
+            labelStyle={styles.editProfileButtonLabel}
+            contentStyle={styles.editProfileButtonContent}
+            icon="account-edit"
+          >
+            Edit Profile
+          </Button>
         </View>
 
         {/* Stats Card */}
@@ -402,36 +413,24 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 
-  // Avatar
+  // Avatar - Clean design with subtle shadow
   avatarWrapper: {
     alignItems: 'center',
     marginTop: -50,
   },
   avatarContainer: {
-    position: 'relative',
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    // Shadow for Android
+    elevation: 6,
   },
   avatar: {
     backgroundColor: '#0ea5e9',
-    borderWidth: 4,
+    borderWidth: 2,
     borderColor: '#ffffff',
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    borderRadius: 14,
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  editBadgeText: {
-    fontSize: 14,
   },
 
   // Name Section
@@ -452,6 +451,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     lineHeight: 20,
+  },
+
+  // Edit Profile Button
+  editProfileContainer: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  editProfileButton: {
+    borderColor: '#0ea5e9',
+    borderRadius: 10,
+  },
+  editProfileButtonLabel: {
+    color: '#0ea5e9',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  editProfileButtonContent: {
+    paddingVertical: 4,
   },
 
   // Stats Card
