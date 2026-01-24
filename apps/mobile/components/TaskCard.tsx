@@ -8,6 +8,8 @@ import StarRating from './StarRating';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 
+const JOB_COLOR = '#3B82F6'; // Blue for jobs
+
 interface TaskCardProps {
   task: Task;
   onPress?: (task: Task) => void;
@@ -101,7 +103,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       marginBottom: 12, 
       backgroundColor: themeColors.card,
       borderRadius: 12,
-      elevation: 1,
+      // Blue left border accent for jobs
+      borderLeftWidth: 4,
+      borderLeftColor: JOB_COLOR,
+      // Subtle shadow for depth
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: activeTheme === 'dark' ? 0.3 : 0.08,
+      shadowRadius: 6,
+      elevation: 3,
     },
     cardContent: {
       paddingVertical: 14,
@@ -123,7 +133,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
     price: {
       fontSize: 18,
       fontWeight: '700',
-      color: themeColors.primaryAccent,
+      color: JOB_COLOR,
     },
     
     // Row 2: Title
@@ -150,7 +160,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       width: 24,
       height: 24,
       borderRadius: 12,
-      backgroundColor: themeColors.primaryAccent,
+      backgroundColor: JOB_COLOR,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 6,
