@@ -5,6 +5,8 @@ import { Text, Button, Surface, Avatar, TextInput, ActivityIndicator } from 'rea
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask, createTaskReview, canReviewTask, useAuthStore } from '@marketplace/shared';
 import { useState } from 'react';
+import { useThemeStore } from '../../../src/stores/themeStore';
+import { colors } from '../../../src/theme';
 
 const MIN_REVIEW_LENGTH = 10;
 
@@ -13,6 +15,9 @@ export default function ReviewScreen() {
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
   
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState('');
@@ -64,6 +69,168 @@ export default function ReviewScreen() {
     reviewMutation.mutate();
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    errorIcon: {
+      fontSize: 64,
+      marginBottom: 20,
+    },
+    errorTitle: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+      marginBottom: 12,
+      fontSize: 22,
+    },
+    errorText: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 32,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    backButton: {
+      minWidth: 140,
+      backgroundColor: '#0ea5e9',
+    },
+    taskCard: {
+      backgroundColor: themeColors.card,
+      padding: 16,
+      margin: 16,
+      marginBottom: 0,
+      borderRadius: 12,
+    },
+    taskLabel: {
+      color: themeColors.textSecondary,
+      marginBottom: 4,
+      fontSize: 13,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    taskTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      fontSize: 16,
+    },
+    section: {
+      backgroundColor: themeColors.card,
+      padding: 20,
+      marginTop: 16,
+      marginHorizontal: 16,
+      borderRadius: 12,
+    },
+    sectionTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 16,
+      fontSize: 17,
+    },
+    revieweeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatar: {
+      backgroundColor: '#0ea5e9',
+      marginRight: 16,
+    },
+    revieweeInfo: {
+      flex: 1,
+    },
+    revieweeName: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+      fontSize: 18,
+    },
+    revieweeRole: {
+      color: themeColors.textSecondary,
+      marginTop: 4,
+      fontSize: 14,
+    },
+    ratingHint: {
+      color: themeColors.textMuted,
+      fontSize: 13,
+      marginBottom: 12,
+    },
+    starsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    starButton: {
+      padding: 8,
+    },
+    star: {
+      fontSize: 40,
+      color: themeColors.border,
+    },
+    starFilled: {
+      color: '#fbbf24',
+    },
+    ratingLabel: {
+      textAlign: 'center',
+      marginTop: 8,
+      color: themeColors.text,
+      fontWeight: '500',
+      fontSize: 16,
+    },
+    textInput: {
+      backgroundColor: themeColors.card,
+      minHeight: 120,
+    },
+    textInputOutline: {
+      borderColor: themeColors.border,
+    },
+    charCount: {
+      marginTop: 8,
+      color: themeColors.textMuted,
+      fontSize: 12,
+      textAlign: 'right',
+    },
+    charCountError: {
+      color: '#ef4444',
+    },
+    bottomSpacer: {
+      height: 100,
+    },
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: themeColors.card,
+      padding: 16,
+      paddingBottom: 32,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    submitButton: {
+      borderRadius: 12,
+      backgroundColor: '#0ea5e9',
+    },
+    submitButtonContent: {
+      paddingVertical: 8,
+    },
+  });
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -80,7 +247,9 @@ export default function ReviewScreen() {
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Leave Review' }} />
         <View style={styles.errorContainer}>
-          <Text variant="headlineSmall" style={styles.errorText}>Task not found</Text>
+          <Text style={styles.errorIcon}>🔍</Text>
+          <Text style={styles.errorTitle}>Task not found</Text>
+          <Text style={styles.errorText}>This task could not be loaded. It may have been deleted or you don't have permission to view it.</Text>
           <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
             Go Back
           </Button>
@@ -95,11 +264,13 @@ export default function ReviewScreen() {
         <Stack.Screen options={{ headerShown: true, title: 'Leave Review' }} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorIcon}>📝</Text>
-          <Text variant="titleLarge" style={styles.errorTitle}>
+          <Text style={styles.errorTitle}>
             {canReview?.existing_review ? 'Already Reviewed' : 'Cannot Review'}
           </Text>
           <Text style={styles.errorText}>
-            {canReview?.reason || 'You cannot review this task.'}
+            {canReview?.existing_review 
+              ? 'You have already reviewed this task'
+              : (canReview?.reason || 'You cannot review this task at this time.')}
           </Text>
           <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
             Go Back
@@ -122,13 +293,13 @@ export default function ReviewScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Task Info */}
         <Surface style={styles.taskCard} elevation={1}>
-          <Text variant="labelMedium" style={styles.taskLabel}>Task</Text>
-          <Text variant="titleMedium" style={styles.taskTitle}>{task.title}</Text>
+          <Text style={styles.taskLabel}>Task</Text>
+          <Text style={styles.taskTitle}>{task.title}</Text>
         </Surface>
 
         {/* Reviewee Card */}
         <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle}>
             Review {revieweeRole === 'worker' ? 'Worker' : 'Client'}
           </Text>
           <View style={styles.revieweeRow}>
@@ -138,7 +309,7 @@ export default function ReviewScreen() {
               style={styles.avatar}
             />
             <View style={styles.revieweeInfo}>
-              <Text variant="titleLarge" style={styles.revieweeName}>
+              <Text style={styles.revieweeName}>
                 {revieweeName || 'Unknown'}
               </Text>
               <Text style={styles.revieweeRole}>
@@ -150,7 +321,7 @@ export default function ReviewScreen() {
 
         {/* Star Rating */}
         <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Rating</Text>
+          <Text style={styles.sectionTitle}>Rating</Text>
           <Text style={styles.ratingHint}>Tap a star to rate</Text>
           <View style={styles.starsContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
@@ -179,16 +350,18 @@ export default function ReviewScreen() {
 
         {/* Review Text */}
         <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Your Review</Text>
+          <Text style={styles.sectionTitle}>Your Review</Text>
           <TextInput
             mode="outlined"
             placeholder="Share your experience..."
+            placeholderTextColor={themeColors.textMuted}
             value={content}
             onChangeText={setContent}
             multiline
             numberOfLines={5}
             style={styles.textInput}
             outlineStyle={styles.textInputOutline}
+            textColor={themeColors.text}
           />
           <Text style={[
             styles.charCount,
@@ -218,147 +391,3 @@ export default function ReviewScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  errorIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  errorText: {
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  backButton: {
-    minWidth: 120,
-  },
-  taskCard: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    margin: 16,
-    marginBottom: 0,
-    borderRadius: 12,
-  },
-  taskLabel: {
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  taskTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginTop: 16,
-    marginHorizontal: 16,
-    borderRadius: 12,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  revieweeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    backgroundColor: '#0ea5e9',
-    marginRight: 16,
-  },
-  revieweeInfo: {
-    flex: 1,
-  },
-  revieweeName: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  revieweeRole: {
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  ratingHint: {
-    color: '#9ca3af',
-    fontSize: 13,
-    marginBottom: 12,
-  },
-  starsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  starButton: {
-    padding: 8,
-  },
-  star: {
-    fontSize: 40,
-    color: '#d1d5db',
-  },
-  starFilled: {
-    color: '#fbbf24',
-  },
-  ratingLabel: {
-    textAlign: 'center',
-    marginTop: 8,
-    color: '#1f2937',
-    fontWeight: '500',
-    fontSize: 16,
-  },
-  textInput: {
-    backgroundColor: '#ffffff',
-    minHeight: 120,
-  },
-  textInputOutline: {
-    borderColor: '#e5e7eb',
-  },
-  charCount: {
-    marginTop: 8,
-    color: '#9ca3af',
-    fontSize: 12,
-    textAlign: 'right',
-  },
-  charCountError: {
-    color: '#ef4444',
-  },
-  bottomSpacer: {
-    height: 100,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 32,
-  },
-  submitButton: {
-    borderRadius: 12,
-  },
-  submitButtonContent: {
-    paddingVertical: 8,
-  },
-});
