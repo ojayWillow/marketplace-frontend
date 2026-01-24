@@ -2,7 +2,7 @@ import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip, IconButton, Badge } from 'react-native-paper';
 import { router, Stack } from 'expo-router';
-import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount } from '@marketplace/shared';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, getCategoryByKey, getCategoryIcon, getCategoryLabel } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
@@ -109,7 +109,7 @@ export default function ProfileScreen() {
 
   // Parse skills - could be string or array
   const userSkills = displayUser.skills 
-    ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()))
+    ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()).filter(Boolean))
     : [];
 
   return (
@@ -224,14 +224,15 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Skills & Expertise</Text>
             <Surface style={[styles.skillsContainer, { backgroundColor: themeColors.card }]} elevation={0}>
               <View style={styles.skillsChipsContainer}>
-                {userSkills.map((skill: string, index: number) => (
+                {userSkills.map((skillKey: string, index: number) => (
                   <Chip 
                     key={index} 
                     mode="outlined" 
                     style={styles.skillChip}
                     textStyle={styles.skillChipText}
+                    icon={() => <Text style={styles.skillIcon}>{getCategoryIcon(skillKey)}</Text>}
                   >
-                    {skill}
+                    {getCategoryLabel(skillKey)}
                   </Chip>
                 ))}
               </View>
@@ -462,6 +463,9 @@ const styles = StyleSheet.create({
   },
   skillChipText: {
     fontSize: 13,
+  },
+  skillIcon: {
+    fontSize: 14,
   },
   menuContainer: {
   },
