@@ -3,7 +3,7 @@ import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, TextInput, Avatar, Switch, Chip, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, FORM_CATEGORIES, normalizeCategory } from '@marketplace/shared';
+import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, FORM_CATEGORIES, normalizeSkills } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -40,8 +40,9 @@ export default function EditProfileScreen() {
       setIsHelper(profile.is_helper || false);
       setHourlyRate(profile.hourly_rate?.toString() || '');
       
-      // Handle skills - could be array or comma-separated string
-      // Also normalize legacy category names to new ones
+      // Handle skills - normalize legacy skills to new category keys
+      // This will auto-convert old skills (cooking -> events, driving -> delivery, etc.)
+      // and filter out any that don't map to valid categories
       if (profile.skills) {
         let skillsArray: string[] = [];
         if (Array.isArray(profile.skills)) {
@@ -49,8 +50,8 @@ export default function EditProfileScreen() {
         } else if (typeof profile.skills === 'string') {
           skillsArray = profile.skills.split(',').map(s => s.trim()).filter(Boolean);
         }
-        // Normalize legacy skills to new category keys
-        setSkills(skillsArray.map(s => normalizeCategory(s.toLowerCase().replace(/\s+/g, '-'))));
+        // Normalize and filter to only valid categories
+        setSkills(normalizeSkills(skillsArray));
       }
       
       if (profile.avatar_url) {
@@ -142,6 +143,7 @@ export default function EditProfileScreen() {
     };
 
     // Always send skills (even if empty) - store as comma-separated string
+    // Skills are already normalized at this point
     data.skills = skills.join(',');
 
     if (isHelper) {
