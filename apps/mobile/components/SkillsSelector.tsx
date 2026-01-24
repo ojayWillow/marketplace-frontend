@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Modal, Portal, Text, Chip, Button, Searchbar, ActivityIndicator } from 'react-native-paper';
-import { CATEGORIES, CATEGORY_SKILLS, type Skill } from '@marketplace/shared';
+import { Modal, Portal, Text, Chip, Button, Searchbar } from 'react-native-paper';
+import { CATEGORIES } from '@marketplace/shared';
 
 interface SkillsSelectorProps {
   visible: boolean;
@@ -15,6 +15,15 @@ export function SkillsSelector({ visible, selectedSkills, onDismiss, onSave, all
   const [localSelected, setLocalSelected] = useState<number[]>(selectedSkills);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset state when modal opens
+  React.useEffect(() => {
+    if (visible) {
+      setLocalSelected(selectedSkills);
+      setSelectedCategory(null);
+      setSearchQuery('');
+    }
+  }, [visible, selectedSkills]);
 
   // Group skills by category
   const skillsByCategory: Record<string, typeof allSkills> = {};
@@ -43,17 +52,21 @@ export function SkillsSelector({ visible, selectedSkills, onDismiss, onSave, all
 
   const handleSave = () => {
     onSave(localSelected);
-    onDismiss();
   };
 
   const handleCancel = () => {
-    setLocalSelected(selectedSkills); // Reset to original
+    setLocalSelected(selectedSkills);
     onDismiss();
   };
 
   const getCategoryLabel = (categoryKey: string) => {
     const category = CATEGORIES.find(c => c.key === categoryKey);
     return category?.label || categoryKey;
+  };
+
+  const getCategoryIcon = (categoryKey: string) => {
+    const category = CATEGORIES.find(c => c.key === categoryKey);
+    return category?.icon || '📦';
   };
 
   return (
@@ -82,9 +95,9 @@ export function SkillsSelector({ visible, selectedSkills, onDismiss, onSave, all
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Show search results */}
           {filteredSkills ? (
-            <View style={styles.categorySection}>
-              <Text variant="titleMedium" style={styles.categoryTitle}>
-                Search Results
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Search Results ({filteredSkills.length})
               </Text>
               <View style={styles.skillsGrid}>
                 {filteredSkills.map(skill => (
@@ -104,68 +117,67 @@ export function SkillsSelector({ visible, selectedSkills, onDismiss, onSave, all
                 ))}
               </View>
             </View>
-          ) : (
-            /* Show category selection or skills in category */
-            !selectedCategory ? (
-              /* Category Grid */
-              <View style={styles.categoriesGrid}>
-                {CATEGORIES.map(category => {
-                  const categorySkills = skillsByCategory[category.key] || [];
-                  const selectedInCategory = categorySkills.filter(s => localSelected.includes(s.id)).length;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={category.key}
-                      style={styles.categoryCard}
-                      onPress={() => setSelectedCategory(category.key)}
-                    >
-                      <Text style={styles.categoryEmoji}>{category.icon}</Text>
-                      <Text variant="titleSmall" style={styles.categoryName}>
-                        {category.label}
-                      </Text>
-                      {selectedInCategory > 0 && (
-                        <View style={styles.categoryBadge}>
-                          <Text style={styles.categoryBadgeText}>{selectedInCategory}</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ) : (
-              /* Skills in selected category */
-              <View style={styles.categorySection}>
-                <View style={styles.categoryHeader}>
-                  <Button
-                    mode="text"
-                    onPress={() => setSelectedCategory(null)}
-                    icon="arrow-left"
+          ) : selectedCategory ? (
+            /* Skills in selected category */
+            <View style={styles.section}>
+              <Button
+                mode="text"
+                onPress={() => setSelectedCategory(null)}
+                icon="arrow-left"
+                style={styles.backButton}
+              >
+                Back to Categories
+              </Button>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                {getCategoryIcon(selectedCategory)} {getCategoryLabel(selectedCategory)}
+              </Text>
+              <View style={styles.skillsGrid}>
+                {(skillsByCategory[selectedCategory] || []).map(skill => (
+                  <Chip
+                    key={skill.id}
+                    selected={localSelected.includes(skill.id)}
+                    onPress={() => toggleSkill(skill.id)}
+                    style={[
+                      styles.skillChip,
+                      localSelected.includes(skill.id) && styles.skillChipSelected
+                    ]}
+                    textStyle={localSelected.includes(skill.id) ? styles.skillChipTextSelected : undefined}
+                    mode={localSelected.includes(skill.id) ? 'flat' : 'outlined'}
                   >
-                    Back to Categories
-                  </Button>
-                </View>
-                <Text variant="titleMedium" style={styles.categoryTitle}>
-                  {getCategoryLabel(selectedCategory)}
-                </Text>
-                <View style={styles.skillsGrid}>
-                  {(skillsByCategory[selectedCategory] || []).map(skill => (
-                    <Chip
-                      key={skill.id}
-                      selected={localSelected.includes(skill.id)}
-                      onPress={() => toggleSkill(skill.id)}
-                      style={[
-                        styles.skillChip,
-                        localSelected.includes(skill.id) && styles.skillChipSelected
-                      ]}
-                      textStyle={localSelected.includes(skill.id) ? styles.skillChipTextSelected : undefined}
-                      mode={localSelected.includes(skill.id) ? 'flat' : 'outlined'}
-                    >
-                      {skill.name}
-                    </Chip>
-                  ))}
-                </View>
+                    {skill.name}
+                  </Chip>
+                ))}
               </View>
-            )
+            </View>
+          ) : (
+            /* Category Grid */
+            <View style={styles.categoriesGrid}>
+              {CATEGORIES.map(category => {
+                const categorySkills = skillsByCategory[category.key] || [];
+                const selectedInCategory = categorySkills.filter(s => localSelected.includes(s.id)).length;
+                
+                return (
+                  <TouchableOpacity
+                    key={category.key}
+                    style={styles.categoryCard}
+                    onPress={() => setSelectedCategory(category.key)}
+                  >
+                    <Text style={styles.categoryEmoji}>{category.icon}</Text>
+                    <Text variant="labelLarge" style={styles.categoryName}>
+                      {category.label}
+                    </Text>
+                    <Text style={styles.categoryCount}>
+                      {categorySkills.length} skills
+                    </Text>
+                    {selectedInCategory > 0 && (
+                      <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryBadgeText}>{selectedInCategory}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           )}
         </ScrollView>
 
@@ -214,6 +226,19 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  section: {
+    paddingBottom: 20,
+  },
+  sectionTitle: {
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -230,6 +255,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     position: 'relative',
+    minHeight: 110,
   },
   categoryEmoji: {
     fontSize: 32,
@@ -238,6 +264,12 @@ const styles = StyleSheet.create({
   categoryName: {
     textAlign: 'center',
     color: '#1f2937',
+    fontWeight: '600',
+  },
+  categoryCount: {
+    fontSize: 11,
+    color: '#9ca3af',
+    marginTop: 2,
   },
   categoryBadge: {
     position: 'absolute',
@@ -255,17 +287,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
-  },
-  categorySection: {
-    paddingBottom: 20,
-  },
-  categoryHeader: {
-    marginBottom: 12,
-  },
-  categoryTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
   },
   skillsGrid: {
     flexDirection: 'row',
