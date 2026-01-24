@@ -7,15 +7,14 @@ import {
   Platform,
   RefreshControl,
   Pressable,
+  TextInput as RNTextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Text,
-  TextInput,
   IconButton,
   ActivityIndicator,
   Avatar,
-  Surface,
 } from 'react-native-paper';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,7 +25,6 @@ import {
   markAsRead,
   useAuthStore,
   type Message,
-  type Conversation,
 } from '@marketplace/shared';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
@@ -103,6 +101,7 @@ export default function ConversationScreen() {
 
   const otherUser = conversation?.other_participant;
   const headerTitle = otherUser?.username || 'Chat';
+  const avatarLabel = otherUser?.username?.charAt(0).toUpperCase() || '?';
 
   // Format message time
   const formatTime = (timestamp: string) => {
@@ -142,177 +141,46 @@ export default function ConversationScreen() {
     return currentDate !== prevDate;
   };
 
-  // Dynamic styles based on theme
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: themeColors.background,
-    },
-    keyboardView: {
-      flex: 1,
-    },
-    centerContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-    },
-    statusText: {
-      marginTop: 12,
-      color: themeColors.textSecondary,
-    },
-    errorText: {
-      color: activeTheme === 'dark' ? themeColors.error : '#ef4444',
-      marginBottom: 12,
-      fontSize: 16,
-    },
-    retryButton: {
-      backgroundColor: activeTheme === 'dark' ? themeColors.primaryAccent : '#0ea5e9',
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 8,
-    },
-    retryButtonText: {
-      color: '#ffffff',
-      fontWeight: '600',
-    },
-    messagesContainer: {
-      flex: 1,
-    },
-    messagesContent: {
-      padding: 16,
-      flexGrow: 1,
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingVertical: 60,
-    },
-    emptyIcon: {
-      fontSize: 48,
-      marginBottom: 16,
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: themeColors.text,
-      marginBottom: 8,
-    },
-    emptySubtext: {
-      fontSize: 14,
-      color: themeColors.textSecondary,
-      textAlign: 'center',
-    },
-    dateSeparator: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginVertical: 16,
-    },
-    dateLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor: themeColors.border,
-    },
-    dateText: {
-      paddingHorizontal: 12,
-      fontSize: 12,
-      color: themeColors.textMuted,
-      fontWeight: '500',
-    },
-    messageBubbleContainer: {
-      flexDirection: 'row',
-      marginBottom: 8,
-      alignItems: 'flex-end',
-    },
-    ownMessageContainer: {
-      justifyContent: 'flex-end',
-    },
-    otherMessageContainer: {
-      justifyContent: 'flex-start',
-    },
-    messageAvatar: {
-      backgroundColor: activeTheme === 'dark' ? themeColors.secondaryAccent : '#6b7280',
-      marginRight: 8,
-    },
-    messageBubble: {
-      maxWidth: '75%',
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: 18,
-    },
-    ownMessage: {
-      backgroundColor: activeTheme === 'dark' ? themeColors.primaryAccent : '#0ea5e9',
-      borderBottomRightRadius: 4,
-      // Purple glow effect in dark mode
-      ...(activeTheme === 'dark' && {
-        shadowColor: themeColors.primaryAccent,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-      }),
-    },
-    otherMessage: {
-      backgroundColor: themeColors.card,
-      borderBottomLeftRadius: 4,
-      borderWidth: 1,
-      borderColor: themeColors.border,
-    },
-    messageText: {
-      fontSize: 15,
-      lineHeight: 20,
-    },
-    ownMessageText: {
-      color: '#ffffff',
-    },
-    otherMessageText: {
-      color: themeColors.text,
-    },
-    messageTime: {
-      fontSize: 11,
-      marginTop: 4,
-    },
-    ownMessageTime: {
-      color: 'rgba(255, 255, 255, 0.7)',
-      textAlign: 'right',
-    },
-    otherMessageTime: {
-      color: themeColors.textMuted,
-    },
-    inputContainer: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      padding: 12,
-      paddingBottom: 8,
-      backgroundColor: themeColors.card,
-      borderTopWidth: 1,
-      borderTopColor: themeColors.border,
-    },
-    textInput: {
-      flex: 1,
-      marginRight: 8,
-      maxHeight: 100,
-      backgroundColor: themeColors.card,
-      color: themeColors.text,
-    },
-    textInputOutline: {
-      borderRadius: 20,
-      borderColor: themeColors.border,
-    },
-    sendButton: {
-      marginBottom: 4,
-      backgroundColor: activeTheme === 'dark' ? themeColors.primaryAccent : undefined,
-    },
-  });
+  // Custom header with avatar
+  const CustomHeader = () => (
+    <View style={[styles.customHeader, { backgroundColor: themeColors.card, borderBottomColor: themeColors.border }]}>
+      <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Text style={[styles.backText, { color: '#0ea5e9' }]}>‹ Back</Text>
+      </Pressable>
+      
+      <Pressable 
+        style={styles.headerCenter}
+        onPress={() => otherUser?.id && router.push(`/user/${otherUser.id}`)}
+      >
+        <Avatar.Text
+          size={36}
+          label={avatarLabel}
+          style={styles.headerAvatar}
+        />
+        <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={1}>
+          {headerTitle}
+        </Text>
+      </Pressable>
+
+      <Pressable 
+        style={styles.infoButton}
+        onPress={() => otherUser?.id && router.push(`/user/${otherUser.id}`)}
+      >
+        <Text style={styles.infoIcon}>ℹ️</Text>
+      </Pressable>
+    </View>
+  );
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: 'Loading...', headerShown: true }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <CustomHeader />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={activeTheme === 'dark' ? themeColors.primaryAccent : undefined} />
-          <Text style={styles.statusText}>Loading messages...</Text>
+          <ActivityIndicator size="large" color="#0ea5e9" />
+          <Text style={[styles.statusText, { color: themeColors.textSecondary }]}>
+            Loading messages...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -320,8 +188,9 @@ export default function ConversationScreen() {
 
   if (isError) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: 'Error', headerShown: true }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <CustomHeader />
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>Failed to load messages</Text>
           <Pressable style={styles.retryButton} onPress={() => refetch()}>
@@ -333,24 +202,20 @@ export default function ConversationScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen
-        options={{
-          title: headerTitle,
-          headerShown: true,
-          headerBackTitle: 'Back',
-        }}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top', 'bottom']}>
+      <Stack.Screen options={{ headerShown: false }} />
+      
+      <CustomHeader />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         {/* Messages List */}
         <ScrollView
           ref={scrollViewRef}
-          style={styles.messagesContainer}
+          style={[styles.messagesContainer, { backgroundColor: themeColors.backgroundSecondary }]}
           contentContainerStyle={styles.messagesContent}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
@@ -358,9 +223,11 @@ export default function ConversationScreen() {
         >
           {messages.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>💬</Text>
-              <Text style={styles.emptyText}>No messages yet</Text>
-              <Text style={styles.emptySubtext}>
+              <View style={[styles.emptyIconContainer, { backgroundColor: themeColors.card }]}>
+                <Text style={styles.emptyIcon}>👋</Text>
+              </View>
+              <Text style={[styles.emptyText, { color: themeColors.text }]}>Say hello!</Text>
+              <Text style={[styles.emptySubtext, { color: themeColors.textSecondary }]}>
                 Send a message to start the conversation
               </Text>
             </View>
@@ -375,11 +242,11 @@ export default function ConversationScreen() {
                   {/* Date Separator */}
                   {showDateSeparator && (
                     <View style={styles.dateSeparator}>
-                      <View style={styles.dateLine} />
-                      <Text style={styles.dateText}>
+                      <View style={[styles.dateLine, { backgroundColor: themeColors.border }]} />
+                      <Text style={[styles.dateText, { color: themeColors.textMuted }]}>
                         {formatDateSeparator(message.created_at)}
                       </Text>
-                      <View style={styles.dateLine} />
+                      <View style={[styles.dateLine, { backgroundColor: themeColors.border }]} />
                     </View>
                   )}
 
@@ -394,19 +261,21 @@ export default function ConversationScreen() {
                       <Avatar.Text
                         size={32}
                         label={message.sender?.username?.charAt(0).toUpperCase() || '?'}
-                        style={styles.messageAvatar}
+                        style={[styles.messageAvatar, { backgroundColor: activeTheme === 'dark' ? themeColors.secondaryAccent : '#6b7280' }]}
                       />
                     )}
                     <View
                       style={[
                         styles.messageBubble,
-                        isOwnMessage ? styles.ownMessage : styles.otherMessage,
+                        isOwnMessage 
+                          ? [styles.ownMessage, activeTheme === 'dark' && styles.ownMessageDark]
+                          : [styles.otherMessage, { backgroundColor: themeColors.card, borderColor: themeColors.border }],
                       ]}
                     >
                       <Text
                         style={[
                           styles.messageText,
-                          isOwnMessage ? styles.ownMessageText : styles.otherMessageText,
+                          isOwnMessage ? styles.ownMessageText : [styles.otherMessageText, { color: themeColors.text }],
                         ]}
                       >
                         {message.content}
@@ -414,7 +283,7 @@ export default function ConversationScreen() {
                       <Text
                         style={[
                           styles.messageTime,
-                          isOwnMessage ? styles.ownMessageTime : styles.otherMessageTime,
+                          isOwnMessage ? styles.ownMessageTime : [styles.otherMessageTime, { color: themeColors.textMuted }],
                         ]}
                       >
                         {formatTime(message.created_at)}
@@ -427,33 +296,271 @@ export default function ConversationScreen() {
           )}
         </ScrollView>
 
-        {/* Input Area */}
-        <Surface style={styles.inputContainer} elevation={2}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Type a message..."
-            placeholderTextColor={themeColors.textMuted}
-            value={messageText}
-            onChangeText={setMessageText}
-            multiline
-            maxLength={1000}
-            mode="outlined"
-            outlineStyle={styles.textInputOutline}
-            dense
-            textColor={themeColors.text}
-          />
-          <IconButton
-            icon="send"
-            mode="contained"
-            size={24}
+        {/* Input Area - Redesigned */}
+        <View style={[styles.inputContainer, { backgroundColor: themeColors.card, borderTopColor: themeColors.border }]}>
+          <Pressable style={[styles.attachButton, { backgroundColor: themeColors.backgroundSecondary }]}>
+            <Text style={styles.attachIcon}>📎</Text>
+          </Pressable>
+          
+          <View style={[styles.textInputContainer, { backgroundColor: themeColors.backgroundSecondary }]}>
+            <RNTextInput
+              style={[styles.textInput, { color: themeColors.text }]}
+              placeholder="Type a message..."
+              placeholderTextColor={themeColors.textMuted}
+              value={messageText}
+              onChangeText={setMessageText}
+              multiline
+              maxLength={1000}
+            />
+          </View>
+
+          <Pressable 
+            style={[
+              styles.sendButton,
+              (!messageText.trim() || sendMutation.isPending) && styles.sendButtonDisabled,
+            ]}
             onPress={handleSend}
             disabled={!messageText.trim() || sendMutation.isPending}
-            loading={sendMutation.isPending}
-            style={styles.sendButton}
-            iconColor="#ffffff"
-          />
-        </Surface>
+          >
+            {sendMutation.isPending ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.sendIcon}>➤</Text>
+            )}
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  
+  // Custom Header
+  customHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    paddingVertical: 4,
+    paddingRight: 8,
+  },
+  backText: {
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+  headerAvatar: {
+    backgroundColor: '#0ea5e9',
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  infoButton: {
+    padding: 4,
+  },
+  infoIcon: {
+    fontSize: 20,
+  },
+
+  // Center states
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  statusText: {
+    marginTop: 12,
+  },
+  errorText: {
+    color: '#ef4444',
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  retryButton: {
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+
+  // Messages
+  messagesContainer: {
+    flex: 1,
+  },
+  messagesContent: {
+    padding: 16,
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  emptyIcon: {
+    fontSize: 32,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+
+  // Date Separator
+  dateSeparator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dateLine: {
+    flex: 1,
+    height: 1,
+  },
+  dateText: {
+    paddingHorizontal: 12,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Message Bubbles
+  messageBubbleContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    alignItems: 'flex-end',
+  },
+  ownMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  otherMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  messageAvatar: {
+    marginRight: 8,
+  },
+  messageBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  ownMessage: {
+    backgroundColor: '#0ea5e9',
+    borderBottomRightRadius: 6,
+  },
+  ownMessageDark: {
+    shadowColor: '#0ea5e9',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  otherMessage: {
+    borderBottomLeftRadius: 6,
+    borderWidth: 1,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  ownMessageText: {
+    color: '#ffffff',
+  },
+  otherMessageText: {},
+  messageTime: {
+    fontSize: 11,
+    marginTop: 4,
+  },
+  ownMessageTime: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'right',
+  },
+  otherMessageTime: {},
+
+  // Input Area
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    gap: 8,
+  },
+  attachButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attachIcon: {
+    fontSize: 18,
+  },
+  textInputContainer: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    maxHeight: 100,
+    justifyContent: 'center',
+  },
+  textInput: {
+    fontSize: 16,
+    lineHeight: 20,
+    maxHeight: 80,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  sendIcon: {
+    fontSize: 18,
+    color: '#ffffff',
+  },
+});
