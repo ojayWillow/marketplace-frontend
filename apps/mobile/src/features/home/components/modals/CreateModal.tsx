@@ -3,7 +3,6 @@ import { Modal, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { haptic } from '../../../../../utils/haptics';
-import { JOB_COLOR, OFFERING_COLOR } from '../../constants';
 
 interface CreateModalProps {
   visible: boolean;
@@ -30,50 +29,43 @@ export default function CreateModal({
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>What do you want to create?</Text>
           
-          {/* Grid of options */}
-          <View style={styles.modalGrid}>
-            {/* POST JOB Card */}
-            <TouchableOpacity 
-              style={styles.modalCard} 
-              onPress={() => { haptic.light(); onCreateJob(); }} 
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={['#0ea5e9', '#0284c7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.modalCardGradient}
-              />
-              <View style={styles.modalCardContent}>
-                <View style={styles.modalCardIconContainer}>
-                  <Text style={styles.modalCardIcon}>💼</Text>
-                </View>
-                <Text style={styles.modalCardTitle}>Post a Job</Text>
-                <Text style={styles.modalCardSubtitle}>Find someone to help</Text>
-              </View>
-            </TouchableOpacity>
-            
-            {/* OFFER SERVICE Card */}
-            <TouchableOpacity 
-              style={styles.modalCard} 
-              onPress={() => { haptic.light(); onCreateService(); }} 
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={['#f97316', '#ea580c']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.modalCardGradient}
-              />
-              <View style={styles.modalCardContent}>
-                <View style={styles.modalCardIconContainer}>
-                  <Text style={styles.modalCardIcon}>⚡</Text>
-                </View>
-                <Text style={styles.modalCardTitle}>Offer Service</Text>
-                <Text style={styles.modalCardSubtitle}>Share your skills</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          {/* POST JOB - Blue Gradient */}
+          <TouchableOpacity 
+            style={styles.modalOption} 
+            onPress={() => { haptic.light(); onCreateJob(); }} 
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={['#0ea5e9', '#0284c7']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 16 }}
+            />
+            <Text style={styles.modalOptionIcon}>💼</Text>
+            <View style={styles.modalOptionText}>
+              <Text style={styles.modalOptionTitle}>Post a Job</Text>
+              <Text style={styles.modalOptionSubtitle}>Find someone to help you</Text>
+            </View>
+          </TouchableOpacity>
+          
+          {/* OFFER SERVICE - Orange Gradient */}
+          <TouchableOpacity 
+            style={styles.modalOption} 
+            onPress={() => { haptic.light(); onCreateService(); }} 
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={['#f97316', '#ea580c']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: 16 }}
+            />
+            <Text style={styles.modalOptionIcon}>⚡</Text>
+            <View style={styles.modalOptionText}>
+              <Text style={styles.modalOptionTitle}>Offer a Service</Text>
+              <Text style={styles.modalOptionSubtitle}>Share your skills</Text>
+            </View>
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.modalCancel} 
