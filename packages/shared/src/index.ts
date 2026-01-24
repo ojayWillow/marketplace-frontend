@@ -42,4 +42,3 @@ export * from './types';
 
 // Constants exports
 export * from './constants/categories';
-export * from './constants/skills';
