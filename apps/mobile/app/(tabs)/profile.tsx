@@ -1,13 +1,14 @@
 import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Avatar, Surface, Divider, Button, ActivityIndicator, Chip, IconButton, Badge } from 'react-native-paper';
+import { Text, Avatar, Surface, Button, ActivityIndicator, IconButton, Badge } from 'react-native-paper';
 import { router, Stack } from 'expo-router';
-import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, getCategoryByKey, getCategoryIcon, getCategoryLabel } from '@marketplace/shared';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, getCategoryIcon, getCategoryLabel } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -32,10 +33,9 @@ export default function ProfileScreen() {
     queryKey: ['unreadCount'],
     queryFn: getUnreadCount,
     enabled: isAuthenticated,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
-  // Refetch profile data when screen comes into focus (after editing)
   useFocusEffect(
     useCallback(() => {
       refetchUser();
@@ -54,7 +54,6 @@ export default function ProfileScreen() {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
-            // Clear all cached data to prevent showing previous user's data
             queryClient.clear();
             logout();
             router.replace('/');
@@ -71,15 +70,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
         <Stack.Screen 
           options={{ 
-            headerShown: true, 
-            title: 'Profile',
-            headerStyle: {
-              backgroundColor: themeColors.card,
-            },
-            headerTintColor: themeColors.text,
-            headerTitleStyle: {
-              color: themeColors.text,
-            },
+            headerShown: false,
           }} 
         />
         <View style={styles.centerContainer}>
@@ -103,64 +94,63 @@ export default function ProfileScreen() {
   const displayUser = userData || user;
   const isLoading = isLoadingUser || isLoadingStats;
 
-  // Get profile picture URL
   const profilePictureUrl = displayUser.profile_picture_url || displayUser.avatar_url;
   const fullProfilePictureUrl = profilePictureUrl ? getImageUrl(profilePictureUrl) : null;
 
-  // Parse skills - could be string or array
   const userSkills = displayUser.skills 
     ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()).filter(Boolean))
     : [];
 
+  const displayName = user.first_name && user.last_name
+    ? `${user.first_name} ${user.last_name}`
+    : user.username;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true, 
-          title: 'Profile',
-          headerStyle: {
-            backgroundColor: themeColors.card,
-          },
-          headerTintColor: themeColors.text,
-          headerTitleStyle: {
-            color: themeColors.text,
-          },
-          headerRight: () => (
-            <Pressable onPress={() => router.push('/notifications')} style={styles.bellContainer}>
-              <IconButton
-                icon="bell-outline"
-                size={24}
-                onPress={() => router.push('/notifications')}
-                iconColor={themeColors.text}
-              />
-              {unreadCount > 0 && (
-                <View style={styles.badgeContainer}>
-                  <Badge size={18} style={styles.badge}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Badge>
-                </View>
-              )}
-            </Pressable>
-          ),
-        }} 
-      />
-      <ScrollView style={styles.scrollView}>
-        {/* Header */}
-        <Surface style={[styles.header, { backgroundColor: themeColors.card }]} elevation={1}>
-          <Pressable 
-            onPress={() => router.push('/profile/edit')}
-            style={styles.avatarContainer}
-          >
+    <View style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
+      <Stack.Screen options={{ headerShown: false }} />
+      
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Hero Header with Gradient */}
+        <LinearGradient
+          colors={activeTheme === 'dark' ? ['#1e3a5f', '#0c1929'] : ['#0ea5e9', '#0284c7']}
+          style={styles.heroGradient}
+        >
+          <SafeAreaView edges={['top']}>
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+              <Text style={styles.headerTitle}>Profile</Text>
+              <View style={styles.topBarRight}>
+                <Pressable onPress={() => router.push('/settings')} style={styles.iconButton}>
+                  <Text style={styles.iconEmoji}>⚙️</Text>
+                </Pressable>
+                <Pressable onPress={() => router.push('/notifications')} style={styles.iconButton}>
+                  <Text style={styles.iconEmoji}>🔔</Text>
+                  {unreadCount > 0 && (
+                    <View style={styles.badgeContainer}>
+                      <Badge size={16} style={styles.badge}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Badge>
+                    </View>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        {/* Avatar - overlapping gradient */}
+        <View style={styles.avatarWrapper}>
+          <Pressable onPress={() => router.push('/profile/edit')} style={styles.avatarContainer}>
             {fullProfilePictureUrl ? (
               <Avatar.Image
-                size={96}
+                size={100}
                 source={{ uri: fullProfilePictureUrl }}
                 style={styles.avatar}
               />
             ) : (
               <Avatar.Text
-                size={96}
-                label={user.username?.charAt(0).toUpperCase() || 'U'}
+                size={100}
+                label={displayName.charAt(0).toUpperCase()}
                 style={styles.avatar}
               />
             )}
@@ -168,48 +158,48 @@ export default function ProfileScreen() {
               <Text style={styles.editBadgeText}>✏️</Text>
             </View>
           </Pressable>
-          
+        </View>
+
+        {/* Name & Location */}
+        <View style={styles.nameSection}>
           <Text variant="headlineSmall" style={[styles.name, { color: themeColors.text }]}>
-            {user.first_name && user.last_name
-              ? `${user.first_name} ${user.last_name}`
-              : user.username}
+            {displayName}
           </Text>
-          <Text style={[styles.username, { color: themeColors.textSecondary }]}>@{user.username}</Text>
-          
-          {displayUser.bio ? (
-            <Text style={[styles.bio, { color: themeColors.textSecondary }]} numberOfLines={2}>{displayUser.bio}</Text>
-          ) : null}
-          
-          {/* Stats */}
+          <Text style={[styles.username, { color: themeColors.textSecondary }]}>
+            @{user.username} {displayUser.city && `· 📍 ${displayUser.city}`}
+          </Text>
+          {displayUser.bio && (
+            <Text style={[styles.bio, { color: themeColors.textSecondary }]} numberOfLines={2}>
+              {displayUser.bio}
+            </Text>
+          )}
+        </View>
+
+        {/* Stats Card */}
+        <Surface style={[styles.statsCard, { backgroundColor: themeColors.card }]} elevation={2}>
           {isLoading ? (
-            <View style={styles.statsLoading}>
-              <ActivityIndicator size="small" color="#0ea5e9" />
-            </View>
+            <ActivityIndicator size="small" color="#0ea5e9" />
           ) : (
-            <View style={styles.statsContainer}>
+            <View style={styles.statsRow}>
               <View style={styles.stat}>
-                {reviewStats?.average_rating && reviewStats.average_rating > 0 ? (
-                  <View style={styles.statRatingContainer}>
-                    <Text style={styles.starEmoji}>⭐</Text>
-                    <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
-                      {reviewStats.average_rating.toFixed(1)}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>-</Text>
-                )}
+                <View style={styles.statValueRow}>
+                  <Text style={styles.starEmoji}>⭐</Text>
+                  <Text style={[styles.statValue, { color: themeColors.text }]}>
+                    {reviewStats?.average_rating ? reviewStats.average_rating.toFixed(1) : '—'}
+                  </Text>
+                </View>
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Rating</Text>
               </View>
               <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
               <View style={styles.stat}>
-                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
+                <Text style={[styles.statValue, { color: themeColors.text }]}>
                   {reviewStats?.total_reviews || 0}
                 </Text>
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Reviews</Text>
               </View>
               <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
               <View style={styles.stat}>
-                <Text variant="titleLarge" style={[styles.statValue, { color: themeColors.text }]}>
+                <Text style={[styles.statValue, { color: themeColors.text }]}>
                   {displayUser.completed_tasks_count || 0}
                 </Text>
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Completed</Text>
@@ -218,50 +208,67 @@ export default function ProfileScreen() {
           )}
         </Surface>
 
-        {/* Skills Section */}
+        {/* Skills Section - Horizontal Scroll */}
         {userSkills.length > 0 && (
-          <>
-            <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Skills & Expertise</Text>
-            <Surface style={[styles.skillsContainer, { backgroundColor: themeColors.card }]} elevation={0}>
-              <View style={styles.skillsChipsContainer}>
-                {userSkills.map((skillKey: string, index: number) => (
-                  <Chip 
-                    key={index} 
-                    mode="outlined" 
-                    style={styles.skillChip}
-                    textStyle={styles.skillChipText}
-                    icon={() => <Text style={styles.skillIcon}>{getCategoryIcon(skillKey)}</Text>}
-                  >
+          <View style={styles.skillsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Skills</Text>
+              <Pressable onPress={() => router.push('/profile/edit')}>
+                <Text style={styles.editLink}>Edit</Text>
+              </Pressable>
+            </View>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.skillsScrollContent}
+            >
+              {userSkills.map((skillKey: string, index: number) => (
+                <View 
+                  key={index} 
+                  style={[styles.skillItem, { backgroundColor: themeColors.card }]}
+                >
+                  <Text style={styles.skillIcon}>{getCategoryIcon(skillKey)}</Text>
+                  <Text style={[styles.skillLabel, { color: themeColors.text }]} numberOfLines={1}>
                     {getCategoryLabel(skillKey)}
-                  </Chip>
-                ))}
-              </View>
-            </Surface>
-          </>
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         )}
 
-        {/* My Activity Section - SINGLE ITEM */}
-        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>My Activity</Text>
-        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
-          <MenuItem 
-            title="Jobs & Offerings" 
-            subtitle="View all your jobs and services"
-            icon="📄" 
-            onPress={() => router.push('/activity/jobs-and-offerings')}
-            themeColors={themeColors}
-          />
-        </Surface>
+        {/* No Skills - Prompt to add */}
+        {userSkills.length === 0 && (
+          <Pressable 
+            onPress={() => router.push('/profile/edit')}
+            style={[styles.addSkillsPrompt, { backgroundColor: themeColors.card }]}
+          >
+            <Text style={styles.addSkillsIcon}>🛠️</Text>
+            <View style={styles.addSkillsText}>
+              <Text style={[styles.addSkillsTitle, { color: themeColors.text }]}>Add your skills</Text>
+              <Text style={[styles.addSkillsSubtitle, { color: themeColors.textSecondary }]}>
+                Let others know what you can help with
+              </Text>
+            </View>
+            <Text style={[styles.addSkillsArrow, { color: themeColors.textMuted }]}>›</Text>
+          </Pressable>
+        )}
 
-        {/* Settings - Single Button */}
-        <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card, marginTop: 24 }]} elevation={0}>
-          <MenuItem 
-            title="Settings" 
-            subtitle="Appearance, notifications, language"
-            icon="⚙️" 
-            onPress={() => router.push('/settings')}
-            themeColors={themeColors}
-          />
-        </Surface>
+        {/* Activity Section */}
+        <View style={styles.menuSection}>
+          <Text style={[styles.sectionTitle, { color: themeColors.text, marginBottom: 12, marginHorizontal: 20 }]}>
+            Activity
+          </Text>
+          <Surface style={[styles.menuCard, { backgroundColor: themeColors.card }]} elevation={1}>
+            <MenuItem 
+              title="Jobs & Offerings" 
+              subtitle="View all your jobs and services"
+              icon="📄" 
+              onPress={() => router.push('/activity/jobs-and-offerings')}
+              themeColors={themeColors}
+            />
+          </Surface>
+        </View>
 
         {/* Logout */}
         <View style={styles.logoutContainer}>
@@ -276,7 +283,7 @@ export default function ProfileScreen() {
           </Button>
         </View>
 
-        {/* Account Info */}
+        {/* Footer */}
         <View style={styles.footer}>
           <Text style={[styles.memberSince, { color: themeColors.textMuted }]}>
             Member since {new Date(user.created_at).toLocaleDateString()}
@@ -284,7 +291,7 @@ export default function ProfileScreen() {
           <Text style={[styles.version, { color: themeColors.textMuted }]}>App version 1.0.0</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -293,36 +300,32 @@ function MenuItem({
   subtitle,
   icon, 
   onPress,
-  disabled = false,
   themeColors,
 }: { 
   title: string; 
   subtitle?: string;
   icon: string; 
   onPress: () => void;
-  disabled?: boolean;
   themeColors: typeof colors.light;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
       style={({ pressed }) => [
         styles.menuItem,
-        pressed && !disabled && { backgroundColor: themeColors.backgroundSecondary },
-        disabled && styles.menuItemDisabled,
+        pressed && { backgroundColor: themeColors.backgroundSecondary },
       ]}
     >
-      <Text style={[styles.menuIcon, disabled && styles.menuIconDisabled]}>{icon}</Text>
+      <Text style={styles.menuIcon}>{icon}</Text>
       <View style={styles.menuTextContainer}>
-        <Text style={[styles.menuTitle, { color: themeColors.text }, disabled && { color: themeColors.textMuted }]}>{title}</Text>
-        {subtitle ? (
-          <Text style={[styles.menuSubtitle, { color: themeColors.textMuted }, disabled && styles.menuSubtitleDisabled]}>
+        <Text style={[styles.menuTitle, { color: themeColors.text }]}>{title}</Text>
+        {subtitle && (
+          <Text style={[styles.menuSubtitle, { color: themeColors.textMuted }]}>
             {subtitle}
           </Text>
-        ) : null}
+        )}
       </View>
-      {!disabled && <Text style={[styles.menuArrow, { color: themeColors.textMuted }]}>›</Text>}
+      <Text style={[styles.menuArrow, { color: themeColors.textMuted }]}>›</Text>
     </Pressable>
   );
 }
@@ -333,18 +336,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  bellContainer: {
-    position: 'relative',
-    marginRight: -8,
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-  },
-  badge: {
-    backgroundColor: '#ef4444',
   },
   centerContainer: {
     flex: 1,
@@ -366,152 +357,262 @@ const styles = StyleSheet.create({
   signInButton: {
     paddingHorizontal: 24,
   },
-  header: {
-    paddingVertical: 32,
-    paddingHorizontal: 24,
+  
+  // Hero Header
+  heroGradient: {
+    paddingBottom: 50,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconEmoji: {
+    fontSize: 18,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+  },
+  badge: {
+    backgroundColor: '#ef4444',
+    fontSize: 10,
+  },
+
+  // Avatar
+  avatarWrapper: {
+    alignItems: 'center',
+    marginTop: -50,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
   },
   avatar: {
     backgroundColor: '#0ea5e9',
+    borderWidth: 4,
+    borderColor: '#ffffff',
   },
   editBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    borderRadius: 12,
+    bottom: 4,
+    right: 4,
+    borderRadius: 14,
     width: 28,
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
   editBadgeText: {
     fontSize: 14,
   },
+
+  // Name Section
+  nameSection: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginTop: 12,
+  },
   name: {
     fontWeight: 'bold',
   },
   username: {
     marginTop: 4,
+    fontSize: 14,
   },
   bio: {
-    marginTop: 12,
+    marginTop: 8,
     textAlign: 'center',
-    paddingHorizontal: 24,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  statsLoading: {
-    marginTop: 24,
-    paddingVertical: 16,
+
+  // Stats Card
+  statsCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 16,
   },
-  statsContainer: {
+  statsRow: {
     flexDirection: 'row',
-    marginTop: 24,
     alignItems: 'center',
+    justifyContent: 'space-around',
   },
   stat: {
     alignItems: 'center',
-    paddingHorizontal: 24,
+    flex: 1,
   },
-  statDivider: {
-    width: 1,
-    height: 32,
-  },
-  statValue: {
-    fontWeight: 'bold',
-  },
-  statRatingContainer: {
+  statValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
+  statValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
   starEmoji: {
-    fontSize: 20,
+    fontSize: 18,
   },
   statLabel: {
     fontSize: 12,
     marginTop: 4,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+  statDivider: {
+    width: 1,
+    height: 36,
+  },
+
+  // Skills Section
+  skillsSection: {
     marginTop: 24,
-    marginBottom: 8,
-    marginHorizontal: 16,
-    textTransform: 'uppercase',
   },
-  skillsContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  skillsChipsContainer: {
+  sectionHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
-  skillChip: {
-    marginRight: 0,
-    marginBottom: 0,
-    height: 32,
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
-  skillChipText: {
-    fontSize: 13,
+  editLink: {
+    fontSize: 14,
+    color: '#0ea5e9',
+    fontWeight: '500',
+  },
+  skillsScrollContent: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  skillItem: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    minWidth: 80,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
   },
   skillIcon: {
-    fontSize: 14,
+    fontSize: 24,
+    marginBottom: 6,
   },
-  menuContainer: {
+  skillLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Add Skills Prompt
+  addSkillsPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 24,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderStyle: 'dashed',
+  },
+  addSkillsIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  addSkillsText: {
+    flex: 1,
+  },
+  addSkillsTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  addSkillsSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  addSkillsArrow: {
+    fontSize: 24,
+  },
+
+  // Menu Section
+  menuSection: {
+    marginTop: 24,
+  },
+  menuCard: {
+    marginHorizontal: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  menuItemDisabled: {
-    opacity: 0.5,
+    paddingHorizontal: 16,
   },
   menuIcon: {
     fontSize: 20,
-    marginRight: 16,
-    width: 28,
-  },
-  menuIconDisabled: {
-    opacity: 0.5,
+    marginRight: 12,
   },
   menuTextContainer: {
     flex: 1,
   },
   menuTitle: {
     fontSize: 16,
+    fontWeight: '500',
   },
   menuSubtitle: {
     fontSize: 13,
     marginTop: 2,
   },
-  menuSubtitleDisabled: {
-    fontStyle: 'italic',
-  },
   menuArrow: {
     fontSize: 24,
   },
+
+  // Logout
   logoutContainer: {
-    marginTop: 24,
-    marginHorizontal: 16,
+    marginTop: 32,
+    marginHorizontal: 20,
   },
   logoutButton: {
     borderColor: '#fecaca',
+    borderRadius: 12,
   },
+
+  // Footer
   footer: {
     paddingVertical: 24,
-    paddingHorizontal: 24,
     alignItems: 'center',
   },
   memberSince: {
