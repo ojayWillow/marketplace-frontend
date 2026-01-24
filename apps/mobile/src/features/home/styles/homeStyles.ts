@@ -163,16 +163,26 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     emptyPostButton: { marginTop: 16, backgroundColor: JOB_COLOR, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
     emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
     
-    // Job Card in list
+    // Job Card in list - with blue left border accent
     jobCard: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingVertical: 14,
       paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: themeColors.border,
+      marginHorizontal: 12,
+      marginVertical: 6,
+      borderRadius: 12,
       backgroundColor: themeColors.card,
+      // Blue left border accent
+      borderLeftWidth: 4,
+      borderLeftColor: JOB_COLOR,
+      // Subtle shadow for depth
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: activeTheme === 'dark' ? 0.3 : 0.08,
+      shadowRadius: 6,
+      elevation: 3,
     },
     jobCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
     jobCategoryDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
