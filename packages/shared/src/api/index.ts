@@ -26,7 +26,6 @@ export * from './offerings';
 export * from './push';
 export * from './reviews';
 export * from './taskResponses';
-export * from './skills';
 
 // Tasks - export everything except Task type (it conflicts with types.ts)
 export {
