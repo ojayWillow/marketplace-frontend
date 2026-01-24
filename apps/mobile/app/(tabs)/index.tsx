@@ -1,4 +1,4 @@
-<![CDATA[import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, Animated, PanResponder, Dimensions, Modal, TextInput, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -1527,4 +1527,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-]]>
