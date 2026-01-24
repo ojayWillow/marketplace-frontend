@@ -7,7 +7,7 @@ export interface Category {
   icon: string;
 }
 
-// Complete category list (19 categories including 'all')
+// Complete category list (21 categories including 'all')
 export const CATEGORIES: Category[] = [
   { key: 'all', label: 'All Categories', icon: '🔍' },
   { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
@@ -27,6 +27,8 @@ export const CATEGORIES: Category[] = [
   { key: 'tutoring', label: 'Tutoring', icon: '📚' },
   { key: 'tech-help', label: 'Tech Help', icon: '💻' },
   { key: 'beauty', label: 'Beauty', icon: '💇' },
+  { key: 'hospitality', label: 'Hospitality', icon: '🍽️' },
+  { key: 'construction', label: 'Construction', icon: '👷' },
   { key: 'other', label: 'Other', icon: '📋' },
 ];
 
