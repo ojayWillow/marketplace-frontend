@@ -8,6 +8,8 @@ import StarRating from './StarRating';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 
+const OFFERING_COLOR = '#f97316'; // Orange for services
+
 interface OfferingCardProps {
   offering: Offering;
   onPress?: (offering: Offering) => void;
@@ -98,7 +100,15 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
       marginBottom: 12, 
       backgroundColor: themeColors.card,
       borderRadius: 12,
-      elevation: 1,
+      // Orange left border accent for services
+      borderLeftWidth: 4,
+      borderLeftColor: OFFERING_COLOR,
+      // Subtle shadow for depth
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: activeTheme === 'dark' ? 0.3 : 0.08,
+      shadowRadius: 6,
+      elevation: 3,
     },
     cardContent: {
       paddingVertical: 14,
@@ -120,7 +130,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
     price: {
       fontSize: 18,
       fontWeight: '700',
-      color: '#f97316', // Orange for services - keep consistent
+      color: OFFERING_COLOR,
     },
     
     // Row 2: Title
@@ -147,7 +157,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress }) => {
       width: 24,
       height: 24,
       borderRadius: 12,
-      backgroundColor: '#f97316',
+      backgroundColor: OFFERING_COLOR,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 6,
