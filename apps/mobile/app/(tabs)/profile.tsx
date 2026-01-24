@@ -2,7 +2,7 @@ import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Avatar, Surface, Button, ActivityIndicator, IconButton, Badge } from 'react-native-paper';
 import { router, Stack } from 'expo-router';
-import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, getCategoryIcon, getCategoryLabel } from '@marketplace/shared';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, getCategoryIcon, getCategoryLabel, normalizeSkills } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
@@ -97,9 +97,11 @@ export default function ProfileScreen() {
   const profilePictureUrl = displayUser.profile_picture_url || displayUser.avatar_url;
   const fullProfilePictureUrl = profilePictureUrl ? getImageUrl(profilePictureUrl) : null;
 
-  const userSkills = displayUser.skills 
+  // Parse and normalize skills - converts legacy skills and filters invalid ones
+  const rawSkills = displayUser.skills 
     ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()).filter(Boolean))
     : [];
+  const userSkills = normalizeSkills(rawSkills);
 
   const displayName = user.first_name && user.last_name
     ? `${user.first_name} ${user.last_name}`
