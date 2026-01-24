@@ -226,9 +226,6 @@ export default function ProfileScreen() {
           <View style={styles.skillsSection}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Skills</Text>
-              <Pressable onPress={() => router.push('/profile/edit')}>
-                <Text style={styles.editLink}>Edit</Text>
-              </Pressable>
             </View>
             <ScrollView 
               horizontal 
@@ -522,11 +519,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  editLink: {
-    fontSize: 14,
-    color: '#0ea5e9',
-    fontWeight: '500',
   },
   skillsScrollContent: {
     paddingHorizontal: 20,
