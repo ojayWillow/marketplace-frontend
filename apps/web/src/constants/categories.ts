@@ -1,5 +1,6 @@
-// Shared categories for Jobs and Offerings
-// This ensures both sides use the same categories for matching
+// Unified categories for Jobs and Offerings
+// Aligned with shared package - same categories across web and mobile
+// Designed for quick-help gig platform - simple, clear categories
 
 export interface Category {
   value: string;
@@ -8,52 +9,28 @@ export interface Category {
   description: string;
 }
 
+// Complete category list (15 categories)
 export const CATEGORIES: Category[] = [
-  // Home & Living
   { value: 'cleaning', label: 'Cleaning', icon: '🧹', description: 'House cleaning, deep cleaning, organizing' },
-  { value: 'moving', label: 'Moving', icon: '📦', description: 'Help with moving, lifting, transporting' },
-  { value: 'assembly', label: 'Furniture Assembly', icon: '🔧', description: 'IKEA assembly, furniture building' },
-  { value: 'repair', label: 'Home Repair', icon: '🛠️', description: 'Fixing things around the house' },
-  { value: 'plumbing', label: 'Plumbing', icon: '🚿', description: 'Pipes, faucets, drains, water issues' },
-  { value: 'electrical', label: 'Electrical', icon: '⚡', description: 'Electrical work, lighting, outlets' },
+  { value: 'moving', label: 'Moving & Lifting', icon: '📦', description: 'Moving, heavy lifting, transporting' },
+  { value: 'assembly', label: 'Assembly', icon: '🔧', description: 'Furniture assembly, IKEA, mounting' },
+  { value: 'handyman', label: 'Handyman', icon: '🛠️', description: 'Repairs, fixes, small construction' },
+  { value: 'plumbing', label: 'Plumbing', icon: '🚿', description: 'Pipes, faucets, drains' },
+  { value: 'electrical', label: 'Electrical', icon: '⚡', description: 'Wiring, lighting, outlets' },
   { value: 'painting', label: 'Painting', icon: '🎨', description: 'Wall painting, touch-ups, decorating' },
-  
-  // Outdoor
-  { value: 'outdoor', label: 'Gardening & Outdoor', icon: '🌿', description: 'Lawn care, gardening, yard work' },
-  { value: 'car-wash', label: 'Car Wash', icon: '🚗', description: 'Car washing, detailing, cleaning' },
-  { value: 'snow-removal', label: 'Snow Removal', icon: '❄️', description: 'Snow shoveling, winter cleanup' },
-  
-  // Care Services
-  { value: 'pet-care', label: 'Pet Care', icon: '🐕', description: 'Dog walking, pet sitting, feeding' },
-  { value: 'babysitting', label: 'Babysitting', icon: '👶', description: 'Childcare, babysitting, nanny services' },
-  { value: 'elderly-care', label: 'Elderly Care', icon: '👴', description: 'Companionship, assistance, errands for seniors' },
-  
-  // Errands & Delivery
-  { value: 'delivery', label: 'Delivery', icon: '🚚', description: 'Pick up and deliver items' },
-  { value: 'shopping', label: 'Shopping', icon: '🛒', description: 'Grocery shopping, errands, buying items' },
-  { value: 'errands', label: 'Errands', icon: '🏃', description: 'General errands, waiting in line, misc tasks' },
-  
-  // Professional Services
-  { value: 'tutoring', label: 'Tutoring', icon: '📚', description: 'Teaching, homework help, lessons' },
-  { value: 'tech-help', label: 'Tech Help', icon: '💻', description: 'Computer help, phone setup, tech support' },
-  { value: 'photography', label: 'Photography', icon: '📷', description: 'Photo shoots, events, portraits' },
-  { value: 'translation', label: 'Translation', icon: '🌐', description: 'Language translation, interpretation' },
-  
-  // Events & Entertainment
-  { value: 'events', label: 'Event Help', icon: '🎉', description: 'Party setup, event assistance, catering help' },
-  { value: 'music', label: 'Music & DJ', icon: '🎵', description: 'Live music, DJ services, entertainment' },
-  
-  // Health & Wellness
-  { value: 'fitness', label: 'Fitness & Training', icon: '💪', description: 'Personal training, workout buddy' },
-  { value: 'beauty', label: 'Beauty & Styling', icon: '💇', description: 'Hair, makeup, styling services' },
-  
-  // Other
-  { value: 'other', label: 'Other', icon: '💼', description: 'Something else not listed above' },
+  { value: 'outdoor', label: 'Outdoor', icon: '🌿', description: 'Gardening, yard work, snow removal' },
+  { value: 'delivery', label: 'Delivery & Errands', icon: '🚚', description: 'Delivery, shopping, errands' },
+  { value: 'care', label: 'Care', icon: '🤝', description: 'Pet care, childcare, elderly care' },
+  { value: 'tutoring', label: 'Tutoring', icon: '📚', description: 'Teaching, lessons, homework help' },
+  { value: 'tech', label: 'Tech Help', icon: '💻', description: 'Computer, phone, tech support' },
+  { value: 'beauty', label: 'Beauty', icon: '💇', description: 'Hair, makeup, styling' },
+  { value: 'events', label: 'Events', icon: '🎉', description: 'Party setup, catering, entertainment' },
+  { value: 'other', label: 'Other', icon: '📋', description: 'Everything else' },
 ];
 
-// For dropdown menus - includes "All" option (label does NOT include icon, render separately)
+// For dropdown menus - includes "All" option
 export const CATEGORY_OPTIONS = [
-  { value: 'all', label: 'All Categories', icon: '📋' },
+  { value: 'all', label: 'All Categories', icon: '🔍' },
   ...CATEGORIES.map(c => ({ value: c.value, label: c.label, icon: c.icon }))
 ];
 
@@ -64,7 +41,7 @@ export const getCategoryByValue = (value: string): Category | undefined => {
 
 // Get icon for a category
 export const getCategoryIcon = (value: string): string => {
-  return getCategoryByValue(value)?.icon || '💼';
+  return getCategoryByValue(value)?.icon || '📋';
 };
 
 // Get label for a category
@@ -72,38 +49,56 @@ export const getCategoryLabel = (value: string): string => {
   return getCategoryByValue(value)?.label || value;
 };
 
+// Get description for a category
+export const getCategoryDescription = (value: string): string => {
+  return getCategoryByValue(value)?.description || '';
+};
+
 // Group categories for organized display
 export const CATEGORY_GROUPS = [
   {
-    name: 'Home & Living',
-    categories: ['cleaning', 'moving', 'assembly', 'repair', 'plumbing', 'electrical', 'painting']
+    name: 'Home & Property',
+    categories: ['cleaning', 'moving', 'assembly', 'handyman', 'plumbing', 'electrical', 'painting']
   },
   {
-    name: 'Outdoor',
-    categories: ['outdoor', 'car-wash', 'snow-removal']
+    name: 'Outdoor & Transport',
+    categories: ['outdoor', 'delivery']
   },
   {
-    name: 'Care Services',
-    categories: ['pet-care', 'babysitting', 'elderly-care']
-  },
-  {
-    name: 'Errands & Delivery',
-    categories: ['delivery', 'shopping', 'errands']
-  },
-  {
-    name: 'Professional Services',
-    categories: ['tutoring', 'tech-help', 'photography', 'translation']
-  },
-  {
-    name: 'Events & Entertainment',
-    categories: ['events', 'music']
-  },
-  {
-    name: 'Health & Wellness',
-    categories: ['fitness', 'beauty']
+    name: 'People & Services',
+    categories: ['care', 'tutoring', 'tech', 'beauty', 'events']
   },
   {
     name: 'Other',
     categories: ['other']
   }
 ];
+
+// Legacy mapping - maps old category keys to new ones
+// Use this for backward compatibility with existing data
+export const LEGACY_CATEGORY_MAP: Record<string, string> = {
+  'heavy-lifting': 'moving',
+  'mounting': 'assembly',
+  'construction': 'handyman',
+  'repair': 'handyman',
+  'gardening': 'outdoor',
+  'car-wash': 'outdoor',
+  'snow-removal': 'outdoor',
+  'pet-care': 'care',
+  'babysitting': 'care',
+  'childcare': 'care',
+  'elderly-care': 'care',
+  'shopping': 'delivery',
+  'errands': 'delivery',
+  'tech-help': 'tech',
+  'hospitality': 'events',
+  'music': 'events',
+  'photography': 'other',
+  'translation': 'other',
+  'fitness': 'other',
+};
+
+// Normalize category - converts legacy keys to new ones
+export const normalizeCategory = (value: string): string => {
+  return LEGACY_CATEGORY_MAP[value] || value;
+};
