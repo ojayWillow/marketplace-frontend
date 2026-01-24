@@ -14,22 +14,27 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
 
-// Memoized components
-import { TaskCard, FocusedTaskCard, UserLocationMarker, ClusterMarker, PriceMarker, OfferingMarker } from './home/components';
+// Feature imports from src/features/home
+import { TaskCard, FocusedTaskCard, UserLocationMarker, ClusterMarker, PriceMarker, OfferingMarker } from '../../src/features/home/components';
+import { useLocation } from '../../src/features/home/hooks/useLocation';
+import { useTaskFilters } from '../../src/features/home/hooks/useTaskFilters';
+import { useSearchDebounce } from '../../src/features/home/hooks/useSearchDebounce';
+import { createStyles } from '../../src/features/home/styles/homeStyles';
+import { 
+  SHEET_MIN_HEIGHT, 
+  SHEET_MID_HEIGHT, 
+  SHEET_MAX_HEIGHT, 
+  JOB_COLOR, 
+  OFFERING_COLOR, 
+  OVERLAP_THRESHOLD_FACTOR, 
+  getZoomLevel, 
+  calculateDistance 
+} from '../../src/features/home/constants';
 
 // Lazy loaded modals
-const CategoryModal = lazy(() => import('./home/components/modals/CategoryModal'));
-const FiltersModal = lazy(() => import('./home/components/modals/FiltersModal'));
-const CreateModal = lazy(() => import('./home/components/modals/CreateModal'));
-
-// Hooks
-import { useLocation } from './home/hooks/useLocation';
-import { useTaskFilters } from './home/hooks/useTaskFilters';
-import { useSearchDebounce } from './home/hooks/useSearchDebounce';
-
-// Styles and constants
-import { createStyles } from './home/styles/homeStyles';
-import { SHEET_MIN_HEIGHT, SHEET_MID_HEIGHT, SHEET_MAX_HEIGHT, JOB_COLOR, OFFERING_COLOR, OVERLAP_THRESHOLD_FACTOR, getZoomLevel, getMarkerColor, calculateDistance } from './home/constants';
+const CategoryModal = lazy(() => import('../../src/features/home/components/modals/CategoryModal'));
+const FiltersModal = lazy(() => import('../../src/features/home/components/modals/FiltersModal'));
+const CreateModal = lazy(() => import('../../src/features/home/components/modals/CreateModal'));
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
