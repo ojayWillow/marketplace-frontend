@@ -5,8 +5,12 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { getOfferings, getMyOfferings, useAuthStore, type Offering } from '@marketplace/shared';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 type FilterTab = 'all' | 'my_offerings';
+
+const OFFERING_COLOR = '#f97316'; // Orange for services
 
 const CATEGORIES = [
   { id: 'all', label: 'All', emoji: '💼' },
@@ -23,6 +27,9 @@ export default function OfferingsScreen() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { user, isAuthenticated } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const {
     data,
@@ -100,6 +107,87 @@ export default function OfferingsScreen() {
     }
   };
 
+  // Dynamic styles based on theme
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    header: {
+      padding: 16,
+      backgroundColor: themeColors.card,
+    },
+    title: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+    },
+    subtitle: {
+      color: themeColors.textSecondary,
+      marginTop: 4,
+    },
+    tabContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: themeColors.card,
+    },
+    categoryContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    card: {
+      marginBottom: 12,
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      // Orange left border accent for services
+      borderLeftWidth: 4,
+      borderLeftColor: OFFERING_COLOR,
+      // Subtle shadow for depth
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: activeTheme === 'dark' ? 0.3 : 0.08,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    providerName: {
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    rating: {
+      color: themeColors.textSecondary,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    cardTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      flex: 1,
+    },
+    description: {
+      color: themeColors.textSecondary,
+      marginBottom: 12,
+      lineHeight: 20,
+    },
+    price: {
+      color: OFFERING_COLOR,
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    location: {
+      color: themeColors.textMuted,
+      fontSize: 13,
+    },
+    statusText: {
+      marginTop: 12,
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+    },
+    errorText: {
+      color: '#ef4444',
+      marginBottom: 12,
+    },
+  });
+
   const renderOfferingCard = ({ item: offering }: { item: Offering }) => {
     const statusColors = getStatusColor(offering.status);
     const isMyOffering = activeTab === 'my_offerings';
@@ -107,7 +195,7 @@ export default function OfferingsScreen() {
     return (
       <Card
         key={offering.id}
-        style={styles.card}
+        style={dynamicStyles.card}
         onPress={() => router.push(`/offering/${offering.id}`)}
       >
         <Card.Content>
@@ -120,9 +208,9 @@ export default function OfferingsScreen() {
                 style={styles.avatar}
               />
               <View style={styles.providerInfo}>
-                <Text style={styles.providerName}>{offering.creator_name}</Text>
+                <Text style={dynamicStyles.providerName}>{offering.creator_name}</Text>
                 {offering.creator_rating ? (
-                  <Text style={styles.rating}>
+                  <Text style={dynamicStyles.rating}>
                     ⭐ {offering.creator_rating.toFixed(1)} ({offering.creator_review_count || 0})
                   </Text>
                 ) : null}
@@ -140,20 +228,20 @@ export default function OfferingsScreen() {
           {/* Title & Category */}
           <View style={styles.titleRow}>
             <Text style={styles.categoryEmoji}>{getCategoryEmoji(offering.category)}</Text>
-            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>
+            <Text variant="titleMedium" numberOfLines={1} style={dynamicStyles.cardTitle}>
               {offering.title}
             </Text>
           </View>
 
           {/* Description */}
-          <Text style={styles.description} numberOfLines={2}>
+          <Text style={dynamicStyles.description} numberOfLines={2}>
             {offering.description}
           </Text>
 
           {/* Footer */}
           <View style={styles.cardFooter}>
-            <Text style={styles.price}>{getPriceLabel(offering)}</Text>
-            <Text style={styles.location}>
+            <Text style={dynamicStyles.price}>{getPriceLabel(offering)}</Text>
+            <Text style={dynamicStyles.location}>
               📍 {offering.location || 'Location'}
             </Text>
           </View>
@@ -172,13 +260,13 @@ export default function OfferingsScreen() {
   const renderListHeader = () => (
     <>
       {/* Header */}
-      <Surface style={styles.header} elevation={1}>
-        <Text variant="headlineMedium" style={styles.title}>Services</Text>
-        <Text style={styles.subtitle}>Find professionals for any task</Text>
+      <Surface style={dynamicStyles.header} elevation={1}>
+        <Text variant="headlineMedium" style={dynamicStyles.title}>Services</Text>
+        <Text style={dynamicStyles.subtitle}>Find professionals for any task</Text>
       </Surface>
 
       {/* Tabs */}
-      <Surface style={styles.tabContainer} elevation={1}>
+      <Surface style={dynamicStyles.tabContainer} elevation={1}>
         <View style={styles.tabsRow}>
           {visibleTabs.map((tab) => (
             <Chip
@@ -196,7 +284,7 @@ export default function OfferingsScreen() {
 
       {/* Category Filter - only show on Browse tab */}
       {activeTab === 'all' ? (
-        <Surface style={styles.categoryContainer} elevation={0}>
+        <Surface style={dynamicStyles.categoryContainer} elevation={0}>
           <View style={styles.categoriesRow}>
             {CATEGORIES.map((cat) => (
               <Chip
@@ -219,7 +307,7 @@ export default function OfferingsScreen() {
   const renderListEmpty = () => (
     <View style={styles.centerContainer}>
       <Text style={styles.emptyIcon}>🛠️</Text>
-      <Text style={styles.statusText}>
+      <Text style={dynamicStyles.statusText}>
         {activeTab === 'my_offerings'
           ? "You haven't created any services yet"
           : 'No services available'}
@@ -229,6 +317,7 @@ export default function OfferingsScreen() {
           mode="contained" 
           onPress={handleCreateOffering}
           style={styles.createButton}
+          buttonColor={OFFERING_COLOR}
         >
           Offer Your First Service
         </Button>
@@ -240,7 +329,7 @@ export default function OfferingsScreen() {
     if (!isFetchingNextPage) return <View style={styles.fabSpacer} />;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" />
+        <ActivityIndicator size="small" color={OFFERING_COLOR} />
         <Text style={styles.footerText}>Loading more...</Text>
         <View style={styles.fabSpacer} />
       </View>
@@ -249,11 +338,11 @@ export default function OfferingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={dynamicStyles.container} edges={['top']}>
         {renderListHeader()}
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.statusText}>Loading services...</Text>
+          <ActivityIndicator size="large" color={OFFERING_COLOR} />
+          <Text style={dynamicStyles.statusText}>Loading services...</Text>
         </View>
       </SafeAreaView>
     );
@@ -261,11 +350,11 @@ export default function OfferingsScreen() {
 
   if (isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={dynamicStyles.container} edges={['top']}>
         {renderListHeader()}
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load services</Text>
-          <Button mode="contained" onPress={() => refetch()}>
+          <Text style={dynamicStyles.errorText}>Failed to load services</Text>
+          <Button mode="contained" onPress={() => refetch()} buttonColor={OFFERING_COLOR}>
             Retry
           </Button>
         </View>
@@ -274,7 +363,7 @@ export default function OfferingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={dynamicStyles.container} edges={['top']}>
       <FlatList
         data={offerings}
         renderItem={renderOfferingCard}
@@ -304,38 +393,13 @@ export default function OfferingsScreen() {
   );
 }
 
+// Static styles that don't change with theme
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  title: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  subtitle: {
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  tabContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-  },
   tabsRow: {
     flexDirection: 'row',
   },
   tab: {
     marginRight: 8,
-  },
-  categoryContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f9fafb',
   },
   categoriesRow: {
     flexDirection: 'row',
@@ -353,24 +417,11 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     paddingHorizontal: 24,
   },
-  statusText: {
-    marginTop: 12,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#ef4444',
-    marginBottom: 12,
-  },
   emptyIcon: {
     fontSize: 48,
   },
   createButton: {
     marginTop: 16,
-  },
-  card: {
-    marginBottom: 12,
-    backgroundColor: '#ffffff',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -390,15 +441,6 @@ const styles = StyleSheet.create({
   providerInfo: {
     flex: 1,
   },
-  providerName: {
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  rating: {
-    color: '#6b7280',
-    fontSize: 12,
-    marginTop: 2,
-  },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -417,28 +459,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginRight: 8,
   },
-  cardTitle: {
-    fontWeight: '600',
-    flex: 1,
-  },
-  description: {
-    color: '#6b7280',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  price: {
-    color: '#f97316',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  location: {
-    color: '#9ca3af',
-    fontSize: 13,
   },
   boostBadge: {
     backgroundColor: '#fef3c7',
