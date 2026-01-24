@@ -1,4 +1,4 @@
-import { View, FlatList, Animated, PanResponder, Dimensions, TextInput, Keyboard } from 'react-native';
+import { View, FlatList, Animated, PanResponder, Dimensions, TextInput, Keyboard, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
@@ -319,15 +319,21 @@ export default function HomeScreen() {
         {/* Floating Header */}
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
           <View style={styles.topRow}>
-            <View style={[styles.categoryButton, hasActiveCategory && styles.categoryButtonActive]}>
+            {/* Category Button - TouchableOpacity wrapper for full touch area */}
+            <TouchableOpacity 
+              style={[styles.categoryButton, hasActiveCategory && styles.categoryButtonActive]}
+              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+              activeOpacity={0.7}
+            >
               <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
-                <Text style={styles.categoryButtonText} numberOfLines={1} onPress={() => { haptic.light(); setShowCategoryModal(true); }}>
+                <Text style={styles.categoryButtonText} numberOfLines={1}>
                   {hasActiveCategory ? selectedCategoryData?.label : 'Category'}
                 </Text>
                 <Icon name="expand-more" size={18} color={styles.categoryButtonText.color} />
               </BlurView>
-            </View>
+            </TouchableOpacity>
 
+            {/* Search Bar */}
             <View style={styles.searchBar}>
               <BlurView intensity={80} tint="light" style={styles.searchBlur}>
                 <Icon name="search" size={20} color={styles.searchInput.color} />
@@ -341,18 +347,25 @@ export default function HomeScreen() {
                   returnKeyType="search"
                 />
                 {searchQuery.length > 0 && (
-                  <Icon name="close" size={18} color={styles.searchInput.color} onPress={handleClearSearch} />
+                  <TouchableOpacity onPress={handleClearSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Icon name="close" size={18} color={styles.searchInput.color} />
+                  </TouchableOpacity>
                 )}
                 {showSearchLoading && <ActivityIndicator size="small" color={JOB_COLOR} />}
               </BlurView>
             </View>
 
-            <View style={styles.filtersButton}>
+            {/* Filter Button - TouchableOpacity wrapper for full touch area */}
+            <TouchableOpacity 
+              style={styles.filtersButton}
+              onPress={() => { haptic.light(); setShowFiltersModal(true); }}
+              activeOpacity={0.7}
+            >
               <BlurView intensity={80} tint="light" style={styles.filtersBlur}>
-                <Icon name="tune" size={20} color={hasActiveFilters ? JOB_COLOR : styles.categoryButtonText.color} onPress={() => { haptic.light(); setShowFiltersModal(true); }} />
+                <Icon name="tune" size={20} color={hasActiveFilters ? JOB_COLOR : styles.categoryButtonText.color} />
                 {hasActiveFilters && <View style={styles.filterDot} />}
               </BlurView>
-            </View>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
 
@@ -366,13 +379,17 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* My Location Button */}
+        {/* My Location Button - TouchableOpacity wrapper */}
         {sheetPosition === 'min' && (
-          <View style={styles.myLocationButton}>
+          <TouchableOpacity 
+            style={styles.myLocationButton} 
+            onPress={handleMyLocation}
+            activeOpacity={0.7}
+          >
             <View style={styles.compassButton}>
-              <Icon name="navigation" size={24} color="#4285F4" onPress={handleMyLocation} />
+              <Icon name="navigation" size={24} color="#4285F4" />
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         {/* Bottom Sheet */}
@@ -386,10 +403,19 @@ export default function HomeScreen() {
               {focusedTask ? (
                 <IconButton icon="close" size={20} onPress={handleCloseFocusedJob} />
               ) : (
-                <View style={styles.quickPostButton}>
-                  <LinearGradient colors={[JOB_COLOR, OFFERING_COLOR]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', width: '100%', height: '100%' }} />
-                  <Text style={styles.quickPostIcon} onPress={() => { haptic.medium(); setShowCreateModal(true); }}>+</Text>
-                </View>
+                <TouchableOpacity 
+                  style={styles.quickPostButton}
+                  onPress={() => { haptic.medium(); setShowCreateModal(true); }}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient 
+                    colors={[JOB_COLOR, OFFERING_COLOR]} 
+                    start={{ x: 0, y: 0 }} 
+                    end={{ x: 1, y: 1 }} 
+                    style={{ position: 'absolute', width: '100%', height: '100%' }} 
+                  />
+                  <Text style={styles.quickPostIcon}>+</Text>
+                </TouchableOpacity>
               )}
             </View>
           </View>
