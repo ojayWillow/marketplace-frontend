@@ -2,7 +2,7 @@ import { View, FlatList, Animated, PanResponder, Dimensions, TextInput, Keyboard
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { getTasks, getOfferings, searchTasks, type Task, type Offering, getCategoryByKey } from '@marketplace/shared';
@@ -31,10 +31,10 @@ import {
   calculateDistance 
 } from '../../src/features/home/constants';
 
-// Lazy loaded modals
-const CategoryModal = lazy(() => import('../../src/features/home/components/modals/CategoryModal'));
-const FiltersModal = lazy(() => import('../../src/features/home/components/modals/FiltersModal'));
-const CreateModal = lazy(() => import('../../src/features/home/components/modals/CreateModal'));
+// Direct imports for modals (small, frequently used - no need for lazy loading)
+import CategoryModal from '../../src/features/home/components/modals/CategoryModal';
+import FiltersModal from '../../src/features/home/components/modals/FiltersModal';
+import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -404,39 +404,31 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {/* Lazy Loaded Modals */}
-      <Suspense fallback={null}>
-        {showCategoryModal && (
-          <CategoryModal
-            visible={showCategoryModal}
-            selectedCategory={selectedCategory}
-            onSelect={(cat) => { setSelectedCategory(cat); setShowCategoryModal(false); setFocusedTaskId(null); }}
-            onClose={() => setShowCategoryModal(false)}
-            styles={styles}
-          />
-        )}
-        {showFiltersModal && (
-          <FiltersModal
-            visible={showFiltersModal}
-            selectedRadius={selectedRadius}
-            selectedDifficulty={selectedDifficulty}
-            onRadiusChange={setSelectedRadius}
-            onDifficultyChange={setSelectedDifficulty}
-            onClear={() => { setSelectedRadius(null); setSelectedDifficulty(null); }}
-            onClose={() => setShowFiltersModal(false)}
-            styles={styles}
-          />
-        )}
-        {showCreateModal && (
-          <CreateModal
-            visible={showCreateModal}
-            onCreateJob={() => { setShowCreateModal(false); router.push('/task/create'); }}
-            onCreateService={() => { setShowCreateModal(false); router.push('/offering/create'); }}
-            onClose={() => setShowCreateModal(false)}
-            styles={styles}
-          />
-        )}
-      </Suspense>
+      {/* Modals */}
+      <CategoryModal
+        visible={showCategoryModal}
+        selectedCategory={selectedCategory}
+        onSelect={(cat) => { setSelectedCategory(cat); setShowCategoryModal(false); setFocusedTaskId(null); }}
+        onClose={() => setShowCategoryModal(false)}
+        styles={styles}
+      />
+      <FiltersModal
+        visible={showFiltersModal}
+        selectedRadius={selectedRadius}
+        selectedDifficulty={selectedDifficulty}
+        onRadiusChange={setSelectedRadius}
+        onDifficultyChange={setSelectedDifficulty}
+        onClear={() => { setSelectedRadius(null); setSelectedDifficulty(null); }}
+        onClose={() => setShowFiltersModal(false)}
+        styles={styles}
+      />
+      <CreateModal
+        visible={showCreateModal}
+        onCreateJob={() => { setShowCreateModal(false); router.push('/task/create'); }}
+        onCreateService={() => { setShowCreateModal(false); router.push('/offering/create'); }}
+        onClose={() => setShowCreateModal(false)}
+        styles={styles}
+      />
     </View>
   );
 }
