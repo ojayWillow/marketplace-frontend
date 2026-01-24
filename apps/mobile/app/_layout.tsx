@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/stores/authStore';
-import { View, useColorScheme, InteractionManager, Appearance } from 'react-native';
+import { View, useColorScheme, InteractionManager, Appearance, Platform } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
@@ -131,6 +131,28 @@ export default function RootLayout() {
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: themeColors.background },
+            // Smooth animations to reduce visual glitches
+            animation: Platform.OS === 'ios' ? 'default' : 'fade_from_bottom',
+            animationDuration: 200, // Faster, snappier transitions
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            // Remove any jumpy animations
+            animationTypeForReplace: 'push',
+            // Customize transition spec for smoother experience
+            transitionSpec: {
+              open: {
+                animation: 'timing',
+                config: {
+                  duration: 200,
+                },
+              },
+              close: {
+                animation: 'timing',
+                config: {
+                  duration: 200,
+                },
+              },
+            },
           }}
         />
       </QueryClientProvider>
