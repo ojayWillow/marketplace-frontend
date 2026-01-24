@@ -63,14 +63,14 @@ export default function SettingsScreen() {
           <MenuItem 
             title="Privacy Policy" 
             icon="🔒" 
-            onPress={() => Alert.alert('Privacy Policy', 'Coming soon')}
+            onPress={() => router.push('/settings/privacy-policy')}
             themeColors={themeColors}
           />
           <Divider style={{ backgroundColor: themeColors.border }} />
           <MenuItem 
             title="Terms of Service" 
             icon="📄" 
-            onPress={() => Alert.alert('Terms of Service', 'Coming soon')}
+            onPress={() => router.push('/settings/terms-of-service')}
             themeColors={themeColors}
           />
         </Surface>
