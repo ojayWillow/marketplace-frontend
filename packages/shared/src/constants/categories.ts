@@ -20,17 +20,20 @@ export const CATEGORIES: Category[] = [
   { key: 'electrical', label: 'Electrical', icon: '⚡', description: 'Wiring, lighting, outlets' },
   { key: 'painting', label: 'Painting', icon: '🎨', description: 'Wall painting, touch-ups, decorating' },
   { key: 'outdoor', label: 'Outdoor', icon: '🌿', description: 'Gardening, yard work, snow removal' },
-  { key: 'delivery', label: 'Delivery & Errands', icon: '🚚', description: 'Delivery, shopping, errands' },
+  { key: 'delivery', label: 'Delivery & Errands', icon: '🚚', description: 'Delivery, shopping, errands, driving' },
   { key: 'care', label: 'Care', icon: '🤝', description: 'Pet care, childcare, elderly care' },
   { key: 'tutoring', label: 'Tutoring', icon: '📚', description: 'Teaching, lessons, homework help' },
   { key: 'tech', label: 'Tech Help', icon: '💻', description: 'Computer, phone, tech support' },
   { key: 'beauty', label: 'Beauty', icon: '💇', description: 'Hair, makeup, styling' },
-  { key: 'events', label: 'Events', icon: '🎉', description: 'Party setup, catering, entertainment' },
+  { key: 'events', label: 'Events', icon: '🎉', description: 'Party setup, catering, cooking, entertainment' },
   { key: 'other', label: 'Other', icon: '📋', description: 'Everything else' },
 ];
 
 // Categories for create/edit forms (excludes 'all')
 export const FORM_CATEGORIES = CATEGORIES.filter(c => c.key !== 'all');
+
+// Valid category keys (for filtering)
+export const VALID_CATEGORY_KEYS = FORM_CATEGORIES.map(c => c.key);
 
 // Quick lookup by key
 export const getCategoryByKey = (key: string): Category | undefined => {
@@ -55,6 +58,7 @@ export const getCategoryDescription = (key: string): string => {
 // Legacy mapping - maps old category keys to new ones
 // Use this for backward compatibility with existing data
 export const LEGACY_CATEGORY_MAP: Record<string, string> = {
+  // Old mobile categories
   'heavy-lifting': 'moving',
   'mounting': 'assembly',
   'construction': 'handyman',
@@ -74,9 +78,40 @@ export const LEGACY_CATEGORY_MAP: Record<string, string> = {
   'photography': 'other',
   'translation': 'other',
   'fitness': 'other',
+  // Additional legacy skills
+  'tech-support': 'tech',
+  'techsupport': 'tech',
+  'cooking': 'events',
+  'catering': 'events',
+  'driving': 'delivery',
+  'driver': 'delivery',
+  'transport': 'delivery',
+  'cleaning-services': 'cleaning',
+  'house-cleaning': 'cleaning',
+  'dog-walking': 'care',
+  'pet-sitting': 'care',
+  'lawn-care': 'outdoor',
+  'yard-work': 'outdoor',
+  'furniture-assembly': 'assembly',
+  'ikea': 'assembly',
 };
 
 // Normalize category - converts legacy keys to new ones
 export const normalizeCategory = (key: string): string => {
-  return LEGACY_CATEGORY_MAP[key] || key;
+  const normalized = key.toLowerCase().trim();
+  return LEGACY_CATEGORY_MAP[normalized] || normalized;
+};
+
+// Check if a category key is valid (exists in current categories)
+export const isValidCategory = (key: string): boolean => {
+  return VALID_CATEGORY_KEYS.includes(key);
+};
+
+// Filter and normalize skills array - removes invalid ones, converts legacy
+export const normalizeSkills = (skills: string[]): string[] => {
+  const normalized = skills
+    .map(s => normalizeCategory(s.toLowerCase().trim()))
+    .filter(s => isValidCategory(s));
+  // Remove duplicates
+  return [...new Set(normalized)];
 };
