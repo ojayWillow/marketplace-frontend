@@ -7,3 +7,4 @@ export {
   PriceMarker, 
   OfferingMarker 
 } from './MapMarkers';
+export { AnimatedMapMarkers } from './AnimatedMapMarkers';
