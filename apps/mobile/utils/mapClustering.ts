@@ -1,13 +1,13 @@
 /**
- * Simple Map Clustering
+ * Map Clustering Utility
  * 
- * TESTED: Without clustering, all 43 markers render correctly.
- * Now adding back MINIMAL clustering only when markers would visually overlap.
+ * Groups nearby map markers into clusters to reduce visual clutter.
  * 
  * Rules:
- * 1. Only cluster when zoomed out FAR (latitudeDelta > 0.3)
- * 2. Minimum 4 jobs to form a cluster
- * 3. Very tight distance - only when markers would literally overlap
+ * 1. Zoomed in (latitudeDelta < 0.25) = NO clustering, show all individual
+ * 2. Zoomed out = cluster jobs that are close together
+ * 3. Minimum 3 jobs to form a cluster
+ * 4. Every job MUST appear either as individual marker OR inside a cluster
  */
 
 import type { Region } from 'react-native-maps';
@@ -34,24 +34,24 @@ export interface ClusterConfig {
   previousClusters?: Cluster<any>[];
 }
 
-// Only cluster when VERY zoomed out
-const CLUSTER_ZOOM_THRESHOLD = 0.3;
+// Cluster when zoomed out past this level
+const CLUSTER_ZOOM_THRESHOLD = 0.25;
 
-// Very tight clustering - only when markers would overlap
-const CLUSTER_DISTANCE_FACTOR = 0.025; // 2.5% of screen
+// How close items must be to cluster (% of visible area)
+const CLUSTER_DISTANCE_FACTOR = 0.035; // 3.5% of screen
 
-// Need at least 4 jobs to make a cluster
-const MIN_CLUSTER_SIZE = 4;
+// Minimum items to form a cluster
+const MIN_CLUSTER_SIZE = 3;
 
 /**
- * Simple clustering - all items as individual OR in clusters
+ * Main clustering function
  */
 export function clusterItems<T extends ClusterableItem>(
   items: T[],
   region: Region | null,
   _config: ClusterConfig = {}
 ): Cluster<T>[] {
-  // Filter items with valid coordinates
+  // Filter to items with valid coordinates
   const validItems = (items || []).filter(item => 
     item && 
     typeof item.latitude === 'number' && 
@@ -60,11 +60,12 @@ export function clusterItems<T extends ClusterableItem>(
     !isNaN(item.longitude)
   );
 
+  // No items = empty result
   if (validItems.length === 0) {
     return [];
   }
 
-  // No region OR zoomed in = show all as individual markers
+  // No region OR zoomed in close = show ALL as individual markers (no clustering)
   if (!region || region.latitudeDelta < CLUSTER_ZOOM_THRESHOLD) {
     return validItems.map(item => ({
       id: `single-${item.id}`,
@@ -75,69 +76,79 @@ export function clusterItems<T extends ClusterableItem>(
     }));
   }
 
-  // Zoomed out - apply simple clustering
+  // Calculate clustering distance based on visible area
   const clusterDistLat = region.latitudeDelta * CLUSTER_DISTANCE_FACTOR;
   const clusterDistLng = region.longitudeDelta * CLUSTER_DISTANCE_FACTOR;
 
+  // Track which items have been assigned to a cluster
   const assigned = new Set<number>();
   const clusters: Cluster<T>[] = [];
 
-  for (const item of validItems) {
-    if (assigned.has(item.id)) continue;
+  // Process each item as potential cluster seed
+  for (const seedItem of validItems) {
+    // Skip if already in another cluster
+    if (assigned.has(seedItem.id)) continue;
 
-    // Find nearby items
-    const nearby: T[] = [];
-    
+    // Start cluster with the seed item
+    const clusterItems: T[] = [seedItem];
+    assigned.add(seedItem.id);
+
+    // Find all other nearby items
     for (const other of validItems) {
       if (assigned.has(other.id)) continue;
 
-      const latDiff = Math.abs(other.latitude - item.latitude);
-      const lngDiff = Math.abs(other.longitude - item.longitude);
+      const latDiff = Math.abs(other.latitude - seedItem.latitude);
+      const lngDiff = Math.abs(other.longitude - seedItem.longitude);
 
       if (latDiff < clusterDistLat && lngDiff < clusterDistLng) {
-        nearby.push(other);
+        clusterItems.push(other);
+        assigned.add(other.id);
       }
     }
 
-    // Only cluster if we have enough items
-    if (nearby.length >= MIN_CLUSTER_SIZE) {
-      // Mark all as assigned
-      for (const n of nearby) {
-        assigned.add(n.id);
-      }
-
-      // Calculate center
-      const centerLat = nearby.reduce((sum, t) => sum + t.latitude, 0) / nearby.length;
-      const centerLng = nearby.reduce((sum, t) => sum + t.longitude, 0) / nearby.length;
+    // Decide: cluster or individual markers?
+    if (clusterItems.length >= MIN_CLUSTER_SIZE) {
+      // Form a cluster
+      const centerLat = clusterItems.reduce((sum, t) => sum + t.latitude, 0) / clusterItems.length;
+      const centerLng = clusterItems.reduce((sum, t) => sum + t.longitude, 0) / clusterItems.length;
 
       clusters.push({
-        id: `cluster-${item.id}`,
+        id: `cluster-${seedItem.id}`,
         latitude: centerLat,
         longitude: centerLng,
-        items: nearby,
+        items: clusterItems,
         isCluster: true,
       });
+      
+      // Debug log
+      console.log(`[Cluster] Created cluster with ${clusterItems.length} items at (${centerLat.toFixed(4)}, ${centerLng.toFixed(4)})`);
+    } else {
+      // Not enough for cluster - add each as individual marker
+      for (const single of clusterItems) {
+        clusters.push({
+          id: `single-${single.id}`,
+          latitude: single.latitude,
+          longitude: single.longitude,
+          items: [single],
+          isCluster: false,
+        });
+      }
     }
   }
 
-  // Add remaining items as individual markers
-  for (const item of validItems) {
-    if (!assigned.has(item.id)) {
-      clusters.push({
-        id: `single-${item.id}`,
-        latitude: item.latitude,
-        longitude: item.longitude,
-        items: [item],
-        isCluster: false,
-      });
-    }
+  // Verify: total items in clusters should equal input items
+  const totalInOutput = clusters.reduce((sum, c) => sum + c.items.length, 0);
+  if (totalInOutput !== validItems.length) {
+    console.error(`[Cluster] BUG! Input: ${validItems.length}, Output: ${totalInOutput}`);
+  } else {
+    console.log(`[Cluster] OK: ${validItems.length} items -> ${clusters.length} markers (${clusters.filter(c => c.isCluster).length} clusters)`);
   }
 
   return clusters;
 }
 
 /**
- * Calculate distance between two points (Haversine formula)
+ * Calculate distance between two points in km (Haversine formula)
  */
 export function calculateDistance(
   lat1: number,
@@ -145,7 +156,7 @@ export function calculateDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371;
+  const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
