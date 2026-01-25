@@ -5,6 +5,7 @@ import { Text, Button, ActivityIndicator, IconButton, Portal, Dialog, TextInput 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, getCategoryByKey, getImageUrl } from '@marketplace/shared';
 import { useState } from 'react';
+import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 180;
@@ -193,6 +194,7 @@ export default function OfferingDetailScreen() {
   const isOwnOffering = user?.id === offering?.creator_id;
   const categoryData = offering ? getCategoryByKey(offering.category) : null;
   const timeAgo = formatTimeAgo(offering?.created_at);
+  const hasRating = (offering?.creator_rating ?? 0) > 0;
   const distance = offering?.distance;
   const priceDisplay = getPriceDisplay(offering?.price, offering?.price_type);
   const statusColor = getStatusColor(offering?.status || 'paused');
@@ -256,22 +258,25 @@ export default function OfferingDetailScreen() {
           {/* Row 2: Title */}
           <Text style={styles.heroTitle}>{offering.title}</Text>
 
-          {/* Row 3: Compact Stats */}
+          {/* Row 3: Stats - NO RATING (shown below with provider) */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>⭐ {rating > 0 ? rating.toFixed(1) : '–'}</Text>
+              <Text style={styles.statValue}>✓ {completedJobs}</Text>
+              <Text style={styles.statLabel}>COMPLETED</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>✓ {completedJobs} done</Text>
+              <Text style={styles.statValue}>⚡ ~2h</Text>
+              <Text style={styles.statLabel}>RESPONSE</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>⚡ ~2h reply</Text>
+              <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
+              <Text style={styles.statLabel}>POSTED</Text>
             </View>
           </View>
 
-          {/* Row 4: Provider inline - NO DUPLICATE RATING */}
+          {/* Row 4: Provider with StarRating component */}
           <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
             {offering.creator_avatar ? (
               <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
@@ -282,6 +287,7 @@ export default function OfferingDetailScreen() {
             )}
             <View style={styles.providerInfo}>
               <Text style={styles.providerName}>{offering.creator_name}</Text>
+              {hasRating && <StarRating rating={rating} reviewCount={offering.creator_review_count} size={12} showCount />}
               {offering.creator_city && <Text style={styles.providerCity}>📍 {offering.creator_city}</Text>}
             </View>
             {!isOwnOffering && (
@@ -293,7 +299,6 @@ export default function OfferingDetailScreen() {
 
           {/* Posted + Report */}
           <View style={styles.footerRow}>
-            <Text style={styles.postedTime}>Posted {timeAgo}</Text>
             <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.reportText}>🚩 Report</Text>
             </TouchableOpacity>
@@ -311,7 +316,7 @@ export default function OfferingDetailScreen() {
           </View>
         )}
 
-        {/* DESCRIPTION (collapsible feel) */}
+        {/* DESCRIPTION */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.descriptionText}>{offering.description}</Text>
@@ -426,7 +431,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: 12, paddingBottom: 100 },
 
-  // HERO CARD - COMPACT
+  // HERO CARD
   heroCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -448,7 +453,7 @@ const styles = StyleSheet.create({
 
   heroTitle: { fontSize: 20, fontWeight: '700', color: '#111', marginBottom: 12 },
 
-  // Stats Row - SIMPLE
+  // Stats - NO RATING
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,29 +463,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 13, fontWeight: '600', color: '#374151' },
-  statDivider: { width: 1, height: 16, backgroundColor: '#e5e7eb' },
+  statValue: { fontSize: 14, fontWeight: '700', color: '#374151' },
+  statLabel: { fontSize: 9, color: '#9ca3af', marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 20, backgroundColor: '#e5e7eb' },
 
-  // Provider Row - NO DUPLICATE RATING
-  providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  // Provider Row - with StarRating
+  providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   avatarSmall: { width: 40, height: 40, borderRadius: 20 },
   avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   avatarSmallText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  providerInfo: { flex: 1, marginLeft: 10, gap: 2 },
+  providerInfo: { flex: 1, marginLeft: 10, gap: 3 },
   providerName: { fontSize: 15, fontWeight: '600', color: '#111' },
   providerCity: { fontSize: 12, color: '#6b7280' },
   messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   messageBtnText: { fontSize: 16 },
 
-  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  postedTime: { fontSize: 12, color: '#9ca3af' },
+  footerRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   reportText: { fontSize: 12, color: '#9ca3af' },
 
   // Images
   imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
   offeringImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
 
-  // Section Card - COMPACT
+  // Section Card
   sectionCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
