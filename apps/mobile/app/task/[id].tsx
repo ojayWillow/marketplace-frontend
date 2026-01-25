@@ -1,9 +1,9 @@
 import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions, Share } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, ActivityIndicator, IconButton } from 'react-native-paper';
+import { Text, Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, getCategoryByKey, type Task } from '@marketplace/shared';
+import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, getCategoryByKey } from '@marketplace/shared';
 import { useState } from 'react';
 import StarRating from '../../components/StarRating';
 
@@ -11,7 +11,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 200;
 const ACCENT_COLOR = '#3B82F6';
 
-// Helper to format time ago
 const formatTimeAgo = (dateString: string | undefined): string => {
   if (!dateString) return '';
   const now = new Date();
@@ -27,12 +26,10 @@ const formatTimeAgo = (dateString: string | undefined): string => {
   return past.toLocaleDateString();
 };
 
-// Helper to get difficulty indicator
-const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined) => {
   switch (difficulty) {
     case 'easy': return { color: '#10b981', label: 'Easy' };
     case 'hard': return { color: '#ef4444', label: 'Hard' };
-    case 'medium':
     default: return { color: '#f59e0b', label: 'Medium' };
   }
 };
@@ -73,7 +70,7 @@ export default function TaskDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to withdraw.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed.');
     },
   });
 
@@ -121,16 +118,12 @@ export default function TaskDetailScreen() {
     },
   });
 
-  // Handlers
   const handleShare = async () => {
     try {
       await Share.share({
         message: `${task?.title} - €${task?.budget || task?.reward || 0}\n${task?.description}`,
-        url: `https://yourapp.com/task/${taskId}`,
       });
-    } catch (error) {
-      console.error('Share error:', error);
-    }
+    } catch (e) {}
   };
 
   const handleApply = () => {
@@ -202,7 +195,7 @@ export default function TaskDetailScreen() {
   const handleReport = () => {
     Alert.alert('Report', 'Report this task?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: () => Alert.alert('Reported', 'Thanks for reporting.') },
+      { text: 'Report', style: 'destructive', onPress: () => Alert.alert('Reported', 'Thanks.') },
     ]);
   };
 
@@ -213,11 +206,13 @@ export default function TaskDetailScreen() {
   // Computed
   const isOwnTask = user?.id === task?.creator_id;
   const isAssignedToMe = user?.id === task?.assigned_to_id;
-  const canApply = isAuthenticated && !isOwnTask && task?.status === 'open' && !task?.has_applied;
   const hasApplied = task?.has_applied && task?.user_application?.status === 'pending';
   const canWithdraw = hasApplied;
   const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
   const canConfirm = isOwnTask && task?.status === 'pending_confirmation';
+  
+  // Show apply button if: task is open AND user is not the owner AND user hasn't applied yet
+  const showApplyButton = task?.status === 'open' && !isOwnTask && !hasApplied;
 
   const categoryData = task ? getCategoryByKey(task.category) : null;
   const difficulty = getDifficultyIndicator(task?.difficulty);
@@ -230,7 +225,6 @@ export default function TaskDetailScreen() {
     ? task.images.split(',').filter(Boolean).map(url => getImageUrl(url))
     : [];
 
-  // Loading
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -242,7 +236,6 @@ export default function TaskDetailScreen() {
     );
   }
 
-  // Error
   if (error || !task) {
     return (
       <SafeAreaView style={styles.container}>
@@ -255,7 +248,6 @@ export default function TaskDetailScreen() {
     );
   }
 
-  // Review prompt
   if (showReviewPrompt) {
     return (
       <SafeAreaView style={styles.container}>
@@ -281,12 +273,7 @@ export default function TaskDetailScreen() {
           title: 'Task Details', 
           headerBackTitle: 'Back',
           headerRight: () => (
-            <IconButton
-              icon="share-variant"
-              iconColor={ACCENT_COLOR}
-              size={24}
-              onPress={handleShare}
-            />
+            <IconButton icon="share-variant" iconColor={ACCENT_COLOR} size={24} onPress={handleShare} />
           ),
         }} 
       />
@@ -295,30 +282,28 @@ export default function TaskDetailScreen() {
         
         {/* HERO CARD */}
         <View style={styles.heroCard}>
-          {/* Category + Badges */}
-          <View style={styles.heroTop}>
-            <View style={styles.categoryBadge}>
+          {/* ROW 1: Category + Urgent + Flag + Price - ALL ON SAME LINE */}
+          <View style={styles.topRow}>
+            <View style={styles.topRowLeft}>
               <Text style={styles.categoryText}>{categoryData?.icon || '📋'} {categoryData?.label || task.category}</Text>
-            </View>
-            <View style={styles.heroTopRight}>
               {task.is_urgent && (
                 <View style={styles.urgentBadge}>
-                  <Text style={styles.urgentText}>🔥 Urgent</Text>
+                  <Text style={styles.urgentText}>🔥</Text>
                 </View>
               )}
+            </View>
+            <View style={styles.topRowRight}>
               <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Text style={styles.flagIcon}>🚩</Text>
               </TouchableOpacity>
+              <Text style={styles.price}>€{task.budget || task.reward || 0}</Text>
             </View>
           </View>
 
-          {/* Title + Price Row */}
-          <View style={styles.titlePriceRow}>
-            <Text style={styles.heroTitle} numberOfLines={2}>{task.title}</Text>
-            <Text style={styles.heroPrice}>€{task.budget || task.reward || 0}</Text>
-          </View>
+          {/* ROW 2: Title */}
+          <Text style={styles.heroTitle}>{task.title}</Text>
 
-          {/* Stats Row */}
+          {/* ROW 3: Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{applicantsCount}</Text>
@@ -356,7 +341,7 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
-        {/* POSTED BY CARD */}
+        {/* POSTED BY */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Posted by</Text>
           <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
@@ -369,9 +354,7 @@ export default function TaskDetailScreen() {
             )}
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{task.creator_name || 'Anonymous'}</Text>
-              {hasRating && (
-                <StarRating rating={task.creator_rating || 0} reviewCount={task.creator_review_count} size={14} showCount />
-              )}
+              {hasRating && <StarRating rating={task.creator_rating || 0} reviewCount={task.creator_review_count} size={14} showCount />}
               {task.creator_city && <Text style={styles.userCity}>📍 {task.creator_city}</Text>}
             </View>
             {!isOwnTask && (
@@ -382,19 +365,19 @@ export default function TaskDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* DESCRIPTION CARD */}
+        {/* DESCRIPTION */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.descriptionText}>{task.description}</Text>
         </View>
 
-        {/* LOCATION CARD */}
+        {/* LOCATION */}
         {task.location && (
           <View style={styles.sectionCard}>
             <View style={styles.locationHeader}>
               <Text style={styles.sectionTitle}>Location</Text>
               {distance !== undefined && distance !== null && (
-                <Text style={styles.distanceText}>📏 {distance.toFixed(1)} km away</Text>
+                <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
               )}
             </View>
             <Text style={styles.locationAddress}>{task.location}</Text>
@@ -406,19 +389,17 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
-        {/* STATUS NOTICES */}
+        {/* NOTICES */}
         {hasApplied && (
           <View style={[styles.noticeCard, styles.noticeInfo]}>
             <Text style={styles.noticeText}>✅ You have applied for this task</Text>
           </View>
         )}
-
         {task.status === 'pending_confirmation' && isOwnTask && (
           <View style={[styles.noticeCard, styles.noticeWarning]}>
             <Text style={styles.noticeText}>⏳ {task.assigned_to_name} marked this as done</Text>
           </View>
         )}
-
         {isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress') && (
           <View style={[styles.noticeCard, styles.noticeSuccess]}>
             <Text style={styles.noticeText}>🎯 You are assigned to this task</Text>
@@ -427,9 +408,10 @@ export default function TaskDetailScreen() {
 
       </ScrollView>
 
-      {/* STICKY BOTTOM BAR */}
+      {/* BOTTOM BAR - ALWAYS VISIBLE */}
       <View style={styles.bottomBar}>
-        {canApply && (
+        {/* APPLY BUTTON - for anyone who can apply */}
+        {showApplyButton && (
           <Button 
             mode="contained" 
             onPress={handleApply} 
@@ -442,6 +424,7 @@ export default function TaskDetailScreen() {
           </Button>
         )}
 
+        {/* WITHDRAW */}
         {canWithdraw && (
           <Button 
             mode="outlined" 
@@ -455,6 +438,7 @@ export default function TaskDetailScreen() {
           </Button>
         )}
 
+        {/* OWNER ACTIONS */}
         {isOwnTask && task.status === 'open' && (
           <View style={styles.ownerActions}>
             <Button 
@@ -467,27 +451,21 @@ export default function TaskDetailScreen() {
               View Applications ({applicantsCount})
             </Button>
             <View style={styles.ownerBtnRow}>
-              <Button mode="outlined" onPress={handleCancel} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]}>
-                Cancel
-              </Button>
-              <Button mode="outlined" onPress={() => router.push(`/task/${taskId}/edit`)} style={styles.halfBtn}>
-                Edit
-              </Button>
+              <Button mode="outlined" onPress={handleCancel} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]}>Cancel</Button>
+              <Button mode="outlined" onPress={() => router.push(`/task/${taskId}/edit`)} style={styles.halfBtn}>Edit</Button>
             </View>
           </View>
         )}
 
+        {/* CONFIRM/DISPUTE */}
         {canConfirm && (
           <View style={styles.ownerBtnRow}>
-            <Button mode="outlined" onPress={handleDispute} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]} loading={disputeMutation.isPending}>
-              Dispute
-            </Button>
-            <Button mode="contained" onPress={handleConfirm} style={[styles.halfBtn, styles.successBtn]} loading={confirmMutation.isPending}>
-              Confirm Done
-            </Button>
+            <Button mode="outlined" onPress={handleDispute} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]} loading={disputeMutation.isPending}>Dispute</Button>
+            <Button mode="contained" onPress={handleConfirm} style={[styles.halfBtn, styles.successBtn]} loading={confirmMutation.isPending}>Confirm Done</Button>
           </View>
         )}
 
+        {/* MARK DONE */}
         {canMarkDone && (
           <Button 
             mode="contained" 
@@ -526,63 +504,55 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  heroTop: {
+  
+  // TOP ROW: Category + Flag + Price on SAME LINE
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  heroTopRight: {
+  topRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  topRowRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  categoryBadge: {
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
   categoryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: ACCENT_COLOR,
+    color: '#6b7280',
   },
   urgentBadge: {
     backgroundColor: '#fef3c7',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
   urgentText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#92400e',
   },
   flagIcon: {
-    fontSize: 20,
-    opacity: 0.6,
+    fontSize: 18,
+    opacity: 0.5,
+  },
+  price: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: ACCENT_COLOR,
   },
   
-  // Title + Price Row (NEW - Combined)
-  titlePriceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    gap: 12,
-  },
+  // Title
   heroTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: '#111827',
-    flex: 1,
+    marginBottom: 16,
     lineHeight: 28,
-  },
-  heroPrice: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ACCENT_COLOR,
   },
 
   // Stats Row
@@ -591,244 +561,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f9fafb',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
   },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#e5e7eb',
-  },
-  difficultyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  difficultyDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 28, backgroundColor: '#e5e7eb' },
+  difficultyRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  difficultyDot: { width: 8, height: 8, borderRadius: 4 },
 
   // Image Card
-  imageCard: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 12,
-    position: 'relative',
-  },
-  taskImage: {
-    width: SCREEN_WIDTH - 32,
-    height: IMAGE_HEIGHT,
-  },
-  imageCounter: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  imageCounterText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  imageCard: { borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
+  taskImage: { width: SCREEN_WIDTH - 32, height: IMAGE_HEIGHT },
+  imageCounter: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  imageCounterText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
 
   // Section Card
-  sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: '#1f2937',
-    lineHeight: 24,
-    fontWeight: '400',
-  },
+  sectionCard: { backgroundColor: '#ffffff', borderRadius: 16, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  sectionTitle: { fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
 
   // User Row
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  avatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: ACCENT_COLOR,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  userInfo: {
-    flex: 1,
-    marginLeft: 14,
-    gap: 4,
-  },
-  userName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  userCity: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  messageBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: ACCENT_COLOR,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: ACCENT_COLOR,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  messageBtnText: {
-    fontSize: 22,
-  },
+  userRow: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 52, height: 52, borderRadius: 26 },
+  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
+  userInfo: { flex: 1, marginLeft: 12, gap: 3 },
+  userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  userCity: { fontSize: 13, color: '#6b7280' },
+  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  messageBtnText: { fontSize: 20 },
 
   // Location
-  locationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  distanceText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: ACCENT_COLOR,
-  },
-  locationAddress: {
-    fontSize: 15,
-    color: '#1f2937',
-    marginBottom: 12,
-    fontWeight: '400',
-  },
-  mapBtn: {
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  mapBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ACCENT_COLOR,
-  },
+  locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+  locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 12 },
+  mapBtn: { backgroundColor: '#eff6ff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
+  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
 
   // Notices
-  noticeCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  noticeInfo: {
-    backgroundColor: '#dbeafe',
-  },
-  noticeWarning: {
-    backgroundColor: '#fef3c7',
-  },
-  noticeSuccess: {
-    backgroundColor: '#dcfce7',
-  },
-  noticeText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1f2937',
-    textAlign: 'center',
-  },
+  noticeCard: { borderRadius: 12, padding: 14, marginBottom: 12 },
+  noticeInfo: { backgroundColor: '#dbeafe' },
+  noticeWarning: { backgroundColor: '#fef3c7' },
+  noticeSuccess: { backgroundColor: '#dcfce7' },
+  noticeText: { fontSize: 14, fontWeight: '500', color: '#1f2937', textAlign: 'center' },
 
   // Bottom Bar
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 34,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  primaryBtn: {
-    borderRadius: 14,
-  },
-  btnContent: {
-    paddingVertical: 8,
-  },
-  btnLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  dangerBtn: {
-    borderColor: '#fecaca',
-  },
-  successBtn: {
-    backgroundColor: '#10b981',
-  },
-  ownerActions: {
-    gap: 10,
-  },
-  ownerBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  halfBtn: {
-    flex: 1,
-    borderRadius: 14,
-  },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: 16, paddingBottom: 34, borderTopWidth: 1, borderTopColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
+  primaryBtn: { borderRadius: 14 },
+  btnContent: { paddingVertical: 8 },
+  btnLabel: { fontSize: 16, fontWeight: '700' },
+  dangerBtn: { borderColor: '#fecaca' },
+  successBtn: { backgroundColor: '#10b981' },
+  ownerActions: { gap: 10 },
+  ownerBtnRow: { flexDirection: 'row', gap: 10 },
+  halfBtn: { flex: 1, borderRadius: 14 },
 
   // Celebrate
   celebrateIcon: { fontSize: 64, marginBottom: 16 },
