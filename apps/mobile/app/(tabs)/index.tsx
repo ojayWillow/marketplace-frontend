@@ -4,11 +4,12 @@ import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import ClusteredMapView from 'react-native-map-supercluster';
 import { getTasks, getOfferings, searchTasks, type Task, type Offering, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
-import { clusterItems, type Cluster } from '../../utils/mapClustering';
+import { calculateDistance } from '../../utils/mapClustering';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +21,6 @@ import {
   FocusedTaskCard, 
   UserLocationMarker, 
   OfferingMarker,
-  AnimatedMapMarkers 
 } from '../../src/features/home/components';
 import { useLocation } from '../../src/features/home/hooks/useLocation';
 import { useTaskFilters } from '../../src/features/home/hooks/useTaskFilters';
@@ -32,12 +32,11 @@ import {
   SHEET_MAX_HEIGHT, 
   JOB_COLOR, 
   OFFERING_COLOR, 
-  OVERLAP_THRESHOLD_FACTOR, 
-  getZoomLevel, 
-  calculateDistance 
+  getZoomLevel,
+  getMarkerColor,
 } from '../../src/features/home/constants';
 
-// Direct imports for modals (small, frequently used - no need for lazy loading)
+// Direct imports for modals
 import CategoryModal from '../../src/features/home/components/modals/CategoryModal';
 import FiltersModal from '../../src/features/home/components/modals/FiltersModal';
 import CreateModal from '../../src/features/home/components/modals/CreateModal';
@@ -49,13 +48,9 @@ export default function HomeScreen() {
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
   
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const listRef = useRef<FlatList>(null);
   const searchInputRef = useRef<TextInput>(null);
-  
-  // Store previous clusters for smooth animations
-  const previousClustersRef = useRef<Cluster<Task>[]>([]);
-  const [previousClusters, setPreviousClusters] = useState<Cluster<Task>[]>([]);
   
   // Custom hooks
   const { userLocation, hasRealLocation } = useLocation(mapRef);
@@ -68,7 +63,6 @@ export default function HomeScreen() {
   } = useTaskFilters();
   
   // UI State
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -180,51 +174,28 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation, hasRealLocation]);
 
-  // Clustering with previous cluster tracking for animations
-  const clusters = useMemo(() => {
-    const newClusters = clusterItems<Task>(filteredTasks, mapRegion, {
-      overlapThresholdFactor: OVERLAP_THRESHOLD_FACTOR,
-      minClusterSize: 2,
-      hysteresis: 0.6,
-      previousClusters: previousClustersRef.current,
-    });
-    
-    // Store current as previous for next iteration
-    // Using ref for clustering algorithm, state for animation component
-    const oldClusters = previousClustersRef.current;
-    previousClustersRef.current = newClusters;
-    
-    // Update state to trigger animation component re-render with previous clusters
-    if (JSON.stringify(oldClusters.map(c => c.id)) !== JSON.stringify(newClusters.map(c => c.id))) {
-      setPreviousClusters(oldClusters);
-    }
-    
-    return newClusters;
-  }, [filteredTasks, mapRegion]);
-
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
   const selectedCategoryData = getCategoryByKey(selectedCategory);
 
-  // Handle region change - update immediately for smooth transitions
+  // Handle region change
   const handleRegionChangeComplete = useCallback((region: Region) => {
     setMapRegion(region);
   }, []);
 
-  const handleClusterPress = useCallback((cluster: Cluster<Task>) => {
+  // Handle cluster press - zoom into cluster
+  const handleClusterPress = useCallback((cluster: any, markers: any[]) => {
     haptic.light();
-    if (cluster.isCluster && mapRef.current) {
-      const lats = cluster.items.map(t => t.latitude!);
-      const lngs = cluster.items.map(t => t.longitude!);
-      const padding = 0.005;
+    if (mapRef.current && markers.length > 0) {
+      const lats = markers.map(m => m.geometry.coordinates[1]);
+      const lngs = markers.map(m => m.geometry.coordinates[0]);
+      const padding = 0.01;
       mapRef.current.animateToRegion({
         latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
         longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2,
-        latitudeDelta: Math.max(Math.max(...lats) - Math.min(...lats) + padding, 0.01),
-        longitudeDelta: Math.max(Math.max(...lngs) - Math.min(...lngs) + padding, 0.01),
+        latitudeDelta: Math.max(Math.max(...lats) - Math.min(...lats) + padding, 0.02),
+        longitudeDelta: Math.max(Math.max(...lngs) - Math.min(...lngs) + padding, 0.02),
       }, 400);
-    } else {
-      handleMarkerPress(cluster.items[0]);
     }
   }, []);
 
@@ -241,7 +212,6 @@ export default function HomeScreen() {
       }, 350);
     }
     setFocusedTaskId(task.id);
-    setSelectedTask(null);
     setSelectedOffering(null);
     animateSheetTo(SHEET_MID_HEIGHT);
     setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
@@ -280,6 +250,33 @@ export default function HomeScreen() {
     Keyboard.dismiss();
   }, [clearSearch]);
 
+  // Custom cluster renderer - Gold coin design
+  const renderCluster = useCallback((cluster: any) => {
+    const { geometry, properties } = cluster;
+    const count = properties.point_count;
+    
+    return (
+      <Marker
+        key={`cluster-${cluster.id}`}
+        coordinate={{
+          latitude: geometry.coordinates[1],
+          longitude: geometry.coordinates[0],
+        }}
+        tracksViewChanges={false}
+        onPress={() => handleClusterPress(cluster, properties.getLeaves())}
+      >
+        <View style={styles.coinClusterContainer}>
+          <View style={styles.coinCluster}>
+            <Text style={styles.coinEuro}>€</Text>
+          </View>
+          <View style={styles.coinBadge}>
+            <Text style={styles.coinBadgeText}>{count}</Text>
+          </View>
+        </View>
+      </Marker>
+    );
+  }, [styles, handleClusterPress]);
+
   // Render functions
   const renderJobItem = useCallback(({ item }: { item: Task }) => (
     <TaskCard
@@ -302,27 +299,54 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <MapView
+        <ClusteredMapView
           ref={mapRef}
           style={styles.map}
           provider={PROVIDER_DEFAULT}
           customMapStyle={activeTheme === 'dark' ? darkMapStyle : lightMapStyle}
-          initialRegion={{ latitude: userLocation.latitude, longitude: userLocation.longitude, latitudeDelta: 0.15, longitudeDelta: 0.15 }}
+          initialRegion={{ 
+            latitude: userLocation.latitude, 
+            longitude: userLocation.longitude, 
+            latitudeDelta: 0.15, 
+            longitudeDelta: 0.15 
+          }}
           onRegionChangeComplete={handleRegionChangeComplete}
           showsUserLocation={false}
           showsMyLocationButton={false}
+          // Clustering options
+          clusteringEnabled={true}
+          radius={50}
+          minPoints={3}
+          maxZoom={16}
+          renderCluster={renderCluster}
         >
-          {/* Animated Task clusters/markers - smooth transitions */}
-          <AnimatedMapMarkers
-            clusters={clusters}
-            previousClusters={previousClusters}
-            focusedTaskId={focusedTaskId}
-            onClusterPress={handleClusterPress}
-            onTaskPress={handleMarkerPress}
-            styles={styles}
-          />
+          {/* Task markers - the library handles clustering automatically */}
+          {filteredTasks.map((task) => {
+            const markerColor = getMarkerColor(task.category);
+            const isFocused = focusedTaskId === task.id;
+            
+            return (
+              <Marker
+                key={`task-${task.id}`}
+                coordinate={{ latitude: task.latitude!, longitude: task.longitude! }}
+                onPress={() => handleMarkerPress(task)}
+                tracksViewChanges={false}
+                zIndex={isFocused ? 10 : 1}
+              >
+                <View style={[
+                  styles.priceMarker,
+                  { borderColor: markerColor },
+                  isFocused && styles.priceMarkerFocused
+                ]}>
+                  <Text style={[styles.priceMarkerText, { color: markerColor }]}>
+                    €{task.budget?.toFixed(0) || '0'}
+                  </Text>
+                </View>
+              </Marker>
+            );
+          })}
 
-          {/* Boosted offerings - render second */}
+          {/* Boosted offerings - not clustered */}
           {boostedOfferings.map((offering) => (
             <Marker 
               key={`offering-${offering.id}`} 
@@ -335,19 +359,18 @@ export default function HomeScreen() {
             </Marker>
           ))}
 
-          {/* User location marker - render LAST (on top of everything) */}
+          {/* User location marker */}
           <UserLocationMarker 
             userLocation={userLocation} 
             hasRealLocation={hasRealLocation} 
             zoomLevel={zoomLevel} 
             styles={styles} 
           />
-        </MapView>
+        </ClusteredMapView>
 
         {/* Floating Header */}
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
           <View style={styles.topRow}>
-            {/* Category Button - TouchableOpacity wrapper for full touch area */}
             <TouchableOpacity 
               style={[styles.categoryButton, hasActiveCategory && styles.categoryButtonActive]}
               onPress={() => { haptic.light(); setShowCategoryModal(true); }}
@@ -361,7 +384,6 @@ export default function HomeScreen() {
               </BlurView>
             </TouchableOpacity>
 
-            {/* Search Bar */}
             <View style={styles.searchBar}>
               <BlurView intensity={80} tint="light" style={styles.searchBlur}>
                 <Icon name="search" size={20} color={styles.searchInput.color} />
@@ -383,7 +405,6 @@ export default function HomeScreen() {
               </BlurView>
             </View>
 
-            {/* Filter Button - TouchableOpacity wrapper for full touch area */}
             <TouchableOpacity 
               style={styles.filtersButton}
               onPress={() => { haptic.light(); setShowFiltersModal(true); }}
@@ -407,7 +428,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* My Location Button - TouchableOpacity wrapper */}
+        {/* My Location Button */}
         {sheetPosition === 'min' && (
           <TouchableOpacity 
             style={styles.myLocationButton} 
