@@ -19,6 +19,8 @@ export interface Message {
   sender?: MessageUser;
   content: string;
   is_read: boolean;
+  attachment_url?: string;
+  attachment_type?: 'image' | 'file' | 'video' | 'audio';
   created_at: string;
 }
 
@@ -46,6 +48,34 @@ export interface GetMessagesResponse {
   pages: number;
   has_more: boolean;
 }
+
+/**
+ * Upload an image file
+ */
+export const uploadImage = async (file: File | { uri: string; type: string; name: string }): Promise<string> => {
+  const formData = new FormData();
+  
+  // Handle both web File and React Native file objects
+  if ('uri' in file) {
+    // React Native
+    formData.append('file', {
+      uri: file.uri,
+      type: file.type,
+      name: file.name,
+    } as any);
+  } else {
+    // Web
+    formData.append('file', file);
+  }
+
+  const response = await apiClient.post('/api/uploads', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  return response.data.url;
+};
 
 /**
  * Get all conversations for current user
@@ -100,12 +130,16 @@ export const getMessages = async (
  * @param content - Message content
  * @param taskId - Optional task ID to associate with conversation
  * @param offeringId - Optional offering ID to associate with conversation
+ * @param attachmentUrl - Optional attachment URL
+ * @param attachmentType - Optional attachment type
  */
 export const sendMessage = async (
   recipientIdOrConversationId: number,
   content: string,
   taskId?: number,
-  offeringId?: number
+  offeringId?: number,
+  attachmentUrl?: string,
+  attachmentType?: 'image' | 'file' | 'video' | 'audio'
 ): Promise<Message> => {
   // If taskId or offeringId is provided, it's a new conversation with recipient
   if (taskId || offeringId) {
@@ -121,9 +155,40 @@ export const sendMessage = async (
   // Otherwise, send to existing conversation
   const response = await apiClient.post(
     `/api/messages/conversations/${recipientIdOrConversationId}/messages`,
-    { content }
+    { 
+      content,
+      attachment_url: attachmentUrl,
+      attachment_type: attachmentType
+    }
   );
   return response.data.message;
+};
+
+/**
+ * Send a message with an attachment
+ */
+export const sendMessageWithAttachment = async (
+  conversationId: number,
+  content: string,
+  file: File | { uri: string; type: string; name: string }
+): Promise<Message> => {
+  // Upload file first
+  const attachmentUrl = await uploadImage(file);
+  
+  // Determine attachment type from file
+  let attachmentType: 'image' | 'file' | 'video' | 'audio' = 'file';
+  const fileType = 'type' in file ? file.type : file.type;
+  
+  if (fileType.startsWith('image/')) {
+    attachmentType = 'image';
+  } else if (fileType.startsWith('video/')) {
+    attachmentType = 'video';
+  } else if (fileType.startsWith('audio/')) {
+    attachmentType = 'audio';
+  }
+  
+  // Send message with attachment
+  return sendMessage(conversationId, content, undefined, undefined, attachmentUrl, attachmentType);
 };
 
 /**
