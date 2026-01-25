@@ -68,6 +68,11 @@ export default function UserProfileScreen() {
     return user.username?.[0]?.toUpperCase() || 'U';
   };
 
+  const handleMessage = () => {
+    // Navigate to conversation with userId and username for display
+    router.push(`/conversation/new?userId=${userId}&username=${encodeURIComponent(user.username)}`);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen 
@@ -196,7 +201,7 @@ export default function UserProfileScreen() {
           <Surface style={styles.actionsSection} elevation={0}>
             <Button
               mode="contained"
-              onPress={() => router.push(`/conversation/new?userId=${userId}`)}
+              onPress={handleMessage}
               style={styles.messageButton}
               icon="message"
             >
