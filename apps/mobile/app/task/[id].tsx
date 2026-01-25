@@ -1,7 +1,7 @@
-import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions, Share } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
+import { Text, Button, Surface, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, getCategoryByKey, type Task } from '@marketplace/shared';
 import { useState } from 'react';
@@ -122,6 +122,17 @@ export default function TaskDetailScreen() {
   });
 
   // Handlers
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `${task?.title} - €${task?.budget || task?.reward || 0}\n${task?.description}`,
+        url: `https://yourapp.com/task/${taskId}`, // Replace with your actual deep link
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+    }
+  };
+
   const handleApply = () => {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'You need to sign in to apply.', [
@@ -213,6 +224,7 @@ export default function TaskDetailScreen() {
   const timeAgo = formatTimeAgo(task?.created_at);
   const hasRating = (task?.creator_rating ?? 0) > 0;
   const applicantsCount = task?.pending_applications_count ?? 0;
+  const distance = task?.distance;
   
   const taskImages = task?.images 
     ? task.images.split(',').filter(Boolean).map(url => getImageUrl(url))
@@ -263,13 +275,27 @@ export default function TaskDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerShown: true, title: 'Task Details', headerBackTitle: 'Back' }} />
+      <Stack.Screen 
+        options={{ 
+          headerShown: true, 
+          title: 'Task Details', 
+          headerBackTitle: 'Back',
+          headerRight: () => (
+            <IconButton
+              icon="share-variant"
+              iconColor={ACCENT_COLOR}
+              size={24}
+              onPress={handleShare}
+            />
+          ),
+        }} 
+      />
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
         {/* HERO CARD */}
         <View style={styles.heroCard}>
-          {/* Category + Flag */}
+          {/* Category + Badges */}
           <View style={styles.heroTop}>
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{categoryData?.icon || '📋'} {categoryData?.label || task.category}</Text>
@@ -330,12 +356,6 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
-        {/* DESCRIPTION CARD */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.descriptionText}>{task.description}</Text>
-        </View>
-
         {/* POSTED BY CARD */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Posted by</Text>
@@ -362,18 +382,27 @@ export default function TaskDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* DESCRIPTION CARD */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.descriptionText}>{task.description}</Text>
+        </View>
+
         {/* LOCATION CARD */}
         {task.location && (
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Location</Text>
-            <View style={styles.locationRow}>
-              <Text style={styles.locationText}>📍 {task.location}</Text>
-              {task.latitude && task.longitude && (
-                <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
-                  <Text style={styles.mapBtnText}>🗺️ Open Maps</Text>
-                </TouchableOpacity>
+            <View style={styles.locationHeader}>
+              <Text style={styles.sectionTitle}>Location</Text>
+              {distance !== undefined && distance !== null && (
+                <Text style={styles.distanceText}>📏 {distance.toFixed(1)} km away</Text>
               )}
             </View>
+            <Text style={styles.locationAddress}>{task.location}</Text>
+            {task.latitude && task.longitude && (
+              <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
+                <Text style={styles.mapBtnText}>🗺️ Open in Maps</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -609,8 +638,9 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     fontSize: 16,
-    color: '#374151',
+    color: '#1f2937',
     lineHeight: 24,
+    fontWeight: '400',
   },
 
   // User Row
@@ -668,24 +698,32 @@ const styles = StyleSheet.create({
   },
 
   // Location
-  locationRow: {
+  locationHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  locationText: {
+  distanceText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ACCENT_COLOR,
+  },
+  locationAddress: {
     fontSize: 15,
-    color: '#374151',
-    flex: 1,
+    color: '#1f2937',
+    marginBottom: 12,
+    fontWeight: '400',
   },
   mapBtn: {
     backgroundColor: '#eff6ff',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   mapBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: ACCENT_COLOR,
   },
