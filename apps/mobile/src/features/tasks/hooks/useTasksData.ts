@@ -23,17 +23,17 @@ export function useTasksData({
   userLocation,
   hasRealLocation,
 }: UseTasksDataProps) {
-  // Browse Jobs query - only open jobs
+  // Browse Jobs query - only open jobs - LOAD ALL
   const jobsQuery = useQuery({
     queryKey: ['tasks-browse'],
-    queryFn: () => getTasks({ page: 1, per_page: 20, status: 'open' }),
+    queryFn: () => getTasks({ page: 1, per_page: 500, status: 'open' }),
     enabled: mainTab === 'jobs' || mainTab === 'all',
   });
 
-  // Browse Services query - all active services
+  // Browse Services query - all active services - LOAD ALL
   const servicesQuery = useQuery({
     queryKey: ['services-browse'],
-    queryFn: () => getOfferings({ page: 1, per_page: 20 }),
+    queryFn: () => getOfferings({ page: 1, per_page: 500 }),
     enabled: mainTab === 'services' || mainTab === 'all',
   });
 
