@@ -31,7 +31,6 @@ import {
   SHEET_MAX_HEIGHT, 
   JOB_COLOR, 
   OFFERING_COLOR, 
-  getZoomLevel,
   getMarkerColor,
 } from '../../src/features/home/constants';
 
@@ -131,8 +130,6 @@ export default function HomeScreen() {
   // Animation
   const sheetHeight = useRef(new Animated.Value(SHEET_MIN_HEIGHT)).current;
   const currentHeight = useRef(SHEET_MIN_HEIGHT);
-
-  const zoomLevel = useMemo(() => getZoomLevel(mapRegion?.latitudeDelta), [mapRegion?.latitudeDelta]);
 
   const animateSheetTo = useCallback((height: number) => {
     currentHeight.current = height;
@@ -386,7 +383,8 @@ export default function HomeScreen() {
             longitudeDelta: 0.15 
           }}
           onRegionChangeComplete={handleRegionChangeComplete}
-          showsUserLocation={false}
+          // Use native user location (blue dot) - not affected by clustering
+          showsUserLocation={hasRealLocation}
           showsMyLocationButton={false}
           // Clustering options
           clusteringEnabled={true}
@@ -437,19 +435,6 @@ export default function HomeScreen() {
             </Marker>
           ))}
         </ClusteredMapView>
-
-        {/* User location marker - OUTSIDE ClusteredMapView to avoid clustering */}
-        {hasRealLocation && (
-          <View 
-            style={styles.userLocationOverlay}
-            pointerEvents="none"
-          >
-            <View style={styles.userMarkerFull}>
-              <View style={styles.userMarkerHalo} />
-              <View style={styles.userMarkerDot} />
-            </View>
-          </View>
-        )}
 
         {/* Floating Header */}
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
