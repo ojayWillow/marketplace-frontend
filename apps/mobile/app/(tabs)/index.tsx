@@ -4,8 +4,7 @@ import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
-import { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
-import ClusteredMapView from 'react-native-map-supercluster';
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { getTasks, getOfferings, searchTasks, type Task, type Offering, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
@@ -104,7 +103,7 @@ export default function HomeScreen() {
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
   
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
   const searchInputRef = useRef<TextInput>(null);
   
@@ -242,38 +241,6 @@ export default function HomeScreen() {
     setMapRegion(region);
   }, []);
 
-  // Handle cluster press - zoom into cluster using the library's onClusterPress
-  const onClusterPress = useCallback((cluster: any, markers?: any[]) => {
-    haptic.light();
-    
-    try {
-      if (!mapRef.current || !cluster?.geometry?.coordinates) return;
-      
-      const [lng, lat] = cluster.geometry.coordinates;
-      const count = cluster.properties?.point_count || 0;
-      
-      // Calculate a good zoom delta based on cluster size
-      // Smaller clusters need less zoom, larger clusters need more
-      let newDelta = 0.05; // Default
-      if (count <= 3) {
-        newDelta = 0.02;
-      } else if (count <= 10) {
-        newDelta = 0.03;
-      } else {
-        newDelta = 0.04;
-      }
-      
-      mapRef.current.animateToRegion({
-        latitude: lat,
-        longitude: lng,
-        latitudeDelta: newDelta,
-        longitudeDelta: newDelta,
-      }, 350);
-    } catch (error) {
-      console.warn('Error handling cluster press:', error);
-    }
-  }, []);
-
   const handleMarkerPress = useCallback((task: Task) => {
     haptic.light();
     if (mapRef.current && task.latitude && task.longitude) {
@@ -325,25 +292,6 @@ export default function HomeScreen() {
     Keyboard.dismiss();
   }, [clearSearch]);
 
-  // Custom cluster renderer - Gold coin design
-  // NOTE: This returns just the VIEW content, not a Marker wrapper
-  const renderCluster = useCallback((cluster: any) => {
-    const { properties } = cluster;
-    const count = properties?.point_count || 0;
-    
-    // Return the cluster VIEW (the library wraps it in a Marker)
-    return (
-      <View style={styles.coinClusterContainer}>
-        <View style={styles.coinCluster}>
-          <Text style={styles.coinEuro}>€</Text>
-        </View>
-        <View style={styles.coinBadge}>
-          <Text style={styles.coinBadgeText}>{count}</Text>
-        </View>
-      </View>
-    );
-  }, [styles]);
-
   // Render functions
   const renderJobItem = useCallback(({ item }: { item: Task }) => (
     <TaskCard
@@ -366,7 +314,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <ClusteredMapView
+        <MapView
           ref={mapRef}
           style={styles.map}
           provider={PROVIDER_DEFAULT}
@@ -378,29 +326,10 @@ export default function HomeScreen() {
             longitudeDelta: 0.15 
           }}
           onRegionChangeComplete={handleRegionChangeComplete}
-          // Use native user location (blue dot) - not affected by clustering
           showsUserLocation={hasRealLocation}
           showsMyLocationButton={false}
-          // Clustering options
-          clusteringEnabled={true}
-          radius={50}
-          minPoints={2}
-          maxZoom={16}
-          extent={512}
-          nodeSize={64}
-          // Custom cluster appearance
-          renderCluster={renderCluster}
-          clusterColor="#FCD34D"
-          clusterTextColor="#92400E"
-          clusterFontFamily="System"
-          // Handle cluster press
-          onClusterPress={onClusterPress}
-          // Animation settings
-          animationEnabled={true}
-          // Don't use spiderifier - we handle overlaps with offset
-          spiderLineColor="transparent"
         >
-          {/* Task markers with overlap offset - the library handles clustering */}
+          {/* Task markers with overlap offset - plain price bubble markers */}
           {tasksWithOffset.map((task) => {
             const markerColor = getMarkerColor(task.category);
             const isFocused = focusedTaskId === task.id;
@@ -426,7 +355,7 @@ export default function HomeScreen() {
             );
           })}
 
-          {/* Boosted offerings - not clustered */}
+          {/* Boosted offerings markers */}
           {boostedOfferings.map((offering) => (
             <Marker 
               key={`offering-${offering.id}`} 
@@ -438,7 +367,7 @@ export default function HomeScreen() {
               <OfferingMarker offering={offering} styles={styles} />
             </Marker>
           ))}
-        </ClusteredMapView>
+        </MapView>
 
         {/* Floating Header */}
         <SafeAreaView style={styles.floatingHeader} edges={['top']}>
