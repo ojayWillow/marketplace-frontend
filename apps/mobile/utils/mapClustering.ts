@@ -1,6 +1,7 @@
 /**
  * Optimized Map Clustering Utility
  * Uses spatial grid algorithm for O(n) performance instead of O(n²)
+ * Includes hysteresis to prevent flip-flopping at zoom boundaries
  */
 
 import type { Region } from 'react-native-maps';
@@ -9,7 +10,7 @@ export interface ClusterableItem {
   id: number;
   latitude: number;
   longitude: number;
-  [key: string]: any; // Allow additional properties
+  [key: string]: any;
 }
 
 export interface Cluster<T extends ClusterableItem> {
@@ -20,14 +21,11 @@ export interface Cluster<T extends ClusterableItem> {
   isCluster: boolean;
 }
 
-/**
- * Configuration for clustering behavior
- */
 export interface ClusterConfig {
   /**
    * Factor of region delta to use as overlap threshold
    * Smaller = more aggressive clustering
-   * Default: 0.025 (2.5% of visible area)
+   * Default: 0.04 (4% of visible area)
    */
   overlapThresholdFactor?: number;
 
@@ -36,16 +34,30 @@ export interface ClusterConfig {
    * Default: 2
    */
   minClusterSize?: number;
+
+  /**
+   * Hysteresis factor to prevent flip-flopping
+   * Once clustered, need to zoom in this much more to uncluster
+   * Value of 0.6 means uncluster threshold is 60% of cluster threshold
+   * Default: 0.6
+   */
+  hysteresis?: number;
+
+  /**
+   * Previous clusters for hysteresis comparison
+   * Pass the previous result to enable smooth transitions
+   */
+  previousClusters?: Cluster<any>[];
 }
 
-const DEFAULT_CONFIG: Required<ClusterConfig> = {
-  overlapThresholdFactor: 0.025,
+const DEFAULT_CONFIG: Required<Omit<ClusterConfig, 'previousClusters'>> = {
+  overlapThresholdFactor: 0.04,
   minClusterSize: 2,
+  hysteresis: 0.6,
 };
 
 /**
  * Spatial grid for fast neighbor lookup
- * Divides the map into cells and stores items by cell
  */
 class SpatialGrid<T extends ClusterableItem> {
   private grid: Map<string, T[]> = new Map();
@@ -57,18 +69,12 @@ class SpatialGrid<T extends ClusterableItem> {
     this.cellSizeLng = cellSizeLng;
   }
 
-  /**
-   * Get cell key for a coordinate
-   */
   private getCellKey(lat: number, lng: number): string {
     const cellLat = Math.floor(lat / this.cellSizeLat);
     const cellLng = Math.floor(lng / this.cellSizeLng);
     return `${cellLat},${cellLng}`;
   }
 
-  /**
-   * Add item to grid
-   */
   add(item: T): void {
     const key = this.getCellKey(item.latitude, item.longitude);
     const cell = this.grid.get(key);
@@ -79,16 +85,11 @@ class SpatialGrid<T extends ClusterableItem> {
     }
   }
 
-  /**
-   * Get nearby items (within 3x3 cell neighborhood)
-   * This ensures we catch items near cell boundaries
-   */
   getNearby(lat: number, lng: number): T[] {
     const centerKey = this.getCellKey(lat, lng);
     const [centerLat, centerLng] = centerKey.split(',').map(Number);
     const nearby: T[] = [];
 
-    // Check 3x3 grid around center cell
     for (let dLat = -1; dLat <= 1; dLat++) {
       for (let dLng = -1; dLng <= 1; dLng++) {
         const key = `${centerLat + dLat},${centerLng + dLng}`;
@@ -104,49 +105,73 @@ class SpatialGrid<T extends ClusterableItem> {
 }
 
 /**
- * Fast clustering algorithm using spatial grid
- * Time complexity: O(n) average case, O(n*k) worst case where k is max items per cell
- * Space complexity: O(n)
+ * Check if an item was previously in a cluster
+ */
+function wasInCluster<T extends ClusterableItem>(
+  itemId: number,
+  previousClusters: Cluster<T>[] | undefined
+): boolean {
+  if (!previousClusters) return false;
+  
+  for (const cluster of previousClusters) {
+    if (cluster.isCluster && cluster.items.some(item => item.id === itemId)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Fast clustering algorithm with hysteresis
  */
 export function clusterItems<T extends ClusterableItem>(
   items: T[],
   region: Region | null,
   config: ClusterConfig = {}
 ): Cluster<T>[] {
-  // Early return for edge cases
   if (!region || items.length === 0) {
     return [];
   }
 
-  const { overlapThresholdFactor, minClusterSize } = { ...DEFAULT_CONFIG, ...config };
+  const { 
+    overlapThresholdFactor, 
+    minClusterSize, 
+    hysteresis 
+  } = { ...DEFAULT_CONFIG, ...config };
+  
+  const { previousClusters } = config;
 
-  // Calculate overlap distance based on current zoom level
   const { latitudeDelta, longitudeDelta } = region;
-  const overlapDistLat = latitudeDelta * overlapThresholdFactor;
-  const overlapDistLng = longitudeDelta * overlapThresholdFactor;
+  
+  // Base overlap distance
+  const baseOverlapDistLat = latitudeDelta * overlapThresholdFactor;
+  const baseOverlapDistLng = longitudeDelta * overlapThresholdFactor;
 
-  // Create spatial grid with cell size = overlap distance
-  // This ensures nearby items are in same or adjacent cells
-  const grid = new SpatialGrid<T>(overlapDistLat, overlapDistLng);
-
-  // Populate grid
+  // Create spatial grid
+  const grid = new SpatialGrid<T>(baseOverlapDistLat, baseOverlapDistLng);
   for (const item of items) {
     grid.add(item);
   }
 
-  // Track processed items
   const processed = new Set<number>();
   const clusters: Cluster<T>[] = [];
 
-  // Process each item
   for (const item of items) {
     if (processed.has(item.id)) continue;
 
-    // Get nearby items from grid (fast lookup)
-    const nearbyItems = grid.getNearby(item.latitude, item.longitude);
+    // Apply hysteresis: if item was previously clustered, use tighter threshold
+    // This means it needs to be zoomed in MORE to uncluster
+    const wasClusteredBefore = wasInCluster(item.id, previousClusters);
+    const overlapDistLat = wasClusteredBefore 
+      ? baseOverlapDistLat * (1 + (1 - hysteresis))  // Larger threshold to stay clustered
+      : baseOverlapDistLat;
+    const overlapDistLng = wasClusteredBefore 
+      ? baseOverlapDistLng * (1 + (1 - hysteresis))
+      : baseOverlapDistLng;
 
-    // Find overlapping items
+    const nearbyItems = grid.getNearby(item.latitude, item.longitude);
     const overlappingItems: T[] = [];
+
     for (const nearby of nearbyItems) {
       if (processed.has(nearby.id)) continue;
 
@@ -159,13 +184,9 @@ export function clusterItems<T extends ClusterableItem>(
       }
     }
 
-    // Create cluster or single marker
     if (overlappingItems.length >= minClusterSize) {
-      // Calculate center of overlapping items
-      const centerLat =
-        overlappingItems.reduce((sum, t) => sum + t.latitude, 0) / overlappingItems.length;
-      const centerLng =
-        overlappingItems.reduce((sum, t) => sum + t.longitude, 0) / overlappingItems.length;
+      const centerLat = overlappingItems.reduce((sum, t) => sum + t.latitude, 0) / overlappingItems.length;
+      const centerLng = overlappingItems.reduce((sum, t) => sum + t.longitude, 0) / overlappingItems.length;
 
       clusters.push({
         id: `cluster-${item.id}`,
@@ -175,7 +196,6 @@ export function clusterItems<T extends ClusterableItem>(
         isCluster: true,
       });
     } else {
-      // Single item (no clustering)
       clusters.push({
         id: `single-${item.id}`,
         latitude: item.latitude,
@@ -190,8 +210,7 @@ export function clusterItems<T extends ClusterableItem>(
 }
 
 /**
- * Helper to calculate distance between two points (Haversine formula)
- * Used for validation/testing
+ * Calculate distance between two points (Haversine formula)
  */
 export function calculateDistance(
   lat1: number,
@@ -199,7 +218,7 @@ export function calculateDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
