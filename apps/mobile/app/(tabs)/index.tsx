@@ -15,7 +15,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
 
 // Feature imports from src/features/home
-import { TaskCard, FocusedTaskCard, UserLocationMarker, ClusterMarker, PriceMarker, OfferingMarker } from '../../src/features/home/components';
+import { 
+  TaskCard, 
+  FocusedTaskCard, 
+  UserLocationMarker, 
+  OfferingMarker,
+  AnimatedMapMarkers 
+} from '../../src/features/home/components';
 import { useLocation } from '../../src/features/home/hooks/useLocation';
 import { useTaskFilters } from '../../src/features/home/hooks/useTaskFilters';
 import { useSearchDebounce } from '../../src/features/home/hooks/useSearchDebounce';
@@ -47,8 +53,9 @@ export default function HomeScreen() {
   const listRef = useRef<FlatList>(null);
   const searchInputRef = useRef<TextInput>(null);
   
-  // Store previous clusters for hysteresis (smoother transitions)
+  // Store previous clusters for smooth animations
   const previousClustersRef = useRef<Cluster<Task>[]>([]);
+  const [previousClusters, setPreviousClusters] = useState<Cluster<Task>[]>([]);
   
   // Custom hooks
   const { userLocation, hasRealLocation } = useLocation(mapRef);
@@ -173,7 +180,7 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation, hasRealLocation]);
 
-  // Clustering with hysteresis - pass previous clusters to prevent flip-flopping
+  // Clustering with previous cluster tracking for animations
   const clusters = useMemo(() => {
     const newClusters = clusterItems<Task>(filteredTasks, mapRegion, {
       overlapThresholdFactor: OVERLAP_THRESHOLD_FACTOR,
@@ -182,8 +189,15 @@ export default function HomeScreen() {
       previousClusters: previousClustersRef.current,
     });
     
-    // Store for next iteration
+    // Store current as previous for next iteration
+    // Using ref for clustering algorithm, state for animation component
+    const oldClusters = previousClustersRef.current;
     previousClustersRef.current = newClusters;
+    
+    // Update state to trigger animation component re-render with previous clusters
+    if (JSON.stringify(oldClusters.map(c => c.id)) !== JSON.stringify(newClusters.map(c => c.id))) {
+      setPreviousClusters(oldClusters);
+    }
     
     return newClusters;
   }, [filteredTasks, mapRegion]);
@@ -192,8 +206,7 @@ export default function HomeScreen() {
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
   const selectedCategoryData = getCategoryByKey(selectedCategory);
 
-  // Handle region change - update immediately, no debounce
-  // This ensures markers are always visible and update in real-time
+  // Handle region change - update immediately for smooth transitions
   const handleRegionChangeComplete = useCallback((region: Region) => {
     setMapRegion(region);
   }, []);
@@ -299,22 +312,15 @@ export default function HomeScreen() {
           showsUserLocation={false}
           showsMyLocationButton={false}
         >
-          {/* Task clusters/markers - render FIRST (below user location) */}
-          {clusters.map((cluster) => (
-            <Marker 
-              key={cluster.id} 
-              coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }} 
-              onPress={() => handleClusterPress(cluster)} 
-              tracksViewChanges={false}
-              zIndex={1}
-            >
-              {cluster.isCluster ? (
-                <ClusterMarker count={cluster.items.length} styles={styles} />
-              ) : (
-                <PriceMarker task={cluster.items[0]} isFocused={focusedTaskId === cluster.items[0].id} styles={styles} />
-              )}
-            </Marker>
-          ))}
+          {/* Animated Task clusters/markers - smooth transitions */}
+          <AnimatedMapMarkers
+            clusters={clusters}
+            previousClusters={previousClusters}
+            focusedTaskId={focusedTaskId}
+            onClusterPress={handleClusterPress}
+            onTaskPress={handleMarkerPress}
+            styles={styles}
+          />
 
           {/* Boosted offerings - render second */}
           {boostedOfferings.map((offering) => (
