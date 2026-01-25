@@ -9,7 +9,7 @@ import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 200;
-const ACCENT_COLOR = '#3B82F6';
+const ACCENT_COLOR = '#f97316'; // ORANGE for services
 
 const formatTimeAgo = (dateString: string | undefined): string => {
   if (!dateString) return '';
@@ -373,6 +373,7 @@ export default function OfferingDetailScreen() {
             style={styles.primaryBtn} 
             contentStyle={styles.btnContent} 
             labelStyle={styles.btnLabel}
+            buttonColor={ACCENT_COLOR}
           >
             Contact Provider
           </Button>
@@ -462,14 +463,14 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 120 },
 
-  // Hero Card
+  // Hero Card - ORANGE themed
   heroCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: ACCENT_COLOR,
+    borderLeftColor: ACCENT_COLOR, // ORANGE
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
   boostBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 12 },
   boostText: { fontSize: 12 },
   flagIcon: { fontSize: 18, opacity: 0.5 },
-  price: { fontSize: 24, fontWeight: '800', color: ACCENT_COLOR },
+  price: { fontSize: 24, fontWeight: '800', color: ACCENT_COLOR }, // ORANGE
   heroTitle: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 16, lineHeight: 28 },
 
   // Stats
@@ -510,25 +511,25 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
   descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
 
-  // User Row
+  // User Row - ORANGE avatar
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 52, height: 52, borderRadius: 26 },
-  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' }, // ORANGE
   avatarText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
   userInfo: { flex: 1, marginLeft: 12, gap: 3 },
   userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
   userCity: { fontSize: 13, color: '#6b7280' },
   completedTasks: { fontSize: 12, color: '#059669' },
-  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' }, // ORANGE
   messageBtnText: { fontSize: 20 },
 
-  // Location
+  // Location - ORANGE accents
   locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR }, // ORANGE
   locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 8 },
   serviceRadius: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
-  mapBtn: { backgroundColor: '#eff6ff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
-  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+  mapBtn: { backgroundColor: '#fff7ed', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' }, // ORANGE tint
+  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR }, // ORANGE
 
   // Notices
   noticeCard: { borderRadius: 12, padding: 14, marginBottom: 12 },
