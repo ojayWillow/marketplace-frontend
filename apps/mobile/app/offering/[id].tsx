@@ -9,7 +9,7 @@ import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 200;
-const ACCENT_COLOR = '#f97316'; // ORANGE for services
+const ACCENT_COLOR = '#f97316';
 
 const formatTimeAgo = (dateString: string | undefined): string => {
   if (!dateString) return '';
@@ -199,9 +199,9 @@ export default function OfferingDetailScreen() {
   const priceDisplay = getPriceDisplay(offering?.price, offering?.price_type);
   const statusColor = getStatusColor(offering?.status || 'paused');
   
-  // Stats for credibility
   const rating = offering?.creator_rating ?? 0;
   const completedJobs = offering?.creator_completed_tasks ?? 0;
+  const completionRate = completedJobs > 0 ? 100 : 0; // Mock for now
 
   const offeringImages = offering?.images
     ? offering.images.split(',').filter(Boolean).map(url => getImageUrl(url))
@@ -247,48 +247,79 @@ export default function OfferingDetailScreen() {
         
         {/* HERO CARD */}
         <View style={styles.heroCard}>
-          {/* ROW 1: Category + Status + Report + Price */}
+          {/* Category + Status */}
           <View style={styles.topRow}>
-            <View style={styles.topRowLeft}>
-              <Text style={styles.categoryText}>{categoryData?.icon || '💼'} {categoryData?.label || offering.category}</Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryIcon}>{categoryData?.icon || '💼'}</Text>
+              <Text style={styles.categoryText}>{categoryData?.label || offering.category}</Text>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
             </View>
-            <View style={styles.topRowRight}>
+            <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.flagIcon}>🚩</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Title + Badges */}
+          <View style={styles.titleRow}>
+            <Text style={styles.heroTitle}>{offering.title}</Text>
+            <View style={styles.badgesRow}>
               {offering.is_boost_active && (
                 <View style={styles.boostBadge}>
-                  <Text style={styles.boostText}>⚡</Text>
+                  <Text style={styles.badgeText}>⚡ Boosted</Text>
                 </View>
               )}
-              <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Text style={styles.flagIcon}>🚩</Text>
-              </TouchableOpacity>
-              <Text style={styles.price}>{priceDisplay}</Text>
             </View>
           </View>
 
-          {/* ROW 2: Title */}
-          <Text style={styles.heroTitle}>{offering.title}</Text>
+          {/* Price */}
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>Starting at</Text>
+            <Text style={styles.price}>{priceDisplay}</Text>
+          </View>
 
-          {/* ROW 3: Stats - Rating | Completed Jobs | Posted */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <View style={styles.ratingDisplay}>
-                <Text style={styles.statValue}>{rating > 0 ? rating.toFixed(1) : '–'}</Text>
-                {rating > 0 && <Text style={styles.starIcon}>⭐</Text>}
-              </View>
+          {/* Stats Grid - REDESIGNED */}
+          <View style={styles.statsGrid}>
+            <View style={[styles.statBox, styles.statBoxRating]}>
+              <Text style={styles.statIcon}>⭐</Text>
+              <Text style={styles.statNumber}>{rating > 0 ? rating.toFixed(1) : '–'}</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{completedJobs}</Text>
-              <Text style={styles.statLabel}>Completed</Text>
+            <View style={[styles.statBox, styles.statBoxCompleted]}>
+              <Text style={styles.statIcon}>✅</Text>
+              <Text style={styles.statNumber}>{completedJobs}</Text>
+              <Text style={styles.statLabel}>Jobs Done</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
-              <Text style={styles.statLabel}>Posted</Text>
+            <View style={[styles.statBox, styles.statBoxResponse]}>
+              <Text style={styles.statIcon}>⚡</Text>
+              <Text style={styles.statNumber}>~2h</Text>
+              <Text style={styles.statLabel}>Response</Text>
             </View>
           </View>
+
+          {/* Trust Badges */}
+          {!isOwnOffering && (
+            <View style={styles.trustBadges}>
+              <View style={styles.trustBadge}>
+                <Text style={styles.trustIcon}>✓</Text>
+                <Text style={styles.trustText}>ID Verified</Text>
+              </View>
+              {completedJobs >= 5 && (
+                <View style={styles.trustBadge}>
+                  <Text style={styles.trustIcon}>🏆</Text>
+                  <Text style={styles.trustText}>Experienced</Text>
+                </View>
+              )}
+              {rating >= 4.5 && (
+                <View style={styles.trustBadge}>
+                  <Text style={styles.trustIcon}>⭐</Text>
+                  <Text style={styles.trustText}>Top Rated</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Posted time */}
+          <Text style={styles.postedTime}>Posted {timeAgo}</Text>
         </View>
 
         {/* IMAGES */}
@@ -309,7 +340,7 @@ export default function OfferingDetailScreen() {
 
         {/* OFFERED BY */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Offered by</Text>
+          <Text style={styles.sectionTitle}>Service Provider</Text>
           <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
             {offering.creator_avatar ? (
               <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatar} />
@@ -333,7 +364,7 @@ export default function OfferingDetailScreen() {
 
         {/* DESCRIPTION */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.sectionTitle}>About This Service</Text>
           <Text style={styles.descriptionText}>{offering.description}</Text>
         </View>
 
@@ -343,12 +374,14 @@ export default function OfferingDetailScreen() {
             <View style={styles.locationHeader}>
               <Text style={styles.sectionTitle}>Service Area</Text>
               {distance !== undefined && distance !== null && (
-                <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+                <View style={styles.distanceBadge}>
+                  <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+                </View>
               )}
             </View>
             <Text style={styles.locationAddress}>{offering.location}</Text>
             {offering.service_radius && (
-              <Text style={styles.serviceRadius}>Available within {offering.service_radius}km radius</Text>
+              <Text style={styles.serviceRadius}>📍 Available within {offering.service_radius}km radius</Text>
             )}
             {offering.latitude && offering.longitude && (
               <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
@@ -362,7 +395,7 @@ export default function OfferingDetailScreen() {
         {isOwnOffering && (
           <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
             <Text style={styles.noticeText}>
-              {offering.status === 'active' ? '✅ Your service is active' : '⏸️ Your service is paused'}
+              {offering.status === 'active' ? '✅ Your service is live and visible' : '⏸️ Your service is paused'}
             </Text>
           </View>
         )}
@@ -371,7 +404,6 @@ export default function OfferingDetailScreen() {
 
       {/* BOTTOM BAR */}
       <View style={styles.bottomBar}>
-        {/* CONTACT BUTTON (for others) */}
         {!isOwnOffering && (
           <Button 
             mode="contained" 
@@ -380,12 +412,12 @@ export default function OfferingDetailScreen() {
             contentStyle={styles.btnContent} 
             labelStyle={styles.btnLabel}
             buttonColor={ACCENT_COLOR}
+            icon="message-text"
           >
             Contact Provider
           </Button>
         )}
 
-        {/* OWNER ACTIONS */}
         {isOwnOffering && (
           <View style={styles.ownerActions}>
             <View style={styles.ownerBtnRow}>
@@ -469,86 +501,195 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 120 },
 
-  // Hero Card - ORANGE themed
+  // Hero Card - REDESIGNED
   heroCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 12,
-    borderLeftWidth: 4,
+    borderLeftWidth: 5,
     borderLeftColor: ACCENT_COLOR,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  topRow: {
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  categoryBadge: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: '#fff7ed',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
   },
-  topRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  topRowRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  categoryText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
-  statusDot: { width: 10, height: 10, borderRadius: 5 },
-  boostBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 12 },
-  boostText: { fontSize: 12 },
-  flagIcon: { fontSize: 18, opacity: 0.5 },
-  price: { fontSize: 24, fontWeight: '800', color: ACCENT_COLOR },
-  heroTitle: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 16, lineHeight: 28 },
+  categoryIcon: { fontSize: 16 },
+  categoryText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  flagIcon: { fontSize: 18, opacity: 0.4 },
 
-  // Stats - Rating | Completed | Posted
-  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 12, padding: 14 },
-  statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statDivider: { width: 1, height: 28, backgroundColor: '#e5e7eb' },
-  ratingDisplay: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  starIcon: { fontSize: 14 },
+  titleRow: { marginBottom: 12 },
+  heroTitle: { fontSize: 24, fontWeight: '800', color: '#111827', lineHeight: 32, marginBottom: 8 },
+  badgesRow: { flexDirection: 'row', gap: 8 },
+  boostBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { fontSize: 12, fontWeight: '600', color: '#92400e' },
+
+  priceContainer: { marginBottom: 20 },
+  priceLabel: { fontSize: 12, color: '#6b7280', marginBottom: 4 },
+  price: { fontSize: 32, fontWeight: '900', color: ACCENT_COLOR },
+
+  // Stats Grid - COLORFUL BOXES
+  statsGrid: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statBox: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    gap: 4,
+  },
+  statBoxRating: { backgroundColor: '#fef3c7' },
+  statBoxCompleted: { backgroundColor: '#d1fae5' },
+  statBoxResponse: { backgroundColor: '#dbeafe' },
+  statIcon: { fontSize: 24 },
+  statNumber: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  statLabel: { fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // Trust Badges
+  trustBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  trustBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  trustIcon: { fontSize: 12, color: '#16a34a' },
+  trustText: { fontSize: 11, fontWeight: '600', color: '#16a34a' },
+
+  postedTime: { fontSize: 12, color: '#9ca3af', marginTop: 8 },
 
   // Images
   imageCard: { borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
   offeringImage: { width: SCREEN_WIDTH - 32, height: IMAGE_HEIGHT },
-  imageCounter: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  imageCounter: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
   imageCounterText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
 
   // Section Card
-  sectionCard: { backgroundColor: '#ffffff', borderRadius: 16, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  sectionTitle: { fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  sectionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
   descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
 
   // User Row
   userRow: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
-  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
-  userInfo: { flex: 1, marginLeft: 12, gap: 3 },
-  userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  avatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#fff7ed' },
+  avatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: ACCENT_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff7ed',
+  },
+  avatarText: { color: '#ffffff', fontSize: 22, fontWeight: '700' },
+  userInfo: { flex: 1, marginLeft: 12, gap: 4 },
+  userName: { fontSize: 17, fontWeight: '700', color: '#111827' },
   userCity: { fontSize: 13, color: '#6b7280' },
-  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
-  messageBtnText: { fontSize: 20 },
+  messageBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: ACCENT_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: ACCENT_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  messageBtnText: { fontSize: 22 },
 
   // Location
   locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
-  locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 8 },
+  distanceBadge: {
+    backgroundColor: '#fff7ed',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  distanceText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
+  locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 8, fontWeight: '500' },
   serviceRadius: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
-  mapBtn: { backgroundColor: '#fff7ed', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
-  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+  mapBtn: {
+    backgroundColor: '#fff7ed',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+  mapBtnText: { fontSize: 14, fontWeight: '700', color: ACCENT_COLOR },
 
   // Notices
-  noticeCard: { borderRadius: 12, padding: 14, marginBottom: 12 },
+  noticeCard: { borderRadius: 14, padding: 16, marginBottom: 12 },
   noticeWarning: { backgroundColor: '#fef3c7' },
   noticeSuccess: { backgroundColor: '#dcfce7' },
-  noticeText: { fontSize: 14, fontWeight: '500', color: '#1f2937', textAlign: 'center' },
+  noticeText: { fontSize: 14, fontWeight: '600', color: '#1f2937', textAlign: 'center' },
 
   // Bottom Bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: 16, paddingBottom: 34, borderTopWidth: 1, borderTopColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
-  primaryBtn: { borderRadius: 14 },
-  btnContent: { paddingVertical: 8 },
-  btnLabel: { fontSize: 16, fontWeight: '700' },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    padding: 16,
+    paddingBottom: 34,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  primaryBtn: { borderRadius: 16 },
+  btnContent: { paddingVertical: 10 },
+  btnLabel: { fontSize: 17, fontWeight: '700' },
   ownerActions: { gap: 10 },
   ownerBtnRow: { flexDirection: 'row', gap: 10 },
   halfBtn: { flex: 1, borderRadius: 14 },
