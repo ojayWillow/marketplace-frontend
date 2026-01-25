@@ -29,10 +29,10 @@ const formatTimeAgo = (dateString: string | undefined): string => {
 const getPriceDisplay = (price: number | undefined, priceType: string | undefined): string => {
   if (!price) return 'Negotiable';
   switch (priceType) {
-    case 'hourly': return `\u20ac${price}/hr`;
-    case 'fixed': return `\u20ac${price}`;
-    case 'negotiable': return `From \u20ac${price}`;
-    default: return `\u20ac${price}`;
+    case 'hourly': return `€${price}/hr`;
+    case 'fixed': return `€${price}`;
+    case 'negotiable': return `From €${price}`;
+    default: return `€${price}`;
   }
 };
 
@@ -246,11 +246,14 @@ export default function OfferingDetailScreen() {
         
         {/* COMPACT HERO CARD */}
         <View style={styles.heroCard}>
-          {/* Row 1: Category + Price */}
+          {/* Row 1: Category + Report Flag (LEFT) + Price (RIGHT) */}
           <View style={styles.topRow}>
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{categoryData?.icon} {categoryData?.label || offering.category}</Text>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+              <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.reportBtn}>
+                <Text style={styles.flagIcon}>🚩</Text>
+              </TouchableOpacity>
             </View>
             <Text style={styles.price}>{priceDisplay}</Text>
           </View>
@@ -258,7 +261,7 @@ export default function OfferingDetailScreen() {
           {/* Row 2: Title */}
           <Text style={styles.heroTitle}>{offering.title}</Text>
 
-          {/* Row 3: Provider FIRST */}
+          {/* Row 3: Provider */}
           <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
             {offering.creator_avatar ? (
               <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
@@ -270,24 +273,24 @@ export default function OfferingDetailScreen() {
             <View style={styles.providerInfo}>
               <Text style={styles.providerName}>{offering.creator_name}</Text>
               {hasRating && <StarRating rating={rating} reviewCount={offering.creator_review_count} size={12} showCount />}
-              {offering.creator_city && <Text style={styles.providerCity}>\ud83d\udccd {offering.creator_city}</Text>}
+              {offering.creator_city && <Text style={styles.providerCity}>📍 {offering.creator_city}</Text>}
             </View>
             {!isOwnOffering && (
               <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
-                <Text style={styles.messageBtnText}>\ud83d\udcac</Text>
+                <Text style={styles.messageBtnText}>💬</Text>
               </TouchableOpacity>
             )}
           </TouchableOpacity>
 
-          {/* Row 4: Stats BELOW provider */}
+          {/* Row 4: Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>\u2713 {completedJobs}</Text>
+              <Text style={styles.statValue}>✓ {completedJobs}</Text>
               <Text style={styles.statLabel}>COMPLETED</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>\u26a1 ~2h</Text>
+              <Text style={styles.statValue}>⚡ ~2h</Text>
               <Text style={styles.statLabel}>RESPONSE</Text>
             </View>
             <View style={styles.statDivider} />
@@ -295,13 +298,6 @@ export default function OfferingDetailScreen() {
               <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
               <Text style={styles.statLabel}>POSTED</Text>
             </View>
-          </View>
-
-          {/* Report */}
-          <View style={styles.footerRow}>
-            <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.reportText}>\ud83d\udea9 Report</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -330,7 +326,7 @@ export default function OfferingDetailScreen() {
                 <Text style={styles.sectionTitle}>Service Area</Text>
                 <Text style={styles.locationText}>{offering.location}</Text>
                 {offering.service_radius && (
-                  <Text style={styles.radiusText}>\ud83d\udccd {offering.service_radius}km radius</Text>
+                  <Text style={styles.radiusText}>📍 {offering.service_radius}km radius</Text>
                 )}
               </View>
               {distance !== undefined && distance !== null && (
@@ -341,7 +337,7 @@ export default function OfferingDetailScreen() {
             </View>
             {offering.latitude && offering.longitude && (
               <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
-                <Text style={styles.mapBtnText}>\ud83d\uddfa\ufe0f Map</Text>
+                <Text style={styles.mapBtnText}>🗺️ Map</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -351,7 +347,7 @@ export default function OfferingDetailScreen() {
         {isOwnOffering && (
           <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
             <Text style={styles.noticeText}>
-              {offering.status === 'active' ? '\u2705 Live' : '\u23f8\ufe0f Paused'}
+              {offering.status === 'active' ? '✅ Live' : '⏸️ Paused'}
             </Text>
           </View>
         )}
@@ -383,11 +379,11 @@ export default function OfferingDetailScreen() {
             </Button>
             {!offering.is_boost_active && (
               <Button mode="contained" onPress={handleBoost} style={styles.ownerBtn} buttonColor="#f59e0b" compact>
-                \u26a1
+                ⚡
               </Button>
             )}
             <Button mode="outlined" onPress={handleDelete} textColor="#ef4444" style={styles.ownerBtn} compact>
-              \ud83d\uddd1\ufe0f
+              🗑️
             </Button>
           </View>
         )}
@@ -449,11 +445,13 @@ const styles = StyleSheet.create({
   categoryBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   categoryText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
+  reportBtn: { marginLeft: 4 },
+  flagIcon: { fontSize: 16, opacity: 0.5 },
   price: { fontSize: 22, fontWeight: '800', color: ACCENT_COLOR },
 
   heroTitle: { fontSize: 20, fontWeight: '700', color: '#111', marginBottom: 12 },
 
-  // Provider Row - NOW ABOVE STATS
+  // Provider Row
   providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   avatarSmall: { width: 40, height: 40, borderRadius: 20 },
   avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
@@ -464,22 +462,18 @@ const styles = StyleSheet.create({
   messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   messageBtnText: { fontSize: 16 },
 
-  // Stats - NOW BELOW PROVIDER
+  // Stats
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9fafb',
     borderRadius: 10,
     padding: 10,
-    marginBottom: 8,
   },
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: 14, fontWeight: '700', color: '#374151' },
   statLabel: { fontSize: 9, color: '#9ca3af', marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
   statDivider: { width: 1, height: 20, backgroundColor: '#e5e7eb' },
-
-  footerRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
-  reportText: { fontSize: 12, color: '#9ca3af' },
 
   // Images
   imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
