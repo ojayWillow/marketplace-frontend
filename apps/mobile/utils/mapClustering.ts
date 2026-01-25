@@ -1,14 +1,12 @@
 /**
- * Smart Map Clustering Utility
+ * SIMPLIFIED Map Clustering
  * 
- * CRITICAL: Every job MUST appear in exactly one cluster or as individual marker.
- * No job should ever "disappear" from the map.
+ * GOAL: Jobs should NEVER disappear. Keep it simple and stable.
  * 
- * Dynamic clustering based on zoom level:
- * - CLOSE (street): No clustering - always show individual jobs
- * - MEDIUM (city): Cluster only when 3+ jobs overlap
- * - FAR (country): Normal clustering 
- * - EXTREME (continental): Aggressive clustering
+ * Rules:
+ * 1. If zoomed in close (latitudeDelta < 0.2) - NO clustering, show all individual
+ * 2. If zoomed out - cluster nearby jobs (within ~5% of screen)
+ * 3. EVERY job must appear somewhere - either as marker or in a cluster
  */
 
 import type { Region } from 'react-native-maps';
@@ -35,119 +33,39 @@ export interface ClusterConfig {
   previousClusters?: Cluster<any>[];
 }
 
-const DEFAULT_CONFIG = {
-  overlapThresholdFactor: 0.04,
-  minClusterSize: 2,
-  hysteresis: 0.6,
-};
+// Only cluster when zoomed out past this threshold
+const CLUSTER_ZOOM_THRESHOLD = 0.15; // ~city level view
+
+// How close jobs need to be to cluster (as % of visible area)
+const CLUSTER_DISTANCE_FACTOR = 0.04; // 4% of screen
+
+// Minimum jobs to form a cluster
+const MIN_CLUSTER_SIZE = 3;
 
 /**
- * Zoom level detection thresholds (based on latitudeDelta)
- */
-const ZOOM_THRESHOLDS = {
-  CLOSE: 0.015,     // Street level - buildings visible
-  MEDIUM: 0.1,      // City level - neighborhoods visible  
-  FAR: 0.6,         // Country level - cities visible
-  EXTREME: 3.0,     // Continental level
-};
-
-/**
- * Get dynamic clustering parameters based on zoom level
- */
-function getDynamicClusterParams(latitudeDelta: number): {
-  overlapFactor: number;
-  minSize: number;
-  shouldCluster: boolean;
-} {
-  // CLOSE zoom (street level) - NO clustering at all
-  if (latitudeDelta <= ZOOM_THRESHOLDS.CLOSE) {
-    return { overlapFactor: 0, minSize: 999, shouldCluster: false };
-  }
-  
-  // MEDIUM zoom (city/neighborhood) - gentle clustering, min 3 jobs
-  if (latitudeDelta <= ZOOM_THRESHOLDS.MEDIUM) {
-    return { overlapFactor: 0.025, minSize: 3, shouldCluster: true };
-  }
-  
-  // FAR zoom (country level) - normal clustering
-  if (latitudeDelta <= ZOOM_THRESHOLDS.FAR) {
-    return { overlapFactor: 0.04, minSize: 2, shouldCluster: true };
-  }
-  
-  // EXTREME zoom (continental) - more aggressive
-  if (latitudeDelta <= ZOOM_THRESHOLDS.EXTREME) {
-    return { overlapFactor: 0.06, minSize: 2, shouldCluster: true };
-  }
-  
-  // WORLD view - very aggressive
-  return { overlapFactor: 0.1, minSize: 2, shouldCluster: true };
-}
-
-/**
- * Spatial grid for fast neighbor lookup - O(1) instead of O(n)
- */
-class SpatialGrid<T extends ClusterableItem> {
-  private grid: Map<string, T[]> = new Map();
-  private cellSizeLat: number;
-  private cellSizeLng: number;
-
-  constructor(cellSizeLat: number, cellSizeLng: number) {
-    this.cellSizeLat = Math.max(cellSizeLat, 0.001); // Minimum cell size
-    this.cellSizeLng = Math.max(cellSizeLng, 0.001);
-  }
-
-  private getCellKey(lat: number, lng: number): string {
-    const cellLat = Math.floor(lat / this.cellSizeLat);
-    const cellLng = Math.floor(lng / this.cellSizeLng);
-    return `${cellLat},${cellLng}`;
-  }
-
-  add(item: T): void {
-    const key = this.getCellKey(item.latitude, item.longitude);
-    const cell = this.grid.get(key);
-    if (cell) {
-      cell.push(item);
-    } else {
-      this.grid.set(key, [item]);
-    }
-  }
-
-  getNearby(lat: number, lng: number): T[] {
-    const centerKey = this.getCellKey(lat, lng);
-    const [centerLat, centerLng] = centerKey.split(',').map(Number);
-    const nearby: T[] = [];
-
-    for (let dLat = -1; dLat <= 1; dLat++) {
-      for (let dLng = -1; dLng <= 1; dLng++) {
-        const key = `${centerLat + dLat},${centerLng + dLng}`;
-        const cell = this.grid.get(key);
-        if (cell) {
-          nearby.push(...cell);
-        }
-      }
-    }
-
-    return nearby;
-  }
-}
-
-/**
- * Smart clustering algorithm
- * GUARANTEE: Every input item will appear in exactly one output cluster
+ * Simple, stable clustering algorithm
  */
 export function clusterItems<T extends ClusterableItem>(
   items: T[],
   region: Region | null,
-  config: ClusterConfig = {}
+  _config: ClusterConfig = {}
 ): Cluster<T>[] {
-  // No items = no clusters
-  if (!items || items.length === 0) {
+  // Filter out items without coordinates
+  const validItems = items.filter(item => 
+    item.latitude !== null && 
+    item.latitude !== undefined && 
+    item.longitude !== null && 
+    item.longitude !== undefined
+  );
+
+  // No items = empty array
+  if (validItems.length === 0) {
     return [];
   }
 
-  // No region = show all as individual (safe fallback)
-  if (!region) {
-    return items.map(item => ({
+  // No region or zoomed in close = show all as individual markers
+  if (!region || region.latitudeDelta < CLUSTER_ZOOM_THRESHOLD) {
+    return validItems.map(item => ({
       id: `single-${item.id}`,
       latitude: item.latitude,
       longitude: item.longitude,
@@ -156,100 +74,69 @@ export function clusterItems<T extends ClusterableItem>(
     }));
   }
 
-  const { hysteresis } = { ...DEFAULT_CONFIG, ...config };
-  const { latitudeDelta, longitudeDelta } = region;
-  
-  // Get dynamic parameters based on zoom
-  const dynamicParams = getDynamicClusterParams(latitudeDelta);
-  
-  // If clustering disabled, return all as individual markers
-  if (!dynamicParams.shouldCluster) {
-    return items.map(item => ({
-      id: `single-${item.id}`,
-      latitude: item.latitude,
-      longitude: item.longitude,
-      items: [item],
-      isCluster: false,
-    }));
-  }
-  
-  // Calculate overlap thresholds
-  const overlapDistLat = latitudeDelta * dynamicParams.overlapFactor;
-  const overlapDistLng = longitudeDelta * dynamicParams.overlapFactor;
-  const minClusterSize = dynamicParams.minSize;
+  // Calculate clustering distance based on visible area
+  const clusterDistLat = region.latitudeDelta * CLUSTER_DISTANCE_FACTOR;
+  const clusterDistLng = region.longitudeDelta * CLUSTER_DISTANCE_FACTOR;
 
-  // Build spatial grid for fast lookups
-  const grid = new SpatialGrid<T>(overlapDistLat, overlapDistLng);
-  for (const item of items) {
-    if (item.latitude && item.longitude) {
-      grid.add(item);
-    }
-  }
-
-  const processed = new Set<number>();
+  // Track which items have been assigned
+  const assigned = new Set<number>();
   const clusters: Cluster<T>[] = [];
 
-  // Process each item
-  for (const item of items) {
-    // Skip if already processed or no coordinates
-    if (processed.has(item.id) || !item.latitude || !item.longitude) {
-      continue;
-    }
+  // Simple O(n²) clustering - fine for <200 items
+  for (const item of validItems) {
+    if (assigned.has(item.id)) continue;
 
-    // Find all overlapping items (including self)
-    const nearbyItems = grid.getNearby(item.latitude, item.longitude);
-    const overlappingItems: T[] = [];
+    // Find all nearby items
+    const nearby: T[] = [item];
+    assigned.add(item.id);
 
-    for (const nearby of nearbyItems) {
-      if (processed.has(nearby.id)) continue;
+    for (const other of validItems) {
+      if (assigned.has(other.id)) continue;
 
-      const latDiff = Math.abs(nearby.latitude - item.latitude);
-      const lngDiff = Math.abs(nearby.longitude - item.longitude);
+      const latDiff = Math.abs(other.latitude - item.latitude);
+      const lngDiff = Math.abs(other.longitude - item.longitude);
 
-      if (latDiff <= overlapDistLat && lngDiff <= overlapDistLng) {
-        overlappingItems.push(nearby);
-        processed.add(nearby.id);
+      if (latDiff < clusterDistLat && lngDiff < clusterDistLng) {
+        nearby.push(other);
+        assigned.add(other.id);
       }
     }
 
-    // Create cluster or individual markers
-    if (overlappingItems.length >= minClusterSize) {
-      // Create cluster
-      const centerLat = overlappingItems.reduce((sum, t) => sum + t.latitude, 0) / overlappingItems.length;
-      const centerLng = overlappingItems.reduce((sum, t) => sum + t.longitude, 0) / overlappingItems.length;
+    // Create cluster or individual marker
+    if (nearby.length >= MIN_CLUSTER_SIZE) {
+      const centerLat = nearby.reduce((sum, t) => sum + t.latitude, 0) / nearby.length;
+      const centerLng = nearby.reduce((sum, t) => sum + t.longitude, 0) / nearby.length;
 
       clusters.push({
-        id: `cluster-${item.id}-${overlappingItems.length}`,
+        id: `cluster-${item.id}`,
         latitude: centerLat,
         longitude: centerLng,
-        items: overlappingItems,
+        items: nearby,
         isCluster: true,
       });
     } else {
-      // Create individual markers for each item
-      for (const singleItem of overlappingItems) {
+      // Not enough for cluster - add each as individual
+      for (const single of nearby) {
         clusters.push({
-          id: `single-${singleItem.id}`,
-          latitude: singleItem.latitude,
-          longitude: singleItem.longitude,
-          items: [singleItem],
+          id: `single-${single.id}`,
+          latitude: single.latitude,
+          longitude: single.longitude,
+          items: [single],
           isCluster: false,
         });
       }
     }
   }
 
-  // SAFETY CHECK: Ensure all items are accounted for
-  const totalItemsInClusters = clusters.reduce((sum, c) => sum + c.items.length, 0);
-  const validItems = items.filter(i => i.latitude && i.longitude).length;
-  
-  if (totalItemsInClusters !== validItems) {
-    console.warn(`[Clustering] Item count mismatch! Input: ${validItems}, Output: ${totalItemsInClusters}`);
+  // SAFETY: Verify all items are accounted for
+  const totalInClusters = clusters.reduce((sum, c) => sum + c.items.length, 0);
+  if (totalInClusters !== validItems.length) {
+    console.error(`[Clustering] BUG: Lost items! Input: ${validItems.length}, Output: ${totalInClusters}`);
     
-    // Fallback: find missing items and add them
-    const clusteredIds = new Set(clusters.flatMap(c => c.items.map(i => i.id)));
-    for (const item of items) {
-      if (item.latitude && item.longitude && !clusteredIds.has(item.id)) {
+    // Emergency fallback: find missing and add them
+    const inCluster = new Set(clusters.flatMap(c => c.items.map(i => i.id)));
+    for (const item of validItems) {
+      if (!inCluster.has(item.id)) {
         clusters.push({
           id: `single-${item.id}`,
           latitude: item.latitude,
