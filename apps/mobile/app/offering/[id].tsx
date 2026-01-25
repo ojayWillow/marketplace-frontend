@@ -5,7 +5,6 @@ import { Text, Button, ActivityIndicator, IconButton, Portal, Dialog, TextInput 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, getCategoryByKey, getImageUrl } from '@marketplace/shared';
 import { useState } from 'react';
-import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 180;
@@ -194,7 +193,6 @@ export default function OfferingDetailScreen() {
   const isOwnOffering = user?.id === offering?.creator_id;
   const categoryData = offering ? getCategoryByKey(offering.category) : null;
   const timeAgo = formatTimeAgo(offering?.created_at);
-  const hasRating = (offering?.creator_rating ?? 0) > 0;
   const distance = offering?.distance;
   const priceDisplay = getPriceDisplay(offering?.price, offering?.price_type);
   const statusColor = getStatusColor(offering?.status || 'paused');
@@ -273,7 +271,7 @@ export default function OfferingDetailScreen() {
             </View>
           </View>
 
-          {/* Row 4: Provider inline */}
+          {/* Row 4: Provider inline - NO DUPLICATE RATING */}
           <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
             {offering.creator_avatar ? (
               <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
@@ -284,7 +282,7 @@ export default function OfferingDetailScreen() {
             )}
             <View style={styles.providerInfo}>
               <Text style={styles.providerName}>{offering.creator_name}</Text>
-              {hasRating && <StarRating rating={rating} reviewCount={offering.creator_review_count} size={12} showCount />}
+              {offering.creator_city && <Text style={styles.providerCity}>📍 {offering.creator_city}</Text>}
             </View>
             {!isOwnOffering && (
               <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
@@ -463,13 +461,14 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 13, fontWeight: '600', color: '#374151' },
   statDivider: { width: 1, height: 16, backgroundColor: '#e5e7eb' },
 
-  // Provider Row - INLINE
+  // Provider Row - NO DUPLICATE RATING
   providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   avatarSmall: { width: 40, height: 40, borderRadius: 20 },
   avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   avatarSmallText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   providerInfo: { flex: 1, marginLeft: 10, gap: 2 },
   providerName: { fontSize: 15, fontWeight: '600', color: '#111' },
+  providerCity: { fontSize: 12, color: '#6b7280' },
   messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   messageBtnText: { fontSize: 16 },
 
