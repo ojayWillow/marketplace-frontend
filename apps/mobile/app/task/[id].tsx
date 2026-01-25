@@ -1,7 +1,7 @@
 import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, ActivityIndicator, IconButton } from 'react-native-paper';
+import { Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, getCategoryByKey, type Task } from '@marketplace/shared';
 import { useState } from 'react';
@@ -9,18 +9,17 @@ import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 200;
+const ACCENT_COLOR = '#3B82F6';
 
 // Helper to format time ago
 const formatTimeAgo = (dateString: string | undefined): string => {
   if (!dateString) return '';
-  
   const now = new Date();
   const past = new Date(dateString);
   const diffMs = now.getTime() - past.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
-  
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
@@ -59,14 +58,13 @@ export default function TaskDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to apply. Please try again.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to apply.');
     },
   });
 
   const withdrawMutation = useMutation({
     mutationFn: () => {
-      if (!task?.user_application?.id) throw new Error('No application to withdraw');
+      if (!task?.user_application?.id) throw new Error('No application');
       return withdrawApplication(taskId, task.user_application.id);
     },
     onSuccess: () => {
@@ -75,20 +73,18 @@ export default function TaskDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to withdraw application';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to withdraw.');
     },
   });
 
   const markDoneMutation = useMutation({
     mutationFn: () => markTaskDone(taskId),
     onSuccess: () => {
-      Alert.alert('Success', 'Task marked as done! Waiting for confirmation.');
+      Alert.alert('Success', 'Task marked as done!');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to mark task as done.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed.');
     },
   });
 
@@ -96,22 +92,21 @@ export default function TaskDetailScreen() {
     mutationFn: () => confirmTaskCompletion(taskId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowReviewPrompt(true);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to confirm completion.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed.');
     },
   });
 
   const disputeMutation = useMutation({
     mutationFn: () => disputeTask(taskId, 'Work not completed satisfactorily'),
     onSuccess: () => {
-      Alert.alert('Disputed', 'Task has been disputed. Please contact support.');
+      Alert.alert('Disputed', 'Task has been disputed.');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to dispute task.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed.');
     },
   });
 
@@ -120,59 +115,59 @@ export default function TaskDetailScreen() {
     onSuccess: () => {
       Alert.alert('Cancelled', 'Task has been cancelled.');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to cancel task.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed.');
     },
   });
 
+  // Handlers
   const handleApply = () => {
     if (!isAuthenticated) {
-      Alert.alert('Sign In Required', 'You need to sign in to apply for tasks.', [
+      Alert.alert('Sign In Required', 'You need to sign in to apply.', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
-    Alert.alert('Apply for Task', 'Would you like to apply for this task?', [
+    Alert.alert('Apply', 'Apply for this task?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Apply', onPress: () => applyMutation.mutate() },
     ]);
   };
 
   const handleWithdraw = () => {
-    Alert.alert('Withdraw Application', 'Are you sure you want to withdraw?', [
+    Alert.alert('Withdraw', 'Withdraw your application?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Withdraw', style: 'destructive', onPress: () => withdrawMutation.mutate() },
     ]);
   };
 
   const handleMarkDone = () => {
-    Alert.alert('Mark as Done', 'Mark this task as completed?', [
+    Alert.alert('Mark Done', 'Mark this task as completed?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Mark Done', onPress: () => markDoneMutation.mutate() },
     ]);
   };
 
   const handleConfirm = () => {
-    Alert.alert('Confirm Completion', 'Confirm that this task has been completed?', [
+    Alert.alert('Confirm', 'Confirm task completion?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Confirm', onPress: () => confirmMutation.mutate() },
     ]);
   };
 
   const handleDispute = () => {
-    Alert.alert('Dispute Task', 'Are you not satisfied with the work?', [
+    Alert.alert('Dispute', 'Not satisfied with the work?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Dispute', style: 'destructive', onPress: () => disputeMutation.mutate() },
     ]);
   };
 
   const handleCancel = () => {
-    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+    Alert.alert('Cancel Task', 'Cancel this task?', [
       { text: 'No', style: 'cancel' },
-      { text: 'Yes, Cancel', style: 'destructive', onPress: () => cancelMutation.mutate() },
+      { text: 'Yes', style: 'destructive', onPress: () => cancelMutation.mutate() },
     ]);
   };
 
@@ -184,39 +179,27 @@ export default function TaskDetailScreen() {
 
   const handleMessage = () => {
     if (!isAuthenticated) {
-      Alert.alert('Sign In Required', 'You need to sign in to send messages.', [
+      Alert.alert('Sign In Required', 'You need to sign in to message.', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
-    if (task?.creator_id) {
-      router.push(`/conversation/${task.creator_id}`);
-    }
+    if (task?.creator_id) router.push(`/conversation/${task.creator_id}`);
   };
 
   const handleReport = () => {
-    Alert.alert('Report Task', 'Report this task for inappropriate content?', [
+    Alert.alert('Report', 'Report this task?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: () => {
-        // TODO: Implement report API
-        Alert.alert('Reported', 'Thank you for your report. We will review it.');
-      }},
+      { text: 'Report', style: 'destructive', onPress: () => Alert.alert('Reported', 'Thanks for reporting.') },
     ]);
   };
 
   const handleViewProfile = () => {
-    if (task?.creator_id) {
-      router.push(`/user/${task.creator_id}`);
-    }
+    if (task?.creator_id) router.push(`/user/${task.creator_id}`);
   };
 
-  const handleLeaveReview = () => {
-    setShowReviewPrompt(false);
-    router.push(`/task/${taskId}/review`);
-  };
-
-  // Computed values
+  // Computed
   const isOwnTask = user?.id === task?.creator_id;
   const isAssignedToMe = user?.id === task?.assigned_to_id;
   const canApply = isAuthenticated && !isOwnTask && task?.status === 'open' && !task?.has_applied;
@@ -224,30 +207,30 @@ export default function TaskDetailScreen() {
   const canWithdraw = hasApplied;
   const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
   const canConfirm = isOwnTask && task?.status === 'pending_confirmation';
-  const canCancel = isOwnTask && task?.status === 'open';
 
   const categoryData = task ? getCategoryByKey(task.category) : null;
   const difficulty = getDifficultyIndicator(task?.difficulty);
   const timeAgo = formatTimeAgo(task?.created_at);
   const hasRating = (task?.creator_rating ?? 0) > 0;
+  const applicantsCount = task?.pending_applications_count ?? 0;
   
   const taskImages = task?.images 
     ? task.images.split(',').filter(Boolean).map(url => getImageUrl(url))
     : [];
 
-  // Loading state
+  // Loading
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color={ACCENT_COLOR} />
         </View>
       </SafeAreaView>
     );
   }
 
-  // Error state
+  // Error
   if (error || !task) {
     return (
       <SafeAreaView style={styles.container}>
@@ -264,14 +247,14 @@ export default function TaskDetailScreen() {
   if (showReviewPrompt) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ headerShown: true, title: 'Task Completed' }} />
+        <Stack.Screen options={{ headerShown: true, title: 'Completed' }} />
         <View style={styles.centered}>
-          <Text style={styles.reviewIcon}>🎉</Text>
-          <Text style={styles.reviewTitle}>Task Completed!</Text>
-          <Text style={styles.reviewText}>Would you like to leave a review?</Text>
-          <View style={styles.reviewButtons}>
-            <Button onPress={() => setShowReviewPrompt(false)} textColor="#6b7280">Maybe Later</Button>
-            <Button mode="contained" onPress={handleLeaveReview}>Leave Review</Button>
+          <Text style={styles.celebrateIcon}>🎉</Text>
+          <Text style={styles.celebrateTitle}>Task Completed!</Text>
+          <Text style={styles.celebrateText}>Leave a review?</Text>
+          <View style={styles.celebrateButtons}>
+            <Button onPress={() => setShowReviewPrompt(false)} textColor="#6b7280">Later</Button>
+            <Button mode="contained" onPress={() => { setShowReviewPrompt(false); router.push(`/task/${taskId}/review`); }}>Review</Button>
           </View>
         </View>
       </SafeAreaView>
@@ -283,102 +266,60 @@ export default function TaskDetailScreen() {
       <Stack.Screen options={{ headerShown: true, title: 'Task Details', headerBackTitle: 'Back' }} />
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Row 1: Category + Urgent + Flag + Price */}
-        <View style={styles.topRow}>
-          <View style={styles.topRowLeft}>
-            <Text style={styles.category}>
-              {categoryData?.icon || '📋'} {categoryData?.label || task.category}
-            </Text>
-            {task.is_urgent && (
-              <View style={styles.urgentBadge}>
-                <Text style={styles.urgentText}>🔥 Urgent</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.topRowRight}>
-            <TouchableOpacity onPress={handleReport} style={styles.flagButton}>
-              <Text style={styles.flagIcon}>🚩</Text>
-            </TouchableOpacity>
-            <Text style={styles.price}>€{task.budget || task.reward || 0}</Text>
-          </View>
-        </View>
-
-        {/* Row 2: Title */}
-        <Text style={styles.title}>{task.title}</Text>
-
-        {/* Row 3: User Section - Avatar | Name/Rating/City | Message */}
-        <TouchableOpacity style={styles.userSection} onPress={handleViewProfile} activeOpacity={0.7}>
-          <View style={styles.userLeft}>
-            {task.creator_avatar ? (
-              <Image source={{ uri: getImageUrl(task.creator_avatar) }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{task.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
-              </View>
-            )}
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{task.creator_name || 'Anonymous'}</Text>
-              {hasRating && (
-                <StarRating 
-                  rating={task.creator_rating || 0} 
-                  reviewCount={task.creator_review_count}
-                  size={12}
-                  showCount={true}
-                />
+        
+        {/* HERO CARD */}
+        <View style={styles.heroCard}>
+          {/* Category + Flag */}
+          <View style={styles.heroTop}>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{categoryData?.icon || '📋'} {categoryData?.label || task.category}</Text>
+            </View>
+            <View style={styles.heroTopRight}>
+              {task.is_urgent && (
+                <View style={styles.urgentBadge}>
+                  <Text style={styles.urgentText}>🔥 Urgent</Text>
+                </View>
               )}
-              {task.creator_city && (
-                <Text style={styles.userCity}>📍 {task.creator_city}</Text>
-              )}
+              <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={styles.flagIcon}>🚩</Text>
+              </TouchableOpacity>
             </View>
           </View>
-          {!isOwnTask && (
-            <TouchableOpacity onPress={handleMessage} style={styles.messageButton}>
-              <Text style={styles.messageIcon}>💬</Text>
-            </TouchableOpacity>
-          )}
-        </TouchableOpacity>
 
-        {/* Row 4: Description */}
-        <Text style={styles.description}>{task.description}</Text>
+          {/* Title */}
+          <Text style={styles.heroTitle}>{task.title}</Text>
 
-        {/* Row 5: Location + Map button */}
-        {task.location && (
-          <View style={styles.locationRow}>
-            <Text style={styles.locationText}>📍 {task.location}</Text>
-            {task.latitude && task.longitude && (
-              <TouchableOpacity onPress={handleOpenMap} style={styles.mapLink}>
-                <Text style={styles.mapLinkText}>Open Maps</Text>
-              </TouchableOpacity>
-            )}
+          {/* Price */}
+          <Text style={styles.heroPrice}>€{task.budget || task.reward || 0}</Text>
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{applicantsCount}</Text>
+              <Text style={styles.statLabel}>Applicants</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <View style={styles.difficultyRow}>
+                <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
+                <Text style={styles.statValue}>{difficulty.label}</Text>
+              </View>
+              <Text style={styles.statLabel}>Difficulty</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
+              <Text style={styles.statLabel}>Posted</Text>
+            </View>
           </View>
-        )}
-
-        {/* Row 6: Meta - Applicants + Difficulty + Time */}
-        <View style={styles.metaRow}>
-          {(task.pending_applications_count ?? 0) > 0 && (
-            <>
-              <Text style={styles.metaText}>👤 {task.pending_applications_count} applied</Text>
-              <Text style={styles.metaDot}>•</Text>
-            </>
-          )}
-          <View style={styles.difficultyBadge}>
-            <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
-            <Text style={styles.difficultyText}>{difficulty.label}</Text>
-          </View>
-          {timeAgo && (
-            <>
-              <Text style={styles.metaDot}>•</Text>
-              <Text style={styles.metaText}>{timeAgo}</Text>
-            </>
-          )}
         </View>
 
-        {/* Images (if any) */}
+        {/* IMAGES */}
         {taskImages.length > 0 && (
-          <View style={styles.imageSection}>
+          <View style={styles.imageCard}>
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-              {taskImages.map((imageUrl, index) => (
-                <Image key={index} source={{ uri: imageUrl }} style={styles.taskImage} resizeMode="cover" />
+              {taskImages.map((uri, i) => (
+                <Image key={i} source={{ uri }} style={styles.taskImage} resizeMode="cover" />
               ))}
             </ScrollView>
             {taskImages.length > 1 && (
@@ -389,333 +330,242 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
-        {/* Status notices */}
+        {/* DESCRIPTION CARD */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.descriptionText}>{task.description}</Text>
+        </View>
+
+        {/* POSTED BY CARD */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Posted by</Text>
+          <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
+            {task.creator_avatar ? (
+              <Image source={{ uri: getImageUrl(task.creator_avatar) }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{task.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
+              </View>
+            )}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{task.creator_name || 'Anonymous'}</Text>
+              {hasRating && (
+                <StarRating rating={task.creator_rating || 0} reviewCount={task.creator_review_count} size={14} showCount />
+              )}
+              {task.creator_city && <Text style={styles.userCity}>📍 {task.creator_city}</Text>}
+            </View>
+            {!isOwnTask && (
+              <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
+                <Text style={styles.messageBtnText}>💬</Text>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* LOCATION CARD */}
+        {task.location && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Location</Text>
+            <View style={styles.locationRow}>
+              <Text style={styles.locationText}>📍 {task.location}</Text>
+              {task.latitude && task.longitude && (
+                <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
+                  <Text style={styles.mapBtnText}>🗺️ Open Maps</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* STATUS NOTICES */}
         {hasApplied && (
-          <View style={styles.noticeBanner}>
+          <View style={[styles.noticeCard, styles.noticeInfo]}>
             <Text style={styles.noticeText}>✅ You have applied for this task</Text>
           </View>
         )}
 
         {task.status === 'pending_confirmation' && isOwnTask && (
-          <View style={[styles.noticeBanner, styles.warningBanner]}>
-            <Text style={styles.noticeText}>⏳ {task.assigned_to_name} marked this as done. Please confirm.</Text>
+          <View style={[styles.noticeCard, styles.noticeWarning]}>
+            <Text style={styles.noticeText}>⏳ {task.assigned_to_name} marked this as done</Text>
           </View>
         )}
 
         {isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress') && (
-          <View style={[styles.noticeBanner, styles.successBanner]}>
+          <View style={[styles.noticeCard, styles.noticeSuccess]}>
             <Text style={styles.noticeText}>🎯 You are assigned to this task</Text>
           </View>
         )}
+
       </ScrollView>
 
-      {/* Sticky Bottom Bar */}
-      <Surface style={styles.bottomBar} elevation={4}>
-        {/* Apply button */}
+      {/* STICKY BOTTOM BAR */}
+      <View style={styles.bottomBar}>
         {canApply && (
-          <Button
-            mode="contained"
-            onPress={handleApply}
-            loading={applyMutation.isPending}
-            disabled={applyMutation.isPending}
-            style={styles.actionButton}
-            contentStyle={styles.actionButtonContent}
-          >
-            Apply for this Task
+          <Button mode="contained" onPress={handleApply} loading={applyMutation.isPending} style={styles.primaryBtn} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
+            Apply Now
           </Button>
         )}
 
-        {/* Withdraw button */}
         {canWithdraw && (
-          <Button
-            mode="outlined"
-            onPress={handleWithdraw}
-            loading={withdrawMutation.isPending}
-            textColor="#ef4444"
-            style={[styles.actionButton, styles.withdrawButton]}
-            contentStyle={styles.actionButtonContent}
-          >
+          <Button mode="outlined" onPress={handleWithdraw} loading={withdrawMutation.isPending} textColor="#ef4444" style={[styles.primaryBtn, styles.dangerBtn]} contentStyle={styles.btnContent}>
             Withdraw Application
           </Button>
         )}
 
-        {/* Owner actions - Open status */}
         {isOwnTask && task.status === 'open' && (
           <View style={styles.ownerActions}>
-            <View style={styles.buttonRow}>
-              <Button
-                mode="outlined"
-                onPress={handleCancel}
-                loading={cancelMutation.isPending}
-                textColor="#ef4444"
-                style={[styles.flexButton, styles.cancelButton]}
-              >
+            <Button mode="contained" onPress={() => router.push(`/task/${taskId}/applications`)} style={styles.primaryBtn} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
+              View Applications ({applicantsCount})
+            </Button>
+            <View style={styles.ownerBtnRow}>
+              <Button mode="outlined" onPress={handleCancel} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]}>
                 Cancel
               </Button>
-              <Button
-                mode="outlined"
-                onPress={() => router.push(`/task/${taskId}/edit`)}
-                style={styles.flexButton}
-              >
+              <Button mode="outlined" onPress={() => router.push(`/task/${taskId}/edit`)} style={styles.halfBtn}>
                 Edit
               </Button>
             </View>
-            <Button
-              mode="contained"
-              onPress={() => router.push(`/task/${taskId}/applications`)}
-              style={styles.actionButton}
-            >
-              View Applications ({task.pending_applications_count || 0})
-            </Button>
           </View>
         )}
 
-        {/* Owner actions - Pending confirmation */}
         {canConfirm && (
-          <View style={styles.buttonRow}>
-            <Button
-              mode="outlined"
-              onPress={handleDispute}
-              loading={disputeMutation.isPending}
-              textColor="#ef4444"
-              style={[styles.flexButton, styles.cancelButton]}
-            >
+          <View style={styles.ownerBtnRow}>
+            <Button mode="outlined" onPress={handleDispute} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]} loading={disputeMutation.isPending}>
               Dispute
             </Button>
-            <Button
-              mode="contained"
-              onPress={handleConfirm}
-              loading={confirmMutation.isPending}
-              style={[styles.flexButton, styles.confirmButton]}
-            >
+            <Button mode="contained" onPress={handleConfirm} style={[styles.halfBtn, styles.successBtn]} loading={confirmMutation.isPending}>
               Confirm Done
             </Button>
           </View>
         )}
 
-        {/* Worker actions - Can mark done */}
         {canMarkDone && (
-          <Button
-            mode="contained"
-            onPress={handleMarkDone}
-            loading={markDoneMutation.isPending}
-            style={styles.actionButton}
-            contentStyle={styles.actionButtonContent}
-          >
+          <Button mode="contained" onPress={handleMarkDone} loading={markDoneMutation.isPending} style={[styles.primaryBtn, styles.successBtn]} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
             Mark as Done
           </Button>
         )}
-      </Surface>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
+  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorText: { fontSize: 16, color: '#6b7280', marginBottom: 16 },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 120 },
 
-  // Row 1: Category + Urgent + Flag + Price
-  topRow: {
+  // Hero Card
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: ACCENT_COLOR,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  heroTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  topRowLeft: {
+  heroTopRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  topRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  categoryBadge: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  category: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
+  categoryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ACCENT_COLOR,
   },
   urgentBadge: {
     backgroundColor: '#fef3c7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
   },
   urgentText: {
     fontSize: 12,
-    color: '#92400e',
     fontWeight: '600',
-  },
-  flagButton: {
-    padding: 4,
+    color: '#92400e',
   },
   flagIcon: {
-    fontSize: 18,
+    fontSize: 20,
+    opacity: 0.6,
   },
-  price: {
+  heroTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#3B82F6',
+    color: '#111827',
+    marginBottom: 8,
+    lineHeight: 30,
+  },
+  heroPrice: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: ACCENT_COLOR,
+    marginBottom: 20,
   },
 
-  // Row 2: Title
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-
-  // Row 3: User Section
-  userSection: {
+  // Stats Row
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: '#f9fafb',
-    padding: 12,
     borderRadius: 12,
-    marginBottom: 16,
+    padding: 16,
   },
-  userLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  statItem: {
     flex: 1,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  userInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  userName: {
+  statValue: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: '700',
+    color: '#111827',
   },
-  userCity: {
-    fontSize: 13,
+  statLabel: {
+    fontSize: 11,
     color: '#6b7280',
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  messageButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#e5e7eb',
   },
-  messageIcon: {
-    fontSize: 20,
-  },
-
-  // Row 4: Description
-  description: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-
-  // Row 5: Location
-  locationRow: {
+  difficultyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#4b5563',
-    flex: 1,
-  },
-  mapLink: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#eff6ff',
-    borderRadius: 8,
-  },
-  mapLinkText: {
-    fontSize: 13,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
-
-  // Row 6: Meta
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  metaDot: {
-    fontSize: 13,
-    color: '#d1d5db',
-    marginHorizontal: 8,
-  },
-  difficultyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 6,
   },
   difficultyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 4,
-  },
-  difficultyText: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 
-  // Images
-  imageSection: {
-    marginBottom: 16,
-    borderRadius: 12,
+  // Image Card
+  imageCard: {
+    borderRadius: 16,
     overflow: 'hidden',
+    marginBottom: 12,
     position: 'relative',
   },
   taskImage: {
@@ -724,39 +574,145 @@ const styles = StyleSheet.create({
   },
   imageCounter: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   imageCounterText: {
     color: '#ffffff',
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 
-  // Notice banners
-  noticeBanner: {
-    backgroundColor: '#dbeafe',
-    padding: 12,
-    borderRadius: 8,
+  // Section Card
+  sectionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 12,
   },
-  warningBanner: {
+  descriptionText: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+  },
+
+  // User Row
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  avatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: ACCENT_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 14,
+    gap: 4,
+  },
+  userName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  userCity: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  messageBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: ACCENT_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: ACCENT_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  messageBtnText: {
+    fontSize: 22,
+  },
+
+  // Location
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  locationText: {
+    fontSize: 15,
+    color: '#374151',
+    flex: 1,
+  },
+  mapBtn: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  mapBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ACCENT_COLOR,
+  },
+
+  // Notices
+  noticeCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  noticeInfo: {
+    backgroundColor: '#dbeafe',
+  },
+  noticeWarning: {
     backgroundColor: '#fef3c7',
   },
-  successBanner: {
+  noticeSuccess: {
     backgroundColor: '#dcfce7',
   },
   noticeText: {
     fontSize: 14,
+    fontWeight: '500',
     color: '#1f2937',
     textAlign: 'center',
   },
 
-  // Bottom bar
+  // Bottom Bar
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -764,55 +720,46 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#ffffff',
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
   },
-  actionButton: {
-    borderRadius: 12,
+  primaryBtn: {
+    borderRadius: 14,
   },
-  actionButtonContent: {
-    paddingVertical: 6,
+  btnContent: {
+    paddingVertical: 8,
   },
-  withdrawButton: {
+  btnLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dangerBtn: {
     borderColor: '#fecaca',
   },
-  ownerActions: {
-    gap: 8,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  flexButton: {
-    flex: 1,
-    borderRadius: 12,
-  },
-  cancelButton: {
-    borderColor: '#fecaca',
-  },
-  confirmButton: {
+  successBtn: {
     backgroundColor: '#10b981',
   },
-
-  // Review prompt
-  reviewIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+  ownerActions: {
+    gap: 10,
   },
-  reviewTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  reviewText: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 24,
-  },
-  reviewButtons: {
+  ownerBtnRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
+  halfBtn: {
+    flex: 1,
+    borderRadius: 14,
+  },
+
+  // Celebrate
+  celebrateIcon: { fontSize: 64, marginBottom: 16 },
+  celebrateTitle: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  celebrateText: { fontSize: 16, color: '#6b7280', marginBottom: 24 },
+  celebrateButtons: { flexDirection: 'row', gap: 12 },
 });
