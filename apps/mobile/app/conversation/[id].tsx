@@ -23,6 +23,7 @@ import {
   getMessages,
   sendMessage,
   markAsRead,
+  startConversation,
   useAuthStore,
   type Message,
 } from '@marketplace/shared';
@@ -30,8 +31,18 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 
 export default function ConversationScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const conversationId = parseInt(id);
+  // Support both conversation ID and user ID for new conversations
+  const { id, userId, username } = useLocalSearchParams<{ 
+    id: string; 
+    userId?: string;
+    username?: string;
+  }>();
+  
+  const [conversationId, setConversationId] = useState<number | null>(
+    id && id !== 'new' ? parseInt(id) : null
+  );
+  const targetUserId = userId ? parseInt(userId) : null;
+  
   const { user } = useAuthStore();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
@@ -39,29 +50,47 @@ export default function ConversationScreen() {
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
   const [messageText, setMessageText] = useState('');
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+
+  // Create conversation if we have userId but no conversationId
+  useEffect(() => {
+    if (targetUserId && !conversationId && !isCreatingConversation) {
+      setIsCreatingConversation(true);
+      startConversation(targetUserId)
+        .then((result) => {
+          setConversationId(result.conversation.id);
+          setIsCreatingConversation(false);
+        })
+        .catch((error) => {
+          console.error('Failed to create conversation:', error);
+          setIsCreatingConversation(false);
+        });
+    }
+  }, [targetUserId, conversationId, isCreatingConversation]);
 
   // Fetch conversation details
   const { data: conversation } = useQuery({
     queryKey: ['conversation', conversationId],
-    queryFn: () => getConversation(conversationId),
+    queryFn: () => getConversation(conversationId!),
     enabled: !!conversationId,
   });
 
   // Fetch messages
   const {
     data: messagesData,
-    isLoading,
+    isLoading: isLoadingMessages,
     isError,
     refetch,
     isRefetching,
   } = useQuery({
     queryKey: ['messages', conversationId],
-    queryFn: () => getMessages(conversationId),
+    queryFn: () => getMessages(conversationId!),
     enabled: !!conversationId,
     refetchInterval: 10000, // Poll every 10 seconds for new messages
   });
 
   const messages = messagesData?.messages || [];
+  const isLoading = isCreatingConversation || (!conversationId && targetUserId) || isLoadingMessages;
 
   // Mark as read on mount
   useEffect(() => {
@@ -81,12 +110,24 @@ export default function ConversationScreen() {
 
   // Send message mutation
   const sendMutation = useMutation({
-    mutationFn: (content: string) => sendMessage(conversationId, content),
+    mutationFn: async (content: string) => {
+      // If no conversation yet, create one with the first message
+      if (!conversationId && targetUserId) {
+        const result = await startConversation(targetUserId, content);
+        setConversationId(result.conversation.id);
+        return result.conversation.last_message;
+      }
+      // Otherwise send to existing conversation
+      return sendMessage(conversationId!, content);
+    },
     onSuccess: () => {
       setMessageText('');
-      // Refetch after a short delay to let backend process
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      // Refetch messages after a short delay
       setTimeout(() => {
-        refetch();
+        if (conversationId) {
+          refetch();
+        }
       }, 500);
     },
     onError: (error: any) => {
@@ -102,8 +143,8 @@ export default function ConversationScreen() {
   };
 
   const otherUser = conversation?.other_participant;
-  const headerTitle = otherUser?.username || 'Chat';
-  const avatarLabel = otherUser?.username?.charAt(0).toUpperCase() || '?';
+  const headerTitle = otherUser?.username || username || 'Chat';
+  const avatarLabel = (otherUser?.username || username || '?').charAt(0).toUpperCase();
 
   // Format message time
   const formatTime = (timestamp: string) => {
@@ -181,7 +222,7 @@ export default function ConversationScreen() {
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
           <Text style={[styles.statusText, { color: themeColors.textSecondary }]}>
-            Loading messages...
+            {isCreatingConversation ? 'Starting conversation...' : 'Loading messages...'}
           </Text>
         </View>
       </SafeAreaView>
@@ -202,6 +243,9 @@ export default function ConversationScreen() {
       </SafeAreaView>
     );
   }
+
+  // Can send if we have text AND either a conversation or a target user
+  const canSend = messageText.trim() && !sendMutation.isPending && (conversationId || targetUserId);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top', 'bottom']}>
@@ -319,10 +363,10 @@ export default function ConversationScreen() {
           <Pressable 
             style={[
               styles.sendButton,
-              (!messageText.trim() || sendMutation.isPending) && styles.sendButtonDisabled,
+              !canSend && styles.sendButtonDisabled,
             ]}
             onPress={handleSend}
-            disabled={!messageText.trim() || sendMutation.isPending}
+            disabled={!canSend}
           >
             {sendMutation.isPending ? (
               <ActivityIndicator size="small" color="#ffffff" />
