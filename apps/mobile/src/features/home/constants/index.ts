@@ -11,10 +11,20 @@ export const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
 // Default location (Riga)
 export const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };
 
-// Map thresholds
-export const OVERLAP_THRESHOLD_FACTOR = 0.025;
-export const ZOOM_FAR_THRESHOLD = 0.12;
-export const ZOOM_CLOSE_THRESHOLD = 0.05;
+// Map thresholds - TUNED FOR SMOOTHER TRANSITIONS
+// Larger value = less aggressive clustering (markers stay separate longer)
+export const OVERLAP_THRESHOLD_FACTOR = 0.04;
+
+// Hysteresis: once clustered, need to zoom in more to uncluster
+// This prevents flip-flopping at threshold boundaries
+export const CLUSTER_HYSTERESIS = 0.6; // Uncluster at 60% of cluster threshold
+
+// Zoom level thresholds - widened for smoother transitions
+export const ZOOM_FAR_THRESHOLD = 0.15;    // was 0.12
+export const ZOOM_CLOSE_THRESHOLD = 0.04;  // was 0.05
+
+// Region change debounce (ms) - slower = smoother but less responsive
+export const REGION_CHANGE_DEBOUNCE = 250; // was 150
 
 // Theme colors
 export const JOB_COLOR = '#0ea5e9';      // Sky blue
