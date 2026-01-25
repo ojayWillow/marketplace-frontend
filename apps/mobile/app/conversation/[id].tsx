@@ -8,20 +8,24 @@ import {
   RefreshControl,
   Pressable,
   TextInput as RNTextInput,
+  Image as RNImage,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Text,
-  IconButton,
   ActivityIndicator,
   Avatar,
+  IconButton,
 } from 'react-native-paper';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import {
   getConversation,
   getMessages,
   sendMessage,
+  sendMessageWithAttachment,
   markAsRead,
   startConversation,
   useAuthStore,
@@ -52,6 +56,7 @@ export default function ConversationScreen() {
   const [messageText, setMessageText] = useState('');
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   // Create conversation if we have userId but no conversationId
   useEffect(() => {
@@ -78,7 +83,6 @@ export default function ConversationScreen() {
     onError: (error: any) => {
       if (error?.response?.status === 403) {
         setAccessDenied(true);
-        // Clear this conversation from cache
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
       }
     },
@@ -96,7 +100,7 @@ export default function ConversationScreen() {
     queryKey: ['messages', conversationId],
     queryFn: () => getMessages(conversationId!),
     enabled: !!conversationId && !accessDenied,
-    refetchInterval: 10000, // Poll every 10 seconds for new messages
+    refetchInterval: 10000,
     retry: false,
     onError: (error: any) => {
       if (error?.response?.status === 403) {
@@ -135,22 +139,59 @@ export default function ConversationScreen() {
     }
   }, [messages.length]);
 
+  // Pick image from gallery
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photo library');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0]);
+    }
+  };
+
+  // Clear selected image
+  const clearImage = () => {
+    setSelectedImage(null);
+  };
+
   // Send message mutation
   const sendMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, image }: { content: string; image?: ImagePicker.ImagePickerAsset }) => {
       // If no conversation yet, create one with the first message
       if (!conversationId && targetUserId) {
         const result = await startConversation(targetUserId, content);
         setConversationId(result.conversation.id);
         return result.conversation.last_message;
       }
-      // Otherwise send to existing conversation
+      
+      // Send with attachment if image is selected
+      if (image) {
+        const file = {
+          uri: image.uri,
+          type: image.mimeType || 'image/jpeg',
+          name: image.fileName || `image_${Date.now()}.jpg`,
+        };
+        return sendMessageWithAttachment(conversationId!, content, file);
+      }
+      
+      // Otherwise send text message
       return sendMessage(conversationId!, content);
     },
     onSuccess: () => {
       setMessageText('');
+      setSelectedImage(null);
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      // Refetch messages after a short delay
       setTimeout(() => {
         if (conversationId) {
           refetch();
@@ -159,13 +200,14 @@ export default function ConversationScreen() {
     },
     onError: (error: any) => {
       console.error('Failed to send message:', error);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     },
   });
 
   const handleSend = () => {
     const trimmed = messageText.trim();
-    if (trimmed && !sendMutation.isPending) {
-      sendMutation.mutate(trimmed);
+    if ((trimmed || selectedImage) && !sendMutation.isPending) {
+      sendMutation.mutate({ content: trimmed, image: selectedImage || undefined });
     }
   };
 
@@ -293,8 +335,8 @@ export default function ConversationScreen() {
     );
   }
 
-  // Can send if we have text AND either a conversation or a target user
-  const canSend = messageText.trim() && !sendMutation.isPending && (conversationId || targetUserId);
+  // Can send if we have text OR image AND (conversation or target user)
+  const canSend = (messageText.trim() || selectedImage) && !sendMutation.isPending && (conversationId || targetUserId);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top', 'bottom']}>
@@ -367,14 +409,28 @@ export default function ConversationScreen() {
                           : [styles.otherMessage, { backgroundColor: themeColors.card, borderColor: themeColors.border }],
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.messageText,
-                          isOwnMessage ? styles.ownMessageText : [styles.otherMessageText, { color: themeColors.text }],
-                        ]}
-                      >
-                        {message.content}
-                      </Text>
+                      {/* Image Attachment */}
+                      {message.attachment_url && message.attachment_type === 'image' && (
+                        <Pressable onPress={() => {/* TODO: Open full screen image */}}>
+                          <RNImage
+                            source={{ uri: message.attachment_url }}
+                            style={styles.messageImage}
+                            resizeMode="cover"
+                          />
+                        </Pressable>
+                      )}
+                      
+                      {message.content ? (
+                        <Text
+                          style={[
+                            styles.messageText,
+                            isOwnMessage ? styles.ownMessageText : [styles.otherMessageText, { color: themeColors.text }],
+                          ]}
+                        >
+                          {message.content}
+                        </Text>
+                      ) : null}
+                      
                       <Text
                         style={[
                           styles.messageTime,
@@ -391,9 +447,20 @@ export default function ConversationScreen() {
           )}
         </ScrollView>
 
-        {/* Input Area - Redesigned */}
+        {/* Image Preview */}
+        {selectedImage && (
+          <View style={[styles.imagePreview, { backgroundColor: themeColors.card, borderTopColor: themeColors.border }]}>
+            <RNImage source={{ uri: selectedImage.uri }} style={styles.previewImage} />
+            <IconButton icon="close" size={20} onPress={clearImage} />
+          </View>
+        )}
+
+        {/* Input Area */}
         <View style={[styles.inputContainer, { backgroundColor: themeColors.card, borderTopColor: themeColors.border }]}>
-          <Pressable style={[styles.attachButton, { backgroundColor: themeColors.backgroundSecondary }]}>
+          <Pressable 
+            style={[styles.attachButton, { backgroundColor: themeColors.backgroundSecondary }]}
+            onPress={pickImage}
+          >
             <Text style={styles.attachIcon}>📎</Text>
           </Pressable>
           
@@ -619,6 +686,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
     borderWidth: 1,
   },
+  messageImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
   messageText: {
     fontSize: 15,
     lineHeight: 20,
@@ -636,6 +709,20 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   otherMessageTime: {},
+
+  // Image Preview
+  imagePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderTopWidth: 1,
+  },
+  previewImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 8,
+  },
 
   // Input Area
   inputContainer: {
