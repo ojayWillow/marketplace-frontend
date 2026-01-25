@@ -1,7 +1,7 @@
 import { View, TouchableOpacity, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { type Task, getCategoryByKey, getImageUrl } from '@marketplace/shared';
-import StarRating from '../../../../components/StarRating';
+import StarRating from '../../../../../components/StarRating';
 import { styles, ACCENT_COLOR } from '../../styles/taskDetailStyles';
 import { formatTimeAgo, getDifficultyIndicator } from '../../utils/taskHelpers';
 
