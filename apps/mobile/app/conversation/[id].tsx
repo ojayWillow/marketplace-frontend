@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -29,10 +29,12 @@ import {
   markAsRead,
   startConversation,
   useAuthStore,
+  socketService,
   type Message,
 } from '@marketplace/shared';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import Constants from 'expo-constants';
 
 export default function ConversationScreen() {
   // Support both conversation ID and user ID for new conversations
@@ -47,7 +49,7 @@ export default function ConversationScreen() {
   );
   const targetUserId = userId ? parseInt(userId) : null;
   
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
@@ -57,6 +59,10 @@ export default function ConversationScreen() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+
+  // Get API URL for socket
+  const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
 
   // Create conversation if we have userId but no conversationId
   useEffect(() => {
@@ -74,6 +80,71 @@ export default function ConversationScreen() {
     }
   }, [targetUserId, conversationId, isCreatingConversation]);
 
+  // Setup WebSocket connection
+  useEffect(() => {
+    if (!conversationId || !token) return;
+
+    // Initialize socket service
+    socketService.init(apiUrl);
+
+    // Connect to WebSocket
+    const connectSocket = async () => {
+      try {
+        await socketService.connect(token);
+        setSocketConnected(true);
+        
+        // Join conversation room
+        await socketService.joinConversation(conversationId);
+        console.log('[Socket] Joined conversation:', conversationId);
+      } catch (error) {
+        console.error('[Socket] Connection failed:', error);
+        setSocketConnected(false);
+      }
+    };
+
+    connectSocket();
+
+    // Cleanup on unmount
+    return () => {
+      if (conversationId) {
+        socketService.leaveConversation(conversationId);
+      }
+    };
+  }, [conversationId, token, apiUrl]);
+
+  // Handle real-time messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const unsubscribe = socketService.onMessage(conversationId, (newMessage: Message) => {
+      console.log('[Socket] New message received:', newMessage.id);
+      
+      // Update messages in cache
+      queryClient.setQueryData(['messages', conversationId], (old: any) => {
+        if (!old) return old;
+        
+        // Check if message already exists
+        const exists = old.messages.some((m: Message) => m.id === newMessage.id);
+        if (exists) return old;
+        
+        return {
+          ...old,
+          messages: [...old.messages, newMessage],
+        };
+      });
+
+      // Invalidate conversations list to update last message
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+
+      // Scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
+
+    return unsubscribe;
+  }, [conversationId, queryClient]);
+
   // Fetch conversation details
   const { data: conversation } = useQuery({
     queryKey: ['conversation', conversationId],
@@ -88,7 +159,7 @@ export default function ConversationScreen() {
     },
   });
 
-  // Fetch messages
+  // Fetch messages (with polling as fallback if socket fails)
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
@@ -100,7 +171,8 @@ export default function ConversationScreen() {
     queryKey: ['messages', conversationId],
     queryFn: () => getMessages(conversationId!),
     enabled: !!conversationId && !accessDenied,
-    refetchInterval: 10000,
+    // Only poll if socket is not connected
+    refetchInterval: socketConnected ? false : 10000,
     retry: false,
     onError: (error: any) => {
       if (error?.response?.status === 403) {
@@ -192,11 +264,14 @@ export default function ConversationScreen() {
       setMessageText('');
       setSelectedImage(null);
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      setTimeout(() => {
-        if (conversationId) {
-          refetch();
-        }
-      }, 500);
+      // Only manually refetch if socket not connected
+      if (!socketConnected) {
+        setTimeout(() => {
+          if (conversationId) {
+            refetch();
+          }
+        }, 500);
+      }
     },
     onError: (error: any) => {
       console.error('Failed to send message:', error);
@@ -411,13 +486,15 @@ export default function ConversationScreen() {
                     >
                       {/* Image Attachment */}
                       {message.attachment_url && message.attachment_type === 'image' && (
-                        <Pressable onPress={() => {/* TODO: Open full screen image */}}>
-                          <RNImage
-                            source={{ uri: message.attachment_url }}
-                            style={styles.messageImage}
-                            resizeMode="cover"
-                          />
-                        </Pressable>
+                        <View style={styles.imageContainer}>
+                          <Pressable onPress={() => {/* TODO: Open full screen image */}}>
+                            <RNImage
+                              source={{ uri: message.attachment_url }}
+                              style={styles.messageImage}
+                              resizeMode="cover"
+                            />
+                          </Pressable>
+                        </View>
                       )}
                       
                       {message.content ? (
@@ -686,11 +763,15 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
     borderWidth: 1,
   },
-  messageImage: {
-    width: 200,
-    height: 150,
-    borderRadius: 12,
+  imageContainer: {
     marginBottom: 8,
+    overflow: 'hidden',
+    borderRadius: 12,
+  },
+  messageImage: {
+    width: 220,
+    height: 165,
+    borderRadius: 12,
   },
   messageText: {
     fontSize: 15,
