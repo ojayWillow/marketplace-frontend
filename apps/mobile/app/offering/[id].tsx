@@ -198,6 +198,10 @@ export default function OfferingDetailScreen() {
   const distance = offering?.distance;
   const priceDisplay = getPriceDisplay(offering?.price, offering?.price_type);
   const statusColor = getStatusColor(offering?.status || 'paused');
+  
+  // Stats for credibility
+  const rating = offering?.creator_rating ?? 0;
+  const completedJobs = offering?.creator_completed_tasks ?? 0;
 
   const offeringImages = offering?.images
     ? offering.images.split(',').filter(Boolean).map(url => getImageUrl(url))
@@ -265,16 +269,19 @@ export default function OfferingDetailScreen() {
           {/* ROW 2: Title */}
           <Text style={styles.heroTitle}>{offering.title}</Text>
 
-          {/* ROW 3: Stats */}
+          {/* ROW 3: Stats - Rating | Completed Jobs | Posted */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{offering.experience || 'N/A'}</Text>
-              <Text style={styles.statLabel}>Experience</Text>
+              <View style={styles.ratingDisplay}>
+                <Text style={styles.statValue}>{rating > 0 ? rating.toFixed(1) : '–'}</Text>
+                {rating > 0 && <Text style={styles.starIcon}>⭐</Text>}
+              </View>
+              <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{offering.availability || 'Flexible'}</Text>
-              <Text style={styles.statLabel}>Availability</Text>
+              <Text style={styles.statValue}>{completedJobs}</Text>
+              <Text style={styles.statLabel}>Completed</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -315,7 +322,6 @@ export default function OfferingDetailScreen() {
               <Text style={styles.userName}>{offering.creator_name || 'Anonymous'}</Text>
               {hasRating && <StarRating rating={offering.creator_rating || 0} reviewCount={offering.creator_review_count} size={14} showCount />}
               {offering.creator_city && <Text style={styles.userCity}>📍 {offering.creator_city}</Text>}
-              {offering.creator_completed_tasks && <Text style={styles.completedTasks}>✅ {offering.creator_completed_tasks} completed</Text>}
             </View>
             {!isOwnOffering && (
               <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
@@ -470,7 +476,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: ACCENT_COLOR, // ORANGE
+    borderLeftColor: ACCENT_COLOR,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -490,15 +496,17 @@ const styles = StyleSheet.create({
   boostBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 12 },
   boostText: { fontSize: 12 },
   flagIcon: { fontSize: 18, opacity: 0.5 },
-  price: { fontSize: 24, fontWeight: '800', color: ACCENT_COLOR }, // ORANGE
+  price: { fontSize: 24, fontWeight: '800', color: ACCENT_COLOR },
   heroTitle: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 16, lineHeight: 28 },
 
-  // Stats
+  // Stats - Rating | Completed | Posted
   statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 12, padding: 14 },
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: 15, fontWeight: '700', color: '#111827' },
   statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
   statDivider: { width: 1, height: 28, backgroundColor: '#e5e7eb' },
+  ratingDisplay: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  starIcon: { fontSize: 14 },
 
   // Images
   imageCard: { borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
@@ -511,25 +519,24 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
   descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
 
-  // User Row - ORANGE avatar
+  // User Row
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 52, height: 52, borderRadius: 26 },
-  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' }, // ORANGE
+  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
   userInfo: { flex: 1, marginLeft: 12, gap: 3 },
   userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
   userCity: { fontSize: 13, color: '#6b7280' },
-  completedTasks: { fontSize: 12, color: '#059669' },
-  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' }, // ORANGE
+  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
   messageBtnText: { fontSize: 20 },
 
-  // Location - ORANGE accents
+  // Location
   locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR }, // ORANGE
+  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
   locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 8 },
   serviceRadius: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
-  mapBtn: { backgroundColor: '#fff7ed', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' }, // ORANGE tint
-  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR }, // ORANGE
+  mapBtn: { backgroundColor: '#fff7ed', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
+  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
 
   // Notices
   noticeCard: { borderRadius: 12, padding: 14, marginBottom: 12 },
