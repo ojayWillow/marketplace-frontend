@@ -84,8 +84,10 @@ export default function ConversationScreen() {
     mutationFn: (content: string) => sendMessage(conversationId, content),
     onSuccess: () => {
       setMessageText('');
-      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      // Refetch after a short delay to let backend process
+      setTimeout(() => {
+        refetch();
+      }, 500);
     },
     onError: (error: any) => {
       console.error('Failed to send message:', error);
