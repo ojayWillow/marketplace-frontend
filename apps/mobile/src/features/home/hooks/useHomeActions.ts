@@ -1,11 +1,10 @@
 import { useCallback, RefObject } from 'react';
-import { Keyboard } from 'react-native';
+import { Keyboard, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import MapView, { Region } from 'react-native-maps';
 import { type Task } from '@marketplace/shared';
-import { haptic } from '../../../utils/haptics';
+import { haptic } from '../../../../utils/haptics';
 import { SHEET_MID_HEIGHT } from '../constants';
-import { Dimensions } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
