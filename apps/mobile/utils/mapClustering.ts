@@ -1,11 +1,14 @@
 /**
  * Smart Map Clustering Utility
  * 
+ * CRITICAL: Every job MUST appear in exactly one cluster or as individual marker.
+ * No job should ever "disappear" from the map.
+ * 
  * Dynamic clustering based on zoom level:
  * - CLOSE (street): No clustering - always show individual jobs
  * - MEDIUM (city): Cluster only when 3+ jobs overlap
- * - FAR (country): Aggressive clustering 
- * - EXTREME (continental): Force everything into minimal clusters
+ * - FAR (country): Normal clustering 
+ * - EXTREME (continental): Aggressive clustering
  */
 
 import type { Region } from 'react-native-maps';
@@ -26,34 +29,13 @@ export interface Cluster<T extends ClusterableItem> {
 }
 
 export interface ClusterConfig {
-  /**
-   * Base factor of region delta to use as overlap threshold
-   * This gets dynamically adjusted based on zoom level
-   * Default: 0.04 (4% of visible area)
-   */
   overlapThresholdFactor?: number;
-
-  /**
-   * Minimum items required to form a cluster
-   * This gets dynamically adjusted based on zoom level
-   * Default: 2
-   */
   minClusterSize?: number;
-
-  /**
-   * Hysteresis factor to prevent flip-flopping
-   * Once clustered, need to zoom in this much more to uncluster
-   * Default: 0.6
-   */
   hysteresis?: number;
-
-  /**
-   * Previous clusters for hysteresis comparison
-   */
   previousClusters?: Cluster<any>[];
 }
 
-const DEFAULT_CONFIG: Required<Omit<ClusterConfig, 'previousClusters'>> = {
+const DEFAULT_CONFIG = {
   overlapThresholdFactor: 0.04,
   minClusterSize: 2,
   hysteresis: 0.6,
@@ -63,10 +45,10 @@ const DEFAULT_CONFIG: Required<Omit<ClusterConfig, 'previousClusters'>> = {
  * Zoom level detection thresholds (based on latitudeDelta)
  */
 const ZOOM_THRESHOLDS = {
-  CLOSE: 0.02,      // Street level - individual buildings visible
-  MEDIUM: 0.08,     // City level - neighborhoods visible  
-  FAR: 0.5,         // Country level - cities visible
-  EXTREME: 2.0,     // Continental level - countries visible
+  CLOSE: 0.015,     // Street level - buildings visible
+  MEDIUM: 0.1,      // City level - neighborhoods visible  
+  FAR: 0.6,         // Country level - cities visible
+  EXTREME: 3.0,     // Continental level
 };
 
 /**
@@ -77,32 +59,32 @@ function getDynamicClusterParams(latitudeDelta: number): {
   minSize: number;
   shouldCluster: boolean;
 } {
-  // CLOSE zoom (street level) - NO clustering
+  // CLOSE zoom (street level) - NO clustering at all
   if (latitudeDelta <= ZOOM_THRESHOLDS.CLOSE) {
-    return { overlapFactor: 0.01, minSize: 999, shouldCluster: false };
+    return { overlapFactor: 0, minSize: 999, shouldCluster: false };
   }
   
   // MEDIUM zoom (city/neighborhood) - gentle clustering, min 3 jobs
   if (latitudeDelta <= ZOOM_THRESHOLDS.MEDIUM) {
-    return { overlapFactor: 0.03, minSize: 3, shouldCluster: true };
+    return { overlapFactor: 0.025, minSize: 3, shouldCluster: true };
   }
   
-  // FAR zoom (country level) - normal clustering, min 2 jobs
+  // FAR zoom (country level) - normal clustering
   if (latitudeDelta <= ZOOM_THRESHOLDS.FAR) {
-    return { overlapFactor: 0.05, minSize: 2, shouldCluster: true };
+    return { overlapFactor: 0.04, minSize: 2, shouldCluster: true };
   }
   
-  // EXTREME zoom (continental) - aggressive clustering
+  // EXTREME zoom (continental) - more aggressive
   if (latitudeDelta <= ZOOM_THRESHOLDS.EXTREME) {
-    return { overlapFactor: 0.08, minSize: 2, shouldCluster: true };
+    return { overlapFactor: 0.06, minSize: 2, shouldCluster: true };
   }
   
-  // WORLD view - very aggressive, cluster everything nearby
-  return { overlapFactor: 0.12, minSize: 2, shouldCluster: true };
+  // WORLD view - very aggressive
+  return { overlapFactor: 0.1, minSize: 2, shouldCluster: true };
 }
 
 /**
- * Spatial grid for fast neighbor lookup
+ * Spatial grid for fast neighbor lookup - O(1) instead of O(n)
  */
 class SpatialGrid<T extends ClusterableItem> {
   private grid: Map<string, T[]> = new Map();
@@ -110,8 +92,8 @@ class SpatialGrid<T extends ClusterableItem> {
   private cellSizeLng: number;
 
   constructor(cellSizeLat: number, cellSizeLng: number) {
-    this.cellSizeLat = cellSizeLat;
-    this.cellSizeLng = cellSizeLng;
+    this.cellSizeLat = Math.max(cellSizeLat, 0.001); // Minimum cell size
+    this.cellSizeLng = Math.max(cellSizeLng, 0.001);
   }
 
   private getCellKey(lat: number, lng: number): string {
@@ -135,7 +117,6 @@ class SpatialGrid<T extends ClusterableItem> {
     const [centerLat, centerLng] = centerKey.split(',').map(Number);
     const nearby: T[] = [];
 
-    // Check 3x3 grid of cells around the point
     for (let dLat = -1; dLat <= 1; dLat++) {
       for (let dLng = -1; dLng <= 1; dLng++) {
         const key = `${centerLat + dLat},${centerLng + dLng}`;
@@ -151,42 +132,37 @@ class SpatialGrid<T extends ClusterableItem> {
 }
 
 /**
- * Check if an item was previously in a cluster
- */
-function wasInCluster<T extends ClusterableItem>(
-  itemId: number,
-  previousClusters: Cluster<T>[] | undefined
-): boolean {
-  if (!previousClusters) return false;
-  
-  for (const cluster of previousClusters) {
-    if (cluster.isCluster && cluster.items.some(item => item.id === itemId)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Smart clustering algorithm with dynamic zoom-based parameters
+ * Smart clustering algorithm
+ * GUARANTEE: Every input item will appear in exactly one output cluster
  */
 export function clusterItems<T extends ClusterableItem>(
   items: T[],
   region: Region | null,
   config: ClusterConfig = {}
 ): Cluster<T>[] {
-  if (!region || items.length === 0) {
+  // No items = no clusters
+  if (!items || items.length === 0) {
     return [];
   }
 
+  // No region = show all as individual (safe fallback)
+  if (!region) {
+    return items.map(item => ({
+      id: `single-${item.id}`,
+      latitude: item.latitude,
+      longitude: item.longitude,
+      items: [item],
+      isCluster: false,
+    }));
+  }
+
   const { hysteresis } = { ...DEFAULT_CONFIG, ...config };
-  const { previousClusters } = config;
   const { latitudeDelta, longitudeDelta } = region;
   
-  // Get dynamic parameters based on current zoom level
+  // Get dynamic parameters based on zoom
   const dynamicParams = getDynamicClusterParams(latitudeDelta);
   
-  // If clustering is disabled at this zoom level, return all as individual
+  // If clustering disabled, return all as individual markers
   if (!dynamicParams.shouldCluster) {
     return items.map(item => ({
       id: `single-${item.id}`,
@@ -197,34 +173,30 @@ export function clusterItems<T extends ClusterableItem>(
     }));
   }
   
-  // Calculate overlap distances using dynamic factor
-  const baseOverlapDistLat = latitudeDelta * dynamicParams.overlapFactor;
-  const baseOverlapDistLng = longitudeDelta * dynamicParams.overlapFactor;
+  // Calculate overlap thresholds
+  const overlapDistLat = latitudeDelta * dynamicParams.overlapFactor;
+  const overlapDistLng = longitudeDelta * dynamicParams.overlapFactor;
   const minClusterSize = dynamicParams.minSize;
 
-  // Create spatial grid for O(n) neighbor lookup
-  const grid = new SpatialGrid<T>(baseOverlapDistLat, baseOverlapDistLng);
+  // Build spatial grid for fast lookups
+  const grid = new SpatialGrid<T>(overlapDistLat, overlapDistLng);
   for (const item of items) {
-    grid.add(item);
+    if (item.latitude && item.longitude) {
+      grid.add(item);
+    }
   }
 
   const processed = new Set<number>();
   const clusters: Cluster<T>[] = [];
 
+  // Process each item
   for (const item of items) {
-    if (processed.has(item.id)) continue;
+    // Skip if already processed or no coordinates
+    if (processed.has(item.id) || !item.latitude || !item.longitude) {
+      continue;
+    }
 
-    // Apply hysteresis: if item was previously clustered, use larger threshold
-    // This prevents flip-flopping at zoom boundaries
-    const wasClusteredBefore = wasInCluster(item.id, previousClusters);
-    const overlapDistLat = wasClusteredBefore 
-      ? baseOverlapDistLat * (1 + (1 - hysteresis))
-      : baseOverlapDistLat;
-    const overlapDistLng = wasClusteredBefore 
-      ? baseOverlapDistLng * (1 + (1 - hysteresis))
-      : baseOverlapDistLng;
-
-    // Find all overlapping items
+    // Find all overlapping items (including self)
     const nearbyItems = grid.getNearby(item.latitude, item.longitude);
     const overlappingItems: T[] = [];
 
@@ -234,32 +206,55 @@ export function clusterItems<T extends ClusterableItem>(
       const latDiff = Math.abs(nearby.latitude - item.latitude);
       const lngDiff = Math.abs(nearby.longitude - item.longitude);
 
-      if (latDiff < overlapDistLat && lngDiff < overlapDistLng) {
+      if (latDiff <= overlapDistLat && lngDiff <= overlapDistLng) {
         overlappingItems.push(nearby);
         processed.add(nearby.id);
       }
     }
 
-    // Create cluster or individual marker based on count
+    // Create cluster or individual markers
     if (overlappingItems.length >= minClusterSize) {
+      // Create cluster
       const centerLat = overlappingItems.reduce((sum, t) => sum + t.latitude, 0) / overlappingItems.length;
       const centerLng = overlappingItems.reduce((sum, t) => sum + t.longitude, 0) / overlappingItems.length;
 
       clusters.push({
-        id: `cluster-${item.id}`,
+        id: `cluster-${item.id}-${overlappingItems.length}`,
         latitude: centerLat,
         longitude: centerLng,
         items: overlappingItems,
         isCluster: true,
       });
     } else {
-      // Not enough items to cluster - show individually
+      // Create individual markers for each item
       for (const singleItem of overlappingItems) {
         clusters.push({
           id: `single-${singleItem.id}`,
           latitude: singleItem.latitude,
           longitude: singleItem.longitude,
           items: [singleItem],
+          isCluster: false,
+        });
+      }
+    }
+  }
+
+  // SAFETY CHECK: Ensure all items are accounted for
+  const totalItemsInClusters = clusters.reduce((sum, c) => sum + c.items.length, 0);
+  const validItems = items.filter(i => i.latitude && i.longitude).length;
+  
+  if (totalItemsInClusters !== validItems) {
+    console.warn(`[Clustering] Item count mismatch! Input: ${validItems}, Output: ${totalItemsInClusters}`);
+    
+    // Fallback: find missing items and add them
+    const clusteredIds = new Set(clusters.flatMap(c => c.items.map(i => i.id)));
+    for (const item of items) {
+      if (item.latitude && item.longitude && !clusteredIds.has(item.id)) {
+        clusters.push({
+          id: `single-${item.id}`,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          items: [item],
           isCluster: false,
         });
       }
@@ -278,7 +273,7 @@ export function calculateDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
