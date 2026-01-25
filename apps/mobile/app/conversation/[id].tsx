@@ -51,6 +51,7 @@ export default function ConversationScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [messageText, setMessageText] = useState('');
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Create conversation if we have userId but no conversationId
   useEffect(() => {
@@ -73,6 +74,14 @@ export default function ConversationScreen() {
     queryKey: ['conversation', conversationId],
     queryFn: () => getConversation(conversationId!),
     enabled: !!conversationId,
+    retry: false,
+    onError: (error: any) => {
+      if (error?.response?.status === 403) {
+        setAccessDenied(true);
+        // Clear this conversation from cache
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      }
+    },
   });
 
   // Fetch messages
@@ -80,24 +89,42 @@ export default function ConversationScreen() {
     data: messagesData,
     isLoading: isLoadingMessages,
     isError,
+    error: messagesError,
     refetch,
     isRefetching,
   } = useQuery({
     queryKey: ['messages', conversationId],
     queryFn: () => getMessages(conversationId!),
-    enabled: !!conversationId,
+    enabled: !!conversationId && !accessDenied,
     refetchInterval: 10000, // Poll every 10 seconds for new messages
+    retry: false,
+    onError: (error: any) => {
+      if (error?.response?.status === 403) {
+        setAccessDenied(true);
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      }
+    },
   });
 
   const messages = messagesData?.messages || [];
   const isLoading = isCreatingConversation || (!conversationId && targetUserId) || isLoadingMessages;
 
+  // Auto-redirect after 3 seconds if access denied
+  useEffect(() => {
+    if (accessDenied) {
+      const timer = setTimeout(() => {
+        router.replace('/(tabs)/messages');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [accessDenied]);
+
   // Mark as read on mount
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && !accessDenied) {
       markAsRead(conversationId).catch(console.error);
     }
-  }, [conversationId]);
+  }, [conversationId, accessDenied]);
 
   // Scroll to bottom when messages load or new message sent
   useEffect(() => {
@@ -213,6 +240,28 @@ export default function ConversationScreen() {
       </Pressable>
     </View>
   );
+
+  // Access Denied Screen
+  if (accessDenied) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <CustomHeader />
+        <View style={styles.centerContainer}>
+          <View style={[styles.errorIconContainer, { backgroundColor: themeColors.card }]}>
+            <Text style={styles.errorIconLarge}>🚫</Text>
+          </View>
+          <Text style={[styles.errorTitle, { color: themeColors.text }]}>Access Denied</Text>
+          <Text style={[styles.errorSubtext, { color: themeColors.textSecondary }]}>
+            You don't have permission to view this conversation.
+          </Text>
+          <Text style={[styles.errorSubtext, { color: themeColors.textMuted }]}>
+            Redirecting to messages...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -450,6 +499,32 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#ffffff',
     fontWeight: '600',
+  },
+  errorIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  errorIconLarge: {
+    fontSize: 40,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
   },
 
   // Messages
