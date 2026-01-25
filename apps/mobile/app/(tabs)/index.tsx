@@ -8,7 +8,7 @@ import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { getTasks, getOfferings, searchTasks, type Task, type Offering, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
-import { clusterItems } from '../../utils/mapClustering';
+import { clusterItems, type Cluster } from '../../utils/mapClustering';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,13 +38,8 @@ import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-interface Cluster {
-  id: string;
-  latitude: number;
-  longitude: number;
-  items: Task[];
-  isCluster: boolean;
-}
+// Debounce time for region changes (higher = less glitchy, more stable)
+const REGION_CHANGE_DEBOUNCE = 300;
 
 export default function HomeScreen() {
   const { getActiveTheme } = useThemeStore();
@@ -55,6 +50,9 @@ export default function HomeScreen() {
   const listRef = useRef<FlatList>(null);
   const searchInputRef = useRef<TextInput>(null);
   const regionChangeTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Store previous clusters for hysteresis (smoother transitions)
+  const previousClustersRef = useRef<Cluster<Task>[]>([]);
   
   // Custom hooks
   const { userLocation, hasRealLocation } = useLocation(mapRef);
@@ -179,24 +177,32 @@ export default function HomeScreen() {
     });
   }, [filteredTasks, userLocation, hasRealLocation]);
 
+  // Clustering with hysteresis - pass previous clusters to prevent flip-flopping
   const clusters = useMemo(() => {
-    return clusterItems<Task>(filteredTasks, mapRegion, {
+    const newClusters = clusterItems<Task>(filteredTasks, mapRegion, {
       overlapThresholdFactor: OVERLAP_THRESHOLD_FACTOR,
       minClusterSize: 2,
-    }) as Cluster[];
+      hysteresis: 0.6,
+      previousClusters: previousClustersRef.current,
+    });
+    
+    // Store for next iteration
+    previousClustersRef.current = newClusters;
+    
+    return newClusters;
   }, [filteredTasks, mapRegion]);
 
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
   const selectedCategoryData = getCategoryByKey(selectedCategory);
 
-  // Handlers
+  // Handlers - increased debounce for smoother experience
   const handleRegionChange = useCallback((region: Region) => {
     if (regionChangeTimeout.current) clearTimeout(regionChangeTimeout.current);
-    regionChangeTimeout.current = setTimeout(() => setMapRegion(region), 150);
+    regionChangeTimeout.current = setTimeout(() => setMapRegion(region), REGION_CHANGE_DEBOUNCE);
   }, []);
 
-  const handleClusterPress = useCallback((cluster: Cluster) => {
+  const handleClusterPress = useCallback((cluster: Cluster<Task>) => {
     haptic.light();
     if (cluster.isCluster && mapRef.current) {
       const lats = cluster.items.map(t => t.latitude!);
@@ -297,10 +303,15 @@ export default function HomeScreen() {
           showsUserLocation={false}
           showsMyLocationButton={false}
         >
-          <UserLocationMarker userLocation={userLocation} hasRealLocation={hasRealLocation} zoomLevel={zoomLevel} styles={styles} />
-          
+          {/* Task clusters/markers - render FIRST (below user location) */}
           {clusters.map((cluster) => (
-            <Marker key={cluster.id} coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }} onPress={() => handleClusterPress(cluster)} tracksViewChanges={false}>
+            <Marker 
+              key={cluster.id} 
+              coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }} 
+              onPress={() => handleClusterPress(cluster)} 
+              tracksViewChanges={false}
+              zIndex={1}
+            >
               {cluster.isCluster ? (
                 <ClusterMarker count={cluster.items.length} styles={styles} />
               ) : (
@@ -309,11 +320,26 @@ export default function HomeScreen() {
             </Marker>
           ))}
 
+          {/* Boosted offerings - render second */}
           {boostedOfferings.map((offering) => (
-            <Marker key={`offering-${offering.id}`} coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }} onPress={() => setSelectedOffering(offering)} tracksViewChanges={false}>
+            <Marker 
+              key={`offering-${offering.id}`} 
+              coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }} 
+              onPress={() => setSelectedOffering(offering)} 
+              tracksViewChanges={false}
+              zIndex={2}
+            >
               <OfferingMarker offering={offering} styles={styles} />
             </Marker>
           ))}
+
+          {/* User location marker - render LAST (on top of everything) */}
+          <UserLocationMarker 
+            userLocation={userLocation} 
+            hasRealLocation={hasRealLocation} 
+            zoomLevel={zoomLevel} 
+            styles={styles} 
+          />
         </MapView>
 
         {/* Floating Header */}
