@@ -1,7 +1,7 @@
 import { View, FlatList, Animated, PanResponder, Dimensions, TextInput, Keyboard, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
@@ -39,6 +39,7 @@ import FiltersModal from '../../src/features/home/components/modals/FiltersModal
 import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const ITEMS_PER_PAGE = 20;
 
 /**
  * Apply spiral offset to markers at the same location
@@ -173,16 +174,46 @@ export default function HomeScreen() {
     })
   ).current;
 
-  // Data fetching
-  const { data, isLoading } = useQuery({
-    queryKey: ['tasks-home'],
-    queryFn: () => getTasks({ page: 1, per_page: 100, status: 'open' }),
+  // INFINITE SCROLL - Main tasks query
+  const {
+    data: tasksData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['tasks-home-infinite'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const result = await getTasks({ page: pageParam, per_page: ITEMS_PER_PAGE, status: 'open' });
+      return {
+        tasks: result.tasks,
+        nextPage: result.tasks.length === ITEMS_PER_PAGE ? pageParam + 1 : undefined,
+        totalCount: result.pagination?.total || result.tasks.length,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
     staleTime: 30000,
   });
 
-  const { data: searchData, isFetching: isSearchFetching } = useQuery({
-    queryKey: ['tasks-search', debouncedSearchQuery],
-    queryFn: () => searchTasks({ q: debouncedSearchQuery, page: 1, per_page: 100, status: 'open' }),
+  // INFINITE SCROLL - Search query
+  const {
+    data: searchData,
+    isFetching: isSearchFetching,
+    fetchNextPage: fetchNextSearchPage,
+    hasNextPage: hasNextSearchPage,
+    isFetchingNextPage: isFetchingNextSearchPage,
+  } = useInfiniteQuery({
+    queryKey: ['tasks-search-infinite', debouncedSearchQuery],
+    queryFn: async ({ pageParam = 1 }) => {
+      const result = await searchTasks({ q: debouncedSearchQuery, page: pageParam, per_page: ITEMS_PER_PAGE, status: 'open' });
+      return {
+        tasks: result.tasks,
+        nextPage: result.tasks.length === ITEMS_PER_PAGE ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
     enabled: !!debouncedSearchQuery.trim(),
     staleTime: 10000,
   });
@@ -193,12 +224,22 @@ export default function HomeScreen() {
     staleTime: 30000,
   });
 
-  // Memoized data transformations
+  // Flatten paginated data
   const allTasks = useMemo(() => {
-    if (debouncedSearchQuery.trim() && searchData?.tasks) return searchData.tasks;
+    if (debouncedSearchQuery.trim() && searchData?.pages) {
+      return searchData.pages.flatMap(page => page.tasks);
+    }
     if (debouncedSearchQuery.trim() && isSearchFetching) return [];
-    return data?.tasks || [];
-  }, [debouncedSearchQuery, searchData, isSearchFetching, data]);
+    return tasksData?.pages?.flatMap(page => page.tasks) || [];
+  }, [debouncedSearchQuery, searchData, isSearchFetching, tasksData]);
+
+  // Get total count for display
+  const totalTaskCount = useMemo(() => {
+    if (tasksData?.pages?.[0]?.totalCount) {
+      return tasksData.pages[0].totalCount;
+    }
+    return allTasks.length;
+  }, [tasksData, allTasks.length]);
   
   const boostedOfferings = useMemo(() => 
     (offeringsData?.offerings || []).filter(o => o.is_boost_active && o.latitude && o.longitude),
@@ -233,8 +274,21 @@ export default function HomeScreen() {
   }, [filteredTasks, userLocation, hasRealLocation]);
 
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
-  const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
+  const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
   const selectedCategoryData = getCategoryByKey(selectedCategory);
+
+  // Infinite scroll handler
+  const handleLoadMore = useCallback(() => {
+    if (debouncedSearchQuery.trim()) {
+      if (hasNextSearchPage && !isFetchingNextSearchPage) {
+        fetchNextSearchPage();
+      }
+    } else {
+      if (hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }
+  }, [debouncedSearchQuery, hasNextPage, hasNextSearchPage, isFetchingNextPage, isFetchingNextSearchPage, fetchNextPage, fetchNextSearchPage]);
 
   // Handle region change
   const handleRegionChangeComplete = useCallback((region: Region) => {
@@ -302,6 +356,23 @@ export default function HomeScreen() {
       styles={styles}
     />
   ), [userLocation, hasRealLocation, handleJobItemPress, styles]);
+
+  const renderFooter = useCallback(() => {
+    const isLoadingMore = debouncedSearchQuery.trim() ? isFetchingNextSearchPage : isFetchingNextPage;
+    const canLoadMore = debouncedSearchQuery.trim() ? hasNextSearchPage : hasNextPage;
+    
+    if (!isLoadingMore && !canLoadMore) return null;
+    
+    return (
+      <View style={styles.loadMoreContainer}>
+        {isLoadingMore ? (
+          <ActivityIndicator size="small" color={JOB_COLOR} />
+        ) : canLoadMore ? (
+          <Text style={styles.loadMoreText}>Scroll for more</Text>
+        ) : null}
+      </View>
+    );
+  }, [debouncedSearchQuery, isFetchingNextPage, isFetchingNextSearchPage, hasNextPage, hasNextSearchPage, styles]);
 
   const renderEmptyList = () => (
     <View style={styles.emptySheet}>
@@ -475,7 +546,17 @@ export default function HomeScreen() {
           ) : sortedTasks.length === 0 ? (
             renderEmptyList()
           ) : (
-            <FlatList ref={listRef} data={sortedTasks} renderItem={renderJobItem} keyExtractor={(item) => `task-${item.id}`} showsVerticalScrollIndicator contentContainerStyle={styles.listContent} />
+            <FlatList
+              ref={listRef}
+              data={sortedTasks}
+              renderItem={renderJobItem}
+              keyExtractor={(item) => `task-${item.id}`}
+              showsVerticalScrollIndicator
+              contentContainerStyle={styles.listContent}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={renderFooter}
+            />
           )}
         </Animated.View>
       </View>
