@@ -2,6 +2,7 @@
  * API functions for messaging between users
  */
 import apiClient from './client';
+import { API_URL } from './client';
 
 export interface MessageUser {
   id: number;
@@ -74,7 +75,17 @@ export const uploadImage = async (file: File | { uri: string; type: string; name
     },
   });
   
-  return response.data.url;
+  // Backend returns relative URL like /api/uploads/filename.jpg
+  // Convert to absolute URL
+  const relativeUrl = response.data.url;
+  
+  // If already absolute, return as-is
+  if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
+    return relativeUrl;
+  }
+  
+  // Otherwise, prepend API_URL
+  return `${API_URL}${relativeUrl}`;
 };
 
 /**
