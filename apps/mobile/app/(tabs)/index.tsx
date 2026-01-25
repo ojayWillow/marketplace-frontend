@@ -1,7 +1,7 @@
 import { View, FlatList, Animated, TextInput, Keyboard, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
@@ -24,10 +24,10 @@ import { useLocation } from '../../src/features/home/hooks/useLocation';
 import { useTaskFilters } from '../../src/features/home/hooks/useTaskFilters';
 import { useSearchDebounce } from '../../src/features/home/hooks/useSearchDebounce';
 import { useBottomSheet } from '../../src/features/home/hooks/useBottomSheet';
-import { useHomeActions } from '../../src/features/home/hooks/useHomeActions';
 import { createStyles } from '../../src/features/home/styles/homeStyles';
 import { 
-  SHEET_MIN_HEIGHT, 
+  SHEET_MIN_HEIGHT,
+  SHEET_MID_HEIGHT,
   JOB_COLOR, 
   OFFERING_COLOR, 
   getMarkerColor,
@@ -38,8 +38,6 @@ import { applyOverlapOffset } from '../../src/features/home/utils/markerHelpers'
 import CategoryModal from '../../src/features/home/components/modals/CategoryModal';
 import FiltersModal from '../../src/features/home/components/modals/FiltersModal';
 import CreateModal from '../../src/features/home/components/modals/CreateModal';
-
-const ITEMS_PER_PAGE = 20;
 
 export default function HomeScreen() {
   const { getActiveTheme } = useThemeStore();
@@ -71,46 +69,23 @@ export default function HomeScreen() {
   // Bottom sheet animation
   const { sheetHeight, panResponder, animateSheetTo } = useBottomSheet('min', setSheetPosition);
 
-  // Data fetching - Main tasks
-  const {
-    data: tasksData,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['tasks-home-infinite'],
-    queryFn: async ({ pageParam = 1 }) => {
-      const result = await getTasks({ page: pageParam, per_page: ITEMS_PER_PAGE, status: 'open' });
-      return {
-        tasks: result.tasks,
-        nextPage: result.tasks.length === ITEMS_PER_PAGE ? pageParam + 1 : undefined,
-        totalCount: result.pagination?.total || result.tasks.length,
-      };
+  // Data fetching - ALL tasks at once (no pagination for home map)
+  const { data: tasksData, isLoading } = useQuery({
+    queryKey: ['tasks-home-all'],
+    queryFn: async () => {
+      const result = await getTasks({ page: 1, per_page: 500, status: 'open' });
+      return result.tasks;
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    initialPageParam: 1,
     staleTime: 30000,
   });
 
   // Data fetching - Search
-  const {
-    data: searchData,
-    isFetching: isSearchFetching,
-    fetchNextPage: fetchNextSearchPage,
-    hasNextPage: hasNextSearchPage,
-    isFetchingNextPage: isFetchingNextSearchPage,
-  } = useInfiniteQuery({
-    queryKey: ['tasks-search-infinite', debouncedSearchQuery],
-    queryFn: async ({ pageParam = 1 }) => {
-      const result = await searchTasks({ q: debouncedSearchQuery, page: pageParam, per_page: ITEMS_PER_PAGE, status: 'open' });
-      return {
-        tasks: result.tasks,
-        nextPage: result.tasks.length === ITEMS_PER_PAGE ? pageParam + 1 : undefined,
-      };
+  const { data: searchData, isFetching: isSearchFetching } = useQuery({
+    queryKey: ['tasks-search', debouncedSearchQuery],
+    queryFn: async () => {
+      const result = await searchTasks({ q: debouncedSearchQuery, page: 1, per_page: 500, status: 'open' });
+      return result.tasks;
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    initialPageParam: 1,
     enabled: !!debouncedSearchQuery.trim(),
     staleTime: 10000,
   });
@@ -122,39 +97,73 @@ export default function HomeScreen() {
     staleTime: 30000,
   });
 
-  // Actions hook
-  const actions = useHomeActions({
-    mapRef,
-    listRef,
-    userLocation,
-    animateSheetTo,
-    setFocusedTaskId,
-    setSelectedOffering,
-    clearSearch,
-    debouncedSearchQuery,
-    hasNextPage: hasNextPage || false,
-    hasNextSearchPage: hasNextSearchPage || false,
-    isFetchingNextPage,
-    isFetchingNextSearchPage,
-    fetchNextPage,
-    fetchNextSearchPage,
-  });
+  // Handlers
+  const handleMarkerPress = useCallback((task: Task) => {
+    haptic.light();
+    if (mapRef.current && task.latitude && task.longitude) {
+      const latitudeDelta = 0.03;
+      const { height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
+      const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.4;
+      mapRef.current.animateToRegion(
+        {
+          latitude: task.latitude - latitudeOffset,
+          longitude: task.longitude,
+          latitudeDelta,
+          longitudeDelta: latitudeDelta,
+        },
+        350
+      );
+    }
+    setFocusedTaskId(task.id);
+    setSelectedOffering(null);
+    animateSheetTo(SHEET_MID_HEIGHT);
+    setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
+  }, [animateSheetTo]);
+
+  const handleJobItemPress = useCallback((task: Task) => {
+    haptic.medium();
+    handleMarkerPress(task);
+  }, [handleMarkerPress]);
+
+  const handleViewFullDetails = useCallback((id: number) => {
+    haptic.light();
+    router.push(`/task/${id}`);
+  }, []);
+
+  const handleCloseFocusedJob = useCallback(() => {
+    haptic.soft();
+    setFocusedTaskId(null);
+    animateSheetTo(SHEET_MIN_HEIGHT);
+  }, [animateSheetTo]);
+
+  const handleMyLocation = useCallback(() => {
+    haptic.medium();
+    mapRef.current?.animateToRegion(
+      {
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      },
+      500
+    );
+  }, [userLocation]);
+
+  const handleClearSearch = useCallback(() => {
+    haptic.soft();
+    clearSearch();
+    setFocusedTaskId(null);
+    Keyboard.dismiss();
+  }, [clearSearch]);
 
   // Memoized data transformations
   const allTasks = useMemo(() => {
-    if (debouncedSearchQuery.trim() && searchData?.pages) {
-      return searchData.pages.flatMap(page => page.tasks);
+    if (debouncedSearchQuery.trim() && searchData) {
+      return searchData;
     }
     if (debouncedSearchQuery.trim() && isSearchFetching) return [];
-    return tasksData?.pages?.flatMap(page => page.tasks) || [];
+    return tasksData || [];
   }, [debouncedSearchQuery, searchData, isSearchFetching, tasksData]);
-
-  const totalTaskCount = useMemo(() => {
-    if (tasksData?.pages?.[0]?.totalCount) {
-      return tasksData.pages[0].totalCount;
-    }
-    return allTasks.length;
-  }, [tasksData, allTasks.length]);
   
   const boostedOfferings = useMemo(() => 
     (offeringsData?.offerings || []).filter(o => o.is_boost_active && o.latitude && o.longitude),
@@ -195,27 +204,10 @@ export default function HomeScreen() {
       task={item}
       userLocation={userLocation}
       hasRealLocation={hasRealLocation}
-      onPress={actions.handleJobItemPress}
+      onPress={handleJobItemPress}
       styles={styles}
     />
-  ), [userLocation, hasRealLocation, actions.handleJobItemPress, styles]);
-
-  const renderFooter = useCallback(() => {
-    const isLoadingMore = debouncedSearchQuery.trim() ? isFetchingNextSearchPage : isFetchingNextPage;
-    const canLoadMore = debouncedSearchQuery.trim() ? hasNextSearchPage : hasNextPage;
-    
-    if (!isLoadingMore && !canLoadMore) return null;
-    
-    return (
-      <View style={styles.loadMoreContainer}>
-        {isLoadingMore ? (
-          <ActivityIndicator size="small" color={JOB_COLOR} />
-        ) : canLoadMore ? (
-          <Text style={styles.loadMoreText}>Scroll for more</Text>
-        ) : null}
-      </View>
-    );
-  }, [debouncedSearchQuery, isFetchingNextPage, isFetchingNextSearchPage, hasNextPage, hasNextSearchPage, styles]);
+  ), [userLocation, hasRealLocation, handleJobItemPress, styles]);
 
   const renderEmptyList = () => (
     <View style={styles.emptySheet}>
@@ -239,7 +231,6 @@ export default function HomeScreen() {
             latitudeDelta: 0.15, 
             longitudeDelta: 0.15 
           }}
-          onRegionChangeComplete={actions.handleRegionChangeComplete}
           showsUserLocation={hasRealLocation}
           showsMyLocationButton={false}
         >
@@ -252,7 +243,7 @@ export default function HomeScreen() {
               <Marker
                 key={`task-${task.id}`}
                 coordinate={{ latitude: task.displayLat, longitude: task.displayLng }}
-                onPress={() => actions.handleMarkerPress(task)}
+                onPress={() => handleMarkerPress(task)}
                 tracksViewChanges={false}
                 zIndex={isFocused ? 10 : 1}
               >
@@ -312,7 +303,7 @@ export default function HomeScreen() {
                   returnKeyType="search"
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={actions.handleClearSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <TouchableOpacity onPress={handleClearSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Icon name="close" size={18} color={styles.searchInput.color} />
                   </TouchableOpacity>
                 )}
@@ -347,7 +338,7 @@ export default function HomeScreen() {
         {sheetPosition === 'min' && (
           <TouchableOpacity 
             style={styles.myLocationButton} 
-            onPress={actions.handleMyLocation}
+            onPress={handleMyLocation}
             activeOpacity={0.7}
           >
             <View style={styles.compassButton}>
@@ -365,7 +356,7 @@ export default function HomeScreen() {
                 {focusedTask ? 'Job Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
               </Text>
               {focusedTask ? (
-                <IconButton icon="close" size={20} onPress={actions.handleCloseFocusedJob} />
+                <IconButton icon="close" size={20} onPress={handleCloseFocusedJob} />
               ) : (
                 <TouchableOpacity 
                   style={styles.quickPostButton}
@@ -389,7 +380,7 @@ export default function HomeScreen() {
               task={focusedTask} 
               userLocation={userLocation} 
               hasRealLocation={hasRealLocation} 
-              onViewDetails={actions.handleViewFullDetails} 
+              onViewDetails={handleViewFullDetails} 
               styles={styles} 
             />
           ) : sortedTasks.length === 0 ? (
@@ -402,9 +393,6 @@ export default function HomeScreen() {
               keyExtractor={(item) => `task-${item.id}`}
               showsVerticalScrollIndicator
               contentContainerStyle={styles.listContent}
-              onEndReached={actions.handleLoadMore}
-              onEndReachedThreshold={0.3}
-              ListFooterComponent={renderFooter}
             />
           )}
         </Animated.View>
