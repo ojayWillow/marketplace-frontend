@@ -1,8 +1,13 @@
 /**
- * Map Clustering Utility - DISABLED FOR DEBUGGING
+ * Simple Map Clustering
  * 
- * Clustering is temporarily disabled to stop app crashes.
- * All jobs render as individual markers.
+ * TESTED: Without clustering, all 43 markers render correctly.
+ * Now adding back MINIMAL clustering only when markers would visually overlap.
+ * 
+ * Rules:
+ * 1. Only cluster when zoomed out FAR (latitudeDelta > 0.3)
+ * 2. Minimum 4 jobs to form a cluster
+ * 3. Very tight distance - only when markers would literally overlap
  */
 
 import type { Region } from 'react-native-maps';
@@ -29,12 +34,21 @@ export interface ClusterConfig {
   previousClusters?: Cluster<any>[];
 }
 
+// Only cluster when VERY zoomed out
+const CLUSTER_ZOOM_THRESHOLD = 0.3;
+
+// Very tight clustering - only when markers would overlap
+const CLUSTER_DISTANCE_FACTOR = 0.025; // 2.5% of screen
+
+// Need at least 4 jobs to make a cluster
+const MIN_CLUSTER_SIZE = 4;
+
 /**
- * CLUSTERING DISABLED - Returns all items as individual markers
+ * Simple clustering - all items as individual OR in clusters
  */
 export function clusterItems<T extends ClusterableItem>(
   items: T[],
-  _region: Region | null,
+  region: Region | null,
   _config: ClusterConfig = {}
 ): Cluster<T>[] {
   // Filter items with valid coordinates
@@ -46,14 +60,80 @@ export function clusterItems<T extends ClusterableItem>(
     !isNaN(item.longitude)
   );
 
-  // Return each item as individual marker (no clustering)
-  return validItems.map(item => ({
-    id: `single-${item.id}`,
-    latitude: item.latitude,
-    longitude: item.longitude,
-    items: [item],
-    isCluster: false,
-  }));
+  if (validItems.length === 0) {
+    return [];
+  }
+
+  // No region OR zoomed in = show all as individual markers
+  if (!region || region.latitudeDelta < CLUSTER_ZOOM_THRESHOLD) {
+    return validItems.map(item => ({
+      id: `single-${item.id}`,
+      latitude: item.latitude,
+      longitude: item.longitude,
+      items: [item],
+      isCluster: false,
+    }));
+  }
+
+  // Zoomed out - apply simple clustering
+  const clusterDistLat = region.latitudeDelta * CLUSTER_DISTANCE_FACTOR;
+  const clusterDistLng = region.longitudeDelta * CLUSTER_DISTANCE_FACTOR;
+
+  const assigned = new Set<number>();
+  const clusters: Cluster<T>[] = [];
+
+  for (const item of validItems) {
+    if (assigned.has(item.id)) continue;
+
+    // Find nearby items
+    const nearby: T[] = [];
+    
+    for (const other of validItems) {
+      if (assigned.has(other.id)) continue;
+
+      const latDiff = Math.abs(other.latitude - item.latitude);
+      const lngDiff = Math.abs(other.longitude - item.longitude);
+
+      if (latDiff < clusterDistLat && lngDiff < clusterDistLng) {
+        nearby.push(other);
+      }
+    }
+
+    // Only cluster if we have enough items
+    if (nearby.length >= MIN_CLUSTER_SIZE) {
+      // Mark all as assigned
+      for (const n of nearby) {
+        assigned.add(n.id);
+      }
+
+      // Calculate center
+      const centerLat = nearby.reduce((sum, t) => sum + t.latitude, 0) / nearby.length;
+      const centerLng = nearby.reduce((sum, t) => sum + t.longitude, 0) / nearby.length;
+
+      clusters.push({
+        id: `cluster-${item.id}`,
+        latitude: centerLat,
+        longitude: centerLng,
+        items: nearby,
+        isCluster: true,
+      });
+    }
+  }
+
+  // Add remaining items as individual markers
+  for (const item of validItems) {
+    if (!assigned.has(item.id)) {
+      clusters.push({
+        id: `single-${item.id}`,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        items: [item],
+        isCluster: false,
+      });
+    }
+  }
+
+  return clusters;
 }
 
 /**
