@@ -38,9 +38,6 @@ import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Debounce time for region changes (higher = less glitchy, more stable)
-const REGION_CHANGE_DEBOUNCE = 300;
-
 export default function HomeScreen() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
@@ -49,7 +46,6 @@ export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
   const searchInputRef = useRef<TextInput>(null);
-  const regionChangeTimeout = useRef<NodeJS.Timeout | null>(null);
   
   // Store previous clusters for hysteresis (smoother transitions)
   const previousClustersRef = useRef<Cluster<Task>[]>([]);
@@ -196,10 +192,10 @@ export default function HomeScreen() {
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching;
   const selectedCategoryData = getCategoryByKey(selectedCategory);
 
-  // Handlers - increased debounce for smoother experience
-  const handleRegionChange = useCallback((region: Region) => {
-    if (regionChangeTimeout.current) clearTimeout(regionChangeTimeout.current);
-    regionChangeTimeout.current = setTimeout(() => setMapRegion(region), REGION_CHANGE_DEBOUNCE);
+  // Handle region change - update immediately, no debounce
+  // This ensures markers are always visible and update in real-time
+  const handleRegionChangeComplete = useCallback((region: Region) => {
+    setMapRegion(region);
   }, []);
 
   const handleClusterPress = useCallback((cluster: Cluster<Task>) => {
@@ -299,7 +295,7 @@ export default function HomeScreen() {
           provider={PROVIDER_DEFAULT}
           customMapStyle={activeTheme === 'dark' ? darkMapStyle : lightMapStyle}
           initialRegion={{ latitude: userLocation.latitude, longitude: userLocation.longitude, latitudeDelta: 0.15, longitudeDelta: 0.15 }}
-          onRegionChangeComplete={handleRegionChange}
+          onRegionChangeComplete={handleRegionChangeComplete}
           showsUserLocation={false}
           showsMyLocationButton={false}
         >
