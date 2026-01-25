@@ -1,21 +1,48 @@
 import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, Chip, Avatar, Divider, ActivityIndicator, Card } from 'react-native-paper';
+import { Text, Button, Surface, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, type Task } from '@marketplace/shared';
+import { getTask, applyToTask, markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, withdrawApplication, useAuthStore, getImageUrl, getCategoryByKey, type Task } from '@marketplace/shared';
 import { useState } from 'react';
+import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_WIDTH = SCREEN_WIDTH - 40; // Accounting for padding
-const IMAGE_HEIGHT = 240;
+const IMAGE_HEIGHT = 200;
+
+// Helper to format time ago
+const formatTimeAgo = (dateString: string | undefined): string => {
+  if (!dateString) return '';
+  
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return past.toLocaleDateString();
+};
+
+// Helper to get difficulty indicator
+const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+  switch (difficulty) {
+    case 'easy': return { color: '#10b981', label: 'Easy' };
+    case 'hard': return { color: '#ef4444', label: 'Hard' };
+    case 'medium':
+    default: return { color: '#f59e0b', label: 'Medium' };
+  }
+};
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
-  const [applyMessage, setApplyMessage] = useState('');
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
   const { data: task, isLoading, error } = useQuery({
@@ -25,7 +52,7 @@ export default function TaskDetailScreen() {
   });
 
   const applyMutation = useMutation({
-    mutationFn: () => applyToTask(taskId, applyMessage || undefined),
+    mutationFn: () => applyToTask(taskId),
     onSuccess: () => {
       Alert.alert('Success', 'Your application has been submitted!');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
@@ -39,9 +66,7 @@ export default function TaskDetailScreen() {
 
   const withdrawMutation = useMutation({
     mutationFn: () => {
-      if (!task?.user_application?.id) {
-        throw new Error('No application to withdraw');
-      }
+      if (!task?.user_application?.id) throw new Error('No application to withdraw');
       return withdrawApplication(taskId, task.user_application.id);
     },
     onSuccess: () => {
@@ -58,13 +83,12 @@ export default function TaskDetailScreen() {
   const markDoneMutation = useMutation({
     mutationFn: () => markTaskDone(taskId),
     onSuccess: () => {
-      Alert.alert('Success', 'Task marked as done! Waiting for confirmation from the client.');
+      Alert.alert('Success', 'Task marked as done! Waiting for confirmation.');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to mark task as done.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to mark task as done.');
     },
   });
 
@@ -76,8 +100,7 @@ export default function TaskDetailScreen() {
       setShowReviewPrompt(true);
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to confirm completion.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to confirm completion.');
     },
   });
 
@@ -86,11 +109,9 @@ export default function TaskDetailScreen() {
     onSuccess: () => {
       Alert.alert('Disputed', 'Task has been disputed. Please contact support.');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to dispute task.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to dispute task.');
     },
   });
 
@@ -102,87 +123,92 @@ export default function TaskDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to cancel task.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to cancel task.');
     },
   });
 
   const handleApply = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Sign In Required',
-        'You need to sign in to apply for tasks.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
-        ]
-      );
+      Alert.alert('Sign In Required', 'You need to sign in to apply for tasks.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+      ]);
       return;
     }
-
-    Alert.alert(
-      'Apply for Task',
-      'Would you like to apply for this task?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Apply', onPress: () => applyMutation.mutate() },
-      ]
-    );
+    Alert.alert('Apply for Task', 'Would you like to apply for this task?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Apply', onPress: () => applyMutation.mutate() },
+    ]);
   };
 
   const handleWithdraw = () => {
-    Alert.alert(
-      'Withdraw Application',
-      'Are you sure you want to withdraw your application?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Withdraw', style: 'destructive', onPress: () => withdrawMutation.mutate() },
-      ]
-    );
+    Alert.alert('Withdraw Application', 'Are you sure you want to withdraw?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Withdraw', style: 'destructive', onPress: () => withdrawMutation.mutate() },
+    ]);
   };
 
   const handleMarkDone = () => {
-    Alert.alert(
-      'Mark as Done',
-      'Mark this task as completed? The client will need to confirm.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Mark Done', onPress: () => markDoneMutation.mutate() },
-      ]
-    );
+    Alert.alert('Mark as Done', 'Mark this task as completed?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Mark Done', onPress: () => markDoneMutation.mutate() },
+    ]);
   };
 
-  const handleConfirmCompletion = () => {
-    Alert.alert(
-      'Confirm Completion',
-      'Confirm that this task has been completed satisfactorily?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: () => confirmMutation.mutate() },
-      ]
-    );
+  const handleConfirm = () => {
+    Alert.alert('Confirm Completion', 'Confirm that this task has been completed?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm', onPress: () => confirmMutation.mutate() },
+    ]);
   };
 
   const handleDispute = () => {
-    Alert.alert(
-      'Dispute Task',
-      'Are you not satisfied with the work? This will open a dispute.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Dispute', style: 'destructive', onPress: () => disputeMutation.mutate() },
-      ]
-    );
+    Alert.alert('Dispute Task', 'Are you not satisfied with the work?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Dispute', style: 'destructive', onPress: () => disputeMutation.mutate() },
+    ]);
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Task',
-      'Are you sure you want to cancel this task?',
-      [
-        { text: 'No', style: 'cancel' },
-        { text: 'Yes, Cancel', style: 'destructive', onPress: () => cancelMutation.mutate() },
-      ]
-    );
+    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+      { text: 'No', style: 'cancel' },
+      { text: 'Yes, Cancel', style: 'destructive', onPress: () => cancelMutation.mutate() },
+    ]);
+  };
+
+  const handleOpenMap = () => {
+    if (task?.latitude && task?.longitude) {
+      Linking.openURL(`https://maps.google.com/?q=${task.latitude},${task.longitude}`);
+    }
+  };
+
+  const handleMessage = () => {
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'You need to sign in to send messages.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+      ]);
+      return;
+    }
+    if (task?.creator_id) {
+      router.push(`/conversation/${task.creator_id}`);
+    }
+  };
+
+  const handleReport = () => {
+    Alert.alert('Report Task', 'Report this task for inappropriate content?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Report', style: 'destructive', onPress: () => {
+        // TODO: Implement report API
+        Alert.alert('Reported', 'Thank you for your report. We will review it.');
+      }},
+    ]);
+  };
+
+  const handleViewProfile = () => {
+    if (task?.creator_id) {
+      router.push(`/user/${task.creator_id}`);
+    }
   };
 
   const handleLeaveReview = () => {
@@ -190,121 +216,63 @@ export default function TaskDetailScreen() {
     router.push(`/task/${taskId}/review`);
   };
 
-  const handleSkipReview = () => {
-    setShowReviewPrompt(false);
-    Alert.alert('Task Completed!', 'You can leave a review later from the task details.');
-  };
-
-  const handleOpenMap = () => {
-    if (task?.latitude && task?.longitude) {
-      const url = `https://maps.google.com/?q=${task.latitude},${task.longitude}`;
-      Linking.openURL(url);
-    }
-  };
-
-  const handleViewProfile = (userId: number) => {
-    router.push(`/user/${userId}`);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return '#10b981';
-      case 'assigned': return '#f59e0b';
-      case 'in_progress': return '#3b82f6';
-      case 'pending_confirmation': return '#8b5cf6';
-      case 'completed': return '#6b7280';
-      case 'cancelled': return '#ef4444';
-      case 'disputed': return '#dc2626';
-      default: return '#6b7280';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'open': return 'Open';
-      case 'assigned': return 'Assigned';
-      case 'in_progress': return 'In Progress';
-      case 'pending_confirmation': return 'Awaiting Confirm';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      case 'disputed': return 'Disputed';
-      default: return status;
-    }
-  };
-
+  // Computed values
   const isOwnTask = user?.id === task?.creator_id;
   const isAssignedToMe = user?.id === task?.assigned_to_id;
-  
-  // Use backend's has_applied field instead of just checking status
   const canApply = isAuthenticated && !isOwnTask && task?.status === 'open' && !task?.has_applied;
   const hasApplied = task?.has_applied && task?.user_application?.status === 'pending';
   const canWithdraw = hasApplied;
-  
   const canMarkDone = isAssignedToMe && (task?.status === 'assigned' || task?.status === 'in_progress');
   const canConfirm = isOwnTask && task?.status === 'pending_confirmation';
   const canCancel = isOwnTask && task?.status === 'open';
-  const canEdit = isOwnTask && task?.status === 'open';
-  const canReview = (isOwnTask || isAssignedToMe) && task?.status === 'completed';
 
-  // Parse images from comma-separated string and convert to full URLs
+  const categoryData = task ? getCategoryByKey(task.category) : null;
+  const difficulty = getDifficultyIndicator(task?.difficulty);
+  const timeAgo = formatTimeAgo(task?.created_at);
+  const hasRating = (task?.creator_rating ?? 0) > 0;
+  
   const taskImages = task?.images 
     ? task.images.split(',').filter(Boolean).map(url => getImageUrl(url))
     : [];
 
-  console.log('Task images:', taskImages); // Debug log
-
+  // Loading state
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0ea5e9" />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#3B82F6" />
         </View>
       </SafeAreaView>
     );
   }
 
+  // Error state
   if (error || !task) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
-        <View style={styles.errorContainer}>
-          <Text variant="headlineSmall" style={styles.errorText}>Task not found</Text>
-          <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
-            Go Back
-          </Button>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>Task not found</Text>
+          <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Review prompt
   if (showReviewPrompt) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Task Completed' }} />
-        <View style={styles.reviewPromptContainer}>
-          <Card style={styles.reviewPromptCard}>
-            <Card.Content style={styles.reviewPromptContent}>
-              <Text style={styles.reviewPromptIcon}>🎉</Text>
-              <Text variant="headlineSmall" style={styles.reviewPromptTitle}>
-                Task Completed!
-              </Text>
-              <Text style={styles.reviewPromptText}>
-                Great job! Would you like to leave a review for {isOwnTask ? task.assigned_to_name : task.creator_name}?
-              </Text>
-              <Text style={styles.reviewPromptHint}>
-                Reviews help build trust in the community.
-              </Text>
-            </Card.Content>
-            <Card.Actions style={styles.reviewPromptActions}>
-              <Button onPress={handleSkipReview} textColor="#6b7280">
-                Maybe Later
-              </Button>
-              <Button mode="contained" onPress={handleLeaveReview}>
-                Leave Review
-              </Button>
-            </Card.Actions>
-          </Card>
+        <View style={styles.centered}>
+          <Text style={styles.reviewIcon}>🎉</Text>
+          <Text style={styles.reviewTitle}>Task Completed!</Text>
+          <Text style={styles.reviewText}>Would you like to leave a review?</Text>
+          <View style={styles.reviewButtons}>
+            <Button onPress={() => setShowReviewPrompt(false)} textColor="#6b7280">Maybe Later</Button>
+            <Button mode="contained" onPress={handleLeaveReview}>Leave Review</Button>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -312,294 +280,182 @@ export default function TaskDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true, 
-          title: 'Task Details',
-          headerBackTitle: 'Back',
-        }} 
-      />
+      <Stack.Screen options={{ headerShown: true, title: 'Task Details', headerBackTitle: 'Back' }} />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <Surface style={styles.header} elevation={1}>
-          <View style={styles.headerTop}>
-            {/* Status Badge - Using View instead of Chip */}
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
-              <Text style={styles.statusBadgeText}>
-                {getStatusLabel(task.status)}
-              </Text>
-            </View>
-            {task.is_urgent ? (
-              <View style={styles.urgentBadge}>
-                <Text style={styles.urgentBadgeText}>🔥 Urgent</Text>
-              </View>
-            ) : null}
-          </View>
-          
-          <Text variant="headlineSmall" style={styles.title}>{task.title}</Text>
-          
-          <View style={styles.priceRow}>
-            <Text variant="headlineMedium" style={styles.price}>
-              €{task.budget || task.reward || 0}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Row 1: Category + Urgent + Flag + Price */}
+        <View style={styles.topRow}>
+          <View style={styles.topRowLeft}>
+            <Text style={styles.category}>
+              {categoryData?.icon || '📋'} {categoryData?.label || task.category}
             </Text>
-            {task.pending_applications_count != null && task.pending_applications_count > 0 ? (
-              <View style={styles.applicationsBadge}>
-                <Text style={styles.applicationsBadgeText}>
-                  {task.pending_applications_count} application{task.pending_applications_count !== 1 ? 's' : ''}
-                </Text>
+            {task.is_urgent && (
+              <View style={styles.urgentBadge}>
+                <Text style={styles.urgentText}>🔥 Urgent</Text>
               </View>
-            ) : null}
+            )}
           </View>
-        </Surface>
+          <View style={styles.topRowRight}>
+            <TouchableOpacity onPress={handleReport} style={styles.flagButton}>
+              <Text style={styles.flagIcon}>🚩</Text>
+            </TouchableOpacity>
+            <Text style={styles.price}>€{task.budget || task.reward || 0}</Text>
+          </View>
+        </View>
 
-        {/* IMAGE GALLERY */}
-        {taskImages.length > 0 ? (
-          <View style={styles.imageGalleryContainer}>
-            <ScrollView 
-              horizontal 
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              style={styles.imageScrollView}
-            >
+        {/* Row 2: Title */}
+        <Text style={styles.title}>{task.title}</Text>
+
+        {/* Row 3: User Section - Avatar | Name/Rating/City | Message */}
+        <TouchableOpacity style={styles.userSection} onPress={handleViewProfile} activeOpacity={0.7}>
+          <View style={styles.userLeft}>
+            {task.creator_avatar ? (
+              <Image source={{ uri: getImageUrl(task.creator_avatar) }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{task.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
+              </View>
+            )}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{task.creator_name || 'Anonymous'}</Text>
+              {hasRating && (
+                <StarRating 
+                  rating={task.creator_rating || 0} 
+                  reviewCount={task.creator_review_count}
+                  size={12}
+                  showCount={true}
+                />
+              )}
+              {task.creator_city && (
+                <Text style={styles.userCity}>📍 {task.creator_city}</Text>
+              )}
+            </View>
+          </View>
+          {!isOwnTask && (
+            <TouchableOpacity onPress={handleMessage} style={styles.messageButton}>
+              <Text style={styles.messageIcon}>💬</Text>
+            </TouchableOpacity>
+          )}
+        </TouchableOpacity>
+
+        {/* Row 4: Description */}
+        <Text style={styles.description}>{task.description}</Text>
+
+        {/* Row 5: Location + Map button */}
+        {task.location && (
+          <View style={styles.locationRow}>
+            <Text style={styles.locationText}>📍 {task.location}</Text>
+            {task.latitude && task.longitude && (
+              <TouchableOpacity onPress={handleOpenMap} style={styles.mapLink}>
+                <Text style={styles.mapLinkText}>Open Maps</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Row 6: Meta - Applicants + Difficulty + Time */}
+        <View style={styles.metaRow}>
+          {(task.pending_applications_count ?? 0) > 0 && (
+            <>
+              <Text style={styles.metaText}>👤 {task.pending_applications_count} applied</Text>
+              <Text style={styles.metaDot}>•</Text>
+            </>
+          )}
+          <View style={styles.difficultyBadge}>
+            <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
+            <Text style={styles.difficultyText}>{difficulty.label}</Text>
+          </View>
+          {timeAgo && (
+            <>
+              <Text style={styles.metaDot}>•</Text>
+              <Text style={styles.metaText}>{timeAgo}</Text>
+            </>
+          )}
+        </View>
+
+        {/* Images (if any) */}
+        {taskImages.length > 0 && (
+          <View style={styles.imageSection}>
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
               {taskImages.map((imageUrl, index) => (
-                <View key={index} style={styles.imageWrapper}>
-                  <Image
-                    source={{ uri: imageUrl }}
-                    style={styles.taskImage}
-                    resizeMode="cover"
-                  />
-                </View>
+                <Image key={index} source={{ uri: imageUrl }} style={styles.taskImage} resizeMode="cover" />
               ))}
             </ScrollView>
-            {taskImages.length > 1 ? (
+            {taskImages.length > 1 && (
               <View style={styles.imageCounter}>
-                <Text style={styles.imageCounterText}>
-                  {taskImages.length} photo{taskImages.length !== 1 ? 's' : ''}
-                </Text>
+                <Text style={styles.imageCounterText}>{taskImages.length} photos</Text>
               </View>
-            ) : null}
+            )}
           </View>
-        ) : null}
+        )}
 
-        {/* Application Status Notice */}
-        {hasApplied ? (
-          <Surface style={styles.appliedSection} elevation={0}>
-            <View style={styles.noticeContent}>
-              <Text style={styles.noticeIcon}>✅</Text>
-              <View style={styles.noticeTextContainer}>
-                <Text variant="titleMedium" style={styles.noticeTitle}>Application Submitted</Text>
-                <Text style={styles.noticeText}>
-                  You have applied for this task. Waiting for the client to review your application.
-                </Text>
-              </View>
-            </View>
-          </Surface>
-        ) : null}
-
-        {/* Pending Confirmation Notice */}
-        {task.status === 'pending_confirmation' && isOwnTask ? (
-          <Surface style={styles.noticeSection} elevation={0}>
-            <View style={styles.noticeContent}>
-              <Text style={styles.noticeIcon}>⏳</Text>
-              <View style={styles.noticeTextContainer}>
-                <Text variant="titleMedium" style={styles.noticeTitle}>Awaiting Your Confirmation</Text>
-                <Text style={styles.noticeText}>
-                  {task.assigned_to_name} has marked this task as done. Please confirm if the work is complete.
-                </Text>
-              </View>
-            </View>
-          </Surface>
-        ) : null}
-
-        {/* Completed - Review Notice */}
-        {task.status === 'completed' && canReview ? (
-          <Surface style={styles.completedSection} elevation={0}>
-            <View style={styles.noticeContent}>
-              <Text style={styles.noticeIcon}>✅</Text>
-              <View style={styles.noticeTextContainer}>
-                <Text variant="titleMedium" style={styles.noticeTitle}>Task Completed</Text>
-                <Text style={styles.noticeText}>
-                  This task was completed on {task.completed_at ? new Date(task.completed_at).toLocaleDateString() : 'recently'}.
-                </Text>
-                <Button 
-                  mode="outlined" 
-                  onPress={() => router.push(`/task/${taskId}/review`)}
-                  style={styles.reviewButton}
-                  compact
-                >
-                  Leave a Review
-                </Button>
-              </View>
-            </View>
-          </Surface>
-        ) : null}
-
-        {/* Description */}
-        <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{task.description}</Text>
-        </Surface>
-
-        {/* Location */}
-        {task.location ? (
-          <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Location</Text>
-            <View style={styles.locationRow}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.location}>{task.location}</Text>
-            </View>
-            {task.latitude && task.longitude ? (
-              <Button 
-                mode="outlined" 
-                onPress={handleOpenMap}
-                style={styles.mapButton}
-                icon="map"
-              >
-                Open in Maps
-              </Button>
-            ) : null}
-          </Surface>
-        ) : null}
-
-        {/* Category & Details */}
-        <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Details</Text>
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Category</Text>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryBadgeText}>{task.category}</Text>
-              </View>
-            </View>
-            {task.deadline ? (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Deadline</Text>
-                <Text style={styles.detailValue}>
-                  {new Date(task.deadline).toLocaleDateString()}
-                </Text>
-              </View>
-            ) : null}
-            {task.created_at ? (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Posted</Text>
-                <Text style={styles.detailValue}>
-                  {new Date(task.created_at).toLocaleDateString()}
-                </Text>
-              </View>
-            ) : null}
+        {/* Status notices */}
+        {hasApplied && (
+          <View style={styles.noticeBanner}>
+            <Text style={styles.noticeText}>✅ You have applied for this task</Text>
           </View>
-        </Surface>
+        )}
 
-        {/* Creator - Now Clickable */}
-        <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Posted by</Text>
-          <TouchableOpacity 
-            style={styles.creatorRow}
-            onPress={() => task.creator_id && handleViewProfile(task.creator_id)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.creatorAvatarContainer}>
-              <Text style={styles.creatorAvatarText}>
-                {task.creator_name?.charAt(0).toUpperCase() || 'U'}
-              </Text>
-            </View>
-            <View style={styles.creatorInfo}>
-              <Text variant="titleMedium" style={styles.creatorName}>
-                {task.creator_name || 'Unknown'}
-              </Text>
-              {isOwnTask ? (
-                <View style={styles.ownTaskBadge}>
-                  <Text style={styles.ownTaskText}>Your task</Text>
-                </View>
-              ) : null}
-              {isAssignedToMe ? (
-                <View style={styles.assignedBadge}>
-                  <Text style={styles.assignedText}>Assigned to you</Text>
-                </View>
-              ) : null}
-            </View>
-          </TouchableOpacity>
-        </Surface>
+        {task.status === 'pending_confirmation' && isOwnTask && (
+          <View style={[styles.noticeBanner, styles.warningBanner]}>
+            <Text style={styles.noticeText}>⏳ {task.assigned_to_name} marked this as done. Please confirm.</Text>
+          </View>
+        )}
 
-        {/* Assigned Helper - Now Clickable */}
-        {task.assigned_to_name && !isAssignedToMe ? (
-          <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Assigned to</Text>
-            <TouchableOpacity 
-              style={styles.creatorRow}
-              onPress={() => task.assigned_to_id && handleViewProfile(task.assigned_to_id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.helperAvatarContainer}>
-                <Text style={styles.helperAvatarText}>
-                  {task.assigned_to_name?.charAt(0).toUpperCase() || 'U'}
-                </Text>
-              </View>
-              <View style={styles.creatorInfo}>
-                <Text variant="titleMedium" style={styles.creatorName}>
-                  {task.assigned_to_name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </Surface>
-        ) : null}
-
-        <View style={styles.bottomSpacer} />
+        {isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress') && (
+          <View style={[styles.noticeBanner, styles.successBanner]}>
+            <Text style={styles.noticeText}>🎯 You are assigned to this task</Text>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Apply Button */}
-      {canApply ? (
-        <Surface style={styles.bottomBar} elevation={4}>
+      {/* Sticky Bottom Bar */}
+      <Surface style={styles.bottomBar} elevation={4}>
+        {/* Apply button */}
+        {canApply && (
           <Button
             mode="contained"
             onPress={handleApply}
             loading={applyMutation.isPending}
             disabled={applyMutation.isPending}
-            style={styles.applyButton}
-            contentStyle={styles.applyButtonContent}
+            style={styles.actionButton}
+            contentStyle={styles.actionButtonContent}
           >
             Apply for this Task
           </Button>
-        </Surface>
-      ) : null}
+        )}
 
-      {/* Withdraw Application Button */}
-      {canWithdraw ? (
-        <Surface style={styles.bottomBar} elevation={4}>
+        {/* Withdraw button */}
+        {canWithdraw && (
           <Button
             mode="outlined"
             onPress={handleWithdraw}
             loading={withdrawMutation.isPending}
-            disabled={withdrawMutation.isPending}
             textColor="#ef4444"
-            style={[styles.applyButton, styles.withdrawButton]}
-            contentStyle={styles.applyButtonContent}
+            style={[styles.actionButton, styles.withdrawButton]}
+            contentStyle={styles.actionButtonContent}
           >
             Withdraw Application
           </Button>
-        </Surface>
-      ) : null}
+        )}
 
-      {/* Own Task Actions - Open Status */}
-      {isOwnTask && task.status === 'open' ? (
-        <Surface style={styles.bottomBar} elevation={4}>
+        {/* Owner actions - Open status */}
+        {isOwnTask && task.status === 'open' && (
           <View style={styles.ownerActions}>
             <View style={styles.buttonRow}>
               <Button
                 mode="outlined"
                 onPress={handleCancel}
                 loading={cancelMutation.isPending}
-                disabled={cancelMutation.isPending}
                 textColor="#ef4444"
-                style={[styles.actionButton, styles.cancelButton]}
+                style={[styles.flexButton, styles.cancelButton]}
               >
                 Cancel
               </Button>
               <Button
                 mode="outlined"
                 onPress={() => router.push(`/task/${taskId}/edit`)}
-                style={styles.actionButton}
+                style={styles.flexButton}
               >
                 Edit
               </Button>
@@ -607,56 +463,49 @@ export default function TaskDetailScreen() {
             <Button
               mode="contained"
               onPress={() => router.push(`/task/${taskId}/applications`)}
-              style={styles.fullWidthButton}
+              style={styles.actionButton}
             >
-              Applications ({task.pending_applications_count || 0})
+              View Applications ({task.pending_applications_count || 0})
             </Button>
           </View>
-        </Surface>
-      ) : null}
+        )}
 
-      {/* Owner Actions - Pending Confirmation */}
-      {canConfirm ? (
-        <Surface style={styles.bottomBar} elevation={4}>
+        {/* Owner actions - Pending confirmation */}
+        {canConfirm && (
           <View style={styles.buttonRow}>
             <Button
               mode="outlined"
               onPress={handleDispute}
               loading={disputeMutation.isPending}
-              disabled={confirmMutation.isPending || disputeMutation.isPending}
               textColor="#ef4444"
-              style={[styles.actionButton, styles.cancelButton]}
+              style={[styles.flexButton, styles.cancelButton]}
             >
               Dispute
             </Button>
             <Button
               mode="contained"
-              onPress={handleConfirmCompletion}
+              onPress={handleConfirm}
               loading={confirmMutation.isPending}
-              disabled={confirmMutation.isPending || disputeMutation.isPending}
-              style={[styles.actionButton, styles.confirmButton]}
+              style={[styles.flexButton, styles.confirmButton]}
             >
-              Confirm Complete
+              Confirm Done
             </Button>
           </View>
-        </Surface>
-      ) : null}
+        )}
 
-      {/* Worker Actions - Can Mark Done */}
-      {canMarkDone ? (
-        <Surface style={styles.bottomBar} elevation={4}>
+        {/* Worker actions - Can mark done */}
+        {canMarkDone && (
           <Button
             mode="contained"
             onPress={handleMarkDone}
             loading={markDoneMutation.isPending}
-            disabled={markDoneMutation.isPending}
-            style={styles.applyButton}
-            contentStyle={styles.applyButtonContent}
+            style={styles.actionButton}
+            contentStyle={styles.actionButtonContent}
           >
             Mark as Done
           </Button>
-        </Surface>
-      ) : null}
+        )}
+      </Surface>
     </SafeAreaView>
   );
 }
@@ -664,284 +513,250 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ffffff',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 16,
   },
   scrollView: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  errorText: {
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-  backButton: {
-    minWidth: 120,
-  },
-  header: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-  },
-  headerTop: {
+
+  // Row 1: Category + Urgent + Flag + Price
+  topRow: {
     flexDirection: 'row',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  topRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  // Custom badges instead of Chip
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
+  topRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  statusBadgeText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '600',
+  category: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   urgentBadge: {
     backgroundColor: '#fef3c7',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-  },
-  urgentBadgeText: {
-    color: '#92400e',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  title: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  price: {
-    color: '#0ea5e9',
-    fontWeight: 'bold',
-  },
-  applicationsBadge: {
-    backgroundColor: '#e0f2fe',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  applicationsBadgeText: {
-    color: '#0369a1',
+  urgentText: {
     fontSize: 12,
-    fontWeight: '500',
+    color: '#92400e',
+    fontWeight: '600',
   },
-  // IMAGE GALLERY STYLES
-  imageGalleryContainer: {
-    backgroundColor: '#000000',
-    marginTop: 12,
-    position: 'relative',
+  flagButton: {
+    padding: 4,
   },
-  imageScrollView: {
-    width: SCREEN_WIDTH,
+  flagIcon: {
+    fontSize: 18,
   },
-  imageWrapper: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
+  price: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#3B82F6',
+  },
+
+  // Row 2: Title
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+
+  // Row 3: User Section
+  userSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  userLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  userInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  userCity: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  messageButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  messageIcon: {
+    fontSize: 20,
+  },
+
+  // Row 4: Description
+  description: {
+    fontSize: 15,
+    color: '#374151',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+
+  // Row 5: Location
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#4b5563',
+    flex: 1,
+  },
+  mapLink: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#eff6ff',
+    borderRadius: 8,
+  },
+  mapLinkText: {
+    fontSize: 13,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+
+  // Row 6: Meta
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  metaText: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  metaDot: {
+    fontSize: 13,
+    color: '#d1d5db',
+    marginHorizontal: 8,
+  },
+  difficultyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  difficultyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
+  },
+  difficultyText: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+
+  // Images
+  imageSection: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
   taskImage: {
-    width: SCREEN_WIDTH,
+    width: SCREEN_WIDTH - 32,
     height: IMAGE_HEIGHT,
   },
   imageCounter: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  imageCounterText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  appliedSection: {
-    backgroundColor: '#dbeafe',
-    padding: 16,
-    marginTop: 12,
-  },
-  noticeSection: {
-    backgroundColor: '#fef3c7',
-    padding: 16,
-    marginTop: 12,
-  },
-  completedSection: {
-    backgroundColor: '#dcfce7',
-    padding: 16,
-    marginTop: 12,
-  },
-  noticeContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  noticeIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  noticeTextContainer: {
-    flex: 1,
-  },
-  noticeTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  noticeText: {
-    color: '#4b5563',
-    lineHeight: 20,
-  },
-  reviewButton: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  description: {
-    color: '#4b5563',
-    lineHeight: 24,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  location: {
-    color: '#4b5563',
-    flex: 1,
-  },
-  mapButton: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  detailsGrid: {
-    gap: 16,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    color: '#6b7280',
-  },
-  detailValue: {
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  categoryBadge: {
-    backgroundColor: '#f3f4f6',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  categoryBadgeText: {
-    color: '#374151',
-    fontSize: 13,
+  imageCounterText: {
+    color: '#ffffff',
+    fontSize: 12,
     fontWeight: '500',
   },
-  creatorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  // Custom Avatar with View
-  creatorAvatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#0ea5e9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  creatorAvatarText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  helperAvatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#10b981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  helperAvatarText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  creatorInfo: {
-    flex: 1,
-  },
-  creatorName: {
-    color: '#1f2937',
-  },
-  ownTaskBadge: {
+
+  // Notice banners
+  noticeBanner: {
     backgroundColor: '#dbeafe',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 4,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
   },
-  ownTaskText: {
-    color: '#1d4ed8',
-    fontSize: 11,
-    fontWeight: '500',
+  warningBanner: {
+    backgroundColor: '#fef3c7',
   },
-  assignedBadge: {
+  successBanner: {
     backgroundColor: '#dcfce7',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 4,
   },
-  assignedText: {
-    color: '#166534',
-    fontSize: 11,
-    fontWeight: '500',
+  noticeText: {
+    fontSize: 14,
+    color: '#1f2937',
+    textAlign: 'center',
   },
-  bottomSpacer: {
-    height: 120,
-  },
+
+  // Bottom bar
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -950,12 +765,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     padding: 16,
     paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
-  applyButton: {
+  actionButton: {
     borderRadius: 12,
   },
-  applyButtonContent: {
-    paddingVertical: 8,
+  actionButtonContent: {
+    paddingVertical: 6,
   },
   withdrawButton: {
     borderColor: '#fecaca',
@@ -967,11 +784,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  actionButton: {
+  flexButton: {
     flex: 1,
-    borderRadius: 12,
-  },
-  fullWidthButton: {
     borderRadius: 12,
   },
   cancelButton: {
@@ -980,44 +794,25 @@ const styles = StyleSheet.create({
   confirmButton: {
     backgroundColor: '#10b981',
   },
-  reviewPromptContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f5f5f5',
-  },
-  reviewPromptCard: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  reviewPromptContent: {
-    alignItems: 'center',
-  },
-  reviewPromptIcon: {
-    fontSize: 48,
-    textAlign: 'center',
+
+  // Review prompt
+  reviewIcon: {
+    fontSize: 64,
     marginBottom: 16,
   },
-  reviewPromptTitle: {
-    textAlign: 'center',
-    fontWeight: 'bold',
+  reviewTitle: {
+    fontSize: 24,
+    fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 12,
-  },
-  reviewPromptText: {
-    textAlign: 'center',
-    color: '#4b5563',
     marginBottom: 8,
-    lineHeight: 22,
   },
-  reviewPromptHint: {
-    textAlign: 'center',
-    color: '#9ca3af',
-    fontSize: 13,
+  reviewText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 24,
   },
-  reviewPromptActions: {
-    justifyContent: 'center',
-    paddingTop: 8,
+  reviewButtons: {
+    flexDirection: 'row',
+    gap: 12,
   },
 });
