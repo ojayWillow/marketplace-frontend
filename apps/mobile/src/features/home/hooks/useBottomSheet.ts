@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { Animated, PanResponder } from 'react-native';
-import { haptic } from '../../../utils/haptics';
+import { haptic } from '../../../../utils/haptics';
 import { SHEET_MIN_HEIGHT, SHEET_MID_HEIGHT, SHEET_MAX_HEIGHT } from '../constants';
 
 export type SheetPosition = 'min' | 'mid' | 'max';
