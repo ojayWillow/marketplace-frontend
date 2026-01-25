@@ -163,6 +163,18 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     emptyPostButton: { marginTop: 16, backgroundColor: JOB_COLOR, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
     emptyPostText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
     
+    // Infinite scroll loading footer
+    loadMoreContainer: {
+      paddingVertical: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreText: {
+      fontSize: 13,
+      color: themeColors.textMuted,
+      fontWeight: '500',
+    },
+    
     // Job Card in list - with blue left border accent
     jobCard: {
       flexDirection: 'row',
