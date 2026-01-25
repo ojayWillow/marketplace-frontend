@@ -34,6 +34,9 @@ export { useFavoritesStore } from './stores/favoritesStore';
 export { useMatchingStore } from './stores/matchingStore';
 export { useToastStore } from './stores/toastStore';
 
+// Service exports
+export { socketService } from './services/socket';
+
 // i18n exports
 export { default as i18n } from './i18n';
 
