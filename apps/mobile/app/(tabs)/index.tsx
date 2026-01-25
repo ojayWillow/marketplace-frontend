@@ -242,30 +242,37 @@ export default function HomeScreen() {
     setMapRegion(region);
   }, []);
 
-  // Handle cluster press - zoom into cluster
-  const handleClusterPress = useCallback((cluster: any) => {
+  // Handle cluster press - zoom into cluster using the library's onClusterPress
+  const onClusterPress = useCallback((cluster: any, markers?: any[]) => {
     haptic.light();
     
     try {
       if (!mapRef.current || !cluster?.geometry?.coordinates) return;
       
-      // Get cluster expansion zoom or calculate region from cluster center
       const [lng, lat] = cluster.geometry.coordinates;
+      const count = cluster.properties?.point_count || 0;
       
-      // Zoom in closer to the cluster
-      const currentDelta = mapRegion?.latitudeDelta || 0.1;
-      const newDelta = Math.max(currentDelta * 0.4, 0.01); // Zoom in by 60%
+      // Calculate a good zoom delta based on cluster size
+      // Smaller clusters need less zoom, larger clusters need more
+      let newDelta = 0.05; // Default
+      if (count <= 3) {
+        newDelta = 0.02;
+      } else if (count <= 10) {
+        newDelta = 0.03;
+      } else {
+        newDelta = 0.04;
+      }
       
       mapRef.current.animateToRegion({
         latitude: lat,
         longitude: lng,
         latitudeDelta: newDelta,
         longitudeDelta: newDelta,
-      }, 400);
+      }, 350);
     } catch (error) {
       console.warn('Error handling cluster press:', error);
     }
-  }, [mapRegion]);
+  }, []);
 
   const handleMarkerPress = useCallback((task: Task) => {
     haptic.light();
@@ -319,35 +326,23 @@ export default function HomeScreen() {
   }, [clearSearch]);
 
   // Custom cluster renderer - Gold coin design
+  // NOTE: This returns just the VIEW content, not a Marker wrapper
   const renderCluster = useCallback((cluster: any) => {
-    const { geometry, properties } = cluster;
+    const { properties } = cluster;
+    const count = properties?.point_count || 0;
     
-    // Safety check
-    if (!geometry?.coordinates || !properties) return null;
-    
-    const count = properties.point_count || 0;
-    
+    // Return the cluster VIEW (the library wraps it in a Marker)
     return (
-      <Marker
-        key={`cluster-${cluster.id}`}
-        coordinate={{
-          latitude: geometry.coordinates[1],
-          longitude: geometry.coordinates[0],
-        }}
-        tracksViewChanges={false}
-        onPress={() => handleClusterPress(cluster)}
-      >
-        <View style={styles.coinClusterContainer}>
-          <View style={styles.coinCluster}>
-            <Text style={styles.coinEuro}>€</Text>
-          </View>
-          <View style={styles.coinBadge}>
-            <Text style={styles.coinBadgeText}>{count}</Text>
-          </View>
+      <View style={styles.coinClusterContainer}>
+        <View style={styles.coinCluster}>
+          <Text style={styles.coinEuro}>€</Text>
         </View>
-      </Marker>
+        <View style={styles.coinBadge}>
+          <Text style={styles.coinBadgeText}>{count}</Text>
+        </View>
+      </View>
     );
-  }, [styles, handleClusterPress]);
+  }, [styles]);
 
   // Render functions
   const renderJobItem = useCallback(({ item }: { item: Task }) => (
@@ -388,13 +383,22 @@ export default function HomeScreen() {
           showsMyLocationButton={false}
           // Clustering options
           clusteringEnabled={true}
-          radius={60}
+          radius={50}
           minPoints={2}
-          maxZoom={17}
+          maxZoom={16}
+          extent={512}
+          nodeSize={64}
+          // Custom cluster appearance
           renderCluster={renderCluster}
-          // Preserve cluster zoom behavior
-          preserveClusterPressBehavior={true}
-          spiralEnabled={false}
+          clusterColor="#FCD34D"
+          clusterTextColor="#92400E"
+          clusterFontFamily="System"
+          // Handle cluster press
+          onClusterPress={onClusterPress}
+          // Animation settings
+          animationEnabled={true}
+          // Don't use spiderifier - we handle overlaps with offset
+          spiderLineColor="transparent"
         >
           {/* Task markers with overlap offset - the library handles clustering */}
           {tasksWithOffset.map((task) => {
