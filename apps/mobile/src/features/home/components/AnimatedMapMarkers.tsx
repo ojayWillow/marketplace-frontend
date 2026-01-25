@@ -1,20 +1,18 @@
 /**
- * AnimatedMapMarkers - Smooth transitions for clustering/unclustering
+ * MapMarkers - Simple, stable marker rendering
  * 
- * IMPORTANT: Markers must ALWAYS render. No marker should ever disappear.
- * Animation is just visual polish - the marker itself must always be visible.
+ * NO animations that could cause markers to be invisible.
+ * Just render everything directly and reliably.
  */
 
-import React, { memo, useEffect, useRef } from 'react';
-import { Animated, View, Text } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { type Task } from '@marketplace/shared';
 import { type Cluster } from '../../../../utils/mapClustering';
 import { getMarkerColor } from '../constants';
 
-const ANIMATION_DURATION = 200;
-
-interface AnimatedTaskMarkerProps {
+interface TaskMarkerProps {
   task: Task;
   isFocused: boolean;
   onPress: (task: Task) => void;
@@ -22,40 +20,19 @@ interface AnimatedTaskMarkerProps {
 }
 
 /**
- * Individual task marker - ALWAYS visible
+ * Individual task marker - simple and direct
  */
-const AnimatedTaskMarker = memo(function AnimatedTaskMarker({
+const TaskMarker = memo(function TaskMarker({
   task,
   isFocused,
   onPress,
   styles,
-}: AnimatedTaskMarkerProps) {
-  // Safety check - don't render if no coordinates
+}: TaskMarkerProps) {
   if (!task.latitude || !task.longitude) {
     return null;
   }
 
   const markerColor = getMarkerColor(task.category);
-  
-  // Simple scale animation on mount
-  const scale = useRef(new Animated.Value(0.8)).current;
-  const opacity = useRef(new Animated.Value(0.7)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, {
-        toValue: 1,
-        tension: 120,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: ANIMATION_DURATION,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   return (
     <Marker
@@ -64,52 +41,36 @@ const AnimatedTaskMarker = memo(function AnimatedTaskMarker({
       tracksViewChanges={false}
       zIndex={isFocused ? 10 : 1}
     >
-      <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <View style={[
-          styles.priceMarker,
-          { borderColor: markerColor },
-          isFocused && styles.priceMarkerFocused
-        ]}>
-          <Text style={[styles.priceMarkerText, { color: markerColor }]}>
-            €{task.budget?.toFixed(0) || '0'}
-          </Text>
-        </View>
-      </Animated.View>
+      <View style={[
+        styles.priceMarker,
+        { borderColor: markerColor },
+        isFocused && styles.priceMarkerFocused
+      ]}>
+        <Text style={[styles.priceMarkerText, { color: markerColor }]}>
+          €{task.budget?.toFixed(0) || '0'}
+        </Text>
+      </View>
     </Marker>
   );
 });
 
-interface AnimatedClusterMarkerProps {
+interface ClusterMarkerProps {
   cluster: Cluster<Task>;
   onPress: (cluster: Cluster<Task>) => void;
   styles: any;
 }
 
 /**
- * Cluster marker (coin) - ALWAYS visible when cluster exists
+ * Cluster marker (coin) - simple and direct
  */
-const AnimatedClusterMarker = memo(function AnimatedClusterMarker({
+const ClusterMarker = memo(function ClusterMarker({
   cluster,
   onPress,
   styles,
-}: AnimatedClusterMarkerProps) {
-  // Safety check
+}: ClusterMarkerProps) {
   if (!cluster.latitude || !cluster.longitude) {
     return null;
   }
-
-  // Start VISIBLE, just animate scale for polish
-  const scale = useRef(new Animated.Value(0.8)).current;
-  const opacity = useRef(new Animated.Value(1)).current; // START AT 1!
-
-  useEffect(() => {
-    Animated.spring(scale, {
-      toValue: 1,
-      tension: 120,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  }, []);
 
   return (
     <Marker
@@ -118,16 +79,14 @@ const AnimatedClusterMarker = memo(function AnimatedClusterMarker({
       tracksViewChanges={false}
       zIndex={5}
     >
-      <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <View style={styles.coinClusterContainer}>
-          <View style={styles.coinCluster}>
-            <Text style={styles.coinEuro}>€</Text>
-          </View>
-          <View style={styles.coinBadge}>
-            <Text style={styles.coinBadgeText}>{cluster.items.length}</Text>
-          </View>
+      <View style={styles.coinClusterContainer}>
+        <View style={styles.coinCluster}>
+          <Text style={styles.coinEuro}>€</Text>
         </View>
-      </Animated.View>
+        <View style={styles.coinBadge}>
+          <Text style={styles.coinBadgeText}>{cluster.items.length}</Text>
+        </View>
+      </View>
     </Marker>
   );
 });
@@ -142,8 +101,8 @@ interface AnimatedMapMarkersProps {
 }
 
 /**
- * Main component - renders ALL clusters/markers
- * Every job MUST be represented either as individual marker or inside a cluster
+ * Main component - renders ALL clusters and markers
+ * No animations, just reliable rendering.
  */
 export const AnimatedMapMarkers = memo(function AnimatedMapMarkers({
   clusters,
@@ -153,16 +112,15 @@ export const AnimatedMapMarkers = memo(function AnimatedMapMarkers({
   styles,
 }: AnimatedMapMarkersProps) {
   
-  // Debug: log cluster count
-  // console.log(`[AnimatedMapMarkers] Rendering ${clusters.length} clusters`);
+  // Debug logging
+  // console.log(`[MapMarkers] Rendering ${clusters.length} clusters/markers`);
 
   return (
     <>
       {clusters.map((cluster) => {
         if (cluster.isCluster) {
-          // Render cluster coin
           return (
-            <AnimatedClusterMarker
+            <ClusterMarker
               key={cluster.id}
               cluster={cluster}
               onPress={onClusterPress}
@@ -170,12 +128,11 @@ export const AnimatedMapMarkers = memo(function AnimatedMapMarkers({
             />
           );
         } else {
-          // Render individual task marker
           const task = cluster.items[0];
           if (!task) return null;
           
           return (
-            <AnimatedTaskMarker
+            <TaskMarker
               key={`task-${task.id}`}
               task={task}
               isFocused={focusedTaskId === task.id}
