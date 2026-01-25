@@ -126,7 +126,7 @@ export default function TaskDetailScreen() {
     try {
       await Share.share({
         message: `${task?.title} - €${task?.budget || task?.reward || 0}\n${task?.description}`,
-        url: `https://yourapp.com/task/${taskId}`, // Replace with your actual deep link
+        url: `https://yourapp.com/task/${taskId}`,
       });
     } catch (error) {
       console.error('Share error:', error);
@@ -312,11 +312,11 @@ export default function TaskDetailScreen() {
             </View>
           </View>
 
-          {/* Title */}
-          <Text style={styles.heroTitle}>{task.title}</Text>
-
-          {/* Price */}
-          <Text style={styles.heroPrice}>€{task.budget || task.reward || 0}</Text>
+          {/* Title + Price Row */}
+          <View style={styles.titlePriceRow}>
+            <Text style={styles.heroTitle} numberOfLines={2}>{task.title}</Text>
+            <Text style={styles.heroPrice}>€{task.budget || task.reward || 0}</Text>
+          </View>
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
@@ -430,20 +430,40 @@ export default function TaskDetailScreen() {
       {/* STICKY BOTTOM BAR */}
       <View style={styles.bottomBar}>
         {canApply && (
-          <Button mode="contained" onPress={handleApply} loading={applyMutation.isPending} style={styles.primaryBtn} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
+          <Button 
+            mode="contained" 
+            onPress={handleApply} 
+            loading={applyMutation.isPending} 
+            style={styles.primaryBtn} 
+            contentStyle={styles.btnContent} 
+            labelStyle={styles.btnLabel}
+          >
             Apply Now
           </Button>
         )}
 
         {canWithdraw && (
-          <Button mode="outlined" onPress={handleWithdraw} loading={withdrawMutation.isPending} textColor="#ef4444" style={[styles.primaryBtn, styles.dangerBtn]} contentStyle={styles.btnContent}>
+          <Button 
+            mode="outlined" 
+            onPress={handleWithdraw} 
+            loading={withdrawMutation.isPending} 
+            textColor="#ef4444" 
+            style={[styles.primaryBtn, styles.dangerBtn]} 
+            contentStyle={styles.btnContent}
+          >
             Withdraw Application
           </Button>
         )}
 
         {isOwnTask && task.status === 'open' && (
           <View style={styles.ownerActions}>
-            <Button mode="contained" onPress={() => router.push(`/task/${taskId}/applications`)} style={styles.primaryBtn} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
+            <Button 
+              mode="contained" 
+              onPress={() => router.push(`/task/${taskId}/applications`)} 
+              style={styles.primaryBtn} 
+              contentStyle={styles.btnContent} 
+              labelStyle={styles.btnLabel}
+            >
               View Applications ({applicantsCount})
             </Button>
             <View style={styles.ownerBtnRow}>
@@ -469,7 +489,14 @@ export default function TaskDetailScreen() {
         )}
 
         {canMarkDone && (
-          <Button mode="contained" onPress={handleMarkDone} loading={markDoneMutation.isPending} style={[styles.primaryBtn, styles.successBtn]} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
+          <Button 
+            mode="contained" 
+            onPress={handleMarkDone} 
+            loading={markDoneMutation.isPending} 
+            style={[styles.primaryBtn, styles.successBtn]} 
+            contentStyle={styles.btnContent} 
+            labelStyle={styles.btnLabel}
+          >
             Mark as Done
           </Button>
         )}
@@ -536,18 +563,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     opacity: 0.6,
   },
+  
+  // Title + Price Row (NEW - Combined)
+  titlePriceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    gap: 12,
+  },
   heroTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 8,
-    lineHeight: 30,
+    flex: 1,
+    lineHeight: 28,
   },
   heroPrice: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: ACCENT_COLOR,
-    marginBottom: 20,
   },
 
   // Stats Row
