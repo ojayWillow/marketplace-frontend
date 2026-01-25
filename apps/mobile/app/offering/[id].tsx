@@ -8,7 +8,7 @@ import { useState } from 'react';
 import StarRating from '../../components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_HEIGHT = 200;
+const IMAGE_HEIGHT = 180;
 const ACCENT_COLOR = '#f97316';
 
 const formatTimeAgo = (dateString: string | undefined): string => {
@@ -201,7 +201,6 @@ export default function OfferingDetailScreen() {
   
   const rating = offering?.creator_rating ?? 0;
   const completedJobs = offering?.creator_completed_tasks ?? 0;
-  const completionRate = completedJobs > 0 ? 100 : 0; // Mock for now
 
   const offeringImages = offering?.images
     ? offering.images.split(',').filter(Boolean).map(url => getImageUrl(url))
@@ -245,114 +244,47 @@ export default function OfferingDetailScreen() {
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
-        {/* HERO CARD */}
+        {/* COMPACT HERO CARD */}
         <View style={styles.heroCard}>
-          {/* Category + Status */}
+          {/* Row 1: Category + Price */}
           <View style={styles.topRow}>
             <View style={styles.categoryBadge}>
-              <Text style={styles.categoryIcon}>{categoryData?.icon || '💼'}</Text>
-              <Text style={styles.categoryText}>{categoryData?.label || offering.category}</Text>
+              <Text style={styles.categoryText}>{categoryData?.icon} {categoryData?.label || offering.category}</Text>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
             </View>
-            <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.flagIcon}>🚩</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Title + Badges */}
-          <View style={styles.titleRow}>
-            <Text style={styles.heroTitle}>{offering.title}</Text>
-            <View style={styles.badgesRow}>
-              {offering.is_boost_active && (
-                <View style={styles.boostBadge}>
-                  <Text style={styles.badgeText}>⚡ Boosted</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Price */}
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Starting at</Text>
             <Text style={styles.price}>{priceDisplay}</Text>
           </View>
 
-          {/* Stats Grid - REDESIGNED */}
-          <View style={styles.statsGrid}>
-            <View style={[styles.statBox, styles.statBoxRating]}>
-              <Text style={styles.statIcon}>⭐</Text>
-              <Text style={styles.statNumber}>{rating > 0 ? rating.toFixed(1) : '–'}</Text>
-              <Text style={styles.statLabel}>Rating</Text>
+          {/* Row 2: Title */}
+          <Text style={styles.heroTitle}>{offering.title}</Text>
+
+          {/* Row 3: Compact Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>⭐ {rating > 0 ? rating.toFixed(1) : '–'}</Text>
             </View>
-            <View style={[styles.statBox, styles.statBoxCompleted]}>
-              <Text style={styles.statIcon}>✅</Text>
-              <Text style={styles.statNumber}>{completedJobs}</Text>
-              <Text style={styles.statLabel}>Jobs Done</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>✓ {completedJobs} done</Text>
             </View>
-            <View style={[styles.statBox, styles.statBoxResponse]}>
-              <Text style={styles.statIcon}>⚡</Text>
-              <Text style={styles.statNumber}>~2h</Text>
-              <Text style={styles.statLabel}>Response</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>⚡ ~2h reply</Text>
             </View>
           </View>
 
-          {/* Trust Badges */}
-          {!isOwnOffering && (
-            <View style={styles.trustBadges}>
-              <View style={styles.trustBadge}>
-                <Text style={styles.trustIcon}>✓</Text>
-                <Text style={styles.trustText}>ID Verified</Text>
-              </View>
-              {completedJobs >= 5 && (
-                <View style={styles.trustBadge}>
-                  <Text style={styles.trustIcon}>🏆</Text>
-                  <Text style={styles.trustText}>Experienced</Text>
-                </View>
-              )}
-              {rating >= 4.5 && (
-                <View style={styles.trustBadge}>
-                  <Text style={styles.trustIcon}>⭐</Text>
-                  <Text style={styles.trustText}>Top Rated</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Posted time */}
-          <Text style={styles.postedTime}>Posted {timeAgo}</Text>
-        </View>
-
-        {/* IMAGES */}
-        {offeringImages.length > 0 && (
-          <View style={styles.imageCard}>
-            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-              {offeringImages.map((uri, i) => (
-                <Image key={i} source={{ uri }} style={styles.offeringImage} resizeMode="cover" />
-              ))}
-            </ScrollView>
-            {offeringImages.length > 1 && (
-              <View style={styles.imageCounter}>
-                <Text style={styles.imageCounterText}>{offeringImages.length} photos</Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* OFFERED BY */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Service Provider</Text>
-          <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
+          {/* Row 4: Provider inline */}
+          <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
             {offering.creator_avatar ? (
-              <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatar} />
+              <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
             ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{offering.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
+              <View style={styles.avatarSmallPlaceholder}>
+                <Text style={styles.avatarSmallText}>{offering.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
               </View>
             )}
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{offering.creator_name || 'Anonymous'}</Text>
-              {hasRating && <StarRating rating={offering.creator_rating || 0} reviewCount={offering.creator_review_count} size={14} showCount />}
-              {offering.creator_city && <Text style={styles.userCity}>📍 {offering.creator_city}</Text>}
+            <View style={styles.providerInfo}>
+              <Text style={styles.providerName}>{offering.creator_name}</Text>
+              {hasRating && <StarRating rating={rating} reviewCount={offering.creator_review_count} size={12} showCount />}
             </View>
             {!isOwnOffering && (
               <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
@@ -360,42 +292,63 @@ export default function OfferingDetailScreen() {
               </TouchableOpacity>
             )}
           </TouchableOpacity>
+
+          {/* Posted + Report */}
+          <View style={styles.footerRow}>
+            <Text style={styles.postedTime}>Posted {timeAgo}</Text>
+            <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.reportText}>🚩 Report</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* DESCRIPTION */}
+        {/* IMAGES (if any) */}
+        {offeringImages.length > 0 && (
+          <View style={styles.imageCard}>
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+              {offeringImages.map((uri, i) => (
+                <Image key={i} source={{ uri }} style={styles.offeringImage} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* DESCRIPTION (collapsible feel) */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>About This Service</Text>
+          <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.descriptionText}>{offering.description}</Text>
         </View>
 
         {/* LOCATION */}
         {offering.location && (
           <View style={styles.sectionCard}>
-            <View style={styles.locationHeader}>
-              <Text style={styles.sectionTitle}>Service Area</Text>
+            <View style={styles.locationRow}>
+              <View style={styles.locationInfo}>
+                <Text style={styles.sectionTitle}>Service Area</Text>
+                <Text style={styles.locationText}>{offering.location}</Text>
+                {offering.service_radius && (
+                  <Text style={styles.radiusText}>📍 {offering.service_radius}km radius</Text>
+                )}
+              </View>
               {distance !== undefined && distance !== null && (
                 <View style={styles.distanceBadge}>
-                  <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+                  <Text style={styles.distanceText}>{distance.toFixed(1)}km</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.locationAddress}>{offering.location}</Text>
-            {offering.service_radius && (
-              <Text style={styles.serviceRadius}>📍 Available within {offering.service_radius}km radius</Text>
-            )}
             {offering.latitude && offering.longitude && (
               <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
-                <Text style={styles.mapBtnText}>🗺️ Open in Maps</Text>
+                <Text style={styles.mapBtnText}>🗺️ Map</Text>
               </TouchableOpacity>
             )}
           </View>
         )}
 
-        {/* STATUS NOTICE */}
+        {/* OWNER NOTICE */}
         {isOwnOffering && (
           <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
             <Text style={styles.noticeText}>
-              {offering.status === 'active' ? '✅ Your service is live and visible' : '⏸️ Your service is paused'}
+              {offering.status === 'active' ? '✅ Live' : '⏸️ Paused'}
             </Text>
           </View>
         )}
@@ -412,7 +365,6 @@ export default function OfferingDetailScreen() {
             contentStyle={styles.btnContent} 
             labelStyle={styles.btnLabel}
             buttonColor={ACCENT_COLOR}
-            icon="message-text"
           >
             Contact Provider
           </Button>
@@ -420,44 +372,20 @@ export default function OfferingDetailScreen() {
 
         {isOwnOffering && (
           <View style={styles.ownerActions}>
-            <View style={styles.ownerBtnRow}>
-              <Button 
-                mode="outlined" 
-                onPress={handleToggleStatus} 
-                loading={pauseMutation.isPending || activateMutation.isPending}
-                style={styles.halfBtn}
-              >
-                {offering.status === 'active' ? 'Pause' : 'Activate'}
+            <Button mode="outlined" onPress={handleToggleStatus} style={styles.ownerBtn} compact>
+              {offering.status === 'active' ? 'Pause' : 'Activate'}
+            </Button>
+            <Button mode="outlined" onPress={() => router.push(`/offering/${offeringId}/edit`)} style={styles.ownerBtn} compact>
+              Edit
+            </Button>
+            {!offering.is_boost_active && (
+              <Button mode="contained" onPress={handleBoost} style={styles.ownerBtn} buttonColor="#f59e0b" compact>
+                ⚡
               </Button>
-              <Button 
-                mode="outlined" 
-                onPress={() => router.push(`/offering/${offeringId}/edit`)} 
-                style={styles.halfBtn}
-              >
-                Edit
-              </Button>
-            </View>
-            <View style={styles.ownerBtnRow}>
-              {!offering.is_boost_active && (
-                <Button 
-                  mode="contained" 
-                  onPress={handleBoost} 
-                  loading={boostMutation.isPending}
-                  style={[styles.halfBtn, styles.boostBtn]}
-                >
-                  ⚡ Boost
-                </Button>
-              )}
-              <Button 
-                mode="outlined" 
-                onPress={handleDelete} 
-                loading={deleteMutation.isPending}
-                textColor="#ef4444" 
-                style={[styles.halfBtn, styles.dangerBtn]}
-              >
-                Delete
-              </Button>
-            </View>
+            )}
+            <Button mode="outlined" onPress={handleDelete} textColor="#ef4444" style={styles.ownerBtn} compact>
+              🗑️
+            </Button>
           </View>
         )}
       </View>
@@ -465,17 +393,16 @@ export default function OfferingDetailScreen() {
       {/* CONTACT DIALOG */}
       <Portal>
         <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
-          <Dialog.Title>Send Message</Dialog.Title>
+          <Dialog.Title>Message</Dialog.Title>
           <Dialog.Content>
-            <Text style={styles.dialogSubtitle}>Message {offering.creator_name}</Text>
             <TextInput
               mode="outlined"
               value={contactMessage}
               onChangeText={setContactMessage}
               multiline
-              numberOfLines={4}
+              numberOfLines={3}
               style={styles.dialogInput}
-              placeholder="Type your message..."
+              placeholder="Your message..."
             />
           </Dialog.Content>
           <Dialog.Actions>
@@ -495,180 +422,90 @@ export default function OfferingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { fontSize: 16, color: '#6b7280', marginBottom: 16 },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 120 },
+  scrollContent: { padding: 12, paddingBottom: 100 },
 
-  // Hero Card - REDESIGNED
+  // HERO CARD - COMPACT
   heroCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 12,
-    borderLeftWidth: 5,
-    borderLeftColor: ACCENT_COLOR,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  categoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff7ed',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  categoryIcon: { fontSize: 16 },
-  categoryText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  flagIcon: { fontSize: 18, opacity: 0.4 },
-
-  titleRow: { marginBottom: 12 },
-  heroTitle: { fontSize: 24, fontWeight: '800', color: '#111827', lineHeight: 32, marginBottom: 8 },
-  badgesRow: { flexDirection: 'row', gap: 8 },
-  boostBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  badgeText: { fontSize: 12, fontWeight: '600', color: '#92400e' },
-
-  priceContainer: { marginBottom: 20 },
-  priceLabel: { fontSize: 12, color: '#6b7280', marginBottom: 4 },
-  price: { fontSize: 32, fontWeight: '900', color: ACCENT_COLOR },
-
-  // Stats Grid - COLORFUL BOXES
-  statsGrid: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  statBox: {
-    flex: 1,
+    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statBoxRating: { backgroundColor: '#fef3c7' },
-  statBoxCompleted: { backgroundColor: '#d1fae5' },
-  statBoxResponse: { backgroundColor: '#dbeafe' },
-  statIcon: { fontSize: 24 },
-  statNumber: { fontSize: 20, fontWeight: '800', color: '#111827' },
-  statLabel: { fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 },
-
-  // Trust Badges
-  trustBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-  },
-  trustIcon: { fontSize: 12, color: '#16a34a' },
-  trustText: { fontSize: 11, fontWeight: '600', color: '#16a34a' },
-
-  postedTime: { fontSize: 12, color: '#9ca3af', marginTop: 8 },
-
-  // Images
-  imageCard: { borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
-  offeringImage: { width: SCREEN_WIDTH - 32, height: IMAGE_HEIGHT },
-  imageCounter: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  imageCounterText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
-
-  // Section Card
-  sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: ACCENT_COLOR,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  categoryBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  categoryText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  price: { fontSize: 22, fontWeight: '800', color: ACCENT_COLOR },
+
+  heroTitle: { fontSize: 20, fontWeight: '700', color: '#111', marginBottom: 12 },
+
+  // Stats Row - SIMPLE
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderRadius: 10,
+    padding: 10,
     marginBottom: 12,
   },
-  descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  statDivider: { width: 1, height: 16, backgroundColor: '#e5e7eb' },
 
-  // User Row
-  userRow: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#fff7ed' },
-  avatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: ACCENT_COLOR,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff7ed',
+  // Provider Row - INLINE
+  providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  avatarSmall: { width: 40, height: 40, borderRadius: 20 },
+  avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  avatarSmallText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  providerInfo: { flex: 1, marginLeft: 10, gap: 2 },
+  providerName: { fontSize: 15, fontWeight: '600', color: '#111' },
+  messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  messageBtnText: { fontSize: 16 },
+
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  postedTime: { fontSize: 12, color: '#9ca3af' },
+  reportText: { fontSize: 12, color: '#9ca3af' },
+
+  // Images
+  imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
+  offeringImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
+
+  // Section Card - COMPACT
+  sectionCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
   },
-  avatarText: { color: '#ffffff', fontSize: 22, fontWeight: '700' },
-  userInfo: { flex: 1, marginLeft: 12, gap: 4 },
-  userName: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  userCity: { fontSize: 13, color: '#6b7280' },
-  messageBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: ACCENT_COLOR,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: ACCENT_COLOR,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  messageBtnText: { fontSize: 22 },
+  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  descriptionText: { fontSize: 15, color: '#374151', lineHeight: 22 },
 
   // Location
-  locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  distanceBadge: {
-    backgroundColor: '#fff7ed',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  distanceText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
-  locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 8, fontWeight: '500' },
-  serviceRadius: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
-  mapBtn: {
-    backgroundColor: '#fff7ed',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 14,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: '#fed7aa',
-  },
-  mapBtnText: { fontSize: 14, fontWeight: '700', color: ACCENT_COLOR },
+  locationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  locationInfo: { flex: 1 },
+  locationText: { fontSize: 14, color: '#374151', marginBottom: 4 },
+  radiusText: { fontSize: 12, color: '#6b7280' },
+  distanceBadge: { backgroundColor: '#fff7ed', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  distanceText: { fontSize: 12, fontWeight: '700', color: ACCENT_COLOR },
+  mapBtn: { backgroundColor: '#fff7ed', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', marginTop: 8 },
+  mapBtnText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
 
-  // Notices
-  noticeCard: { borderRadius: 14, padding: 16, marginBottom: 12 },
+  // Notice
+  noticeCard: { borderRadius: 10, padding: 10, marginBottom: 10, alignItems: 'center' },
   noticeWarning: { backgroundColor: '#fef3c7' },
   noticeSuccess: { backgroundColor: '#dcfce7' },
-  noticeText: { fontSize: 14, fontWeight: '600', color: '#1f2937', textAlign: 'center' },
+  noticeText: { fontSize: 13, fontWeight: '600', color: '#374151' },
 
   // Bottom Bar
   bottomBar: {
@@ -676,27 +513,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 34,
+    backgroundColor: '#fff',
+    padding: 12,
+    paddingBottom: 30,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
   },
-  primaryBtn: { borderRadius: 16 },
-  btnContent: { paddingVertical: 10 },
-  btnLabel: { fontSize: 17, fontWeight: '700' },
-  ownerActions: { gap: 10 },
-  ownerBtnRow: { flexDirection: 'row', gap: 10 },
-  halfBtn: { flex: 1, borderRadius: 14 },
-  boostBtn: { backgroundColor: '#f59e0b' },
-  dangerBtn: { borderColor: '#fecaca' },
+  primaryBtn: { borderRadius: 12 },
+  btnContent: { paddingVertical: 6 },
+  btnLabel: { fontSize: 16, fontWeight: '700' },
+  ownerActions: { flexDirection: 'row', gap: 8 },
+  ownerBtn: { flex: 1, borderRadius: 10 },
 
   // Dialog
-  dialogSubtitle: { color: '#6b7280', marginBottom: 16 },
-  dialogInput: { minHeight: 100 },
+  dialogInput: { minHeight: 80 },
 });
