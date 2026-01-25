@@ -280,9 +280,9 @@ export default function TaskDetailScreen() {
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
-        {/* HERO CARD */}
+        {/* HERO CARD - Contains everything important */}
         <View style={styles.heroCard}>
-          {/* ROW 1: Category + Urgent + Flag + Price - ALL ON SAME LINE */}
+          {/* ROW 1: Category + Urgent + Flag + Price */}
           <View style={styles.topRow}>
             <View style={styles.topRowLeft}>
               <Text style={styles.categoryText}>{categoryData?.icon || '📋'} {categoryData?.label || task.category}</Text>
@@ -303,11 +303,32 @@ export default function TaskDetailScreen() {
           {/* ROW 2: Title */}
           <Text style={styles.heroTitle}>{task.title}</Text>
 
-          {/* ROW 3: Stats */}
+          {/* ROW 3: POSTED BY - Now inside hero card */}
+          <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
+            {task.creator_avatar ? (
+              <Image source={{ uri: getImageUrl(task.creator_avatar) }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{task.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
+              </View>
+            )}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{task.creator_name || 'Anonymous'}</Text>
+              {hasRating && <StarRating rating={task.creator_rating || 0} reviewCount={task.creator_review_count} size={12} showCount />}
+              {task.creator_city && <Text style={styles.userCity}>📍 {task.creator_city}</Text>}
+            </View>
+            {!isOwnTask && (
+              <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
+                <Text style={styles.messageBtnText}>💬</Text>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+
+          {/* ROW 4: Stats - Below posted by */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{applicantsCount}</Text>
-              <Text style={styles.statLabel}>Applicants</Text>
+              <Text style={styles.statLabel}>APPLICANTS</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -315,12 +336,12 @@ export default function TaskDetailScreen() {
                 <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
                 <Text style={styles.statValue}>{difficulty.label}</Text>
               </View>
-              <Text style={styles.statLabel}>Difficulty</Text>
+              <Text style={styles.statLabel}>DIFFICULTY</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
-              <Text style={styles.statLabel}>Posted</Text>
+              <Text style={styles.statLabel}>POSTED</Text>
             </View>
           </View>
         </View>
@@ -341,53 +362,31 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
-        {/* POSTED BY */}
+        {/* DESCRIPTION + LOCATION - Combined into one card */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Posted by</Text>
-          <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
-            {task.creator_avatar ? (
-              <Image source={{ uri: getImageUrl(task.creator_avatar) }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{task.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
-              </View>
-            )}
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{task.creator_name || 'Anonymous'}</Text>
-              {hasRating && <StarRating rating={task.creator_rating || 0} reviewCount={task.creator_review_count} size={14} showCount />}
-              {task.creator_city && <Text style={styles.userCity}>📍 {task.creator_city}</Text>}
-            </View>
-            {!isOwnTask && (
-              <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
-                <Text style={styles.messageBtnText}>💬</Text>
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* DESCRIPTION */}
-        <View style={styles.sectionCard}>
+          {/* Description */}
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.descriptionText}>{task.description}</Text>
-        </View>
 
-        {/* LOCATION */}
-        {task.location && (
-          <View style={styles.sectionCard}>
-            <View style={styles.locationHeader}>
-              <Text style={styles.sectionTitle}>Location</Text>
-              {distance !== undefined && distance !== null && (
-                <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+          {/* Location - in same card */}
+          {task.location && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.locationHeader}>
+                <Text style={styles.sectionTitle}>Location</Text>
+                {distance !== undefined && distance !== null && (
+                  <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+                )}
+              </View>
+              <Text style={styles.locationAddress}>{task.location}</Text>
+              {task.latitude && task.longitude && (
+                <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
+                  <Text style={styles.mapBtnText}>🗺️ Open in Maps</Text>
+                </TouchableOpacity>
               )}
-            </View>
-            <Text style={styles.locationAddress}>{task.location}</Text>
-            {task.latitude && task.longitude && (
-              <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
-                <Text style={styles.mapBtnText}>🗺️ Open in Maps</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+            </>
+          )}
+        </View>
 
         {/* NOTICES */}
         {hasApplied && (
@@ -488,14 +487,14 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { fontSize: 16, color: '#6b7280', marginBottom: 16 },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 120 },
+  scrollContent: { padding: 12, paddingBottom: 120 },
 
-  // Hero Card
+  // Hero Card - Now contains Posted By + Stats
   heroCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
+    padding: 16,
+    marginBottom: 10,
     borderLeftWidth: 4,
     borderLeftColor: ACCENT_COLOR,
     shadowColor: '#000',
@@ -505,12 +504,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   
-  // TOP ROW: Category + Flag + Price on SAME LINE
+  // TOP ROW
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   topRowLeft: {
     flexDirection: 'row',
@@ -523,7 +522,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#6b7280',
   },
@@ -537,85 +536,109 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   flagIcon: {
-    fontSize: 18,
+    fontSize: 16,
     opacity: 0.5,
   },
   price: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: ACCENT_COLOR,
   },
   
   // Title
   heroTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 16,
-    lineHeight: 28,
+    marginBottom: 12,
+    lineHeight: 26,
   },
+
+  // User Row - Now inside hero card
+  userRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  avatarPlaceholder: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
+  userInfo: { flex: 1, marginLeft: 10, gap: 2 },
+  userName: { fontSize: 15, fontWeight: '600', color: '#111827' },
+  userCity: { fontSize: 12, color: '#6b7280' },
+  messageBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  messageBtnText: { fontSize: 18 },
 
   // Stats Row
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 10,
+    padding: 12,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statDivider: { width: 1, height: 28, backgroundColor: '#e5e7eb' },
+  statValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  statLabel: { fontSize: 9, color: '#9ca3af', marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 24, backgroundColor: '#e5e7eb' },
   difficultyRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   difficultyDot: { width: 8, height: 8, borderRadius: 4 },
 
   // Image Card
-  imageCard: { borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
-  taskImage: { width: SCREEN_WIDTH - 32, height: IMAGE_HEIGHT },
-  imageCounter: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10, position: 'relative' },
+  taskImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
+  imageCounter: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
   imageCounterText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
 
-  // Section Card
-  sectionCard: { backgroundColor: '#ffffff', borderRadius: 16, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  sectionTitle: { fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
-  descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
+  // Section Card - Now contains Description + Location
+  sectionCard: { 
+    backgroundColor: '#ffffff', 
+    borderRadius: 12, 
+    padding: 16, 
+    marginBottom: 10, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 4, 
+    elevation: 2 
+  },
+  sectionTitle: { 
+    fontSize: 11, 
+    fontWeight: '700', 
+    color: '#9ca3af', 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5, 
+    marginBottom: 8 
+  },
+  descriptionText: { fontSize: 15, color: '#1f2937', lineHeight: 22 },
 
-  // User Row
-  userRow: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
-  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
-  userInfo: { flex: 1, marginLeft: 12, gap: 3 },
-  userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  userCity: { fontSize: 13, color: '#6b7280' },
-  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
-  messageBtnText: { fontSize: 20 },
+  // Divider between description and location
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 16,
+  },
 
   // Location
-  locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
-  locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 12 },
-  mapBtn: { backgroundColor: '#eff6ff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
-  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+  locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  distanceText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
+  locationAddress: { fontSize: 14, color: '#1f2937', marginBottom: 10 },
+  mapBtn: { backgroundColor: '#eff6ff', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, alignSelf: 'flex-start' },
+  mapBtnText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
 
   // Notices
-  noticeCard: { borderRadius: 12, padding: 14, marginBottom: 12 },
+  noticeCard: { borderRadius: 10, padding: 12, marginBottom: 10 },
   noticeInfo: { backgroundColor: '#dbeafe' },
   noticeWarning: { backgroundColor: '#fef3c7' },
   noticeSuccess: { backgroundColor: '#dcfce7' },
-  noticeText: { fontSize: 14, fontWeight: '500', color: '#1f2937', textAlign: 'center' },
+  noticeText: { fontSize: 13, fontWeight: '500', color: '#1f2937', textAlign: 'center' },
 
   // Bottom Bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: 16, paddingBottom: 34, borderTopWidth: 1, borderTopColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
-  primaryBtn: { borderRadius: 14 },
-  btnContent: { paddingVertical: 8 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: 12, paddingBottom: 30, borderTopWidth: 1, borderTopColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
+  primaryBtn: { borderRadius: 12 },
+  btnContent: { paddingVertical: 6 },
   btnLabel: { fontSize: 16, fontWeight: '700' },
   dangerBtn: { borderColor: '#fecaca' },
   successBtn: { backgroundColor: '#10b981' },
-  ownerActions: { gap: 10 },
-  ownerBtnRow: { flexDirection: 'row', gap: 10 },
-  halfBtn: { flex: 1, borderRadius: 14 },
+  ownerActions: { gap: 8 },
+  ownerBtnRow: { flexDirection: 'row', gap: 8 },
+  halfBtn: { flex: 1, borderRadius: 12 },
 
   // Celebrate
   celebrateIcon: { fontSize: 64, marginBottom: 16 },
