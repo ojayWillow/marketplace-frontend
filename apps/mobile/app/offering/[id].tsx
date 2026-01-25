@@ -1,10 +1,48 @@
-import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions, Share } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Surface, ActivityIndicator, Portal, Dialog, TextInput } from 'react-native-paper';
+import { Text, Button, ActivityIndicator, IconButton, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, type Offering } from '@marketplace/shared';
+import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, getCategoryByKey, getImageUrl } from '@marketplace/shared';
 import { useState } from 'react';
+import StarRating from '../../components/StarRating';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IMAGE_HEIGHT = 200;
+const ACCENT_COLOR = '#3B82F6';
+
+const formatTimeAgo = (dateString: string | undefined): string => {
+  if (!dateString) return '';
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return past.toLocaleDateString();
+};
+
+const getPriceDisplay = (price: number | undefined, priceType: string | undefined): string => {
+  if (!price) return 'Negotiable';
+  switch (priceType) {
+    case 'hourly': return `€${price}/hr`;
+    case 'fixed': return `€${price}`;
+    case 'negotiable': return `From €${price}`;
+    default: return `€${price}`;
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'active': return '#10b981';
+    case 'paused': return '#f59e0b';
+    default: return '#6b7280';
+  }
+};
 
 export default function OfferingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,8 +66,7 @@ export default function OfferingDetailScreen() {
       router.push(`/conversation/${data.conversation_id}`);
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to start conversation.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.error || 'Failed to start conversation.');
     },
   });
 
@@ -41,8 +78,7 @@ export default function OfferingDetailScreen() {
       router.back();
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to delete service.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.error || 'Failed to delete.');
     },
   });
 
@@ -51,11 +87,9 @@ export default function OfferingDetailScreen() {
     onSuccess: () => {
       Alert.alert('Paused', 'Your service has been paused.');
       queryClient.invalidateQueries({ queryKey: ['offering', offeringId] });
-      queryClient.invalidateQueries({ queryKey: ['offerings'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to pause service.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.error || 'Failed.');
     },
   });
 
@@ -64,39 +98,39 @@ export default function OfferingDetailScreen() {
     onSuccess: () => {
       Alert.alert('Activated', 'Your service is now active.');
       queryClient.invalidateQueries({ queryKey: ['offering', offeringId] });
-      queryClient.invalidateQueries({ queryKey: ['offerings'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to activate service.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.error || 'Failed.');
     },
   });
 
   const boostMutation = useMutation({
     mutationFn: () => boostOffering(offeringId),
     onSuccess: (data) => {
-      Alert.alert('Boosted!', `Your service is now boosted for ${data.boost_duration_hours} hours!`);
+      Alert.alert('Boosted!', `Your service is boosted for ${data.boost_duration_hours} hours!`);
       queryClient.invalidateQueries({ queryKey: ['offering', offeringId] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || 'Failed to boost service.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.error || 'Failed.');
     },
   });
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `${offering?.title} - ${getPriceDisplay(offering?.price, offering?.price_type)}\n${offering?.description}`,
+      });
+    } catch (e) {}
+  };
+
   const handleContact = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Sign In Required',
-        'You need to sign in to contact service providers.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
-        ]
-      );
+      Alert.alert('Sign In Required', 'You need to sign in to contact.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+      ]);
       return;
     }
-
     setContactMessage(`Hi! I'm interested in your service: ${offering?.title}`);
     setShowContactDialog(true);
   };
@@ -107,19 +141,26 @@ export default function OfferingDetailScreen() {
     }
   };
 
-  const handleViewProfile = (userId: number) => {
-    router.push(`/user/${userId}`);
+  const handleViewProfile = () => {
+    if (offering?.creator_id) router.push(`/user/${offering.creator_id}`);
+  };
+
+  const handleMessage = () => {
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'You need to sign in to message.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+      ]);
+      return;
+    }
+    if (offering?.creator_id) router.push(`/conversation/${offering.creator_id}`);
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Service',
-      'Are you sure you want to delete this service? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
-      ]
-    );
+    Alert.alert('Delete Service', 'Delete this service permanently?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    ]);
   };
 
   const handleToggleStatus = () => {
@@ -131,50 +172,43 @@ export default function OfferingDetailScreen() {
   };
 
   const handleBoost = () => {
-    Alert.alert(
-      'Boost Service',
-      'Boost your service to appear on the map for 24 hours (free trial)?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Boost', onPress: () => boostMutation.mutate() },
-      ]
-    );
+    Alert.alert('Boost Service', 'Boost your service to appear at top for 24 hours?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Boost', onPress: () => boostMutation.mutate() },
+    ]);
   };
 
   const handleOpenMap = () => {
     if (offering?.latitude && offering?.longitude) {
-      const url = `https://maps.google.com/?q=${offering.latitude},${offering.longitude}`;
-      Linking.openURL(url);
+      Linking.openURL(`https://maps.google.com/?q=${offering.latitude},${offering.longitude}`);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return '#10b981';
-      case 'paused': return '#f59e0b';
-      case 'closed': return '#6b7280';
-      default: return '#6b7280';
-    }
-  };
-
-  const getPriceLabel = (off: Offering) => {
-    if (!off.price) return 'Price negotiable';
-    switch (off.price_type) {
-      case 'hourly': return `€${off.price} per hour`;
-      case 'fixed': return `€${off.price} fixed price`;
-      case 'negotiable': return `From €${off.price}`;
-      default: return `€${off.price}`;
-    }
+  const handleReport = () => {
+    Alert.alert('Report', 'Report this service?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Report', style: 'destructive', onPress: () => Alert.alert('Reported', 'Thanks.') },
+    ]);
   };
 
   const isOwnOffering = user?.id === offering?.creator_id;
+  const categoryData = offering ? getCategoryByKey(offering.category) : null;
+  const timeAgo = formatTimeAgo(offering?.created_at);
+  const hasRating = (offering?.creator_rating ?? 0) > 0;
+  const distance = offering?.distance;
+  const priceDisplay = getPriceDisplay(offering?.price, offering?.price_type);
+  const statusColor = getStatusColor(offering?.status || 'paused');
+
+  const offeringImages = offering?.images
+    ? offering.images.split(',').filter(Boolean).map(url => getImageUrl(url))
+    : [];
 
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Service Details' }} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#f97316" />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={ACCENT_COLOR} />
         </View>
       </SafeAreaView>
     );
@@ -184,11 +218,9 @@ export default function OfferingDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: true, title: 'Service Details' }} />
-        <View style={styles.errorContainer}>
-          <Text variant="headlineSmall" style={styles.errorText}>Service not found</Text>
-          <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
-            Go Back
-          </Button>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>Service not found</Text>
+          <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
         </View>
       </SafeAreaView>
     );
@@ -199,217 +231,204 @@ export default function OfferingDetailScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: 'Service Details',
+          title: 'Service Details', 
           headerBackTitle: 'Back',
+          headerRight: () => (
+            <IconButton icon="share-variant" iconColor={ACCENT_COLOR} size={24} onPress={handleShare} />
+          ),
         }} 
       />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <Surface style={styles.header} elevation={1}>
-          <View style={styles.headerTop}>
-            {/* Status Badge - Custom View */}
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(offering.status) }]}>
-              <Text style={styles.statusBadgeText}>
-                {offering.status.charAt(0).toUpperCase() + offering.status.slice(1)}
-              </Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        
+        {/* HERO CARD */}
+        <View style={styles.heroCard}>
+          {/* ROW 1: Category + Status + Report + Price */}
+          <View style={styles.topRow}>
+            <View style={styles.topRowLeft}>
+              <Text style={styles.categoryText}>{categoryData?.icon || '💼'} {categoryData?.label || offering.category}</Text>
+              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
             </View>
-            {offering.is_boost_active ? (
-              <View style={styles.boostBadge}>
-                <Text style={styles.boostBadgeText}>⚡ Boosted</Text>
-              </View>
-            ) : null}
-          </View>
-          
-          <Text variant="headlineSmall" style={styles.title}>{offering.title}</Text>
-          
-          <Text variant="headlineMedium" style={styles.price}>
-            {getPriceLabel(offering)}
-          </Text>
-        </Surface>
-
-        {/* Provider Card - Now Clickable */}
-        <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Service Provider</Text>
-          <TouchableOpacity 
-            style={styles.providerRow}
-            onPress={() => offering.creator_id && handleViewProfile(offering.creator_id)}
-            activeOpacity={0.7}
-          >
-            {/* Custom Avatar */}
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>
-                {offering.creator_name?.charAt(0).toUpperCase() || 'U'}
-              </Text>
-            </View>
-            <View style={styles.providerInfo}>
-              <Text variant="titleLarge" style={styles.providerName}>
-                {offering.creator_name || 'Unknown'}
-              </Text>
-              {offering.creator_rating ? (
-                <View style={styles.ratingRow}>
-                  <Text style={styles.ratingStars}>
-                    {'⭐'.repeat(Math.round(offering.creator_rating))}
-                  </Text>
-                  <Text style={styles.ratingText}>
-                    {offering.creator_rating.toFixed(1)} ({offering.creator_review_count || 0} reviews)
-                  </Text>
+            <View style={styles.topRowRight}>
+              {offering.is_boost_active && (
+                <View style={styles.boostBadge}>
+                  <Text style={styles.boostText}>⚡</Text>
                 </View>
-              ) : (
-                <Text style={styles.noRating}>No reviews yet</Text>
               )}
-              {offering.creator_completed_tasks ? (
-                <Text style={styles.completedTasks}>
-                  ✅ {offering.creator_completed_tasks} tasks completed
-                </Text>
-              ) : null}
-              {isOwnOffering ? (
-                <View style={styles.ownBadge}>
-                  <Text style={styles.ownBadgeText}>Your service</Text>
-                </View>
-              ) : null}
+              <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={styles.flagIcon}>🚩</Text>
+              </TouchableOpacity>
+              <Text style={styles.price}>{priceDisplay}</Text>
             </View>
-          </TouchableOpacity>
-        </Surface>
-
-        {/* Description */}
-        <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{offering.description}</Text>
-        </Surface>
-
-        {/* Location */}
-        {offering.location ? (
-          <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Service Area</Text>
-            <View style={styles.locationRow}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.location}>{offering.location}</Text>
-            </View>
-            {offering.service_radius ? (
-              <Text style={styles.serviceRadius}>
-                Available within {offering.service_radius}km radius
-              </Text>
-            ) : null}
-            {offering.latitude && offering.longitude ? (
-              <Button 
-                mode="outlined" 
-                onPress={handleOpenMap}
-                style={styles.mapButton}
-                icon="map"
-              >
-                View on Map
-              </Button>
-            ) : null}
-          </Surface>
-        ) : null}
-
-        {/* Details */}
-        <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Details</Text>
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Category</Text>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryBadgeText}>{offering.category}</Text>
-              </View>
-            </View>
-            {offering.experience ? (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Experience</Text>
-                <Text style={styles.detailValue}>{offering.experience}</Text>
-              </View>
-            ) : null}
-            {offering.availability ? (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Availability</Text>
-                <Text style={styles.detailValue}>{offering.availability}</Text>
-              </View>
-            ) : null}
-            {offering.created_at ? (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Listed</Text>
-                <Text style={styles.detailValue}>
-                  {new Date(offering.created_at).toLocaleDateString()}
-                </Text>
-              </View>
-            ) : null}
           </View>
-        </Surface>
 
-        <View style={styles.bottomSpacer} />
+          {/* ROW 2: Title */}
+          <Text style={styles.heroTitle}>{offering.title}</Text>
+
+          {/* ROW 3: Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{offering.experience || 'N/A'}</Text>
+              <Text style={styles.statLabel}>Experience</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{offering.availability || 'Flexible'}</Text>
+              <Text style={styles.statLabel}>Availability</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
+              <Text style={styles.statLabel}>Posted</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* IMAGES */}
+        {offeringImages.length > 0 && (
+          <View style={styles.imageCard}>
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+              {offeringImages.map((uri, i) => (
+                <Image key={i} source={{ uri }} style={styles.offeringImage} resizeMode="cover" />
+              ))}
+            </ScrollView>
+            {offeringImages.length > 1 && (
+              <View style={styles.imageCounter}>
+                <Text style={styles.imageCounterText}>{offeringImages.length} photos</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* OFFERED BY */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Offered by</Text>
+          <TouchableOpacity style={styles.userRow} onPress={handleViewProfile} activeOpacity={0.7}>
+            {offering.creator_avatar ? (
+              <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{offering.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
+              </View>
+            )}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{offering.creator_name || 'Anonymous'}</Text>
+              {hasRating && <StarRating rating={offering.creator_rating || 0} reviewCount={offering.creator_review_count} size={14} showCount />}
+              {offering.creator_city && <Text style={styles.userCity}>📍 {offering.creator_city}</Text>}
+              {offering.creator_completed_tasks && <Text style={styles.completedTasks}>✅ {offering.creator_completed_tasks} completed</Text>}
+            </View>
+            {!isOwnOffering && (
+              <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
+                <Text style={styles.messageBtnText}>💬</Text>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* DESCRIPTION */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.descriptionText}>{offering.description}</Text>
+        </View>
+
+        {/* LOCATION */}
+        {offering.location && (
+          <View style={styles.sectionCard}>
+            <View style={styles.locationHeader}>
+              <Text style={styles.sectionTitle}>Service Area</Text>
+              {distance !== undefined && distance !== null && (
+                <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+              )}
+            </View>
+            <Text style={styles.locationAddress}>{offering.location}</Text>
+            {offering.service_radius && (
+              <Text style={styles.serviceRadius}>Available within {offering.service_radius}km radius</Text>
+            )}
+            {offering.latitude && offering.longitude && (
+              <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
+                <Text style={styles.mapBtnText}>🗺️ Open in Maps</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* STATUS NOTICE */}
+        {isOwnOffering && (
+          <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
+            <Text style={styles.noticeText}>
+              {offering.status === 'active' ? '✅ Your service is active' : '⏸️ Your service is paused'}
+            </Text>
+          </View>
+        )}
+
       </ScrollView>
 
-      {/* Contact Button (not own offering) */}
-      {!isOwnOffering ? (
-        <Surface style={styles.bottomBar} elevation={4}>
-          <Button
-            mode="contained"
-            onPress={handleContact}
-            loading={contactMutation.isPending}
-            disabled={contactMutation.isPending}
-            style={styles.contactButton}
-            contentStyle={styles.contactButtonContent}
-            icon="message"
+      {/* BOTTOM BAR */}
+      <View style={styles.bottomBar}>
+        {/* CONTACT BUTTON (for others) */}
+        {!isOwnOffering && (
+          <Button 
+            mode="contained" 
+            onPress={handleContact} 
+            style={styles.primaryBtn} 
+            contentStyle={styles.btnContent} 
+            labelStyle={styles.btnLabel}
           >
             Contact Provider
           </Button>
-        </Surface>
-      ) : null}
+        )}
 
-      {/* Own Offering Actions */}
-      {isOwnOffering ? (
-        <Surface style={styles.bottomBar} elevation={4}>
+        {/* OWNER ACTIONS */}
+        {isOwnOffering && (
           <View style={styles.ownerActions}>
-            <View style={styles.buttonRow}>
-              <Button
-                mode="outlined"
-                onPress={handleToggleStatus}
+            <View style={styles.ownerBtnRow}>
+              <Button 
+                mode="outlined" 
+                onPress={handleToggleStatus} 
                 loading={pauseMutation.isPending || activateMutation.isPending}
-                style={styles.actionButton}
+                style={styles.halfBtn}
               >
                 {offering.status === 'active' ? 'Pause' : 'Activate'}
               </Button>
-              <Button
-                mode="outlined"
-                onPress={() => router.push(`/offering/${offeringId}/edit`)}
-                style={styles.actionButton}
+              <Button 
+                mode="outlined" 
+                onPress={() => router.push(`/offering/${offeringId}/edit`)} 
+                style={styles.halfBtn}
               >
                 Edit
               </Button>
             </View>
-            <View style={styles.buttonRow}>
-              {!offering.is_boost_active ? (
-                <Button
-                  mode="contained"
-                  onPress={handleBoost}
+            <View style={styles.ownerBtnRow}>
+              {!offering.is_boost_active && (
+                <Button 
+                  mode="contained" 
+                  onPress={handleBoost} 
                   loading={boostMutation.isPending}
-                  style={[styles.actionButton, styles.boostButton]}
-                  icon="lightning-bolt"
+                  style={[styles.halfBtn, styles.boostBtn]}
                 >
-                  Boost
+                  ⚡ Boost
                 </Button>
-              ) : null}
-              <Button
-                mode="outlined"
-                onPress={handleDelete}
+              )}
+              <Button 
+                mode="outlined" 
+                onPress={handleDelete} 
                 loading={deleteMutation.isPending}
-                textColor="#ef4444"
-                style={[styles.actionButton, styles.deleteButton]}
+                textColor="#ef4444" 
+                style={[styles.halfBtn, styles.dangerBtn]}
               >
                 Delete
               </Button>
             </View>
           </View>
-        </Surface>
-      ) : null}
+        )}
+      </View>
 
-      {/* Contact Dialog */}
+      {/* CONTACT DIALOG */}
       <Portal>
         <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
           <Dialog.Title>Send Message</Dialog.Title>
           <Dialog.Content>
-            <Text style={styles.dialogSubtitle}>Send a message to {offering.creator_name}</Text>
+            <Text style={styles.dialogSubtitle}>Message {offering.creator_name}</Text>
             <TextInput
               mode="outlined"
               value={contactMessage}
@@ -437,236 +456,98 @@ export default function OfferingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  errorText: {
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-  backButton: {
-    minWidth: 120,
-  },
-  header: {
+  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorText: { fontSize: 16, color: '#6b7280', marginBottom: 16 },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 120 },
+
+  // Hero Card
+  heroCard: {
     backgroundColor: '#ffffff',
-    padding: 20,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    gap: 8,
-  },
-  // Custom Badges
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 16,
-    alignSelf: 'flex-start',
-  },
-  statusBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  boostBadge: {
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-  },
-  boostBadgeText: {
-    color: '#92400e',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  title: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  price: {
-    color: '#f97316',
-    fontWeight: 'bold',
-  },
-  section: {
-    backgroundColor: '#ffffff',
     padding: 20,
-    marginTop: 12,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: ACCENT_COLOR,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  sectionTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  providerRow: {
+  topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  // Custom Avatar
-  avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#f97316',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  providerInfo: {
-    flex: 1,
-  },
-  providerName: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  ratingStars: {
-    marginRight: 8,
-  },
-  ratingText: {
-    color: '#6b7280',
-    fontSize: 13,
-  },
-  noRating: {
-    color: '#9ca3af',
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  completedTasks: {
-    color: '#059669',
-    fontSize: 13,
-  },
-  ownBadge: {
-    backgroundColor: '#dbeafe',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  ownBadgeText: {
-    color: '#1d4ed8',
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  description: {
-    color: '#4b5563',
-    lineHeight: 24,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  location: {
-    color: '#4b5563',
-    flex: 1,
-  },
-  serviceRadius: {
-    color: '#6b7280',
-    fontSize: 13,
-    marginTop: 8,
-  },
-  mapButton: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  detailsGrid: {
-    gap: 12,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  detailLabel: {
-    color: '#6b7280',
-  },
-  detailValue: {
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  categoryBadge: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  categoryBadgeText: {
-    color: '#374151',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  bottomSpacer: {
-    height: 120,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 32,
-  },
-  contactButton: {
-    borderRadius: 12,
-    backgroundColor: '#f97316',
-  },
-  contactButtonContent: {
-    paddingVertical: 8,
-  },
-  ownerActions: {
-    gap: 8,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-    borderRadius: 12,
-  },
-  boostButton: {
-    backgroundColor: '#f59e0b',
-  },
-  deleteButton: {
-    borderColor: '#fecaca',
-  },
-  dialogSubtitle: {
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-  dialogInput: {
-    minHeight: 100,
-  },
+  topRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topRowRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  categoryText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  boostBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 12 },
+  boostText: { fontSize: 12 },
+  flagIcon: { fontSize: 18, opacity: 0.5 },
+  price: { fontSize: 24, fontWeight: '800', color: ACCENT_COLOR },
+  heroTitle: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 16, lineHeight: 28 },
+
+  // Stats
+  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 12, padding: 14 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 28, backgroundColor: '#e5e7eb' },
+
+  // Images
+  imageCard: { borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
+  offeringImage: { width: SCREEN_WIDTH - 32, height: IMAGE_HEIGHT },
+  imageCounter: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  imageCounterText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
+
+  // Section Card
+  sectionCard: { backgroundColor: '#ffffff', borderRadius: 16, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  sectionTitle: { fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  descriptionText: { fontSize: 16, color: '#1f2937', lineHeight: 24 },
+
+  // User Row
+  userRow: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 52, height: 52, borderRadius: 26 },
+  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
+  userInfo: { flex: 1, marginLeft: 12, gap: 3 },
+  userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  userCity: { fontSize: 13, color: '#6b7280' },
+  completedTasks: { fontSize: 12, color: '#059669' },
+  messageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+  messageBtnText: { fontSize: 20 },
+
+  // Location
+  locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  distanceText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+  locationAddress: { fontSize: 15, color: '#1f2937', marginBottom: 8 },
+  serviceRadius: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
+  mapBtn: { backgroundColor: '#eff6ff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
+  mapBtnText: { fontSize: 14, fontWeight: '600', color: ACCENT_COLOR },
+
+  // Notices
+  noticeCard: { borderRadius: 12, padding: 14, marginBottom: 12 },
+  noticeWarning: { backgroundColor: '#fef3c7' },
+  noticeSuccess: { backgroundColor: '#dcfce7' },
+  noticeText: { fontSize: 14, fontWeight: '500', color: '#1f2937', textAlign: 'center' },
+
+  // Bottom Bar
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: 16, paddingBottom: 34, borderTopWidth: 1, borderTopColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
+  primaryBtn: { borderRadius: 14 },
+  btnContent: { paddingVertical: 8 },
+  btnLabel: { fontSize: 16, fontWeight: '700' },
+  ownerActions: { gap: 10 },
+  ownerBtnRow: { flexDirection: 'row', gap: 10 },
+  halfBtn: { flex: 1, borderRadius: 14 },
+  boostBtn: { backgroundColor: '#f59e0b' },
+  dangerBtn: { borderColor: '#fecaca' },
+
+  // Dialog
+  dialogSubtitle: { color: '#6b7280', marginBottom: 16 },
+  dialogInput: { minHeight: 100 },
 });
