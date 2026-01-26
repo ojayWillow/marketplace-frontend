@@ -58,7 +58,7 @@ export default function ConversationScreen() {
   const [messageText, setMessageText] = useState('');
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -214,12 +214,12 @@ export default function ConversationScreen() {
     }
   }, [messages.length]);
 
-  // Show media picker options (iOS ActionSheet or custom for Android)
-  const showMediaOptions = () => {
+  // Show image picker options (iOS ActionSheet or custom for Android)
+  const showImageOptions = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['Cancel', 'Take Photo', 'Choose from Library', 'Choose Video'],
+          options: ['Cancel', 'Take Photo', 'Choose from Library'],
           cancelButtonIndex: 0,
         },
         (buttonIndex) => {
@@ -227,20 +227,17 @@ export default function ConversationScreen() {
             takePhoto();
           } else if (buttonIndex === 2) {
             pickImage();
-          } else if (buttonIndex === 3) {
-            pickVideo();
           }
         }
       );
     } else {
       // Android: Show alert with options
       Alert.alert(
-        'Add Media',
+        'Add Photo',
         'Choose an option',
         [
           { text: 'Take Photo', onPress: takePhoto },
-          { text: 'Choose Image', onPress: pickImage },
-          { text: 'Choose Video', onPress: pickVideo },
+          { text: 'Choose from Library', onPress: pickImage },
           { text: 'Cancel', style: 'cancel' },
         ]
       );
@@ -263,7 +260,7 @@ export default function ConversationScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedMedia(result.assets[0]);
+      setSelectedImage(result.assets[0]);
     }
   };
 
@@ -284,48 +281,18 @@ export default function ConversationScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedMedia(result.assets[0]);
+      setSelectedImage(result.assets[0]);
     }
   };
 
-  // Pick video from gallery
-  const pickVideo = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photo library');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['videos'],
-      allowsEditing: true,
-      quality: 0.8,
-      videoMaxDuration: 60, // 60 seconds max
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      // Check file size for videos (50MB max)
-      const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > 50 * 1024 * 1024) {
-        Alert.alert('File too large', 'Videos must be under 50MB');
-        return;
-      }
-      setSelectedMedia(asset);
-    }
+  // Clear selected image
+  const clearImage = () => {
+    setSelectedImage(null);
   };
-
-  // Clear selected media
-  const clearMedia = () => {
-    setSelectedMedia(null);
-  };
-
-  // Check if selected media is a video
-  const isVideo = selectedMedia?.type === 'video';
 
   // Send message mutation
   const sendMutation = useMutation({
-    mutationFn: async ({ content, media }: { content: string; media?: ImagePicker.ImagePickerAsset }) => {
+    mutationFn: async ({ content, image }: { content: string; image?: ImagePicker.ImagePickerAsset }) => {
       // If no conversation yet, create one with the first message
       if (!conversationId && targetUserId) {
         const result = await startConversation(targetUserId, content);
@@ -333,14 +300,14 @@ export default function ConversationScreen() {
         return result.conversation.last_message;
       }
       
-      // Send with attachment if media is selected
-      if (media) {
+      // Send with attachment if image is selected
+      if (image) {
         setIsUploading(true);
         try {
           const file = {
-            uri: media.uri,
-            type: media.mimeType || (media.type === 'video' ? 'video/mp4' : 'image/jpeg'),
-            name: media.fileName || `${media.type === 'video' ? 'video' : 'image'}_${Date.now()}.${media.type === 'video' ? 'mp4' : 'jpg'}`,
+            uri: image.uri,
+            type: image.mimeType || 'image/jpeg',
+            name: image.fileName || `image_${Date.now()}.jpg`,
           };
           return await sendMessageWithAttachment(conversationId!, content, file);
         } finally {
@@ -353,7 +320,7 @@ export default function ConversationScreen() {
     },
     onSuccess: () => {
       setMessageText('');
-      setSelectedMedia(null);
+      setSelectedImage(null);
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       // Only manually refetch if socket not connected
       if (!socketConnected) {
@@ -374,8 +341,8 @@ export default function ConversationScreen() {
 
   const handleSend = () => {
     const trimmed = messageText.trim();
-    if ((trimmed || selectedMedia) && !sendMutation.isPending && !isUploading) {
-      sendMutation.mutate({ content: trimmed, media: selectedMedia || undefined });
+    if ((trimmed || selectedImage) && !sendMutation.isPending && !isUploading) {
+      sendMutation.mutate({ content: trimmed, image: selectedImage || undefined });
     }
   };
 
@@ -503,8 +470,8 @@ export default function ConversationScreen() {
     );
   }
 
-  // Can send if we have text OR media AND (conversation or target user)
-  const canSend = (messageText.trim() || selectedMedia) && !sendMutation.isPending && !isUploading && (conversationId || targetUserId);
+  // Can send if we have text OR image AND (conversation or target user)
+  const canSend = (messageText.trim() || selectedImage) && !sendMutation.isPending && !isUploading && (conversationId || targetUserId);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top', 'bottom']}>
@@ -590,16 +557,13 @@ export default function ConversationScreen() {
                         </View>
                       )}
 
-                      {/* Video Attachment */}
+                      {/* Video Attachment (legacy support for existing videos) */}
                       {message.attachment_url && message.attachment_type === 'video' && (
                         <View style={styles.imageContainer}>
-                          <Pressable 
-                            style={styles.videoPlaceholder}
-                            onPress={() => {/* TODO: Open video player */}}
-                          >
+                          <View style={styles.videoPlaceholder}>
                             <Text style={styles.videoIcon}>🎥</Text>
-                            <Text style={styles.videoText}>Tap to play video</Text>
-                          </Pressable>
+                            <Text style={styles.videoText}>Video</Text>
+                          </View>
                         </View>
                       )}
                       
@@ -630,18 +594,11 @@ export default function ConversationScreen() {
           )}
         </ScrollView>
 
-        {/* Media Preview */}
-        {selectedMedia && (
+        {/* Image Preview */}
+        {selectedImage && (
           <View style={[styles.mediaPreview, { backgroundColor: themeColors.card, borderTopColor: themeColors.border }]}>
-            {isVideo ? (
-              <View style={styles.videoPreviewContainer}>
-                <Text style={styles.videoPreviewIcon}>🎥</Text>
-                <Text style={[styles.videoPreviewText, { color: themeColors.text }]}>Video selected</Text>
-              </View>
-            ) : (
-              <RNImage source={{ uri: selectedMedia.uri }} style={styles.previewImage} />
-            )}
-            <IconButton icon="close" size={20} onPress={clearMedia} />
+            <RNImage source={{ uri: selectedImage.uri }} style={styles.previewImage} />
+            <IconButton icon="close" size={20} onPress={clearImage} />
             {isUploading && (
               <View style={styles.uploadingOverlay}>
                 <ActivityIndicator size="small" color="#ffffff" />
@@ -654,9 +611,9 @@ export default function ConversationScreen() {
         <View style={[styles.inputContainer, { backgroundColor: themeColors.card, borderTopColor: themeColors.border }]}>
           <Pressable 
             style={[styles.attachButton, { backgroundColor: themeColors.backgroundSecondary }]}
-            onPress={showMediaOptions}
+            onPress={showImageOptions}
           >
-            <Text style={styles.attachIcon}>📎</Text>
+            <Text style={styles.attachIcon}>📷</Text>
           </Pressable>
           
           <View style={[styles.textInputContainer, { backgroundColor: themeColors.backgroundSecondary }]}>
@@ -937,18 +894,6 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     marginRight: 8,
-  },
-  videoPreviewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  videoPreviewIcon: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  videoPreviewText: {
-    fontSize: 14,
   },
   uploadingOverlay: {
     position: 'absolute',
