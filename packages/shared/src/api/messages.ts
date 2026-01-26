@@ -51,41 +51,79 @@ export interface GetMessagesResponse {
 }
 
 /**
- * Upload an image file
+ * Upload an image/video/audio file
+ * Handles both web File objects and React Native file objects
  */
-export const uploadImage = async (file: File | { uri: string; type: string; name: string }): Promise<string> => {
+export const uploadImage = async (file: File | { uri: string; type?: string; name?: string; mimeType?: string; fileName?: string }): Promise<string> => {
   const formData = new FormData();
   
   // Handle both web File and React Native file objects
   if ('uri' in file) {
-    // React Native
-    formData.append('file', {
+    // React Native - construct file object properly
+    // React Native's fetch/axios needs the file in this specific format
+    const mimeType = file.mimeType || file.type || 'image/jpeg';
+    const fileName = file.fileName || file.name || `upload_${Date.now()}.${getExtensionFromMimeType(mimeType)}`;
+    
+    const fileToUpload: any = {
       uri: file.uri,
-      type: file.type,
-      name: file.name,
-    } as any);
+      type: mimeType,
+      name: fileName,
+    };
+    
+    formData.append('file', fileToUpload);
   } else {
-    // Web
+    // Web - standard File object
     formData.append('file', file);
   }
 
-  const response = await apiClient.post('/api/uploads', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
-  // Backend returns relative URL like /api/uploads/filename.jpg
-  // Convert to absolute URL
-  const relativeUrl = response.data.url;
-  
-  // If already absolute, return as-is
-  if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-    return relativeUrl;
+  try {
+    const response = await apiClient.post('/api/uploads', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      // Increase timeout for larger files
+      timeout: 60000,
+    });
+    
+    // Backend returns relative URL like /api/uploads/filename.jpg
+    // Convert to absolute URL
+    const relativeUrl = response.data.url;
+    
+    // If already absolute, return as-is
+    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
+      return relativeUrl;
+    }
+    
+    // Otherwise, prepend API_URL
+    return `${API_URL}${relativeUrl}`;
+  } catch (error: any) {
+    console.error('[Upload] Failed to upload file:', error?.response?.data || error.message);
+    throw error;
   }
+};
+
+/**
+ * Helper to get file extension from MIME type
+ */
+const getExtensionFromMimeType = (mimeType: string): string => {
+  const mimeToExt: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/heic': 'heic',
+    'video/mp4': 'mp4',
+    'video/quicktime': 'mov',
+    'video/x-msvideo': 'avi',
+    'video/webm': 'webm',
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/wav': 'wav',
+    'audio/m4a': 'm4a',
+  };
   
-  // Otherwise, prepend API_URL
-  return `${API_URL}${relativeUrl}`;
+  return mimeToExt[mimeType] || 'jpg';
 };
 
 /**
@@ -176,25 +214,30 @@ export const sendMessage = async (
 };
 
 /**
- * Send a message with an attachment
+ * Send a message with an attachment (image, video, audio, or file)
+ * This handles the upload process and then sends the message with the attachment URL
  */
 export const sendMessageWithAttachment = async (
   conversationId: number,
   content: string,
-  file: File | { uri: string; type: string; name: string }
+  file: File | { uri: string; type?: string; name?: string; mimeType?: string; fileName?: string }
 ): Promise<Message> => {
   // Upload file first
   const attachmentUrl = await uploadImage(file);
   
   // Determine attachment type from file
   let attachmentType: 'image' | 'file' | 'video' | 'audio' = 'file';
-  const fileType = 'type' in file ? file.type : file.type;
   
-  if (fileType.startsWith('image/')) {
+  // Get the MIME type - handle both web and React Native file objects
+  const fileType = 'mimeType' in file 
+    ? file.mimeType 
+    : ('type' in file ? file.type : 'application/octet-stream');
+  
+  if (fileType?.startsWith('image/')) {
     attachmentType = 'image';
-  } else if (fileType.startsWith('video/')) {
+  } else if (fileType?.startsWith('video/')) {
     attachmentType = 'video';
-  } else if (fileType.startsWith('audio/')) {
+  } else if (fileType?.startsWith('audio/')) {
     attachmentType = 'audio';
   }
   
