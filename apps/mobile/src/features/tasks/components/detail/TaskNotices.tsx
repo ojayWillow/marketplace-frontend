@@ -23,7 +23,8 @@ export function TaskNotices({ task }: TaskNoticesProps) {
   };
 
   const handleViewDispute = () => {
-    router.push(`/task/${task.id}/dispute`);
+    // Route to dispute-details screen to view the dispute information
+    router.push(`/task/${task.id}/dispute-details`);
   };
 
   return (
