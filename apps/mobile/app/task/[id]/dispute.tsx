@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   ScrollView,
@@ -184,8 +184,14 @@ export default function DisputeScreen() {
   // Loading state
   if (taskLoading || reasonsLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-        <Stack.Screen options={{ title: 'Report Problem' }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
+        <Stack.Screen 
+          options={{ 
+            headerShown: true,
+            title: 'Report Problem',
+            headerBackTitle: 'Back',
+          }} 
+        />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#0ea5e9" />
         </View>
@@ -196,8 +202,14 @@ export default function DisputeScreen() {
   // Access denied
   if (!canDispute) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-        <Stack.Screen options={{ title: 'Report Problem' }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
+        <Stack.Screen 
+          options={{ 
+            headerShown: true,
+            title: 'Report Problem',
+            headerBackTitle: 'Back',
+          }} 
+        />
         <View style={styles.centered}>
           <Text style={[styles.errorIcon]}>🚫</Text>
           <Text style={[styles.errorTitle, { color: themeColors.text }]}>Cannot Report</Text>
@@ -215,8 +227,14 @@ export default function DisputeScreen() {
   // Success state
   if (submitted) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-        <Stack.Screen options={{ title: 'Report Submitted' }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
+        <Stack.Screen 
+          options={{ 
+            headerShown: true,
+            title: 'Report Submitted',
+            headerBackTitle: 'Back',
+          }} 
+        />
         <View style={styles.centered}>
           <Text style={styles.successIcon}>✅</Text>
           <Text style={[styles.successTitle, { color: themeColors.text }]}>Report Submitted</Text>
@@ -242,7 +260,13 @@ export default function DisputeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
-      <Stack.Screen options={{ title: 'Report Problem' }} />
+      <Stack.Screen 
+        options={{ 
+          headerShown: true,
+          title: 'Report Problem',
+          headerBackTitle: 'Back',
+        }} 
+      />
       
       <KeyboardAvoidingView 
         style={styles.flex} 
