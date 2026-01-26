@@ -9,6 +9,7 @@ import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 
 const JOB_COLOR = '#3B82F6'; // Blue for jobs
+const DISPUTED_COLOR = '#dc2626'; // Red for disputed
 
 interface TaskCardProps {
   task: Task;
@@ -40,6 +41,26 @@ const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefin
     case 'hard': return { color: '#ef4444', label: 'Hard' };  // Red
     case 'medium':
     default: return { color: '#f59e0b', label: 'Medium' }; // Yellow/Orange
+  }
+};
+
+// Helper to get status badge info
+const getStatusBadge = (status: string | undefined): { label: string; color: string; bgColor: string } | null => {
+  switch (status) {
+    case 'disputed':
+      return { label: '⚠️ DISPUTED', color: '#ffffff', bgColor: '#dc2626' };
+    case 'in_progress':
+      return { label: 'In Progress', color: '#ffffff', bgColor: '#f59e0b' };
+    case 'pending_confirmation':
+      return { label: 'Pending Review', color: '#ffffff', bgColor: '#8b5cf6' };
+    case 'completed':
+      return { label: 'Completed', color: '#ffffff', bgColor: '#10b981' };
+    case 'cancelled':
+      return { label: 'Cancelled', color: '#ffffff', bgColor: '#6b7280' };
+    case 'assigned':
+      return { label: 'Assigned', color: '#ffffff', bgColor: '#0ea5e9' };
+    default:
+      return null; // 'open' status doesn't need a badge
   }
 };
 
@@ -89,6 +110,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const hasRating = (task.creator_rating ?? 0) > 0;
   const categoryData = getCategoryByKey(task.category);
   const locationDisplay = formatLocationDisplay(task);
+  const statusBadge = getStatusBadge(task.status);
+  const isDisputed = task.status === 'disputed';
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -101,11 +124,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const styles = StyleSheet.create({
     card: { 
       marginBottom: 12, 
-      backgroundColor: themeColors.card,
+      backgroundColor: isDisputed ? '#fef2f2' : themeColors.card,
       borderRadius: 12,
-      // Blue left border accent for jobs
+      // Red border for disputed, blue for normal
       borderLeftWidth: 4,
-      borderLeftColor: JOB_COLOR,
+      borderLeftColor: isDisputed ? DISPUTED_COLOR : JOB_COLOR,
+      // Add red border all around for disputed tasks
+      borderWidth: isDisputed ? 1 : 0,
+      borderColor: isDisputed ? '#fecaca' : 'transparent',
       // Subtle shadow for depth
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
@@ -118,22 +144,37 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       paddingHorizontal: 16,
     },
     
-    // Row 1: Category + Price
+    // Row 1: Category + Status Badge + Price
     row1: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 6,
     },
+    row1Left: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: 8,
+    },
     category: {
       fontSize: 13,
       fontWeight: '500',
       color: themeColors.textSecondary,
     },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 4,
+    },
+    statusBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+    },
     price: {
       fontSize: 18,
       fontWeight: '700',
-      color: JOB_COLOR,
+      color: isDisputed ? DISPUTED_COLOR : JOB_COLOR,
     },
     
     // Row 2: Title
@@ -160,7 +201,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       width: 24,
       height: 24,
       borderRadius: 12,
-      backgroundColor: JOB_COLOR,
+      backgroundColor: isDisputed ? DISPUTED_COLOR : JOB_COLOR,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 6,
@@ -229,11 +270,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   return (
     <Card style={styles.card} onPress={handlePress}>
       <Card.Content style={styles.cardContent}>
-        {/* Row 1: Category + Price */}
+        {/* Row 1: Category + Status Badge + Price */}
         <View style={styles.row1}>
-          <Text style={styles.category}>
-            {categoryData?.icon || '📋'} {categoryData?.label || task.category}
-          </Text>
+          <View style={styles.row1Left}>
+            <Text style={styles.category}>
+              {categoryData?.icon || '📋'} {categoryData?.label || task.category}
+            </Text>
+            {statusBadge && (
+              <View style={[styles.statusBadge, { backgroundColor: statusBadge.bgColor }]}>
+                <Text style={[styles.statusBadgeText, { color: statusBadge.color }]}>
+                  {statusBadge.label}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.price}>€{task.budget?.toFixed(0) || task.reward?.toFixed(0) || '0'}</Text>
         </View>
         
