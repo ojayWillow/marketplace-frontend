@@ -27,6 +27,11 @@ import { colors } from '../../../src/theme';
 
 const SUPPORT_EMAIL = 'support@marketplace.com';
 
+// Workers can dispute from 'assigned' onwards (creator might ghost after accepting)
+// Creators can only dispute from 'in_progress' onwards (work has started)
+const WORKER_DISPUTABLE_STATUSES = ['assigned', 'in_progress', 'pending_confirmation', 'completed'];
+const CREATOR_DISPUTABLE_STATUSES = ['in_progress', 'pending_confirmation', 'completed'];
+
 export default function DisputeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
@@ -58,8 +63,12 @@ export default function DisputeScreen() {
   // Check if user can dispute this task
   const isCreator = user?.id === task?.creator_id;
   const isWorker = user?.id === task?.assigned_to_id;
-  const canDispute = (isCreator || isWorker) && 
-    (task?.status === 'in_progress' || task?.status === 'completed' || task?.status === 'pending_confirmation');
+  
+  // Workers can report from 'assigned' (client might ghost or misleading description)
+  // Creators can report from 'in_progress' (work has started)
+  const canWorkerDispute = isWorker && WORKER_DISPUTABLE_STATUSES.includes(task?.status || '');
+  const canCreatorDispute = isCreator && CREATOR_DISPUTABLE_STATUSES.includes(task?.status || '');
+  const canDispute = canWorkerDispute || canCreatorDispute;
 
   // Create dispute mutation
   const disputeMutation = useMutation({
@@ -152,6 +161,26 @@ export default function DisputeScreen() {
 
   const canSubmit = selectedReason && description.trim().length >= 20 && !disputeMutation.isPending && !isUploading;
 
+  // Get helpful message based on why they can't dispute
+  const getCannotDisputeMessage = () => {
+    if (!isCreator && !isWorker) {
+      return 'You are not involved in this task.';
+    }
+    if (task?.status === 'open') {
+      return 'This task has not been assigned yet. There is nothing to dispute.';
+    }
+    if (task?.status === 'disputed') {
+      return 'This task is already under review by our team.';
+    }
+    if (task?.status === 'cancelled') {
+      return 'This task has been cancelled.';
+    }
+    if (isCreator && task?.status === 'assigned') {
+      return 'The worker has not started yet. You can cancel the task if needed, or wait for work to begin before reporting a problem.';
+    }
+    return 'This task cannot be disputed in its current status.';
+  };
+
   // Loading state
   if (taskLoading || reasonsLoading) {
     return (
@@ -173,9 +202,7 @@ export default function DisputeScreen() {
           <Text style={[styles.errorIcon]}>🚫</Text>
           <Text style={[styles.errorTitle, { color: themeColors.text }]}>Cannot Report</Text>
           <Text style={[styles.errorText, { color: themeColors.textSecondary }]}>
-            {!isCreator && !isWorker 
-              ? 'You are not involved in this task.'
-              : 'This task cannot be disputed in its current status.'}
+            {getCannotDisputeMessage()}
           </Text>
           <Button mode="contained" onPress={() => router.back()} style={styles.backButton}>
             Go Back
@@ -513,6 +540,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   backButton: {
     marginTop: 12,
