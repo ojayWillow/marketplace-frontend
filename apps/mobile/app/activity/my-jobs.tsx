@@ -11,15 +11,24 @@ export default function MyJobsScreen() {
   });
 
   const tasks = data?.tasks || [];
+  
+  // Separate active tasks from completed/cancelled
+  const activeTasks = tasks.filter((t: Task) => 
+    ['assigned', 'in_progress', 'pending_confirmation', 'disputed'].includes(t.status)
+  );
+  const completedTasks = tasks.filter((t: Task) => 
+    ['completed', 'cancelled'].includes(t.status)
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return { bg: '#dcfce7', text: '#166534' };
-      case 'assigned': return { bg: '#fef3c7', text: '#92400e' };
-      case 'in_progress': return { bg: '#dbeafe', text: '#1e40af' };
-      case 'pending_confirmation': return { bg: '#f3e8ff', text: '#7c3aed' };
-      case 'completed': return { bg: '#f3f4f6', text: '#374151' };
-      case 'cancelled': return { bg: '#fee2e2', text: '#991b1b' };
+      case 'assigned': return { bg: '#dbeafe', text: '#1e40af' }; // Blue - ready to start
+      case 'in_progress': return { bg: '#fef3c7', text: '#92400e' }; // Yellow - working
+      case 'pending_confirmation': return { bg: '#f3e8ff', text: '#7c3aed' }; // Purple - waiting
+      case 'disputed': return { bg: '#fef3c7', text: '#d97706' }; // Orange - dispute
+      case 'completed': return { bg: '#f3f4f6', text: '#374151' }; // Gray - done
+      case 'cancelled': return { bg: '#fee2e2', text: '#991b1b' }; // Red - cancelled
       default: return { bg: '#f3f4f6', text: '#374151' };
     }
   };
@@ -27,13 +36,46 @@ export default function MyJobsScreen() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open': return 'Open';
-      case 'assigned': return 'Assigned';
-      case 'in_progress': return 'In Progress';
-      case 'pending_confirmation': return 'Pending';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
+      case 'assigned': return '🟢 Ready to Start';
+      case 'in_progress': return '🟡 In Progress';
+      case 'pending_confirmation': return '🟣 Awaiting Confirmation';
+      case 'disputed': return '⚠️ Under Review';
+      case 'completed': return '✅ Completed';
+      case 'cancelled': return '❌ Cancelled';
       default: return status;
     }
+  };
+
+  const renderTaskCard = (task: Task) => {
+    const statusColors = getStatusColor(task.status);
+    const isActive = ['assigned', 'in_progress', 'pending_confirmation', 'disputed'].includes(task.status);
+    
+    return (
+      <Card 
+        key={task.id} 
+        style={[
+          styles.card, 
+          isActive && styles.activeCard,
+          task.status === 'disputed' && styles.disputedCard
+        ]} 
+        onPress={() => router.push(`/task/${task.id}`)}
+      >
+        <Card.Content>
+          <View style={styles.cardHeader}>
+            <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
+            </View>
+          </View>
+          <Text style={styles.category}>{task.category}</Text>
+          <Text style={styles.description} numberOfLines={2}>{task.description}</Text>
+          <View style={styles.cardFooter}>
+            <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
+            <Text style={styles.client}>Client: {task.creator_name || 'Anonymous'}</Text>
+          </View>
+        </Card.Content>
+      </Card>
+    );
   };
 
   return (
@@ -70,27 +112,23 @@ export default function MyJobsScreen() {
             </Button>
           </View>
         ) : (
-          tasks.map((task: Task) => {
-            const statusColors = getStatusColor(task.status);
-            return (
-              <Card key={task.id} style={styles.card} onPress={() => router.push(`/task/${task.id}`)}>
-                <Card.Content>
-                  <View style={styles.cardHeader}>
-                    <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>{task.title}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                      <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>{getStatusLabel(task.status)}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.category}>{task.category}</Text>
-                  <Text style={styles.description} numberOfLines={2}>{task.description}</Text>
-                  <View style={styles.cardFooter}>
-                    <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-                    <Text style={styles.client}>Client: {task.creator_name || 'Anonymous'}</Text>
-                  </View>
-                </Card.Content>
-              </Card>
-            );
-          })
+          <>
+            {/* Active Jobs Section */}
+            {activeTasks.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>💪 Active Jobs ({activeTasks.length})</Text>
+                {activeTasks.map(renderTaskCard)}
+              </>
+            )}
+            
+            {/* Completed Jobs Section */}
+            {completedTasks.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, styles.completedSection]}>📋 Completed ({completedTasks.length})</Text>
+                {completedTasks.map(renderTaskCard)}
+              </>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -135,10 +173,28 @@ const styles = StyleSheet.create({
     marginTop: 16, 
     backgroundColor: '#0ea5e9' 
   },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  completedSection: {
+    marginTop: 24,
+    color: '#6b7280',
+  },
   card: { 
     marginBottom: 12, 
     backgroundColor: '#ffffff', 
     borderRadius: 12 
+  },
+  activeCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#0ea5e9',
+  },
+  disputedCard: {
+    borderLeftColor: '#f59e0b',
   },
   cardHeader: { 
     flexDirection: 'row', 
@@ -158,7 +214,7 @@ const styles = StyleSheet.create({
     borderRadius: 12 
   },
   statusBadgeText: { 
-    fontSize: 12, 
+    fontSize: 11, 
     fontWeight: '600' 
   },
   category: { 
