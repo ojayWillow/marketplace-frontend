@@ -25,7 +25,7 @@ import {
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { colors } from '../../../src/theme';
 
-const SUPPORT_EMAIL = 'support@marketplace.com';
+const SUPPORT_EMAIL = 'support@tirgus.lv';
 
 // Workers can dispute from 'assigned' onwards (creator might ghost after accepting)
 // Creators can only dispute from 'in_progress' onwards (work has started)
@@ -69,6 +69,9 @@ export default function DisputeScreen() {
   const canWorkerDispute = isWorker && WORKER_DISPUTABLE_STATUSES.includes(task?.status || '');
   const canCreatorDispute = isCreator && CREATOR_DISPUTABLE_STATUSES.includes(task?.status || '');
   const canDispute = canWorkerDispute || canCreatorDispute;
+  
+  // Check if task is already disputed
+  const isAlreadyDisputed = task?.status === 'disputed';
 
   // Create dispute mutation
   const disputeMutation = useMutation({
@@ -161,26 +164,6 @@ export default function DisputeScreen() {
 
   const canSubmit = selectedReason && description.trim().length >= 20 && !disputeMutation.isPending && !isUploading;
 
-  // Get helpful message based on why they can't dispute
-  const getCannotDisputeMessage = () => {
-    if (!isCreator && !isWorker) {
-      return 'You are not involved in this task.';
-    }
-    if (task?.status === 'open') {
-      return 'This task has not been assigned yet. There is nothing to dispute.';
-    }
-    if (task?.status === 'disputed') {
-      return 'This task is already under review by our team.';
-    }
-    if (task?.status === 'cancelled') {
-      return 'This task has been cancelled.';
-    }
-    if (isCreator && task?.status === 'assigned') {
-      return 'The worker has not started yet. You can cancel the task if needed, or wait for work to begin before reporting a problem.';
-    }
-    return 'This task cannot be disputed in its current status.';
-  };
-
   // Loading state
   if (taskLoading || reasonsLoading) {
     return (
@@ -199,8 +182,101 @@ export default function DisputeScreen() {
     );
   }
 
-  // Access denied
+  // Already disputed - show friendly status screen
+  if (isAlreadyDisputed) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
+        <Stack.Screen 
+          options={{ 
+            headerShown: true,
+            title: 'Report Status',
+            headerBackTitle: 'Back',
+          }} 
+        />
+        <ScrollView contentContainerStyle={styles.centeredScroll}>
+          <Text style={styles.successIcon}>📋</Text>
+          <Text style={[styles.successTitle, { color: themeColors.text }]}>Report Under Review</Text>
+          <Text style={[styles.successText, { color: themeColors.textSecondary }]}>
+            Your report has been submitted and is being reviewed by our team.
+          </Text>
+          
+          {/* What happens next */}
+          <View style={[styles.stepsCard, { backgroundColor: themeColors.card }]}>
+            <Text style={[styles.stepsTitle, { color: themeColors.text }]}>What happens next?</Text>
+            
+            <View style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: '#0ea5e9' }]}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={[styles.stepLabel, { color: themeColors.text }]}>Other party notified</Text>
+                <Text style={[styles.stepDesc, { color: themeColors.textMuted }]}>
+                  They can view and respond to your report
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: '#f59e0b' }]}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={[styles.stepLabel, { color: themeColors.text }]}>Team review</Text>
+                <Text style={[styles.stepDesc, { color: themeColors.textMuted }]}>
+                  Our support team will review both sides
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: '#22c55e' }]}>
+                <Text style={styles.stepNumberText}>3</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={[styles.stepLabel, { color: themeColors.text }]}>Resolution</Text>
+                <Text style={[styles.stepDesc, { color: themeColors.textMuted }]}>
+                  You'll be notified once a decision is made
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          {/* Support info */}
+          <View style={[styles.supportCard, { backgroundColor: themeColors.card }]}>
+            <Text style={[styles.supportLabel, { color: themeColors.textMuted }]}>Need urgent help?</Text>
+            <Text style={[styles.supportEmail, { color: themeColors.text }]}>{SUPPORT_EMAIL}</Text>
+          </View>
+          
+          <Button 
+            mode="contained" 
+            onPress={() => router.replace(`/task/${taskId}`)} 
+            style={styles.doneButton}
+          >
+            Back to Task
+          </Button>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Access denied - other reasons
   if (!canDispute) {
+    const getCannotDisputeMessage = () => {
+      if (!isCreator && !isWorker) {
+        return 'You are not involved in this task.';
+      }
+      if (task?.status === 'open') {
+        return 'This task has not been assigned yet. There is nothing to dispute.';
+      }
+      if (task?.status === 'cancelled') {
+        return 'This task has been cancelled.';
+      }
+      if (isCreator && task?.status === 'assigned') {
+        return 'The worker has not started yet. You can cancel the task if needed, or wait for work to begin before reporting a problem.';
+      }
+      return 'This task cannot be disputed in its current status.';
+    };
+
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
         <Stack.Screen 
@@ -224,7 +300,7 @@ export default function DisputeScreen() {
     );
   }
 
-  // Success state
+  // Success state - just submitted
   if (submitted) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['bottom']}>
@@ -235,25 +311,68 @@ export default function DisputeScreen() {
             headerBackTitle: 'Back',
           }} 
         />
-        <View style={styles.centered}>
+        <ScrollView contentContainerStyle={styles.centeredScroll}>
           <Text style={styles.successIcon}>✅</Text>
-          <Text style={[styles.successTitle, { color: themeColors.text }]}>Report Submitted</Text>
+          <Text style={[styles.successTitle, { color: themeColors.text }]}>Report Submitted!</Text>
           <Text style={[styles.successText, { color: themeColors.textSecondary }]}>
-            We've received your report and will review it shortly.
-          </Text>
-          <Text style={[styles.successText, { color: themeColors.textSecondary, marginTop: 12 }]}>
-            The other party will be notified and can respond.
+            Thank you for letting us know. We take all reports seriously.
           </Text>
           
+          {/* What happens next */}
+          <View style={[styles.stepsCard, { backgroundColor: themeColors.card }]}>
+            <Text style={[styles.stepsTitle, { color: themeColors.text }]}>What happens next?</Text>
+            
+            <View style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: '#0ea5e9' }]}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={[styles.stepLabel, { color: themeColors.text }]}>Other party notified</Text>
+                <Text style={[styles.stepDesc, { color: themeColors.textMuted }]}>
+                  They will receive a notification and can respond to your report
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: '#f59e0b' }]}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={[styles.stepLabel, { color: themeColors.text }]}>Team review</Text>
+                <Text style={[styles.stepDesc, { color: themeColors.textMuted }]}>
+                  Our support team will carefully review both sides of the story
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: '#22c55e' }]}>
+                <Text style={styles.stepNumberText}>3</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={[styles.stepLabel, { color: themeColors.text }]}>Resolution</Text>
+                <Text style={[styles.stepDesc, { color: themeColors.textMuted }]}>
+                  You'll be notified once a decision is made (usually within 24-48 hours)
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          {/* Support info */}
           <View style={[styles.supportCard, { backgroundColor: themeColors.card }]}>
-            <Text style={[styles.supportLabel, { color: themeColors.textMuted }]}>Need help?</Text>
+            <Text style={[styles.supportLabel, { color: themeColors.textMuted }]}>Need urgent help?</Text>
             <Text style={[styles.supportEmail, { color: themeColors.text }]}>{SUPPORT_EMAIL}</Text>
           </View>
           
-          <Button mode="contained" onPress={() => router.replace(`/task/${taskId}`)} style={styles.doneButton}>
+          <Button 
+            mode="contained" 
+            onPress={() => router.replace(`/task/${taskId}`)} 
+            style={styles.doneButton}
+          >
             Done
           </Button>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -401,6 +520,12 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  centeredScroll: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -584,12 +709,58 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     paddingHorizontal: 20,
+    lineHeight: 22,
   },
-  supportCard: {
+  
+  // Steps card
+  stepsCard: {
     marginTop: 24,
+    padding: 20,
+    borderRadius: 16,
+    width: '100%',
+  },
+  stepsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  step: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  stepNumberText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  stepDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  
+  // Support card
+  supportCard: {
+    marginTop: 20,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+    width: '100%',
   },
   supportLabel: {
     fontSize: 12,
@@ -601,6 +772,6 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     marginTop: 24,
-    minWidth: 120,
+    minWidth: 140,
   },
 });
