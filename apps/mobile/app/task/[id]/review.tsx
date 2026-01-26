@@ -28,10 +28,15 @@ export default function ReviewScreen() {
     enabled: taskId > 0,
   });
 
+  // Fix: Always fetch fresh data to prevent "Already Reviewed" bug
+  // This ensures each user gets their own review status, not cached data
   const { data: canReview, isLoading: canReviewLoading } = useQuery({
     queryKey: ['canReviewTask', taskId],
     queryFn: () => canReviewTask(taskId),
     enabled: taskId > 0,
+    staleTime: 0,           // Always consider data stale
+    gcTime: 0,              // Don't cache between navigations
+    refetchOnMount: 'always', // Always refetch when screen opens
   });
 
   const reviewMutation = useMutation({
