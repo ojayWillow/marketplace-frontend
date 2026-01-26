@@ -11,6 +11,12 @@ interface TaskBottomBarProps {
   actions: TaskActionsReturn;
 }
 
+// Statuses where disputes are allowed
+// Workers can dispute from 'assigned' onwards (creator might ghost after accepting)
+// Creators can only dispute from 'in_progress' onwards (work has started)
+const WORKER_DISPUTABLE_STATUSES = ['assigned', 'in_progress', 'completed', 'pending_confirmation'];
+const CREATOR_DISPUTABLE_STATUSES = ['in_progress', 'completed', 'pending_confirmation'];
+
 export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
   const { user } = useAuthStore();
   
@@ -25,10 +31,12 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
   const canConfirm = isOwnTask && task.status === 'pending_confirmation';
   const showApplyButton = task.status === 'open' && !isOwnTask && !hasApplied;
   
-  // Can report problem when task is in_progress, completed, or pending_confirmation
-  // Both creator and worker can report
-  const canReport = (isOwnTask || isAssignedToMe) && 
-    (task.status === 'in_progress' || task.status === 'completed' || task.status === 'pending_confirmation');
+  // Can report problem based on role and status
+  // Workers can report from 'assigned' (creator might ghost after accepting them)
+  // Creators can report from 'in_progress' (work has started)
+  const canWorkerReport = isAssignedToMe && WORKER_DISPUTABLE_STATUSES.includes(task.status);
+  const canCreatorReport = isOwnTask && CREATOR_DISPUTABLE_STATUSES.includes(task.status);
+  const canReport = canWorkerReport || canCreatorReport;
 
   // Navigate to dispute form
   const handleReportProblem = () => {
@@ -133,14 +141,16 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
             Mark as Done
           </Button>
           {/* Worker can also report problem while working */}
-          <Button 
-            mode="text" 
-            onPress={handleReportProblem} 
-            textColor="#ef4444"
-            style={{ marginTop: 8 }}
-          >
-            Report a Problem
-          </Button>
+          {canWorkerReport && (
+            <Button 
+              mode="text" 
+              onPress={handleReportProblem} 
+              textColor="#ef4444"
+              style={{ marginTop: 8 }}
+            >
+              Report a Problem
+            </Button>
+          )}
         </View>
       )}
 
