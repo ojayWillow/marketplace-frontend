@@ -221,6 +221,11 @@ export const styles = StyleSheet.create({
   ownerActions: { gap: 8 },
   ownerBtnRow: { flexDirection: 'row', gap: 8 },
   halfBtn: { flex: 1, borderRadius: 12 },
+  
+  // Disputed notice
+  disputedNotice: {
+    alignItems: 'center',
+  },
 
   // Celebrate / Review Prompt
   celebrateIcon: { fontSize: 64, marginBottom: 16 },

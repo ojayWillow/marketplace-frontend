@@ -24,6 +24,16 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
   const canMarkDone = isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress');
   const canConfirm = isOwnTask && task.status === 'pending_confirmation';
   const showApplyButton = task.status === 'open' && !isOwnTask && !hasApplied;
+  
+  // Can report problem when task is in_progress, completed, or pending_confirmation
+  // Both creator and worker can report
+  const canReport = (isOwnTask || isAssignedToMe) && 
+    (task.status === 'in_progress' || task.status === 'completed' || task.status === 'pending_confirmation');
+
+  // Navigate to dispute form
+  const handleReportProblem = () => {
+    router.push(`/task/${taskId}/dispute`);
+  };
 
   return (
     <View style={styles.bottomBar}>
@@ -87,17 +97,16 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
         </View>
       )}
 
-      {/* CONFIRM/DISPUTE */}
+      {/* CONFIRM/DISPUTE - Owner confirming completion */}
       {canConfirm && (
         <View style={styles.ownerBtnRow}>
           <Button 
             mode="outlined" 
-            onPress={actions.handleDispute} 
+            onPress={handleReportProblem} 
             textColor="#ef4444" 
-            style={[styles.halfBtn, styles.dangerBtn]} 
-            loading={actions.isDisputing}
+            style={[styles.halfBtn, styles.dangerBtn]}
           >
-            Dispute
+            Report Problem
           </Button>
           <Button 
             mode="contained" 
@@ -110,18 +119,56 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
         </View>
       )}
 
-      {/* MARK DONE */}
+      {/* MARK DONE - Worker marking task complete */}
       {canMarkDone && (
+        <View style={styles.ownerActions}>
+          <Button 
+            mode="contained" 
+            onPress={actions.handleMarkDone} 
+            loading={actions.isMarkingDone} 
+            style={[styles.primaryBtn, styles.successBtn]} 
+            contentStyle={styles.btnContent} 
+            labelStyle={styles.btnLabel}
+          >
+            Mark as Done
+          </Button>
+          {/* Worker can also report problem while working */}
+          <Button 
+            mode="text" 
+            onPress={handleReportProblem} 
+            textColor="#ef4444"
+            style={{ marginTop: 8 }}
+          >
+            Report a Problem
+          </Button>
+        </View>
+      )}
+
+      {/* REPORT PROBLEM - For owner when task is in_progress (not yet submitted for completion) */}
+      {isOwnTask && task.status === 'in_progress' && !canConfirm && (
         <Button 
-          mode="contained" 
-          onPress={actions.handleMarkDone} 
-          loading={actions.isMarkingDone} 
-          style={[styles.primaryBtn, styles.successBtn]} 
-          contentStyle={styles.btnContent} 
-          labelStyle={styles.btnLabel}
+          mode="outlined" 
+          onPress={handleReportProblem} 
+          textColor="#ef4444" 
+          style={[styles.primaryBtn, styles.dangerBtn]} 
+          contentStyle={styles.btnContent}
         >
-          Mark as Done
+          Report a Problem
         </Button>
+      )}
+
+      {/* DISPUTED STATUS MESSAGE */}
+      {task.status === 'disputed' && (
+        <View style={styles.disputedNotice}>
+          <Button 
+            mode="contained" 
+            disabled
+            style={[styles.primaryBtn, { backgroundColor: '#f59e0b' }]} 
+            contentStyle={styles.btnContent}
+          >
+            ⚠️ Task Under Review
+          </Button>
+        </View>
       )}
     </View>
   );
