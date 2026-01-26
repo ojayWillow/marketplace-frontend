@@ -38,8 +38,9 @@ class SocketService {
         auth: { token },
         transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 3, // Reduced from 5 to fail faster
         reconnectionDelay: 1000,
+        timeout: 5000, // Add timeout to fail faster
       });
 
       this.socket.on('connect', () => {
@@ -48,7 +49,8 @@ class SocketService {
       });
 
       this.socket.on('connect_error', (error) => {
-        console.error('[Socket] Connection error:', error.message);
+        // Use warn instead of error - socket is optional, polling is the fallback
+        console.warn('[Socket] Connection unavailable:', error.message);
         reject(error);
       });
 
@@ -67,7 +69,8 @@ class SocketService {
       });
 
       this.socket.on('error', (data: { message: string }) => {
-        console.error('[Socket] Error:', data.message);
+        // Use warn for socket errors - they're not critical
+        console.warn('[Socket] Error:', data.message);
       });
     });
   }

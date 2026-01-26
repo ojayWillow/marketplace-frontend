@@ -35,7 +35,6 @@ import {
 } from '@marketplace/shared';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
-import Constants from 'expo-constants';
 
 export default function ConversationScreen() {
   // Support both conversation ID and user ID for new conversations
@@ -63,8 +62,8 @@ export default function ConversationScreen() {
   const [socketConnected, setSocketConnected] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Get API URL for socket
-  const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
+  // Get API URL from environment variable (same as API client uses)
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 
   // Create conversation if we have userId but no conversationId
   useEffect(() => {
@@ -99,7 +98,9 @@ export default function ConversationScreen() {
         await socketService.joinConversation(conversationId);
         console.log('[Socket] Joined conversation:', conversationId);
       } catch (error) {
-        console.error('[Socket] Connection failed:', error);
+        // Use console.warn instead of console.error - socket failure is not critical
+        // The app falls back to polling when socket is unavailable
+        console.warn('[Socket] Connection unavailable, using polling fallback');
         setSocketConnected(false);
       }
     };
@@ -276,7 +277,7 @@ export default function ConversationScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -297,7 +298,7 @@ export default function ConversationScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ['videos'],
       allowsEditing: true,
       quality: 0.8,
       videoMaxDuration: 60, // 60 seconds max
@@ -338,8 +339,8 @@ export default function ConversationScreen() {
         try {
           const file = {
             uri: media.uri,
-            mimeType: media.mimeType || (media.type === 'video' ? 'video/mp4' : 'image/jpeg'),
-            fileName: media.fileName || `${media.type === 'video' ? 'video' : 'image'}_${Date.now()}.${media.type === 'video' ? 'mp4' : 'jpg'}`,
+            type: media.mimeType || (media.type === 'video' ? 'video/mp4' : 'image/jpeg'),
+            name: media.fileName || `${media.type === 'video' ? 'video' : 'image'}_${Date.now()}.${media.type === 'video' ? 'mp4' : 'jpg'}`,
           };
           return await sendMessageWithAttachment(conversationId!, content, file);
         } finally {
