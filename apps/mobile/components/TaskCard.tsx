@@ -3,7 +3,7 @@ import { View, StyleSheet, Image } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Task } from '@marketplace/shared';
-import { getImageUrl, getCategoryByKey } from '@marketplace/shared';
+import { getImageUrl, getCategoryByKey, useAuthStore } from '@marketplace/shared';
 import StarRating from './StarRating';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
@@ -78,8 +78,96 @@ const formatLocationDisplay = (task: Task): string => {
   return '';
 };
 
+// Helper to get status badge info
+const getStatusBadge = (task: Task, userId?: number): { text: string; color: string; bgColor: string } | null => {
+  const isMyTask = task.creator_id === userId;
+  const isAssignedToMe = task.assigned_to_id === userId;
+  const applicantsCount = task.pending_applications_count ?? 0;
+
+  // Disputed - highest priority
+  if (task.status === 'disputed') {
+    return {
+      text: '⚠️ Disputed',
+      color: '#fff',
+      bgColor: '#f59e0b', // Orange
+    };
+  }
+
+  // For task creators (job givers)
+  if (isMyTask) {
+    // Action needed: Worker marked done, needs confirmation
+    if (task.status === 'pending_confirmation') {
+      return {
+        text: '🔴 Action needed',
+        color: '#fff',
+        bgColor: '#ef4444', // Red
+      };
+    }
+    
+    // New applicants
+    if (task.status === 'open' && applicantsCount > 0) {
+      return {
+        text: `🔔 ${applicantsCount} applicant${applicantsCount > 1 ? 's' : ''}`,
+        color: '#fff',
+        bgColor: '#3b82f6', // Blue
+      };
+    }
+    
+    // Worker assigned
+    if (task.status === 'assigned' || task.status === 'in_progress') {
+      return {
+        text: '👷 Worker assigned',
+        color: '#fff',
+        bgColor: '#10b981', // Green
+      };
+    }
+  }
+
+  // For workers (helpers)
+  if (isAssignedToMe) {
+    // Waiting for confirmation
+    if (task.status === 'pending_confirmation') {
+      return {
+        text: '🟡 Waiting',
+        color: '#fff',
+        bgColor: '#f59e0b', // Yellow
+      };
+    }
+    
+    // In progress
+    if (task.status === 'in_progress') {
+      return {
+        text: '🟢 In progress',
+        color: '#fff',
+        bgColor: '#10b981', // Green
+      };
+    }
+    
+    // Assigned
+    if (task.status === 'assigned') {
+      return {
+        text: '📍 Assigned to you',
+        color: '#fff',
+        bgColor: '#3b82f6', // Blue
+      };
+    }
+  }
+
+  // Completed
+  if (task.status === 'completed') {
+    return {
+      text: '✅ Completed',
+      color: '#fff',
+      bgColor: '#6b7280', // Gray
+    };
+  }
+
+  return null;
+};
+
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const { getActiveTheme } = useThemeStore();
+  const { user } = useAuthStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   
@@ -89,6 +177,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const hasRating = (task.creator_rating ?? 0) > 0;
   const categoryData = getCategoryByKey(task.category);
   const locationDisplay = formatLocationDisplay(task);
+  const statusBadge = getStatusBadge(task, user?.id);
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -118,12 +207,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       paddingHorizontal: 16,
     },
     
+    // Status Badge
+    statusBadge: {
+      position: 'absolute',
+      top: 12,
+      right: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      zIndex: 10,
+    },
+    statusBadgeText: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    
     // Row 1: Category + Price
     row1: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 6,
+      marginRight: statusBadge ? 120 : 0, // Space for badge
     },
     category: {
       fontSize: 13,
@@ -229,6 +334,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   return (
     <Card style={styles.card} onPress={handlePress}>
       <Card.Content style={styles.cardContent}>
+        {/* Status Badge - Top Right */}
+        {statusBadge && (
+          <View style={[styles.statusBadge, { backgroundColor: statusBadge.bgColor }]}>
+            <Text style={[styles.statusBadgeText, { color: statusBadge.color }]}>
+              {statusBadge.text}
+            </Text>
+          </View>
+        )}
+        
         {/* Row 1: Category + Price */}
         <View style={styles.row1}>
           <Text style={styles.category}>
