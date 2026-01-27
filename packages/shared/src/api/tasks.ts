@@ -45,6 +45,8 @@ export interface Task {
   priority?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   is_urgent?: boolean;
+  payment_required?: boolean;
+  payment_status?: 'pending' | 'paid' | 'released' | 'refunded';
   creator_id: number;
   creator_name?: string;
   creator_avatar?: string;
