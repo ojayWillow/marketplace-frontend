@@ -23,9 +23,9 @@ export default function TaskDetailScreen() {
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
   
-  // CRITICAL FIX: Force minimum render delay to allow layout to stabilize
-  // This prevents content jumping when React Query returns cached data instantly
-  const [isRenderReady, setIsRenderReady] = useState(false);
+  // CRITICAL FIX: Wait for screen transition to complete before rendering content
+  // This prevents the slide-in animation from affecting the content layout
+  const [isTransitionComplete, setIsTransitionComplete] = useState(false);
 
   // Data fetching
   const { data: task, isLoading, error } = useQuery({
@@ -34,13 +34,12 @@ export default function TaskDetailScreen() {
     enabled: taskId > 0,
   });
 
-  // Wait for next frame before rendering content
-  // This gives iOS time to calculate header layout
+  // Wait for screen transition animation to complete (250ms from _layout.tsx)
   useEffect(() => {
-    const timer = requestAnimationFrame(() => {
-      setIsRenderReady(true);
-    });
-    return () => cancelAnimationFrame(timer);
+    const timer = setTimeout(() => {
+      setIsTransitionComplete(true);
+    }, 300); // Slightly longer than animation duration
+    return () => clearTimeout(timer);
   }, []);
 
   // All actions and mutations
@@ -50,8 +49,8 @@ export default function TaskDetailScreen() {
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
   
-  // Show loading if data is loading OR layout isn't ready yet
-  const showLoading = isLoading || !isRenderReady;
+  // Show loading if data is loading OR transition isn't complete yet
+  const showLoading = isLoading || !isTransitionComplete;
 
   // Review prompt after completion
   if (actions.showReviewPrompt) {
@@ -65,7 +64,6 @@ export default function TaskDetailScreen() {
 
   return (
     <View style={styles.container}>
-      {/* CRITICAL: Header configuration must be STATIC to prevent layout recalculation */}
       <Stack.Screen
         options={{
           headerShown: true,
@@ -77,6 +75,7 @@ export default function TaskDetailScreen() {
             backgroundColor: '#f3f4f6',
           },
           headerShadowVisible: false,
+          animation: 'none', // DISABLE animation on this specific screen
           headerRight: () => (
             <IconButton
               icon="share-variant"
@@ -90,7 +89,6 @@ export default function TaskDetailScreen() {
         }}
       />
 
-      {/* Main ScrollView */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -128,7 +126,6 @@ export default function TaskDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Bottom bar */}
       {!showLoading && !error && task && (
         <TaskBottomBar task={task} taskId={taskId} actions={actions} />
       )}
