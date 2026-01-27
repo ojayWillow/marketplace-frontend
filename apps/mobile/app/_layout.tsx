@@ -133,28 +133,22 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: themeColors.background },
-              // Smooth animations to reduce visual glitches
-              animation: Platform.OS === 'ios' ? 'default' : 'fade_from_bottom',
-              animationDuration: 200, // Faster, snappier transitions
+              // CRITICAL FIX: Use slide_from_right for consistent behavior
+              // fade_from_bottom causes layout jump because content renders
+              // at wrong position during fade-in
+              animation: 'slide_from_right',
+              // Keep animations quick but not instant
+              animationDuration: 250,
               gestureEnabled: true,
               gestureDirection: 'horizontal',
-              // Remove any jumpy animations
-              animationTypeForReplace: 'push',
-              // Customize transition spec for smoother experience
-              transitionSpec: {
-                open: {
-                  animation: 'timing',
-                  config: {
-                    duration: 200,
-                  },
-                },
-                close: {
-                  animation: 'timing',
-                  config: {
-                    duration: 200,
-                  },
-                },
-              },
+              // Freeze the outgoing screen during transition to prevent re-renders
+              freezeOnBlur: true,
+              // Use native header to prevent layout measurement issues
+              // When headerShown is true on individual screens, this ensures
+              // the header doesn't cause layout shift
+              headerMode: 'screen',
+              // Ensure content fills the screen properly
+              presentation: 'card',
             }}
           />
         </QueryClientProvider>
