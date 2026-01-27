@@ -9,6 +9,7 @@ import * as Notifications from 'expo-notifications';
 import { registerPushToken, setupNotificationListeners } from '../utils/pushNotifications';
 import { useThemeStore } from '../src/stores/themeStore';
 import { lightTheme, darkTheme, colors } from '../src/theme';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -124,38 +125,40 @@ export default function RootLayout() {
   // Theme preference loads from storage and updates seamlessly
 
   return (
-    <PaperProvider theme={theme}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style={themeColors.statusBar} />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: themeColors.background },
-            // Smooth animations to reduce visual glitches
-            animation: Platform.OS === 'ios' ? 'default' : 'fade_from_bottom',
-            animationDuration: 200, // Faster, snappier transitions
-            gestureEnabled: true,
-            gestureDirection: 'horizontal',
-            // Remove any jumpy animations
-            animationTypeForReplace: 'push',
-            // Customize transition spec for smoother experience
-            transitionSpec: {
-              open: {
-                animation: 'timing',
-                config: {
-                  duration: 200,
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <PaperProvider theme={theme}>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style={themeColors.statusBar} />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: themeColors.background },
+              // Smooth animations to reduce visual glitches
+              animation: Platform.OS === 'ios' ? 'default' : 'fade_from_bottom',
+              animationDuration: 200, // Faster, snappier transitions
+              gestureEnabled: true,
+              gestureDirection: 'horizontal',
+              // Remove any jumpy animations
+              animationTypeForReplace: 'push',
+              // Customize transition spec for smoother experience
+              transitionSpec: {
+                open: {
+                  animation: 'timing',
+                  config: {
+                    duration: 200,
+                  },
+                },
+                close: {
+                  animation: 'timing',
+                  config: {
+                    duration: 200,
+                  },
                 },
               },
-              close: {
-                animation: 'timing',
-                config: {
-                  duration: 200,
-                },
-              },
-            },
-          }}
-        />
-      </QueryClientProvider>
-    </PaperProvider>
+            }}
+          />
+        </QueryClientProvider>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
