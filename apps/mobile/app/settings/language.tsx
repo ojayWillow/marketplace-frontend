@@ -3,7 +3,6 @@ import { Stack, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Surface, RadioButton } from 'react-native-paper';
 import { useState, useEffect } from 'react';
-import { i18n } from '@marketplace/shared';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LANGUAGES = [
@@ -15,10 +14,10 @@ const LANGUAGES = [
 const LANGUAGE_STORAGE_KEY = '@marketplace_language';
 
 export default function LanguageSettingsScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language?.substring(0, 2) || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
   useEffect(() => {
-    // Load saved language
+    // Load saved language preference
     AsyncStorage.getItem(LANGUAGE_STORAGE_KEY).then((saved) => {
       if (saved) {
         setSelectedLanguage(saved);
@@ -29,11 +28,11 @@ export default function LanguageSettingsScreen() {
   const handleLanguageChange = async (langCode: string) => {
     setSelectedLanguage(langCode);
     
-    // Update i18n
-    await i18n.changeLanguage(langCode);
-    
-    // Persist choice
+    // Persist choice for future use
     await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, langCode);
+    
+    // Note: i18n translations are not currently active in mobile app
+    // This screen saves the preference for when translations are re-enabled
   };
 
   return (
@@ -50,6 +49,12 @@ export default function LanguageSettingsScreen() {
         <Text style={styles.sectionDescription}>
           Choose your preferred language for the app interface.
         </Text>
+        
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeText}>
+            ℹ️ Translations are currently being updated. The app is displayed in English for now.
+          </Text>
+        </View>
         
         {LANGUAGES.map((lang) => (
           <Pressable
@@ -76,7 +81,7 @@ export default function LanguageSettingsScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Language changes take effect immediately.
+          Your language preference will be saved for when translations are available.
         </Text>
       </View>
     </SafeAreaView>
@@ -97,6 +102,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 16,
     paddingBottom: 8,
+  },
+  noticeCard: {
+    backgroundColor: '#fef3c7',
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  noticeText: {
+    color: '#92400e',
+    fontSize: 13,
+    lineHeight: 18,
   },
   languageItem: {
     flexDirection: 'row',
