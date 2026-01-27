@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
+import { useState } from 'react';
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Text, Button, TextInput, ActivityIndicator } from 'react-native-paper';
+import { Text, Button, TextInput, ActivityIndicator, Menu } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTask,
@@ -10,7 +10,6 @@ import {
   useAuthStore,
   type DisputeReason,
 } from '@marketplace/shared';
-import { Picker } from '@react-native-picker/picker';
 
 export default function DisputeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,6 +19,7 @@ export default function DisputeScreen() {
 
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [description, setDescription] = useState<string>('');
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // Fetch task details
   const { data: task, isLoading: taskLoading } = useQuery({
@@ -95,7 +95,6 @@ export default function DisputeScreen() {
 
   // Determine user role
   const isWorker = user?.id === task?.assigned_to_id;
-  const isCreator = user?.id === task?.creator_id;
 
   if (taskLoading || reasonsLoading) {
     return (
@@ -143,23 +142,32 @@ export default function DisputeScreen() {
           <Text variant="titleMedium" style={styles.label}>
             Reason *
           </Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedReason}
-              onValueChange={(value) => setSelectedReason(value)}
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
-            >
-              <Picker.Item label="Select a reason..." value="" color="#9ca3af" />
-              {reasons?.map((reason: DisputeReason) => (
-                <Picker.Item key={reason.value} label={reason.label} value={reason.value} />
-              ))}
-            </Picker>
-          </View>
-          {/* Show selected value label for iOS */}
-          {Platform.OS === 'ios' && selectedReason && (
-            <Text style={styles.selectedValueText}>{selectedReasonLabel}</Text>
-          )}
+          <Menu
+            visible={menuVisible}
+            onDismiss={() => setMenuVisible(false)}
+            anchor={
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() => setMenuVisible(true)}
+              >
+                <Text style={[styles.dropdownText, !selectedReason && styles.placeholderText]}>
+                  {selectedReasonLabel}
+                </Text>
+                <Text style={styles.dropdownIcon}>▼</Text>
+              </TouchableOpacity>
+            }
+          >
+            {reasons?.map((reason: DisputeReason) => (
+              <Menu.Item
+                key={reason.value}
+                onPress={() => {
+                  setSelectedReason(reason.value);
+                  setMenuVisible(false);
+                }}
+                title={reason.label}
+              />
+            ))}
+          </Menu>
         </View>
 
         <View style={styles.section}>
@@ -248,26 +256,30 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 8,
   },
-  pickerContainer: {
+  dropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#d1d5db',
-    overflow: 'hidden',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 50,
   },
-  picker: {
-    height: Platform.OS === 'ios' ? 180 : 50,
-    width: '100%',
-  },
-  pickerItem: {
+  dropdownText: {
     fontSize: 16,
-    height: 180,
+    color: '#111827',
+    flex: 1,
   },
-  selectedValueText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
+  placeholderText: {
+    color: '#9ca3af',
+  },
+  dropdownIcon: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginLeft: 8,
   },
   textInput: {
     backgroundColor: '#fff',
