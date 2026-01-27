@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/stores/authStore';
-import { View, useColorScheme, InteractionManager, Appearance, Platform, Dimensions, UIManager, LayoutAnimation } from 'react-native';
+import { useColorScheme, InteractionManager, Platform, Dimensions, UIManager, LayoutAnimation } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import * as Notifications from 'expo-notifications';
@@ -12,13 +12,13 @@ import { lightTheme, darkTheme, colors } from '../src/theme';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 
-// CRITICAL: Disable ALL LayoutAnimations globally
+// Disable LayoutAnimations globally
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(false);
 }
 LayoutAnimation.configureNext = () => {};
 
-// Create QueryClient OUTSIDE component to prevent recreation
+// QueryClient outside component
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -28,7 +28,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Calculate metrics ONCE at module level
+// Calculate metrics ONCE
 const { width, height } = Dimensions.get('window');
 const fallbackMetrics = {
   frame: { x: 0, y: 0, width, height },
@@ -49,34 +49,15 @@ const fallbackMetrics = {
 };
 const safeAreaMetrics = initialWindowMetrics || fallbackMetrics;
 
-// Screen options defined OUTSIDE to prevent object recreation
-const stackScreenOptions = {
-  headerShown: false,
-  animation: 'slide_from_right' as const,
-  animationDuration: 250,
-  gestureEnabled: true,
-  gestureDirection: 'horizontal' as const,
-  freezeOnBlur: true,
-  headerMode: 'screen' as const,
-  presentation: 'card' as const,
-};
-
-let renderCount = 0;
-
 export default function RootLayout() {
-  renderCount++;
-  console.log(`🏗️  ROOT LAYOUT RENDER #${renderCount}`);
-  
   const { token, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const notificationListener = useRef<(() => void) | null>(null);
   const [isReady, setIsReady] = useState(false);
   
-  // Theme
   const systemColorScheme = useColorScheme();
   const { mode, _hasHydrated: themeHydrated } = useThemeStore();
   
-  // Memoize theme to prevent unnecessary re-renders
   const { theme, themeColors } = useMemo(() => {
     const activeTheme = themeHydrated && mode !== 'system'
       ? mode
@@ -87,12 +68,10 @@ export default function RootLayout() {
     };
   }, [systemColorScheme, mode, themeHydrated]);
 
-  // Memoize content style to prevent object recreation
   const contentStyle = useMemo(() => ({ 
     backgroundColor: themeColors.background 
   }), [themeColors.background]);
 
-  // Mark as ready after first render
   useEffect(() => {
     const handle = InteractionManager.runAfterInteractions(() => {
       setIsReady(true);
@@ -100,7 +79,6 @@ export default function RootLayout() {
     return () => handle.cancel();
   }, []);
 
-  // Register for push notifications
   useEffect(() => {
     if (!isReady || !isAuthenticated || !token) return;
     
@@ -111,7 +89,6 @@ export default function RootLayout() {
     return () => handle.cancel();
   }, [isReady, isAuthenticated, token]);
 
-  // Setup notification listeners
   useEffect(() => {
     const cleanup = setupNotificationListeners(
       (notification) => {
@@ -151,8 +128,18 @@ export default function RootLayout() {
           <StatusBar style={themeColors.statusBar} />
           <Stack
             screenOptions={{
-              ...stackScreenOptions,
+              headerShown: false,
               contentStyle,
+              animation: 'slide_from_right',
+              animationDuration: 250,
+              gestureEnabled: true,
+              gestureDirection: 'horizontal',
+              freezeOnBlur: true,
+              // CRITICAL FIX: Use 'float' instead of 'screen'
+              // 'float' = header is separate, doesn't animate with screen content
+              // 'screen' = header animates with screen, causes content to shift
+              headerMode: 'float',
+              presentation: 'card',
             }}
           />
         </QueryClientProvider>
