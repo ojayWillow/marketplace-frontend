@@ -186,8 +186,8 @@ export default function EditProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ headerShown: true, title: 'Edit Profile' }} />
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <Stack.Screen options={{ headerShown: true, title: 'Edit Profile', headerBackTitle: 'Back' }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
         </View>
