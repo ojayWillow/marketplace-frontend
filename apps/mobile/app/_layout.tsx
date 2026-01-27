@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/stores/authStore';
-import { View, useColorScheme, InteractionManager, Appearance, Platform } from 'react-native';
+import { View, useColorScheme, InteractionManager, Appearance, Platform, Dimensions } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
@@ -10,6 +10,7 @@ import { registerPushToken, setupNotificationListeners } from '../utils/pushNoti
 import { useThemeStore } from '../src/stores/themeStore';
 import { lightTheme, darkTheme, colors } from '../src/theme';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +20,33 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// CRITICAL FIX FOR EXPO GO:
+// initialWindowMetrics is null in Expo Go because metrics aren't available at build time.
+// This causes SafeAreaView to re-measure on mount, causing the "drop down" layout jump.
+// We provide sensible fallback values based on platform.
+const { width, height } = Dimensions.get('window');
+
+const fallbackMetrics = {
+  frame: { x: 0, y: 0, width, height },
+  insets: {
+    top: Platform.select({
+      ios: 47, // iPhone with notch (most common)
+      android: Constants.statusBarHeight || 24,
+      default: 0,
+    }),
+    bottom: Platform.select({
+      ios: 34, // iPhone with home indicator
+      android: 0,
+      default: 0,
+    }),
+    left: 0,
+    right: 0,
+  },
+};
+
+// Use initialWindowMetrics if available (production builds), otherwise use fallback (Expo Go)
+const safeAreaMetrics = initialWindowMetrics || fallbackMetrics;
 
 export default function RootLayout() {
   const { token, isAuthenticated } = useAuthStore();
@@ -125,7 +153,7 @@ export default function RootLayout() {
   // Theme preference loads from storage and updates seamlessly
 
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+    <SafeAreaProvider initialMetrics={safeAreaMetrics}>
       <PaperProvider theme={theme}>
         <QueryClientProvider client={queryClient}>
           <StatusBar style={themeColors.statusBar} />
@@ -133,21 +161,12 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: themeColors.background },
-              // CRITICAL FIX: Use slide_from_right for consistent behavior
-              // fade_from_bottom causes layout jump because content renders
-              // at wrong position during fade-in
               animation: 'slide_from_right',
-              // Keep animations quick but not instant
               animationDuration: 250,
               gestureEnabled: true,
               gestureDirection: 'horizontal',
-              // Freeze the outgoing screen during transition to prevent re-renders
               freezeOnBlur: true,
-              // Use native header to prevent layout measurement issues
-              // When headerShown is true on individual screens, this ensures
-              // the header doesn't cause layout shift
               headerMode: 'screen',
-              // Ensure content fills the screen properly
               presentation: 'card',
             }}
           />
