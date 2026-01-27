@@ -12,13 +12,11 @@ import { lightTheme, darkTheme, colors } from '../src/theme';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 
-// Disable LayoutAnimations globally
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(false);
 }
 LayoutAnimation.configureNext = () => {};
 
-// QueryClient outside component
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -28,7 +26,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Calculate metrics ONCE
 const { width, height } = Dimensions.get('window');
 const fallbackMetrics = {
   frame: { x: 0, y: 0, width, height },
@@ -81,11 +78,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isReady || !isAuthenticated || !token) return;
-    
     const handle = InteractionManager.runAfterInteractions(() => {
       registerPushToken(token);
     });
-    
     return () => handle.cancel();
   }, [isReady, isAuthenticated, token]);
 
@@ -99,7 +94,6 @@ export default function RootLayout() {
         handleNotificationTap(response);
       }
     );
-
     notificationListener.current = cleanup;
     return () => cleanup();
   }, []);
@@ -130,15 +124,10 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle,
-              animation: 'slide_from_right',
-              animationDuration: 250,
+              // CRITICAL: Disable ALL animations
+              animation: 'none',
               gestureEnabled: true,
               gestureDirection: 'horizontal',
-              freezeOnBlur: true,
-              // CRITICAL FIX: Use 'float' instead of 'screen'
-              // 'float' = header is separate, doesn't animate with screen content
-              // 'screen' = header animates with screen, causes content to shift
-              headerMode: 'float',
               presentation: 'card',
             }}
           />
