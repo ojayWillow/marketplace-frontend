@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Text, Button, TextInput, ActivityIndicator, Menu, IconButton } from 'react-native-paper';
+import { Text, Button, TextInput, ActivityIndicator, Menu } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -9,6 +9,7 @@ import {
   getDisputeReasons,
   createDispute,
   useAuthStore,
+  uploadImagesFromUris,
   type DisputeReason,
 } from '@marketplace/shared';
 
@@ -24,6 +25,7 @@ export default function DisputeScreen() {
   const [description, setDescription] = useState<string>('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // Fetch task details
   const { data: task, isLoading: taskLoading } = useQuery({
@@ -70,22 +72,38 @@ export default function DisputeScreen() {
 
   // Create dispute mutation
   const createDisputeMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!selectedReason || !description.trim()) {
         throw new Error('Please fill all fields');
       }
-      // TODO: Upload photos and include URLs in dispute creation
+
+      // Upload photos first if any
+      let evidenceUrls: string[] = [];
+      if (photos.length > 0) {
+        setUploadingPhotos(true);
+        try {
+          const uploadResults = await uploadImagesFromUris(photos);
+          evidenceUrls = uploadResults.map((result) => result.url);
+        } catch (uploadError: any) {
+          console.error('Photo upload failed:', uploadError);
+          throw new Error('Failed to upload photos. Please try again.');
+        } finally {
+          setUploadingPhotos(false);
+        }
+      }
+
+      // Create dispute with evidence URLs
       return createDispute({
         task_id: taskId,
         reason: selectedReason,
         description: description.trim(),
-        // evidence_images: photos, // To be implemented with backend
+        evidence_images: evidenceUrls.length > 0 ? evidenceUrls : undefined,
       });
     },
     onSuccess: (data) => {
       Alert.alert(
         'Dispute Created',
-        `Your dispute has been filed. Support will review it.\n\nSupport: ${data.support_email}`,
+        `Your dispute has been filed${photos.length > 0 ? ` with ${photos.length} photo(s)` : ''}. Support will review it.\n\nSupport: ${data.support_email}`,
         [
           {
             text: 'OK',
@@ -116,7 +134,7 @@ export default function DisputeScreen() {
 
     Alert.alert(
       'File Dispute',
-      'Are you sure you want to file a dispute? This will notify the other party and support team.',
+      `Are you sure you want to file a dispute?${photos.length > 0 ? ` This will upload ${photos.length} photo(s) as evidence.` : ''} The other party and support team will be notified.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -149,6 +167,8 @@ export default function DisputeScreen() {
 
   // Get the label for selected reason
   const selectedReasonLabel = reasons?.find((r: DisputeReason) => r.value === selectedReason)?.label || 'Select a reason...';
+  
+  const isSubmitting = createDisputeMutation.isPending || uploadingPhotos;
 
   return (
     <View style={styles.container}>
@@ -243,6 +263,7 @@ export default function DisputeScreen() {
                 <TouchableOpacity
                   style={styles.removePhotoBtn}
                   onPress={() => handleRemovePhoto(index)}
+                  disabled={isSubmitting}
                 >
                   <Text style={styles.removePhotoText}>×</Text>
                 </TouchableOpacity>
@@ -250,7 +271,11 @@ export default function DisputeScreen() {
             ))}
             
             {photos.length < MAX_PHOTOS && (
-              <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto}>
+              <TouchableOpacity 
+                style={styles.addPhotoBtn} 
+                onPress={handleAddPhoto}
+                disabled={isSubmitting}
+              >
                 <Text style={styles.addPhotoIcon}>📷</Text>
                 <Text style={styles.addPhotoText}>Add</Text>
               </TouchableOpacity>
@@ -268,15 +293,22 @@ export default function DisputeScreen() {
           </Text>
         </View>
 
+        {uploadingPhotos && (
+          <View style={styles.uploadingContainer}>
+            <ActivityIndicator size="small" color="#3b82f6" />
+            <Text style={styles.uploadingText}>Uploading photos...</Text>
+          </View>
+        )}
+
         <Button
           mode="contained"
           onPress={handleSubmit}
-          loading={createDisputeMutation.isPending}
-          disabled={createDisputeMutation.isPending}
+          loading={isSubmitting}
+          disabled={isSubmitting}
           style={styles.submitButton}
           buttonColor="#ef4444"
         >
-          File Dispute
+          {uploadingPhotos ? 'Uploading...' : 'File Dispute'}
         </Button>
       </ScrollView>
     </View>
@@ -414,6 +446,20 @@ const styles = StyleSheet.create({
   photoCount: {
     color: '#9ca3af',
     marginTop: 8,
+  },
+  uploadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: '#dbeafe',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  uploadingText: {
+    marginLeft: 8,
+    color: '#1e40af',
+    fontSize: 14,
   },
   info: {
     backgroundColor: '#dbeafe',
