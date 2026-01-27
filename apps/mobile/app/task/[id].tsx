@@ -1,9 +1,15 @@
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getTask, useAuthStore, getImageUrl } from '@marketplace/shared';
+import { useEffect } from 'react';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(false);
+}
 
 // Feature imports
 import {
@@ -29,6 +35,15 @@ export default function TaskDetailScreen() {
     queryFn: () => getTask(taskId),
     enabled: taskId > 0,
   });
+
+  // Disable layout animations on this screen to prevent jumps
+  useEffect(() => {
+    // Disable any pending layout animations
+    LayoutAnimation.configureNext({
+      duration: 0,
+      update: { type: 'linear' },
+    });
+  }, []);
 
   // All actions and mutations
   const actions = useTaskActions(taskId, task);
@@ -65,61 +80,70 @@ export default function TaskDetailScreen() {
     );
   }
 
-  // ALWAYS render the same layout structure
-  // Only the content inside changes between loading/error/success states
+  // CRITICAL: Use View wrapper with flex:1 to prevent SafeAreaView measurement jump
+  // SafeAreaView measures AFTER mount, causing content to shift
+  // Wrapping in a stable flex container prevents this
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
+    <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
       <Stack.Screen options={headerOptions} />
-
-      {/* Main ScrollView - ALWAYS present */}
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
-        removeClippedSubviews={false}
+      
+      <SafeAreaView 
+        style={styles.container} 
+        edges={['bottom']} 
+        collapsable={false}
+        mode="padding"
       >
-        {isLoading ? (
-          // Loading state - show centered spinner INSIDE the scroll view
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={ACCENT_COLOR} />
-          </View>
-        ) : error || !task ? (
-          // Error state - show error INSIDE the scroll view
-          <View style={styles.centered}>
-            <Text style={styles.errorText}>Task not found</Text>
-            <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
-          </View>
-        ) : (
-          // Success state - render task content
-          <>
-            <TaskHeroCard
-              task={task}
-              isOwnTask={isOwnTask}
-              onMessage={actions.handleMessage}
-              onReport={actions.handleReport}
-              onViewProfile={actions.handleViewProfile}
-            />
+        {/* Main ScrollView - ALWAYS present */}
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollContent}
+          removeClippedSubviews={false}
+          scrollEventThrottle={16}
+        >
+          {isLoading ? (
+            // Loading state - show centered spinner INSIDE the scroll view
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={ACCENT_COLOR} />
+            </View>
+          ) : error || !task ? (
+            // Error state - show error INSIDE the scroll view
+            <View style={styles.centered}>
+              <Text style={styles.errorText}>Task not found</Text>
+              <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
+            </View>
+          ) : (
+            // Success state - render task content
+            <>
+              <TaskHeroCard
+                task={task}
+                isOwnTask={isOwnTask}
+                onMessage={actions.handleMessage}
+                onReport={actions.handleReport}
+                onViewProfile={actions.handleViewProfile}
+              />
 
-            <TaskImageGallery images={taskImages} />
+              <TaskImageGallery images={taskImages} />
 
-            <TaskDescription
-              task={task}
-              onOpenMap={actions.handleOpenMap}
-            />
+              <TaskDescription
+                task={task}
+                onOpenMap={actions.handleOpenMap}
+              />
 
-            <TaskNotices task={task} />
-          </>
+              <TaskNotices task={task} />
+            </>
+          )}
+        </ScrollView>
+
+        {/* Bottom bar - ALWAYS present */}
+        {/* Only render TaskBottomBar when we have task data */}
+        {!isLoading && !error && task && (
+          <TaskBottomBar
+            task={task}
+            taskId={taskId}
+            actions={actions}
+          />
         )}
-      </ScrollView>
-
-      {/* Bottom bar - ALWAYS present */}
-      {/* Only render TaskBottomBar when we have task data */}
-      {!isLoading && !error && task && (
-        <TaskBottomBar
-          task={task}
-          taskId={taskId}
-          actions={actions}
-        />
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
