@@ -1,6 +1,6 @@
-import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Appbar, Card, Button, ActivityIndicator, Chip, Divider, Menu } from 'react-native-paper';
+import { Text, Appbar, Card, Button, ActivityIndicator, Chip, Divider, Portal, Dialog, TextInput, RadioButton, Switch } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,16 @@ export default function AdminDisputesScreen() {
   const themeColors = colors[activeTheme];
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterValue>('all');
+  
+  // Resolution dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
+  const [resolution, setResolution] = useState<string>('');
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [addReview, setAddReview] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<'worker' | 'creator'>('worker');
+  const [reviewRating, setReviewRating] = useState<string>('1');
+  const [reviewComment, setReviewComment] = useState('');
 
   // Check admin access
   const isAdmin = user?.is_admin || user?.role === 'admin';
@@ -31,10 +41,22 @@ export default function AdminDisputesScreen() {
 
   // Resolve mutation
   const resolveMutation = useMutation({
-    mutationFn: ({ disputeId, resolution, notes }: { disputeId: number; resolution: string; notes: string }) => 
-      resolveDispute(disputeId, resolution, notes),
+    mutationFn: (params: any) => {
+      const { disputeId, resolution, notes, add_review, review_target, review_rating, review_comment } = params;
+      return resolveDispute(
+        disputeId,
+        resolution as any,
+        notes,
+        add_review,
+        review_target,
+        review_rating,
+        review_comment
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDisputes'] });
+      setDialogVisible(false);
+      resetDialog();
       Alert.alert('Success', 'Dispute resolved successfully');
     },
     onError: (error: any) => {
@@ -58,55 +80,42 @@ export default function AdminDisputesScreen() {
 
   const disputes = data?.disputes || [];
 
-  const handleResolve = (dispute: Dispute) => {
-    Alert.alert(
-      'Resolve Dispute',
-      `Choose resolution for dispute #${dispute.id}`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Refund Creator',
-          onPress: () => promptNotes(dispute.id, 'refund'),
-        },
-        {
-          text: 'Pay Worker',
-          onPress: () => promptNotes(dispute.id, 'pay_worker'),
-        },
-        {
-          text: 'Partial',
-          onPress: () => promptNotes(dispute.id, 'partial'),
-        },
-        {
-          text: 'Cancel Task',
-          onPress: () => promptNotes(dispute.id, 'cancelled'),
-          style: 'destructive',
-        },
-      ]
-    );
+  const resetDialog = () => {
+    setSelectedDispute(null);
+    setResolution('');
+    setResolutionNotes('');
+    setAddReview(false);
+    setReviewTarget('worker');
+    setReviewRating('1');
+    setReviewComment('');
   };
 
-  const promptNotes = (disputeId: number, resolution: string) => {
-    Alert.prompt(
-      'Resolution Notes',
-      'Add notes explaining your decision (optional):',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Resolve',
-          onPress: (notes) => {
-            resolveMutation.mutate({
-              disputeId,
-              resolution,
-              notes: notes || '',
-            });
-          },
-        },
-      ],
-      'plain-text'
-    );
+  const handleResolve = (dispute: Dispute) => {
+    setSelectedDispute(dispute);
+    setDialogVisible(true);
+  };
+
+  const handleSubmitResolution = () => {
+    if (!selectedDispute || !resolution) {
+      Alert.alert('Error', 'Please select a resolution');
+      return;
+    }
+
+    const rating = parseFloat(reviewRating);
+    if (addReview && (rating < 1 || rating > 5)) {
+      Alert.alert('Error', 'Review rating must be between 1 and 5');
+      return;
+    }
+
+    resolveMutation.mutate({
+      disputeId: selectedDispute.id,
+      resolution,
+      notes: resolutionNotes,
+      add_review: addReview,
+      review_target: addReview ? reviewTarget : undefined,
+      review_rating: addReview ? rating : undefined,
+      review_comment: addReview ? reviewComment : undefined,
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -193,7 +202,6 @@ export default function AdminDisputesScreen() {
               mode="contained"
               onPress={() => handleResolve(item)}
               style={styles.resolveButton}
-              loading={resolveMutation.isPending}
             >
               Resolve
             </Button>
@@ -267,6 +275,85 @@ export default function AdminDisputesScreen() {
           contentContainerStyle={styles.listContent}
         />
       )}
+
+      {/* Resolution Dialog */}
+      <Portal>
+        <Dialog visible={dialogVisible} onDismiss={() => { setDialogVisible(false); resetDialog(); }} style={{ maxHeight: '80%' }}>
+          <Dialog.Title>Resolve Dispute #{selectedDispute?.id}</Dialog.Title>
+          <Dialog.ScrollArea>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24 }}>
+              <Text variant="labelLarge" style={styles.dialogLabel}>Resolution Type</Text>
+              <RadioButton.Group onValueChange={setResolution} value={resolution}>
+                <RadioButton.Item label="💰 Refund Creator" value="refund" />
+                <RadioButton.Item label="💵 Pay Worker" value="pay_worker" />
+                <RadioButton.Item label="⚖️ Partial" value="partial" />
+                <RadioButton.Item label="❌ Cancel (Reactivate Task)" value="cancelled" />
+              </RadioButton.Group>
+
+              <TextInput
+                label="Resolution Notes"
+                value={resolutionNotes}
+                onChangeText={setResolutionNotes}
+                mode="outlined"
+                multiline
+                numberOfLines={3}
+                style={styles.input}
+              />
+
+              <Divider style={styles.divider} />
+
+              <View style={styles.reviewSection}>
+                <View style={styles.reviewHeader}>
+                  <Text variant="labelLarge">Add Review (Optional)</Text>
+                  <Switch value={addReview} onValueChange={setAddReview} />
+                </View>
+
+                {addReview && (
+                  <View style={styles.reviewForm}>
+                    <Text variant="labelMedium" style={styles.reviewLabel}>Who gets the review?</Text>
+                    <RadioButton.Group onValueChange={(val) => setReviewTarget(val as 'worker' | 'creator')} value={reviewTarget}>
+                      <RadioButton.Item label="Worker" value="worker" />
+                      <RadioButton.Item label="Creator" value="creator" />
+                    </RadioButton.Group>
+
+                    <TextInput
+                      label="Rating (1-5 stars)"
+                      value={reviewRating}
+                      onChangeText={setReviewRating}
+                      keyboardType="decimal-pad"
+                      mode="outlined"
+                      style={styles.input}
+                      placeholder="e.g. 1, 2.5, 5"
+                    />
+
+                    <TextInput
+                      label="Review Comment (Optional)"
+                      value={reviewComment}
+                      onChangeText={setReviewComment}
+                      mode="outlined"
+                      multiline
+                      numberOfLines={2}
+                      style={styles.input}
+                      placeholder="Will be prefixed with [Dispute Resolution]"
+                    />
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => { setDialogVisible(false); resetDialog(); }}>Cancel</Button>
+            <Button
+              onPress={handleSubmitResolution}
+              loading={resolveMutation.isPending}
+              disabled={!resolution}
+              mode="contained"
+            >
+              Resolve
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }
@@ -357,5 +444,30 @@ const styles = StyleSheet.create({
   },
   resolveButton: {
     flex: 1,
+  },
+  dialogLabel: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  input: {
+    marginTop: 8,
+  },
+  divider: {
+    marginVertical: 16,
+  },
+  reviewSection: {
+    marginTop: 8,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewForm: {
+    marginTop: 8,
+  },
+  reviewLabel: {
+    marginBottom: 4,
   },
 });
