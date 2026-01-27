@@ -87,6 +87,16 @@ export const getMyDisputes = async (status?: string): Promise<GetDisputesRespons
 };
 
 /**
+ * Get ALL disputes (admin only) - includes disputes from all users
+ * @param status - Optional filter by status ('open', 'under_review', 'resolved')
+ */
+export const getAllDisputes = async (status?: string): Promise<GetDisputesResponse> => {
+  const params = status ? { status, all: true } : { all: true };
+  const response = await apiClient.get('/api/disputes', { params });
+  return response.data;
+};
+
+/**
  * Get details of a specific dispute
  * @param disputeId - Dispute ID
  */
