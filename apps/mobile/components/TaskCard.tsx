@@ -98,7 +98,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Action needed: Worker marked done, needs confirmation
     if (task.status === 'pending_confirmation') {
       return {
-        text: '🔴 Action needed',
+        text: 'Action needed',
         color: '#fff',
         bgColor: '#ef4444', // Red
       };
@@ -107,7 +107,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // New applicants
     if (task.status === 'open' && applicantsCount > 0) {
       return {
-        text: `🔔 ${applicantsCount} applicant${applicantsCount > 1 ? 's' : ''}`,
+        text: `${applicantsCount} applicant${applicantsCount > 1 ? 's' : ''}`,
         color: '#fff',
         bgColor: '#3b82f6', // Blue
       };
@@ -116,7 +116,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Worker assigned
     if (task.status === 'assigned' || task.status === 'in_progress') {
       return {
-        text: '👷 Worker assigned',
+        text: 'Assigned',
         color: '#fff',
         bgColor: '#10b981', // Green
       };
@@ -128,7 +128,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Waiting for confirmation
     if (task.status === 'pending_confirmation') {
       return {
-        text: '🟡 Waiting',
+        text: 'Waiting',
         color: '#fff',
         bgColor: '#f59e0b', // Yellow
       };
@@ -137,7 +137,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // In progress
     if (task.status === 'in_progress') {
       return {
-        text: '🟢 In progress',
+        text: 'In progress',
         color: '#fff',
         bgColor: '#10b981', // Green
       };
@@ -146,7 +146,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Assigned
     if (task.status === 'assigned') {
       return {
-        text: '📍 Assigned to you',
+        text: 'Assigned',
         color: '#fff',
         bgColor: '#3b82f6', // Blue
       };
@@ -156,7 +156,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
   // Completed
   if (task.status === 'completed') {
     return {
-      text: '✅ Completed',
+      text: 'Completed',
       color: '#fff',
       bgColor: '#6b7280', // Gray
     };
@@ -207,33 +207,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       paddingHorizontal: 16,
     },
     
-    // Status Badge
-    statusBadge: {
-      position: 'absolute',
-      top: 12,
-      right: 12,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 12,
-      zIndex: 10,
-    },
-    statusBadgeText: {
-      fontSize: 11,
-      fontWeight: '600',
-    },
-    
-    // Row 1: Category + Price
+    // Row 1: Category + Status Badge + Price
     row1: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 6,
-      marginRight: statusBadge ? 120 : 0, // Space for badge
     },
     category: {
       fontSize: 13,
       fontWeight: '500',
       color: themeColors.textSecondary,
+      flex: 1,
+    },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+      marginHorizontal: 8,
+    },
+    statusBadgeText: {
+      fontSize: 10,
+      fontWeight: '600',
     },
     price: {
       fontSize: 18,
@@ -334,20 +329,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   return (
     <Card style={styles.card} onPress={handlePress}>
       <Card.Content style={styles.cardContent}>
-        {/* Status Badge - Top Right */}
-        {statusBadge && (
-          <View style={[styles.statusBadge, { backgroundColor: statusBadge.bgColor }]}>
-            <Text style={[styles.statusBadgeText, { color: statusBadge.color }]}>
-              {statusBadge.text}
-            </Text>
-          </View>
-        )}
-        
-        {/* Row 1: Category + Price */}
+        {/* Row 1: Category + Status Badge (middle) + Price */}
         <View style={styles.row1}>
           <Text style={styles.category}>
             {categoryData?.icon || '📋'} {categoryData?.label || task.category}
           </Text>
+          {statusBadge && (
+            <View style={[styles.statusBadge, { backgroundColor: statusBadge.bgColor }]}>
+              <Text style={[styles.statusBadgeText, { color: statusBadge.color }]}>
+                {statusBadge.text}
+              </Text>
+            </View>
+          )}
           <Text style={styles.price}>€{task.budget?.toFixed(0) || task.reward?.toFixed(0) || '0'}</Text>
         </View>
         

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Text, Button, TextInput, ActivityIndicator, Menu } from 'react-native-paper';
+import { Text, Button, TextInput, ActivityIndicator, Menu, IconButton } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import {
   getTask,
   getDisputeReasons,
@@ -10,6 +11,8 @@ import {
   useAuthStore,
   type DisputeReason,
 } from '@marketplace/shared';
+
+const MAX_PHOTOS = 5;
 
 export default function DisputeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,6 +23,7 @@ export default function DisputeScreen() {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   // Fetch task details
   const { data: task, isLoading: taskLoading } = useQuery({
@@ -34,16 +38,48 @@ export default function DisputeScreen() {
     queryFn: getDisputeReasons,
   });
 
+  // Handle photo picker
+  const handleAddPhoto = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert('Limit Reached', `You can only upload up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photos.length,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets) {
+      const newPhotos = result.assets.map((asset) => asset.uri);
+      setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+    }
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Create dispute mutation
   const createDisputeMutation = useMutation({
     mutationFn: () => {
       if (!selectedReason || !description.trim()) {
         throw new Error('Please fill all fields');
       }
+      // TODO: Upload photos and include URLs in dispute creation
       return createDispute({
         task_id: taskId,
         reason: selectedReason,
         description: description.trim(),
+        // evidence_images: photos, // To be implemented with backend
       });
     },
     onSuccess: (data) => {
@@ -54,7 +90,6 @@ export default function DisputeScreen() {
           {
             text: 'OK',
             onPress: () => {
-              // Invalidate queries and go back
               queryClient.invalidateQueries({ queryKey: ['task', taskId] });
               queryClient.invalidateQueries({ queryKey: ['taskDisputes', taskId] });
               router.back();
@@ -192,6 +227,41 @@ export default function DisputeScreen() {
           </Text>
         </View>
 
+        {/* Photo Evidence Section */}
+        <View style={styles.section}>
+          <Text variant="titleMedium" style={styles.label}>
+            Evidence Photos
+          </Text>
+          <Text variant="bodySmall" style={styles.hint}>
+            Add up to {MAX_PHOTOS} photos as evidence (optional)
+          </Text>
+          
+          <View style={styles.photosContainer}>
+            {photos.map((uri, index) => (
+              <View key={index} style={styles.photoWrapper}>
+                <Image source={{ uri }} style={styles.photo} />
+                <TouchableOpacity
+                  style={styles.removePhotoBtn}
+                  onPress={() => handleRemovePhoto(index)}
+                >
+                  <Text style={styles.removePhotoText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            
+            {photos.length < MAX_PHOTOS && (
+              <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto}>
+                <Text style={styles.addPhotoIcon}>📷</Text>
+                <Text style={styles.addPhotoText}>Add</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          <Text variant="bodySmall" style={styles.photoCount}>
+            {photos.length}/{MAX_PHOTOS} photos
+          </Text>
+        </View>
+
         <View style={styles.info}>
           <Text variant="bodySmall" style={styles.infoText}>
             ℹ️ After filing, the other party will be notified and can respond. Support will review both sides and help resolve the issue.
@@ -289,6 +359,61 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     color: '#9ca3af',
     marginTop: 4,
+  },
+  // Photo styles
+  photosContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  photoWrapper: {
+    position: 'relative',
+  },
+  photo: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#e5e7eb',
+  },
+  removePhotoBtn: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#ef4444',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removePhotoText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 18,
+  },
+  addPhotoBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  addPhotoIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  addPhotoText: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  photoCount: {
+    color: '#9ca3af',
+    marginTop: 8,
   },
   info: {
     backgroundColor: '#dbeafe',
