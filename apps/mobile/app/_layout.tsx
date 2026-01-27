@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/stores/authStore';
-import { View, useColorScheme, InteractionManager, Appearance, Platform, Dimensions } from 'react-native';
+import { View, useColorScheme, InteractionManager, Appearance, Platform, Dimensions, UIManager, LayoutAnimation } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
@@ -11,6 +11,15 @@ import { useThemeStore } from '../src/stores/themeStore';
 import { lightTheme, darkTheme, colors } from '../src/theme';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+
+// CRITICAL: Disable ALL LayoutAnimations globally to prevent content jumps
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(false);
+}
+
+// Override LayoutAnimation.configureNext to be a no-op
+const originalConfigureNext = LayoutAnimation.configureNext;
+LayoutAnimation.configureNext = () => {}; // Disable all layout animations
 
 const queryClient = new QueryClient({
   defaultOptions: {
