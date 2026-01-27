@@ -67,7 +67,7 @@ export default function ProfileScreen() {
 
   if (!isAuthenticated || !user) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} collapsable={false}>
         <Stack.Screen 
           options={{ 
             headerShown: false,
@@ -111,13 +111,17 @@ export default function ProfileScreen() {
     <View style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={false}
+      >
         {/* Hero Header with Gradient */}
         <LinearGradient
           colors={activeTheme === 'dark' ? ['#1e3a5f', '#0c1929'] : ['#0ea5e9', '#0284c7']}
           style={styles.heroGradient}
         >
-          <SafeAreaView edges={['top']}>
+          <SafeAreaView edges={['top']} collapsable={false}>
             {/* Top Bar */}
             <View style={styles.topBar}>
               <Text style={styles.headerTitle}>Profile</Text>
@@ -125,15 +129,15 @@ export default function ProfileScreen() {
                 <Pressable onPress={() => router.push('/settings')} style={styles.iconButton}>
                   <Text style={styles.iconEmoji}>⚙️</Text>
                 </Pressable>
-                <Pressable onPress={() => router.push('/notifications')} style={styles.iconButton}>
+                {/* STABLE NOTIFICATION BUTTON - Always same size */}
+                <Pressable onPress={() => router.push('/notifications')} style={styles.iconButton} collapsable={false}>
                   <Text style={styles.iconEmoji}>🔔</Text>
-                  {unreadCount > 0 && (
-                    <View style={styles.badgeContainer}>
-                      <Badge size={16} style={styles.badge}>
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </Badge>
-                    </View>
-                  )}
+                  {/* Badge always rendered, just made invisible when 0 to prevent layout shift */}
+                  <View style={[styles.badgeContainer, { opacity: unreadCount > 0 ? 1 : 0 }]} collapsable={false}>
+                    <Badge size={16} style={styles.badge}>
+                      {unreadCount > 9 ? '9+' : (unreadCount || '0')}
+                    </Badge>
+                  </View>
                 </Pressable>
               </View>
             </View>
@@ -406,6 +410,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
+    // Always takes up space to prevent layout shift
+    width: 18,
+    height: 18,
   },
   badge: {
     backgroundColor: '#ef4444',
