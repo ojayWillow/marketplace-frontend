@@ -57,7 +57,7 @@ export default function TaskDetailScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
         <Stack.Screen options={headerOptions} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={ACCENT_COLOR} />
@@ -69,7 +69,7 @@ export default function TaskDetailScreen() {
   // Error state
   if (error || !task) {
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
         <Stack.Screen options={headerOptions} />
         <View style={styles.centered}>
           <Text style={styles.errorText}>Task not found</Text>
@@ -90,10 +90,14 @@ export default function TaskDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
       <Stack.Screen options={headerOptions} />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        removeClippedSubviews={false}
+      >
         <TaskHeroCard
           task={task}
           isOwnTask={isOwnTask}

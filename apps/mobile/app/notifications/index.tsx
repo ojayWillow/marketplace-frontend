@@ -149,7 +149,7 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
         <Stack.Screen options={headerOptions} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
@@ -159,7 +159,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
       <Stack.Screen options={headerOptions} />
       
       {notifications.length === 0 ? (
@@ -171,6 +171,7 @@ export default function NotificationsScreen() {
       ) : (
         <ScrollView
           style={styles.scrollView}
+          removeClippedSubviews={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
