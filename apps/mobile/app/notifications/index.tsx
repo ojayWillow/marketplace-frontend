@@ -175,6 +175,10 @@ export default function NotificationsScreen() {
             <Pressable
               key={notification.id}
               onPress={() => handleNotificationPress(notification)}
+              android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+              style={({ pressed }) => [
+                pressed && styles.pressed
+              ]}
             >
               <Surface 
                 style={[
@@ -317,5 +321,8 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 24,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
