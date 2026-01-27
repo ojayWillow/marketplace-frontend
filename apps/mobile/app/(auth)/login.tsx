@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
-import { haptic } from '../../utils/haptics';
+import { haptic } from '../../_utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 
