@@ -37,7 +37,8 @@ export default function TaskDetailScreen() {
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
 
-  // Header options - consistent across all states to prevent layout shift
+  // Header options - ALWAYS CONSISTENT to prevent layout shift
+  // Share button always present, just disabled/hidden when loading
   const headerOptions = {
     headerShown: true,
     title: '',
@@ -54,31 +55,6 @@ export default function TaskDetailScreen() {
     ),
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
-        <Stack.Screen options={headerOptions} />
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={ACCENT_COLOR} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Error state
-  if (error || !task) {
-    return (
-      <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
-        <Stack.Screen options={headerOptions} />
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>Task not found</Text>
-          <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   // Review prompt after completion
   if (actions.showReviewPrompt) {
     return (
@@ -89,38 +65,61 @@ export default function TaskDetailScreen() {
     );
   }
 
+  // ALWAYS render the same layout structure
+  // Only the content inside changes between loading/error/success states
   return (
     <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
       <Stack.Screen options={headerOptions} />
 
+      {/* Main ScrollView - ALWAYS present */}
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
         removeClippedSubviews={false}
       >
-        <TaskHeroCard
-          task={task}
-          isOwnTask={isOwnTask}
-          onMessage={actions.handleMessage}
-          onReport={actions.handleReport}
-          onViewProfile={actions.handleViewProfile}
-        />
+        {isLoading ? (
+          // Loading state - show centered spinner INSIDE the scroll view
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={ACCENT_COLOR} />
+          </View>
+        ) : error || !task ? (
+          // Error state - show error INSIDE the scroll view
+          <View style={styles.centered}>
+            <Text style={styles.errorText}>Task not found</Text>
+            <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
+          </View>
+        ) : (
+          // Success state - render task content
+          <>
+            <TaskHeroCard
+              task={task}
+              isOwnTask={isOwnTask}
+              onMessage={actions.handleMessage}
+              onReport={actions.handleReport}
+              onViewProfile={actions.handleViewProfile}
+            />
 
-        <TaskImageGallery images={taskImages} />
+            <TaskImageGallery images={taskImages} />
 
-        <TaskDescription
-          task={task}
-          onOpenMap={actions.handleOpenMap}
-        />
+            <TaskDescription
+              task={task}
+              onOpenMap={actions.handleOpenMap}
+            />
 
-        <TaskNotices task={task} />
+            <TaskNotices task={task} />
+          </>
+        )}
       </ScrollView>
 
-      <TaskBottomBar
-        task={task}
-        taskId={taskId}
-        actions={actions}
-      />
+      {/* Bottom bar - ALWAYS present */}
+      {/* Only render TaskBottomBar when we have task data */}
+      {!isLoading && !error && task && (
+        <TaskBottomBar
+          task={task}
+          taskId={taskId}
+          actions={actions}
+        />
+      )}
     </SafeAreaView>
   );
 }
