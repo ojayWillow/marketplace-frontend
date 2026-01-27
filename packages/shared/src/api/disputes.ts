@@ -132,15 +132,32 @@ export const respondToDispute = async (
  * @param disputeId - Dispute ID
  * @param resolution - Resolution type
  * @param resolution_notes - Resolution notes
+ * @param add_review - Optional: whether to add a review
+ * @param review_target - Optional: 'worker' or 'creator' (who gets the review)
+ * @param review_rating - Optional: 1-5 stars
+ * @param review_comment - Optional: review comment
  */
 export const resolveDispute = async (
   disputeId: number,
   resolution: 'refund' | 'pay_worker' | 'partial' | 'cancelled',
-  resolution_notes: string
+  resolution_notes: string,
+  add_review?: boolean,
+  review_target?: string,
+  review_rating?: number,
+  review_comment?: string
 ): Promise<DisputeResponse> => {
-  const response = await apiClient.put(`/api/disputes/${disputeId}/resolve`, {
+  const payload: any = {
     resolution,
     resolution_notes,
-  });
+  };
+
+  if (add_review) {
+    payload.add_review = true;
+    payload.review_target = review_target;
+    payload.review_rating = review_rating;
+    payload.review_comment = review_comment;
+  }
+
+  const response = await apiClient.put(`/api/disputes/${disputeId}/resolve`, payload);
   return response.data;
 };
