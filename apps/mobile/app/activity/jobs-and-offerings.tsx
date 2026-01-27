@@ -1,10 +1,10 @@
 import { View, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Appbar, SegmentedButtons, Chip } from 'react-native-paper';
+import { Text, Appbar, Chip, Badge } from 'react-native-paper';
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuthStore, getCreatedTasks, getMyApplications, getMyTasks, getMyOfferings } from '@marketplace/shared';
+import { useAuthStore, getCreatedTasks, getMyApplications, getMyTasks, getMyOfferings, type Task } from '@marketplace/shared';
 import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
 import { useThemeStore } from '../../src/stores/themeStore';
@@ -12,6 +12,34 @@ import { colors } from '../../src/theme';
 
 type TabValue = 'requests' | 'work' | 'services';
 type FilterValue = 'all' | 'active' | 'done';
+
+// Helper to determine if a task needs action from the current user
+const needsAction = (task: Task, userId: number, isCreator: boolean): boolean => {
+  if (task.status === 'disputed') return true;
+  
+  if (isCreator) {
+    // Creator needs to: confirm completion, review applicants
+    if (task.status === 'pending_confirmation') return true;
+    if (task.status === 'open' && (task.pending_applications_count ?? 0) > 0) return true;
+  } else {
+    // Worker needs to: nothing special yet (waiting states are not action-required)
+    // Could add: if task.status === 'assigned' and hasn't started?
+  }
+  
+  return false;
+};
+
+// Get action priority (lower = higher priority, shown first)
+const getActionPriority = (task: Task, userId: number, isCreator: boolean): number => {
+  if (task.status === 'disputed') return 0; // Highest priority
+  if (isCreator && task.status === 'pending_confirmation') return 1;
+  if (isCreator && task.status === 'open' && (task.pending_applications_count ?? 0) > 0) return 2;
+  if (task.status === 'in_progress') return 3;
+  if (task.status === 'assigned') return 4;
+  if (task.status === 'open') return 5;
+  if (task.status === 'completed') return 6;
+  return 10; // Default low priority
+};
 
 export default function JobsAndOfferingsScreen() {
   const { user } = useAuthStore();
@@ -52,20 +80,45 @@ export default function JobsAndOfferingsScreen() {
   const assignedJobs = assignedJobsData?.tasks || [];
   const myServices = myServicesData?.offerings || [];
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== Jobs & Offerings Debug ===');
-    console.log('Applications:', applications.length, applications);
-    console.log('Assigned Jobs:', assignedJobs.length, assignedJobs);
-    console.log('Posted Jobs:', postedJobs.length);
-    console.log('Services:', myServices.length);
-  }, [applications, assignedJobs, postedJobs, myServices]);
-
   // Combine applications + assigned for "My Work" tab with type markers
-  const myWork = [
+  const myWork = useMemo(() => [
     ...applications.map((item: any) => ({ ...item, _type: 'application' })),
     ...assignedJobs.map((item: any) => ({ ...item, _type: 'task' }))
-  ];
+  ], [applications, assignedJobs]);
+
+  // Count actions needed for each tab
+  const actionCounts = useMemo(() => {
+    const requestsCount = postedJobs.filter((task: Task) => 
+      needsAction(task, user?.id || 0, true)
+    ).length;
+
+    const workCount = myWork.filter((item: any) => {
+      const task = item._type === 'application' ? item.task : item;
+      if (!task) return false;
+      return needsAction(task, user?.id || 0, false);
+    }).length;
+
+    return { requests: requestsCount, work: workCount, services: 0 };
+  }, [postedJobs, myWork, user?.id]);
+
+  // Sort function - action-needed items first
+  const sortByActionPriority = (data: any[], isCreator: boolean) => {
+    return [...data].sort((a, b) => {
+      const taskA = a._type === 'application' ? a.task : a;
+      const taskB = b._type === 'application' ? b.task : b;
+      if (!taskA || !taskB) return 0;
+      
+      const priorityA = getActionPriority(taskA, user?.id || 0, isCreator);
+      const priorityB = getActionPriority(taskB, user?.id || 0, isCreator);
+      
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      // Secondary sort by date (newest first)
+      const dateA = new Date(taskA.created_at || 0).getTime();
+      const dateB = new Date(taskB.created_at || 0).getTime();
+      return dateB - dateA;
+    });
+  };
 
   // Apply filters
   const getFilteredData = (data: any[]) => {
@@ -73,7 +126,7 @@ export default function JobsAndOfferingsScreen() {
     if (filter === 'active') {
       return data.filter((item: any) => {
         const status = item.status || item.task?.status;
-        return status === 'open' || status === 'in_progress' || status === 'pending' || status === 'active';
+        return ['open', 'in_progress', 'pending', 'active', 'assigned', 'pending_confirmation', 'disputed'].includes(status);
       });
     }
     if (filter === 'done') {
@@ -87,10 +140,14 @@ export default function JobsAndOfferingsScreen() {
 
   const getActiveData = () => {
     switch (activeTab) {
-      case 'requests': return getFilteredData(postedJobs);
-      case 'work': return getFilteredData(myWork);
-      case 'services': return myServices; // No filters for services
-      default: return [];
+      case 'requests': 
+        return sortByActionPriority(getFilteredData(postedJobs), true);
+      case 'work': 
+        return sortByActionPriority(getFilteredData(myWork), false);
+      case 'services': 
+        return myServices; // No sorting/filters for services
+      default: 
+        return [];
     }
   };
 
@@ -114,13 +171,58 @@ export default function JobsAndOfferingsScreen() {
 
   const data = getActiveData();
 
-  // Debug current tab data
-  useEffect(() => {
-    console.log(`Active Tab: ${activeTab}, Filter: ${filter}, Data Count: ${data.length}`);
-    if (activeTab === 'work') {
-      console.log('My Work Data:', data);
-    }
-  }, [activeTab, filter, data.length]);
+  // Tab button component with badge
+  const TabButton = ({ 
+    value, 
+    label, 
+    badgeCount 
+  }: { 
+    value: TabValue; 
+    label: string; 
+    badgeCount: number;
+  }) => {
+    const isActive = activeTab === value;
+    return (
+      <Chip
+        selected={isActive}
+        onPress={() => {
+          setActiveTab(value);
+          setFilter('all');
+        }}
+        style={[
+          styles.tabChip,
+          isActive && { backgroundColor: themeColors.primaryAccent }
+        ]}
+        textStyle={[
+          styles.tabChipText,
+          isActive && { color: '#fff' }
+        ]}
+        mode={isActive ? 'flat' : 'outlined'}
+      >
+        <View style={styles.tabContent}>
+          <Text style={[
+            styles.tabLabel,
+            { color: isActive ? '#fff' : themeColors.text }
+          ]}>
+            {label}
+          </Text>
+          {badgeCount > 0 && (
+            <View style={styles.badgeWrapper}>
+              <Badge 
+                size={18} 
+                style={[
+                  styles.actionBadge,
+                  isActive && styles.actionBadgeActive
+                ]}
+              >
+                {badgeCount > 9 ? '9+' : badgeCount}
+              </Badge>
+            </View>
+          )}
+        </View>
+      </Chip>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top']}>
@@ -129,30 +231,13 @@ export default function JobsAndOfferingsScreen() {
         <Appbar.Content title="Jobs & Offerings" titleStyle={{ color: themeColors.text }} />
       </Appbar.Header>
 
-      {/* Main Tabs */}
+      {/* Main Tabs with Badges */}
       <View style={[styles.tabContainer, { backgroundColor: themeColors.card }]}>
-        <SegmentedButtons
-          value={activeTab}
-          onValueChange={(value) => {
-            setActiveTab(value as TabValue);
-            setFilter('all'); // Reset filter when switching tabs
-          }}
-          buttons={[
-            {
-              value: 'requests',
-              label: 'Requests',
-            },
-            {
-              value: 'work',
-              label: 'My Work',
-            },
-            {
-              value: 'services',
-              label: 'Services',
-            },
-          ]}
-          style={styles.segmentedButtons}
-        />
+        <View style={styles.tabsRow}>
+          <TabButton value="requests" label="Requests" badgeCount={actionCounts.requests} />
+          <TabButton value="work" label="My Work" badgeCount={actionCounts.work} />
+          <TabButton value="services" label="Services" badgeCount={actionCounts.services} />
+        </View>
       </View>
 
       {/* Filter Chips (only for requests and work tabs) */}
@@ -233,8 +318,38 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  segmentedButtons: {
-    // Custom styling if needed
+  tabsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tabChip: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  tabChipText: {
+    textAlign: 'center',
+  },
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  badgeWrapper: {
+    marginLeft: 2,
+  },
+  actionBadge: {
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    fontWeight: '600',
+  },
+  actionBadgeActive: {
+    backgroundColor: '#fff',
+    color: '#ef4444',
   },
   filterContainer: {
     flexDirection: 'row',
