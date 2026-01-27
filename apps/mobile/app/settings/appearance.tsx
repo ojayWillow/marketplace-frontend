@@ -44,34 +44,36 @@ export default function AppearanceSettingsScreen() {
         </Text>
         
         <Surface style={[styles.optionsContainer, { backgroundColor: themeColors.card }]} elevation={0}>
-          {options.map((option, index) => (
-            <View key={option.value}>
-              {index > 0 && <View style={[styles.divider, { backgroundColor: themeColors.border }]} />}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.option,
-                  pressed && { backgroundColor: themeColors.backgroundSecondary },
-                ]}
-                onPress={() => setMode(option.value)}
-              >
-                <Text style={styles.optionIcon}>{option.icon}</Text>
-                <View style={styles.optionTextContainer}>
-                  <Text style={[styles.optionLabel, { color: themeColors.text }]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.optionDescription, { color: themeColors.textSecondary }]}>
-                    {option.description}
-                  </Text>
-                </View>
-                <RadioButton
-                  value={option.value}
-                  status={mode === option.value ? 'checked' : 'unchecked'}
+          <View style={styles.optionsContent}>
+            {options.map((option, index) => (
+              <View key={option.value}>
+                {index > 0 && <View style={[styles.divider, { backgroundColor: themeColors.border }]} />}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.option,
+                    pressed && { backgroundColor: themeColors.backgroundSecondary },
+                  ]}
                   onPress={() => setMode(option.value)}
-                  color="#0ea5e9"
-                />
-              </Pressable>
-            </View>
-          ))}
+                >
+                  <Text style={styles.optionIcon}>{option.icon}</Text>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={[styles.optionLabel, { color: themeColors.text }]}>
+                      {option.label}
+                    </Text>
+                    <Text style={[styles.optionDescription, { color: themeColors.textSecondary }]}>
+                      {option.description}
+                    </Text>
+                  </View>
+                  <RadioButton
+                    value={option.value}
+                    status={mode === option.value ? 'checked' : 'unchecked'}
+                    onPress={() => setMode(option.value)}
+                    color="#0ea5e9"
+                  />
+                </Pressable>
+              </View>
+            ))}
+          </View>
         </Surface>
 
         <Text style={[styles.footnote, { color: themeColors.textMuted }]}>
@@ -119,7 +121,10 @@ const styles = StyleSheet.create({
   optionsContainer: {
     borderRadius: 12,
     marginHorizontal: 16,
+  },
+  optionsContent: {
     overflow: 'hidden',
+    borderRadius: 12,
   },
   option: {
     flexDirection: 'row',

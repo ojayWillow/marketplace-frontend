@@ -3,7 +3,7 @@ import { Modal, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { haptic } from '../../../../../utils/haptics';
+import { haptic } from '../../../../../_utils/haptics';
 
 interface CreateModalProps {
   visible: boolean;
@@ -35,20 +35,22 @@ export default function CreateModal({
             onPress={() => { haptic.light(); onCreateJob(); }} 
             activeOpacity={0.85}
           >
-            <LinearGradient
-              colors={['#0ea5e9', '#0369a1']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={localStyles.optionGradient}
-            />
-            <View style={localStyles.iconCircle}>
-              <Text style={localStyles.icon}>💼</Text>
+            <View style={localStyles.optionCardContent}>
+              <LinearGradient
+                colors={['#0ea5e9', '#0369a1']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={localStyles.optionGradient}
+              />
+              <View style={localStyles.iconCircle}>
+                <Text style={localStyles.icon}>💼</Text>
+              </View>
+              <View style={localStyles.optionContent}>
+                <Text style={localStyles.optionTitle}>Post a Job</Text>
+                <Text style={localStyles.optionDesc}>Find someone to help you with a task</Text>
+              </View>
+              <Text style={localStyles.arrow}>›</Text>
             </View>
-            <View style={localStyles.optionContent}>
-              <Text style={localStyles.optionTitle}>Post a Job</Text>
-              <Text style={localStyles.optionDesc}>Find someone to help you with a task</Text>
-            </View>
-            <Text style={localStyles.arrow}>›</Text>
           </TouchableOpacity>
           
           {/* OFFER SERVICE */}
@@ -57,20 +59,22 @@ export default function CreateModal({
             onPress={() => { haptic.light(); onCreateService(); }} 
             activeOpacity={0.85}
           >
-            <LinearGradient
-              colors={['#f97316', '#c2410c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={localStyles.optionGradient}
-            />
-            <View style={localStyles.iconCircle}>
-              <Text style={localStyles.icon}>⚡</Text>
+            <View style={localStyles.optionCardContent}>
+              <LinearGradient
+                colors={['#f97316', '#c2410c']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={localStyles.optionGradient}
+              />
+              <View style={localStyles.iconCircle}>
+                <Text style={localStyles.icon}>⚡</Text>
+              </View>
+              <View style={localStyles.optionContent}>
+                <Text style={localStyles.optionTitle}>Offer a Service</Text>
+                <Text style={localStyles.optionDesc}>Share your skills and earn money</Text>
+              </View>
+              <Text style={localStyles.arrow}>›</Text>
             </View>
-            <View style={localStyles.optionContent}>
-              <Text style={localStyles.optionTitle}>Offer a Service</Text>
-              <Text style={localStyles.optionDesc}>Share your skills and earn money</Text>
-            </View>
-            <Text style={localStyles.arrow}>›</Text>
           </TouchableOpacity>
           
           {/* Cancel */}
@@ -122,11 +126,14 @@ const localStyles = StyleSheet.create({
     marginBottom: 28,
   },
   optionCard: {
+    borderRadius: 18,
+    marginBottom: 14,
+  },
+  optionCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 18,
     padding: 18,
-    marginBottom: 14,
     overflow: 'hidden',
   },
   optionGradient: {

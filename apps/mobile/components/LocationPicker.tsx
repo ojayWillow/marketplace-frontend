@@ -255,30 +255,32 @@ export default function LocationPicker({
 
       {/* Map */}
       <Surface style={styles.mapContainer} elevation={2}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.loadingText}>Getting location...</Text>
-          </View>
-        ) : (
-          <MapView
-            style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            region={region}
-            onPress={handleMapPress}
-            showsUserLocation
-            showsMyLocationButton
-          >
-            {marker && (
-              <Marker
-                coordinate={marker}
-                title="Selected Location"
-                description={address}
-                pinColor={hasValidLocation ? '#0ea5e9' : '#f59e0b'}
-              />
-            )}
-          </MapView>
-        )}
+        <View style={styles.mapContent}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" />
+              <Text style={styles.loadingText}>Getting location...</Text>
+            </View>
+          ) : (
+            <MapView
+              style={styles.map}
+              provider={PROVIDER_DEFAULT}
+              region={region}
+              onPress={handleMapPress}
+              showsUserLocation
+              showsMyLocationButton
+            >
+              {marker && (
+                <Marker
+                  coordinate={marker}
+                  title="Selected Location"
+                  description={address}
+                  pinColor={hasValidLocation ? '#0ea5e9' : '#f59e0b'}
+                />
+              )}
+            </MapView>
+          )}
+        </View>
       </Surface>
 
       {/* Selected Address Display */}
@@ -333,8 +335,12 @@ const styles = StyleSheet.create({
   mapContainer: {
     height: 300,
     borderRadius: 8,
-    overflow: 'hidden',
     backgroundColor: '#ffffff',
+  },
+  mapContent: {
+    flex: 1,
+    overflow: 'hidden',
+    borderRadius: 8,
   },
   map: {
     flex: 1,
