@@ -3,6 +3,7 @@ export { apiClient, default as api } from './client';
 
 // API modules
 export { authApi } from './auth';
+export * from './disputes';
 export * from './favorites';
 export * from './geocoding';
 export * from './listings';
