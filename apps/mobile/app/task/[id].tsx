@@ -3,7 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Text, Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getTask, useAuthStore, getImageUrl } from '@marketplace/shared';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 // Feature imports
 import {
@@ -22,10 +22,6 @@ export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
-  
-  // CRITICAL FIX: Wait for screen transition to complete before rendering content
-  // This prevents the slide-in animation from affecting the content layout
-  const [isTransitionComplete, setIsTransitionComplete] = useState(false);
 
   // Data fetching
   const { data: task, isLoading, error } = useQuery({
@@ -34,13 +30,14 @@ export default function TaskDetailScreen() {
     enabled: taskId > 0,
   });
 
-  // Wait for screen transition animation to complete (250ms from _layout.tsx)
+  // DEBUG LOGGING
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsTransitionComplete(true);
-    }, 300); // Slightly longer than animation duration
-    return () => clearTimeout(timer);
+    console.log('🔴 SCREEN MOUNTED', { taskId, hasTask: !!task, isLoading });
   }, []);
+
+  useEffect(() => {
+    console.log('🟡 DATA CHANGED', { hasTask: !!task, isLoading, taskTitle: task?.title });
+  }, [task, isLoading]);
 
   // All actions and mutations
   const actions = useTaskActions(taskId, task);
@@ -48,9 +45,6 @@ export default function TaskDetailScreen() {
   // Computed values
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
-  
-  // Show loading if data is loading OR transition isn't complete yet
-  const showLoading = isLoading || !isTransitionComplete;
 
   // Review prompt after completion
   if (actions.showReviewPrompt) {
@@ -62,20 +56,15 @@ export default function TaskDetailScreen() {
     );
   }
 
+  console.log('🔵 RENDER', { isLoading, hasTask: !!task, hasError: !!error });
+
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTransparent: false,
-          headerLargeTitle: false,
           title: '',
           headerBackTitle: 'Back',
-          headerStyle: {
-            backgroundColor: '#f3f4f6',
-          },
-          headerShadowVisible: false,
-          animation: 'none', // DISABLE animation on this specific screen
           headerRight: () => (
             <IconButton
               icon="share-variant"
@@ -83,7 +72,6 @@ export default function TaskDetailScreen() {
               size={24}
               onPress={task ? actions.handleShare : undefined}
               disabled={!task}
-              style={{ opacity: task ? 1 : 0 }}
             />
           ),
         }}
@@ -92,11 +80,8 @@ export default function TaskDetailScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        contentInsetAdjustmentBehavior="never"
-        automaticallyAdjustContentInsets={false}
-        automaticallyAdjustsScrollIndicatorInsets={false}
       >
-        {showLoading ? (
+        {isLoading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={ACCENT_COLOR} />
           </View>
@@ -126,7 +111,7 @@ export default function TaskDetailScreen() {
         )}
       </ScrollView>
 
-      {!showLoading && !error && task && (
+      {!isLoading && !error && task && (
         <TaskBottomBar task={task} taskId={taskId} actions={actions} />
       )}
     </View>
