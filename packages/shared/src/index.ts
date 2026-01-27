@@ -37,8 +37,8 @@ export { useToastStore } from './stores/toastStore';
 // Service exports
 export { socketService } from './services/socket';
 
-// i18n exports
-export { default as i18n } from './i18n';
+// i18n removed - was causing 404 errors and layout issues
+// export { default as i18n } from './i18n';
 
 // Type exports
 export * from './types';
