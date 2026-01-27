@@ -128,10 +128,29 @@ export default function NotificationsScreen() {
     }
   };
 
+  const notifications = data?.notifications || [];
+  const unreadCount = data?.unread_count || 0;
+
+  // Consistent header options to prevent layout shift
+  const headerOptions = {
+    headerShown: true,
+    title: 'Notifications',
+    headerRight: () => (
+      <Button
+        onPress={handleMarkAllRead}
+        compact
+        style={{ opacity: unreadCount > 0 ? 1 : 0 }}
+        disabled={unreadCount === 0}
+      >
+        Mark All Read
+      </Button>
+    ),
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <Stack.Screen options={{ headerShown: true, title: 'Notifications' }} />
+        <Stack.Screen options={headerOptions} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
         </View>
@@ -139,24 +158,9 @@ export default function NotificationsScreen() {
     );
   }
 
-  const notifications = data?.notifications || [];
-  const unreadCount = data?.unread_count || 0;
-
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true, 
-          title: 'Notifications',
-          headerRight: () => (
-            unreadCount > 0 ? (
-              <Button onPress={handleMarkAllRead} compact>
-                Mark All Read
-              </Button>
-            ) : null
-          ),
-        }} 
-      />
+      <Stack.Screen options={headerOptions} />
       
       {notifications.length === 0 ? (
         <View style={styles.emptyContainer}>
