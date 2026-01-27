@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { fontSize: 16, color: '#6b7280', marginBottom: 16 },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 12, paddingBottom: 120 },
+  scrollContent: { padding: 12, paddingBottom: 100 },
 
   // Hero Card - Contains Posted By + Stats
   heroCard: {
@@ -126,11 +126,10 @@ export const styles = StyleSheet.create({
   // Image Card
   imageCard: { 
     borderRadius: 12, 
-    overflow: 'hidden', 
     marginBottom: 10, 
     position: 'relative' 
   },
-  taskImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
+  taskImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT, borderRadius: 12 },
   imageCounter: { 
     position: 'absolute', 
     bottom: 10, 
