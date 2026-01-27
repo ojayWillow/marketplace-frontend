@@ -38,6 +38,7 @@ export default function CreateTaskScreen() {
 
   const createMutation = useMutation({
     mutationFn: async (data: Parameters<typeof createTask>[0]) => {
+      // Upload images first if any
       let imageUrls: string[] = [];
       if (images.length > 0) {
         setUploading(true);
@@ -78,14 +79,38 @@ export default function CreateTaskScreen() {
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || error.message || 'Failed to create task';
+      console.error('Create task error:', error);
+      console.error('Error response:', error.response?.data);
+      const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to create task. Please try again.';
       Alert.alert('Error', message);
     },
   });
 
+  const handleCategorySelect = (categoryKey: string) => {
+    haptic.selection();
+    setCategory(categoryKey);
+    setShowCategoryModal(false);
+  };
+
   const handleSubmit = () => {
-    if (!title.trim() || !description.trim() || !budget.trim() || !location || !user?.id) {
-      Alert.alert('Required', 'Please fill in all required fields.');
+    if (!title.trim()) {
+      Alert.alert('Required', 'Please enter a title for your task.');
+      return;
+    }
+    if (!description.trim()) {
+      Alert.alert('Required', 'Please enter a description.');
+      return;
+    }
+    if (!budget.trim() || isNaN(parseFloat(budget))) {
+      Alert.alert('Required', 'Please enter a valid budget.');
+      return;
+    }
+    if (!location) {
+      Alert.alert('Required', 'Please select a location for your task.');
+      return;
+    }
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found. Please log in again.');
       return;
     }
 
@@ -104,24 +129,210 @@ export default function CreateTaskScreen() {
     });
   };
 
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ headerShown: true, title: 'Create Task' }} />
+        <View style={styles.centerContainer}>
+          <Text variant="headlineSmall" style={styles.notAuthTitle}>Sign In Required</Text>
+          <Text style={styles.notAuthText}>You need to sign in to create tasks.</Text>
+          <Button mode="contained" onPress={() => router.push('/(auth)/login')} style={styles.signInButton}>
+            Sign In
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const isLoading = createMutation.isPending || uploading;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerShown: true, title: 'Create Task', headerBackTitle: 'Cancel' }} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
-        <ScrollView style={styles.scrollView}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: 'Create Task',
+          headerBackTitle: 'Cancel',
+        }}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
-            
-            {/* EXISTING SECTIONS... Title, Description, Images, Category, Budget, Difficulty, Location, Deadline */}
-            
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Task Title *</Text>
+              <TextInput
+                mode="flat"
+                placeholder="What do you need help with?"
+                value={title}
+                onChangeText={setTitle}
+                maxLength={100}
+                style={styles.flatInput}
+              />
+            </Surface>
+
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Description *</Text>
+              <TextInput
+                mode="flat"
+                placeholder="Describe your task in detail..."
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={5}
+                maxLength={1000}
+                style={styles.flatTextArea}
+              />
+            </Surface>
+
+            <Surface style={styles.section} elevation={0}>
+              <ImagePicker
+                images={images}
+                onImagesChange={setImages}
+                maxImages={5}
+                label="Photos (Optional)"
+              />
+            </Surface>
+
+            {/* Category Picker - Opens Modal */}
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Category</Text>
+              <TouchableOpacity 
+                style={styles.categorySelector}
+                onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '📋'}</Text>
+                <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || 'Select category'}</Text>
+                <Text style={styles.categorySelectorArrow}>›</Text>
+              </TouchableOpacity>
+            </Surface>
+
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Budget *</Text>
+              <View style={styles.budgetRow}>
+                <Text style={styles.euroSign}>€</Text>
+                <TextInput
+                  mode="flat"
+                  placeholder="0.00"
+                  value={budget}
+                  onChangeText={setBudget}
+                  keyboardType="decimal-pad"
+                  style={styles.budgetInput}
+                />
+              </View>
+            </Surface>
+
+            {/* Difficulty Selector */}
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Difficulty</Text>
+              <Text style={styles.sectionHint}>How challenging is this task?</Text>
+              <View style={styles.difficultyRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.difficultyOption,
+                    difficulty === 'easy' && styles.difficultyOptionActive,
+                    { borderColor: '#10b981' }
+                  ]}
+                  onPress={() => { haptic.selection(); setDifficulty('easy'); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.difficultyDot, { backgroundColor: '#10b981' }]} />
+                  <Text style={[
+                    styles.difficultyLabel,
+                    difficulty === 'easy' && styles.difficultyLabelActive
+                  ]}>Easy</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.difficultyOption,
+                    difficulty === 'medium' && styles.difficultyOptionActive,
+                    { borderColor: '#f59e0b' }
+                  ]}
+                  onPress={() => { haptic.selection(); setDifficulty('medium'); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.difficultyDot, { backgroundColor: '#f59e0b' }]} />
+                  <Text style={[
+                    styles.difficultyLabel,
+                    difficulty === 'medium' && styles.difficultyLabelActive
+                  ]}>Medium</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.difficultyOption,
+                    difficulty === 'hard' && styles.difficultyOptionActive,
+                    { borderColor: '#ef4444' }
+                  ]}
+                  onPress={() => { haptic.selection(); setDifficulty('hard'); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.difficultyDot, { backgroundColor: '#ef4444' }]} />
+                  <Text style={[
+                    styles.difficultyLabel,
+                    difficulty === 'hard' && styles.difficultyLabelActive
+                  ]}>Hard</Text>
+                </TouchableOpacity>
+              </View>
+            </Surface>
+
+            <Surface style={styles.section} elevation={0}>
+              <LocationPicker
+                initialLocation={location || undefined}
+                onLocationSelect={setLocation}
+                label="Location *"
+              />
+            </Surface>
+
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Deadline (Optional)</Text>
+              <Button
+                mode="outlined"
+                onPress={() => setShowDatePicker(true)}
+                icon="calendar"
+                style={styles.dateButton}
+              >
+                {deadline ? deadline.toLocaleDateString() : 'Select deadline'}
+              </Button>
+              {deadline && (
+                <Button
+                  mode="text"
+                  onPress={() => setDeadline(null)}
+                  textColor="#ef4444"
+                  compact
+                >
+                  Clear deadline
+                </Button>
+              )}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={deadline || new Date()}
+                  mode="date"
+                  minimumDate={new Date()}
+                  onChange={(event, date) => {
+                    setShowDatePicker(false);
+                    if (date) setDeadline(date);
+                  }}
+                />
+              )}
+            </Surface>
+
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
                   <Text variant="titleMedium">🔥 Mark as Urgent</Text>
                   <Text style={styles.urgentHint}>Urgent tasks get more visibility</Text>
                 </View>
-                <Chip selected={isUrgent} onPress={() => setIsUrgent(!isUrgent)} mode={isUrgent ? 'flat' : 'outlined'}>
+                <Chip
+                  selected={isUrgent}
+                  onPress={() => setIsUrgent(!isUrgent)}
+                  mode={isUrgent ? 'flat' : 'outlined'}
+                >
                   {isUrgent ? 'Yes' : 'No'}
                 </Chip>
               </View>
@@ -131,10 +342,14 @@ export default function CreateTaskScreen() {
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
-                  <Text variant="titleMedium">💳 Require Payment</Text>
-                  <Text style={styles.urgentHint}>Get paid upfront via secure escrow</Text>
+                  <Text variant="titleMedium">💳 Secure Payment</Text>
+                  <Text style={styles.urgentHint}>Worker gets paid when you confirm task is done</Text>
                 </View>
-                <Chip selected={requirePayment} onPress={() => setRequirePayment(!requirePayment)} mode={requirePayment ? 'flat' : 'outlined'}>
+                <Chip
+                  selected={requirePayment}
+                  onPress={() => setRequirePayment(!requirePayment)}
+                  mode={requirePayment ? 'flat' : 'outlined'}
+                >
                   {requirePayment ? 'Yes' : 'No'}
                 </Chip>
               </View>
@@ -145,26 +360,297 @@ export default function CreateTaskScreen() {
         </ScrollView>
 
         <Surface style={styles.bottomBar} elevation={4}>
-          <Button mode="contained" onPress={handleSubmit} loading={isLoading} disabled={isLoading} style={styles.submitButton} contentStyle={styles.submitButtonContent}>
-            {uploading ? 'Uploading...' : 'Create Task'}
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={isLoading}
+            disabled={isLoading}
+            style={styles.submitButton}
+            contentStyle={styles.submitButtonContent}
+          >
+            {uploading ? 'Uploading Images...' : 'Create Task'}
           </Button>
         </Surface>
       </KeyboardAvoidingView>
+
+      {/* CATEGORY MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
+      <Modal
+        visible={showCategoryModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => { haptic.soft(); setShowCategoryModal(false); }}
+        >
+          <View style={styles.categoryModalContent}>
+            <Text style={styles.modalTitle}>Select Category</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.categoryWrap}>
+                {FORM_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[
+                      styles.categoryPill,
+                      category === cat.key && styles.categoryPillActive
+                    ]}
+                    onPress={() => handleCategorySelect(cat.key)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.categoryPillIcon}>{cat.icon}</Text>
+                    <Text style={[
+                      styles.categoryPillLabel,
+                      category === cat.key && styles.categoryPillLabelActive
+                    ]}>
+                      {cat.label}
+                    </Text>
+                    {category === cat.key && (
+                      <Text style={styles.categoryPillCheck}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  keyboardView: { flex: 1 },
-  scrollView: { flex: 1 },
-  content: { padding: 16 },
-  section: { backgroundColor: '#ffffff', padding: 16, borderRadius: 12, marginBottom: 12 },
-  urgentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  urgentInfo: { flex: 1 },
-  urgentHint: { color: '#6b7280', fontSize: 13, marginTop: 2 },
-  bottomSpacer: { height: 100 },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: 16, paddingBottom: 32 },
-  submitButton: { borderRadius: 12 },
-  submitButtonContent: { paddingVertical: 8 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  notAuthTitle: {
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  notAuthText: {
+    color: '#6b7280',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  signInButton: {
+    minWidth: 120,
+  },
+  section: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  sectionHint: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 12,
+  },
+  flatInput: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  flatTextArea: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
+    minHeight: 120,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  euroSign: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginRight: 8,
+  },
+  budgetInput: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  
+  // Category Selector (Button that opens modal)
+  categorySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  categorySelectorIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  categorySelectorText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  categorySelectorArrow: {
+    fontSize: 24,
+    color: '#9ca3af',
+  },
+  
+  // Difficulty Selector
+  difficultyRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  difficultyOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    backgroundColor: '#f9fafb',
+  },
+  difficultyOptionActive: {
+    backgroundColor: '#ffffff',
+  },
+  difficultyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  difficultyLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  difficultyLabelActive: {
+    color: '#1f2937',
+  },
+  
+  dateButton: {
+    alignSelf: 'flex-start',
+  },
+  urgentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  urgentInfo: {
+    flex: 1,
+  },
+  urgentHint: {
+    color: '#6b7280',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    padding: 16,
+    paddingBottom: 32,
+  },
+  submitButton: {
+    borderRadius: 12,
+  },
+  submitButtonContent: {
+    paddingVertical: 8,
+  },
+  
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  categoryModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  
+  // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
+  categoryWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+  },
+  categoryPillActive: {
+    backgroundColor: '#e0f2fe',
+    borderColor: '#0ea5e9',
+  },
+  categoryPillIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  categoryPillLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  categoryPillLabelActive: {
+    color: '#0369a1',
+    fontWeight: '700',
+  },
+  categoryPillCheck: {
+    fontSize: 14,
+    color: '#0ea5e9',
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
 });
