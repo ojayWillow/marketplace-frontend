@@ -61,7 +61,12 @@ const stackScreenOptions = {
   presentation: 'card' as const,
 };
 
+let renderCount = 0;
+
 export default function RootLayout() {
+  renderCount++;
+  console.log(`🏗️  ROOT LAYOUT RENDER #${renderCount}`);
+  
   const { token, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const notificationListener = useRef<(() => void) | null>(null);
