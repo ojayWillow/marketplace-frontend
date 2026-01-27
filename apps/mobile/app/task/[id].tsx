@@ -37,11 +37,11 @@ export default function TaskDetailScreen() {
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
 
-  // Loading state
+  // Loading state - use same SafeAreaView edges to prevent layout shift
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <Stack.Screen options={{ headerShown: true, title: 'Task Details', headerBackTitle: 'Back' }} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={ACCENT_COLOR} />
         </View>
@@ -52,8 +52,8 @@ export default function TaskDetailScreen() {
   // Error state
   if (error || !task) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ headerShown: true, title: 'Task Details' }} />
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <Stack.Screen options={{ headerShown: true, title: 'Task Details', headerBackTitle: 'Back' }} />
         <View style={styles.centered}>
           <Text style={styles.errorText}>Task not found</Text>
           <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
