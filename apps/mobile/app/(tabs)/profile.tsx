@@ -270,13 +270,15 @@ export default function ProfileScreen() {
             Activity
           </Text>
           <Surface style={[styles.menuCard, { backgroundColor: themeColors.card }]} elevation={1}>
-            <MenuItem 
-              title="Jobs & Offerings" 
-              subtitle="View all your jobs and services"
-              icon="📄" 
-              onPress={() => router.push('/activity/jobs-and-offerings')}
-              themeColors={themeColors}
-            />
+            <View style={styles.menuCardContent}>
+              <MenuItem 
+                title="Jobs & Offerings" 
+                subtitle="View all your jobs and services"
+                icon="📄" 
+                onPress={() => router.push('/activity/jobs-and-offerings')}
+                themeColors={themeColors}
+              />
+            </View>
           </Surface>
         </View>
 
@@ -584,7 +586,10 @@ const styles = StyleSheet.create({
   menuCard: {
     marginHorizontal: 20,
     borderRadius: 12,
+  },
+  menuCardContent: {
     overflow: 'hidden',
+    borderRadius: 12,
   },
   menuItem: {
     flexDirection: 'row',
