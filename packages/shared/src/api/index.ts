@@ -24,6 +24,7 @@ export {
 } from './notifications';
 
 export * from './offerings';
+export * from './payments';
 export * from './push';
 export * from './reviews';
 export * from './taskResponses';
