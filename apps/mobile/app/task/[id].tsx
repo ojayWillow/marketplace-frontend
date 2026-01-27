@@ -1,6 +1,5 @@
 import { View, ScrollView } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getTask, useAuthStore, getImageUrl } from '@marketplace/shared';
@@ -37,24 +36,6 @@ export default function TaskDetailScreen() {
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
 
-  // Header options - ALWAYS CONSISTENT to prevent layout shift
-  // Share button always present, just disabled/hidden when loading
-  const headerOptions = {
-    headerShown: true,
-    title: '',
-    headerBackTitle: 'Back',
-    headerRight: () => (
-      <IconButton
-        icon="share-variant"
-        iconColor={ACCENT_COLOR}
-        size={24}
-        onPress={task ? actions.handleShare : undefined}
-        disabled={!task}
-        style={{ opacity: task ? 1 : 0 }}
-      />
-    ),
-  };
-
   // Review prompt after completion
   if (actions.showReviewPrompt) {
     return (
@@ -66,68 +47,76 @@ export default function TaskDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
-      <Stack.Screen options={headerOptions} />
-      
-      <SafeAreaView 
-        style={styles.container} 
-        edges={['bottom']} 
+    <View style={styles.container}>
+      {/* CRITICAL: Header configuration must be STATIC to prevent layout recalculation */}
+      {/* headerTransparent: false ensures header takes up space in layout */}
+      {/* headerLargeTitle: false prevents iOS large title animation */}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTransparent: false,
+          headerLargeTitle: false,
+          title: '',
+          headerBackTitle: 'Back',
+          headerStyle: {
+            backgroundColor: '#f3f4f6',
+          },
+          headerShadowVisible: false,
+          headerRight: () => (
+            <IconButton
+              icon="share-variant"
+              iconColor={ACCENT_COLOR}
+              size={24}
+              onPress={task ? actions.handleShare : undefined}
+              disabled={!task}
+              style={{ opacity: task ? 1 : 0 }}
+            />
+          ),
+        }}
+      />
+
+      {/* Main ScrollView */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
+        automaticallyAdjustsScrollIndicatorInsets={false}
       >
-        {/* Main ScrollView - ALWAYS present */}
-        {/* CRITICAL FIX: contentInsetAdjustmentBehavior="never" prevents iOS */}
-        {/* from automatically adjusting content insets when header appears, */}
-        {/* which causes the "content behind header then slides down" issue */}
-        <ScrollView 
-          style={styles.scrollView} 
-          contentContainerStyle={styles.scrollContent}
-          contentInsetAdjustmentBehavior="never"
-          automaticallyAdjustContentInsets={false}
-          automaticallyAdjustsScrollIndicatorInsets={false}
-        >
-          {isLoading ? (
-            // Loading state - show centered spinner INSIDE the scroll view
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color={ACCENT_COLOR} />
-            </View>
-          ) : error || !task ? (
-            // Error state - show error INSIDE the scroll view
-            <View style={styles.centered}>
-              <Text style={styles.errorText}>Task not found</Text>
-              <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
-            </View>
-          ) : (
-            // Success state - render task content
-            <>
-              <TaskHeroCard
-                task={task}
-                isOwnTask={isOwnTask}
-                onMessage={actions.handleMessage}
-                onReport={actions.handleReport}
-                onViewProfile={actions.handleViewProfile}
-              />
+        {isLoading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={ACCENT_COLOR} />
+          </View>
+        ) : error || !task ? (
+          <View style={styles.centered}>
+            <Text style={styles.errorText}>Task not found</Text>
+            <Button mode="contained" onPress={() => router.back()}>
+              Go Back
+            </Button>
+          </View>
+        ) : (
+          <>
+            <TaskHeroCard
+              task={task}
+              isOwnTask={isOwnTask}
+              onMessage={actions.handleMessage}
+              onReport={actions.handleReport}
+              onViewProfile={actions.handleViewProfile}
+            />
 
-              <TaskImageGallery images={taskImages} />
+            <TaskImageGallery images={taskImages} />
 
-              <TaskDescription
-                task={task}
-                onOpenMap={actions.handleOpenMap}
-              />
+            <TaskDescription task={task} onOpenMap={actions.handleOpenMap} />
 
-              <TaskNotices task={task} />
-            </>
-          )}
-        </ScrollView>
-
-        {/* Bottom bar - ALWAYS present */}
-        {/* Only render TaskBottomBar when we have task data */}
-        {!isLoading && !error && task && (
-          <TaskBottomBar
-            task={task}
-            taskId={taskId}
-            actions={actions}
-          />
+            <TaskNotices task={task} />
+          </>
         )}
-      </SafeAreaView>
+      </ScrollView>
+
+      {/* Bottom bar */}
+      {!isLoading && !error && task && (
+        <TaskBottomBar task={task} taskId={taskId} actions={actions} />
+      )}
     </View>
   );
 }
