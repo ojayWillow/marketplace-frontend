@@ -24,6 +24,11 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
   const canMarkDone = isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress');
   const canConfirm = isOwnTask && task.status === 'pending_confirmation';
   const showApplyButton = task.status === 'open' && !isOwnTask && !hasApplied;
+  
+  // Worker can report issue when assigned or in progress (not disputed yet)
+  const canWorkerReportIssue = isAssignedToMe && 
+    (task.status === 'assigned' || task.status === 'in_progress') && 
+    task.status !== 'disputed';
 
   return (
     <View style={styles.bottomBar}>
@@ -87,15 +92,14 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
         </View>
       )}
 
-      {/* CONFIRM/DISPUTE */}
+      {/* CONFIRM/DISPUTE - for job giver when pending confirmation */}
       {canConfirm && (
         <View style={styles.ownerBtnRow}>
           <Button 
             mode="outlined" 
             onPress={actions.handleDispute} 
             textColor="#ef4444" 
-            style={[styles.halfBtn, styles.dangerBtn]} 
-            loading={actions.isDisputing}
+            style={[styles.halfBtn, styles.dangerBtn]}
           >
             Dispute
           </Button>
@@ -110,18 +114,30 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
         </View>
       )}
 
-      {/* MARK DONE */}
+      {/* WORKER ACTIONS - Mark Done + Report Issue */}
       {canMarkDone && (
-        <Button 
-          mode="contained" 
-          onPress={actions.handleMarkDone} 
-          loading={actions.isMarkingDone} 
-          style={[styles.primaryBtn, styles.successBtn]} 
-          contentStyle={styles.btnContent} 
-          labelStyle={styles.btnLabel}
-        >
-          Mark as Done
-        </Button>
+        <View style={styles.ownerActions}>
+          <Button 
+            mode="contained" 
+            onPress={actions.handleMarkDone} 
+            loading={actions.isMarkingDone} 
+            style={[styles.primaryBtn, styles.successBtn]} 
+            contentStyle={styles.btnContent} 
+            labelStyle={styles.btnLabel}
+          >
+            Mark as Done
+          </Button>
+          {canWorkerReportIssue && (
+            <Button 
+              mode="outlined" 
+              onPress={actions.handleDispute} 
+              textColor="#ef4444" 
+              style={[styles.primaryBtn, styles.dangerBtn]}
+            >
+              Report Issue
+            </Button>
+          )}
+        </View>
       )}
     </View>
   );

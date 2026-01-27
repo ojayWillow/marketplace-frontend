@@ -13,6 +13,7 @@ import {
   TaskNotices,
   TaskBottomBar,
   TaskReviewPrompt,
+  TaskDisputeInfo,
 } from '../../src/features/tasks/components/detail';
 import { useTaskActions } from '../../src/features/tasks/hooks/useTaskActions';
 import { styles, ACCENT_COLOR } from '../../src/features/tasks/styles/taskDetailStyles';
@@ -111,6 +112,11 @@ export default function TaskDetailScreen() {
             <TaskImageGallery images={taskImages} />
 
             <TaskDescription task={task} onOpenMap={actions.handleOpenMap} />
+
+            {/* Show dispute info if task has disputes */}
+            {(task.status === 'disputed' || task.status === 'pending_confirmation') && (
+              <TaskDisputeInfo taskId={taskId} />
+            )}
 
             <TaskNotices task={task} />
           </>

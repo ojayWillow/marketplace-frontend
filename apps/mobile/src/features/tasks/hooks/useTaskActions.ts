@@ -7,7 +7,6 @@ import {
   markTaskDone, 
   confirmTaskCompletion, 
   cancelTask, 
-  disputeTask, 
   withdrawApplication,
   useAuthStore,
   type Task 
@@ -23,7 +22,6 @@ export interface TaskActionsReturn {
   isWithdrawing: boolean;
   isMarkingDone: boolean;
   isConfirming: boolean;
-  isDisputing: boolean;
   isCancelling: boolean;
   
   // Handlers
@@ -96,17 +94,6 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
     },
   });
 
-  const disputeMutation = useMutation({
-    mutationFn: () => disputeTask(taskId, 'Work not completed satisfactorily'),
-    onSuccess: () => {
-      Alert.alert('Disputed', 'Task has been disputed.');
-      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-    },
-    onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed.');
-    },
-  });
-
   const cancelMutation = useMutation({
     mutationFn: () => cancelTask(taskId),
     onSuccess: () => {
@@ -167,11 +154,9 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
   }, [confirmMutation]);
 
   const handleDispute = useCallback(() => {
-    Alert.alert('Dispute', 'Not satisfied with the work?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Dispute', style: 'destructive', onPress: () => disputeMutation.mutate() },
-    ]);
-  }, [disputeMutation]);
+    // Navigate to dispute creation screen instead of old simple dispute
+    router.push(`/task/${taskId}/dispute`);
+  }, [taskId]);
 
   const handleCancel = useCallback(() => {
     Alert.alert('Cancel Task', 'Cancel this task?', [
@@ -222,7 +207,6 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
     isWithdrawing: withdrawMutation.isPending,
     isMarkingDone: markDoneMutation.isPending,
     isConfirming: confirmMutation.isPending,
-    isDisputing: disputeMutation.isPending,
     isCancelling: cancelMutation.isPending,
     
     // Handlers

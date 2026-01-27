@@ -4,11 +4,16 @@ import { Text, Surface, Divider, Appbar } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useAuthStore } from '@marketplace/shared';
 
 export default function SettingsScreen() {
   const { getActiveTheme, mode } = useThemeStore();
+  const { user } = useAuthStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+
+  // Check if user is admin (adjust based on your user model)
+  const isAdmin = user?.is_admin || user?.role === 'admin';
 
   const getAppearanceLabel = () => {
     if (mode === 'system') return 'System';
@@ -24,7 +29,32 @@ export default function SettingsScreen() {
       </Appbar.Header>
       
       <ScrollView style={styles.scrollView}>
+        {/* Admin Section - Only show for admins */}
+        {isAdmin && (
+          <>
+            <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Admin</Text>
+            <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
+              <MenuItem 
+                title="Manage Disputes" 
+                subtitle="Review and resolve disputes"
+                icon="⚖️" 
+                onPress={() => router.push('/settings/admin/disputes')}
+                themeColors={themeColors}
+              />
+              <Divider style={{ backgroundColor: themeColors.border }} />
+              <MenuItem 
+                title="User Management" 
+                subtitle="View and manage users"
+                icon="👥" 
+                onPress={() => Alert.alert('Coming Soon', 'User management will be available soon')}
+                themeColors={themeColors}
+              />
+            </Surface>
+          </>
+        )}
+
         {/* Appearance */}
+        <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>Preferences</Text>
         <Surface style={[styles.menuContainer, { backgroundColor: themeColors.card }]} elevation={0}>
           <MenuItem 
             title="Appearance" 
