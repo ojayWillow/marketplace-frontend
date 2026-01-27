@@ -3,6 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Text, Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getTask, useAuthStore, getImageUrl } from '@marketplace/shared';
+import { useState, useEffect } from 'react';
 
 // Feature imports
 import {
@@ -21,6 +22,10 @@ export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
+  
+  // CRITICAL FIX: Force minimum render delay to allow layout to stabilize
+  // This prevents content jumping when React Query returns cached data instantly
+  const [isRenderReady, setIsRenderReady] = useState(false);
 
   // Data fetching
   const { data: task, isLoading, error } = useQuery({
@@ -29,12 +34,24 @@ export default function TaskDetailScreen() {
     enabled: taskId > 0,
   });
 
+  // Wait for next frame before rendering content
+  // This gives iOS time to calculate header layout
+  useEffect(() => {
+    const timer = requestAnimationFrame(() => {
+      setIsRenderReady(true);
+    });
+    return () => cancelAnimationFrame(timer);
+  }, []);
+
   // All actions and mutations
   const actions = useTaskActions(taskId, task);
 
   // Computed values
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
+  
+  // Show loading if data is loading OR layout isn't ready yet
+  const showLoading = isLoading || !isRenderReady;
 
   // Review prompt after completion
   if (actions.showReviewPrompt) {
@@ -49,8 +66,6 @@ export default function TaskDetailScreen() {
   return (
     <View style={styles.container}>
       {/* CRITICAL: Header configuration must be STATIC to prevent layout recalculation */}
-      {/* headerTransparent: false ensures header takes up space in layout */}
-      {/* headerLargeTitle: false prevents iOS large title animation */}
       <Stack.Screen
         options={{
           headerShown: true,
@@ -83,7 +98,7 @@ export default function TaskDetailScreen() {
         automaticallyAdjustContentInsets={false}
         automaticallyAdjustsScrollIndicatorInsets={false}
       >
-        {isLoading ? (
+        {showLoading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={ACCENT_COLOR} />
           </View>
@@ -114,7 +129,7 @@ export default function TaskDetailScreen() {
       </ScrollView>
 
       {/* Bottom bar */}
-      {!isLoading && !error && task && (
+      {!showLoading && !error && task && (
         <TaskBottomBar task={task} taskId={taskId} actions={actions} />
       )}
     </View>
