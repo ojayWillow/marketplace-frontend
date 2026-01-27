@@ -36,54 +36,36 @@ export interface StripeConfig {
   platform_fee_percent: string;
 }
 
-/**
- * Create payment intent for task (escrow)
- */
 export const createPaymentIntent = async (taskId: number, amount: number): Promise<PaymentIntentResponse> => {
-  const response = await apiClient.post(`/api/tasks/${taskId}/pay`, { amount });
+  const response = await apiClient.post(`/api/payments/tasks/${taskId}/pay`, { amount });
   return response.data;
 };
 
-/**
- * Release payment to worker after task completion
- */
 export const releasePayment = async (taskId: number): Promise<{ message: string; transaction: Transaction }> => {
-  const response = await apiClient.post(`/api/tasks/${taskId}/release-payment`);
+  const response = await apiClient.post(`/api/payments/tasks/${taskId}/release-payment`);
   return response.data;
 };
 
-/**
- * Refund payment to creator (admin only)
- */
 export const refundPayment = async (
   taskId: number,
   amount?: number,
   reason?: string
 ): Promise<{ message: string; transaction: Transaction }> => {
-  const response = await apiClient.post(`/api/tasks/${taskId}/refund`, { amount, reason });
+  const response = await apiClient.post(`/api/payments/tasks/${taskId}/refund`, { amount, reason });
   return response.data;
 };
 
-/**
- * Get user's transaction history
- */
 export const getTransactions = async (status?: string): Promise<{ transactions: Transaction[]; total: number }> => {
-  const response = await apiClient.get('/api/transactions', { params: { status } });
+  const response = await apiClient.get('/api/payments/transactions', { params: { status } });
   return response.data;
 };
 
-/**
- * Get specific transaction details
- */
 export const getTransaction = async (transactionId: number): Promise<{ transaction: Transaction }> => {
-  const response = await apiClient.get(`/api/transactions/${transactionId}`);
+  const response = await apiClient.get(`/api/payments/transactions/${transactionId}`);
   return response.data;
 };
 
-/**
- * Get Stripe public configuration
- */
 export const getStripeConfig = async (): Promise<StripeConfig> => {
-  const response = await apiClient.get('/api/config');
+  const response = await apiClient.get('/api/payments/config');
   return response.data;
 };
