@@ -1,9 +1,9 @@
-import { View, ScrollView } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { View, ScrollView, InteractionManager } from 'react-native';
+import { useLocalSearchParams, router, Stack, useFocusEffect } from 'expo-router';
 import { Text, Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getTask, useAuthStore, getImageUrl } from '@marketplace/shared';
-import { useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 // Feature imports
 import {
@@ -22,6 +22,9 @@ export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
+  
+  // Wait for screen transition to complete before rendering content
+  const [isScreenReady, setIsScreenReady] = useState(false);
 
   // Data fetching
   const { data: task, isLoading, error } = useQuery({
@@ -30,14 +33,16 @@ export default function TaskDetailScreen() {
     enabled: taskId > 0,
   });
 
-  // DEBUG LOGGING
-  useEffect(() => {
-    console.log('🔴 SCREEN MOUNTED', { taskId, hasTask: !!task, isLoading });
-  }, []);
-
-  useEffect(() => {
-    console.log('🟡 DATA CHANGED', { hasTask: !!task, isLoading, taskTitle: task?.title });
-  }, [task, isLoading]);
+  // CRITICAL: Wait for navigation animation to complete
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenReady(false);
+      const task = InteractionManager.runAfterInteractions(() => {
+        setIsScreenReady(true);
+      });
+      return () => task.cancel();
+    }, [])
+  );
 
   // All actions and mutations
   const actions = useTaskActions(taskId, task);
@@ -45,6 +50,9 @@ export default function TaskDetailScreen() {
   // Computed values
   const isOwnTask = user?.id === task?.creator_id;
   const taskImages = parseTaskImages(task?.images, getImageUrl);
+  
+  // Only show content when BOTH data is ready AND screen transition is complete
+  const showContent = !isLoading && isScreenReady;
 
   // Review prompt after completion
   if (actions.showReviewPrompt) {
@@ -55,8 +63,6 @@ export default function TaskDetailScreen() {
       />
     );
   }
-
-  console.log('🔵 RENDER', { isLoading, hasTask: !!task, hasError: !!error });
 
   return (
     <View style={styles.container}>
@@ -81,7 +87,7 @@ export default function TaskDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        {isLoading ? (
+        {!showContent ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={ACCENT_COLOR} />
           </View>
@@ -111,7 +117,7 @@ export default function TaskDetailScreen() {
         )}
       </ScrollView>
 
-      {!isLoading && !error && task && (
+      {showContent && !error && task && (
         <TaskBottomBar task={task} taskId={taskId} actions={actions} />
       )}
     </View>
