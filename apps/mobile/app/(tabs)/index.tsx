@@ -1,5 +1,5 @@
 import { View, FlatList, Animated, TextInput, Keyboard, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
@@ -43,6 +43,9 @@ export default function HomeScreen() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
+  
+  // Get safe area insets for stable positioning
+  const insets = useSafeAreaInsets();
   
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
@@ -274,8 +277,14 @@ export default function HomeScreen() {
           ))}
         </MapView>
 
-        {/* Floating Header */}
-        <SafeAreaView style={styles.floatingHeader} edges={['top']}>
+        {/* Floating Header - FIXED with stable positioning */}
+        <View 
+          style={[
+            styles.floatingHeader, 
+            { paddingTop: insets.top } // Use actual safe area inset, no SafeAreaView needed
+          ]} 
+          collapsable={false}
+        >
           <View style={styles.topRow}>
             <TouchableOpacity 
               style={[styles.categoryButton, hasActiveCategory && styles.categoryButtonActive]}
@@ -322,7 +331,7 @@ export default function HomeScreen() {
               </BlurView>
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
+        </View>
 
         {/* Loading Overlay */}
         {isLoading && (
