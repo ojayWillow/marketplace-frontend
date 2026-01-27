@@ -1,6 +1,5 @@
 import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions, Share } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, ActivityIndicator, IconButton, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, getCategoryByKey, getImageUrl } from '@marketplace/shared';
@@ -206,232 +205,226 @@ export default function OfferingDetailScreen() {
     ? offering.images.split(',').filter(Boolean).map(url => getImageUrl(url))
     : [];
 
-  // Header options - ALWAYS CONSISTENT to prevent layout shift
-  // Share button always present, just disabled when loading
-  const headerOptions = {
-    headerShown: true,
-    title: 'Service Details',
-    headerBackTitle: 'Back',
-    headerRight: () => (
-      <IconButton
-        icon="share-variant"
-        iconColor={ACCENT_COLOR}
-        size={24}
-        onPress={offering ? handleShare : undefined}
-        disabled={!offering}
-        style={{ opacity: offering ? 1 : 0 }}
-      />
-    ),
-  };
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <Stack.Screen options={headerOptions} />
-      
-      <SafeAreaView 
-        style={styles.container} 
-        edges={['bottom']} 
+    <View style={styles.container}>
+      {/* CRITICAL: Header configuration must be STATIC to prevent layout recalculation */}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTransparent: false,
+          headerLargeTitle: false,
+          title: 'Service Details',
+          headerBackTitle: 'Back',
+          headerStyle: {
+            backgroundColor: '#f5f5f5',
+          },
+          headerShadowVisible: false,
+          headerRight: () => (
+            <IconButton
+              icon="share-variant"
+              iconColor={ACCENT_COLOR}
+              size={24}
+              onPress={offering ? handleShare : undefined}
+              disabled={!offering}
+              style={{ opacity: offering ? 1 : 0 }}
+            />
+          ),
+        }}
+      />
+
+      {/* Main ScrollView */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
+        automaticallyAdjustsScrollIndicatorInsets={false}
       >
-        {/* Main ScrollView - ALWAYS present */}
-        {/* CRITICAL FIX: contentInsetAdjustmentBehavior="never" prevents iOS */}
-        {/* from automatically adjusting content insets when header appears */}
-        <ScrollView 
-          style={styles.scrollView} 
-          contentContainerStyle={styles.scrollContent}
-          contentInsetAdjustmentBehavior="never"
-          automaticallyAdjustContentInsets={false}
-          automaticallyAdjustsScrollIndicatorInsets={false}
-        >
-          {isLoading ? (
-            // Loading state
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color={ACCENT_COLOR} />
-            </View>
-          ) : error || !offering ? (
-            // Error state
-            <View style={styles.centered}>
-              <Text style={styles.errorText}>Service not found</Text>
-              <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
-            </View>
-          ) : (
-            // Success state - render offering content
-            <>
-              {/* COMPACT HERO CARD */}
-              <View style={styles.heroCard}>
-                {/* Row 1: Category + Report Flag (LEFT) + Price (RIGHT) */}
-                <View style={styles.topRow}>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryText}>{categoryData?.icon} {categoryData?.label || offering.category}</Text>
-                    <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                    <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.reportBtn}>
-                      <Text style={styles.flagIcon}>🚩</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.price}>{priceDisplay}</Text>
+        {isLoading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={ACCENT_COLOR} />
+          </View>
+        ) : error || !offering ? (
+          <View style={styles.centered}>
+            <Text style={styles.errorText}>Service not found</Text>
+            <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
+          </View>
+        ) : (
+          <>
+            {/* COMPACT HERO CARD */}
+            <View style={styles.heroCard}>
+              {/* Row 1: Category + Report Flag (LEFT) + Price (RIGHT) */}
+              <View style={styles.topRow}>
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{categoryData?.icon} {categoryData?.label || offering.category}</Text>
+                  <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                  <TouchableOpacity onPress={handleReport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.reportBtn}>
+                    <Text style={styles.flagIcon}>🚩</Text>
+                  </TouchableOpacity>
                 </View>
-
-                {/* Row 2: Title */}
-                <Text style={styles.heroTitle}>{offering.title}</Text>
-
-                {/* Row 3: Provider */}
-                <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
-                  {offering.creator_avatar ? (
-                    <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
-                  ) : (
-                    <View style={styles.avatarSmallPlaceholder}>
-                      <Text style={styles.avatarSmallText}>{offering.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
-                    </View>
-                  )}
-                  <View style={styles.providerInfo}>
-                    <Text style={styles.providerName}>{offering.creator_name}</Text>
-                    {hasRating && <StarRating rating={rating} reviewCount={offering.creator_review_count} size={12} showCount />}
-                    {offering.creator_city && <Text style={styles.providerCity}>📍 {offering.creator_city}</Text>}
-                  </View>
-                  {!isOwnOffering && (
-                    <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
-                      <Text style={styles.messageBtnText}>💬</Text>
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-
-                {/* Row 4: Stats */}
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>✓ {completedJobs}</Text>
-                    <Text style={styles.statLabel}>COMPLETED</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>⚡ ~2h</Text>
-                    <Text style={styles.statLabel}>RESPONSE</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
-                    <Text style={styles.statLabel}>POSTED</Text>
-                  </View>
-                </View>
+                <Text style={styles.price}>{priceDisplay}</Text>
               </View>
 
-              {/* IMAGES (if any) */}
-              {offeringImages.length > 0 && (
-                <View style={styles.imageCard}>
-                  <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                    {offeringImages.map((uri, i) => (
-                      <Image key={i} source={{ uri }} style={styles.offeringImage} resizeMode="cover" />
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
+              {/* Row 2: Title */}
+              <Text style={styles.heroTitle}>{offering.title}</Text>
 
-              {/* DESCRIPTION */}
+              {/* Row 3: Provider */}
+              <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
+                {offering.creator_avatar ? (
+                  <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
+                ) : (
+                  <View style={styles.avatarSmallPlaceholder}>
+                    <Text style={styles.avatarSmallText}>{offering.creator_name?.charAt(0).toUpperCase() || 'U'}</Text>
+                  </View>
+                )}
+                <View style={styles.providerInfo}>
+                  <Text style={styles.providerName}>{offering.creator_name}</Text>
+                  {hasRating && <StarRating rating={rating} reviewCount={offering.creator_review_count} size={12} showCount />}
+                  {offering.creator_city && <Text style={styles.providerCity}>📍 {offering.creator_city}</Text>}
+                </View>
+                {!isOwnOffering && (
+                  <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
+                    <Text style={styles.messageBtnText}>💬</Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+
+              {/* Row 4: Stats */}
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>✓ {completedJobs}</Text>
+                  <Text style={styles.statLabel}>COMPLETED</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>⚡ ~2h</Text>
+                  <Text style={styles.statLabel}>RESPONSE</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
+                  <Text style={styles.statLabel}>POSTED</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* IMAGES (if any) */}
+            {offeringImages.length > 0 && (
+              <View style={styles.imageCard}>
+                <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+                  {offeringImages.map((uri, i) => (
+                    <Image key={i} source={{ uri }} style={styles.offeringImage} resizeMode="cover" />
+                  ))}                </ScrollView>
+              </View>
+            )}
+
+            {/* DESCRIPTION */}
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>About</Text>
+              <Text style={styles.descriptionText}>{offering.description}</Text>
+            </View>
+
+            {/* LOCATION */}
+            {offering.location && (
               <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>About</Text>
-                <Text style={styles.descriptionText}>{offering.description}</Text>
-              </View>
-
-              {/* LOCATION */}
-              {offering.location && (
-                <View style={styles.sectionCard}>
-                  <View style={styles.locationRow}>
-                    <View style={styles.locationInfo}>
-                      <Text style={styles.sectionTitle}>Service Area</Text>
-                      <Text style={styles.locationText}>{offering.location}</Text>
-                      {offering.service_radius && (
-                        <Text style={styles.radiusText}>📍 {offering.service_radius}km radius</Text>
-                      )}
-                    </View>
-                    {distance !== undefined && distance !== null && (
-                      <View style={styles.distanceBadge}>
-                        <Text style={styles.distanceText}>{distance.toFixed(1)}km</Text>
-                      </View>
+                <View style={styles.locationRow}>
+                  <View style={styles.locationInfo}>
+                    <Text style={styles.sectionTitle}>Service Area</Text>
+                    <Text style={styles.locationText}>{offering.location}</Text>
+                    {offering.service_radius && (
+                      <Text style={styles.radiusText}>📍 {offering.service_radius}km radius</Text>
                     )}
                   </View>
-                  {offering.latitude && offering.longitude && (
-                    <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
-                      <Text style={styles.mapBtnText}>🗺️ Map</Text>
-                    </TouchableOpacity>
+                  {distance !== undefined && distance !== null && (
+                    <View style={styles.distanceBadge}>
+                      <Text style={styles.distanceText}>{distance.toFixed(1)}km</Text>
+                    </View>
                   )}
                 </View>
-              )}
-
-              {/* OWNER NOTICE */}
-              {isOwnOffering && (
-                <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
-                  <Text style={styles.noticeText}>
-                    {offering.status === 'active' ? '✅ Live' : '⏸️ Paused'}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
-        </ScrollView>
-
-        {/* BOTTOM BAR */}
-        {!isLoading && !error && offering && (
-          <View style={styles.bottomBar}>
-            {!isOwnOffering && (
-              <Button 
-                mode="contained" 
-                onPress={handleContact} 
-                style={styles.primaryBtn} 
-                contentStyle={styles.btnContent} 
-                labelStyle={styles.btnLabel}
-                buttonColor={ACCENT_COLOR}
-              >
-                Contact Provider
-              </Button>
-            )}
-
-            {isOwnOffering && (
-              <View style={styles.ownerActions}>
-                <Button mode="outlined" onPress={handleToggleStatus} style={styles.ownerBtn} compact>
-                  {offering.status === 'active' ? 'Pause' : 'Activate'}
-                </Button>
-                <Button mode="outlined" onPress={() => router.push(`/offering/${offeringId}/edit`)} style={styles.ownerBtn} compact>
-                  Edit
-                </Button>
-                {!offering.is_boost_active && (
-                  <Button mode="contained" onPress={handleBoost} style={styles.ownerBtn} buttonColor="#f59e0b" compact>
-                    ⚡
-                  </Button>
+                {offering.latitude && offering.longitude && (
+                  <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
+                    <Text style={styles.mapBtnText}>🗺️ Map</Text>
+                  </TouchableOpacity>
                 )}
-                <Button mode="outlined" onPress={handleDelete} textColor="#ef4444" style={styles.ownerBtn} compact>
-                  🗑️
-                </Button>
               </View>
             )}
-          </View>
-        )}
 
-        {/* CONTACT DIALOG */}
-        <Portal>
-          <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
-            <Dialog.Title>Message</Dialog.Title>
-            <Dialog.Content>
-              <TextInput
-                mode="outlined"
-                value={contactMessage}
-                onChangeText={setContactMessage}
-                multiline
-                numberOfLines={3}
-                style={styles.dialogInput}
-                placeholder="Your message..."
-              />
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Button onPress={() => setShowContactDialog(false)}>Cancel</Button>
-              <Button 
-                onPress={handleSendMessage} 
-                disabled={!contactMessage.trim() || contactMutation.isPending}
-                loading={contactMutation.isPending}
-              >
-                Send
+            {/* OWNER NOTICE */}
+            {isOwnOffering && (
+              <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
+                <Text style={styles.noticeText}>
+                  {offering.status === 'active' ? '✅ Live' : '⏸️ Paused'}
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
+
+      {/* BOTTOM BAR */}
+      {!isLoading && !error && offering && (
+        <View style={styles.bottomBar}>
+          {!isOwnOffering && (
+            <Button 
+              mode="contained" 
+              onPress={handleContact} 
+              style={styles.primaryBtn} 
+              contentStyle={styles.btnContent} 
+              labelStyle={styles.btnLabel}
+              buttonColor={ACCENT_COLOR}
+            >
+              Contact Provider
+            </Button>
+          )}
+
+          {isOwnOffering && (
+            <View style={styles.ownerActions}>
+              <Button mode="outlined" onPress={handleToggleStatus} style={styles.ownerBtn} compact>
+                {offering.status === 'active' ? 'Pause' : 'Activate'}
               </Button>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
-      </SafeAreaView>
+              <Button mode="outlined" onPress={() => router.push(`/offering/${offeringId}/edit`)} style={styles.ownerBtn} compact>
+                Edit
+              </Button>
+              {!offering.is_boost_active && (
+                <Button mode="contained" onPress={handleBoost} style={styles.ownerBtn} buttonColor="#f59e0b" compact>
+                  ⚡
+                </Button>
+              )}
+              <Button mode="outlined" onPress={handleDelete} textColor="#ef4444" style={styles.ownerBtn} compact>
+                🗑️
+              </Button>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* CONTACT DIALOG */}
+      <Portal>
+        <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
+          <Dialog.Title>Message</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              mode="outlined"
+              value={contactMessage}
+              onChangeText={setContactMessage}
+              multiline
+              numberOfLines={3}
+              style={styles.dialogInput}
+              placeholder="Your message..."
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowContactDialog(false)}>Cancel</Button>
+            <Button 
+              onPress={handleSendMessage} 
+              disabled={!contactMessage.trim() || contactMutation.isPending}
+              loading={contactMutation.isPending}
+            >
+              Send
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }
