@@ -1,4 +1,4 @@
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Appbar, Chip, Badge } from 'react-native-paper';
 import { router } from 'expo-router';
@@ -171,7 +171,7 @@ export default function JobsAndOfferingsScreen() {
 
   const data = getActiveData();
 
-  // Tab button component with badge
+  // Tab button component with badge at corner
   const TabButton = ({ 
     value, 
     label, 
@@ -183,44 +183,30 @@ export default function JobsAndOfferingsScreen() {
   }) => {
     const isActive = activeTab === value;
     return (
-      <Chip
-        selected={isActive}
-        onPress={() => {
-          setActiveTab(value);
-          setFilter('all');
-        }}
-        style={[
-          styles.tabChip,
-          isActive && { backgroundColor: themeColors.primaryAccent }
-        ]}
-        textStyle={[
-          styles.tabChipText,
-          isActive && { color: '#fff' }
-        ]}
-        mode={isActive ? 'flat' : 'outlined'}
-      >
-        <View style={styles.tabContent}>
-          <Text style={[
-            styles.tabLabel,
-            { color: isActive ? '#fff' : themeColors.text }
-          ]}>
-            {label}
-          </Text>
-          {badgeCount > 0 && (
-            <View style={styles.badgeWrapper}>
-              <Badge 
-                size={18} 
-                style={[
-                  styles.actionBadge,
-                  isActive && styles.actionBadgeActive
-                ]}
-              >
-                {badgeCount > 9 ? '9+' : badgeCount}
-              </Badge>
-            </View>
-          )}
-        </View>
-      </Chip>
+      <View style={styles.tabButtonWrapper}>
+        <Chip
+          selected={isActive}
+          onPress={() => {
+            setActiveTab(value);
+            setFilter('all');
+          }}
+          style={[
+            styles.tabChip,
+            isActive && { backgroundColor: themeColors.primaryAccent }
+          ]}
+          textStyle={{ color: isActive ? '#fff' : themeColors.text }}
+          mode={isActive ? 'flat' : 'outlined'}
+        >
+          {label}
+        </Chip>
+        {badgeCount > 0 && (
+          <View style={styles.cornerBadge}>
+            <Badge size={18} style={styles.actionBadge}>
+              {badgeCount > 9 ? '9+' : badgeCount}
+            </Badge>
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -322,34 +308,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  tabChip: {
+  tabButtonWrapper: {
     flex: 1,
+    position: 'relative',
+  },
+  tabChip: {
     justifyContent: 'center',
   },
-  tabChipText: {
-    textAlign: 'center',
-  },
-  tabContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  badgeWrapper: {
-    marginLeft: 2,
+  cornerBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    zIndex: 10,
   },
   actionBadge: {
     backgroundColor: '#ef4444',
     color: '#fff',
     fontWeight: '600',
-  },
-  actionBadgeActive: {
-    backgroundColor: '#fff',
-    color: '#ef4444',
+    fontSize: 10,
   },
   filterContainer: {
     flexDirection: 'row',
