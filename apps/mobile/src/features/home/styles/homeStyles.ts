@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 import { colors } from '../../../theme';
 import { JOB_COLOR, OFFERING_COLOR } from '../constants';
 
@@ -11,7 +11,18 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     container: { flex: 1, backgroundColor: themeColors.backgroundSecondary },
     mapContainer: { flex: 1, position: 'relative' },
     map: { flex: 1 },
-    floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
+    floatingHeader: { 
+      position: 'absolute', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      zIndex: 10,
+      // CRITICAL: Pre-allocate minimum height to prevent layout shift
+      // iOS safe area is ~44-50px, Android is smaller
+      // Adding topRow padding (8px) + topRow height (44px) = ~52px content
+      // Total with safe area: ~96-102px
+      minHeight: Platform.OS === 'ios' ? 102 : 68,
+    },
     
     topRow: { 
       flexDirection: 'row', 
