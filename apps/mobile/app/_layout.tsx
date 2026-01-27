@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/stores/authStore';
@@ -31,21 +31,18 @@ const queryClient = new QueryClient({
 });
 
 // CRITICAL FIX FOR EXPO GO:
-// initialWindowMetrics is null in Expo Go because metrics aren't available at build time.
-// This causes SafeAreaView to re-measure on mount, causing the "drop down" layout jump.
-// We provide sensible fallback values based on platform.
 const { width, height } = Dimensions.get('window');
 
 const fallbackMetrics = {
   frame: { x: 0, y: 0, width, height },
   insets: {
     top: Platform.select({
-      ios: 47, // iPhone with notch (most common)
+      ios: 47,
       android: Constants.statusBarHeight || 24,
       default: 0,
     }),
     bottom: Platform.select({
-      ios: 34, // iPhone with home indicator
+      ios: 34,
       android: 0,
       default: 0,
     }),
@@ -54,59 +51,76 @@ const fallbackMetrics = {
   },
 };
 
-// Use initialWindowMetrics if available (production builds), otherwise use fallback (Expo Go)
 const safeAreaMetrics = initialWindowMetrics || fallbackMetrics;
 
+let renderCount = 0;
+
 export default function RootLayout() {
+  renderCount++;
+  const currentRender = renderCount;
+  
   const { token, isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const segments = useSegments();
+  const pathname = usePathname();
   const notificationListener = useRef<(() => void) | null>(null);
   const [isReady, setIsReady] = useState(false);
   
-  // Theme - use system color scheme immediately, don't wait for hydration
   const systemColorScheme = useColorScheme();
   const { mode, _hasHydrated: themeHydrated } = useThemeStore();
   const [, forceUpdate] = useState({});
   
-  // Determine active theme - use system as default until hydrated
   const activeTheme = themeHydrated && mode !== 'system'
     ? mode
     : (systemColorScheme === 'dark' ? 'dark' : 'light');
   const theme = activeTheme === 'dark' ? darkTheme : lightTheme;
   const themeColors = colors[activeTheme];
 
-  // Listen for system appearance changes when in system mode
+  // DEBUG LOGGING
+  console.log(`\n🏗️  ROOT LAYOUT RENDER #${currentRender}`, {
+    pathname,
+    segments: segments.join('/'),
+    isReady,
+    isAuthenticated,
+    themeHydrated,
+    activeTheme,
+  });
+
+  useEffect(() => {
+    console.log('📍 PATHNAME CHANGED:', pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    console.log('🧭 SEGMENTS CHANGED:', segments.join('/'));
+  }, [segments]);
+
   useEffect(() => {
     if (mode !== 'system') return;
     
     const subscription = Appearance.addChangeListener(() => {
-      // Force re-render when system theme changes
+      console.log('🎨 THEME APPEARANCE CHANGED');
       forceUpdate({});
     });
 
     return () => subscription.remove();
   }, [mode]);
 
-  // Force re-render when theme mode changes manually
   useEffect(() => {
+    console.log('🎨 THEME MODE CHANGED:', mode);
     forceUpdate({});
   }, [mode]);
 
-  // Mark as ready after first render completes
   useEffect(() => {
-    // Use InteractionManager to wait for animations/transitions to complete
     const handle = InteractionManager.runAfterInteractions(() => {
+      console.log('✅ ROOT LAYOUT READY');
       setIsReady(true);
     });
     return () => handle.cancel();
   }, []);
 
-  // Register for push notifications AFTER app is interactive
-  // This prevents blocking the initial render
   useEffect(() => {
     if (!isReady || !isAuthenticated || !token) return;
     
-    // Defer push notification registration to not block UI
     const handle = InteractionManager.runAfterInteractions(() => {
       registerPushToken(token).then((success) => {
         if (success) {
@@ -120,7 +134,6 @@ export default function RootLayout() {
     return () => handle.cancel();
   }, [isReady, isAuthenticated, token]);
 
-  // Setup notification listeners - can run immediately as it's just event subscription
   useEffect(() => {
     const cleanup = setupNotificationListeners(
       (notification) => {
@@ -156,10 +169,6 @@ export default function RootLayout() {
       router.push('/(tabs)');
     }
   };
-
-  // NO LONGER BLOCKING ON HYDRATION
-  // The app renders immediately with system theme defaults
-  // Theme preference loads from storage and updates seamlessly
 
   return (
     <SafeAreaProvider initialMetrics={safeAreaMetrics}>
