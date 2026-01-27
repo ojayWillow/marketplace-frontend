@@ -1,16 +1,11 @@
-import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions, Share, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, TouchableOpacity, Image, Dimensions, Share } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, ActivityIndicator, IconButton, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, getCategoryByKey, getImageUrl } from '@marketplace/shared';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import StarRating from '../../components/StarRating';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(false);
-}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 180;
@@ -62,15 +57,6 @@ export default function OfferingDetailScreen() {
     queryFn: () => getOffering(offeringId),
     enabled: offeringId > 0,
   });
-
-  // Disable layout animations on this screen to prevent jumps
-  useEffect(() => {
-    // Disable any pending layout animations
-    LayoutAnimation.configureNext({
-      duration: 0,
-      update: { type: 'linear' },
-    });
-  }, []);
 
   const contactMutation = useMutation({
     mutationFn: (message: string) => contactOfferingCreator(offeringId, message),
@@ -238,9 +224,6 @@ export default function OfferingDetailScreen() {
     ),
   };
 
-  // CRITICAL: Use View wrapper with flex:1 to prevent SafeAreaView measurement jump
-  // SafeAreaView measures AFTER mount, causing content to shift
-  // Wrapping in a stable flex container prevents this
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       <Stack.Screen options={headerOptions} />
@@ -248,23 +231,24 @@ export default function OfferingDetailScreen() {
       <SafeAreaView 
         style={styles.container} 
         edges={['bottom']} 
-        collapsable={false}
-        mode="padding"
       >
         {/* Main ScrollView - ALWAYS present */}
+        {/* CRITICAL FIX: contentInsetAdjustmentBehavior="never" prevents iOS */}
+        {/* from automatically adjusting content insets when header appears */}
         <ScrollView 
           style={styles.scrollView} 
           contentContainerStyle={styles.scrollContent}
-          removeClippedSubviews={false}
-          scrollEventThrottle={16}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustsScrollIndicatorInsets={false}
         >
           {isLoading ? (
-            // Loading state - show centered spinner INSIDE the scroll view
+            // Loading state
             <View style={styles.centered}>
               <ActivityIndicator size="large" color={ACCENT_COLOR} />
             </View>
           ) : error || !offering ? (
-            // Error state - show error INSIDE the scroll view
+            // Error state
             <View style={styles.centered}>
               <Text style={styles.errorText}>Service not found</Text>
               <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
@@ -383,8 +367,7 @@ export default function OfferingDetailScreen() {
           )}
         </ScrollView>
 
-        {/* BOTTOM BAR - ALWAYS present */}
-        {/* Only render content when we have offering data and not in loading/error state */}
+        {/* BOTTOM BAR */}
         {!isLoading && !error && offering && (
           <View style={styles.bottomBar}>
             {!isOwnOffering && (
