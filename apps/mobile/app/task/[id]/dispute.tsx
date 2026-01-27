@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Text, Button, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -113,6 +113,9 @@ export default function DisputeScreen() {
     );
   }
 
+  // Get the label for selected reason
+  const selectedReasonLabel = reasons?.find((r: DisputeReason) => r.value === selectedReason)?.label || 'Select a reason...';
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -145,13 +148,18 @@ export default function DisputeScreen() {
               selectedValue={selectedReason}
               onValueChange={(value) => setSelectedReason(value)}
               style={styles.picker}
+              itemStyle={styles.pickerItem}
             >
-              <Picker.Item label="Select a reason..." value="" />
+              <Picker.Item label="Select a reason..." value="" color="#9ca3af" />
               {reasons?.map((reason: DisputeReason) => (
                 <Picker.Item key={reason.value} label={reason.label} value={reason.value} />
               ))}
             </Picker>
           </View>
+          {/* Show selected value label for iOS */}
+          {Platform.OS === 'ios' && selectedReason && (
+            <Text style={styles.selectedValueText}>{selectedReasonLabel}</Text>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -234,6 +242,7 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: '600',
     marginBottom: 8,
+    color: '#374151',
   },
   hint: {
     color: '#6b7280',
@@ -244,9 +253,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#d1d5db',
+    overflow: 'hidden',
   },
   picker: {
-    height: 50,
+    height: Platform.OS === 'ios' ? 180 : 50,
+    width: '100%',
+  },
+  pickerItem: {
+    fontSize: 16,
+    height: 180,
+  },
+  selectedValueText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
   },
   textInput: {
     backgroundColor: '#fff',
