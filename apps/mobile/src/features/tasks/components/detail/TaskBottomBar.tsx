@@ -94,8 +94,7 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
             mode="outlined" 
             onPress={actions.handleDispute} 
             textColor="#ef4444" 
-            style={[styles.halfBtn, styles.dangerBtn]} 
-            loading={actions.isDisputing}
+            style={[styles.halfBtn, styles.dangerBtn]}
           >
             Dispute
           </Button>
