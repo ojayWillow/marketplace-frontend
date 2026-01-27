@@ -171,7 +171,7 @@ export default function JobsAndOfferingsScreen() {
 
   const data = getActiveData();
 
-  // Tab button component with badge at corner
+  // Tab button component with badge at corner OUTSIDE
   const TabButton = ({ 
     value, 
     label, 
@@ -200,10 +200,10 @@ export default function JobsAndOfferingsScreen() {
           {label}
         </Chip>
         {badgeCount > 0 && (
-          <View style={styles.cornerBadge}>
-            <Badge size={18} style={styles.actionBadge}>
-              {badgeCount > 9 ? '9+' : badgeCount}
-            </Badge>
+          <View style={styles.cornerBadge} pointerEvents="none">
+            <View style={styles.badgeCircle}>
+              <Text style={styles.badgeText}>{badgeCount > 9 ? '9+' : badgeCount}</Text>
+            </View>
           </View>
         )}
       </View>
@@ -317,15 +317,26 @@ const styles = StyleSheet.create({
   },
   cornerBadge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
+    top: -8,
+    right: -4,
     zIndex: 10,
   },
-  actionBadge: {
+  badgeCircle: {
     backgroundColor: '#ef4444',
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  badgeText: {
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   filterContainer: {
     flexDirection: 'row',
