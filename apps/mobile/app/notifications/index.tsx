@@ -130,7 +130,7 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <Stack.Screen options={{ headerShown: true, title: 'Notifications' }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
@@ -143,7 +143,7 @@ export default function NotificationsScreen() {
   const unreadCount = data?.unread_count || 0;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen 
         options={{ 
           headerShown: true, 
