@@ -21,6 +21,7 @@ import {
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
+import ImageView from 'react-native-image-viewing';
 import {
   getConversation,
   getMessages,
@@ -59,6 +60,8 @@ export default function ConversationScreen() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImageIndex, setViewerImageIndex] = useState(0);
 
   // Get API URL for socket
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
@@ -181,6 +184,10 @@ export default function ConversationScreen() {
   const messages = messagesData?.messages || [];
   const isLoading = isCreatingConversation || (!conversationId && targetUserId) || isLoadingMessages;
 
+  // Get all image URLs from messages for the viewer
+  const imageMessages = messages.filter((m: Message) => m.attachment_url && m.attachment_type === 'image');
+  const viewerImages = imageMessages.map((m: Message) => ({ uri: m.attachment_url! }));
+
   // Auto-redirect after 3 seconds if access denied
   useEffect(() => {
     if (accessDenied) {
@@ -231,6 +238,15 @@ export default function ConversationScreen() {
   // Clear selected image
   const clearImage = () => {
     setSelectedImage(null);
+  };
+
+  // Open image viewer
+  const openImageViewer = (imageUrl: string) => {
+    const index = imageMessages.findIndex((m: Message) => m.attachment_url === imageUrl);
+    if (index !== -1) {
+      setViewerImageIndex(index);
+      setViewerVisible(true);
+    }
   };
 
   // Send message mutation
@@ -476,7 +492,7 @@ export default function ConversationScreen() {
                       {/* Image Attachment */}
                       {message.attachment_url && message.attachment_type === 'image' && (
                         <View style={styles.imageContainer}>
-                          <Pressable onPress={() => {/* TODO: Open full screen image */}}>
+                          <Pressable onPress={() => openImageViewer(message.attachment_url!)}>
                             <RNImage
                               source={{ uri: message.attachment_url }}
                               style={styles.messageImage}
@@ -558,6 +574,16 @@ export default function ConversationScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen Image Viewer */}
+      <ImageView
+        images={viewerImages}
+        imageIndex={viewerImageIndex}
+        visible={viewerVisible}
+        onRequestClose={() => setViewerVisible(false)}
+        swipeToCloseEnabled
+        doubleTapToZoomEnabled
+      />
     </SafeAreaView>
   );
 }
