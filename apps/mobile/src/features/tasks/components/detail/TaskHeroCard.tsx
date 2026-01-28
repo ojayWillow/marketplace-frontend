@@ -1,6 +1,6 @@
-import { View, TouchableOpacity, Image } from 'react-native';
+import { View, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-import { type Task, getCategoryByKey, getImageUrl } from '@marketplace/shared';
+import { type Task, getCategoryByKey, getImageUrl, useAuthStore } from '@marketplace/shared';
 import StarRating from '../../../../../components/StarRating';
 import { styles, ACCENT_COLOR } from '../../styles/taskDetailStyles';
 import { formatTimeAgo, getDifficultyIndicator } from '../../utils/taskHelpers';
@@ -13,6 +13,60 @@ interface TaskHeroCardProps {
   onViewProfile: () => void;
 }
 
+/**
+ * Get compact status info for the current user
+ */
+function getStatusBadge(task: Task, userId?: number): { text: string; color: string; bgColor: string } | null {
+  if (!userId) return null;
+  
+  const isCreator = task.creator_id === userId;
+  const isWorker = task.assigned_user_id === userId;
+  const isApplicant = task.user_application_status === 'pending';
+  
+  // Skip for terminal states
+  if (task.status === 'completed' || task.status === 'cancelled' || task.status === 'disputed') {
+    return null;
+  }
+  
+  // Creator view
+  if (isCreator) {
+    if (task.status === 'open' && (task.pending_applications_count ?? 0) > 0) {
+      return { text: '👀 Review Applicants', color: '#9333ea', bgColor: '#f3e8ff' };
+    }
+    if (task.status === 'open') {
+      return { text: '⏳ Awaiting Applicants', color: '#6b7280', bgColor: '#f3f4f6' };
+    }
+    if (task.status === 'assigned' || task.status === 'in_progress') {
+      return { text: '🔨 In Progress', color: '#2563eb', bgColor: '#dbeafe' };
+    }
+    if (task.status === 'pending_confirmation') {
+      return { text: '✅ Review & Confirm', color: '#16a34a', bgColor: '#dcfce7' };
+    }
+    return null;
+  }
+  
+  // Worker view
+  if (isWorker) {
+    if (task.status === 'assigned') {
+      return { text: '🎯 Start Working', color: '#2563eb', bgColor: '#dbeafe' };
+    }
+    if (task.status === 'in_progress') {
+      return { text: '🔨 Mark Complete', color: '#f59e0b', bgColor: '#fef3c7' };
+    }
+    if (task.status === 'pending_confirmation') {
+      return { text: '⏳ Awaiting Confirmation', color: '#6b7280', bgColor: '#f3f4f6' };
+    }
+    return null;
+  }
+  
+  // Applicant view
+  if (isApplicant) {
+    return { text: '📩 Application Pending', color: '#9333ea', bgColor: '#f3e8ff' };
+  }
+  
+  return null;
+}
+
 export function TaskHeroCard({ 
   task, 
   isOwnTask, 
@@ -20,11 +74,15 @@ export function TaskHeroCard({
   onReport, 
   onViewProfile 
 }: TaskHeroCardProps) {
+  const { user } = useAuthStore();
   const categoryData = getCategoryByKey(task.category);
   const difficulty = getDifficultyIndicator(task.difficulty);
   const timeAgo = formatTimeAgo(task.created_at);
   const hasRating = (task.creator_rating ?? 0) > 0;
   const applicantsCount = task.pending_applications_count ?? 0;
+  
+  // Get status badge for current user
+  const statusBadge = getStatusBadge(task, user?.id);
 
   return (
     <View style={styles.heroCard}>
@@ -50,6 +108,15 @@ export function TaskHeroCard({
           <Text style={styles.price}>€{task.budget || task.reward || 0}</Text>
         </View>
       </View>
+
+      {/* ROW 1.5: Status Badge (only for involved users) */}
+      {statusBadge && (
+        <View style={[badgeStyles.statusBadge, { backgroundColor: statusBadge.bgColor }]}>
+          <Text style={[badgeStyles.statusText, { color: statusBadge.color }]}>
+            {statusBadge.text}
+          </Text>
+        </View>
+      )}
 
       {/* ROW 2: Title */}
       <Text style={styles.heroTitle}>{task.title}</Text>
@@ -116,3 +183,18 @@ export function TaskHeroCard({
     </View>
   );
 }
+
+const badgeStyles = StyleSheet.create({
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
