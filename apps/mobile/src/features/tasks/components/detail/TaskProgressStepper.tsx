@@ -1,6 +1,5 @@
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useTranslation } from 'react-i18next';
 import type { Task } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
 import { getTaskSteps, getCurrentStep, type TaskStep, type StepStatus } from '../../utils/taskSteps';
@@ -10,12 +9,46 @@ interface TaskProgressStepperProps {
   onActionPress?: (stepId: string) => void;
 }
 
+// Role labels (avoiding useTranslation hook issue)
+const ROLE_LABELS: Record<string, string> = {
+  creator: 'YOUR JOB PROGRESS',
+  worker: 'YOUR WORK PROGRESS', 
+  applicant: 'YOUR APPLICATION',
+};
+
+// Step labels
+const STEP_LABELS: Record<string, { title: string; description: string }> = {
+  // Creator steps
+  'creator_posted': { title: 'Job Posted', description: 'Your job is visible to helpers' },
+  'creator_reviewing': { title: 'Review Applicants', description: 'Check applications and choose a helper' },
+  'creator_assigned': { title: 'Helper Assigned', description: 'Someone is working on your job' },
+  'creator_in_progress': { title: 'Work in Progress', description: 'Wait for the helper to complete the work' },
+  'creator_pending_review': { title: 'Review Required', description: 'Confirm the work is done satisfactorily' },
+  'creator_completed': { title: 'Job Completed', description: 'Payment released to helper' },
+  // Worker steps
+  'worker_accepted': { title: 'Job Accepted', description: 'You are assigned to this job' },
+  'worker_in_progress': { title: 'Do the Work', description: 'Complete the job as described' },
+  'worker_pending_confirmation': { title: 'Awaiting Confirmation', description: 'Waiting for the poster to confirm' },
+  'worker_completed': { title: 'Job Completed', description: 'Payment received!' },
+  // Applicant steps
+  'applicant_applied': { title: 'Application Sent', description: 'Your application is pending review' },
+  'applicant_waiting': { title: 'Waiting for Response', description: 'The poster will review your application' },
+  'applicant_decision': { title: 'Decision Pending', description: 'You will be notified of the outcome' },
+};
+
+// Action prompts
+const ACTION_PROMPTS: Record<string, string> = {
+  'tasks:steps.actions.review_applicants': 'Review applicants and assign someone',
+  'tasks:steps.actions.confirm_completion': 'Review the work and confirm completion',
+  'tasks:steps.actions.mark_complete': 'Mark as complete when done',
+  'tasks:steps.actions.wait_for_decision': 'Waiting for poster to decide',
+};
+
 /**
  * Visual progress stepper showing task workflow status
  * Adapts based on user role (Creator, Worker, or Applicant)
  */
 export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepperProps) => {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
   
   const result = getTaskSteps(task, user?.id);
@@ -35,7 +68,7 @@ export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepper
           {role === 'worker' && '🛠️'}
           {role === 'applicant' && '📩'}
           {' '}
-          {t(`tasks:steps.roles.${role}`)}
+          {ROLE_LABELS[role] || 'PROGRESS'}
         </Text>
       </View>
 
@@ -55,7 +88,7 @@ export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepper
       {currentStep?.actionKey && currentStep.status === 'current' && (
         <View style={styles.actionPrompt}>
           <Text style={styles.actionPromptText}>
-            👉 {t(currentStep.actionKey)}
+            👉 {ACTION_PROMPTS[currentStep.actionKey] || 'Take action'}
           </Text>
         </View>
       )}
@@ -72,10 +105,9 @@ interface StepItemProps {
   onActionPress?: (stepId: string) => void;
 }
 
-const StepItem = ({ step, isLast, onActionPress }: StepItemProps) => {
-  const { t } = useTranslation();
-  
+const StepItem = ({ step, isLast }: StepItemProps) => {
   const statusStyles = getStatusStyles(step.status);
+  const labels = STEP_LABELS[step.id] || { title: step.titleKey, description: step.descriptionKey };
 
   return (
     <View style={styles.stepRow}>
@@ -102,7 +134,7 @@ const StepItem = ({ step, isLast, onActionPress }: StepItemProps) => {
       <View style={styles.contentColumn}>
         <View style={styles.stepHeader}>
           <Text style={[styles.stepTitle, statusStyles.title]}>
-            {t(step.titleKey)}
+            {labels.title}
           </Text>
           {step.status === 'current' && (
             <View style={styles.currentBadge}>
@@ -117,7 +149,7 @@ const StepItem = ({ step, isLast, onActionPress }: StepItemProps) => {
         </View>
         
         <Text style={[styles.stepDescription, statusStyles.description]}>
-          {t(step.descriptionKey)}
+          {labels.description}
         </Text>
       </View>
     </View>
