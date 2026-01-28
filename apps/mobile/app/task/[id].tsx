@@ -17,13 +17,22 @@ import {
   TaskAssignedWorker,
 } from '../../src/features/tasks/components/detail';
 import { useTaskActions } from '../../src/features/tasks/hooks/useTaskActions';
-import { styles, ACCENT_COLOR } from '../../src/features/tasks/styles/taskDetailStyles';
+import { createTaskDetailStyles } from '../../src/features/tasks/styles/taskDetailStyles';
 import { parseTaskImages } from '../../src/features/tasks/utils/taskHelpers';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taskId = parseInt(id || '0', 10);
   const { user } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+  
+  // Create theme-aware styles
+  const styles = createTaskDetailStyles(activeTheme);
+  const ACCENT_COLOR = themeColors.primaryAccent;
   
   // Wait for screen transition to complete before rendering content
   const [isScreenReady, setIsScreenReady] = useState(false);
@@ -73,6 +82,9 @@ export default function TaskDetailScreen() {
           headerShown: true,
           title: '',
           headerBackTitle: 'Back',
+          headerStyle: { backgroundColor: themeColors.card },
+          headerTintColor: ACCENT_COLOR,
+          headerTitleStyle: { color: themeColors.text },
           headerRight: () => (
             <IconButton
               icon="share-variant"
@@ -96,7 +108,7 @@ export default function TaskDetailScreen() {
         ) : error || !task ? (
           <View style={styles.centered}>
             <Text style={styles.errorText}>Task not found</Text>
-            <Button mode="contained" onPress={() => router.back()}>
+            <Button mode="contained" onPress={() => router.back()} buttonColor={ACCENT_COLOR}>
               Go Back
             </Button>
           </View>
