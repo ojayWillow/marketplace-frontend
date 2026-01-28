@@ -42,13 +42,22 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
   
   const handleViewProfile = () => {
     if (task.assigned_to_id) {
-      router.push(`/profile/${task.assigned_to_id}`);
+      // Use /user/[id] route for viewing profiles
+      router.push(`/user/${task.assigned_to_id}`);
     }
   };
   
   const handleMessage = () => {
     if (task.assigned_to_id) {
-      router.push(`/conversation/${task.assigned_to_id}`);
+      // Use /conversation/new with userId and username params to start/open conversation
+      const workerName = task.assigned_to_name || 'Helper';
+      router.push({
+        pathname: '/conversation/new',
+        params: {
+          userId: task.assigned_to_id.toString(),
+          username: workerName,
+        },
+      });
     }
   };
 
