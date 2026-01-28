@@ -11,6 +11,7 @@ import { useThemeStore } from '../src/stores/themeStore';
 import { lightTheme, darkTheme, colors } from '../src/theme';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(false);
@@ -116,23 +117,25 @@ export default function RootLayout() {
   };
 
   return (
-    <SafeAreaProvider initialMetrics={safeAreaMetrics}>
-      <PaperProvider theme={theme}>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style={themeColors.statusBar} />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle,
-              // CRITICAL: Disable ALL animations
-              animation: 'none',
-              gestureEnabled: true,
-              gestureDirection: 'horizontal',
-              presentation: 'card',
-            }}
-          />
-        </QueryClientProvider>
-      </PaperProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <PaperProvider theme={theme}>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style={themeColors.statusBar} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle,
+                // CRITICAL: Disable ALL animations
+                animation: 'none',
+                gestureEnabled: true,
+                gestureDirection: 'horizontal',
+                presentation: 'card',
+              }}
+            />
+          </QueryClientProvider>
+        </PaperProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Text, Button, TextInput, ActivityIndicator, Menu } from 'react-native-paper';
+import { Text, Button, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -23,7 +23,6 @@ export default function DisputeScreen() {
 
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [menuVisible, setMenuVisible] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
@@ -164,9 +163,6 @@ export default function DisputeScreen() {
       </View>
     );
   }
-
-  // Get the label for selected reason
-  const selectedReasonLabel = reasons?.find((r: DisputeReason) => r.value === selectedReason)?.label || 'Select a reason...';
   
   const isSubmitting = createDisputeMutation.isPending || uploadingPhotos;
 
@@ -197,32 +193,31 @@ export default function DisputeScreen() {
           <Text variant="titleMedium" style={styles.label}>
             Reason *
           </Text>
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <TouchableOpacity
-                style={styles.dropdown}
-                onPress={() => setMenuVisible(true)}
-              >
-                <Text style={[styles.dropdownText, !selectedReason && styles.placeholderText]}>
-                  {selectedReasonLabel}
-                </Text>
-                <Text style={styles.dropdownIcon}>▼</Text>
-              </TouchableOpacity>
-            }
-          >
-            {reasons?.map((reason: DisputeReason) => (
-              <Menu.Item
-                key={reason.value}
-                onPress={() => {
-                  setSelectedReason(reason.value);
-                  setMenuVisible(false);
-                }}
-                title={reason.label}
-              />
-            ))}
-          </Menu>
+          <Text variant="bodySmall" style={styles.hint}>
+            Select the reason that best describes your issue
+          </Text>
+          
+          {reasons?.map((reason: DisputeReason) => (
+            <TouchableOpacity
+              key={reason.value}
+              style={[
+                styles.radioOption,
+                selectedReason === reason.value && styles.radioOptionSelected,
+              ]}
+              onPress={() => setSelectedReason(reason.value)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.radioCircle}>
+                {selectedReason === reason.value && <View style={styles.radioCircleInner} />}
+              </View>
+              <Text style={[
+                styles.radioLabel,
+                selectedReason === reason.value && styles.radioLabelSelected,
+              ]}>
+                {reason.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.section}>
@@ -356,32 +351,48 @@ const styles = StyleSheet.create({
   },
   hint: {
     color: '#6b7280',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  dropdown: {
+  // Radio button styles
+  radioOption: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#d1d5db',
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    minHeight: 50,
+    marginBottom: 10,
   },
-  dropdownText: {
+  radioOptionSelected: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#eff6ff',
+  },
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioCircleInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#3b82f6',
+  },
+  radioLabel: {
     fontSize: 16,
-    color: '#111827',
+    color: '#374151',
     flex: 1,
   },
-  placeholderText: {
-    color: '#9ca3af',
-  },
-  dropdownIcon: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginLeft: 8,
+  radioLabelSelected: {
+    color: '#1e40af',
+    fontWeight: '500',
   },
   textInput: {
     backgroundColor: '#fff',

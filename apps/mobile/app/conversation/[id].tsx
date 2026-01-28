@@ -21,6 +21,7 @@ import {
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
+import ImageView from 'react-native-image-viewing';
 import {
   getConversation,
   getMessages,
@@ -59,7 +60,8 @@ export default function ConversationScreen() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImageIndex, setViewerImageIndex] = useState(0);
 
   // Get API URL for socket
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
@@ -91,14 +93,12 @@ export default function ConversationScreen() {
     const connectSocket = async () => {
       try {
         await socketService.connect(token);
-        setSocketConnected(true);
         
         // Join conversation room
         await socketService.joinConversation(conversationId);
         console.log('[Socket] Joined conversation:', conversationId);
       } catch (error) {
         console.error('[Socket] Connection failed:', error);
-        setSocketConnected(false);
       }
     };
 
@@ -159,7 +159,7 @@ export default function ConversationScreen() {
     },
   });
 
-  // Fetch messages (with polling as fallback if socket fails)
+  // Fetch messages - socket handles real-time updates, no polling needed
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
@@ -171,8 +171,7 @@ export default function ConversationScreen() {
     queryKey: ['messages', conversationId],
     queryFn: () => getMessages(conversationId!),
     enabled: !!conversationId && !accessDenied,
-    // Only poll if socket is not connected
-    refetchInterval: socketConnected ? false : 10000,
+    refetchInterval: false, // Socket handles real-time updates
     retry: false,
     onError: (error: any) => {
       if (error?.response?.status === 403) {
@@ -184,6 +183,10 @@ export default function ConversationScreen() {
 
   const messages = messagesData?.messages || [];
   const isLoading = isCreatingConversation || (!conversationId && targetUserId) || isLoadingMessages;
+
+  // Get all image URLs from messages for the viewer
+  const imageMessages = messages.filter((m: Message) => m.attachment_url && m.attachment_type === 'image');
+  const viewerImages = imageMessages.map((m: Message) => ({ uri: m.attachment_url! }));
 
   // Auto-redirect after 3 seconds if access denied
   useEffect(() => {
@@ -237,6 +240,15 @@ export default function ConversationScreen() {
     setSelectedImage(null);
   };
 
+  // Open image viewer
+  const openImageViewer = (imageUrl: string) => {
+    const index = imageMessages.findIndex((m: Message) => m.attachment_url === imageUrl);
+    if (index !== -1) {
+      setViewerImageIndex(index);
+      setViewerVisible(true);
+    }
+  };
+
   // Send message mutation
   const sendMutation = useMutation({
     mutationFn: async ({ content, image }: { content: string; image?: ImagePicker.ImagePickerAsset }) => {
@@ -264,14 +276,7 @@ export default function ConversationScreen() {
       setMessageText('');
       setSelectedImage(null);
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      // Only manually refetch if socket not connected
-      if (!socketConnected) {
-        setTimeout(() => {
-          if (conversationId) {
-            refetch();
-          }
-        }, 500);
-      }
+      // Socket will handle adding the message to cache in real-time
     },
     onError: (error: any) => {
       console.error('Failed to send message:', error);
@@ -487,7 +492,7 @@ export default function ConversationScreen() {
                       {/* Image Attachment */}
                       {message.attachment_url && message.attachment_type === 'image' && (
                         <View style={styles.imageContainer}>
-                          <Pressable onPress={() => {/* TODO: Open full screen image */}}>
+                          <Pressable onPress={() => openImageViewer(message.attachment_url!)}>
                             <RNImage
                               source={{ uri: message.attachment_url }}
                               style={styles.messageImage}
@@ -569,6 +574,16 @@ export default function ConversationScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen Image Viewer */}
+      <ImageView
+        images={viewerImages}
+        imageIndex={viewerImageIndex}
+        visible={viewerVisible}
+        onRequestClose={() => setViewerVisible(false)}
+        swipeToCloseEnabled
+        doubleTapToZoomEnabled
+      />
     </SafeAreaView>
   );
 }
