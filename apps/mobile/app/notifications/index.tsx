@@ -5,10 +5,15 @@ import { router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getNotifications, markAsRead, markAllAsRead, deleteNotification, NotificationType, type Notification } from '@marketplace/shared';
 import { useState } from 'react';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['notifications'],
@@ -47,38 +52,31 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = (notification: Notification) => {
-    // Mark as read
     if (!notification.is_read) {
       markReadMutation.mutate(notification.id);
     }
 
-    // Route based on notification type
     const taskId = notification.related_id;
     if (!taskId) return;
 
     switch (notification.type) {
       case NotificationType.NEW_APPLICATION:
-        // Task creator - go to applications page
         router.push(`/task/${taskId}/applications`);
         break;
       
       case NotificationType.APPLICATION_ACCEPTED:
-        // Worker - go to task details
         router.push(`/task/${taskId}`);
         break;
       
       case NotificationType.APPLICATION_REJECTED:
-        // Worker - go to task details (they can see it's rejected)
         router.push(`/task/${taskId}`);
         break;
       
       case NotificationType.TASK_MARKED_DONE:
-        // Task creator - go to task details (shows confirm button)
         router.push(`/task/${taskId}`);
         break;
       
       case NotificationType.TASK_COMPLETED:
-        // Worker - go to review page
         router.push(`/task/${taskId}/review`);
         break;
       
@@ -131,7 +129,6 @@ export default function NotificationsScreen() {
   const notifications = data?.notifications || [];
   const unreadCount = data?.unread_count || 0;
 
-  // Consistent header options to prevent layout shift
   const headerOptions = {
     headerShown: true,
     title: 'Notifications',
@@ -141,18 +138,109 @@ export default function NotificationsScreen() {
         compact
         style={{ opacity: unreadCount > 0 ? 1 : 0 }}
         disabled={unreadCount === 0}
+        textColor={themeColors.primaryAccent}
       >
         Mark All Read
       </Button>
     ),
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 48,
+    },
+    emptyIcon: {
+      fontSize: 64,
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    notificationCard: {
+      backgroundColor: themeColors.card,
+      marginBottom: 1,
+    },
+    unreadCard: {
+      backgroundColor: activeTheme === 'dark' ? themeColors.elevated : '#eff6ff',
+    },
+    notificationContent: {
+      flexDirection: 'row',
+      padding: 16,
+      alignItems: 'flex-start',
+    },
+    notificationLeft: {
+      position: 'relative',
+      marginRight: 12,
+    },
+    notificationIcon: {
+      fontSize: 32,
+    },
+    unreadDot: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#ef4444',
+      borderWidth: 2,
+      borderColor: themeColors.card,
+    },
+    notificationBody: {
+      flex: 1,
+    },
+    notificationTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 4,
+    },
+    notificationMessage: {
+      color: themeColors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 4,
+    },
+    notificationTime: {
+      fontSize: 12,
+      color: themeColors.textMuted,
+    },
+    deleteButton: {
+      margin: 0,
+    },
+    bottomSpacer: {
+      height: 24,
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+  });
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
         <Stack.Screen options={headerOptions} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0ea5e9" />
+          <ActivityIndicator size="large" color={themeColors.primaryAccent} />
         </View>
       </SafeAreaView>
     );
@@ -217,6 +305,7 @@ export default function NotificationsScreen() {
                     size={20}
                     onPress={() => handleDelete(notification.id)}
                     style={styles.deleteButton}
+                    iconColor={themeColors.textMuted}
                   />
                 </View>
               </Surface>
@@ -241,93 +330,3 @@ function getTimeAgo(dateString: string): string {
   if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
   return date.toLocaleDateString();
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 48,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  notificationCard: {
-    backgroundColor: '#ffffff',
-    marginBottom: 1,
-  },
-  unreadCard: {
-    backgroundColor: '#eff6ff',
-  },
-  notificationContent: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'flex-start',
-  },
-  notificationLeft: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  notificationIcon: {
-    fontSize: 32,
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#ef4444',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  notificationBody: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  notificationMessage: {
-    color: '#4b5563',
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
-  deleteButton: {
-    margin: 0,
-  },
-  bottomSpacer: {
-    height: 24,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});

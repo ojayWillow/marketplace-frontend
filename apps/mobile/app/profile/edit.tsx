@@ -6,10 +6,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, FORM_CATEGORIES, normalizeSkills } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function EditProfileScreen() {
   const { user, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
   
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -40,9 +45,6 @@ export default function EditProfileScreen() {
       setIsHelper(profile.is_helper || false);
       setHourlyRate(profile.hourly_rate?.toString() || '');
       
-      // Handle skills - normalize legacy skills to new category keys
-      // This will auto-convert old skills (cooking -> events, driving -> delivery, etc.)
-      // and filter out any that don't map to valid categories
       if (profile.skills) {
         let skillsArray: string[] = [];
         if (Array.isArray(profile.skills)) {
@@ -50,7 +52,6 @@ export default function EditProfileScreen() {
         } else if (typeof profile.skills === 'string') {
           skillsArray = profile.skills.split(',').map(s => s.trim()).filter(Boolean);
         }
-        // Normalize and filter to only valid categories
         setSkills(normalizeSkills(skillsArray));
       }
       
@@ -142,8 +143,6 @@ export default function EditProfileScreen() {
       is_helper: isHelper,
     };
 
-    // Always send skills (even if empty) - store as comma-separated string
-    // Skills are already normalized at this point
     data.skills = skills.join(',');
 
     if (isHelper) {
@@ -152,7 +151,6 @@ export default function EditProfileScreen() {
       data.hourly_rate = null;
     }
 
-    // If avatar changed, upload it first
     if (avatarChanged && avatarUri) {
       try {
         const uploadResponse = await uploadImageFromUri(avatarUri);
@@ -184,12 +182,165 @@ export default function EditProfileScreen() {
     return profile?.username?.[0]?.toUpperCase() || 'U';
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    avatarSection: {
+      backgroundColor: themeColors.card,
+      alignItems: 'center',
+      paddingVertical: 24,
+      paddingHorizontal: 16,
+    },
+    avatarContainer: {
+      position: 'relative',
+      marginBottom: 8,
+    },
+    avatar: {
+      backgroundColor: themeColors.primaryAccent,
+    },
+    avatarImage: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+    },
+    cameraIcon: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      backgroundColor: themeColors.card,
+      borderRadius: 16,
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    cameraIconText: {
+      fontSize: 16,
+    },
+    changePhotoText: {
+      color: themeColors.primaryAccent,
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    username: {
+      color: themeColors.textSecondary,
+      fontSize: 14,
+    },
+    email: {
+      color: themeColors.textMuted,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    section: {
+      backgroundColor: themeColors.card,
+      padding: 20,
+      marginTop: 12,
+    },
+    sectionTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 16,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    input: {
+      marginBottom: 12,
+      backgroundColor: themeColors.card,
+    },
+    halfInput: {
+      flex: 1,
+    },
+    inputOutline: {
+      borderColor: themeColors.border,
+    },
+    skillsDescription: {
+      color: themeColors.textSecondary,
+      fontSize: 13,
+      marginBottom: 16,
+      marginTop: -8,
+    },
+    skillsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    skillChip: {
+      marginRight: 8,
+      marginBottom: 8,
+    },
+    skillChipSelected: {
+      backgroundColor: themeColors.primaryAccent,
+    },
+    skillChipTextSelected: {
+      color: '#ffffff',
+    },
+    skillIcon: {
+      fontSize: 14,
+      marginRight: 2,
+    },
+    helperHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    helperTextContainer: {
+      flex: 1,
+      marginRight: 16,
+    },
+    helperDescription: {
+      color: themeColors.textSecondary,
+      fontSize: 13,
+      marginTop: -12,
+    },
+    helperFields: {
+      marginTop: 20,
+      paddingTop: 20,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    bottomSpacer: {
+      height: 100,
+    },
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: themeColors.card,
+      padding: 16,
+      paddingBottom: 32,
+    },
+    saveButton: {
+      borderRadius: 12,
+      backgroundColor: themeColors.primaryAccent,
+    },
+    saveButtonContent: {
+      paddingVertical: 8,
+    },
+  });
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <Stack.Screen options={{ headerShown: true, title: 'Edit Profile', headerBackTitle: 'Back' }} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0ea5e9" />
+          <ActivityIndicator size="large" color={themeColors.primaryAccent} />
         </View>
       </SafeAreaView>
     );
@@ -239,6 +390,9 @@ export default function EditProfileScreen() {
               onChangeText={setFirstName}
               style={[styles.input, styles.halfInput]}
               outlineStyle={styles.inputOutline}
+              outlineColor={themeColors.border}
+              activeOutlineColor={themeColors.primaryAccent}
+              textColor={themeColors.text}
             />
             <TextInput
               mode="outlined"
@@ -247,6 +401,9 @@ export default function EditProfileScreen() {
               onChangeText={setLastName}
               style={[styles.input, styles.halfInput]}
               outlineStyle={styles.inputOutline}
+              outlineColor={themeColors.border}
+              activeOutlineColor={themeColors.primaryAccent}
+              textColor={themeColors.text}
             />
           </View>
 
@@ -260,6 +417,10 @@ export default function EditProfileScreen() {
             style={styles.input}
             outlineStyle={styles.inputOutline}
             placeholder="Tell others about yourself..."
+            outlineColor={themeColors.border}
+            activeOutlineColor={themeColors.primaryAccent}
+            textColor={themeColors.text}
+            placeholderTextColor={themeColors.textMuted}
           />
 
           <TextInput
@@ -270,6 +431,9 @@ export default function EditProfileScreen() {
             keyboardType="phone-pad"
             style={styles.input}
             outlineStyle={styles.inputOutline}
+            outlineColor={themeColors.border}
+            activeOutlineColor={themeColors.primaryAccent}
+            textColor={themeColors.text}
           />
 
           <TextInput
@@ -280,6 +444,10 @@ export default function EditProfileScreen() {
             style={styles.input}
             outlineStyle={styles.inputOutline}
             placeholder="e.g. Riga"
+            outlineColor={themeColors.border}
+            activeOutlineColor={themeColors.primaryAccent}
+            textColor={themeColors.text}
+            placeholderTextColor={themeColors.textMuted}
           />
         </Surface>
 
@@ -299,7 +467,7 @@ export default function EditProfileScreen() {
                   styles.skillChip,
                   skills.includes(category.key) && styles.skillChipSelected
                 ]}
-                textStyle={skills.includes(category.key) ? styles.skillChipTextSelected : undefined}
+                textStyle={skills.includes(category.key) ? styles.skillChipTextSelected : { color: themeColors.text }}
                 mode={skills.includes(category.key) ? 'flat' : 'outlined'}
                 icon={() => <Text style={styles.skillIcon}>{category.icon}</Text>}
               >
@@ -321,7 +489,7 @@ export default function EditProfileScreen() {
             <Switch
               value={isHelper}
               onValueChange={setIsHelper}
-              color="#0ea5e9"
+              color={themeColors.primaryAccent}
             />
           </View>
 
@@ -336,6 +504,10 @@ export default function EditProfileScreen() {
                 style={styles.input}
                 outlineStyle={styles.inputOutline}
                 placeholder="e.g. 15"
+                outlineColor={themeColors.border}
+                activeOutlineColor={themeColors.primaryAccent}
+                textColor={themeColors.text}
+                placeholderTextColor={themeColors.textMuted}
               />
             </View>
           ) : null}
@@ -353,6 +525,8 @@ export default function EditProfileScreen() {
           disabled={updateMutation.isPending}
           style={styles.saveButton}
           contentStyle={styles.saveButtonContent}
+          buttonColor={themeColors.primaryAccent}
+          textColor="#ffffff"
         >
           Save Changes
         </Button>
@@ -360,155 +534,3 @@ export default function EditProfileScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarSection: {
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 8,
-  },
-  avatar: {
-    backgroundColor: '#0ea5e9',
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  cameraIcon: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cameraIconText: {
-    fontSize: 16,
-  },
-  changePhotoText: {
-    color: '#0ea5e9',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  username: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  email: {
-    color: '#9ca3af',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  input: {
-    marginBottom: 12,
-    backgroundColor: '#ffffff',
-  },
-  halfInput: {
-    flex: 1,
-  },
-  inputOutline: {
-    borderColor: '#e5e7eb',
-  },
-  skillsDescription: {
-    color: '#6b7280',
-    fontSize: 13,
-    marginBottom: 16,
-    marginTop: -8,
-  },
-  skillsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  skillChip: {
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  skillChipSelected: {
-    backgroundColor: '#0ea5e9',
-  },
-  skillChipTextSelected: {
-    color: '#ffffff',
-  },
-  skillIcon: {
-    fontSize: 14,
-    marginRight: 2,
-  },
-  helperHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  helperTextContainer: {
-    flex: 1,
-    marginRight: 16,
-  },
-  helperDescription: {
-    color: '#6b7280',
-    fontSize: 13,
-    marginTop: -12,
-  },
-  helperFields: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  bottomSpacer: {
-    height: 100,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 32,
-  },
-  saveButton: {
-    borderRadius: 12,
-  },
-  saveButtonContent: {
-    paddingVertical: 8,
-  },
-});
