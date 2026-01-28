@@ -59,7 +59,6 @@ export default function ConversationScreen() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [socketConnected, setSocketConnected] = useState(false);
 
   // Get API URL for socket
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
@@ -91,14 +90,12 @@ export default function ConversationScreen() {
     const connectSocket = async () => {
       try {
         await socketService.connect(token);
-        setSocketConnected(true);
         
         // Join conversation room
         await socketService.joinConversation(conversationId);
         console.log('[Socket] Joined conversation:', conversationId);
       } catch (error) {
         console.error('[Socket] Connection failed:', error);
-        setSocketConnected(false);
       }
     };
 
@@ -159,7 +156,7 @@ export default function ConversationScreen() {
     },
   });
 
-  // Fetch messages (with polling as fallback if socket fails)
+  // Fetch messages - socket handles real-time updates, no polling needed
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
@@ -171,8 +168,7 @@ export default function ConversationScreen() {
     queryKey: ['messages', conversationId],
     queryFn: () => getMessages(conversationId!),
     enabled: !!conversationId && !accessDenied,
-    // Only poll if socket is not connected
-    refetchInterval: socketConnected ? false : 10000,
+    refetchInterval: false, // Socket handles real-time updates
     retry: false,
     onError: (error: any) => {
       if (error?.response?.status === 403) {
@@ -264,14 +260,7 @@ export default function ConversationScreen() {
       setMessageText('');
       setSelectedImage(null);
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      // Only manually refetch if socket not connected
-      if (!socketConnected) {
-        setTimeout(() => {
-          if (conversationId) {
-            refetch();
-          }
-        }, 500);
-      }
+      // Socket will handle adding the message to cache in real-time
     },
     onError: (error: any) => {
       console.error('Failed to send message:', error);
