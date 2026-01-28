@@ -14,7 +14,6 @@ import {
   TaskBottomBar,
   TaskReviewPrompt,
   TaskDisputeInfo,
-  TaskProgressStepper,
 } from '../../src/features/tasks/components/detail';
 import { useTaskActions } from '../../src/features/tasks/hooks/useTaskActions';
 import { styles, ACCENT_COLOR } from '../../src/features/tasks/styles/taskDetailStyles';
@@ -109,9 +108,6 @@ export default function TaskDetailScreen() {
               onReport={actions.handleReport}
               onViewProfile={actions.handleViewProfile}
             />
-
-            {/* Progress Stepper - Shows workflow steps for involved users */}
-            <TaskProgressStepper task={task} />
 
             <TaskImageGallery images={taskImages} />
 
