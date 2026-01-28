@@ -16,7 +16,6 @@ export default function EditProfileScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   
-  // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [bio, setBio] = useState('');
@@ -28,13 +27,11 @@ export default function EditProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [avatarChanged, setAvatarChanged] = useState(false);
 
-  // Load current profile
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => authApi.getProfile(),
   });
 
-  // Initialize form with profile data
   useEffect(() => {
     if (profile) {
       setFirstName(profile.first_name || '');
@@ -338,7 +335,16 @@ export default function EditProfileScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <Stack.Screen options={{ headerShown: true, title: 'Edit Profile', headerBackTitle: 'Back' }} />
+        <Stack.Screen 
+          options={{ 
+            headerShown: true, 
+            title: 'Edit Profile', 
+            headerBackTitle: 'Back',
+            headerStyle: { backgroundColor: themeColors.card },
+            headerTintColor: themeColors.primaryAccent,
+            headerTitleStyle: { color: themeColors.text },
+          }} 
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={themeColors.primaryAccent} />
         </View>
@@ -353,11 +359,13 @@ export default function EditProfileScreen() {
           headerShown: true, 
           title: 'Edit Profile',
           headerBackTitle: 'Back',
+          headerStyle: { backgroundColor: themeColors.card },
+          headerTintColor: themeColors.primaryAccent,
+          headerTitleStyle: { color: themeColors.text },
         }} 
       />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Avatar Section */}
         <Surface style={styles.avatarSection} elevation={0}>
           <Pressable onPress={pickImage} style={styles.avatarContainer}>
             {avatarUri ? (
@@ -378,7 +386,6 @@ export default function EditProfileScreen() {
           <Text style={styles.email}>{profile?.email}</Text>
         </Surface>
 
-        {/* Basic Info */}
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Basic Information</Text>
           
@@ -451,7 +458,6 @@ export default function EditProfileScreen() {
           />
         </Surface>
 
-        {/* Skills Section */}
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Your Skills</Text>
           <Text style={styles.skillsDescription}>
@@ -477,7 +483,6 @@ export default function EditProfileScreen() {
           </View>
         </Surface>
 
-        {/* Helper Settings */}
         <Surface style={styles.section} elevation={0}>
           <View style={styles.helperHeader}>
             <View style={styles.helperTextContainer}>
@@ -516,7 +521,6 @@ export default function EditProfileScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Save Button */}
       <Surface style={styles.bottomBar} elevation={4}>
         <Button
           mode="contained"

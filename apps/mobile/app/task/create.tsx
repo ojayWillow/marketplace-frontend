@@ -367,7 +367,15 @@ export default function CreateTaskScreen() {
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ headerShown: true, title: 'Create Task' }} />
+        <Stack.Screen 
+          options={{ 
+            headerShown: true, 
+            title: 'Create Task',
+            headerStyle: { backgroundColor: themeColors.card },
+            headerTintColor: themeColors.primaryAccent,
+            headerTitleStyle: { color: themeColors.text },
+          }} 
+        />
         <View style={styles.centerContainer}>
           <Text variant="headlineSmall" style={styles.notAuthTitle}>Sign In Required</Text>
           <Text style={styles.notAuthText}>You need to sign in to create tasks.</Text>
@@ -386,6 +394,9 @@ export default function CreateTaskScreen() {
           headerShown: true,
           title: 'Create Task',
           headerBackTitle: 'Cancel',
+          headerStyle: { backgroundColor: themeColors.card },
+          headerTintColor: themeColors.primaryAccent,
+          headerTitleStyle: { color: themeColors.text },
         }}
       />
 
