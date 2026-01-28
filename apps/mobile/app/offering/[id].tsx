@@ -3,8 +3,10 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Text, Button, ActivityIndicator, IconButton, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, activateOffering, boostOffering, useAuthStore, getCategoryByKey, getImageUrl } from '@marketplace/shared';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import StarRating from '../../components/StarRating';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 180;
@@ -50,6 +52,10 @@ export default function OfferingDetailScreen() {
   const queryClient = useQueryClient();
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
+  
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const { data: offering, isLoading, error } = useQuery({
     queryKey: ['offering', offeringId],
@@ -205,9 +211,115 @@ export default function OfferingDetailScreen() {
     ? offering.images.split(',').filter(Boolean).map(url => getImageUrl(url))
     : [];
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: themeColors.backgroundSecondary },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+    errorText: { fontSize: 16, color: themeColors.textSecondary, marginBottom: 16 },
+    scrollView: { flex: 1 },
+    scrollContent: { padding: 12, paddingBottom: 100 },
+
+    // HERO CARD
+    heroCard: {
+      backgroundColor: themeColors.card,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 10,
+      borderLeftWidth: 4,
+      borderLeftColor: ACCENT_COLOR,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    categoryBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    categoryText: { fontSize: 13, fontWeight: '600', color: themeColors.textSecondary },
+    statusDot: { width: 8, height: 8, borderRadius: 4 },
+    reportBtn: { marginLeft: 4 },
+    flagIcon: { fontSize: 16, opacity: 0.5 },
+    price: { fontSize: 22, fontWeight: '800', color: ACCENT_COLOR },
+
+    heroTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 12 },
+
+    // Provider Row
+    providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    avatarSmall: { width: 40, height: 40, borderRadius: 20 },
+    avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+    avatarSmallText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    providerInfo: { flex: 1, marginLeft: 10, gap: 3 },
+    providerName: { fontSize: 15, fontWeight: '600', color: themeColors.text },
+    providerCity: { fontSize: 12, color: themeColors.textSecondary },
+    messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
+    messageBtnText: { fontSize: 16 },
+
+    // Stats
+    statsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: themeColors.inputBackground,
+      borderRadius: 10,
+      padding: 10,
+    },
+    statItem: { flex: 1, alignItems: 'center' },
+    statValue: { fontSize: 14, fontWeight: '700', color: themeColors.text },
+    statLabel: { fontSize: 9, color: themeColors.textMuted, marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
+    statDivider: { width: 1, height: 20, backgroundColor: themeColors.border },
+
+    // Images
+    imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
+    offeringImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
+
+    // Section Card
+    sectionCard: {
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    },
+    sectionTitle: { fontSize: 11, fontWeight: '700', color: themeColors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+    descriptionText: { fontSize: 15, color: themeColors.text, lineHeight: 22 },
+
+    // Location
+    locationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    locationInfo: { flex: 1 },
+    locationText: { fontSize: 14, color: themeColors.text, marginBottom: 4 },
+    radiusText: { fontSize: 12, color: themeColors.textSecondary },
+    distanceBadge: { backgroundColor: activeTheme === 'dark' ? '#422006' : '#fff7ed', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+    distanceText: { fontSize: 12, fontWeight: '700', color: ACCENT_COLOR },
+    mapBtn: { backgroundColor: activeTheme === 'dark' ? '#422006' : '#fff7ed', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', marginTop: 8 },
+    mapBtnText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
+
+    // Notice
+    noticeCard: { borderRadius: 10, padding: 10, marginBottom: 10, alignItems: 'center' },
+    noticeWarning: { backgroundColor: activeTheme === 'dark' ? '#422006' : '#fef3c7' },
+    noticeSuccess: { backgroundColor: activeTheme === 'dark' ? '#064e3b' : '#dcfce7' },
+    noticeText: { fontSize: 13, fontWeight: '600', color: themeColors.text },
+
+    // Bottom Bar
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: themeColors.card,
+      padding: 12,
+      paddingBottom: 30,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    primaryBtn: { borderRadius: 12 },
+    btnContent: { paddingVertical: 6 },
+    btnLabel: { fontSize: 16, fontWeight: '700' },
+    ownerActions: { flexDirection: 'row', gap: 8 },
+    ownerBtn: { flex: 1, borderRadius: 10 },
+
+    // Dialog
+    dialogInput: { minHeight: 80 },
+  }), [activeTheme, themeColors]);
+
   return (
     <View style={styles.container}>
-      {/* CRITICAL: Header configuration must be STATIC to prevent layout recalculation */}
       <Stack.Screen
         options={{
           headerShown: true,
@@ -216,7 +328,11 @@ export default function OfferingDetailScreen() {
           title: 'Service Details',
           headerBackTitle: 'Back',
           headerStyle: {
-            backgroundColor: '#f5f5f5',
+            backgroundColor: themeColors.card,
+          },
+          headerTintColor: ACCENT_COLOR,
+          headerTitleStyle: {
+            color: themeColors.text,
           },
           headerShadowVisible: false,
           headerRight: () => (
@@ -232,7 +348,6 @@ export default function OfferingDetailScreen() {
         }}
       />
 
-      {/* Main ScrollView */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -247,13 +362,11 @@ export default function OfferingDetailScreen() {
         ) : error || !offering ? (
           <View style={styles.centered}>
             <Text style={styles.errorText}>Service not found</Text>
-            <Button mode="contained" onPress={() => router.back()}>Go Back</Button>
+            <Button mode="contained" onPress={() => router.back()} buttonColor={ACCENT_COLOR}>Go Back</Button>
           </View>
         ) : (
           <>
-            {/* COMPACT HERO CARD */}
             <View style={styles.heroCard}>
-              {/* Row 1: Category + Report Flag (LEFT) + Price (RIGHT) */}
               <View style={styles.topRow}>
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryText}>{categoryData?.icon} {categoryData?.label || offering.category}</Text>
@@ -265,10 +378,8 @@ export default function OfferingDetailScreen() {
                 <Text style={styles.price}>{priceDisplay}</Text>
               </View>
 
-              {/* Row 2: Title */}
               <Text style={styles.heroTitle}>{offering.title}</Text>
 
-              {/* Row 3: Provider */}
               <TouchableOpacity style={styles.providerRow} onPress={handleViewProfile} activeOpacity={0.7}>
                 {offering.creator_avatar ? (
                   <Image source={{ uri: getImageUrl(offering.creator_avatar) }} style={styles.avatarSmall} />
@@ -289,7 +400,6 @@ export default function OfferingDetailScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Row 4: Stats */}
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>✓ {completedJobs}</Text>
@@ -308,23 +418,21 @@ export default function OfferingDetailScreen() {
               </View>
             </View>
 
-            {/* IMAGES (if any) */}
             {offeringImages.length > 0 && (
               <View style={styles.imageCard}>
                 <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
                   {offeringImages.map((uri, i) => (
                     <Image key={i} source={{ uri }} style={styles.offeringImage} resizeMode="cover" />
-                  ))}                </ScrollView>
+                  ))}
+                </ScrollView>
               </View>
             )}
 
-            {/* DESCRIPTION */}
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>About</Text>
               <Text style={styles.descriptionText}>{offering.description}</Text>
             </View>
 
-            {/* LOCATION */}
             {offering.location && (
               <View style={styles.sectionCard}>
                 <View style={styles.locationRow}>
@@ -349,7 +457,6 @@ export default function OfferingDetailScreen() {
               </View>
             )}
 
-            {/* OWNER NOTICE */}
             {isOwnOffering && (
               <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
                 <Text style={styles.noticeText}>
@@ -361,7 +468,6 @@ export default function OfferingDetailScreen() {
         )}
       </ScrollView>
 
-      {/* BOTTOM BAR */}
       {!isLoading && !error && offering && (
         <View style={styles.bottomBar}>
           {!isOwnOffering && (
@@ -379,10 +485,10 @@ export default function OfferingDetailScreen() {
 
           {isOwnOffering && (
             <View style={styles.ownerActions}>
-              <Button mode="outlined" onPress={handleToggleStatus} style={styles.ownerBtn} compact>
+              <Button mode="outlined" onPress={handleToggleStatus} style={styles.ownerBtn} compact textColor={themeColors.text}>
                 {offering.status === 'active' ? 'Pause' : 'Activate'}
               </Button>
-              <Button mode="outlined" onPress={() => router.push(`/offering/${offeringId}/edit`)} style={styles.ownerBtn} compact>
+              <Button mode="outlined" onPress={() => router.push(`/offering/${offeringId}/edit`)} style={styles.ownerBtn} compact textColor={themeColors.text}>
                 Edit
               </Button>
               {!offering.is_boost_active && (
@@ -398,7 +504,6 @@ export default function OfferingDetailScreen() {
         </View>
       )}
 
-      {/* CONTACT DIALOG */}
       <Portal>
         <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
           <Dialog.Title>Message</Dialog.Title>
@@ -428,110 +533,3 @@ export default function OfferingDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { fontSize: 16, color: '#6b7280', marginBottom: 16 },
-  scrollView: { flex: 1 },
-  scrollContent: { padding: 12, paddingBottom: 100 },
-
-  // HERO CARD
-  heroCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: ACCENT_COLOR,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  categoryBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  categoryText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  reportBtn: { marginLeft: 4 },
-  flagIcon: { fontSize: 16, opacity: 0.5 },
-  price: { fontSize: 22, fontWeight: '800', color: ACCENT_COLOR },
-
-  heroTitle: { fontSize: 20, fontWeight: '700', color: '#111', marginBottom: 12 },
-
-  // Provider Row
-  providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  avatarSmall: { width: 40, height: 40, borderRadius: 20 },
-  avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
-  avatarSmallText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  providerInfo: { flex: 1, marginLeft: 10, gap: 3 },
-  providerName: { fontSize: 15, fontWeight: '600', color: '#111' },
-  providerCity: { fontSize: 12, color: '#6b7280' },
-  messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
-  messageBtnText: { fontSize: 16 },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderRadius: 10,
-    padding: 10,
-  },
-  statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 14, fontWeight: '700', color: '#374151' },
-  statLabel: { fontSize: 9, color: '#9ca3af', marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
-  statDivider: { width: 1, height: 20, backgroundColor: '#e5e7eb' },
-
-  // Images
-  imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
-  offeringImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
-
-  // Section Card
-  sectionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-  },
-  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  descriptionText: { fontSize: 15, color: '#374151', lineHeight: 22 },
-
-  // Location
-  locationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  locationInfo: { flex: 1 },
-  locationText: { fontSize: 14, color: '#374151', marginBottom: 4 },
-  radiusText: { fontSize: 12, color: '#6b7280' },
-  distanceBadge: { backgroundColor: '#fff7ed', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  distanceText: { fontSize: 12, fontWeight: '700', color: ACCENT_COLOR },
-  mapBtn: { backgroundColor: '#fff7ed', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', marginTop: 8 },
-  mapBtnText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
-
-  // Notice
-  noticeCard: { borderRadius: 10, padding: 10, marginBottom: 10, alignItems: 'center' },
-  noticeWarning: { backgroundColor: '#fef3c7' },
-  noticeSuccess: { backgroundColor: '#dcfce7' },
-  noticeText: { fontSize: 13, fontWeight: '600', color: '#374151' },
-
-  // Bottom Bar
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    padding: 12,
-    paddingBottom: 30,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  primaryBtn: { borderRadius: 12 },
-  btnContent: { paddingVertical: 6 },
-  btnLabel: { fontSize: 16, fontWeight: '700' },
-  ownerActions: { flexDirection: 'row', gap: 8 },
-  ownerBtn: { flex: 1, borderRadius: 10 },
-
-  // Dialog
-  dialogInput: { minHeight: 80 },
-});

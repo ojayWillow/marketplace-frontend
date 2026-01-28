@@ -11,6 +11,8 @@ import {
   requestPushPermissions,
   sendTestNotification 
 } from '../../utils/pushNotifications';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 const NOTIFICATION_SETTINGS_KEY = '@marketplace_notification_settings';
 
@@ -36,6 +38,9 @@ export default function NotificationSettingsScreen() {
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const { token, isAuthenticated } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   useEffect(() => {
     loadSettings();
@@ -110,6 +115,87 @@ export default function NotificationSettingsScreen() {
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    emptyIcon: {
+      fontSize: 64,
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontWeight: '600',
+      marginBottom: 8,
+      color: themeColors.text,
+    },
+    emptyText: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+    },
+    section: {
+      backgroundColor: themeColors.card,
+      marginTop: 16,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+      textTransform: 'uppercase',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 8,
+    },
+    settingItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    settingInfo: {
+      flex: 1,
+      marginRight: 16,
+    },
+    settingLabel: {
+      fontSize: 16,
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    settingDescription: {
+      fontSize: 13,
+      color: themeColors.textMuted,
+    },
+    testSection: {
+      padding: 16,
+    },
+    warningContainer: {
+      margin: 16,
+      padding: 16,
+      backgroundColor: activeTheme === 'dark' ? '#422006' : '#fef3c7',
+      borderRadius: 12,
+    },
+    warningText: {
+      color: activeTheme === 'dark' ? '#fbbf24' : '#92400e',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    footer: {
+      padding: 16,
+    },
+    footerText: {
+      color: themeColors.textMuted,
+      fontSize: 13,
+      textAlign: 'center',
+    },
+  });
+
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -118,6 +204,9 @@ export default function NotificationSettingsScreen() {
             headerShown: true, 
             title: 'Notifications',
             headerBackTitle: 'Back',
+            headerStyle: { backgroundColor: themeColors.card },
+            headerTintColor: themeColors.primaryAccent,
+            headerTitleStyle: { color: themeColors.text },
           }} 
         />
         <View style={styles.centerContainer}>
@@ -138,6 +227,9 @@ export default function NotificationSettingsScreen() {
           headerShown: true, 
           title: 'Notifications',
           headerBackTitle: 'Back',
+          headerStyle: { backgroundColor: themeColors.card },
+          headerTintColor: themeColors.primaryAccent,
+          headerTitleStyle: { color: themeColors.text },
         }} 
       />
       
@@ -242,6 +334,7 @@ export default function NotificationSettingsScreen() {
             mode="outlined" 
             onPress={handleTestNotification}
             icon="bell-ring"
+            textColor={themeColors.text}
           >
             Send Test Notification
           </Button>
@@ -265,83 +358,3 @@ export default function NotificationSettingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  emptyText: {
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    marginTop: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingLabel: {
-    fontSize: 16,
-    color: '#1f2937',
-    marginBottom: 2,
-  },
-  settingDescription: {
-    fontSize: 13,
-    color: '#9ca3af',
-  },
-  testSection: {
-    padding: 16,
-  },
-  warningContainer: {
-    margin: 16,
-    padding: 16,
-    backgroundColor: '#fef3c7',
-    borderRadius: 12,
-  },
-  warningText: {
-    color: '#92400e',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  footer: {
-    padding: 16,
-  },
-  footerText: {
-    color: '#9ca3af',
-    fontSize: 13,
-    textAlign: 'center',
-  },
-});

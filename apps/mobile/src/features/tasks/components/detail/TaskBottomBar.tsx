@@ -24,9 +24,6 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
   const canConfirm = isOwnTask && task.status === 'pending_confirmation';
   const showApplyButton = task.status === 'open' && !isOwnTask && !hasApplied;
   const canWorkerReportIssue = isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress') && task.status !== 'disputed';
-  
-  // Payment button logic
-  const needsPayment = isOwnTask && task.payment_required && task.payment_status === 'pending';
 
   return (
     <View style={styles.bottomBar}>
@@ -39,13 +36,6 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
       {canWithdraw && (
         <Button mode="outlined" onPress={actions.handleWithdraw} loading={actions.isWithdrawing} textColor="#ef4444" style={[styles.primaryBtn, styles.dangerBtn]} contentStyle={styles.btnContent}>
           Withdraw Application
-        </Button>
-      )}
-
-      {/* PAYMENT BUTTON */}
-      {needsPayment && (
-        <Button mode="contained" onPress={() => router.push(`/task/${taskId}/payment`)} style={[styles.primaryBtn, { backgroundColor: '#10b981' }]} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
-          💳 Pay Now
         </Button>
       )}
 

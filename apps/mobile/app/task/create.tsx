@@ -35,7 +35,6 @@ export default function CreateTaskScreen() {
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
-  const [requirePayment, setRequirePayment] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -60,7 +59,6 @@ export default function CreateTaskScreen() {
       return createTask({
         ...data,
         images: imageUrls.length > 0 ? imageUrls.join(',') : undefined,
-        payment_required: requirePayment,
       });
     },
     onSuccess: (task) => {
@@ -584,23 +582,6 @@ export default function CreateTaskScreen() {
                   selectedColor={themeColors.primaryAccent}
                 >
                   {isUrgent ? 'Yes' : 'No'}
-                </Chip>
-              </View>
-            </Surface>
-
-            <Surface style={styles.section} elevation={0}>
-              <View style={styles.urgentRow}>
-                <View style={styles.urgentInfo}>
-                  <Text variant="titleMedium" style={{ color: themeColors.text }}>💳 Secure Payment</Text>
-                  <Text style={styles.urgentHint}>Worker gets paid when you confirm task is done</Text>
-                </View>
-                <Chip
-                  selected={requirePayment}
-                  onPress={() => setRequirePayment(!requirePayment)}
-                  mode={requirePayment ? 'flat' : 'outlined'}
-                  selectedColor={themeColors.primaryAccent}
-                >
-                  {requirePayment ? 'Yes' : 'No'}
                 </Chip>
               </View>
             </Surface>
