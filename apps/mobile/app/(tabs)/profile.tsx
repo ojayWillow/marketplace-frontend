@@ -286,6 +286,31 @@ export default function ProfileScreen() {
           </Surface>
         </View>
 
+        {/* My Listings Section - Coming Soon */}
+        <View style={styles.menuSection}>
+          <Text style={[styles.sectionTitle, { color: themeColors.text, marginBottom: 12, marginHorizontal: 20 }]}>
+            Marketplace
+          </Text>
+          <Surface style={[styles.menuCard, { backgroundColor: themeColors.card }]} elevation={1}>
+            <View style={styles.menuCardContent}>
+              <View style={styles.comingSoonItem}>
+                <Text style={styles.menuIcon}>🛍️</Text>
+                <View style={styles.menuTextContainer}>
+                  <View style={styles.comingSoonTitleRow}>
+                    <Text style={[styles.menuTitle, { color: themeColors.text }]}>My Listings</Text>
+                    <View style={styles.comingSoonBadge}>
+                      <Text style={styles.comingSoonBadgeText}>Coming Soon</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.menuSubtitle, { color: themeColors.textMuted }]}>
+                    Buy and sell items in your area
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Surface>
+        </View>
+
         {/* Logout */}
         <View style={styles.logoutContainer}>
           <Button
@@ -621,6 +646,31 @@ const styles = StyleSheet.create({
   },
   menuArrow: {
     fontSize: 24,
+  },
+
+  // Coming Soon Item
+  comingSoonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    opacity: 0.7,
+  },
+  comingSoonTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  comingSoonBadge: {
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  comingSoonBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '600',
   },
 
   // Logout
