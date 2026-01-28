@@ -55,10 +55,11 @@ export default function HomeScreen() {
   const { userLocation, hasRealLocation } = useLocation(mapRef);
   const { searchQuery, setSearchQuery, debouncedSearchQuery, clearSearch } = useSearchDebounce();
   const {
-    selectedCategory, setSelectedCategory,
+    selectedCategories, setSelectedCategories,
     selectedRadius, setSelectedRadius,
     selectedDifficulty, setSelectedDifficulty,
-    hasActiveFilters, hasActiveCategory
+    hasActiveFilters, hasActiveCategory,
+    matchesCategory,
   } = useTaskFilters();
   
   // UI State
@@ -173,10 +174,12 @@ export default function HomeScreen() {
     [offeringsData]
   );
 
+  // Updated filtering to use matchesCategory for multi-select
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       if (!task.latitude || !task.longitude) return false;
-      if (selectedCategory !== 'all' && task.category !== selectedCategory) return false;
+      // Use matchesCategory for multi-select support
+      if (!matchesCategory(task.category)) return false;
       if (selectedRadius && hasRealLocation) {
         const distance = calculateDistance(userLocation.latitude, userLocation.longitude, task.latitude, task.longitude);
         if (distance > selectedRadius) return false;
@@ -184,7 +187,7 @@ export default function HomeScreen() {
       if (selectedDifficulty && task.difficulty !== selectedDifficulty) return false;
       return true;
     });
-  }, [allTasks, selectedCategory, selectedRadius, selectedDifficulty, userLocation, hasRealLocation]);
+  }, [allTasks, matchesCategory, selectedRadius, selectedDifficulty, userLocation, hasRealLocation]);
 
   const tasksWithOffset = useMemo(() => applyOverlapOffset(filteredTasks), [filteredTasks]);
 
@@ -199,7 +202,16 @@ export default function HomeScreen() {
 
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
-  const selectedCategoryData = getCategoryByKey(selectedCategory);
+  
+  // Get display text for category button
+  const getCategoryButtonText = () => {
+    if (!hasActiveCategory) return 'Category';
+    if (selectedCategories.length === 1) {
+      const cat = getCategoryByKey(selectedCategories[0]);
+      return cat?.label || 'Category';
+    }
+    return `${selectedCategories.length} Categories`;
+  };
 
   // Render functions
   const renderJobItem = useCallback(({ item }: { item: Task }) => (
@@ -293,7 +305,7 @@ export default function HomeScreen() {
             >
               <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
                 <Text style={styles.categoryButtonText} numberOfLines={1}>
-                  {hasActiveCategory ? selectedCategoryData?.label : 'Category'}
+                  {getCategoryButtonText()}
                 </Text>
                 <Icon name="expand-more" size={18} color={styles.categoryButtonText.color} />
               </BlurView>
@@ -410,8 +422,8 @@ export default function HomeScreen() {
       {/* Modals */}
       <CategoryModal
         visible={showCategoryModal}
-        selectedCategory={selectedCategory}
-        onSelect={(cat) => { setSelectedCategory(cat); setShowCategoryModal(false); setFocusedTaskId(null); }}
+        selectedCategories={selectedCategories}
+        onSelect={(cats) => { setSelectedCategories(cats); setFocusedTaskId(null); }}
         onClose={() => setShowCategoryModal(false)}
         styles={styles}
       />

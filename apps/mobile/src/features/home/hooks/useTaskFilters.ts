@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 
 export function useTaskFilters() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  // Changed from single string to array of strings for multi-select
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
 
   const hasActiveFilters = selectedRadius !== null || selectedDifficulty !== null;
-  const hasActiveCategory = selectedCategory !== 'all';
+  const hasActiveCategory = !selectedCategories.includes('all') && selectedCategories.length > 0;
 
   const clearFilters = useCallback(() => {
     setSelectedRadius(null);
@@ -14,14 +15,23 @@ export function useTaskFilters() {
   }, []);
 
   const resetAll = useCallback(() => {
-    setSelectedCategory('all');
+    setSelectedCategories(['all']);
     setSelectedRadius(null);
     setSelectedDifficulty(null);
   }, []);
 
+  // Helper to check if a task matches the selected categories
+  const matchesCategory = useCallback((taskCategory: string) => {
+    if (selectedCategories.includes('all')) return true;
+    return selectedCategories.includes(taskCategory);
+  }, [selectedCategories]);
+
   return {
-    selectedCategory,
-    setSelectedCategory,
+    selectedCategories,
+    setSelectedCategories,
+    // Legacy support - returns first category or 'all'
+    selectedCategory: selectedCategories.includes('all') ? 'all' : selectedCategories[0] || 'all',
+    setSelectedCategory: (cat: string) => setSelectedCategories(cat === 'all' ? ['all'] : [cat]),
     selectedRadius,
     setSelectedRadius,
     selectedDifficulty,
@@ -30,5 +40,6 @@ export function useTaskFilters() {
     hasActiveCategory,
     clearFilters,
     resetAll,
+    matchesCategory,
   };
 }
