@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, Appbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useThemeStore } from '../../stores/themeStore';
 import { colors } from '../../theme';
 
@@ -53,9 +54,13 @@ export default function PrivacyPolicyScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <Appbar.Header style={{ backgroundColor: themeColors.card }}>
+        <Appbar.BackAction onPress={() => router.back()} color={themeColors.text} />
+        <Appbar.Content title="Privacy Policy" titleStyle={{ color: themeColors.text }} />
+      </Appbar.Header>
+      
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Privacy Policy</Text>
         <Text style={styles.lastUpdated}>Last Updated: January 2026</Text>
 
         <Text style={styles.sectionTitle}>1. Introduction</Text>

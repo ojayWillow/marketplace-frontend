@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, Appbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useThemeStore } from '../../stores/themeStore';
 import { colors } from '../../theme';
 
@@ -18,12 +19,6 @@ export default function TermsOfServiceScreen() {
     scrollContent: {
       padding: 16,
       paddingBottom: 32,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: themeColors.text,
-      marginBottom: 16,
     },
     lastUpdated: {
       fontSize: 12,
@@ -53,72 +48,73 @@ export default function TermsOfServiceScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <Appbar.Header style={{ backgroundColor: themeColors.card }}>
+        <Appbar.BackAction onPress={() => router.back()} color={themeColors.text} />
+        <Appbar.Content title="Terms of Service" titleStyle={{ color: themeColors.text }} />
+      </Appbar.Header>
+      
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Terms of Service</Text>
         <Text style={styles.lastUpdated}>Last Updated: January 2026</Text>
 
-        <Text style={styles.sectionTitle}>1. Agreement to Terms</Text>
+        <Text style={styles.sectionTitle}>1. Acceptance of Terms</Text>
         <Text style={styles.paragraph}>
-          By accessing and using this application, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+          By accessing and using this application, you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use this application.
         </Text>
 
-        <Text style={styles.sectionTitle}>2. Use License</Text>
+        <Text style={styles.sectionTitle}>2. Description of Service</Text>
         <Text style={styles.paragraph}>
-          Permission is granted to temporarily download one copy of the materials (information or software) on our app for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
-        </Text>
-        <Text style={styles.bullet}>• Modify or copy the materials</Text>
-        <Text style={styles.bullet}>• Use the materials for any commercial purpose or for any public display</Text>
-        <Text style={styles.bullet}>• Attempt to decompile or reverse engineer the software</Text>
-        <Text style={styles.bullet}>• Remove any copyright or other proprietary notations from the materials</Text>
-        <Text style={styles.bullet}>• Transfer the materials to another person or "mirror" the materials on any other server</Text>
-
-        <Text style={styles.sectionTitle}>3. User Responsibilities</Text>
-        <Text style={styles.paragraph}>
-          As a user of our platform, you are responsible for:
-        </Text>
-        <Text style={styles.bullet}>• Providing accurate and complete information during registration</Text>
-        <Text style={styles.bullet}>• Maintaining the confidentiality of your account credentials</Text>
-        <Text style={styles.bullet}>• All activity that occurs under your account</Text>
-        <Text style={styles.bullet}>• Complying with all applicable laws and regulations</Text>
-        <Text style={styles.bullet}>• Not engaging in fraudulent or illegal activities</Text>
-
-        <Text style={styles.sectionTitle}>4. User Content</Text>
-        <Text style={styles.paragraph}>
-          You retain all rights to any content you submit, post, or display on or through the app. By submitting content, you grant us a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, and distribute such content in connection with our services.
-        </Text>
-        <Text style={styles.paragraph}>
-          You agree not to submit content that is illegal, defamatory, threatening, offensive, or violates any third-party rights.
+          Our marketplace application provides a platform that connects users who need tasks completed with users who can perform those tasks. We facilitate the connection but are not a party to any agreements between users.
         </Text>
 
-        <Text style={styles.sectionTitle}>5. Payment Terms</Text>
+        <Text style={styles.sectionTitle}>3. User Accounts</Text>
+        <Text style={styles.paragraph}>To use certain features of the app, you must register for an account. You agree to:</Text>
+        <Text style={styles.bullet}>• Provide accurate and complete information</Text>
+        <Text style={styles.bullet}>• Maintain the security of your account credentials</Text>
+        <Text style={styles.bullet}>• Promptly update any changes to your information</Text>
+        <Text style={styles.bullet}>• Accept responsibility for all activities under your account</Text>
+
+        <Text style={styles.sectionTitle}>4. User Conduct</Text>
+        <Text style={styles.paragraph}>When using our service, you agree not to:</Text>
+        <Text style={styles.bullet}>• Violate any laws or regulations</Text>
+        <Text style={styles.bullet}>• Infringe on the rights of others</Text>
+        <Text style={styles.bullet}>• Post false, misleading, or fraudulent content</Text>
+        <Text style={styles.bullet}>• Harass, abuse, or harm other users</Text>
+        <Text style={styles.bullet}>• Attempt to gain unauthorized access to our systems</Text>
+
+        <Text style={styles.sectionTitle}>5. Payments and Fees</Text>
         <Text style={styles.paragraph}>
-          All payments made through our platform are final and non-refundable unless otherwise specified. We use secure payment processing, but you are responsible for protecting your payment information.
+          Users may agree to payments for tasks through the platform. We may charge service fees for facilitating transactions. All fees will be clearly disclosed before any transaction is completed.
         </Text>
 
-        <Text style={styles.sectionTitle}>6. Limitation of Liability</Text>
+        <Text style={styles.sectionTitle}>6. Dispute Resolution</Text>
         <Text style={styles.paragraph}>
-          In no event shall our company be liable for any direct, indirect, incidental, special, or consequential damages arising out of or in any way connected with your use of the app or the materials contained therein.
+          We provide tools to help resolve disputes between users. However, we are not responsible for resolving disputes and make no guarantees about the outcome of any dispute resolution process.
         </Text>
 
-        <Text style={styles.sectionTitle}>7. Dispute Resolution</Text>
+        <Text style={styles.sectionTitle}>7. Limitation of Liability</Text>
         <Text style={styles.paragraph}>
-          Any dispute arising out of or in connection with these terms and conditions shall be governed by and construed in accordance with the laws of Latvia, and you irrevocably submit to the exclusive jurisdiction of the courts located there.
+          To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service.
         </Text>
 
-        <Text style={styles.sectionTitle}>8. Termination</Text>
+        <Text style={styles.sectionTitle}>8. Indemnification</Text>
         <Text style={styles.paragraph}>
-          We may terminate or suspend your account and access to our services immediately, without prior notice or liability, for any reason whatsoever, including if you breach the terms of this agreement.
+          You agree to indemnify and hold harmless our company and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses arising from your use of the service or violation of these terms.
         </Text>
 
-        <Text style={styles.sectionTitle}>9. Changes to Terms</Text>
+        <Text style={styles.sectionTitle}>9. Modifications to Terms</Text>
         <Text style={styles.paragraph}>
-          We reserve the right to modify these terms at any time. Your continued use of the app following the posting of revised terms means that you accept and agree to the changes.
+          We reserve the right to modify these terms at any time. We will notify users of any material changes by posting the new terms on this page and updating the "Last Updated" date.
         </Text>
 
-        <Text style={styles.sectionTitle}>10. Contact Us</Text>
+        <Text style={styles.sectionTitle}>10. Termination</Text>
         <Text style={styles.paragraph}>
-          If you have any questions about these Terms of Service, please contact us at legal@marketplace.local or through the contact form in the app settings.
+          We may terminate or suspend your account and access to the service immediately, without prior notice or liability, for any reason, including breach of these Terms.
+        </Text>
+
+        <Text style={styles.sectionTitle}>11. Contact Information</Text>
+        <Text style={styles.paragraph}>
+          If you have any questions about these Terms of Service, please contact us at support@marketplace.local or through the contact form in the app settings.
         </Text>
       </ScrollView>
     </SafeAreaView>
