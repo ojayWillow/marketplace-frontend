@@ -129,5 +129,73 @@
     "tutoring": "Tutoring",
     "tech-help": "Tech Help",
     "other": "Other"
+  },
+  "steps": {
+    "roles": {
+      "creator": "Your Job Progress",
+      "worker": "Your Work Progress",
+      "applicant": "Application Status"
+    },
+    "creator": {
+      "posted": {
+        "title": "Job Posted",
+        "description": "Your job is live and visible to helpers"
+      },
+      "reviewing": {
+        "title": "Review Applicants",
+        "descriptionWithCount": "You have applicants waiting for your response",
+        "descriptionEmpty": "Waiting for helpers to apply",
+        "action": "Review applicants and choose a helper"
+      },
+      "assigned": {
+        "title": "Helper Assigned",
+        "description": "A helper has been assigned to your job"
+      },
+      "inProgress": {
+        "title": "Work in Progress",
+        "description": "Your helper is working on the job"
+      },
+      "awaitingReview": {
+        "title": "Review Required",
+        "description": "Helper marked the job as done",
+        "action": "Review the work and confirm completion"
+      },
+      "completed": {
+        "title": "Job Completed",
+        "description": "The job has been completed successfully",
+        "action": "Leave a review for the helper"
+      }
+    },
+    "worker": {
+      "accepted": {
+        "title": "Job Accepted",
+        "description": "You've been assigned to this job"
+      },
+      "working": {
+        "title": "Do the Work",
+        "description": "Complete the job as described",
+        "action": "Mark as done when finished"
+      },
+      "markedDone": {
+        "title": "Awaiting Confirmation",
+        "description": "Waiting for the client to confirm"
+      },
+      "completed": {
+        "title": "Job Completed",
+        "description": "Great work! The job is complete",
+        "action": "Leave a review for the client"
+      }
+    },
+    "applicant": {
+      "applied": {
+        "title": "Application Sent",
+        "description": "Your application has been submitted"
+      },
+      "waiting": {
+        "title": "Waiting for Response",
+        "description": "The job poster is reviewing applications",
+        "action": "You can withdraw your application anytime"
+      }
+    }
   }
 }

@@ -129,5 +129,73 @@
     "tutoring": "Privātstundas",
     "tech-help": "Tehniskā palīdzība",
     "other": "Cits"
+  },
+  "steps": {
+    "roles": {
+      "creator": "Jūsu darba progress",
+      "worker": "Jūsu darba izpildes progress",
+      "applicant": "Pieteikuma statuss"
+    },
+    "creator": {
+      "posted": {
+        "title": "Darbs publicēts",
+        "description": "Jūsu darbs ir redzams palīgiem"
+      },
+      "reviewing": {
+        "title": "Pārskatīt pieteikumus",
+        "descriptionWithCount": "Jums ir pieteikumi, kas gaida atbildi",
+        "descriptionEmpty": "Gaidām, kad palīgi pieteiks",
+        "action": "Pārskatiet pieteikumus un izvēlieties palīgu"
+      },
+      "assigned": {
+        "title": "Palīgs norīkots",
+        "description": "Palīgs ir norīkots jūsu darbam"
+      },
+      "inProgress": {
+        "title": "Darbs procesā",
+        "description": "Jūsu palīgs strādā pie darba"
+      },
+      "awaitingReview": {
+        "title": "Nepieciešams pārskats",
+        "description": "Palīgs atzīmēja darbu kā pabeigtu",
+        "action": "Pārskatiet darbu un apstipriniet pabeigšanu"
+      },
+      "completed": {
+        "title": "Darbs pabeigts",
+        "description": "Darbs ir veiksmīgi pabeigts",
+        "action": "Atstājiet atsauksmi par palīgu"
+      }
+    },
+    "worker": {
+      "accepted": {
+        "title": "Darbs pieņemts",
+        "description": "Jūs esat norīkots šim darbam"
+      },
+      "working": {
+        "title": "Veiciet darbu",
+        "description": "Pabeidziet darbu kā aprakstīts",
+        "action": "Atzīmējiet kā pabeigtu, kad esat beidzis"
+      },
+      "markedDone": {
+        "title": "Gaida apstiprinājumu",
+        "description": "Gaidām, kad klients apstiprinās"
+      },
+      "completed": {
+        "title": "Darbs pabeigts",
+        "description": "Lielisks darbs! Darbs ir pabeigts",
+        "action": "Atstājiet atsauksmi par klientu"
+      }
+    },
+    "applicant": {
+      "applied": {
+        "title": "Pieteikums nosūtīts",
+        "description": "Jūsu pieteikums ir iesniegts"
+      },
+      "waiting": {
+        "title": "Gaida atbildi",
+        "description": "Darba devējs pārskata pieteikumus",
+        "action": "Jūs varat atsaukt pieteikumu jebkurā laikā"
+      }
+    }
   }
 }

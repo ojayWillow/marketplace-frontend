@@ -5,3 +5,4 @@ export { TaskNotices } from './TaskNotices';
 export { TaskBottomBar } from './TaskBottomBar';
 export { TaskReviewPrompt } from './TaskReviewPrompt';
 export { TaskDisputeInfo } from './TaskDisputeInfo';
+export { TaskProgressStepper } from './TaskProgressStepper';
