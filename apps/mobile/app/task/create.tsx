@@ -9,6 +9,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from '../../components/ImagePicker';
 import LocationPicker from '../../components/LocationPicker';
 import { haptic } from '../../utils/haptics';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 interface LocationData {
   address: string;
@@ -19,6 +21,9 @@ interface LocationData {
 export default function CreateTaskScreen() {
   const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -38,7 +43,6 @@ export default function CreateTaskScreen() {
 
   const createMutation = useMutation({
     mutationFn: async (data: Parameters<typeof createTask>[0]) => {
-      // Upload images first if any
       let imageUrls: string[] = [];
       if (images.length > 0) {
         setUploading(true);
@@ -129,6 +133,237 @@ export default function CreateTaskScreen() {
     });
   };
 
+  const isLoading = createMutation.isPending || uploading;
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: 16,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    notAuthTitle: {
+      fontWeight: '600',
+      marginBottom: 8,
+      color: themeColors.text,
+    },
+    notAuthText: {
+      color: themeColors.textSecondary,
+      marginBottom: 24,
+      textAlign: 'center',
+    },
+    signInButton: {
+      minWidth: 120,
+      backgroundColor: themeColors.primaryAccent,
+    },
+    section: {
+      backgroundColor: themeColors.card,
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 12,
+    },
+    sectionHint: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+      marginBottom: 12,
+    },
+    flatInput: {
+      backgroundColor: themeColors.inputBackground,
+      borderRadius: 8,
+      fontSize: 16,
+    },
+    flatTextArea: {
+      backgroundColor: themeColors.inputBackground,
+      borderRadius: 8,
+      fontSize: 16,
+      minHeight: 120,
+    },
+    budgetRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    euroSign: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: themeColors.text,
+      marginRight: 8,
+    },
+    budgetInput: {
+      flex: 1,
+      backgroundColor: themeColors.inputBackground,
+      borderRadius: 8,
+      fontSize: 16,
+    },
+    categorySelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: themeColors.inputBackground,
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
+    categorySelectorIcon: {
+      fontSize: 24,
+      marginRight: 12,
+    },
+    categorySelectorText: {
+      flex: 1,
+      fontSize: 16,
+      color: themeColors.text,
+      fontWeight: '500',
+    },
+    categorySelectorArrow: {
+      fontSize: 24,
+      color: themeColors.textMuted,
+    },
+    difficultyRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    difficultyOption: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 2,
+      backgroundColor: themeColors.inputBackground,
+    },
+    difficultyOptionActive: {
+      backgroundColor: themeColors.card,
+    },
+    difficultyDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 6,
+    },
+    difficultyLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+    },
+    difficultyLabelActive: {
+      color: themeColors.text,
+    },
+    dateButton: {
+      alignSelf: 'flex-start',
+    },
+    urgentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    urgentInfo: {
+      flex: 1,
+    },
+    urgentHint: {
+      color: themeColors.textSecondary,
+      fontSize: 13,
+      marginTop: 2,
+    },
+    bottomSpacer: {
+      height: 100,
+    },
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: themeColors.card,
+      padding: 16,
+      paddingBottom: 32,
+    },
+    submitButton: {
+      borderRadius: 12,
+      backgroundColor: themeColors.primaryAccent,
+    },
+    submitButtonContent: {
+      paddingVertical: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    categoryModalContent: {
+      backgroundColor: themeColors.card,
+      borderRadius: 20,
+      padding: 20,
+      width: '100%',
+      maxWidth: 400,
+      maxHeight: '80%',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: themeColors.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    categoryWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    categoryPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: themeColors.inputBackground,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: themeColors.border,
+    },
+    categoryPillActive: {
+      backgroundColor: activeTheme === 'dark' ? themeColors.elevated : '#e0f2fe',
+      borderColor: themeColors.primaryAccent,
+    },
+    categoryPillIcon: {
+      fontSize: 16,
+      marginRight: 6,
+    },
+    categoryPillLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    categoryPillLabelActive: {
+      color: themeColors.primaryAccent,
+      fontWeight: '700',
+    },
+    categoryPillCheck: {
+      fontSize: 14,
+      color: themeColors.primaryAccent,
+      fontWeight: 'bold',
+      marginLeft: 6,
+    },
+  });
+
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.container}>
@@ -143,8 +378,6 @@ export default function CreateTaskScreen() {
       </SafeAreaView>
     );
   }
-
-  const isLoading = createMutation.isPending || uploading;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -171,6 +404,8 @@ export default function CreateTaskScreen() {
                 onChangeText={setTitle}
                 maxLength={100}
                 style={styles.flatInput}
+                textColor={themeColors.text}
+                placeholderTextColor={themeColors.textMuted}
               />
             </Surface>
 
@@ -185,6 +420,8 @@ export default function CreateTaskScreen() {
                 numberOfLines={5}
                 maxLength={1000}
                 style={styles.flatTextArea}
+                textColor={themeColors.text}
+                placeholderTextColor={themeColors.textMuted}
               />
             </Surface>
 
@@ -197,7 +434,6 @@ export default function CreateTaskScreen() {
               />
             </Surface>
 
-            {/* Category Picker - Opens Modal */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Category</Text>
               <TouchableOpacity 
@@ -222,11 +458,12 @@ export default function CreateTaskScreen() {
                   onChangeText={setBudget}
                   keyboardType="decimal-pad"
                   style={styles.budgetInput}
+                  textColor={themeColors.text}
+                  placeholderTextColor={themeColors.textMuted}
                 />
               </View>
             </Surface>
 
-            {/* Difficulty Selector */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>Difficulty</Text>
               <Text style={styles.sectionHint}>How challenging is this task?</Text>
@@ -296,6 +533,7 @@ export default function CreateTaskScreen() {
                 onPress={() => setShowDatePicker(true)}
                 icon="calendar"
                 style={styles.dateButton}
+                textColor={themeColors.text}
               >
                 {deadline ? deadline.toLocaleDateString() : 'Select deadline'}
               </Button>
@@ -325,30 +563,31 @@ export default function CreateTaskScreen() {
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
-                  <Text variant="titleMedium">🔥 Mark as Urgent</Text>
+                  <Text variant="titleMedium" style={{ color: themeColors.text }}>🔥 Mark as Urgent</Text>
                   <Text style={styles.urgentHint}>Urgent tasks get more visibility</Text>
                 </View>
                 <Chip
                   selected={isUrgent}
                   onPress={() => setIsUrgent(!isUrgent)}
                   mode={isUrgent ? 'flat' : 'outlined'}
+                  selectedColor={themeColors.primaryAccent}
                 >
                   {isUrgent ? 'Yes' : 'No'}
                 </Chip>
               </View>
             </Surface>
 
-            {/* PAYMENT TOGGLE */}
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
-                  <Text variant="titleMedium">💳 Secure Payment</Text>
+                  <Text variant="titleMedium" style={{ color: themeColors.text }}>💳 Secure Payment</Text>
                   <Text style={styles.urgentHint}>Worker gets paid when you confirm task is done</Text>
                 </View>
                 <Chip
                   selected={requirePayment}
                   onPress={() => setRequirePayment(!requirePayment)}
                   mode={requirePayment ? 'flat' : 'outlined'}
+                  selectedColor={themeColors.primaryAccent}
                 >
                   {requirePayment ? 'Yes' : 'No'}
                 </Chip>
@@ -367,13 +606,14 @@ export default function CreateTaskScreen() {
             disabled={isLoading}
             style={styles.submitButton}
             contentStyle={styles.submitButtonContent}
+            buttonColor={themeColors.primaryAccent}
+            textColor="#ffffff"
           >
             {uploading ? 'Uploading Images...' : 'Create Task'}
           </Button>
         </Surface>
       </KeyboardAvoidingView>
 
-      {/* CATEGORY MODAL - FLEXIBLE WRAP PILLS WITH FULL NAMES */}
       <Modal
         visible={showCategoryModal}
         transparent
@@ -419,238 +659,3 @@ export default function CreateTaskScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  notAuthTitle: {
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  notAuthText: {
-    color: '#6b7280',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  signInButton: {
-    minWidth: 120,
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  sectionHint: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  flatInput: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  flatTextArea: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    fontSize: 16,
-    minHeight: 120,
-  },
-  budgetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  euroSign: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginRight: 8,
-  },
-  budgetInput: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  
-  // Category Selector (Button that opens modal)
-  categorySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  categorySelectorIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  categorySelectorText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  categorySelectorArrow: {
-    fontSize: 24,
-    color: '#9ca3af',
-  },
-  
-  // Difficulty Selector
-  difficultyRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  difficultyOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 2,
-    backgroundColor: '#f9fafb',
-  },
-  difficultyOptionActive: {
-    backgroundColor: '#ffffff',
-  },
-  difficultyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  difficultyLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  difficultyLabelActive: {
-    color: '#1f2937',
-  },
-  
-  dateButton: {
-    alignSelf: 'flex-start',
-  },
-  urgentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  urgentInfo: {
-    flex: 1,
-  },
-  urgentHint: {
-    color: '#6b7280',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  bottomSpacer: {
-    height: 100,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    paddingBottom: 32,
-  },
-  submitButton: {
-    borderRadius: 12,
-  },
-  submitButtonContent: {
-    paddingVertical: 8,
-  },
-  
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  categoryModalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  
-  // FLEXIBLE WRAP PILLS - FULL NAMES VISIBLE
-  categoryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-  },
-  categoryPillActive: {
-    backgroundColor: '#e0f2fe',
-    borderColor: '#0ea5e9',
-  },
-  categoryPillIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  categoryPillLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  categoryPillLabelActive: {
-    color: '#0369a1',
-    fontWeight: '700',
-  },
-  categoryPillCheck: {
-    fontSize: 14,
-    color: '#0ea5e9',
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
-});
