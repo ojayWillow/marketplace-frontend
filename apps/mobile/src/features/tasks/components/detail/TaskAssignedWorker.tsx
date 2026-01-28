@@ -10,8 +10,7 @@ interface TaskAssignedWorkerProps {
 
 /**
  * Shows who is assigned/working on the task
- * Visible to creators when task has an assigned worker
- * Visible to workers showing they are assigned
+ * Provides context-aware status and guidance for both creator and worker
  */
 export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
   const { user } = useAuthStore();
@@ -22,34 +21,92 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
   const isCreator = task.creator_id === user?.id;
   const isWorker = task.assigned_to_id === user?.id;
   
-  // Get status label and color based on task status
+  // Get status info with role-specific messaging
   const getStatusInfo = () => {
+    const workerName = task.assigned_to_name || 'Helper';
+    
     switch (task.status) {
       case 'assigned':
-        return { label: 'Assigned', color: '#2563eb', bgColor: '#dbeafe', icon: '🎯' };
+        return {
+          label: 'Assigned',
+          color: '#2563eb',
+          bgColor: '#dbeafe',
+          icon: '🎯',
+          creatorMsg: `${workerName} has been assigned`,
+          creatorSubtext: 'Waiting for them to start working',
+          workerMsg: 'You are assigned to this task',
+          workerSubtext: 'Start working when ready',
+        };
       case 'in_progress':
-        return { label: 'In Progress', color: '#f59e0b', bgColor: '#fef3c7', icon: '🔨' };
+        return {
+          label: 'In Progress',
+          color: '#f59e0b',
+          bgColor: '#fef3c7',
+          icon: '🔨',
+          creatorMsg: `${workerName} is working on this`,
+          creatorSubtext: 'Task is being completed',
+          workerMsg: 'You are working on this',
+          workerSubtext: 'Mark as done when complete',
+        };
       case 'pending_confirmation':
-        return { label: 'Awaiting Confirmation', color: '#16a34a', bgColor: '#dcfce7', icon: '✅' };
+        return {
+          label: 'Awaiting Your Review',
+          color: '#16a34a',
+          bgColor: '#dcfce7',
+          icon: '✅',
+          creatorMsg: `${workerName} marked this as done`,
+          creatorSubtext: 'Review and confirm completion',
+          workerMsg: 'Waiting for confirmation',
+          workerSubtext: 'Creator will review your work',
+        };
       case 'completed':
-        return { label: 'Completed', color: '#16a34a', bgColor: '#dcfce7', icon: '🎉' };
+        return {
+          label: 'Completed',
+          color: '#16a34a',
+          bgColor: '#dcfce7',
+          icon: '🎉',
+          creatorMsg: `Completed by ${workerName}`,
+          creatorSubtext: 'Task finished successfully',
+          workerMsg: 'Task completed!',
+          workerSubtext: 'Great job!',
+        };
       default:
-        return { label: 'Assigned', color: '#6b7280', bgColor: '#f3f4f6', icon: '👤' };
+        return {
+          label: 'Assigned',
+          color: '#6b7280',
+          bgColor: '#f3f4f6',
+          icon: '👤',
+          creatorMsg: `Assigned to ${workerName}`,
+          creatorSubtext: '',
+          workerMsg: 'You are assigned',
+          workerSubtext: '',
+        };
     }
   };
   
   const statusInfo = getStatusInfo();
   
+  // Pick the right message based on user role
+  const getMessage = () => {
+    if (isWorker) {
+      return { main: statusInfo.workerMsg, sub: statusInfo.workerSubtext };
+    } else if (isCreator) {
+      return { main: statusInfo.creatorMsg, sub: statusInfo.creatorSubtext };
+    } else {
+      return { main: 'Someone is working on this', sub: '' };
+    }
+  };
+  
+  const message = getMessage();
+  
   const handleViewProfile = () => {
     if (task.assigned_to_id) {
-      // Use /user/[id] route for viewing profiles
       router.push(`/user/${task.assigned_to_id}`);
     }
   };
   
   const handleMessage = () => {
     if (task.assigned_to_id) {
-      // Use /conversation/new with userId and username params to start/open conversation
       const workerName = task.assigned_to_name || 'Helper';
       router.push({
         pathname: '/conversation/new',
@@ -70,19 +127,18 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
         </Text>
       </View>
       
-      {/* Worker info row */}
-      <View style={styles.workerRow}>
-        {/* For creator: show "Being done by [worker]" */}
-        {/* For worker: show "You are assigned" */}
-        <View style={styles.workerInfo}>
+      {/* Content row */}
+      <View style={styles.contentRow}>
+        <View style={styles.infoSection}>
+          {/* For worker: just show the message */}
           {isWorker ? (
             <>
-              <Text style={styles.roleLabel}>🛠️ You are working on this</Text>
-              <Text style={styles.roleSubtext}>Complete the task and mark it done</Text>
+              <Text style={styles.mainMessage}>{message.main}</Text>
+              {message.sub ? <Text style={styles.subMessage}>{message.sub}</Text> : null}
             </>
           ) : isCreator ? (
+            /* For creator: show worker profile */
             <>
-              <Text style={styles.roleLabel}>👷 Being done by</Text>
               <TouchableOpacity onPress={handleViewProfile} style={styles.workerProfile}>
                 {task.assigned_user_avatar ? (
                   <Image 
@@ -96,16 +152,19 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
                     </Text>
                   </View>
                 )}
-                <Text style={styles.workerName}>{task.assigned_to_name || 'Helper'}</Text>
+                <View style={styles.workerTextContainer}>
+                  <Text style={styles.workerName}>{task.assigned_to_name || 'Helper'}</Text>
+                  {message.sub ? <Text style={styles.subMessage}>{message.sub}</Text> : null}
+                </View>
               </TouchableOpacity>
             </>
           ) : (
-            <Text style={styles.roleLabel}>Someone is working on this</Text>
+            <Text style={styles.mainMessage}>{message.main}</Text>
           )}
         </View>
         
         {/* Message button - for creator to contact worker */}
-        {isCreator && (
+        {isCreator && task.status !== 'completed' && (
           <TouchableOpacity style={styles.messageBtn} onPress={handleMessage}>
             <Text style={styles.messageBtnText}>💬</Text>
           </TouchableOpacity>
@@ -138,58 +197,62 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   
-  workerRow: {
+  contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   
-  workerInfo: {
+  infoSection: {
     flex: 1,
   },
   
-  roleLabel: {
+  mainMessage: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  subMessage: {
     fontSize: 13,
     color: '#6b7280',
-    marginBottom: 4,
-  },
-  roleSubtext: {
-    fontSize: 12,
-    color: '#9ca3af',
   },
   
   workerProfile: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
   },
   
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
   },
   avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   avatarText: {
     color: '#ffffff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 16,
   },
   
+  workerTextContainer: {
+    flex: 1,
+  },
   workerName: {
     fontSize: 15,
     fontWeight: '600',
     color: '#111827',
+    marginBottom: 2,
   },
   
   messageBtn: {
@@ -199,6 +262,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f59e0b',
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 12,
   },
   messageBtnText: {
     fontSize: 20,

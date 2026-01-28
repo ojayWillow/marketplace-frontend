@@ -11,31 +11,23 @@ export function TaskNotices({ task }: TaskNoticesProps) {
   const { user } = useAuthStore();
   
   const isOwnTask = user?.id === task.creator_id;
-  const isAssignedToMe = user?.id === task.assigned_to_id;
   const hasApplied = task.has_applied && task.user_application?.status === 'pending';
 
   return (
     <>
-      {/* Applied notice */}
-      {hasApplied && (
+      {/* Applied notice - for applicants who applied but aren't assigned yet */}
+      {hasApplied && !task.assigned_to_id && (
         <View style={[styles.noticeCard, styles.noticeInfo]}>
           <Text style={styles.noticeText}>✅ You have applied for this task</Text>
         </View>
       )}
 
-      {/* Pending confirmation notice */}
+      {/* Pending confirmation notice - for creator when worker marked as done */}
       {task.status === 'pending_confirmation' && isOwnTask && (
         <View style={[styles.noticeCard, styles.noticeWarning]}>
           <Text style={styles.noticeText}>
-            ⏳ {task.assigned_to_name} marked this as done
+            ⏳ {task.assigned_to_name || 'Worker'} marked this as done. Please review and confirm.
           </Text>
-        </View>
-      )}
-
-      {/* Assigned to me notice */}
-      {isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress') && (
-        <View style={[styles.noticeCard, styles.noticeSuccess]}>
-          <Text style={styles.noticeText}>🎯 You are assigned to this task</Text>
         </View>
       )}
     </>
