@@ -6,3 +6,4 @@ export { TaskBottomBar } from './TaskBottomBar';
 export { TaskReviewPrompt } from './TaskReviewPrompt';
 export { TaskDisputeInfo } from './TaskDisputeInfo';
 export { TaskProgressStepper } from './TaskProgressStepper';
+export { TaskAssignedWorker } from './TaskAssignedWorker';
