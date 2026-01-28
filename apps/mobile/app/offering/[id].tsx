@@ -226,6 +226,8 @@ export default function OfferingDetailScreen() {
       marginBottom: 10,
       borderLeftWidth: 4,
       borderLeftColor: ACCENT_COLOR,
+      borderWidth: 1,
+      borderColor: themeColors.border,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
@@ -267,7 +269,13 @@ export default function OfferingDetailScreen() {
     statDivider: { width: 1, height: 20, backgroundColor: themeColors.border },
 
     // Images
-    imageCard: { borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
+    imageCard: { 
+      borderRadius: 12, 
+      overflow: 'hidden', 
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
     offeringImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
 
     // Section Card
@@ -276,6 +284,8 @@ export default function OfferingDetailScreen() {
       borderRadius: 12,
       padding: 14,
       marginBottom: 10,
+      borderWidth: 1,
+      borderColor: themeColors.border,
     },
     sectionTitle: { fontSize: 11, fontWeight: '700', color: themeColors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
     descriptionText: { fontSize: 15, color: themeColors.text, lineHeight: 22 },
@@ -291,7 +301,14 @@ export default function OfferingDetailScreen() {
     mapBtnText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
 
     // Notice
-    noticeCard: { borderRadius: 10, padding: 10, marginBottom: 10, alignItems: 'center' },
+    noticeCard: { 
+      borderRadius: 10, 
+      padding: 10, 
+      marginBottom: 10, 
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
     noticeWarning: { backgroundColor: activeTheme === 'dark' ? '#422006' : '#fef3c7' },
     noticeSuccess: { backgroundColor: activeTheme === 'dark' ? '#064e3b' : '#dcfce7' },
     noticeText: { fontSize: 13, fontWeight: '600', color: themeColors.text },
