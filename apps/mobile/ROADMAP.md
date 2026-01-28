@@ -1,6 +1,6 @@
 # Marketplace Mobile App - Development Roadmap
 
-**Last Updated**: January 28, 2026, 10:00 AM EET  
+**Last Updated**: January 28, 2026, 10:17 AM EET  
 **Started**: January 19, 2026  
 **Overall Status**: ~90% Complete 🎉
 
@@ -37,7 +37,7 @@
 | Location | expo-location | ✅ |
 | Payments | Stripe | ✅ |
 | Real-time | socket.io-client | ✅ Installed |
-| Push | expo-notifications | 📦 Installed, not configured |
+| Push | expo-notifications | 📦 Code ready, needs dev build |
 
 ---
 
@@ -329,17 +329,47 @@ Current state: Shows "Coming Soon" message with feature preview.
 
 ---
 
-## 🟡 Phase 14: Push Notifications (PARTIALLY READY)
+## 🟡 Phase 14: Push Notifications (CODE READY - BLOCKED)
+
+> ⚠️ **Cannot test in Expo Go** - Push notifications require a development build.
 
 ### Current State:
-- [x] `expo-notifications` installed
-- [x] In-app notifications working
-- [ ] Push notification permissions
-- [ ] Device token registration
-- [ ] Backend push integration
-- [ ] Notification tap handling
+- [x] `expo-notifications` package installed
+- [x] `utils/pushNotifications.ts` fully implemented
+- [x] Permission request flow ready
+- [x] Device token registration ready
+- [x] Backend API endpoints ready (`/push/subscribe`, `/push/unsubscribe`)
+- [x] Notification listeners ready
+- [x] In-app notifications working ✅
 
-**Status**: 🟡 30% (package installed, not configured)
+### What's Blocking:
+Push notifications **do not work in Expo Go**. They require:
+
+1. **Development Build** via EAS Build (`expo-dev-client`)
+2. **Apple Developer Account** ($99/year) for iOS testing
+3. **Physical device** (not simulator)
+
+### To Enable Push Notifications:
+```bash
+# 1. Install EAS CLI
+npm install -g eas-cli
+
+# 2. Configure EAS
+eas build:configure
+
+# 3. Create development build
+eas build --profile development --platform ios
+eas build --profile development --platform android
+
+# 4. Install the .ipa/.apk on physical device
+# 5. Call registerPushToken() after user login
+```
+
+### Code Location:
+- `utils/pushNotifications.ts` - All push notification logic
+- Ready to integrate once dev build is available
+
+**Status**: 🟡 Code 100% ready, blocked by Expo Go limitations
 
 ---
 
@@ -375,11 +405,11 @@ Current state: Shows "Coming Soon" message with feature preview.
 | 7 | Messaging | ✅ 90% |
 | 8 | User Profile | ✅ 100% |
 | 9 | Reviews | ✅ 100% |
-| 10 | Notifications | ✅ 100% |
+| 10 | Notifications (In-App) | ✅ 100% |
 | 11 | Disputes | ✅ 100% |
 | 12 | Payments | ✅ 100% |
 | 13 | Buy/Sell Listings | ⬜ 5% |
-| 14 | Push Notifications | 🟡 30% |
+| 14 | Push Notifications | 🟡 Code ready, blocked |
 | 15 | Polish & App Store | ⬜ 0% |
 
 ---
@@ -406,9 +436,11 @@ Current state: Shows "Coming Soon" message with feature preview.
 
 ### ⬜ Not Yet Built:
 - Buy/Sell Listings (classifieds)
-- Push notifications
 - Real-time chat updates
 - Image sending in messages
+
+### 🟡 Ready But Blocked:
+- Push notifications (needs dev build, not possible in Expo Go)
 
 ---
 
@@ -438,8 +470,8 @@ Current state: Shows "Coming Soon" message with feature preview.
 
 ## Next Steps
 
-### Priority 1 - Before App Store:
-1. 🔔 **Push Notifications** - Configure expo-notifications
+### Priority 1 - When Ready for App Store:
+1. 🔔 **Push Notifications** - Create EAS dev build, integrate `pushNotifications.ts`
 2. 🎨 **App Icon & Splash** - Final branding
 
 ### Priority 2 - Nice to Have:
@@ -466,5 +498,5 @@ npm run android
 
 ---
 
-**Last Updated**: January 28, 2026, 10:00 AM EET  
+**Last Updated**: January 28, 2026, 10:17 AM EET  
 **Verified by**: Full code audit of every screen
