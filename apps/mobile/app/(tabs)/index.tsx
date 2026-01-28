@@ -44,6 +44,9 @@ export default function HomeScreen() {
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
   
+  // Get the blur tint based on theme
+  const blurTint = activeTheme === 'dark' ? 'dark' : 'light';
+  
   // Get safe area insets for stable positioning
   const insets = useSafeAreaInsets();
   
@@ -303,7 +306,7 @@ export default function HomeScreen() {
               onPress={() => { haptic.light(); setShowCategoryModal(true); }}
               activeOpacity={0.7}
             >
-              <BlurView intensity={80} tint="light" style={styles.categoryBlur}>
+              <BlurView intensity={80} tint={blurTint} style={styles.categoryBlur}>
                 <Text style={styles.categoryButtonText} numberOfLines={1}>
                   {getCategoryButtonText()}
                 </Text>
@@ -312,7 +315,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <View style={styles.searchBar}>
-              <BlurView intensity={80} tint="light" style={styles.searchBlur}>
+              <BlurView intensity={80} tint={blurTint} style={styles.searchBlur}>
                 <Icon name="search" size={20} color={styles.searchInput.color} />
                 <TextInput
                   ref={searchInputRef}
@@ -337,7 +340,7 @@ export default function HomeScreen() {
               onPress={() => { haptic.light(); setShowFiltersModal(true); }}
               activeOpacity={0.7}
             >
-              <BlurView intensity={80} tint="light" style={styles.filtersBlur}>
+              <BlurView intensity={80} tint={blurTint} style={styles.filtersBlur}>
                 <Icon name="tune" size={20} color={hasActiveFilters ? JOB_COLOR : styles.categoryButtonText.color} />
                 {hasActiveFilters && <View style={styles.filterDot} />}
               </BlurView>
@@ -348,7 +351,7 @@ export default function HomeScreen() {
         {/* Loading Overlay */}
         {isLoading && (
           <View style={styles.loadingOverlay}>
-            <BlurView intensity={80} tint="light" style={styles.loadingCard}>
+            <BlurView intensity={80} tint={blurTint} style={styles.loadingCard}>
               <ActivityIndicator size="small" color={JOB_COLOR} />
               <Text style={styles.loadingText}>Loading jobs...</Text>
             </BlurView>
