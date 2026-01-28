@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +14,7 @@ interface TaskProgressStepperProps {
  * Visual progress stepper showing task workflow status
  * Adapts based on user role (Creator, Worker, or Applicant)
  */
-export function TaskProgressStepper({ task, onActionPress }: TaskProgressStepperProps) {
+export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepperProps) => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   
@@ -62,7 +61,7 @@ export function TaskProgressStepper({ task, onActionPress }: TaskProgressStepper
       )}
     </View>
   );
-}
+};
 
 /**
  * Individual step item component
@@ -73,7 +72,7 @@ interface StepItemProps {
   onActionPress?: (stepId: string) => void;
 }
 
-function StepItem({ step, isLast, onActionPress }: StepItemProps) {
+const StepItem = ({ step, isLast, onActionPress }: StepItemProps) => {
   const { t } = useTranslation();
   
   const statusStyles = getStatusStyles(step.status);
@@ -123,7 +122,7 @@ function StepItem({ step, isLast, onActionPress }: StepItemProps) {
       </View>
     </View>
   );
-}
+};
 
 /**
  * Get styles based on step status
