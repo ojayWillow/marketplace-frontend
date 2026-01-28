@@ -99,6 +99,9 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
     onSuccess: () => {
       Alert.alert('Cancelled', 'Task has been cancelled.');
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      // Invalidate map and search queries to remove cancelled task from map
+      queryClient.invalidateQueries({ queryKey: ['tasks-home-all'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks-search'] });
     },
     onError: (error: any) => {
       Alert.alert('Error', error.response?.data?.message || 'Failed.');
