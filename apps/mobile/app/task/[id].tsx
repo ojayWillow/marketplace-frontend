@@ -14,6 +14,7 @@ import {
   TaskBottomBar,
   TaskReviewPrompt,
   TaskDisputeInfo,
+  TaskAssignedWorker,
 } from '../../src/features/tasks/components/detail';
 import { useTaskActions } from '../../src/features/tasks/hooks/useTaskActions';
 import { styles, ACCENT_COLOR } from '../../src/features/tasks/styles/taskDetailStyles';
@@ -108,6 +109,9 @@ export default function TaskDetailScreen() {
               onReport={actions.handleReport}
               onViewProfile={actions.handleViewProfile}
             />
+
+            {/* Show assigned worker info (status + who is working) */}
+            <TaskAssignedWorker task={task} />
 
             <TaskImageGallery images={taskImages} />
 
