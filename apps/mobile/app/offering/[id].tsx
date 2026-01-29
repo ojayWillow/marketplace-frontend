@@ -150,6 +150,7 @@ export default function OfferingDetailScreen() {
     if (offering?.creator_id) router.push(`/user/${offering.creator_id}`);
   };
 
+  // FIX: Use the same contactOfferingCreator API to properly create/get conversation
   const handleMessage = () => {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'You need to sign in to message.', [
@@ -158,7 +159,9 @@ export default function OfferingDetailScreen() {
       ]);
       return;
     }
-    if (offering?.creator_id) router.push(`/conversation/${offering.creator_id}`);
+    // Use the contact dialog flow which properly creates the conversation
+    setContactMessage(`Hi! I'd like to discuss your service: ${offering?.title}`);
+    setShowContactDialog(true);
   };
 
   const handleDelete = () => {
