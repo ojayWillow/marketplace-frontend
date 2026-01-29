@@ -12,16 +12,22 @@ import { lightTheme, darkTheme, colors } from '../src/theme';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { useSocket } from '../src/hooks/useSocket'; // ADDED: Import useSocket hook
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(false);
 }
 LayoutAnimation.configureNext = () => {};
 
+// UPDATED: Configure QueryClient with less aggressive refetching
+// This prevents API data from overwriting Socket.IO presence
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
+      staleTime: 5 * 60 * 1000, // 5 minutes - prevents aggressive refetching
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnWindowFocus: false, // Don't refetch on every focus
+      refetchOnReconnect: false, // Don't refetch on reconnect
       retry: 2,
     },
   },
@@ -52,6 +58,9 @@ export default function RootLayout() {
   const router = useRouter();
   const notificationListener = useRef<(() => void) | null>(null);
   const [isReady, setIsReady] = useState(false);
+  
+  // ADDED: Initialize Socket.IO connection and presence tracking
+  useSocket();
   
   const systemColorScheme = useColorScheme();
   const { mode, _hasHydrated: themeHydrated } = useThemeStore();
