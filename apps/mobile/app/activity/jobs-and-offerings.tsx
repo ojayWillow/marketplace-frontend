@@ -81,10 +81,22 @@ export default function JobsAndOfferingsScreen() {
   const myServices = myServicesData?.offerings || [];
 
   // Combine applications + assigned for "My Work" tab with type markers
-  const myWork = useMemo(() => [
-    ...applications.map((item: any) => ({ ...item, _type: 'application' })),
-    ...assignedJobs.map((item: any) => ({ ...item, _type: 'task' }))
-  ], [applications, assignedJobs]);
+  // FIX: Filter out applications where the task is already in assignedJobs to prevent duplicates
+  const myWork = useMemo(() => {
+    // Create a Set of assigned task IDs for fast lookup
+    const assignedTaskIds = new Set(assignedJobs.map((task: any) => task.id));
+    
+    // Filter out applications whose task is already in assignedJobs
+    const filteredApplications = applications.filter((app: any) => {
+      const taskId = app.task?.id || app.task_id;
+      return !assignedTaskIds.has(taskId);
+    });
+    
+    return [
+      ...filteredApplications.map((item: any) => ({ ...item, _type: 'application' })),
+      ...assignedJobs.map((item: any) => ({ ...item, _type: 'task' }))
+    ];
+  }, [applications, assignedJobs]);
 
   // Count actions needed for each tab
   const actionCounts = useMemo(() => {
