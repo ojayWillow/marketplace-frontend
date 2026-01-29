@@ -60,14 +60,12 @@ export default function NotificationsScreen() {
     if (!relatedId) return;
 
     // Handle routing based on notification type
-    // IMPORTANT: Backend stores DISPUTE ID in related_id for dispute notifications,
-    // and TASK ID for all other notification types
+    // All notification types now use task_id in related_id for consistency
     
     switch (notification.type) {
       case NotificationType.TASK_DISPUTED:
-        // Backend stores dispute_id in related_id for dispute notifications
-        // Route to the dispute details screen
-        router.push(`/dispute/${relatedId}`);
+        // Backend stores task_id - route to task page which shows dispute info
+        router.push(`/task/${relatedId}`);
         break;
         
       case NotificationType.NEW_APPLICATION:
