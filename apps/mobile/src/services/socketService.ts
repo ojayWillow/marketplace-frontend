@@ -50,9 +50,9 @@ class SocketService {
     this.socket = io(SOCKET_URL, {
       auth: { token },
       query: { token },
-      // IMPORTANT: Allow polling first, then upgrade to websocket
-      // This ensures connection works even when WebSocket is blocked/unavailable
-      transports: ['polling', 'websocket'],
+      // IMPORTANT: Use polling only - backend (gunicorn+gevent) doesn't support WebSocket
+      // Polling is reliable and works perfectly for real-time messaging
+      transports: ['polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
