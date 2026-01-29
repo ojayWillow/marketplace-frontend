@@ -2,32 +2,9 @@ import { View, StyleSheet } from 'react-native';
 import { Text, Button, Card } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest, useAuthStore } from '@marketplace/shared';
+import { getTaskDisputes, useAuthStore, type Dispute } from '@marketplace/shared';
 import { useThemeStore } from '../../../../stores/themeStore';
 import { colors } from '../../../../theme';
-
-interface Dispute {
-  id: number;
-  task_id: number;
-  filed_by_id: number;
-  filed_against_id: number;
-  reason: string;
-  description: string;
-  response_description: string | null;
-  status: 'open' | 'under_review' | 'resolved';
-  filed_by: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-  };
-  filed_against: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-  };
-}
 
 interface TaskDisputeInfoProps {
   taskId: number;
@@ -52,16 +29,9 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   // Fetch disputes for this task
   const { data, isLoading, error } = useQuery({
     queryKey: ['taskDisputes', taskId],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest(`/disputes/task/${taskId}`);
-        return response;
-      } catch (err) {
-        console.error('Error fetching disputes:', err);
-        return { disputes: [] };
-      }
-    },
+    queryFn: () => getTaskDisputes(taskId),
     enabled: taskId > 0,
+    retry: false,
   });
 
   // Don't render if loading, error, or no disputes
@@ -95,12 +65,20 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   };
 
   const getStatusLabel = (status: string) => {
-    return status.replace('_', ' ').toUpperCase();
+    switch (status) {
+      case 'open':
+        return 'Open';
+      case 'under_review':
+        return 'Under Review';
+      case 'resolved':
+        return 'Resolved';
+      default:
+        return status.replace('_', ' ').toUpperCase();
+    }
   };
 
-  const filedByName = isFiledByMe 
-    ? 'You' 
-    : `${activeDispute.filed_by?.first_name || ''} ${activeDispute.filed_by?.last_name || ''}`.trim() || activeDispute.filed_by?.username || 'Unknown';
+  // Use filed_by_name if available, otherwise 'Unknown'
+  const filedByName = isFiledByMe ? 'You' : (activeDispute.filed_by_name || 'Unknown');
 
   const styles = StyleSheet.create({
     card: {
@@ -183,7 +161,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
             Reason:
           </Text>
           <Text variant="bodyMedium" style={styles.value}>
-            {REASON_LABELS[activeDispute.reason] || activeDispute.reason}
+            {activeDispute.reason_label || REASON_LABELS[activeDispute.reason] || activeDispute.reason}
           </Text>
         </View>
 
