@@ -40,11 +40,22 @@ export function useTasksData({
   const allTasks = jobsQuery.data?.tasks || [];
   const allOfferings = servicesQuery.data?.offerings || [];
 
+  // Deduplicate tasks by ID first (fixes duplicate display issue)
+  const deduplicatedTasks = useMemo(() => {
+    const taskMap = new Map<number, Task>();
+    allTasks.forEach(task => {
+      if (!taskMap.has(task.id)) {
+        taskMap.set(task.id, task);
+      }
+    });
+    return Array.from(taskMap.values());
+  }, [allTasks]);
+
   // Filter and add distance to tasks
   const tasks = useMemo(() => {
     let filtered = selectedCategory === 'all' 
-      ? allTasks 
-      : allTasks.filter(t => t.category === selectedCategory);
+      ? deduplicatedTasks 
+      : deduplicatedTasks.filter(t => t.category === selectedCategory);
     
     if (selectedDifficulty) {
       filtered = filtered.filter(t => t.difficulty === selectedDifficulty);
@@ -66,7 +77,7 @@ export function useTasksData({
     }
     
     return filtered;
-  }, [allTasks, selectedCategory, selectedDifficulty, userLocation, hasRealLocation]);
+  }, [deduplicatedTasks, selectedCategory, selectedDifficulty, userLocation, hasRealLocation]);
   
   const offerings = useMemo(() => 
     selectedCategory === 'all'
