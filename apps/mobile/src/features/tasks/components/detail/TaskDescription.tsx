@@ -1,7 +1,8 @@
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { type Task } from '@marketplace/shared';
-import { styles } from '../../styles/taskDetailStyles';
+import { createTaskDetailStyles } from '../../styles/taskDetailStyles';
+import { useThemeStore } from '../../../../stores/themeStore';
 
 interface TaskDescriptionProps {
   task: Task;
@@ -9,6 +10,10 @@ interface TaskDescriptionProps {
 }
 
 export function TaskDescription({ task, onOpenMap }: TaskDescriptionProps) {
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const styles = createTaskDetailStyles(activeTheme);
+  
   const hasLocation = !!task.location;
   const hasCoordinates = !!(task.latitude && task.longitude);
 
