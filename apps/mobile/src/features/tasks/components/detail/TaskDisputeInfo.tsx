@@ -50,16 +50,22 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   const themeColors = colors[activeTheme];
 
   // Fetch disputes for this task
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['taskDisputes', taskId],
     queryFn: async () => {
-      const response = await apiRequest(`/disputes/task/${taskId}`);
-      return response;
+      try {
+        const response = await apiRequest(`/disputes/task/${taskId}`);
+        return response;
+      } catch (err) {
+        console.error('Error fetching disputes:', err);
+        return { disputes: [] };
+      }
     },
     enabled: taskId > 0,
   });
 
-  if (isLoading || !data || !data.disputes || data.disputes.length === 0) {
+  // Don't render if loading, error, or no disputes
+  if (isLoading || error || !data || !data.disputes || data.disputes.length === 0) {
     return null;
   }
 
@@ -89,25 +95,12 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'Open';
-      case 'under_review':
-        return 'Under Review';
-      case 'resolved':
-        return 'Resolved';
-      default:
-        return status;
-    }
+    return status.replace('_', ' ').toUpperCase();
   };
 
   const filedByName = isFiledByMe 
     ? 'You' 
-    : `${activeDispute.filed_by.first_name} ${activeDispute.filed_by.last_name}`;
-  
-  const filedAgainstName = isFiledByMe
-    ? `${activeDispute.filed_against.first_name} ${activeDispute.filed_against.last_name}`
-    : 'you';
+    : `${activeDispute.filed_by?.first_name || ''} ${activeDispute.filed_by?.last_name || ''}`.trim() || activeDispute.filed_by?.username || 'Unknown';
 
   const styles = StyleSheet.create({
     card: {
@@ -148,16 +141,6 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
     value: {
       color: themeColors.textSecondary,
     },
-    description: {
-      color: themeColors.textSecondary,
-      lineHeight: 20,
-    },
-    responseSection: {
-      backgroundColor: themeColors.backgroundSecondary,
-      padding: 12,
-      borderRadius: 8,
-      marginTop: 8,
-    },
     respondButton: {
       marginTop: 16,
       backgroundColor: themeColors.primaryAccent,
@@ -171,9 +154,6 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
     reviewText: {
       color: '#1e40af',
       lineHeight: 18,
-    },
-    viewButton: {
-      marginTop: 8,
     },
   });
 
@@ -206,17 +186,6 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
             {REASON_LABELS[activeDispute.reason] || activeDispute.reason}
           </Text>
         </View>
-
-        {activeDispute.response_description && (
-          <View style={[styles.info, styles.responseSection]}>
-            <Text variant="bodyMedium" style={styles.label}>
-              Response from {filedAgainstName}:
-            </Text>
-            <Text variant="bodyMedium" style={styles.description}>
-              {activeDispute.response_description}
-            </Text>
-          </View>
-        )}
 
         {activeDispute.status === 'under_review' && (
           <View style={styles.reviewNotice}>
