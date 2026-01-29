@@ -57,6 +57,41 @@ function formatLastSeen(lastSeenStr: string | null): string {
   return lastSeen.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Component for chat images with error handling
+function ChatImage({ uri, onPress, themeColors }: { uri: string; onPress: () => void; themeColors: any }) {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  if (hasError) {
+    return (
+      <View style={[styles.messageImage, styles.imageError, { backgroundColor: themeColors.backgroundSecondary }]}>
+        <Text style={styles.imageErrorIcon}>🖼️</Text>
+        <Text style={[styles.imageErrorText, { color: themeColors.textMuted }]}>Image unavailable</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable onPress={onPress}>
+      {isLoading && (
+        <View style={[styles.messageImage, styles.imageLoading, { backgroundColor: themeColors.backgroundSecondary }]}>
+          <ActivityIndicator size="small" color={themeColors.textMuted} />
+        </View>
+      )}
+      <RNImage
+        source={{ uri }}
+        style={[styles.messageImage, isLoading && styles.hiddenImage]}
+        resizeMode="cover"
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setIsLoading(false);
+          setHasError(true);
+        }}
+      />
+    </Pressable>
+  );
+}
+
 export default function ConversationScreen() {
   // Support both conversation ID and user ID for new conversations
   const { id, userId, username } = useLocalSearchParams<{ 
@@ -231,7 +266,7 @@ export default function ConversationScreen() {
   const messages = messagesData?.messages || [];
   const isLoading = isCreatingConversation || (!conversationId && targetUserId) || isLoadingMessages;
 
-  // Get all image URLs from messages for the viewer
+  // Get all image URLs from messages for the viewer (only valid ones will be shown)
   const imageMessages = messages.filter((m: Message) => m.attachment_url && m.attachment_type === 'image');
   const viewerImages = imageMessages.map((m: Message) => ({ uri: m.attachment_url! }));
 
@@ -560,13 +595,11 @@ export default function ConversationScreen() {
                       {/* Image Attachment */}
                       {message.attachment_url && message.attachment_type === 'image' && (
                         <View style={styles.imageContainer}>
-                          <Pressable onPress={() => openImageViewer(message.attachment_url!)}>
-                            <RNImage
-                              source={{ uri: message.attachment_url }}
-                              style={styles.messageImage}
-                              resizeMode="cover"
-                            />
-                          </Pressable>
+                          <ChatImage
+                            uri={message.attachment_url}
+                            onPress={() => openImageViewer(message.attachment_url!)}
+                            themeColors={themeColors}
+                          />
                         </View>
                       )}
                       
@@ -876,6 +909,25 @@ const styles = StyleSheet.create({
     width: 220,
     height: 165,
     borderRadius: 12,
+  },
+  hiddenImage: {
+    position: 'absolute',
+    opacity: 0,
+  },
+  imageLoading: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageError: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageErrorIcon: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  imageErrorText: {
+    fontSize: 12,
   },
   messageText: {
     fontSize: 15,
