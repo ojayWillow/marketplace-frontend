@@ -59,38 +59,39 @@ export default function NotificationsScreen() {
     const relatedId = notification.related_id;
     if (!relatedId) return;
 
-    // Backend stores TASK IDs in related_id for all notification types
-    // Navigate to task detail for all cases - dispute info is shown on task detail screen
-    const taskId = relatedId;
+    // Handle routing based on notification type
+    // IMPORTANT: Backend stores DISPUTE ID in related_id for dispute notifications,
+    // and TASK ID for all other notification types
     
     switch (notification.type) {
       case NotificationType.TASK_DISPUTED:
-        // Go to task detail where TaskDisputeInfo component shows the dispute
-        router.push(`/task/${taskId}`);
+        // Backend stores dispute_id in related_id for dispute notifications
+        // Route to the dispute details screen
+        router.push(`/dispute/${relatedId}`);
         break;
         
       case NotificationType.NEW_APPLICATION:
-        router.push(`/task/${taskId}/applications`);
+        router.push(`/task/${relatedId}/applications`);
         break;
       
       case NotificationType.APPLICATION_ACCEPTED:
-        router.push(`/task/${taskId}`);
+        router.push(`/task/${relatedId}`);
         break;
       
       case NotificationType.APPLICATION_REJECTED:
-        router.push(`/task/${taskId}`);
+        router.push(`/task/${relatedId}`);
         break;
       
       case NotificationType.TASK_MARKED_DONE:
-        router.push(`/task/${taskId}`);
+        router.push(`/task/${relatedId}`);
         break;
       
       case NotificationType.TASK_COMPLETED:
-        router.push(`/task/${taskId}/review`);
+        router.push(`/task/${relatedId}/review`);
         break;
       
       default:
-        router.push(`/task/${taskId}`);
+        router.push(`/task/${relatedId}`);
     }
   };
 
