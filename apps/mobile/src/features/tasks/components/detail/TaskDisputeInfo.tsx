@@ -1,8 +1,8 @@
-import { View, StyleSheet } from 'react-native';
-import { Text, Card, Button } from 'react-native-paper';
-import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { getTaskDisputes, useAuthStore, type Dispute } from '@marketplace/shared';
+import { View, StyleSheet, Alert } from 'react-native';
+import { Text, Card, Button, TextInput, ActivityIndicator } from 'react-native-paper';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { getTaskDisputes, respondToDispute, useAuthStore, type Dispute } from '@marketplace/shared';
 import { useThemeStore } from '../../../../stores/themeStore';
 import { colors } from '../../../../theme';
 
@@ -25,6 +25,11 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+  const queryClient = useQueryClient();
+
+  // Response form state
+  const [showResponseForm, setShowResponseForm] = useState(false);
+  const [responseText, setResponseText] = useState('');
 
   // Fetch disputes for this task
   const { data, isLoading, error } = useQuery({
@@ -32,6 +37,28 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
     queryFn: () => getTaskDisputes(taskId),
     enabled: taskId > 0,
     retry: false,
+  });
+
+  // Mutation for submitting response
+  const respondMutation = useMutation({
+    mutationFn: (params: { disputeId: number; description: string }) => 
+      respondToDispute(params.disputeId, { description: params.description }),
+    onSuccess: () => {
+      Alert.alert(
+        'Response Submitted',
+        'Your response has been submitted. The dispute is now under review by our support team.',
+        [{ text: 'OK' }]
+      );
+      setShowResponseForm(false);
+      setResponseText('');
+      // Refresh dispute data
+      queryClient.invalidateQueries({ queryKey: ['taskDisputes', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.error || 'Failed to submit response. Please try again.';
+      Alert.alert('Error', message);
+    },
   });
 
   // Don't render if loading, error, or no disputes
@@ -57,8 +84,16 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   // 3. No response has been submitted yet
   const canRespond = isFiledAgainstMe && activeDispute.status === 'open' && !activeDispute.response_description;
 
-  const handleRespond = () => {
-    router.push(`/dispute/${activeDispute.id}`);
+  const handleSubmitResponse = () => {
+    if (responseText.trim().length < 20) {
+      Alert.alert('Error', 'Please provide a detailed response (at least 20 characters).');
+      return;
+    }
+    
+    respondMutation.mutate({
+      disputeId: activeDispute.id,
+      description: responseText.trim(),
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -88,7 +123,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   };
 
   // Use filed_by_name if available, otherwise 'Unknown'
-  const filedByName = isFiledByMe ? 'You' : (activeDispute.filed_by_name || 'Unknown');
+  const filedByName = isFiledByMe ? 'You' : (activeDispute.filed_by_name || 'The other party');
 
   const styles = StyleSheet.create({
     card: {
@@ -174,6 +209,36 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
       color: '#10b981',
       marginBottom: 8,
     },
+    // Response form styles
+    responseFormContainer: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    responseFormTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 12,
+    },
+    textInput: {
+      backgroundColor: themeColors.backgroundSecondary,
+      marginBottom: 12,
+    },
+    characterCount: {
+      fontSize: 12,
+      color: themeColors.textMuted,
+      textAlign: 'right',
+      marginBottom: 12,
+    },
+    formButtons: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 8,
+    },
+    cancelButton: {
+      marginRight: 8,
+    },
   });
 
   return (
@@ -229,15 +294,68 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
           </View>
         )}
 
-        {/* Show respond button if user can respond */}
-        {canRespond && (
+        {/* Response form - shown when user clicks respond */}
+        {canRespond && showResponseForm && (
+          <View style={styles.responseFormContainer}>
+            <Text variant="bodyMedium" style={styles.responseFormTitle}>
+              📝 Your Response
+            </Text>
+            <Text variant="bodySmall" style={{ color: themeColors.textSecondary, marginBottom: 12 }}>
+              Explain your side of the story. Be specific and factual.
+            </Text>
+            <TextInput
+              mode="outlined"
+              placeholder="Describe what happened from your perspective..."
+              value={responseText}
+              onChangeText={setResponseText}
+              multiline
+              numberOfLines={5}
+              style={styles.textInput}
+              outlineColor={themeColors.border}
+              activeOutlineColor={themeColors.primaryAccent}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.textMuted}
+              disabled={respondMutation.isPending}
+            />
+            <Text style={styles.characterCount}>
+              {responseText.length} / 20 minimum characters
+            </Text>
+            <View style={styles.formButtons}>
+              <Button 
+                mode="outlined" 
+                onPress={() => {
+                  setShowResponseForm(false);
+                  setResponseText('');
+                }}
+                style={styles.cancelButton}
+                textColor={themeColors.textSecondary}
+                disabled={respondMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                mode="contained" 
+                onPress={handleSubmitResponse}
+                buttonColor="#ef4444"
+                textColor="#fff"
+                disabled={respondMutation.isPending || responseText.trim().length < 20}
+                loading={respondMutation.isPending}
+              >
+                Submit Response
+              </Button>
+            </View>
+          </View>
+        )}
+
+        {/* Show respond button if user can respond and form is not shown */}
+        {canRespond && !showResponseForm && (
           <View style={styles.respondNotice}>
             <Text variant="bodySmall" style={styles.respondText}>
               ⚠️ A dispute has been filed against you. Please respond with your side of the story.
             </Text>
             <Button 
               mode="contained" 
-              onPress={handleRespond}
+              onPress={() => setShowResponseForm(true)}
               buttonColor="#ef4444"
               textColor="#fff"
               style={styles.respondButton}
