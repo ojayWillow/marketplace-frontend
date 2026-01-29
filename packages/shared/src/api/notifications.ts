@@ -9,6 +9,7 @@ export enum NotificationType {
   APPLICATION_REJECTED = 'application_rejected',
   TASK_MARKED_DONE = 'task_marked_done',
   TASK_COMPLETED = 'task_completed',
+  TASK_DISPUTED = 'task_disputed',
 }
 
 export interface Notification {
