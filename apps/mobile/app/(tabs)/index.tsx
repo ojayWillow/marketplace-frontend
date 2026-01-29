@@ -127,6 +127,7 @@ export default function HomeScreen() {
 
   const handleOfferingMarkerPress = useCallback((offering: Offering) => {
     haptic.light();
+    console.log('Offering marker pressed:', offering.id, offering.title);
     if (mapRef.current && offering.latitude && offering.longitude) {
       const latitudeDelta = 0.03;
       const { height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
@@ -202,10 +203,13 @@ export default function HomeScreen() {
     return tasksData || [];
   }, [debouncedSearchQuery, searchData, isSearchFetching, tasksData]);
   
-  const boostedOfferings = useMemo(() => 
-    (offeringsData?.offerings || []).filter(o => o.is_boost_active && o.latitude && o.longitude),
-    [offeringsData]
-  );
+  // Debug offerings data
+  const boostedOfferings = useMemo(() => {
+    const offerings = (offeringsData?.offerings || []).filter(o => o.latitude && o.longitude);
+    console.log('Boosted offerings count:', offerings.length);
+    offerings.forEach(o => console.log('Offering:', o.id, o.title, o.latitude, o.longitude));
+    return offerings;
+  }, [offeringsData]);
 
   // Updated filtering to use matchesCategory for multi-select
   const filteredTasks = useMemo(() => {
@@ -281,6 +285,22 @@ export default function HomeScreen() {
           showsUserLocation={hasRealLocation}
           showsMyLocationButton={false}
         >
+          {/* Boosted offerings markers - Render FIRST with higher z-index */}
+          {boostedOfferings.map((offering) => {
+            console.log('Rendering offering marker:', offering.id);
+            return (
+              <Marker 
+                key={`offering-${offering.id}`} 
+                coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }} 
+                onPress={() => handleOfferingMarkerPress(offering)}
+                anchor={{ x: 0.5, y: 0.5 }}
+                zIndex={100}
+              >
+                <OfferingMarker offering={offering} styles={styles} />
+              </Marker>
+            );
+          })}
+
           {/* Task markers */}
           {tasksWithOffset.map((task) => {
             const markerColor = getMarkerColor(task.category);
@@ -306,19 +326,6 @@ export default function HomeScreen() {
               </Marker>
             );
           })}
-
-          {/* Boosted offerings markers */}
-          {boostedOfferings.map((offering) => (
-            <Marker 
-              key={`offering-${offering.id}`} 
-              coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }} 
-              onPress={() => handleOfferingMarkerPress(offering)} 
-              tracksViewChanges={false}
-              zIndex={2}
-            >
-              <OfferingMarker offering={offering} styles={styles} />
-            </Marker>
-          ))}
         </MapView>
 
         {/* Floating Header - FIXED with stable positioning */}
