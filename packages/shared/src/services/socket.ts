@@ -6,6 +6,7 @@ import type { Message } from '../api/messages';
 
 type MessageHandler = (message: Message) => void;
 type TypingHandler = (data: { user_id: number; is_typing: boolean; conversation_id: number }) => void;
+type UserStatusHandler = (data: { user_id: number; status: 'online' | 'offline'; last_seen: string | null }) => void;
 
 class SocketService {
   private socket: Socket | null = null;
@@ -13,6 +14,8 @@ class SocketService {
   private token: string = '';
   private messageHandlers: Map<number, MessageHandler[]> = new Map();
   private typingHandlers: Map<number, TypingHandler[]> = new Map();
+  private userStatusHandlers: Map<number, UserStatusHandler[]> = new Map();
+  private globalStatusHandlers: UserStatusHandler[] = [];
   private currentConversationId: number | null = null;
 
   /**
@@ -66,6 +69,23 @@ class SocketService {
         handlers.forEach(handler => handler(data));
       });
 
+      // Handle user status changes (online/offline broadcasts)
+      this.socket.on('user_status_changed', (data: { user_id: number; status: 'online' | 'offline'; last_seen: string }) => {
+        console.log('[Socket] User status changed:', data);
+        // Notify user-specific handlers
+        const handlers = this.userStatusHandlers.get(data.user_id) || [];
+        handlers.forEach(handler => handler(data));
+        // Notify global handlers
+        this.globalStatusHandlers.forEach(handler => handler(data));
+      });
+
+      // Handle user status response (from get_user_status request)
+      this.socket.on('user_status', (data: { user_id: number; status: 'online' | 'offline'; last_seen: string | null }) => {
+        console.log('[Socket] User status received:', data);
+        const handlers = this.userStatusHandlers.get(data.user_id) || [];
+        handlers.forEach(handler => handler(data));
+      });
+
       this.socket.on('error', (data: { message: string }) => {
         console.error('[Socket] Error:', data.message);
       });
@@ -82,6 +102,8 @@ class SocketService {
     }
     this.messageHandlers.clear();
     this.typingHandlers.clear();
+    this.userStatusHandlers.clear();
+    this.globalStatusHandlers = [];
     this.currentConversationId = null;
   }
 
@@ -161,6 +183,43 @@ class SocketService {
       const filtered = current.filter(h => h !== handler);
       this.typingHandlers.set(conversationId, filtered);
     };
+  }
+
+  /**
+   * Subscribe to status changes for a specific user
+   */
+  onUserStatus(userId: number, handler: UserStatusHandler) {
+    const handlers = this.userStatusHandlers.get(userId) || [];
+    handlers.push(handler);
+    this.userStatusHandlers.set(userId, handlers);
+
+    // Return unsubscribe function
+    return () => {
+      const current = this.userStatusHandlers.get(userId) || [];
+      const filtered = current.filter(h => h !== handler);
+      this.userStatusHandlers.set(userId, filtered);
+    };
+  }
+
+  /**
+   * Subscribe to all user status changes (global)
+   */
+  onAnyUserStatus(handler: UserStatusHandler) {
+    this.globalStatusHandlers.push(handler);
+
+    // Return unsubscribe function
+    return () => {
+      this.globalStatusHandlers = this.globalStatusHandlers.filter(h => h !== handler);
+    };
+  }
+
+  /**
+   * Request current status of a user
+   */
+  requestUserStatus(userId: number) {
+    if (this.socket?.connected) {
+      this.socket.emit('get_user_status', { user_id: userId });
+    }
   }
 
   /**
