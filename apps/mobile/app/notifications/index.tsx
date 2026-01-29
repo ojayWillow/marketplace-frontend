@@ -56,9 +56,17 @@ export default function NotificationsScreen() {
       markReadMutation.mutate(notification.id);
     }
 
-    const taskId = notification.related_id;
-    if (!taskId) return;
+    const relatedId = notification.related_id;
+    if (!relatedId) return;
 
+    // Handle dispute notifications
+    if (notification.type === NotificationType.TASK_DISPUTED) {
+      router.push(`/dispute/${relatedId}`);
+      return;
+    }
+
+    // Handle other notifications (task-related)
+    const taskId = relatedId;
     switch (notification.type) {
       case NotificationType.NEW_APPLICATION:
         router.push(`/task/${taskId}/applications`);
@@ -121,6 +129,8 @@ export default function NotificationsScreen() {
         return '⏳';
       case NotificationType.TASK_COMPLETED:
         return '✅';
+      case NotificationType.TASK_DISPUTED:
+        return '🔔';
       default:
         return '🔔';
     }
