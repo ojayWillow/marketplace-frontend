@@ -37,6 +37,26 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import Constants from 'expo-constants';
 
+// Helper to format last seen time
+function formatLastSeen(lastSeenStr: string | null): string {
+  if (!lastSeenStr) return '';
+  
+  const lastSeen = new Date(lastSeenStr);
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeen.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return lastSeen.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function ConversationScreen() {
   // Support both conversation ID and user ID for new conversations
   const { id, userId, username } = useLocalSearchParams<{ 
@@ -62,6 +82,10 @@ export default function ConversationScreen() {
   const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerImageIndex, setViewerImageIndex] = useState(0);
+  
+  // Online status state
+  const [userStatus, setUserStatus] = useState<'online' | 'offline' | null>(null);
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
 
   // Get API URL for socket
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
@@ -158,6 +182,29 @@ export default function ConversationScreen() {
       }
     },
   });
+
+  // Get the other user's ID from conversation
+  const otherUser = conversation?.other_participant;
+  const otherUserId = otherUser?.id;
+
+  // Subscribe to user status updates
+  useEffect(() => {
+    if (!otherUserId) return;
+
+    // Request current status when we know the other user
+    if (socketService.isConnected()) {
+      socketService.requestUserStatus(otherUserId);
+    }
+
+    // Subscribe to status changes for this user
+    const unsubscribe = socketService.onUserStatus(otherUserId, (data) => {
+      console.log('[Socket] User status update:', data);
+      setUserStatus(data.status);
+      setLastSeen(data.last_seen);
+    });
+
+    return unsubscribe;
+  }, [otherUserId]);
 
   // Fetch messages - socket handles real-time updates, no polling needed
   const {
@@ -291,7 +338,6 @@ export default function ConversationScreen() {
     }
   };
 
-  const otherUser = conversation?.other_participant;
   const headerTitle = otherUser?.username || username || 'Chat';
   const avatarLabel = (otherUser?.username || username || '?').charAt(0).toUpperCase();
 
@@ -333,7 +379,14 @@ export default function ConversationScreen() {
     return currentDate !== prevDate;
   };
 
-  // Custom header with avatar
+  // Get status text for header
+  const getStatusText = () => {
+    if (userStatus === 'online') return 'Online';
+    if (userStatus === 'offline' && lastSeen) return `Last seen ${formatLastSeen(lastSeen)}`;
+    return null;
+  };
+
+  // Custom header with avatar and status
   const CustomHeader = () => (
     <View style={[styles.customHeader, { backgroundColor: themeColors.card, borderBottomColor: themeColors.border }]}>
       <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -344,14 +397,29 @@ export default function ConversationScreen() {
         style={styles.headerCenter}
         onPress={() => otherUser?.id && router.push(`/user/${otherUser.id}`)}
       >
-        <Avatar.Text
-          size={36}
-          label={avatarLabel}
-          style={styles.headerAvatar}
-        />
-        <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={1}>
-          {headerTitle}
-        </Text>
+        <View style={styles.avatarContainer}>
+          <Avatar.Text
+            size={36}
+            label={avatarLabel}
+            style={styles.headerAvatar}
+          />
+          {userStatus === 'online' && (
+            <View style={styles.onlineIndicator} />
+          )}
+        </View>
+        <View style={styles.headerTextContainer}>
+          <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={1}>
+            {headerTitle}
+          </Text>
+          {getStatusText() && (
+            <Text style={[
+              styles.statusText, 
+              { color: userStatus === 'online' ? '#22c55e' : themeColors.textMuted }
+            ]}>
+              {getStatusText()}
+            </Text>
+          )}
+        </View>
       </Pressable>
 
       <Pressable 
@@ -392,7 +460,7 @@ export default function ConversationScreen() {
         <CustomHeader />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
-          <Text style={[styles.statusText, { color: themeColors.textSecondary }]}>
+          <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>
             {isCreatingConversation ? 'Starting conversation...' : 'Loading messages...'}
           </Text>
         </View>
@@ -619,13 +687,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 8,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 10,
+  },
   headerAvatar: {
     backgroundColor: '#0ea5e9',
-    marginRight: 10,
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22c55e',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  headerTextContainer: {
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
+  },
+  statusText: {
+    fontSize: 12,
+    marginTop: 1,
   },
   infoButton: {
     padding: 4,
@@ -641,7 +730,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  statusText: {
+  loadingText: {
     marginTop: 12,
   },
   errorText: {
