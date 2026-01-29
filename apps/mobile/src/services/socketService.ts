@@ -50,11 +50,14 @@ class SocketService {
     this.socket = io(SOCKET_URL, {
       auth: { token },
       query: { token },
-      transports: ['websocket'],
+      // IMPORTANT: Allow polling first, then upgrade to websocket
+      // This ensures connection works even when WebSocket is blocked/unavailable
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
+      timeout: 20000,
     });
     
     this.setupEventListeners();
