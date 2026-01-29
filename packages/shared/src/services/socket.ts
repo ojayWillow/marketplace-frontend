@@ -37,9 +37,10 @@ class SocketService {
 
       this.token = token;
       
+      // Use polling only - backend doesn't have gevent-websocket installed
       this.socket = io(this.baseUrl, {
         auth: { token },
-        transports: ['websocket', 'polling'],
+        transports: ['polling'],
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
