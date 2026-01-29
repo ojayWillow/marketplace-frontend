@@ -59,11 +59,13 @@ export default function RegisterScreen() {
         password,
       });
       haptic.success(); // Success haptic
-      setAuth(response.user, response.access_token);
+      // Backend returns 'token' for register, 'access_token' for phone auth
+      const token = response.token || response.access_token;
+      setAuth(response.user, token);
       router.replace('/(tabs)');
     } catch (error: any) {
       haptic.error(); // Error haptic
-      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      const message = error.response?.data?.message || error.response?.data?.error || 'Registration failed. Please try again.';
       setError(message);
     } finally {
       setLoading(false);
