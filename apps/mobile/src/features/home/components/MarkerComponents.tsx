@@ -70,7 +70,7 @@ interface OfferingMarkerProps {
 }
 
 /**
- * Boosted offering marker - shows category icon and price
+ * Boosted offering marker - shows only category icon
  */
 export const OfferingMarker = memo(function OfferingMarker({
   offering,
@@ -82,18 +82,8 @@ export const OfferingMarker = memo(function OfferingMarker({
   const categoryColor = category?.color || '#ec4899';
 
   return (
-    <View style={styles.offeringMarkerContainer}>
-      {/* Category Icon Badge */}
-      <View style={[styles.offeringIconBadge, { backgroundColor: categoryColor }]}>
-        <Text style={styles.offeringIconText}>{categoryIcon}</Text>
-      </View>
-      
-      {/* Price Bubble */}
-      <View style={[styles.offeringPriceBubble, { borderColor: categoryColor }]}>
-        <Text style={[styles.offeringPriceText, { color: categoryColor }]}>
-          €{offering.price?.toFixed(0) || '0'}
-        </Text>
-      </View>
+    <View style={[styles.offeringIconBadge, { backgroundColor: categoryColor }]}>
+      <Text style={styles.offeringIconText}>{categoryIcon}</Text>
     </View>
   );
 });
