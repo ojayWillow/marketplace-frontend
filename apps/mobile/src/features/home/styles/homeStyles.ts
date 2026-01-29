@@ -201,7 +201,7 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
       fontWeight: '500',
     },
     
-    // Job Card in list - with blue left border accent
+    // Job Card in list
     jobCard: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -233,14 +233,182 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     jobCardDistance: { fontSize: 12, color: themeColors.textSecondary, marginTop: 2 },
     
     // Focused Job Card
-    focusedCard: { paddingHorizontal: 20, paddingVertical: 16 },
-    focusedTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    focusedCategoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6 },
+    focusedCard: { 
+      paddingHorizontal: 20, 
+      paddingVertical: 16,
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    
+    // Aceternity-Inspired: Gradient Background
+    cardGradientBg: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 200,
+      zIndex: 0,
+    },
+    
+    focusedTopRow: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      marginBottom: 12,
+      zIndex: 1,
+    },
+    focusedCategoryBadge: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      paddingHorizontal: 12, 
+      paddingVertical: 6, 
+      borderRadius: 16, 
+      gap: 6,
+      // Aceternity: Enhanced shadow
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 6,
+    },
     focusedCategoryIcon: { fontSize: 14 },
     focusedCategoryText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
-    focusedPrice: { fontSize: 28, fontWeight: '800' },
-    focusedTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 16, lineHeight: 26 },
-    statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingVertical: 12, backgroundColor: themeColors.backgroundSecondary, borderRadius: 12, marginBottom: 12 },
+    
+    // Aceternity: Layered price display
+    priceContainer: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    focusedPrice: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
+    priceUnit: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+      marginLeft: 2,
+    },
+    
+    focusedTitle: { 
+      fontSize: 20, 
+      fontWeight: '700', 
+      color: themeColors.text, 
+      marginBottom: 16, 
+      lineHeight: 26,
+      zIndex: 1,
+    },
+    
+    // Aceternity: Elevated Provider Card
+    offeringProviderCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      padding: 16,
+      backgroundColor: themeColors.card,
+      borderRadius: 16,
+      borderLeftWidth: 3,
+      // Enhanced shadow for depth
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: activeTheme === 'dark' ? 0.4 : 0.12,
+      shadowRadius: 10,
+      elevation: 8,
+      zIndex: 1,
+    },
+    providerAvatar: {
+      marginRight: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 4,
+    },
+    providerInfo: {
+      flex: 1,
+    },
+    providerName: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: themeColors.text,
+      marginBottom: 4,
+    },
+    providerMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    ratingBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    ratingStar: {
+      fontSize: 14,
+    },
+    ratingText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: themeColors.text,
+    },
+    metaDivider: {
+      fontSize: 12,
+      color: themeColors.textMuted,
+      marginHorizontal: 6,
+    },
+    providerMeta: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: themeColors.textSecondary,
+    },
+    providerLocation: {
+      fontSize: 12,
+      color: themeColors.textSecondary,
+      fontWeight: '500',
+    },
+    
+    // Aceternity: Stats with Depth
+    statsRow: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'space-between', 
+      width: '100%', 
+      paddingVertical: 12, 
+      backgroundColor: themeColors.backgroundSecondary, 
+      borderRadius: 12, 
+      marginBottom: 12 
+    },
+    statsRowEnhanced: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+      zIndex: 1,
+    },
+    statBoxEnhanced: {
+      flex: 1,
+      backgroundColor: themeColors.card,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderTopWidth: 3,
+      // Aceternity: Individual box shadows
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: activeTheme === 'dark' ? 0.3 : 0.08,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    statValueEnhanced: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    statLabelEnhanced: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: themeColors.textMuted,
+      letterSpacing: 0.5,
+    },
+    
     statItem: { flex: 1, alignItems: 'center' },
     statLabel: { fontSize: 9, fontWeight: '600', color: themeColors.textMuted, letterSpacing: 0.5, marginBottom: 2 },
     statValue: { fontSize: 14, fontWeight: '700', color: themeColors.text },
@@ -252,35 +420,56 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     viewButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', paddingVertical: 14, borderRadius: 12, gap: 8 },
     viewButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
     
-    // Offering Provider Info
-    offeringProviderRow: {
+    // Aceternity: Enhanced Action Buttons
+    actionButtonsRow: {
+      flexDirection: 'row',
+      gap: 12,
+      zIndex: 1,
+    },
+    secondaryActionButton: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      justifyContent: 'center',
+      paddingVertical: 14,
+      borderRadius: 14,
       backgroundColor: themeColors.backgroundSecondary,
-      borderRadius: 12,
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: themeColors.border,
     },
-    providerAvatar: {
-      backgroundColor: OFFERING_COLOR,
-      marginRight: 12,
-    },
-    providerInfo: {
-      flex: 1,
-    },
-    providerLabel: {
-      fontSize: 11,
+    secondaryActionText: {
+      fontSize: 15,
       fontWeight: '600',
-      color: themeColors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginBottom: 2,
-    },
-    providerName: {
-      fontSize: 16,
-      fontWeight: '700',
       color: themeColors.text,
+    },
+    primaryActionButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 14,
+      borderRadius: 14,
+      gap: 6,
+      overflow: 'hidden',
+      // Aceternity: Enhanced shadow
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    primaryActionText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: '#ffffff',
+      zIndex: 2,
+    },
+    buttonGradient: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      borderRadius: 14,
     },
     
     // Modal Base Styles
@@ -288,7 +477,7 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     modalContent: { backgroundColor: themeColors.card, borderRadius: 24, padding: 24, width: '100%', maxWidth: 400 },
     modalTitle: { fontSize: 22, fontWeight: '700', color: themeColors.text, marginBottom: 24, textAlign: 'center' },
     
-    // New Card Grid Styles for Create Modal
+    // Card Grid Styles for Create Modal
     modalGrid: {
       flexDirection: 'row',
       gap: 16,
@@ -340,7 +529,7 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
       fontWeight: '500',
     },
     
-    // Legacy styles (kept for compatibility)
+    // Legacy styles
     modalOption: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 24, borderRadius: 16, marginBottom: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
     modalOptionIcon: { fontSize: 40, marginRight: 20, zIndex: 2 },
     modalOptionText: { flex: 1, zIndex: 2 },
