@@ -114,7 +114,7 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
     if (!task) return;
     try {
       await Share.share({
-        message: `${task.title} - €${task.budget || task.reward || 0}\n${task.description}`,
+        message: `${task.title} - \u20ac${task.budget || task.reward || 0}\n${task.description}`,
       });
     } catch (e) {
       // Silently fail
@@ -183,7 +183,16 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
       return;
     }
     if (task?.creator_id) {
-      router.push(`/conversation/${task.creator_id}`);
+      // Use 'new' as the conversation ID with userId param
+      // This tells the conversation screen to find/create a conversation with this user
+      const creatorName = task.creator?.username || task.creator?.first_name || 'User';
+      router.push({
+        pathname: '/conversation/new',
+        params: { 
+          userId: task.creator_id.toString(),
+          username: creatorName
+        }
+      });
     }
   }, [isAuthenticated, task]);
 
