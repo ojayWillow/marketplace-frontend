@@ -59,15 +59,16 @@ export default function NotificationsScreen() {
     const relatedId = notification.related_id;
     if (!relatedId) return;
 
-    // Handle dispute notifications
-    if (notification.type === NotificationType.TASK_DISPUTED) {
-      router.push(`/dispute/${relatedId}`);
-      return;
-    }
-
-    // Handle other notifications (task-related)
+    // Backend stores TASK IDs in related_id for all notification types
+    // Navigate to task detail for all cases - dispute info is shown on task detail screen
     const taskId = relatedId;
+    
     switch (notification.type) {
+      case NotificationType.TASK_DISPUTED:
+        // Go to task detail where TaskDisputeInfo component shows the dispute
+        router.push(`/task/${taskId}`);
+        break;
+        
       case NotificationType.NEW_APPLICATION:
         router.push(`/task/${taskId}/applications`);
         break;
@@ -130,7 +131,7 @@ export default function NotificationsScreen() {
       case NotificationType.TASK_COMPLETED:
         return '✅';
       case NotificationType.TASK_DISPUTED:
-        return '🔔';
+        return '⚠️';
       default:
         return '🔔';
     }
