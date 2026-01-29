@@ -41,24 +41,34 @@ class SocketService {
 
       this.token = token;
       
-      // Use polling only - backend doesn't have gevent-websocket installed
+      // Socket.IO config for Railway production
+      // Force polling only - Railway/gunicorn setup doesn't support WebSocket upgrades
       this.socket = io(this.baseUrl, {
         auth: { token },
-        transports: ['polling'],
+        transports: ['polling'], // ONLY polling, no websocket
+        upgrade: false, // Prevent upgrade attempts to websocket
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        forceNew: false,
+        // Ensure we're using the correct Engine.IO protocol version
+        path: '/socket.io/',
       });
 
       this.socket.on('connect', () => {
-        console.log('[Socket] Connected');
+        console.log('[Socket] Connected to', this.baseUrl);
         this.startHeartbeat();
         resolve();
       });
 
       this.socket.on('connect_error', (error) => {
         console.error('[Socket] Connection error:', error.message);
-        reject(error);
+        // Don't reject on first error - let reconnection handle it
+        if (!this.socket?.connected) {
+          reject(error);
+        }
       });
 
       this.socket.on('disconnect', (reason) => {
@@ -66,8 +76,8 @@ class SocketService {
         this.stopHeartbeat();
       });
 
-      this.socket.on('reconnect', () => {
-        console.log('[Socket] Reconnected');
+      this.socket.on('reconnect', (attemptNumber) => {
+        console.log('[Socket] Reconnected after', attemptNumber, 'attempts');
         this.startHeartbeat();
       });
 
