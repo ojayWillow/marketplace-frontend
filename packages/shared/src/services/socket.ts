@@ -8,6 +8,9 @@ type MessageHandler = (message: Message) => void;
 type TypingHandler = (data: { user_id: number; is_typing: boolean; conversation_id: number }) => void;
 type UserStatusHandler = (data: { user_id: number; status: 'online' | 'offline'; last_seen: string | null }) => void;
 
+// Heartbeat interval in ms (send every 60 seconds to refresh online status)
+const HEARTBEAT_INTERVAL = 60000;
+
 class SocketService {
   private socket: Socket | null = null;
   private baseUrl: string = '';
@@ -17,6 +20,7 @@ class SocketService {
   private userStatusHandlers: Map<number, UserStatusHandler[]> = new Map();
   private globalStatusHandlers: UserStatusHandler[] = [];
   private currentConversationId: number | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize the socket service with base URL
@@ -48,6 +52,7 @@ class SocketService {
 
       this.socket.on('connect', () => {
         console.log('[Socket] Connected');
+        this.startHeartbeat();
         resolve();
       });
 
@@ -58,6 +63,12 @@ class SocketService {
 
       this.socket.on('disconnect', (reason) => {
         console.log('[Socket] Disconnected:', reason);
+        this.stopHeartbeat();
+      });
+
+      this.socket.on('reconnect', () => {
+        console.log('[Socket] Reconnected');
+        this.startHeartbeat();
       });
 
       this.socket.on('new_message', (data: { message: Message; conversation_id: number }) => {
@@ -87,6 +98,11 @@ class SocketService {
         handlers.forEach(handler => handler(data));
       });
 
+      // Handle heartbeat acknowledgment
+      this.socket.on('heartbeat_ack', () => {
+        // Heartbeat acknowledged - online status refreshed
+      });
+
       this.socket.on('error', (data: { message: string }) => {
         console.error('[Socket] Error:', data.message);
       });
@@ -94,9 +110,44 @@ class SocketService {
   }
 
   /**
+   * Start sending heartbeats to keep online status fresh
+   */
+  private startHeartbeat() {
+    this.stopHeartbeat(); // Clear any existing interval
+    
+    // Send immediate heartbeat
+    this.sendHeartbeat();
+    
+    // Then send every HEARTBEAT_INTERVAL
+    this.heartbeatInterval = setInterval(() => {
+      this.sendHeartbeat();
+    }, HEARTBEAT_INTERVAL);
+  }
+
+  /**
+   * Stop sending heartbeats
+   */
+  private stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  /**
+   * Send a heartbeat to refresh online status
+   */
+  private sendHeartbeat() {
+    if (this.socket?.connected && this.token) {
+      this.socket.emit('heartbeat', { token: this.token });
+    }
+  }
+
+  /**
    * Disconnect from WebSocket server
    */
   disconnect() {
+    this.stopHeartbeat();
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
