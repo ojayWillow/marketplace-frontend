@@ -17,7 +17,8 @@ import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
 // Feature imports
 import { 
   TaskCard, 
-  FocusedTaskCard, 
+  FocusedTaskCard,
+  FocusedOfferingCard,
   OfferingMarker,
 } from '../../src/features/home/components';
 import { useLocation } from '../../src/features/home/hooks/useLocation';
@@ -44,10 +45,7 @@ export default function HomeScreen() {
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
   
-  // Get the blur tint based on theme
   const blurTint = activeTheme === 'dark' ? 'dark' : 'light';
-  
-  // Get safe area insets for stable positioning
   const insets = useSafeAreaInsets();
   
   const mapRef = useRef<MapView>(null);
@@ -66,7 +64,7 @@ export default function HomeScreen() {
   } = useTaskFilters();
   
   // UI State
-  const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
+  const [focusedOffering, setFocusedOffering] = useState<Offering | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -122,9 +120,30 @@ export default function HomeScreen() {
       );
     }
     setFocusedTaskId(task.id);
-    setSelectedOffering(null);
+    setFocusedOffering(null);
     animateSheetTo(SHEET_MID_HEIGHT);
     setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
+  }, [animateSheetTo]);
+
+  const handleOfferingMarkerPress = useCallback((offering: Offering) => {
+    haptic.light();
+    if (mapRef.current && offering.latitude && offering.longitude) {
+      const latitudeDelta = 0.03;
+      const { height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
+      const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.4;
+      mapRef.current.animateToRegion(
+        {
+          latitude: offering.latitude - latitudeOffset,
+          longitude: offering.longitude,
+          latitudeDelta,
+          longitudeDelta: latitudeDelta,
+        },
+        350
+      );
+    }
+    setFocusedOffering(offering);
+    setFocusedTaskId(null);
+    animateSheetTo(SHEET_MID_HEIGHT);
   }, [animateSheetTo]);
 
   const handleJobItemPress = useCallback((task: Task) => {
@@ -137,9 +156,20 @@ export default function HomeScreen() {
     router.push(`/task/${id}`);
   }, []);
 
+  const handleViewOfferingDetails = useCallback((id: number) => {
+    haptic.light();
+    router.push(`/offering/${id}`);
+  }, []);
+
   const handleCloseFocusedJob = useCallback(() => {
     haptic.soft();
     setFocusedTaskId(null);
+    animateSheetTo(SHEET_MIN_HEIGHT);
+  }, [animateSheetTo]);
+
+  const handleCloseFocusedOffering = useCallback(() => {
+    haptic.soft();
+    setFocusedOffering(null);
     animateSheetTo(SHEET_MIN_HEIGHT);
   }, [animateSheetTo]);
 
@@ -181,7 +211,6 @@ export default function HomeScreen() {
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       if (!task.latitude || !task.longitude) return false;
-      // Use matchesCategory for multi-select support
       if (!matchesCategory(task.category)) return false;
       if (selectedRadius && hasRealLocation) {
         const distance = calculateDistance(userLocation.latitude, userLocation.longitude, task.latitude, task.longitude);
@@ -283,7 +312,7 @@ export default function HomeScreen() {
             <Marker 
               key={`offering-${offering.id}`} 
               coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }} 
-              onPress={() => setSelectedOffering(offering)} 
+              onPress={() => handleOfferingMarkerPress(offering)} 
               tracksViewChanges={false}
               zIndex={2}
             >
@@ -296,7 +325,7 @@ export default function HomeScreen() {
         <View 
           style={[
             styles.floatingHeader, 
-            { paddingTop: insets.top } // Use actual safe area inset, no SafeAreaView needed
+            { paddingTop: insets.top }
           ]} 
           collapsable={false}
         >
@@ -377,10 +406,14 @@ export default function HomeScreen() {
             <View style={styles.handleBar} />
             <View style={styles.sheetTitleRow}>
               <Text style={styles.sheetTitle}>
-                {focusedTask ? 'Job Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
+                {focusedTask ? 'Job Details' : focusedOffering ? 'Service Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
               </Text>
-              {focusedTask ? (
-                <IconButton icon="close" size={20} onPress={handleCloseFocusedJob} />
+              {(focusedTask || focusedOffering) ? (
+                <IconButton 
+                  icon="close" 
+                  size={20} 
+                  onPress={focusedTask ? handleCloseFocusedJob : handleCloseFocusedOffering} 
+                />
               ) : (
                 <TouchableOpacity 
                   style={styles.quickPostButton}
@@ -406,6 +439,12 @@ export default function HomeScreen() {
               hasRealLocation={hasRealLocation} 
               onViewDetails={handleViewFullDetails} 
               styles={styles} 
+            />
+          ) : focusedOffering ? (
+            <FocusedOfferingCard
+              offering={focusedOffering}
+              onViewDetails={handleViewOfferingDetails}
+              styles={styles}
             />
           ) : sortedTasks.length === 0 ? (
             renderEmptyList()
