@@ -1,6 +1,7 @@
 import { View, StyleSheet } from 'react-native';
-import { Text, Card } from 'react-native-paper';
+import { Text, Card, Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { getTaskDisputes, useAuthStore, type Dispute } from '@marketplace/shared';
 import { useThemeStore } from '../../../../stores/themeStore';
 import { colors } from '../../../../theme';
@@ -48,6 +49,17 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   }
 
   const isFiledByMe = activeDispute.filed_by_id === user?.id;
+  const isFiledAgainstMe = activeDispute.filed_against_id === user?.id;
+  
+  // User can respond if:
+  // 1. They are the one the dispute is filed against
+  // 2. The dispute is still open
+  // 3. No response has been submitted yet
+  const canRespond = isFiledAgainstMe && activeDispute.status === 'open' && !activeDispute.response_description;
+
+  const handleRespond = () => {
+    router.push(`/dispute/${activeDispute.id}`);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -128,14 +140,39 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
       lineHeight: 20,
     },
     reviewNotice: {
-      backgroundColor: '#dbeafe',
+      backgroundColor: activeTheme === 'dark' ? '#1e3a5f' : '#dbeafe',
       padding: 12,
       borderRadius: 8,
       marginTop: 12,
     },
     reviewText: {
-      color: '#1e40af',
+      color: activeTheme === 'dark' ? '#93c5fd' : '#1e40af',
       lineHeight: 18,
+    },
+    respondNotice: {
+      backgroundColor: activeTheme === 'dark' ? '#4a2c2c' : '#fee2e2',
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 12,
+    },
+    respondText: {
+      color: activeTheme === 'dark' ? '#fca5a5' : '#991b1b',
+      lineHeight: 18,
+      marginBottom: 12,
+    },
+    respondButton: {
+      marginTop: 4,
+    },
+    responseSection: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    responseHeader: {
+      fontWeight: '600',
+      color: '#10b981',
+      marginBottom: 8,
     },
   });
 
@@ -172,10 +209,49 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {activeDispute.description && (
           <View style={styles.descriptionSection}>
             <Text variant="bodyMedium" style={styles.label}>
-              Description:
+              Their complaint:
             </Text>
             <Text variant="bodyMedium" style={styles.description}>
               {activeDispute.description}
+            </Text>
+          </View>
+        )}
+
+        {/* Show response if already submitted */}
+        {activeDispute.response_description && (
+          <View style={styles.responseSection}>
+            <Text variant="bodyMedium" style={styles.responseHeader}>
+              ✅ Response submitted:
+            </Text>
+            <Text variant="bodyMedium" style={styles.description}>
+              {activeDispute.response_description}
+            </Text>
+          </View>
+        )}
+
+        {/* Show respond button if user can respond */}
+        {canRespond && (
+          <View style={styles.respondNotice}>
+            <Text variant="bodySmall" style={styles.respondText}>
+              ⚠️ A dispute has been filed against you. Please respond with your side of the story.
+            </Text>
+            <Button 
+              mode="contained" 
+              onPress={handleRespond}
+              buttonColor="#ef4444"
+              textColor="#fff"
+              style={styles.respondButton}
+            >
+              Respond to Dispute
+            </Button>
+          </View>
+        )}
+
+        {/* Show waiting notice if user filed the dispute */}
+        {isFiledByMe && activeDispute.status === 'open' && !activeDispute.response_description && (
+          <View style={styles.reviewNotice}>
+            <Text variant="bodySmall" style={styles.reviewText}>
+              ⏳ Waiting for the other party to respond to your dispute.
             </Text>
           </View>
         )}
@@ -184,14 +260,6 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
           <View style={styles.reviewNotice}>
             <Text variant="bodySmall" style={styles.reviewText}>
               ℹ️ Both sides have shared their stories. Support is reviewing this dispute and will reach out soon.
-            </Text>
-          </View>
-        )}
-
-        {activeDispute.status === 'open' && !isFiledByMe && (
-          <View style={styles.reviewNotice}>
-            <Text variant="bodySmall" style={styles.reviewText}>
-              ℹ️ A dispute has been filed. Our support team will review this case and contact you if needed.
             </Text>
           </View>
         )}
