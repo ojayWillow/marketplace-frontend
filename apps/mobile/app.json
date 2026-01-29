@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Marketplace",
-    "slug": "marketplace",
+    "name": "KOLAB",
+    "slug": "kolab",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "marketplace",
+    "scheme": "kolab",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.quickhelp.app",
+      "bundleIdentifier": "com.kolab.app",
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.quickhelp.auth",
+      "package": "com.kolab.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
