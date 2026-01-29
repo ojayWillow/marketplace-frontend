@@ -9,6 +9,18 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { StyleSheet } from 'react-native';
 
+/**
+ * IMPORTANT: This screen expects a DISPUTE ID in the route parameter, not a task ID.
+ * 
+ * Most navigation should use /task/[taskId] which shows dispute info via TaskDisputeInfo component.
+ * This dedicated dispute detail screen is only used when you have an actual dispute ID.
+ * 
+ * Typical flow:
+ * - User clicks disputed task card → goes to /task/[taskId] (NOT here)
+ * - Notification with task ID → goes to /task/[taskId] (NOT here) 
+ * - Only use this route if you specifically have a dispute ID from backend
+ */
+
 interface Dispute {
   id: number;
   task_id: number;
@@ -63,7 +75,7 @@ export default function DisputeDetailScreen() {
   const [responseImages, setResponseImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch dispute details
+  // Fetch dispute details by DISPUTE ID (not task ID)
   const { data: dispute, isLoading, error } = useQuery<Dispute>({
     queryKey: ['dispute', disputeId],
     queryFn: async () => {
@@ -217,6 +229,9 @@ export default function DisputeDetailScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.value}>Dispute not found</Text>
+        <Text style={{ color: themeColors.textSecondary, textAlign: 'center', marginTop: 8, marginBottom: 16 }}>
+          This route expects a dispute ID. For task disputes, navigate to /task/[taskId] instead.
+        </Text>
         <Button mode="contained" onPress={() => router.back()} buttonColor={themeColors.primaryAccent}>
           Go Back
         </Button>
