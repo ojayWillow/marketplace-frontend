@@ -142,6 +142,46 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: JOB_COLOR },
     priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: OFFERING_COLOR },
     
+    // NEW: Offering Marker with Category Icon
+    offeringMarkerContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    offeringIconBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3,
+      elevation: 4,
+      borderWidth: 2,
+      borderColor: '#ffffff',
+    },
+    offeringIconText: {
+      fontSize: 16,
+    },
+    offeringPriceBubble: {
+      backgroundColor: themeColors.card,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+      borderWidth: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+      elevation: 3,
+    },
+    offeringPriceText: {
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
+    
     // Bottom Sheet
     bottomSheet: { 
       position: 'absolute', 
