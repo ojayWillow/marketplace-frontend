@@ -29,16 +29,10 @@ export function useSocket() {
     console.log('🚀 [useSocket] Initializing Socket.IO connection');
     socketService.connect(token);
     
-    // Subscribe to all user status changes
-    const unsubscribePresence = socketService.onAnyUserStatus((data) => {
+    // Subscribe to presence updates
+    const unsubscribePresence = socketService.onPresenceChange((presence) => {
       // Update Zustand store with real-time presence
-      updateFromSocket({
-        user_id: data.user_id,
-        is_online: data.status === 'online',
-        online_status: data.status,
-        last_seen: data.last_seen,
-        timestamp: new Date().toISOString(),
-      });
+      updateFromSocket(presence);
     });
     
     // Handle app state changes (background/foreground)
@@ -67,15 +61,11 @@ export function useSocket() {
   
   return {
     isConnected: socketService.isConnected(),
-    requestPresence: (userIds: number[]) => {
-      // Request status for each user
-      userIds.forEach(id => socketService.requestUserStatus(id));
-    },
+    requestPresence: socketService.requestPresence.bind(socketService),
     joinConversation: (conversationId: number) => 
-      token && socketService.joinConversation(conversationId),
-    leaveConversation: (conversationId: number) => 
-      socketService.leaveConversation(conversationId),
+      token && socketService.joinConversation(conversationId, token),
+    leaveConversation: socketService.leaveConversation.bind(socketService),
     sendTyping: (conversationId: number, isTyping: boolean) => 
-      socketService.sendTyping(conversationId, isTyping),
+      token && socketService.sendTyping(conversationId, isTyping, token),
   };
 }
