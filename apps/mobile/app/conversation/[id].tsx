@@ -121,6 +121,7 @@ export default function ConversationScreen() {
   // Online status state
   const [userStatus, setUserStatus] = useState<'online' | 'offline' | null>(null);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   // Get API URL for socket
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
@@ -152,12 +153,14 @@ export default function ConversationScreen() {
     const connectSocket = async () => {
       try {
         await socketService.connect(token);
+        setSocketConnected(true);
         
         // Join conversation room
         await socketService.joinConversation(conversationId);
         console.log('[Socket] Joined conversation:', conversationId);
       } catch (error) {
         console.error('[Socket] Connection failed:', error);
+        setSocketConnected(false);
       }
     };
 
@@ -168,6 +171,7 @@ export default function ConversationScreen() {
       if (conversationId) {
         socketService.leaveConversation(conversationId);
       }
+      setSocketConnected(false);
     };
   }, [conversationId, token, apiUrl]);
 
@@ -222,13 +226,29 @@ export default function ConversationScreen() {
   const otherUser = conversation?.other_participant;
   const otherUserId = otherUser?.id;
 
-  // Subscribe to user status updates
+  // IMPROVED: Subscribe to user status updates and request immediately when ready
   useEffect(() => {
     if (!otherUserId) return;
 
-    // Request current status when we know the other user
-    if (socketService.isConnected()) {
-      socketService.requestUserStatus(otherUserId);
+    // Function to request status
+    const requestStatus = () => {
+      if (socketService.isConnected()) {
+        console.log('[Socket] Requesting user status for:', otherUserId);
+        socketService.requestUserStatus(otherUserId);
+        return true;
+      }
+      return false;
+    };
+
+    // Try to request status immediately
+    const requested = requestStatus();
+
+    // If socket not connected yet, retry after a delay
+    let retryTimer: NodeJS.Timeout | null = null;
+    if (!requested) {
+      retryTimer = setTimeout(() => {
+        requestStatus();
+      }, 500);
     }
 
     // Subscribe to status changes for this user
@@ -238,8 +258,11 @@ export default function ConversationScreen() {
       setLastSeen(data.last_seen);
     });
 
-    return unsubscribe;
-  }, [otherUserId]);
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      unsubscribe();
+    };
+  }, [otherUserId, socketConnected]);
 
   // Fetch messages - socket handles real-time updates, no polling needed
   const {
