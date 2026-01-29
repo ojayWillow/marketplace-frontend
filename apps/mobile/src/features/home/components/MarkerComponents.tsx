@@ -8,7 +8,7 @@
 import React, { memo } from 'react';
 import { View, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { type Offering } from '@marketplace/shared';
+import { type Offering, getCategoryByKey } from '@marketplace/shared';
 
 interface UserLocationMarkerProps {
   userLocation: { latitude: number; longitude: number };
@@ -70,17 +70,30 @@ interface OfferingMarkerProps {
 }
 
 /**
- * Boosted offering marker - purple/pink style
+ * Boosted offering marker - shows category icon and price
  */
 export const OfferingMarker = memo(function OfferingMarker({
   offering,
   styles,
 }: OfferingMarkerProps) {
+  // Get category information
+  const category = getCategoryByKey(offering.category);
+  const categoryIcon = category?.icon || '💼';
+  const categoryColor = category?.color || '#ec4899';
+
   return (
-    <View style={[styles.priceMarker, styles.priceMarkerOffering]}>
-      <Text style={styles.priceMarkerTextOffering}>
-        €{offering.price?.toFixed(0) || '0'}
-      </Text>
+    <View style={styles.offeringMarkerContainer}>
+      {/* Category Icon Badge */}
+      <View style={[styles.offeringIconBadge, { backgroundColor: categoryColor }]}>
+        <Text style={styles.offeringIconText}>{categoryIcon}</Text>
+      </View>
+      
+      {/* Price Bubble */}
+      <View style={[styles.offeringPriceBubble, { borderColor: categoryColor }]}>
+        <Text style={[styles.offeringPriceText, { color: categoryColor }]}>
+          €{offering.price?.toFixed(0) || '0'}
+        </Text>
+      </View>
     </View>
   );
 });
