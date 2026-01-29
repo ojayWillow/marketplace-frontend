@@ -3,6 +3,8 @@ import { Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Task } from '@marketplace/shared';
 import { getImageUrl, useAuthStore } from '@marketplace/shared';
+import { useThemeStore } from '../../../../stores/themeStore';
+import { colors } from '../../../../theme';
 
 interface TaskAssignedWorkerProps {
   task: Task;
@@ -14,6 +16,9 @@ interface TaskAssignedWorkerProps {
  */
 export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
   const { user } = useAuthStore();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
   
   // Only show if task has someone assigned
   if (!task.assigned_to_id) return null;
@@ -30,7 +35,7 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
         return {
           label: 'Assigned',
           color: '#2563eb',
-          bgColor: '#dbeafe',
+          bgColor: activeTheme === 'dark' ? 'rgba(37, 99, 235, 0.15)' : '#dbeafe',
           icon: '🎯',
           creatorMsg: `${workerName} has been assigned`,
           creatorSubtext: 'Waiting for them to start working',
@@ -41,7 +46,7 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
         return {
           label: 'In Progress',
           color: '#f59e0b',
-          bgColor: '#fef3c7',
+          bgColor: activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
           icon: '🔨',
           creatorMsg: `${workerName} is working on this`,
           creatorSubtext: 'Task is being completed',
@@ -52,7 +57,7 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
         return {
           label: 'Awaiting Your Review',
           color: '#16a34a',
-          bgColor: '#dcfce7',
+          bgColor: activeTheme === 'dark' ? 'rgba(22, 163, 74, 0.15)' : '#dcfce7',
           icon: '✅',
           creatorMsg: `${workerName} marked this as done`,
           creatorSubtext: 'Review and confirm completion',
@@ -63,7 +68,7 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
         return {
           label: 'Completed',
           color: '#16a34a',
-          bgColor: '#dcfce7',
+          bgColor: activeTheme === 'dark' ? 'rgba(22, 163, 74, 0.15)' : '#dcfce7',
           icon: '🎉',
           creatorMsg: `Completed by ${workerName}`,
           creatorSubtext: 'Task finished successfully',
@@ -74,7 +79,7 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
         return {
           label: 'Assigned',
           color: '#6b7280',
-          bgColor: '#f3f4f6',
+          bgColor: activeTheme === 'dark' ? 'rgba(107, 114, 128, 0.15)' : '#f3f4f6',
           icon: '👤',
           creatorMsg: `Assigned to ${workerName}`,
           creatorSubtext: '',
@@ -117,6 +122,101 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
       });
     }
   };
+
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      marginBottom: 10,
+      borderLeftWidth: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: activeTheme === 'dark' ? 0.2 : 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+      overflow: 'hidden',
+    },
+    
+    statusHeader: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    statusText: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    
+    contentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    
+    infoSection: {
+      flex: 1,
+    },
+    
+    mainMessage: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    subMessage: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+    },
+    
+    workerProfile: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      marginRight: 12,
+    },
+    avatarPlaceholder: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#3B82F6',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    avatarText: {
+      color: '#ffffff',
+      fontWeight: '600',
+      fontSize: 16,
+    },
+    
+    workerTextContainer: {
+      flex: 1,
+    },
+    workerName: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    
+    messageBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#f59e0b',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 12,
+    },
+    messageBtnText: {
+      fontSize: 20,
+    },
+  });
 
   return (
     <View style={[styles.container, { borderLeftColor: statusInfo.color }]}>
@@ -173,98 +273,3 @@ export const TaskAssignedWorker = ({ task }: TaskAssignedWorkerProps) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  
-  statusHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  
-  infoSection: {
-    flex: 1,
-  },
-  
-  mainMessage: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  subMessage: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  
-  workerProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  
-  workerTextContainer: {
-    flex: 1,
-  },
-  workerName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  
-  messageBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#f59e0b',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  messageBtnText: {
-    fontSize: 20,
-  },
-});
