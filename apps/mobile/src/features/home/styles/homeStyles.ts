@@ -17,10 +17,6 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
       left: 0, 
       right: 0, 
       zIndex: 10,
-      // CRITICAL: Pre-allocate minimum height to prevent layout shift
-      // iOS safe area is ~44-50px, Android is smaller
-      // Adding topRow padding (8px) + topRow height (44px) = ~52px content
-      // Total with safe area: ~96-102px
       minHeight: Platform.OS === 'ios' ? 102 : 68,
     },
     
@@ -142,44 +138,23 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     priceMarkerText: { fontSize: 12, fontWeight: 'bold', color: JOB_COLOR },
     priceMarkerTextOffering: { fontSize: 12, fontWeight: 'bold', color: OFFERING_COLOR },
     
-    // NEW: Offering Marker with Category Icon
-    offeringMarkerContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    // Offering Marker with Category Icon
     offeringIconBadge: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 2,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
+      shadowOpacity: 0.3,
       shadowRadius: 3,
-      elevation: 4,
-      borderWidth: 2,
+      elevation: 5,
+      borderWidth: 3,
       borderColor: '#ffffff',
     },
     offeringIconText: {
-      fontSize: 16,
-    },
-    offeringPriceBubble: {
-      backgroundColor: themeColors.card,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 10,
-      borderWidth: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
-      elevation: 3,
-    },
-    offeringPriceText: {
-      fontSize: 11,
-      fontWeight: 'bold',
+      fontSize: 18,
     },
     
     // Bottom Sheet
@@ -237,10 +212,8 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
       marginVertical: 6,
       borderRadius: 12,
       backgroundColor: themeColors.card,
-      // Blue left border accent
       borderLeftWidth: 4,
       borderLeftColor: JOB_COLOR,
-      // Subtle shadow for depth
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: activeTheme === 'dark' ? 0.3 : 0.08,
@@ -278,6 +251,37 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     difficultyDot: { width: 8, height: 8, borderRadius: 4 },
     viewButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', paddingVertical: 14, borderRadius: 12, gap: 8 },
     viewButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
+    
+    // Offering Provider Info
+    offeringProviderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: themeColors.backgroundSecondary,
+      borderRadius: 12,
+    },
+    providerAvatar: {
+      backgroundColor: OFFERING_COLOR,
+      marginRight: 12,
+    },
+    providerInfo: {
+      flex: 1,
+    },
+    providerLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: themeColors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    providerName: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: themeColors.text,
+    },
     
     // Modal Base Styles
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
