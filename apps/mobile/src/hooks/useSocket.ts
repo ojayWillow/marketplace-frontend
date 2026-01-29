@@ -10,8 +10,7 @@
 
 import { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useAuthStore } from '@marketplace/shared';
-import { socketService } from '../services/socketService';
+import { useAuthStore, socketService } from '@marketplace/shared';
 import { usePresenceStore } from '../stores/presenceStore';
 
 export function useSocket() {
@@ -29,10 +28,16 @@ export function useSocket() {
     console.log('🚀 [useSocket] Initializing Socket.IO connection');
     socketService.connect(token);
     
-    // Subscribe to presence updates
-    const unsubscribePresence = socketService.onPresenceChange((presence) => {
+    // Subscribe to all user status changes
+    const unsubscribePresence = socketService.onAnyUserStatus((data) => {
       // Update Zustand store with real-time presence
-      updateFromSocket(presence);
+      updateFromSocket({
+        user_id: data.user_id,
+        is_online: data.status === 'online',
+        online_status: data.status,
+        last_seen: data.last_seen,
+        timestamp: new Date().toISOString(),
+      });
     });
     
     // Handle app state changes (background/foreground)
@@ -61,11 +66,15 @@ export function useSocket() {
   
   return {
     isConnected: socketService.isConnected(),
-    requestPresence: socketService.requestPresence.bind(socketService),
+    requestPresence: (userIds: number[]) => {
+      // Request status for each user
+      userIds.forEach(id => socketService.requestUserStatus(id));
+    },
     joinConversation: (conversationId: number) => 
-      token && socketService.joinConversation(conversationId, token),
-    leaveConversation: socketService.leaveConversation.bind(socketService),
+      token && socketService.joinConversation(conversationId),
+    leaveConversation: (conversationId: number) => 
+      socketService.leaveConversation(conversationId),
     sendTyping: (conversationId: number, isTyping: boolean) => 
-      token && socketService.sendTyping(conversationId, isTyping, token),
+      socketService.sendTyping(conversationId, isTyping),
   };
 }
