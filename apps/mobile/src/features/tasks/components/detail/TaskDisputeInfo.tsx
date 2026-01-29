@@ -1,6 +1,5 @@
 import { View, StyleSheet } from 'react-native';
-import { Text, Button, Card } from 'react-native-paper';
-import { router } from 'expo-router';
+import { Text, Card } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getTaskDisputes, useAuthStore, type Dispute } from '@marketplace/shared';
 import { useThemeStore } from '../../../../stores/themeStore';
@@ -49,7 +48,6 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   }
 
   const isFiledByMe = activeDispute.filed_by_id === user?.id;
-  const canRespond = !isFiledByMe && activeDispute.status === 'open' && !activeDispute.response_description;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,9 +117,15 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
     value: {
       color: themeColors.textSecondary,
     },
-    respondButton: {
+    descriptionSection: {
       marginTop: 16,
-      backgroundColor: themeColors.primaryAccent,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    description: {
+      color: themeColors.text,
+      lineHeight: 20,
     },
     reviewNotice: {
       backgroundColor: '#dbeafe',
@@ -165,21 +169,32 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
           </Text>
         </View>
 
-        {activeDispute.status === 'under_review' && (
-          <View style={styles.reviewNotice}>
-            <Text variant="bodySmall" style={styles.reviewText}>
-              ℹ️ Both sides have shared their stories. Support is reviewing this dispute.
+        {activeDispute.description && (
+          <View style={styles.descriptionSection}>
+            <Text variant="bodyMedium" style={styles.label}>
+              Description:
+            </Text>
+            <Text variant="bodyMedium" style={styles.description}>
+              {activeDispute.description}
             </Text>
           </View>
         )}
 
-        <Button
-          mode="contained"
-          onPress={() => router.push(`/dispute/${activeDispute.id}`)}
-          style={styles.respondButton}
-        >
-          {canRespond ? 'View & Respond to Dispute' : 'View Dispute Details'}
-        </Button>
+        {activeDispute.status === 'under_review' && (
+          <View style={styles.reviewNotice}>
+            <Text variant="bodySmall" style={styles.reviewText}>
+              ℹ️ Both sides have shared their stories. Support is reviewing this dispute and will reach out soon.
+            </Text>
+          </View>
+        )}
+
+        {activeDispute.status === 'open' && !isFiledByMe && (
+          <View style={styles.reviewNotice}>
+            <Text variant="bodySmall" style={styles.reviewText}>
+              ℹ️ A dispute has been filed. Our support team will review this case and contact you if needed.
+            </Text>
+          </View>
+        )}
       </Card.Content>
     </Card>
   );
