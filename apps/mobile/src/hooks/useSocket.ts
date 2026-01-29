@@ -10,7 +10,8 @@
 
 import { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useAuthStore, socketService } from '@marketplace/shared';
+import { useAuthStore } from '@marketplace/shared';
+import { socketService } from '../services/socketService';
 import { usePresenceStore } from '../stores/presenceStore';
 
 export function useSocket() {
