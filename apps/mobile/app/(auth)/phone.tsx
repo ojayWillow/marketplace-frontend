@@ -8,10 +8,12 @@ import { getFirebaseAuth } from '../../src/config/firebase';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@marketplace/shared';
 import apiClient from '@marketplace/shared/src/api/client';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 type Step = 'phone' | 'code' | 'complete' | 'success';
 
 export default function PhoneAuthScreen() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -21,17 +23,13 @@ export default function PhoneAuthScreen() {
   const [error, setError] = useState('');
   const [isNewUser, setIsNewUser] = useState(false);
   
-  // Store the confirmation result from Firebase
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
   
   const setAuth = useAuthStore((state) => state.setAuth);
   const theme = useTheme();
 
-  // Initialize reCAPTCHA
   useEffect(() => {
-    // Note: reCAPTCHA needs a DOM element, which we don't have in React Native
-    // Firebase JS SDK will handle this by opening a WebView when needed
     return () => {
       if (recaptchaVerifier) {
         recaptchaVerifier.clear();
@@ -39,20 +37,17 @@ export default function PhoneAuthScreen() {
     };
   }, [recaptchaVerifier]);
 
-  // Format phone number to ensure it has country code
   const formatPhoneNumber = (phone: string): string => {
     let formatted = phone.trim();
-    // If it doesn't start with +, assume it's a Latvian number
     if (!formatted.startsWith('+')) {
       formatted = '+371' + formatted.replace(/^0+/, '');
     }
     return formatted;
   };
 
-  // Send verification code
   const handleSendCode = async () => {
     if (!phoneNumber.trim() || phoneNumber.length < 8) {
-      setError('Please enter a valid phone number');
+      setError(t.auth.forgotPassword.errorNoEmail);
       return;
     }
 
@@ -61,39 +56,18 @@ export default function PhoneAuthScreen() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const auth = getFirebaseAuth(); // Synchronous now
-      
-      // Firebase JS SDK will automatically show reCAPTCHA in a WebView
-      // when signInWithPhoneNumber is called
-      const confirmation = await signInWithPhoneNumber(
-        auth,
-        formattedPhone,
-        // @ts-ignore - Firebase will handle reCAPTCHA internally
-        undefined
-      );
-      
+      const auth = getFirebaseAuth();
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, undefined as any);
       setConfirmationResult(confirmation);
       setStep('code');
     } catch (err: any) {
       console.error('Phone auth error:', err);
-      // Handle specific Firebase errors
-      if (err.code === 'auth/invalid-phone-number') {
-        setError('Invalid phone number format. Please include country code.');
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many attempts. Please try again later.');
-      } else if (err.code === 'auth/quota-exceeded') {
-        setError('SMS quota exceeded. Please try again later.');
-      } else if (err.code === 'auth/captcha-check-failed') {
-        setError('reCAPTCHA verification failed. Please try again.');
-      } else {
-        setError(err.message || 'Failed to send verification code');
-      }
+      setError(err.message || 'Failed to send verification code');
     } finally {
       setLoading(false);
     }
   };
 
-  // Verify code
   const handleVerifyCode = async () => {
     if (verificationCode.length !== 6) {
       setError('Please enter the 6-digit code');
@@ -110,18 +84,14 @@ export default function PhoneAuthScreen() {
     setError('');
 
     try {
-      // Confirm the verification code with Firebase
       const userCredential = await confirmationResult.confirm(verificationCode);
-      
       if (!userCredential || !userCredential.user) {
         throw new Error('Verification failed');
       }
 
-      // Get the ID token to send to backend
       const idToken = await userCredential.user.getIdToken();
       const formattedPhone = formatPhoneNumber(phoneNumber);
 
-      // Verify with backend
       const response = await apiClient.post('/api/auth/phone/verify', {
         idToken,
         phoneNumber: formattedPhone
@@ -132,13 +102,11 @@ export default function PhoneAuthScreen() {
       if (is_new_user) {
         setIsNewUser(true);
         setStep('complete');
-        // Store token temporarily
         (global as any).tempToken = access_token;
         (global as any).tempUser = user;
       } else {
         setAuth(user, access_token);
         setStep('success');
-        // Check if user needs onboarding
         setTimeout(() => {
           if (user && user.onboarding_completed === false) {
             router.replace('/onboarding/welcome');
@@ -149,21 +117,12 @@ export default function PhoneAuthScreen() {
       }
     } catch (err: any) {
       console.error('Verification error:', err);
-      if (err.code === 'auth/invalid-verification-code') {
-        setError('Invalid verification code. Please try again.');
-      } else if (err.code === 'auth/code-expired') {
-        setError('Code expired. Please request a new one.');
-        setStep('phone');
-        setConfirmationResult(null);
-      } else {
-        setError(err.response?.data?.message || err.message || 'Invalid verification code');
-      }
+      setError(err.response?.data?.message || err.message || 'Invalid verification code');
     } finally {
       setLoading(false);
     }
   };
 
-  // Complete registration
   const handleCompleteRegistration = async () => {
     if (!username.trim() || username.length < 3) {
       setError('Username must be at least 3 characters');
@@ -186,7 +145,6 @@ export default function PhoneAuthScreen() {
 
       setAuth(user, access_token);
       setStep('success');
-      // New users always see onboarding
       setTimeout(() => router.replace('/onboarding/welcome'), 1500);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -195,7 +153,6 @@ export default function PhoneAuthScreen() {
     }
   };
 
-  // Resend verification code
   const handleResendCode = async () => {
     setVerificationCode('');
     setConfirmationResult(null);
@@ -210,22 +167,20 @@ export default function PhoneAuthScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
-            {/* Header */}
             <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
-              {step === 'complete' ? 'Complete Your Profile' : 'Sign in with Phone'}
+              {step === 'complete' ? t.auth.register.title : t.auth.phone.title}
             </Text>
             <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-              {step === 'phone' && "We'll send you a verification code"}
-              {step === 'code' && `Code sent to ${formatPhoneNumber(phoneNumber)}`}
-              {step === 'complete' && 'Just a few more details'}
-              {step === 'success' && "You're all set!"}
+              {step === 'phone' && t.auth.phone.subtitle}
+              {step === 'code' && t.auth.phone.codeLabel + ` ${formatPhoneNumber(phoneNumber)}`}
+              {step === 'complete' && t.auth.register.subtitle}
+              {step === 'success' && t.onboarding.complete.title}
             </Text>
 
-            {/* Step 1: Phone Number */}
             {step === 'phone' && (
               <View>
                 <TextInput
-                  label="Phone Number"
+                  label={t.auth.phone.phoneLabel}
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   keyboardType="phone-pad"
@@ -238,9 +193,6 @@ export default function PhoneAuthScreen() {
                 <HelperText type="info">
                   Include country code (e.g., +371 for Latvia)
                 </HelperText>
-                <HelperText type="info">
-                  A reCAPTCHA verification popup will appear
-                </HelperText>
 
                 <Button
                   mode="contained"
@@ -250,16 +202,15 @@ export default function PhoneAuthScreen() {
                   style={styles.button}
                   contentStyle={styles.buttonContent}
                 >
-                  Send Code
+                  {t.auth.phone.sendCode}
                 </Button>
               </View>
             )}
 
-            {/* Step 2: Verification Code */}
             {step === 'code' && (
               <View>
                 <TextInput
-                  label="Verification Code"
+                  label={t.auth.phone.codeLabel}
                   value={verificationCode}
                   onChangeText={setVerificationCode}
                   keyboardType="number-pad"
@@ -279,7 +230,7 @@ export default function PhoneAuthScreen() {
                   style={styles.button}
                   contentStyle={styles.buttonContent}
                 >
-                  Verify Code
+                  {t.auth.phone.verifyCode}
                 </Button>
 
                 <View style={styles.codeActions}>
@@ -289,7 +240,7 @@ export default function PhoneAuthScreen() {
                     disabled={loading}
                     compact
                   >
-                    Resend Code
+                    {t.auth.phone.resendCode}
                   </Button>
                   <Button
                     mode="text"
@@ -301,17 +252,16 @@ export default function PhoneAuthScreen() {
                     disabled={loading}
                     compact
                   >
-                    Change Number
+                    {t.auth.forgotPassword.backToLogin}
                   </Button>
                 </View>
               </View>
             )}
 
-            {/* Step 3: Complete Profile (New Users) */}
             {step === 'complete' && (
               <View>
                 <TextInput
-                  label="Username"
+                  label={t.auth.register.nameLabel}
                   value={username}
                   onChangeText={(text) => setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                   placeholder="john_doe"
@@ -322,7 +272,7 @@ export default function PhoneAuthScreen() {
                 />
 
                 <TextInput
-                  label="Email (Optional)"
+                  label={t.auth.register.emailLabel + ' (Optional)'}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -344,32 +294,30 @@ export default function PhoneAuthScreen() {
                   style={styles.button}
                   contentStyle={styles.buttonContent}
                 >
-                  Create Account
+                  {t.auth.register.createAccount}
                 </Button>
               </View>
             )}
 
-            {/* Step 4: Success */}
             {step === 'success' && (
               <View style={styles.successContainer}>
                 <Text variant="headlineMedium" style={{ color: theme.colors.primary, textAlign: 'center' }}>
-                  ✓ Welcome!
+                  ✓ {t.onboarding.welcome.title}
                 </Text>
                 <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 8 }}>
-                  {isNewUser ? 'Setting up your experience...' : 'Redirecting you to the app...'}
+                  {isNewUser ? t.onboarding.complete.subtitle : 'Redirecting you to the app...'}
                 </Text>
               </View>
             )}
 
-            {/* Email Login Link */}
             {step === 'phone' && (
               <View style={styles.loginRow}>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Have an email account?{' '}
+                  {t.auth.register.hasAccount}{' '}
                 </Text>
                 <Link href="/(auth)/login" asChild>
                   <Button mode="text" disabled={loading} compact>
-                    Sign In
+                    {t.auth.register.signIn}
                   </Button>
                 </Link>
               </View>
@@ -378,13 +326,12 @@ export default function PhoneAuthScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Error Snackbar */}
       <Snackbar
         visible={!!error}
         onDismiss={() => setError('')}
         duration={4000}
         action={{
-          label: 'Dismiss',
+          label: t.common.dismiss,
           onPress: () => setError(''),
         }}
       >
@@ -395,50 +342,16 @@ export default function PhoneAuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    marginBottom: 32,
-  },
-  input: {
-    marginBottom: 8,
-  },
-  button: {
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  codeActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  successContainer: {
-    paddingVertical: 48,
-  },
+  container: { flex: 1, backgroundColor: '#ffffff' },
+  keyboardView: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 32 },
+  content: { flex: 1 },
+  title: { fontWeight: 'bold', marginBottom: 8 },
+  subtitle: { marginBottom: 32 },
+  input: { marginBottom: 8 },
+  button: { borderRadius: 12, marginTop: 16 },
+  buttonContent: { paddingVertical: 8 },
+  codeActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 32 },
+  successContainer: { paddingVertical: 48 },
 });
