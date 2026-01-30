@@ -22,6 +22,7 @@ export default function ReviewScreen() {
   
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   const { data: task, isLoading: taskLoading } = useQuery({
     queryKey: ['task', taskId],
@@ -34,7 +35,7 @@ export default function ReviewScreen() {
   const { data: canReview, isLoading: canReviewLoading } = useQuery({
     queryKey: ['canReviewTask', taskId],
     queryFn: () => canReviewTask(taskId),
-    enabled: taskId > 0,
+    enabled: taskId > 0 && !reviewSubmitted,
     staleTime: 0,           // Always consider data stale
     gcTime: 0,              // Don't cache between navigations
     refetchOnMount: 'always', // Always refetch when screen opens
@@ -43,13 +44,10 @@ export default function ReviewScreen() {
   const reviewMutation = useMutation({
     mutationFn: () => createTaskReview(taskId, { rating, content }),
     onSuccess: () => {
+      setReviewSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['canReviewTask', taskId] });
-      Alert.alert(
-        'Review Submitted',
-        'Thank you for your feedback!',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      // Don't show Alert, show success screen instead
     },
     onError: (error: any) => {
       const message = error.response?.data?.error || 'Failed to submit review.';
@@ -91,15 +89,32 @@ export default function ReviewScreen() {
       alignItems: 'center',
       paddingHorizontal: 24,
     },
+    successContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+    },
     errorIcon: {
       fontSize: 64,
       marginBottom: 20,
+    },
+    successIcon: {
+      fontSize: 72,
+      marginBottom: 24,
     },
     errorTitle: {
       fontWeight: 'bold',
       color: themeColors.text,
       marginBottom: 12,
       fontSize: 22,
+    },
+    successTitle: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+      marginBottom: 16,
+      fontSize: 24,
+      textAlign: 'center',
     },
     errorText: {
       color: themeColors.textSecondary,
@@ -108,9 +123,24 @@ export default function ReviewScreen() {
       fontSize: 15,
       lineHeight: 22,
     },
+    successText: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 40,
+      fontSize: 16,
+      lineHeight: 24,
+    },
     backButton: {
       minWidth: 140,
       backgroundColor: '#0ea5e9',
+    },
+    successButton: {
+      minWidth: 160,
+      backgroundColor: '#10b981',
+      borderRadius: 12,
+    },
+    successButtonContent: {
+      paddingVertical: 8,
     },
     taskCard: {
       backgroundColor: themeColors.card,
@@ -233,6 +263,30 @@ export default function ReviewScreen() {
       paddingVertical: 8,
     },
   });
+
+  // Success Screen - Show this after successful submission
+  if (reviewSubmitted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ headerShown: true, title: 'Review Submitted' }} />
+        <View style={styles.successContainer}>
+          <Text style={styles.successIcon}>✅</Text>
+          <Text style={styles.successTitle}>Thank You!</Text>
+          <Text style={styles.successText}>
+            Your review has been submitted successfully. Your feedback helps build a better community!
+          </Text>
+          <Button 
+            mode="contained" 
+            onPress={() => router.back()} 
+            style={styles.successButton}
+            contentStyle={styles.successButtonContent}
+          >
+            Done
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
