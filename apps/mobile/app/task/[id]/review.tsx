@@ -1,4 +1,4 @@
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Avatar, TextInput, ActivityIndicator } from 'react-native-paper';
@@ -238,22 +238,13 @@ export default function ReviewScreen() {
     charCountError: {
       color: '#ef4444',
     },
-    bottomSpacer: {
-      height: 100,
-    },
-    bottomBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
+    submitButtonContainer: {
       backgroundColor: themeColors.card,
       padding: 16,
-      paddingBottom: 32,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 4,
+      marginTop: 24,
+      marginHorizontal: 16,
+      borderRadius: 12,
+      marginBottom: Platform.OS === 'ios' ? 20 : 16,
     },
     submitButton: {
       borderRadius: 12,
@@ -338,7 +329,7 @@ export default function ReviewScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen 
         options={{ 
           headerShown: true, 
@@ -347,7 +338,9 @@ export default function ReviewScreen() {
         }} 
       />
       
-      <KeyboardAwareContainer>
+      <KeyboardAwareContainer 
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+      >
         {/* Task Info */}
         <Surface style={styles.taskCard} elevation={1}>
           <Text style={styles.taskLabel}>Task</Text>
@@ -428,23 +421,20 @@ export default function ReviewScreen() {
           </Text>
         </Surface>
 
-        {/* Spacer */}
-        <View style={styles.bottomSpacer} />
+        {/* Submit Button - Now inside scrollable area */}
+        <View style={styles.submitButtonContainer}>
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={reviewMutation.isPending}
+            disabled={reviewMutation.isPending || rating === 0 || content.trim().length < MIN_REVIEW_LENGTH}
+            style={styles.submitButton}
+            contentStyle={styles.submitButtonContent}
+          >
+            Submit Review
+          </Button>
+        </View>
       </KeyboardAwareContainer>
-
-      {/* Submit Button */}
-      <Surface style={styles.bottomBar} elevation={4}>
-        <Button
-          mode="contained"
-          onPress={handleSubmit}
-          loading={reviewMutation.isPending}
-          disabled={reviewMutation.isPending || rating === 0 || content.trim().length < MIN_REVIEW_LENGTH}
-          style={styles.submitButton}
-          contentStyle={styles.submitButtonContent}
-        >
-          Submit Review
-        </Button>
-      </Surface>
     </SafeAreaView>
   );
 }
