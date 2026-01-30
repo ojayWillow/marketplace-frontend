@@ -1,16 +1,37 @@
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, Animated } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
-import { EncryptedText } from '../src/components/EncryptedText';
+import { TextFlip } from '../src/components/TextFlip';
 import { AnimatedGradient } from '../src/components/AnimatedGradient';
+import React, { useEffect, useRef } from 'react';
 
 export default function WelcomeScreen() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+
+  // Logo animation
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Logo entrance animation
+    Animated.parallel([
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const styles = StyleSheet.create({
     container: {
@@ -23,23 +44,45 @@ export default function WelcomeScreen() {
       paddingHorizontal: 24,
       zIndex: 10,
     },
-    logo: {
-      width: 100,
-      height: 100,
-      marginBottom: 24,
-      borderRadius: 50,
+    logoContainer: {
+      marginBottom: 32,
     },
-    title: {
-      fontSize: 36,
-      fontWeight: 'bold',
-      marginBottom: 8,
-      letterSpacing: 1,
+    logo: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+    },
+    brandContainer: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    brandTitle: {
+      fontSize: 48,
+      fontWeight: '900',
+      letterSpacing: 4,
       color: '#ffffff',
+      marginBottom: 12,
+    },
+    taglineContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 48,
+    },
+    taglinePrefix: {
+      fontSize: 18,
+      color: 'rgba(255, 255, 255, 0.7)',
+      marginRight: 8,
+    },
+    taglineFlip: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#22c55e',
     },
     subtitle: {
       textAlign: 'center',
-      marginBottom: 48,
-      color: 'rgba(255, 255, 255, 0.7)',
+      marginBottom: 56,
+      color: 'rgba(255, 255, 255, 0.6)',
       fontSize: 14,
     },
     buttonContainer: {
@@ -64,6 +107,14 @@ export default function WelcomeScreen() {
     },
   });
 
+  const flipWords = [
+    'Create jobs',
+    'Find jobs', 
+    'Create work',
+    'Find work',
+    'Make money',
+  ];
+
   return (
     <View style={styles.container}>
       {/* Animated Gradient Background */}
@@ -71,26 +122,40 @@ export default function WelcomeScreen() {
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
-          {/* Logo */}
-          <Image
-            source={require('../assets/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          {/* Logo with animation */}
+          <Animated.View 
+            style={[
+              styles.logoContainer,
+              {
+                opacity: logoOpacity,
+                transform: [{ scale: logoScale }],
+              },
+            ]}
+          >
+            <Image
+              source={require('../assets/icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </Animated.View>
 
-          {/* Title with Encrypted Text Animation */}
-          <EncryptedText
-            text="Marketplace"
-            style={styles.title}
-            encryptedColor="rgba(255, 255, 255, 0.3)"
-            revealedColor="#ffffff"
-            revealDelayMs={80}
-            flipDelayMs={50}
-          />
-          
-          <Text style={styles.subtitle}>
-            Find services and tasks in your local community
-          </Text>
+          {/* Brand Name */}
+          <View style={styles.brandContainer}>
+            <Text style={styles.brandTitle}>KOLAB</Text>
+            
+            {/* Tagline with flip text */}
+            <View style={styles.taglineContainer}>
+              <Text style={styles.taglinePrefix}>Find services and tasks in your local community.</Text>
+            </View>
+            
+            <View style={styles.taglineContainer}>
+              <TextFlip
+                words={flipWords}
+                style={styles.taglineFlip}
+                interval={2500}
+              />
+            </View>
+          </View>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
