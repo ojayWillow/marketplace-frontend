@@ -8,7 +8,7 @@ export default function TabsLayout() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
-  const { total: activityCount } = useActivityCounts();
+  const { total: activityCount, isLoading } = useActivityCounts();
 
   // Simple icon components using emoji (works cross-platform)
   const TabIcon = ({ emoji, focused, badge }: { emoji: string; focused: boolean; badge?: number }) => {
@@ -46,24 +46,31 @@ export default function TabsLayout() {
       badgeText: {
         color: '#fff',
         fontSize: 10,
-        fontWeight: '700',
-        textAlign: 'center',
+        fontWeight: '700' as '700',
+        textAlign: 'center' as 'center',
       },
     });
+
+    // Ensure badge is a valid number and > 0
+    const badgeCount = typeof badge === 'number' && badge > 0 ? badge : 0;
+    const badgeDisplay = badgeCount > 9 ? '9+' : String(badgeCount);
 
     return (
       <View style={iconStyles.container}>
         <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
           <Text style={iconStyles.iconEmoji}>{emoji}</Text>
         </View>
-        {badge && badge > 0 && (
+        {badgeCount > 0 && (
           <View style={iconStyles.badge}>
-            <Text style={iconStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+            <Text style={iconStyles.badgeText}>{badgeDisplay}</Text>
           </View>
         )}
       </View>
     );
   };
+
+  // Only show badge if not loading and count is valid
+  const workBadge = !isLoading && typeof activityCount === 'number' ? activityCount : undefined;
 
   return (
     <Tabs
@@ -102,7 +109,7 @@ export default function TabsLayout() {
         options={{
           title: 'Work',
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="💼" focused={focused} badge={activityCount} />
+            <TabIcon emoji="💼" focused={focused} badge={workBadge} />
           ),
         }}
       />
