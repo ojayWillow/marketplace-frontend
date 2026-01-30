@@ -84,8 +84,8 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
   const isAssignedToMe = task.assigned_to_id === userId;
   const applicantsCount = task.pending_applications_count ?? 0;
 
-  // Disputed - highest priority
-  if (task.status === 'disputed') {
+  // Disputed - highest priority (check both status and dispute_status field)
+  if (task.status === 'disputed' || (task as any).dispute_status === 'open') {
     return {
       text: '⚠️ Disputed',
       color: '#fff',
@@ -427,11 +427,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   );
 };
 
-// Memoize with custom comparison
+// Memoize with custom comparison - added dispute_status to dependencies
 export default memo(TaskCard, (prevProps, nextProps) => {
   return (
     prevProps.task.id === nextProps.task.id &&
     prevProps.task.status === nextProps.task.status &&
+    (prevProps.task as any).dispute_status === (nextProps.task as any).dispute_status &&
     prevProps.task.pending_applications_count === nextProps.task.pending_applications_count &&
     prevProps.onPress === nextProps.onPress
   );
