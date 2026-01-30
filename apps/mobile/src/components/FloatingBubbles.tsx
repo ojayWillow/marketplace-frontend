@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface Bubble {
   id: number;
   size: number;
-  translateY: Animated.Value;
-  translateX: Animated.Value;
+  x: Animated.Value;
+  y: Animated.Value;
   opacity: Animated.Value;
 }
 
@@ -15,50 +15,58 @@ export function FloatingBubbles() {
   const bubblesRef = useRef<Bubble[]>([]);
 
   useEffect(() => {
-    // Create 15 bubbles
     const bubbles: Bubble[] = [];
-    for (let i = 0; i < 15; i++) {
+
+    for (let i = 0; i < 18; i++) {
+      const size = 40 + Math.random() * 60;
+      const startX = Math.random() * width;
+      const startY = height + Math.random() * 200; // start below screen
+
       const bubble: Bubble = {
         id: i,
-        size: Math.random() * 60 + 40,
-        translateY: new Animated.Value(height),
-        translateX: new Animated.Value(Math.random() * 100 - 50),
-        opacity: new Animated.Value(0.1 + Math.random() * 0.2),
+        size,
+        x: new Animated.Value(startX),
+        y: new Animated.Value(startY),
+        opacity: new Animated.Value(0.15 + Math.random() * 0.2),
       };
+
       bubbles.push(bubble);
     }
+
     bubblesRef.current = bubbles;
 
-    // Animate each bubble
     bubbles.forEach((bubble, index) => {
       const animate = () => {
-        bubble.translateY.setValue(height);
-        bubble.translateX.setValue(Math.random() * 100 - 50);
+        const toX = Math.random() * width;
+        const toY = -200; // move above top
+        const duration = 12000 + Math.random() * 4000;
 
-        Animated.parallel([
-          Animated.timing(bubble.translateY, {
-            toValue: -100,
-            duration: 10000 + Math.random() * 5000,
-            useNativeDriver: true,
-          }),
-          Animated.loop(
-            Animated.sequence([
-              Animated.timing(bubble.translateX, {
-                toValue: Math.random() * 100 - 50,
-                duration: 2000,
-                useNativeDriver: true,
-              }),
-              Animated.timing(bubble.translateX, {
-                toValue: Math.random() * 100 - 50,
-                duration: 2000,
-                useNativeDriver: true,
-              }),
-            ])
-          ),
-        ]).start(() => animate());
+        bubble.x.setValue(Math.random() * width);
+        bubble.y.setValue(height + Math.random() * 200);
+
+        Animated.timing(bubble.y, {
+          toValue: toY,
+          duration,
+          useNativeDriver: true,
+        }).start(() => animate());
+
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(bubble.x, {
+              toValue: toX + 40,
+              duration: 3000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(bubble.x, {
+              toValue: toX - 40,
+              duration: 3000,
+              useNativeDriver: true,
+            }),
+          ])
+        ).start();
       };
 
-      setTimeout(() => animate(), index * 1000);
+      setTimeout(animate, index * 600);
     });
   }, []);
 
@@ -74,8 +82,8 @@ export function FloatingBubbles() {
               height: bubble.size,
               opacity: bubble.opacity,
               transform: [
-                { translateY: bubble.translateY },
-                { translateX: bubble.translateX },
+                { translateX: bubble.x },
+                { translateY: bubble.y },
               ],
             },
           ]}
@@ -89,12 +97,13 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
+    zIndex: 1,
   },
   bubble: {
     position: 'absolute',
-    borderRadius: 1000,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
 });
