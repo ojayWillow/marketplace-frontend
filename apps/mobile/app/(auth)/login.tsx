@@ -1,8 +1,8 @@
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TextInput, Button, useTheme, Snackbar, Card, Avatar } from 'react-native-paper';
+import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
 import { haptic } from '../../_utils/haptics';
@@ -124,8 +124,10 @@ export default function LoginScreen() {
       marginBottom: 32,
     },
     logo: {
+      width: 100,
+      height: 100,
       marginBottom: 16,
-      backgroundColor: themeColors.primaryAccent,
+      borderRadius: 50,
     },
     brandTitle: {
       fontSize: 32,
@@ -236,10 +238,10 @@ export default function LoginScreen() {
             <View style={styles.content}>
               {/* Logo and Encrypted Brand Name */}
               <View style={styles.logoContainer}>
-                <Avatar.Text
-                  size={80}
-                  label="M"
+                <Image
+                  source={require('../../assets/icon.png')}
                   style={styles.logo}
+                  resizeMode="contain"
                 />
                 <EncryptedText
                   text="Marketplace"
