@@ -5,7 +5,6 @@ import { Text, Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 import { EncryptedText } from '../src/components/EncryptedText';
-import { FloatingBubbles } from '../src/components/FloatingBubbles';
 
 export default function WelcomeScreen() {
   const { getActiveTheme } = useThemeStore();
@@ -22,7 +21,6 @@ export default function WelcomeScreen() {
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 24,
-      zIndex: 10,
     },
     logo: {
       width: 100,
@@ -67,9 +65,6 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Animated Background */}
-      <FloatingBubbles />
-
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
           {/* Logo */}
