@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Text, TextStyle, Animated } from 'react-native';
+import { Text, TextStyle } from 'react-native';
 
 interface EncryptedTextProps {
   text: string;
@@ -22,81 +22,76 @@ export function EncryptedText({
   charset = DEFAULT_CHARSET,
   flipDelayMs = 50,
 }: EncryptedTextProps) {
-  const [displayChars, setDisplayChars] = useState<string[]>([]);
-  const [revealedCount, setRevealedCount] = useState(0);
-  const opacity = useRef(new Animated.Value(0)).current;
-  const flipIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const revealTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [displayText, setDisplayText] = useState('');
+  const [revealIndex, setRevealIndex] = useState(0);
+  const flipInterval = useRef<NodeJS.Timeout | null>(null);
+  const revealTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Initialize with scrambled text
-    const chars = text.split('');
-    setDisplayChars(chars.map((char) => 
-      char === ' ' ? ' ' : charset[Math.floor(Math.random() * charset.length)]
-    ));
+    // Initialize with random characters
+    setDisplayText(
+      text
+        .split('')
+        .map((char) => (char === ' ' ? ' ' : charset[Math.floor(Math.random() * charset.length)]))
+        .join('')
+    );
 
-    // Fade in
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-
-    // Start flipping unrevealed characters
-    flipIntervalRef.current = setInterval(() => {
-      setDisplayChars((prev) => {
-        return prev.map((char, index) => {
-          // Skip if this character is already revealed or is a space
-          if (index < revealedCount || text[index] === ' ') {
-            return text[index];
-          }
-          // Flip to a random character
-          return charset[Math.floor(Math.random() * charset.length)];
-        });
+    // Continuously flip unrevealed characters
+    flipInterval.current = setInterval(() => {
+      setDisplayText((prev) => {
+        return prev
+          .split('')
+          .map((char, index) => {
+            // If revealed or space, keep original
+            if (index < revealIndex || text[index] === ' ') {
+              return text[index];
+            }
+            // Otherwise, random character
+            return charset[Math.floor(Math.random() * charset.length)];
+          })
+          .join('');
       });
     }, flipDelayMs);
 
-    // Start revealing characters one by one
-    let currentIndex = 0;
-    const revealNext = () => {
-      if (currentIndex < text.length) {
-        setRevealedCount(currentIndex + 1);
-        currentIndex++;
-        revealTimeoutRef.current = setTimeout(revealNext, revealDelayMs);
+    // Reveal characters one by one
+    const revealNext = (currentIndex: number) => {
+      if (currentIndex <= text.length) {
+        setRevealIndex(currentIndex);
+        revealTimeout.current = setTimeout(() => revealNext(currentIndex + 1), revealDelayMs);
       } else {
         // All revealed, stop flipping
-        if (flipIntervalRef.current) {
-          clearInterval(flipIntervalRef.current);
+        if (flipInterval.current) {
+          clearInterval(flipInterval.current);
         }
-        setDisplayChars(text.split(''));
+        setDisplayText(text);
       }
     };
 
     // Start revealing after a short delay
-    revealTimeoutRef.current = setTimeout(revealNext, 500);
+    setTimeout(() => revealNext(0), 500);
 
     return () => {
-      if (flipIntervalRef.current) {
-        clearInterval(flipIntervalRef.current);
+      if (flipInterval.current) {
+        clearInterval(flipInterval.current);
       }
-      if (revealTimeoutRef.current) {
-        clearTimeout(revealTimeoutRef.current);
+      if (revealTimeout.current) {
+        clearTimeout(revealTimeout.current);
       }
     };
-  }, [text, revealDelayMs, charset, flipDelayMs]);
+  }, [text]);
 
   return (
-    <Animated.Text style={[style, { opacity }]}>
-      {displayChars.map((char, index) => (
+    <Text style={style}>
+      {displayText.split('').map((char, index) => (
         <Text
           key={index}
           style={{
-            color: index < revealedCount ? revealedColor : encryptedColor,
+            color: index < revealIndex ? revealedColor : encryptedColor,
           }}
         >
           {char}
         </Text>
       ))}
-    </Animated.Text>
+    </Text>
   );
 }
