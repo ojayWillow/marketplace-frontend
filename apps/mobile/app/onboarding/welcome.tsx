@@ -1,81 +1,50 @@
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Image } from 'react-native';
 import { useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 import { Text } from 'react-native-paper';
-import { useThemeStore } from '../../src/stores/themeStore';
-import { colors } from '../../src/theme';
+import { AnimatedGradient } from '../../src/components/AnimatedGradient';
+
+const ProgressDots = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => (
+  <View style={styles.progressContainer}>
+    {Array.from({ length: totalSteps }).map((_, index) => (
+      <View
+        key={index}
+        style={[
+          styles.progressDot,
+          index === currentStep && styles.progressDotActive,
+        ]}
+      />
+    ))}
+  </View>
+);
 
 export default function WelcomeScreen() {
-  const { getActiveTheme } = useThemeStore();
-  const activeTheme = getActiveTheme();
-  const themeColors = colors[activeTheme];
-  
-  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.3)).current;
-  const handshakeRotate = useRef(new Animated.Value(0)).current;
-  const handshakeScale = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const slideUp = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    // Logo fade in and scale up
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(slideUp, {
+        toValue: 0,
+        duration: 500,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Handshake animation - shake effect
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(handshakeRotate, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-          Animated.timing(handshakeScale, {
-            toValue: 1.1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(handshakeRotate, {
-            toValue: -1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-          Animated.timing(handshakeScale, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(handshakeRotate, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-          Animated.timing(handshakeScale, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(800), // Pause between shakes
-      ])
-    ).start();
-
-    // Auto-advance after 2.5 seconds
     const timer = setTimeout(() => {
       router.replace('/onboarding/terms');
     }, 2500);
@@ -83,74 +52,95 @@ export default function WelcomeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const rotate = handshakeRotate.interpolate({
-    inputRange: [-1, 1],
-    outputRange: ['-15deg', '15deg'],
-  });
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: themeColors.background,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    logoContainer: {
-      alignItems: 'center',
-    },
-    iconContainer: {
-      marginBottom: 24,
-    },
-    handshake: {
-      fontSize: 120,
-    },
-    title: {
-      fontSize: 48,
-      fontWeight: 'bold',
-      color: themeColors.text,
-      marginBottom: 8,
-      letterSpacing: 2,
-    },
-    tagline: {
-      fontSize: 18,
-      color: themeColors.primaryAccent,
-      fontWeight: '600',
-      letterSpacing: 1,
-    },
-  });
-
   return (
     <View style={styles.container}>
-      <Animated.View
-        style={[
-          styles.logoContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}
-      >
-        {/* Animated Handshake Icon */}
+      <AnimatedGradient />
+      
+      <ProgressDots currentStep={0} totalSteps={4} />
+
+      <View style={styles.content}>
         <Animated.View
           style={[
-            styles.iconContainer,
+            styles.logoContainer,
             {
-              transform: [
-                { rotate },
-                { scale: handshakeScale },
-              ],
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
             },
           ]}
         >
-          <Text style={styles.handshake}>🤝</Text>
+          <Image
+            source={require('../../assets/kolabbig.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </Animated.View>
 
-        {/* Brand Name */}
-        <Text style={styles.title}>Kolab</Text>
-        
-        {/* Tagline */}
-        <Text style={styles.tagline}>Work Together, Safely</Text>
-      </Animated.View>
+        <Animated.View
+          style={[
+            styles.textContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideUp }],
+            },
+          ]}
+        >
+          <Text style={styles.title}>KOLAB</Text>
+          <Text style={styles.tagline}>Work Together, Safely</Text>
+        </Animated.View>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 4,
+  },
+  progressDotActive: {
+    backgroundColor: '#ffffff',
+    width: 24,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  logoContainer: {
+    marginBottom: 32,
+  },
+  logo: {
+    width: 180,
+    height: 180,
+  },
+  textContainer: {
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 12,
+    letterSpacing: 10,
+  },
+  tagline: {
+    fontSize: 18,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '500',
+    letterSpacing: 2,
+  },
+});
