@@ -5,6 +5,7 @@ import { Text, Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 import { EncryptedText } from '../src/components/EncryptedText';
+import { AnimatedGradient } from '../src/components/AnimatedGradient';
 
 export default function WelcomeScreen() {
   const { getActiveTheme } = useThemeStore();
@@ -14,13 +15,13 @@ export default function WelcomeScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#000000',
     },
     content: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 24,
+      zIndex: 10,
     },
     logo: {
       width: 100,
@@ -65,6 +66,9 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Animated Gradient Background */}
+      <AnimatedGradient />
+
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
           {/* Logo */}
