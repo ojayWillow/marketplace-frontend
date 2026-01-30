@@ -10,12 +10,14 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import { useRef } from 'react';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
 const isPhoneAuthAvailable = !isExpoGo;
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       haptic.warning();
-      setError('Please enter both email and password');
+      setError(t.auth.login.errorNoCredentials);
       return;
     }
 
@@ -62,7 +64,7 @@ export default function LoginScreen() {
       
       if (!token) {
         haptic.error();
-        setError('Login failed: No token received from server');
+        setError(t.auth.login.errorNoToken);
         return;
       }
       
@@ -77,7 +79,7 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       haptic.error();
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      const message = error.response?.data?.message || t.auth.login.errorGeneric;
       setError(message);
     } finally {
       setLoading(false);
@@ -243,10 +245,10 @@ export default function LoginScreen() {
                   resizeMode="contain"
                 />
                 <Text style={styles.brandTitle}>
-                  KOLAB
+                  {t.auth.login.title}
                 </Text>
                 <Text style={styles.subtitle}>
-                  Find services and tasks in your local community
+                  {t.auth.login.subtitle}
                 </Text>
               </View>
 
@@ -263,7 +265,7 @@ export default function LoginScreen() {
                 )}
 
                 <TextInput
-                  label="Email"
+                  label={t.auth.login.emailLabel}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -280,7 +282,7 @@ export default function LoginScreen() {
                 />
 
                 <TextInput
-                  label="Password"
+                  label={t.auth.login.passwordLabel}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -308,7 +310,7 @@ export default function LoginScreen() {
                   style={styles.forgotButton}
                   textColor="#ffffff"
                 >
-                  Forgot Password?
+                  {t.auth.login.forgotPassword}
                 </Button>
 
                 <Button
@@ -321,7 +323,7 @@ export default function LoginScreen() {
                   buttonColor={themeColors.primaryAccent}
                   textColor="#ffffff"
                 >
-                  {loading ? 'Signing In...' : 'Sign In with Email'}
+                  {loading ? t.auth.login.signInLoading : t.auth.login.signIn}
                 </Button>
 
                 {isPhoneAuthAvailable && (
@@ -329,7 +331,7 @@ export default function LoginScreen() {
                     <View style={styles.divider}>
                       <View style={styles.dividerLine} />
                       <Text variant="bodySmall" style={styles.dividerText}>
-                        or
+                        {t.common.next || 'or'}
                       </Text>
                       <View style={styles.dividerLine} />
                     </View>
@@ -344,7 +346,7 @@ export default function LoginScreen() {
                         textColor="#ffffff"
                         onPress={() => haptic.light()}
                       >
-                        Sign In with Phone
+                        {t.auth.phone.signIn}
                       </Button>
                     </Link>
                   </>
@@ -352,7 +354,7 @@ export default function LoginScreen() {
 
                 <View style={styles.registerRow}>
                   <Text variant="bodyMedium" style={styles.registerText}>
-                    Don't have an account?{' '}
+                    {t.auth.login.noAccount + ' '}
                   </Text>
                   <Link href="/(auth)/register" asChild>
                     <Button 
@@ -362,7 +364,7 @@ export default function LoginScreen() {
                       textColor="#ffffff"
                       onPress={() => haptic.light()}
                     >
-                      Sign Up
+                      {t.auth.login.signUp}
                     </Button>
                   </Link>
                 </View>
@@ -375,7 +377,7 @@ export default function LoginScreen() {
                     textColor="rgba(255, 255, 255, 0.7)"
                     onPress={() => haptic.light()}
                   >
-                    Browse as Guest
+                    {t.auth.login.browseGuest}
                   </Button>
                 </Link>
               </View>
@@ -389,7 +391,7 @@ export default function LoginScreen() {
         onDismiss={() => setError('')}
         duration={4000}
         action={{
-          label: 'Dismiss',
+          label: t.common.dismiss,
           onPress: () => { haptic.soft(); setError(''); },
         }}
       >

@@ -2,13 +2,14 @@ import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
-  // Simple icon components using emoji (works cross-platform)
   const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => {
     const iconStyles = StyleSheet.create({
       iconContainer: {
@@ -51,52 +52,48 @@ export default function TabsLayout() {
           fontSize: 11,
           fontWeight: '500',
         },
-        // PERFORMANCE: Enable lazy loading for all tabs
-        // Tabs will only render when first visited
         lazy: true,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t.tabs.home,
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
-          // Home tab loads eagerly since it's the default screen
           lazy: false,
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
-          title: 'Work',
+          title: t.tabs.tasks,
           tabBarIcon: ({ focused }) => <TabIcon emoji="💼" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          title: t.tabs.messages,
           tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t.tabs.profile,
           tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
         }}
       />
-      {/* Hidden tabs - accessible via navigation but not in bottom bar */}
       <Tabs.Screen
         name="listings"
         options={{
-          href: null, // Hide from tab bar
+          href: null,
         }}
       />
       <Tabs.Screen
         name="offerings"
         options={{
-          href: null, // Hide from tab bar
+          href: null,
         }}
       />
     </Tabs>
