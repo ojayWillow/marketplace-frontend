@@ -1,10 +1,9 @@
-import { View, StyleSheet, Image, Animated } from 'react-native';
+import { View, StyleSheet, Image, Animated, Text } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button } from 'react-native-paper';
+import { Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
-import { TextFlip } from '../src/components/TextFlip';
 import { AnimatedGradient } from '../src/components/AnimatedGradient';
 import React, { useEffect, useRef } from 'react';
 
@@ -16,9 +15,11 @@ export default function WelcomeScreen() {
   // Logo animation
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  const titleTranslateY = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    // Logo entrance animation
+    // Logo entrance
     Animated.parallel([
       Animated.timing(logoScale, {
         toValue: 1,
@@ -31,6 +32,22 @@ export default function WelcomeScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Title entrance (after logo)
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(titleOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(titleTranslateY, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 400);
   }, []);
 
   const styles = StyleSheet.create({
@@ -45,7 +62,7 @@ export default function WelcomeScreen() {
       zIndex: 10,
     },
     logoContainer: {
-      marginBottom: 32,
+      marginBottom: 24,
     },
     logo: {
       width: 140,
@@ -54,36 +71,20 @@ export default function WelcomeScreen() {
     },
     brandContainer: {
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: 40,
     },
     brandTitle: {
-      fontSize: 48,
-      fontWeight: '900',
-      letterSpacing: 4,
+      fontSize: 44,
+      fontWeight: '700',
+      letterSpacing: 8,
       color: '#ffffff',
       marginBottom: 12,
     },
-    taglineContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 48,
-    },
-    taglinePrefix: {
-      fontSize: 18,
-      color: 'rgba(255, 255, 255, 0.7)',
-      marginRight: 8,
-    },
-    taglineFlip: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: '#22c55e',
-    },
     subtitle: {
-      textAlign: 'center',
-      marginBottom: 56,
+      fontSize: 16,
       color: 'rgba(255, 255, 255, 0.6)',
-      fontSize: 14,
+      textAlign: 'center',
+      letterSpacing: 0.5,
     },
     buttonContainer: {
       width: '100%',
@@ -106,14 +107,6 @@ export default function WelcomeScreen() {
       marginTop: 24,
     },
   });
-
-  const flipWords = [
-    'Create jobs',
-    'Find jobs', 
-    'Create work',
-    'Find work',
-    'Make money',
-  ];
 
   return (
     <View style={styles.container}>
@@ -139,23 +132,21 @@ export default function WelcomeScreen() {
             />
           </Animated.View>
 
-          {/* Brand Name */}
-          <View style={styles.brandContainer}>
+          {/* Brand Name - Clean & Simple */}
+          <Animated.View 
+            style={[
+              styles.brandContainer,
+              {
+                opacity: titleOpacity,
+                transform: [{ translateY: titleTranslateY }],
+              },
+            ]}
+          >
             <Text style={styles.brandTitle}>KOLAB</Text>
-            
-            {/* Tagline with flip text */}
-            <View style={styles.taglineContainer}>
-              <Text style={styles.taglinePrefix}>Find services and tasks in your local community.</Text>
-            </View>
-            
-            <View style={styles.taglineContainer}>
-              <TextFlip
-                words={flipWords}
-                style={styles.taglineFlip}
-                interval={2500}
-              />
-            </View>
-          </View>
+            <Text style={styles.subtitle}>
+              Find services and tasks in your local community
+            </Text>
+          </Animated.View>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
