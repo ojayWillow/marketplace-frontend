@@ -114,7 +114,7 @@ export default function WelcomeScreen() {
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
-          {/* Logo with animation - using transparent kolab logo */}
+          {/* Logo with animation - using transparent Kolab logo */}
           <Animated.View 
             style={[
               styles.logoContainer,
@@ -125,7 +125,7 @@ export default function WelcomeScreen() {
             ]}
           >
             <Image
-              source={require('../assets/kolab.png')}
+              source={require('../assets/Kolab.png')}
               style={styles.logo}
               resizeMode="contain"
             />
