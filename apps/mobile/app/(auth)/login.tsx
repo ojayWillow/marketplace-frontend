@@ -1,5 +1,5 @@
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 import { haptic } from '../../_utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, Audio } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import { useRef } from 'react';
 
@@ -28,6 +28,23 @@ export default function LoginScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   const videoRef = useRef(null);
+
+  // Configure audio session for video playback with sound
+  useEffect(() => {
+    async function setupAudio() {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true, // This is key - plays even when phone is on silent
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+      } catch (error) {
+        console.error('Error setting up audio:', error);
+      }
+    }
+    setupAudio();
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -178,7 +195,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Video */}
+      {/* Background Video with Audio Enabled */}
       <Video
         ref={videoRef}
         style={styles.videoBackground}
@@ -187,9 +204,16 @@ export default function LoginScreen() {
         shouldPlay
         isLooping
         isMuted={false}
-        volume={0.5}
+        volume={1.0}
         // Slow motion effect (optional - remove if you want normal speed)
         rate={0.75}
+        // Additional props to ensure audio plays
+        audioMode={{
+          playsInSilentModeIOS: true,
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        }}
       />
       
       {/* Blur overlay for that sweet blurry effect */}
