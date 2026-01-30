@@ -5,8 +5,10 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { haptic } from '../../utils/haptics';
 import { authApi } from '@marketplace/shared';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function ForgotPasswordScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +25,7 @@ export default function ForgotPasswordScreen() {
 
     if (!email) {
       haptic.warning();
-      setError('Please enter your email address');
+      setError(t.auth.forgotPassword.errorNoEmail);
       return;
     }
 
@@ -44,7 +46,7 @@ export default function ForgotPasswordScreen() {
     } catch (err: any) {
       haptic.error();
       console.error('Password reset error:', err);
-      const message = err.response?.data?.error || 'Failed to send reset email. Please try again';
+      const message = err.response?.data?.error || t.auth.forgotPassword.errorGeneric;
       setError(message);
     } finally {
       setLoading(false);
@@ -66,42 +68,39 @@ export default function ForgotPasswordScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
           <View style={styles.header}>
             <Text variant="displaySmall" style={styles.title}>
               🔑
             </Text>
             <Text variant="headlineMedium" style={styles.heading}>
-              Forgot Password?
+              {t.auth.forgotPassword.title}
             </Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
               {success 
-                ? "We've sent you a password reset link!" 
-                : "No worries! Enter your email and we'll send you a reset link."}
+                ? t.auth.forgotPassword.successMessage
+                : t.auth.forgotPassword.subtitle}
             </Text>
           </View>
 
-          {/* Success Message */}
           {success && (
             <Surface style={styles.successCard} elevation={0}>
               <Text style={styles.successIcon}>✅</Text>
               <Text variant="titleMedium" style={styles.successTitle}>
-                Email Sent Successfully!
+                {t.auth.forgotPassword.successMessage}
               </Text>
               <Text variant="bodyMedium" style={styles.successText}>
-                Check your email <Text style={styles.emailBold}>{email}</Text> for a password reset link.
+                {t.auth.forgotPassword.successMessage} <Text style={styles.emailBold}>{email}</Text>
               </Text>
               <Text variant="bodySmall" style={styles.successHint}>
-                💡 Don't forget to check your spam folder if you don't see it.
+                💡 {t.auth.forgotPassword.successMessage}
               </Text>
             </Surface>
           )}
 
-          {/* Form */}
           {!success && (
             <View style={styles.form}>
               <TextInput
-                label="Email Address"
+                label={t.auth.forgotPassword.emailLabel}
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -132,22 +131,20 @@ export default function ForgotPasswordScreen() {
                 style={styles.submitButton}
                 contentStyle={styles.buttonContent}
               >
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                {loading ? t.auth.forgotPassword.sending : t.auth.forgotPassword.sendResetLink}
               </Button>
             </View>
           )}
 
-          {/* Back to Login */}
           <Button
             mode="text"
             onPress={handleBackToLogin}
             style={styles.backButton}
             icon="arrow-left"
           >
-            Back to Login
+            {t.auth.forgotPassword.backToLogin}
           </Button>
 
-          {/* Additional Help */}
           <View style={styles.helpSection}>
             <Text variant="bodySmall" style={styles.helpText}>
               Still having trouble?
