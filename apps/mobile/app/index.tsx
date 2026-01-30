@@ -1,14 +1,17 @@
 import { View, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, useTheme } from 'react-native-paper';
+import { Text, Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 import { EncryptedText } from '../src/components/EncryptedText';
-import { Sparkles } from '../src/components/Sparkles';
+
+// CHOOSE YOUR ANIMATION:
+import { FloatingBubbles } from '../src/components/FloatingBubbles'; // OPTION 2 - ACTIVE
+// import { AnimatedGradient } from '../src/components/AnimatedGradient'; // OPTION 1
+// import { PulsingCircles } from '../src/components/PulsingCircles'; // OPTION 3
 
 export default function WelcomeScreen() {
-  const theme = useTheme();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
@@ -16,14 +19,14 @@ export default function WelcomeScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#000000', // Black background for sparkles
+      backgroundColor: '#000000',
     },
     content: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 24,
-      zIndex: 10, // Above sparkles
+      zIndex: 10,
     },
     logo: {
       width: 100,
@@ -32,7 +35,7 @@ export default function WelcomeScreen() {
       borderRadius: 50,
     },
     title: {
-      fontSize: 32,
+      fontSize: 36,
       fontWeight: 'bold',
       marginBottom: 8,
       letterSpacing: 1,
@@ -68,14 +71,10 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Animated Sparkles Background */}
-      <Sparkles
-        particleCount={60}
-        particleColor="#FFFFFF"
-        minSize={1}
-        maxSize={3}
-        speed={3000}
-      />
+      {/* ANIMATED BACKGROUND - Change the component to try different options */}
+      <FloatingBubbles />
+      {/* <AnimatedGradient /> */}
+      {/* <PulsingCircles /> */}
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
@@ -92,7 +91,7 @@ export default function WelcomeScreen() {
             style={styles.title}
             encryptedColor="rgba(255, 255, 255, 0.3)"
             revealedColor="#ffffff"
-            revealDelayMs={50}
+            revealDelayMs={80}
             flipDelayMs={50}
           />
           
