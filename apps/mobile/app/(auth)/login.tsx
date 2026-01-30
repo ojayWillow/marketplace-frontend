@@ -205,8 +205,8 @@ export default function LoginScreen() {
         isLooping
         isMuted={false}
         volume={1.0}
-        // Slow motion effect (optional - remove if you want normal speed)
-        rate={0.75}
+        // Play at normal speed so audio sounds natural
+        rate={1.0}
         // Additional props to ensure audio plays
         audioMode={{
           playsInSilentModeIOS: true,
