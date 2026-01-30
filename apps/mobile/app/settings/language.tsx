@@ -2,9 +2,9 @@ import { View, StyleSheet, Pressable } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Surface, RadioButton } from 'react-native-paper';
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useLanguageStore } from '../../src/stores/languageStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { colors } from '../../src/theme';
 
 const LANGUAGES = [
@@ -13,25 +13,15 @@ const LANGUAGES = [
   { code: 'ru', name: 'Русский', flag: '🇷🇺' },
 ];
 
-const LANGUAGE_STORAGE_KEY = '@marketplace_language';
-
 export default function LanguageSettingsScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguageStore();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
-  useEffect(() => {
-    AsyncStorage.getItem(LANGUAGE_STORAGE_KEY).then((saved) => {
-      if (saved) {
-        setSelectedLanguage(saved);
-      }
-    });
-  }, []);
-
-  const handleLanguageChange = async (langCode: string) => {
-    setSelectedLanguage(langCode);
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, langCode);
+  const handleLanguageChange = (langCode: string) => {
+    setLanguage(langCode as 'en' | 'lv' | 'ru');
   };
 
   const styles = StyleSheet.create({
@@ -100,8 +90,8 @@ export default function LanguageSettingsScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: 'Language',
-          headerBackTitle: 'Back',
+          title: t.settings.language,
+          headerBackTitle: t.common.back,
           headerStyle: { backgroundColor: themeColors.card },
           headerTintColor: themeColors.primaryAccent,
           headerTitleStyle: { color: themeColors.text },
@@ -110,14 +100,8 @@ export default function LanguageSettingsScreen() {
       
       <Surface style={styles.section} elevation={0}>
         <Text style={styles.sectionDescription}>
-          Choose your preferred language for the app interface.
+          {t.settings.languageDescription}
         </Text>
-        
-        <View style={styles.noticeCard}>
-          <Text style={styles.noticeText}>
-            ℹ️ Translations are currently being updated. The app is displayed in English for now.
-          </Text>
-        </View>
         
         {LANGUAGES.map((lang) => (
           <Pressable
@@ -134,7 +118,7 @@ export default function LanguageSettingsScreen() {
             </View>
             <RadioButton
               value={lang.code}
-              status={selectedLanguage === lang.code ? 'checked' : 'unchecked'}
+              status={language === lang.code ? 'checked' : 'unchecked'}
               onPress={() => handleLanguageChange(lang.code)}
               color={themeColors.primaryAccent}
             />
@@ -144,7 +128,7 @@ export default function LanguageSettingsScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Your language preference will be saved for when translations are available.
+          {t.settings.languageFooter}
         </Text>
       </View>
     </SafeAreaView>
