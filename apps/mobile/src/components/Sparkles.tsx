@@ -13,17 +13,18 @@ interface Particle {
   x: Animated.Value;
   y: Animated.Value;
   opacity: Animated.Value;
+  scale: Animated.Value;
   size: number;
 }
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export function Sparkles({
-  particleCount = 50,
+  particleCount = 80,
   particleColor = '#FFFFFF',
-  minSize = 1,
-  maxSize = 3,
-  speed = 2000,
+  minSize = 2,
+  maxSize = 4,
+  speed = 4000,
 }: SparklesProps) {
   const particlesRef = useRef<Particle[]>([]);
 
@@ -35,7 +36,8 @@ export function Sparkles({
       const particle: Particle = {
         x: new Animated.Value(Math.random() * screenWidth),
         y: new Animated.Value(Math.random() * screenHeight),
-        opacity: new Animated.Value(Math.random() * 0.8 + 0.2),
+        opacity: new Animated.Value(Math.random() * 0.6 + 0.4),
+        scale: new Animated.Value(0.5 + Math.random() * 0.5),
         size,
       };
       particles.push(particle);
@@ -48,9 +50,10 @@ export function Sparkles({
         // Random movement
         const newX = Math.random() * screenWidth;
         const newY = Math.random() * screenHeight;
-        const duration = speed + Math.random() * speed;
+        const duration = speed + Math.random() * 2000;
 
         Animated.parallel([
+          // Move particle
           Animated.timing(particle.x, {
             toValue: newX,
             duration,
@@ -61,28 +64,46 @@ export function Sparkles({
             duration,
             useNativeDriver: true,
           }),
-          Animated.sequence([
-            Animated.timing(particle.opacity, {
-              toValue: Math.random() * 0.8 + 0.2,
-              duration: duration / 2,
-              useNativeDriver: true,
-            }),
-            Animated.timing(particle.opacity, {
-              toValue: Math.random() * 0.8 + 0.2,
-              duration: duration / 2,
-              useNativeDriver: true,
-            }),
-          ]),
+          // Twinkle effect
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(particle.opacity, {
+                toValue: 0.2,
+                duration: 1000 + Math.random() * 1000,
+                useNativeDriver: true,
+              }),
+              Animated.timing(particle.opacity, {
+                toValue: 1,
+                duration: 1000 + Math.random() * 1000,
+                useNativeDriver: true,
+              }),
+            ])
+          ),
+          // Pulse scale
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(particle.scale, {
+                toValue: 1.2,
+                duration: 1500 + Math.random() * 1000,
+                useNativeDriver: true,
+              }),
+              Animated.timing(particle.scale, {
+                toValue: 0.8,
+                duration: 1500 + Math.random() * 1000,
+                useNativeDriver: true,
+              }),
+            ])
+          ),
         ]).start(() => animateParticle());
       };
 
       // Stagger start times
-      setTimeout(animateParticle, index * 50);
+      setTimeout(animateParticle, index * 30);
     });
   }, [particleCount, minSize, maxSize, speed]);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} pointerEvents="none">
       {particlesRef.current.map((particle, index) => (
         <Animated.View
           key={index}
@@ -96,6 +117,7 @@ export function Sparkles({
               transform: [
                 { translateX: particle.x },
                 { translateY: particle.y },
+                { scale: particle.scale },
               ],
             },
           ]}
@@ -113,5 +135,10 @@ const styles = StyleSheet.create({
   particle: {
     position: 'absolute',
     borderRadius: 100,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
