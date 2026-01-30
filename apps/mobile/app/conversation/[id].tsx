@@ -29,6 +29,7 @@ import {
   type Message,
 } from '@marketplace/shared';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useLanguageStore } from '../../src/stores/languageStore';
 import { colors } from '../../src/theme';
 import Constants from 'expo-constants';
 
@@ -53,6 +54,7 @@ export default function ConversationScreen() {
   
   const { user, token } = useAuthStore();
   const { getActiveTheme } = useThemeStore();
+  const { t } = useLanguageStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   const queryClient = useQueryClient();
@@ -248,7 +250,7 @@ export default function ConversationScreen() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photo library');
+      Alert.alert(t('conversation.permissionNeeded'), t('conversation.photoLibraryAccess'));
       return;
     }
 
@@ -301,7 +303,7 @@ export default function ConversationScreen() {
     },
     onError: (error: any) => {
       console.error('Failed to send message:', error);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert(t('conversation.sendError'), t('conversation.failedToSend'));
     },
   });
 
@@ -312,12 +314,12 @@ export default function ConversationScreen() {
     }
   };
 
-  const headerTitle = otherUser?.username || username || 'Chat';
+  const headerTitle = otherUser?.username || username || t('conversation.chat');
 
   // Get status text for header
   const getStatusText = () => {
-    if (userStatus === 'online') return 'Online';
-    if (userStatus === 'offline' && lastSeen) return `Last seen ${formatLastSeen(lastSeen)}`;
+    if (userStatus === 'online') return t('conversation.online');
+    if (userStatus === 'offline' && lastSeen) return `${t('conversation.lastSeen')} ${formatLastSeen(lastSeen)}`;
     return null;
   };
 
@@ -338,12 +340,12 @@ export default function ConversationScreen() {
           <View style={[styles.errorIconContainer, { backgroundColor: themeColors.card }]}>
             <Text style={styles.errorIconLarge}>🚫</Text>
           </View>
-          <Text style={[styles.errorTitle, { color: themeColors.text }]}>Access Denied</Text>
+          <Text style={[styles.errorTitle, { color: themeColors.text }]}>{t('conversation.accessDenied')}</Text>
           <Text style={[styles.errorSubtext, { color: themeColors.textSecondary }]}>
-            You don't have permission to view this conversation.
+            {t('conversation.accessDeniedMessage')}
           </Text>
           <Text style={[styles.errorSubtext, { color: themeColors.textMuted }]}>
-            Redirecting to messages...
+            {t('conversation.redirecting')}
           </Text>
         </View>
       </SafeAreaView>
@@ -365,7 +367,7 @@ export default function ConversationScreen() {
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
           <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>
-            {isCreatingConversation ? 'Starting conversation...' : 'Loading messages...'}
+            {isCreatingConversation ? t('conversation.startingConversation') : t('conversation.loadingMessages')}
           </Text>
         </View>
       </SafeAreaView>
@@ -385,9 +387,9 @@ export default function ConversationScreen() {
           themeColors={themeColors}
         />
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load messages</Text>
+          <Text style={styles.errorText}>{t('conversation.failedToLoad')}</Text>
           <Pressable style={styles.retryButton} onPress={() => refetch()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('conversation.retry')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -477,7 +479,7 @@ export default function ConversationScreen() {
           <View style={[styles.textInputContainer, { backgroundColor: themeColors.backgroundSecondary }]}>
             <RNTextInput
               style={[styles.textInput, { color: themeColors.text }]}
-              placeholder="Type a message..."
+              placeholder={t('conversation.typeMessage')}
               placeholderTextColor={themeColors.textMuted}
               value={messageText}
               onChangeText={setMessageText}
