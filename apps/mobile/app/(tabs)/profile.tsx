@@ -5,11 +5,11 @@ import { router, Stack } from 'expo-router';
 import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, normalizeSkills } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { colors } from '../../src/theme';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 
-// Import extracted components
 import { ProfileHeader } from './profile/components/ProfileHeader';
 import { ProfileAvatar } from './profile/components/ProfileAvatar';
 import { ProfileStats } from './profile/components/ProfileStats';
@@ -17,6 +17,7 @@ import { ProfileSkills } from './profile/components/ProfileSkills';
 import { ActivityMenu } from './profile/components/ActivityMenu';
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuthStore();
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
@@ -52,12 +53,12 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t.profile.logoutTitle,
+      t.profile.logoutConfirm,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Logout',
+          text: t.profile.logout,
           style: 'destructive',
           onPress: () => {
             queryClient.clear();
@@ -78,16 +79,16 @@ export default function ProfileScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.centerContainer}>
           <Avatar.Icon size={80} icon="account" style={[styles.guestAvatar, { backgroundColor: themeColors.border }]} />
-          <Text variant="headlineSmall" style={[styles.notLoggedInTitle, { color: themeColors.text }]}>Not Logged In</Text>
+          <Text variant="headlineSmall" style={[styles.notLoggedInTitle, { color: themeColors.text }]}>{t.profile.notLoggedInTitle}</Text>
           <Text style={[styles.notLoggedInSubtitle, { color: themeColors.textSecondary }]}>
-            Sign in to access your profile, listings, and messages
+            {t.profile.notLoggedInSubtitle}
           </Text>
           <Button
             mode="contained"
             onPress={() => router.push('/(auth)/login')}
             style={styles.signInButton}
           >
-            Sign In
+            {t.auth.login.title}
           </Button>
         </View>
       </SafeAreaView>
@@ -100,7 +101,6 @@ export default function ProfileScreen() {
   const profilePictureUrl = displayUser.profile_picture_url || displayUser.avatar_url;
   const fullProfilePictureUrl = profilePictureUrl ? getImageUrl(profilePictureUrl) : null;
 
-  // Parse and normalize skills
   const rawSkills = displayUser.skills 
     ? (Array.isArray(displayUser.skills) ? displayUser.skills : displayUser.skills.split(',').map((s: string) => s.trim()).filter(Boolean))
     : [];
@@ -119,10 +119,8 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={false}
       >
-        {/* Header with gradient and buttons */}
         <ProfileHeader activeTheme={activeTheme} unreadCount={unreadCount} />
 
-        {/* Avatar, name, bio, edit button */}
         <ProfileAvatar
           displayName={displayName}
           username={user.username}
@@ -132,7 +130,6 @@ export default function ProfileScreen() {
           themeColors={themeColors}
         />
 
-        {/* Stats card */}
         <ProfileStats
           reviewStats={reviewStats}
           completedTasksCount={displayUser.completed_tasks_count}
@@ -140,13 +137,10 @@ export default function ProfileScreen() {
           themeColors={themeColors}
         />
 
-        {/* Skills section */}
         <ProfileSkills skills={userSkills} themeColors={themeColors} />
 
-        {/* Activity & Marketplace menu */}
         <ActivityMenu themeColors={themeColors} />
 
-        {/* Logout */}
         <View style={styles.logoutContainer}>
           <Button
             mode="outlined"
@@ -155,16 +149,15 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
             icon="logout"
           >
-            Logout
+            {t.profile.logout}
           </Button>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={[styles.memberSince, { color: themeColors.textMuted }]}>
-            Member since {new Date(user.created_at).toLocaleDateString()}
+            {t.profile.memberSince} {new Date(user.created_at).toLocaleDateString()}
           </Text>
-          <Text style={[styles.version, { color: themeColors.textMuted }]}>App version 1.0.0</Text>
+          <Text style={[styles.version, { color: themeColors.textMuted }]}>{t.profile.appVersion}</Text>
         </View>
       </ScrollView>
     </View>
@@ -172,49 +165,18 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  scrollView: { flex: 1 },
   centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
+    flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24,
   },
-  guestAvatar: {
-    marginBottom: 16,
-  },
-  notLoggedInTitle: {
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  notLoggedInSubtitle: {
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  signInButton: {
-    paddingHorizontal: 24,
-  },
-  logoutContainer: {
-    marginTop: 32,
-    marginHorizontal: 20,
-  },
-  logoutButton: {
-    borderColor: '#fecaca',
-    borderRadius: 12,
-  },
-  footer: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  memberSince: {
-    fontSize: 13,
-  },
-  version: {
-    fontSize: 12,
-    marginTop: 4,
-  },
+  guestAvatar: { marginBottom: 16 },
+  notLoggedInTitle: { fontWeight: '600', marginBottom: 8 },
+  notLoggedInSubtitle: { textAlign: 'center', marginBottom: 24 },
+  signInButton: { paddingHorizontal: 24 },
+  logoutContainer: { marginTop: 32, marginHorizontal: 20 },
+  logoutButton: { borderColor: '#fecaca', borderRadius: 12 },
+  footer: { paddingVertical: 24, alignItems: 'center' },
+  memberSince: { fontSize: 13 },
+  version: { fontSize: 12, marginTop: 4 },
 });
