@@ -2,7 +2,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { useState, useEffect } from 'react';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TextInput, Button, useTheme, Snackbar, Card } from 'react-native-paper';
+import { Text, TextInput, Button, useTheme, Snackbar, Card, Avatar } from 'react-native-paper';
 import { authApi, useAuthStore } from '@marketplace/shared';
 import Constants from 'expo-constants';
 import { haptic } from '../../_utils/haptics';
@@ -11,6 +11,7 @@ import { colors } from '../../src/theme';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import { useRef } from 'react';
+import { EncryptedText } from '../../src/components/EncryptedText';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -35,7 +36,7 @@ export default function LoginScreen() {
       try {
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
-          playsInSilentModeIOS: true, // This is key - plays even when phone is on silent
+          playsInSilentModeIOS: true,
           staysActiveInBackground: false,
           shouldDuckAndroid: true,
         });
@@ -93,7 +94,7 @@ export default function LoginScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#000000', // Fallback if video doesn't load
+      backgroundColor: '#000000',
     },
     videoBackground: {
       position: 'absolute',
@@ -104,7 +105,7 @@ export default function LoginScreen() {
     },
     blurOverlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.4)', // Dark overlay
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     keyboardView: {
       flex: 1,
@@ -115,22 +116,31 @@ export default function LoginScreen() {
     content: {
       flex: 1,
       paddingHorizontal: 24,
-      paddingTop: 32,
+      paddingTop: 60,
+      alignItems: 'center',
     },
-    title: {
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    logo: {
+      marginBottom: 16,
+      backgroundColor: themeColors.primaryAccent,
+    },
+    brandTitle: {
+      fontSize: 32,
       fontWeight: 'bold',
       marginBottom: 8,
-      color: '#ffffff', // White over video
-      textShadowColor: 'rgba(0, 0, 0, 0.8)',
-      textShadowOffset: { width: 0, height: 2 },
-      textShadowRadius: 4,
+      letterSpacing: 1,
     },
     subtitle: {
-      marginBottom: 24,
-      color: '#ffffff',
-      textShadowColor: 'rgba(0, 0, 0, 0.8)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 3,
+      fontSize: 14,
+      marginBottom: 48,
+      color: 'rgba(255, 255, 255, 0.7)',
+      textAlign: 'center',
+    },
+    formContainer: {
+      width: '100%',
     },
     infoBanner: {
       marginBottom: 24,
@@ -189,7 +199,7 @@ export default function LoginScreen() {
       color: '#ffffff',
     },
     guestButton: {
-      marginTop: 32,
+      marginTop: 16,
     },
   });
 
@@ -205,9 +215,7 @@ export default function LoginScreen() {
         isLooping
         isMuted={false}
         volume={1.0}
-        // Play at normal speed so audio sounds natural
         rate={1.0}
-        // Additional props to ensure audio plays
         audioMode={{
           playsInSilentModeIOS: true,
           allowsRecordingIOS: false,
@@ -216,7 +224,7 @@ export default function LoginScreen() {
         }}
       />
       
-      {/* Blur overlay for that sweet blurry effect */}
+      {/* Blur overlay */}
       <BlurView intensity={60} style={styles.blurOverlay} tint="dark" />
 
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
@@ -226,139 +234,156 @@ export default function LoginScreen() {
         >
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.content}>
-              <Text variant="headlineLarge" style={styles.title}>
-                Welcome Back
-              </Text>
-              <Text variant="bodyMedium" style={styles.subtitle}>
-                Sign in to continue
-              </Text>
+              {/* Logo and Encrypted Brand Name */}
+              <View style={styles.logoContainer}>
+                <Avatar.Text
+                  size={80}
+                  label="M"
+                  style={styles.logo}
+                />
+                <EncryptedText
+                  text="Marketplace"
+                  style={styles.brandTitle}
+                  encryptedColor="rgba(255, 255, 255, 0.3)"
+                  revealedColor="#ffffff"
+                  revealDelayMs={300}
+                  revealDurationMs={1500}
+                  scrambleSpeed={40}
+                />
+                <Text style={styles.subtitle}>
+                  Find services and tasks in your local community
+                </Text>
+              </View>
 
-              {isExpoGo && (
-                <Card style={styles.infoBanner} elevation={0}>
-                  <Card.Content>
-                    <Text variant="bodySmall" style={styles.infoBannerText}>
-                      📱 Running in Expo Go - Email login only. Phone authentication will be available in production builds.
-                    </Text>
-                  </Card.Content>
-                </Card>
-              )}
+              {/* Form Container */}
+              <View style={styles.formContainer}>
+                {isExpoGo && (
+                  <Card style={styles.infoBanner} elevation={0}>
+                    <Card.Content>
+                      <Text variant="bodySmall" style={styles.infoBannerText}>
+                        📱 Running in Expo Go - Email login only. Phone authentication will be available in production builds.
+                      </Text>
+                    </Card.Content>
+                  </Card>
+                )}
 
-              <TextInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                disabled={loading}
-                mode="outlined"
-                style={styles.input}
-                outlineColor="rgba(255, 255, 255, 0.5)"
-                activeOutlineColor={themeColors.primaryAccent}
-                textColor="#000000"
-                placeholderTextColor="#666666"
-                left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
-              />
+                <TextInput
+                  label="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  disabled={loading}
+                  mode="outlined"
+                  style={styles.input}
+                  outlineColor="rgba(255, 255, 255, 0.5)"
+                  activeOutlineColor={themeColors.primaryAccent}
+                  textColor="#000000"
+                  placeholderTextColor="#666666"
+                  left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
+                />
 
-              <TextInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                disabled={loading}
-                mode="outlined"
-                style={styles.input}
-                outlineColor="rgba(255, 255, 255, 0.5)"
-                activeOutlineColor={themeColors.primaryAccent}
-                textColor="#000000"
-                placeholderTextColor="#666666"
-                left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
-                right={
-                  <TextInput.Icon
-                    icon={showPassword ? 'eye-off' : 'eye'}
-                    color="#666666"
-                    onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
-                  />
-                }
-              />
+                <TextInput
+                  label="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  disabled={loading}
+                  mode="outlined"
+                  style={styles.input}
+                  outlineColor="rgba(255, 255, 255, 0.5)"
+                  activeOutlineColor={themeColors.primaryAccent}
+                  textColor="#000000"
+                  placeholderTextColor="#666666"
+                  left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? 'eye-off' : 'eye'}
+                      color="#666666"
+                      onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
+                    />
+                  }
+                />
 
-              <Button
-                mode="text"
-                onPress={handleForgotPassword}
-                disabled={loading}
-                style={styles.forgotButton}
-                textColor="#ffffff"
-              >
-                Forgot Password?
-              </Button>
+                <Button
+                  mode="text"
+                  onPress={handleForgotPassword}
+                  disabled={loading}
+                  style={styles.forgotButton}
+                  textColor="#ffffff"
+                >
+                  Forgot Password?
+                </Button>
 
-              <Button
-                mode="contained"
-                onPress={handleLogin}
-                loading={loading}
-                disabled={loading}
-                style={styles.loginButton}
-                contentStyle={styles.buttonContent}
-                buttonColor={themeColors.primaryAccent}
-                textColor="#ffffff"
-              >
-                {loading ? 'Signing In...' : 'Sign In with Email'}
-              </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleLogin}
+                  loading={loading}
+                  disabled={loading}
+                  style={styles.loginButton}
+                  contentStyle={styles.buttonContent}
+                  buttonColor={themeColors.primaryAccent}
+                  textColor="#ffffff"
+                >
+                  {loading ? 'Signing In...' : 'Sign In with Email'}
+                </Button>
 
-              {isPhoneAuthAvailable && (
-                <>
-                  <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <Text variant="bodySmall" style={styles.dividerText}>
-                      or
-                    </Text>
-                    <View style={styles.dividerLine} />
-                  </View>
+                {isPhoneAuthAvailable && (
+                  <>
+                    <View style={styles.divider}>
+                      <View style={styles.dividerLine} />
+                      <Text variant="bodySmall" style={styles.dividerText}>
+                        or
+                      </Text>
+                      <View style={styles.dividerLine} />
+                    </View>
 
-                  <Link href="/(auth)/phone" asChild>
-                    <Button
-                      mode="outlined"
-                      disabled={loading}
-                      style={styles.phoneButton}
-                      contentStyle={styles.buttonContent}
-                      icon="phone"
+                    <Link href="/(auth)/phone" asChild>
+                      <Button
+                        mode="outlined"
+                        disabled={loading}
+                        style={styles.phoneButton}
+                        contentStyle={styles.buttonContent}
+                        icon="phone"
+                        textColor="#ffffff"
+                        onPress={() => haptic.light()}
+                      >
+                        Sign In with Phone
+                      </Button>
+                    </Link>
+                  </>
+                )}
+
+                <View style={styles.registerRow}>
+                  <Text variant="bodyMedium" style={styles.registerText}>
+                    Don't have an account?{' '}
+                  </Text>
+                  <Link href="/(auth)/register" asChild>
+                    <Button 
+                      mode="text" 
+                      disabled={loading} 
+                      compact 
                       textColor="#ffffff"
                       onPress={() => haptic.light()}
                     >
-                      Sign In with Phone
+                      Sign Up
                     </Button>
                   </Link>
-                </>
-              )}
+                </View>
 
-              <View style={styles.registerRow}>
-                <Text variant="bodyMedium" style={styles.registerText}>
-                  Don't have an account?{' '}
-                </Text>
-                <Link href="/(auth)/register" asChild>
+                <Link href="/(tabs)" asChild>
                   <Button 
                     mode="text" 
                     disabled={loading} 
-                    compact 
-                    textColor="#ffffff"
+                    style={styles.guestButton} 
+                    textColor="rgba(255, 255, 255, 0.7)"
                     onPress={() => haptic.light()}
                   >
-                    Sign Up
+                    Browse as Guest
                   </Button>
                 </Link>
               </View>
-
-              <Link href="/(tabs)" asChild>
-                <Button 
-                  mode="text" 
-                  disabled={loading} 
-                  style={styles.guestButton} 
-                  textColor="rgba(255, 255, 255, 0.7)"
-                  onPress={() => haptic.light()}
-                >
-                  Continue as Guest
-                </Button>
-              </Link>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
