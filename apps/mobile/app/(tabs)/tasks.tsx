@@ -10,6 +10,7 @@ import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 // Feature imports
 import {
@@ -30,6 +31,7 @@ import { DEFAULT_LOCATION } from '../../src/features/home/constants';
 import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 export default function TasksScreen() {
+  const { t } = useTranslation();
   const [mainTab, setMainTab] = useState<MainTab>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -120,17 +122,17 @@ export default function TasksScreen() {
       {isLoading && (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
       )}
       {isError && (
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load</Text>
-          <Button mode="contained" onPress={refetch}>Retry</Button>
+          <Text style={styles.errorText}>{t.common.errorLoading}</Text>
+          <Button mode="contained" onPress={refetch}>{t.common.retry}</Button>
         </View>
       )}
     </>
-  ), [hasActiveFilter, selectedCategory, selectedDifficulty, clearFilters, isLoading, isError, refetch, styles]);
+  ), [hasActiveFilter, selectedCategory, selectedDifficulty, clearFilters, isLoading, isError, refetch, styles, t]);
 
   const ListEmptyComponent = useCallback(() => {
     if (isLoading || isError) return null;
@@ -138,9 +140,9 @@ export default function TasksScreen() {
     const emptyConfig = {
       icon: mainTab === 'services' ? '🛠️' : '📋',
       text: hasActiveFilter 
-        ? (mainTab === 'all' ? 'Nothing matches your filters' : mainTab === 'jobs' ? 'No jobs match your filters' : 'No services in this category')
-        : (mainTab === 'all' ? 'No jobs or services available' : mainTab === 'jobs' ? 'No jobs available' : 'No services available'),
-      subtext: hasActiveFilter ? 'Try different filters' : 'Check back later or create your own',
+        ? (mainTab === 'all' ? t.tasks.noFilterMatch : mainTab === 'jobs' ? t.tasks.noJobsFilter : t.tasks.noServicesCategory)
+        : (mainTab === 'all' ? t.tasks.noTasks : mainTab === 'jobs' ? t.tasks.noJobs : t.tasks.noServices),
+      subtext: hasActiveFilter ? t.tasks.tryDifferentFilters : t.tasks.checkBackLater,
     };
 
     return (
@@ -150,7 +152,7 @@ export default function TasksScreen() {
         <Text style={styles.emptySubtext}>{emptyConfig.subtext}</Text>
       </View>
     );
-  }, [isLoading, isError, mainTab, hasActiveFilter, styles]);
+  }, [isLoading, isError, mainTab, hasActiveFilter, t, styles]);
 
   const ListFooterComponent = useCallback(() => <View style={styles.fabSpacer} />, [styles]);
 
