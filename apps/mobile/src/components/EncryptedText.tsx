@@ -1,11 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Text, TextStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { Text, TextStyle, Animated } from 'react-native';
 
 interface EncryptedTextProps {
   text: string;
@@ -19,8 +13,6 @@ interface EncryptedTextProps {
 
 const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
 
-const AnimatedText = Animated.createAnimatedComponent(Text);
-
 export function EncryptedText({
   text,
   style,
@@ -32,21 +24,16 @@ export function EncryptedText({
 }: EncryptedTextProps) {
   const [displayText, setDisplayText] = useState('');
   const [revealedChars, setRevealedChars] = useState(0);
-  const opacity = useSharedValue(0);
+  const opacity = useRef(new Animated.Value(0)).current;
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
 
   useEffect(() => {
     // Fade in
-    opacity.value = withTiming(1, {
+    Animated.timing(opacity, {
+      toValue: 1,
       duration: 300,
-      easing: Easing.ease,
-    });
+      useNativeDriver: true,
+    }).start();
 
     // Start scrambling animation
     const scrambleInterval = setInterval(() => {
@@ -92,14 +79,14 @@ export function EncryptedText({
   }, [text, revealDelayMs, revealDurationMs, scrambleSpeed]);
 
   return (
-    <AnimatedText
+    <Animated.Text
       style={[
         style,
-        animatedStyle,
+        { opacity },
         { color: revealedChars >= text.length ? revealedColor : encryptedColor },
       ]}
     >
       {displayText || text}
-    </AnimatedText>
+    </Animated.Text>
   );
 }
