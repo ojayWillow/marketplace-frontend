@@ -17,8 +17,9 @@ const needsAction = (task: Task, userId: number, isCreator: boolean): boolean =>
     if (task.status === 'pending_confirmation') return true;
     if (task.status === 'open' && (task.pending_applications_count ?? 0) > 0) return true;
   } else {
-    // Worker needs to: start assigned work, complete work
-    // (Currently no specific action required, but can be extended)
+    // Worker needs to: work on assigned/in-progress tasks
+    if (task.status === 'assigned') return true;
+    if (task.status === 'in_progress') return true;
   }
   
   return false;
