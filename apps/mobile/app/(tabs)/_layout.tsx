@@ -2,20 +2,15 @@ import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
-import { useActivityCounts } from '../../src/hooks/useActivityCounts';
 
 export default function TabsLayout() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
-  const { total: activityCount, isLoading } = useActivityCounts();
 
   // Simple icon components using emoji (works cross-platform)
-  const TabIcon = ({ emoji, focused, badge }: { emoji: string; focused: boolean; badge?: number }) => {
+  const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => {
     const iconStyles = StyleSheet.create({
-      container: {
-        position: 'relative',
-      },
       iconContainer: {
         width: 32,
         height: 32,
@@ -29,48 +24,14 @@ export default function TabsLayout() {
       iconEmoji: {
         fontSize: 20,
       },
-      badge: {
-        position: 'absolute',
-        top: -4,
-        right: -6,
-        backgroundColor: '#ef4444',
-        minWidth: 18,
-        height: 18,
-        borderRadius: 9,
-        paddingHorizontal: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: themeColors.tabBar,
-      },
-      badgeText: {
-        color: '#fff',
-        fontSize: 10,
-        fontWeight: '700' as '700',
-        textAlign: 'center' as 'center',
-      },
     });
 
-    // Ensure badge is a valid number and > 0
-    const badgeCount = typeof badge === 'number' && badge > 0 ? badge : 0;
-    const badgeDisplay = badgeCount > 9 ? '9+' : String(badgeCount);
-
     return (
-      <View style={iconStyles.container}>
-        <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
-          <Text style={iconStyles.iconEmoji}>{emoji}</Text>
-        </View>
-        {badgeCount > 0 && (
-          <View style={iconStyles.badge}>
-            <Text style={iconStyles.badgeText}>{badgeDisplay}</Text>
-          </View>
-        )}
+      <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
+        <Text style={iconStyles.iconEmoji}>{emoji}</Text>
       </View>
     );
   };
-
-  // Only show badge if not loading and count is valid
-  const workBadge = !isLoading && typeof activityCount === 'number' ? activityCount : undefined;
 
   return (
     <Tabs
@@ -108,9 +69,7 @@ export default function TabsLayout() {
         name="tasks"
         options={{
           title: 'Work',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="💼" focused={focused} badge={workBadge} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon emoji="💼" focused={focused} />,
         }}
       />
       <Tabs.Screen
