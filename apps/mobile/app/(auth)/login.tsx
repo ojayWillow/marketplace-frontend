@@ -178,7 +178,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Video - Replace with your video! */}
+      {/* Background Video */}
       <Video
         ref={videoRef}
         style={styles.videoBackground}
@@ -186,7 +186,8 @@ export default function LoginScreen() {
         resizeMode={ResizeMode.COVER}
         shouldPlay
         isLooping
-        isMuted
+        isMuted={false}
+        volume={0.5}
         // Slow motion effect (optional - remove if you want normal speed)
         rate={0.75}
       />
