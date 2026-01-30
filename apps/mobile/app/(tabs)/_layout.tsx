@@ -2,15 +2,20 @@ import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useActivityCounts } from '../../src/hooks/useActivityCounts';
 
 export default function TabsLayout() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+  const { total: activityCount } = useActivityCounts();
 
   // Simple icon components using emoji (works cross-platform)
-  const TabIcon = ({ emoji, focused }: { emoji: string; focused: boolean }) => {
+  const TabIcon = ({ emoji, focused, badge }: { emoji: string; focused: boolean; badge?: number }) => {
     const iconStyles = StyleSheet.create({
+      container: {
+        position: 'relative',
+      },
       iconContainer: {
         width: 32,
         height: 32,
@@ -24,11 +29,38 @@ export default function TabsLayout() {
       iconEmoji: {
         fontSize: 20,
       },
+      badge: {
+        position: 'absolute',
+        top: -4,
+        right: -6,
+        backgroundColor: '#ef4444',
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        paddingHorizontal: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: themeColors.tabBar,
+      },
+      badgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '700',
+        textAlign: 'center',
+      },
     });
 
     return (
-      <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
-        <Text style={iconStyles.iconEmoji}>{emoji}</Text>
+      <View style={iconStyles.container}>
+        <View style={[iconStyles.iconContainer, focused && iconStyles.iconFocused]}>
+          <Text style={iconStyles.iconEmoji}>{emoji}</Text>
+        </View>
+        {badge && badge > 0 && (
+          <View style={iconStyles.badge}>
+            <Text style={iconStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+          </View>
+        )}
       </View>
     );
   };
@@ -69,7 +101,9 @@ export default function TabsLayout() {
         name="tasks"
         options={{
           title: 'Work',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💼" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="💼" focused={focused} badge={activityCount} />
+          ),
         }}
       />
       <Tabs.Screen
