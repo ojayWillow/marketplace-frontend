@@ -8,12 +8,14 @@ import Constants from 'expo-constants';
 import { haptic } from '../../utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
 const isPhoneAuthAvailable = !isExpoGo;
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,25 +34,25 @@ export default function RegisterScreen() {
     // Validation
     if (!username.trim() || !email.trim() || !password.trim()) {
       haptic.warning();
-      setError('Please fill in all required fields');
+      setError(t.auth.register.errorNoName + ', ' + t.auth.register.errorNoEmail.toLowerCase() + ', ' + t.auth.register.errorNoPassword.toLowerCase());
       return;
     }
 
     if (password !== confirmPassword) {
       haptic.warning();
-      setError('Passwords do not match');
+      setError(t.auth.register.errorPasswordMatch);
       return;
     }
 
     if (password.length < 6) {
       haptic.warning();
-      setError('Password must be at least 6 characters');
+      setError('Password must be at least 6 characters'); // This needs a key
       return;
     }
 
     setLoading(true);
     setError('');
-    haptic.medium(); // Haptic on submit
+    haptic.medium();
 
     try {
       const response = await authApi.register({
@@ -58,23 +60,21 @@ export default function RegisterScreen() {
         email: email.trim(),
         password,
       });
-      haptic.success(); // Success haptic
-      // Backend returns 'token' for register, 'access_token' for phone auth
+      haptic.success();
       const token = response.token || response.access_token;
       setAuth(response.user, token);
       
       // New users ALWAYS see onboarding
       router.replace('/onboarding/welcome');
     } catch (error: any) {
-      haptic.error(); // Error haptic
-      const message = error.response?.data?.message || error.response?.data?.error || 'Registration failed. Please try again.';
+      haptic.error();
+      const message = error.response?.data?.message || error.response?.data?.error || t.auth.register.errorGeneric;
       setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Dynamic styles based on theme
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -169,12 +169,7 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Hide default white header */}
-      <Stack.Screen 
-        options={{ 
-          headerShown: false 
-        }} 
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -182,15 +177,13 @@ export default function RegisterScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
-            {/* Header */}
             <Text variant="headlineLarge" style={styles.title}>
-              Create Account
+              {t.auth.register.title}
             </Text>
             <Text variant="bodyLarge" style={styles.subtitle}>
-              Join the Kolab community
+              {t.auth.register.subtitle}
             </Text>
 
-            {/* Expo Go Info Banner */}
             {isExpoGo && (
               <Card style={styles.infoBanner} elevation={0}>
                 <Card.Content>
@@ -201,9 +194,8 @@ export default function RegisterScreen() {
               </Card>
             )}
 
-            {/* Username Input */}
             <TextInput
-              label="Username"
+              label={t.auth.register.nameLabel}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -218,9 +210,8 @@ export default function RegisterScreen() {
               left={<TextInput.Icon icon="account" color={themeColors.primaryAccent} />}
             />
 
-            {/* Email Input */}
             <TextInput
-              label="Email"
+              label={t.auth.register.emailLabel}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -236,9 +227,8 @@ export default function RegisterScreen() {
               left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
             />
 
-            {/* Password Input */}
             <TextInput
-              label="Password"
+              label={t.auth.register.passwordLabel}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -259,9 +249,8 @@ export default function RegisterScreen() {
               }
             />
 
-            {/* Confirm Password Input */}
             <TextInput
-              label="Confirm Password"
+              label={t.auth.register.confirmPasswordLabel}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
@@ -282,7 +271,6 @@ export default function RegisterScreen() {
               }
             />
 
-            {/* Register Button */}
             <Button
               mode="contained"
               onPress={handleRegister}
@@ -293,16 +281,15 @@ export default function RegisterScreen() {
               buttonColor={themeColors.primaryAccent}
               textColor="#ffffff"
             >
-              {loading ? 'Creating Account...' : 'Create Account with Email'}
+              {loading ? t.auth.register.creatingAccount : t.auth.register.createAccount}
             </Button>
 
-            {/* Phone Registration Option - Only in Production */}
             {isPhoneAuthAvailable && (
               <>
                 <View style={styles.divider}>
                   <View style={styles.dividerLine} />
                   <Text variant="bodySmall" style={styles.dividerText}>
-                    or
+                    {t.common.confirm || 'or'}
                   </Text>
                   <View style={styles.dividerLine} />
                 </View>
@@ -317,16 +304,15 @@ export default function RegisterScreen() {
                     textColor={themeColors.primaryAccent}
                     onPress={() => haptic.light()}
                   >
-                    Register with Phone
+                    {t.auth.phone.signIn}
                   </Button>
                 </Link>
               </>
             )}
 
-            {/* Login Link */}
             <View style={styles.loginRow}>
               <Text variant="bodyMedium" style={styles.loginText}>
-                Already have an account?{' '}
+                {t.auth.register.hasAccount + ' '}
               </Text>
               <Link href="/(auth)/login" asChild>
                 <Button 
@@ -336,26 +322,24 @@ export default function RegisterScreen() {
                   textColor={themeColors.primaryAccent}
                   onPress={() => haptic.light()}
                 >
-                  Sign In
+                  {t.auth.register.signIn}
                 </Button>
               </Link>
             </View>
 
-            {/* Terms */}
             <Text variant="bodySmall" style={styles.terms}>
-              By creating an account, you agree to our Terms of Service and Privacy Policy
+              {t.auth.register.termsAgreement}
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Error Snackbar */}
       <Snackbar
         visible={!!error}
         onDismiss={() => setError('')}
         duration={4000}
         action={{
-          label: 'Dismiss',
+          label: t.common.dismiss,
           onPress: () => { haptic.soft(); setError(''); },
         }}
       >
