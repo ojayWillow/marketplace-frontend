@@ -5,6 +5,7 @@ import { Text, Button, useTheme } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 import { EncryptedText } from '../src/components/EncryptedText';
+import { Sparkles } from '../src/components/Sparkles';
 
 export default function WelcomeScreen() {
   const theme = useTheme();
@@ -15,13 +16,14 @@ export default function WelcomeScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: themeColors.background,
+      backgroundColor: '#000000', // Black background for sparkles
     },
     content: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 24,
+      zIndex: 10, // Above sparkles
     },
     logo: {
       width: 100,
@@ -34,11 +36,12 @@ export default function WelcomeScreen() {
       fontWeight: 'bold',
       marginBottom: 8,
       letterSpacing: 1,
+      color: '#ffffff',
     },
     subtitle: {
       textAlign: 'center',
       marginBottom: 48,
-      color: themeColors.textSecondary,
+      color: 'rgba(255, 255, 255, 0.7)',
       fontSize: 14,
     },
     buttonContainer: {
@@ -51,70 +54,91 @@ export default function WelcomeScreen() {
     buttonContent: {
       paddingVertical: 8,
     },
+    primaryButton: {
+      backgroundColor: themeColors.primaryAccent,
+    },
+    outlinedButton: {
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
     guestButton: {
       marginTop: 24,
     },
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo */}
-        <Image
-          source={require('../assets/icon.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+    <View style={styles.container}>
+      {/* Animated Sparkles Background */}
+      <Sparkles
+        particleCount={60}
+        particleColor="#FFFFFF"
+        minSize={1}
+        maxSize={3}
+        speed={3000}
+      />
 
-        {/* Title with Encrypted Text Animation */}
-        <EncryptedText
-          text="Marketplace"
-          style={[styles.title, { color: themeColors.text }]}
-          encryptedColor={themeColors.textMuted}
-          revealedColor={themeColors.text}
-          revealDelayMs={50}
-          flipDelayMs={50}
-        />
-        
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          Find services and tasks in your local community
-        </Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.content}>
+          {/* Logo */}
+          <Image
+            source={require('../assets/icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <Link href="/(auth)/phone" asChild>
+          {/* Title with Encrypted Text Animation */}
+          <EncryptedText
+            text="Marketplace"
+            style={styles.title}
+            encryptedColor="rgba(255, 255, 255, 0.3)"
+            revealedColor="#ffffff"
+            revealDelayMs={50}
+            flipDelayMs={50}
+          />
+          
+          <Text style={styles.subtitle}>
+            Find services and tasks in your local community
+          </Text>
+
+          {/* Buttons */}
+          <View style={styles.buttonContainer}>
+            <Link href="/(auth)/phone" asChild>
+              <Button 
+                mode="contained" 
+                style={[styles.button, styles.primaryButton]}
+                contentStyle={styles.buttonContent}
+                icon="phone"
+                textColor="#ffffff"
+              >
+                Continue with Phone
+              </Button>
+            </Link>
+
+            <Link href="/(auth)/login" asChild>
+              <Button 
+                mode="outlined" 
+                style={[styles.button, styles.outlinedButton]}
+                contentStyle={styles.buttonContent}
+                icon="email"
+                textColor="#ffffff"
+              >
+                Sign In with Email
+              </Button>
+            </Link>
+          </View>
+
+          {/* Browse as guest */}
+          <Link href="/(tabs)" asChild>
             <Button 
-              mode="contained" 
-              style={styles.button}
-              contentStyle={styles.buttonContent}
-              icon="phone"
-              buttonColor={themeColors.primaryAccent}
-              textColor="#ffffff"
+              mode="text" 
+              style={styles.guestButton} 
+              textColor="rgba(255, 255, 255, 0.5)"
             >
-              Continue with Phone
-            </Button>
-          </Link>
-
-          <Link href="/(auth)/login" asChild>
-            <Button 
-              mode="outlined" 
-              style={styles.button}
-              contentStyle={styles.buttonContent}
-              icon="email"
-              textColor={themeColors.primaryAccent}
-            >
-              Sign In with Email
+              Browse as Guest
             </Button>
           </Link>
         </View>
-
-        {/* Browse as guest */}
-        <Link href="/(tabs)" asChild>
-          <Button mode="text" style={styles.guestButton} textColor={themeColors.textMuted}>
-            Browse as Guest
-          </Button>
-        </Link>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
