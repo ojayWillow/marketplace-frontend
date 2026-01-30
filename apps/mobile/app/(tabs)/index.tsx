@@ -1,39 +1,29 @@
-import { View, FlatList, Animated, TextInput, Keyboard, TouchableOpacity } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
+import { View, FlatList, TextInput, Keyboard, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, ActivityIndicator } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { getTasks, getOfferings, searchTasks, type Task, type Offering, getCategoryByKey } from '@marketplace/shared';
+import MapView, { PROVIDER_DEFAULT } from 'react-native-maps';
+import { getTasks, getOfferings, searchTasks, getCategoryByKey } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 import { calculateDistance } from '../../utils/mapClustering';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
-import { LinearGradient } from 'expo-linear-gradient';
 import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
 
 // Feature imports
-import { 
-  TaskCard, 
-  FocusedTaskCard,
-  FocusedOfferingCard,
-  OfferingMarker,
-} from '../../src/features/home/components';
 import { useLocation } from '../../src/features/home/hooks/useLocation';
 import { useTaskFilters } from '../../src/features/home/hooks/useTaskFilters';
 import { useSearchDebounce } from '../../src/features/home/hooks/useSearchDebounce';
 import { useBottomSheet } from '../../src/features/home/hooks/useBottomSheet';
 import { createStyles } from '../../src/features/home/styles/homeStyles';
-import { 
-  SHEET_MIN_HEIGHT,
-  SHEET_MID_HEIGHT,
-  JOB_COLOR, 
-  OFFERING_COLOR, 
-  getMarkerColor,
-} from '../../src/features/home/constants';
+import { SHEET_MIN_HEIGHT, SHEET_MID_HEIGHT, JOB_COLOR } from '../../src/features/home/constants';
 import { applyOverlapOffset } from '../../src/features/home/utils/markerHelpers';
+
+// Extracted components
+import { HomeFloatingControls, HomeMapMarkers, HomeBottomSheet } from './home/components';
 
 // Modals
 import CategoryModal from '../../src/features/home/components/modals/CategoryModal';
@@ -44,7 +34,6 @@ export default function HomeScreen() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
-  
   const blurTint = activeTheme === 'dark' ? 'dark' : 'light';
   const insets = useSafeAreaInsets();
   
@@ -56,15 +45,19 @@ export default function HomeScreen() {
   const { userLocation, hasRealLocation } = useLocation(mapRef);
   const { searchQuery, setSearchQuery, debouncedSearchQuery, clearSearch } = useSearchDebounce();
   const {
-    selectedCategories, setSelectedCategories,
-    selectedRadius, setSelectedRadius,
-    selectedDifficulty, setSelectedDifficulty,
-    hasActiveFilters, hasActiveCategory,
+    selectedCategories,
+    setSelectedCategories,
+    selectedRadius,
+    setSelectedRadius,
+    selectedDifficulty,
+    setSelectedDifficulty,
+    hasActiveFilters,
+    hasActiveCategory,
     matchesCategory,
   } = useTaskFilters();
   
   // UI State
-  const [focusedOffering, setFocusedOffering] = useState<Offering | null>(null);
+  const [focusedOffering, setFocusedOffering] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -74,7 +67,7 @@ export default function HomeScreen() {
   // Bottom sheet animation
   const { sheetHeight, panResponder, animateSheetTo } = useBottomSheet('min', setSheetPosition);
 
-  // Data fetching - ALL tasks at once (no pagination for home map)
+  // Data fetching
   const { data: tasksData, isLoading } = useQuery({
     queryKey: ['tasks-home-all'],
     queryFn: async () => {
@@ -84,7 +77,6 @@ export default function HomeScreen() {
     staleTime: 30000,
   });
 
-  // Data fetching - Search
   const { data: searchData, isFetching: isSearchFetching } = useQuery({
     queryKey: ['tasks-search', debouncedSearchQuery],
     queryFn: async () => {
@@ -95,7 +87,6 @@ export default function HomeScreen() {
     staleTime: 10000,
   });
 
-  // Data fetching - Offerings
   const { data: offeringsData } = useQuery({
     queryKey: ['offerings-map'],
     queryFn: () => getOfferings({ page: 1, per_page: 100, status: 'active' }),
@@ -103,7 +94,7 @@ export default function HomeScreen() {
   });
 
   // Handlers
-  const handleMarkerPress = useCallback((task: Task) => {
+  const handleMarkerPress = useCallback((task: any) => {
     haptic.light();
     if (mapRef.current && task.latitude && task.longitude) {
       const latitudeDelta = 0.03;
@@ -125,7 +116,7 @@ export default function HomeScreen() {
     setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
   }, [animateSheetTo]);
 
-  const handleOfferingMarkerPress = useCallback((offering: Offering) => {
+  const handleOfferingMarkerPress = useCallback((offering: any) => {
     haptic.light();
     if (mapRef.current && offering.latitude && offering.longitude) {
       const latitudeDelta = 0.03;
@@ -146,7 +137,7 @@ export default function HomeScreen() {
     animateSheetTo(SHEET_MID_HEIGHT);
   }, [animateSheetTo]);
 
-  const handleJobItemPress = useCallback((task: Task) => {
+  const handleJobItemPress = useCallback((task: any) => {
     haptic.medium();
     handleMarkerPress(task);
   }, [handleMarkerPress]);
@@ -195,9 +186,7 @@ export default function HomeScreen() {
 
   // Memoized data transformations
   const allTasks = useMemo(() => {
-    if (debouncedSearchQuery.trim() && searchData) {
-      return searchData;
-    }
+    if (debouncedSearchQuery.trim() && searchData) return searchData;
     if (debouncedSearchQuery.trim() && isSearchFetching) return [];
     return tasksData || [];
   }, [debouncedSearchQuery, searchData, isSearchFetching, tasksData]);
@@ -207,7 +196,6 @@ export default function HomeScreen() {
     [offeringsData]
   );
 
-  // Updated filtering to use matchesCategory for multi-select
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       if (!task.latitude || !task.longitude) return false;
@@ -235,7 +223,6 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
   
-  // Get display text for category button
   const getCategoryButtonText = () => {
     if (!hasActiveCategory) return 'Category';
     if (selectedCategories.length === 1) {
@@ -244,25 +231,6 @@ export default function HomeScreen() {
     }
     return `${selectedCategories.length} Categories`;
   };
-
-  // Render functions
-  const renderJobItem = useCallback(({ item }: { item: Task }) => (
-    <TaskCard
-      task={item}
-      userLocation={userLocation}
-      hasRealLocation={hasRealLocation}
-      onPress={handleJobItemPress}
-      styles={styles}
-    />
-  ), [userLocation, hasRealLocation, handleJobItemPress, styles]);
-
-  const renderEmptyList = () => (
-    <View style={styles.emptySheet}>
-      <Text style={styles.emptyIcon}>💬</Text>
-      <Text style={styles.emptyText}>{debouncedSearchQuery ? 'No results found' : 'No jobs found'}</Text>
-      <Text style={styles.emptySubtext}>{debouncedSearchQuery ? 'Try a different search term' : 'Try adjusting your filters'}</Text>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -281,101 +249,32 @@ export default function HomeScreen() {
           showsUserLocation={hasRealLocation}
           showsMyLocationButton={false}
         >
-          {/* Task markers */}
-          {tasksWithOffset.map((task) => {
-            const markerColor = getMarkerColor(task.category);
-            const isFocused = focusedTaskId === task.id;
-            
-            return (
-              <Marker
-                key={`task-${task.id}`}
-                coordinate={{ latitude: task.displayLat, longitude: task.displayLng }}
-                onPress={() => handleMarkerPress(task)}
-                tracksViewChanges={false}
-                zIndex={isFocused ? 10 : 1}
-              >
-                <View style={[
-                  styles.priceMarker,
-                  { borderColor: markerColor },
-                  isFocused && styles.priceMarkerFocused
-                ]}>
-                  <Text style={[styles.priceMarkerText, { color: markerColor }]}>
-                    €{task.budget?.toFixed(0) || '0'}
-                  </Text>
-                </View>
-              </Marker>
-            );
-          })}
-
-          {/* Boosted offerings markers */}
-          {boostedOfferings.map((offering) => (
-            <Marker 
-              key={`offering-${offering.id}`} 
-              coordinate={{ latitude: offering.latitude!, longitude: offering.longitude! }} 
-              onPress={() => handleOfferingMarkerPress(offering)} 
-              tracksViewChanges={false}
-              zIndex={2}
-            >
-              <OfferingMarker offering={offering} styles={styles} />
-            </Marker>
-          ))}
+          <HomeMapMarkers
+            tasks={tasksWithOffset}
+            offerings={boostedOfferings}
+            focusedTaskId={focusedTaskId}
+            onTaskMarkerPress={handleMarkerPress}
+            onOfferingMarkerPress={handleOfferingMarkerPress}
+            styles={styles}
+          />
         </MapView>
 
-        {/* Floating Header - FIXED with stable positioning */}
-        <View 
-          style={[
-            styles.floatingHeader, 
-            { paddingTop: insets.top }
-          ]} 
-          collapsable={false}
-        >
-          <View style={styles.topRow}>
-            <TouchableOpacity 
-              style={[styles.categoryButton, hasActiveCategory && styles.categoryButtonActive]}
-              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
-              activeOpacity={0.7}
-            >
-              <BlurView intensity={80} tint={blurTint} style={styles.categoryBlur}>
-                <Text style={styles.categoryButtonText} numberOfLines={1}>
-                  {getCategoryButtonText()}
-                </Text>
-                <Icon name="expand-more" size={18} color={styles.categoryButtonText.color} />
-              </BlurView>
-            </TouchableOpacity>
-
-            <View style={styles.searchBar}>
-              <BlurView intensity={80} tint={blurTint} style={styles.searchBlur}>
-                <Icon name="search" size={20} color={styles.searchInput.color} />
-                <TextInput
-                  ref={searchInputRef}
-                  style={styles.searchInput}
-                  placeholder="Search jobs..."
-                  placeholderTextColor={styles.searchInput.color}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  returnKeyType="search"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={handleClearSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Icon name="close" size={18} color={styles.searchInput.color} />
-                  </TouchableOpacity>
-                )}
-                {showSearchLoading && <ActivityIndicator size="small" color={JOB_COLOR} />}
-              </BlurView>
-            </View>
-
-            <TouchableOpacity 
-              style={styles.filtersButton}
-              onPress={() => { haptic.light(); setShowFiltersModal(true); }}
-              activeOpacity={0.7}
-            >
-              <BlurView intensity={80} tint={blurTint} style={styles.filtersBlur}>
-                <Icon name="tune" size={20} color={hasActiveFilters ? JOB_COLOR : styles.categoryButtonText.color} />
-                {hasActiveFilters && <View style={styles.filterDot} />}
-              </BlurView>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* Floating Header */}
+        <HomeFloatingControls
+          getCategoryButtonText={getCategoryButtonText}
+          hasActiveCategory={hasActiveCategory}
+          hasActiveFilters={hasActiveFilters}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchClear={handleClearSearch}
+          showSearchLoading={showSearchLoading}
+          onCategoryPress={() => { haptic.light(); setShowCategoryModal(true); }}
+          onFiltersPress={() => { haptic.light(); setShowFiltersModal(true); }}
+          blurTint={blurTint}
+          topInset={insets.top}
+          styles={styles}
+          searchInputRef={searchInputRef}
+        />
 
         {/* Loading Overlay */}
         {isLoading && (
@@ -401,64 +300,23 @@ export default function HomeScreen() {
         )}
 
         {/* Bottom Sheet */}
-        <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
-          <View {...panResponder.panHandlers} style={styles.sheetHandle}>
-            <View style={styles.handleBar} />
-            <View style={styles.sheetTitleRow}>
-              <Text style={styles.sheetTitle}>
-                {focusedTask ? 'Job Details' : focusedOffering ? 'Service Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
-              </Text>
-              {(focusedTask || focusedOffering) ? (
-                <IconButton 
-                  icon="close" 
-                  size={20} 
-                  onPress={focusedTask ? handleCloseFocusedJob : handleCloseFocusedOffering} 
-                />
-              ) : (
-                <TouchableOpacity 
-                  style={styles.quickPostButton}
-                  onPress={() => { haptic.medium(); setShowCreateModal(true); }}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient 
-                    colors={[JOB_COLOR, OFFERING_COLOR]} 
-                    start={{ x: 0, y: 0 }} 
-                    end={{ x: 1, y: 1 }} 
-                    style={{ position: 'absolute', width: '100%', height: '100%' }} 
-                  />
-                  <Text style={styles.quickPostIcon}>+</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {focusedTask ? (
-            <FocusedTaskCard 
-              task={focusedTask} 
-              userLocation={userLocation} 
-              hasRealLocation={hasRealLocation} 
-              onViewDetails={handleViewFullDetails} 
-              styles={styles} 
-            />
-          ) : focusedOffering ? (
-            <FocusedOfferingCard
-              offering={focusedOffering}
-              onViewDetails={handleViewOfferingDetails}
-              styles={styles}
-            />
-          ) : sortedTasks.length === 0 ? (
-            renderEmptyList()
-          ) : (
-            <FlatList
-              ref={listRef}
-              data={sortedTasks}
-              renderItem={renderJobItem}
-              keyExtractor={(item) => `task-${item.id}`}
-              showsVerticalScrollIndicator
-              contentContainerStyle={styles.listContent}
-            />
-          )}
-        </Animated.View>
+        <HomeBottomSheet
+          sheetHeight={sheetHeight}
+          panResponder={panResponder}
+          focusedTask={focusedTask || null}
+          focusedOffering={focusedOffering}
+          sortedTasks={sortedTasks}
+          userLocation={userLocation}
+          hasRealLocation={hasRealLocation}
+          onViewTaskDetails={handleViewFullDetails}
+          onViewOfferingDetails={handleViewOfferingDetails}
+          onCloseFocusedTask={handleCloseFocusedJob}
+          onCloseFocusedOffering={handleCloseFocusedOffering}
+          onTaskItemPress={handleJobItemPress}
+          onCreatePress={() => { haptic.medium(); setShowCreateModal(true); }}
+          listRef={listRef}
+          styles={styles}
+        />
       </View>
 
       {/* Modals */}
