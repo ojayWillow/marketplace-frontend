@@ -12,6 +12,7 @@ import { calculateDistance } from '../../utils/mapClustering';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 // Feature imports
 import { useLocation } from '../../src/features/home/hooks/useLocation';
@@ -31,6 +32,7 @@ import FiltersModal from '../../src/features/home/components/modals/FiltersModal
 import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
@@ -224,12 +226,12 @@ export default function HomeScreen() {
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
   
   const getCategoryButtonText = () => {
-    if (!hasActiveCategory) return 'Category';
+    if (!hasActiveCategory) return t.home.categories;
     if (selectedCategories.length === 1) {
       const cat = getCategoryByKey(selectedCategories[0]);
-      return cat?.label || 'Category';
+      return cat?.label || t.home.categories;
     }
-    return `${selectedCategories.length} Categories`;
+    return `${selectedCategories.length} ${t.home.categories}`;
   };
 
   return (
@@ -281,7 +283,7 @@ export default function HomeScreen() {
           <View style={styles.loadingOverlay}>
             <BlurView intensity={80} tint={blurTint} style={styles.loadingCard}>
               <ActivityIndicator size="small" color={JOB_COLOR} />
-              <Text style={styles.loadingText}>Loading jobs...</Text>
+              <Text style={styles.loadingText}>{t.common.loading}</Text>
             </BlurView>
           </View>
         )}
