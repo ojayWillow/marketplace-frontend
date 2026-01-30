@@ -76,32 +76,38 @@ export default function TermsScreen() {
             <View style={styles.checkboxSection}>
               <Text style={styles.checkboxSectionTitle}>Please accept both to continue:</Text>
               
-              <View style={styles.checkboxWrapper}>
+              <View 
+                style={[
+                  styles.checkboxBox,
+                  termsAccepted && styles.checkboxBoxChecked
+                ]}
+                onTouchEnd={() => setTermsAccepted(!termsAccepted)}
+              >
                 <Checkbox
                   status={termsAccepted ? 'checked' : 'unchecked'}
                   onPress={() => setTermsAccepted(!termsAccepted)}
                   color="#22c55e"
-                  uncheckedColor="rgba(255, 255, 255, 0.5)"
+                  uncheckedColor="rgba(255, 255, 255, 0.6)"
                 />
-                <Text 
-                  style={styles.checkboxLabel}
-                  onPress={() => setTermsAccepted(!termsAccepted)}
-                >
+                <Text style={styles.checkboxLabel}>
                   I accept the Terms of Service
                 </Text>
               </View>
 
-              <View style={styles.checkboxWrapper}>
+              <View 
+                style={[
+                  styles.checkboxBox,
+                  privacyAccepted && styles.checkboxBoxChecked
+                ]}
+                onTouchEnd={() => setPrivacyAccepted(!privacyAccepted)}
+              >
                 <Checkbox
                   status={privacyAccepted ? 'checked' : 'unchecked'}
                   onPress={() => setPrivacyAccepted(!privacyAccepted)}
                   color="#22c55e"
-                  uncheckedColor="rgba(255, 255, 255, 0.5)"
+                  uncheckedColor="rgba(255, 255, 255, 0.6)"
                 />
-                <Text 
-                  style={styles.checkboxLabel}
-                  onPress={() => setPrivacyAccepted(!privacyAccepted)}
-                >
+                <Text style={styles.checkboxLabel}>
                   I accept the Privacy Policy
                 </Text>
               </View>
@@ -211,11 +217,6 @@ const styles = StyleSheet.create({
   },
   checkboxSection: {
     marginTop: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   checkboxSectionTitle: {
     fontSize: 16,
@@ -224,11 +225,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  checkboxWrapper: {
+  checkboxBox: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 12,
-    paddingVertical: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  checkboxBoxChecked: {
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    borderColor: '#22c55e',
   },
   checkboxLabel: {
     fontSize: 16,
