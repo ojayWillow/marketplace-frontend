@@ -73,33 +73,35 @@ export default function TermsScreen() {
               <Text style={styles.bulletPoint}>• We use data to improve your experience and ensure safety</Text>
             </View>
 
-            <View style={styles.checkboxContainer}>
-              <View style={[
-                styles.checkboxRow,
-                termsAccepted && styles.checkboxRowChecked
-              ]}>
+            <View style={styles.checkboxSection}>
+              <Text style={styles.checkboxSectionTitle}>Please accept both to continue:</Text>
+              
+              <View style={styles.checkboxWrapper}>
                 <Checkbox
                   status={termsAccepted ? 'checked' : 'unchecked'}
                   onPress={() => setTermsAccepted(!termsAccepted)}
                   color="#22c55e"
                   uncheckedColor="rgba(255, 255, 255, 0.5)"
                 />
-                <Text style={styles.checkboxLabel}>
+                <Text 
+                  style={styles.checkboxLabel}
+                  onPress={() => setTermsAccepted(!termsAccepted)}
+                >
                   I accept the Terms of Service
                 </Text>
               </View>
 
-              <View style={[
-                styles.checkboxRow,
-                privacyAccepted && styles.checkboxRowChecked
-              ]}>
+              <View style={styles.checkboxWrapper}>
                 <Checkbox
                   status={privacyAccepted ? 'checked' : 'unchecked'}
                   onPress={() => setPrivacyAccepted(!privacyAccepted)}
                   color="#22c55e"
                   uncheckedColor="rgba(255, 255, 255, 0.5)"
                 />
-                <Text style={styles.checkboxLabel}>
+                <Text 
+                  style={styles.checkboxLabel}
+                  onPress={() => setPrivacyAccepted(!privacyAccepted)}
+                >
                   I accept the Privacy Policy
                 </Text>
               </View>
@@ -207,22 +209,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingLeft: 8,
   },
-  checkboxContainer: {
+  checkboxSection: {
     marginTop: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  checkboxRow: {
+  checkboxSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  checkboxWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
     marginBottom: 12,
-  },
-  checkboxRowChecked: {
-    borderColor: '#22c55e',
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    paddingVertical: 4,
   },
   checkboxLabel: {
     fontSize: 16,
