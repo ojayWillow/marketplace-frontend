@@ -1,9 +1,10 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, useTheme } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
+import { EncryptedText } from '../src/components/EncryptedText';
 
 export default function WelcomeScreen() {
   const theme = useTheme();
@@ -23,27 +24,22 @@ export default function WelcomeScreen() {
       paddingHorizontal: 24,
     },
     logo: {
-      width: 96,
-      height: 96,
-      borderRadius: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 32,
-      backgroundColor: themeColors.primaryAccent,
-    },
-    logoText: {
-      color: '#ffffff',
-      fontWeight: 'bold',
+      width: 100,
+      height: 100,
+      marginBottom: 24,
+      borderRadius: 50,
     },
     title: {
+      fontSize: 32,
       fontWeight: 'bold',
       marginBottom: 8,
-      color: themeColors.text,
+      letterSpacing: 1,
     },
     subtitle: {
       textAlign: 'center',
       marginBottom: 48,
       color: themeColors.textSecondary,
+      fontSize: 14,
     },
     buttonContainer: {
       width: '100%',
@@ -64,14 +60,22 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         {/* Logo */}
-        <View style={styles.logo}>
-          <Text variant="displayMedium" style={styles.logoText}>M</Text>
-        </View>
+        <Image
+          source={require('../assets/icon.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
-        {/* Title */}
-        <Text variant="headlineLarge" style={styles.title}>
-          Marketplace
-        </Text>
+        {/* Title with Encrypted Text Animation */}
+        <EncryptedText
+          text="Marketplace"
+          style={[styles.title, { color: themeColors.text }]}
+          encryptedColor={themeColors.textMuted}
+          revealedColor={themeColors.text}
+          revealDelayMs={50}
+          flipDelayMs={50}
+        />
+        
         <Text variant="bodyLarge" style={styles.subtitle}>
           Find services and tasks in your local community
         </Text>
