@@ -65,8 +65,8 @@ export default function WelcomeScreen() {
       marginBottom: 24,
     },
     logo: {
-      width: 200,
-      height: 200,
+      width: 280,
+      height: 280,
     },
     brandContainer: {
       alignItems: 'center',
