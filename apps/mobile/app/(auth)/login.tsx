@@ -48,7 +48,13 @@ export default function LoginScreen() {
       
       haptic.success();
       setAuth(response.user, token);
-      router.replace('/(tabs)');
+      
+      // Check if user needs onboarding
+      if (response.user && response.user.onboarding_completed === false) {
+        router.replace('/onboarding/welcome');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error: any) {
       haptic.error();
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';

@@ -62,7 +62,9 @@ export default function RegisterScreen() {
       // Backend returns 'token' for register, 'access_token' for phone auth
       const token = response.token || response.access_token;
       setAuth(response.user, token);
-      router.replace('/(tabs)');
+      
+      // New users ALWAYS see onboarding
+      router.replace('/onboarding/welcome');
     } catch (error: any) {
       haptic.error(); // Error haptic
       const message = error.response?.data?.message || error.response?.data?.error || 'Registration failed. Please try again.';
@@ -185,7 +187,7 @@ export default function RegisterScreen() {
               Create Account
             </Text>
             <Text variant="bodyLarge" style={styles.subtitle}>
-              Join the marketplace community
+              Join the Kolab community
             </Text>
 
             {/* Expo Go Info Banner */}
