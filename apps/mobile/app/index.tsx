@@ -67,7 +67,6 @@ export default function WelcomeScreen() {
     logo: {
       width: 160,
       height: 160,
-      borderRadius: 80,
     },
     brandContainer: {
       alignItems: 'center',
@@ -115,7 +114,7 @@ export default function WelcomeScreen() {
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
-          {/* Logo with animation */}
+          {/* Logo with animation - using transparent Kolab logo */}
           <Animated.View 
             style={[
               styles.logoContainer,
@@ -126,7 +125,7 @@ export default function WelcomeScreen() {
             ]}
           >
             <Image
-              source={require('../assets/icon.png')}
+              source={require('../assets/Kolab.png')}
               style={styles.logo}
               resizeMode="contain"
             />
