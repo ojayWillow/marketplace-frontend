@@ -1,0 +1,68 @@
+{
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "done": "Done",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "apply": "Apply",
+    "viewDetails": "View Details",
+    "loadMore": "Load More"
+  },
+  "labels": {
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "name": "Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "description": "Description",
+    "price": "Price",
+    "category": "Category",
+    "status": "Status",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location"
+  },
+  "status": {
+    "open": "Open",
+    "closed": "Closed",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "disputed": "Disputed"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "error": "Something went wrong",
+    "success": "Success!",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "changesSaved": "Changes saved successfully"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minuteAgo": "{{count}} minute ago",
+    "minuteAgo_plural": "{{count}} minutes ago",
+    "hourAgo": "{{count}} hour ago",
+    "hourAgo_plural": "{{count}} hours ago",
+    "dayAgo": "{{count}} day ago",
+    "dayAgo_plural": "{{count}} days ago",
+    "weekAgo": "{{count}} week ago",
+    "weekAgo_plural": "{{count}} weeks ago"
+  }
+}
