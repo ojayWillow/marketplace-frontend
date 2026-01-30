@@ -4,32 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
+import { AnimatedGradient } from '../src/components/AnimatedGradient';
 import React, { useEffect, useRef } from 'react';
-
-// Animated gradient background component
-function AnimatedGradient() {
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: '#1a1a2e',
-          },
-        ]}
-      />
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: '#16213e',
-            opacity: 0.8,
-          },
-        ]}
-      />
-    </View>
-  );
-}
 
 export default function WelcomeScreen() {
   const { getActiveTheme } = useThemeStore();
@@ -89,8 +65,8 @@ export default function WelcomeScreen() {
       marginBottom: 24,
     },
     logo: {
-      width: 160,
-      height: 160,
+      width: 200,
+      height: 200,
     },
     brandContainer: {
       alignItems: 'center',
@@ -133,7 +109,7 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Dark Background */}
+      {/* Animated Gradient Background */}
       <AnimatedGradient />
 
       <SafeAreaView style={{ flex: 1 }}>
