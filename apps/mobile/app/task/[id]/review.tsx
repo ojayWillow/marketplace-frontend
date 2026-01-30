@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Avatar, TextInput, ActivityIndicator } from 'react-native-paper';
@@ -7,6 +7,7 @@ import { getTask, createTaskReview, canReviewTask, useAuthStore } from '@marketp
 import { useState } from 'react';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { colors } from '../../../src/theme';
+import { KeyboardAwareContainer } from '../../../components/KeyboardAwareContainer';
 
 const MIN_REVIEW_LENGTH = 10;
 
@@ -78,9 +79,6 @@ export default function ReviewScreen() {
     container: {
       flex: 1,
       backgroundColor: themeColors.backgroundSecondary,
-    },
-    scrollView: {
-      flex: 1,
     },
     loadingContainer: {
       flex: 1,
@@ -295,7 +293,7 @@ export default function ReviewScreen() {
         }} 
       />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareContainer>
         {/* Task Info */}
         <Surface style={styles.taskCard} elevation={1}>
           <Text style={styles.taskLabel}>Task</Text>
@@ -378,7 +376,7 @@ export default function ReviewScreen() {
 
         {/* Spacer */}
         <View style={styles.bottomSpacer} />
-      </ScrollView>
+      </KeyboardAwareContainer>
 
       {/* Submit Button */}
       <Surface style={styles.bottomBar} elevation={4}>
