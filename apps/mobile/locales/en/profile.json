@@ -1,0 +1,44 @@
+{
+  "title": "Profile",
+  "notLoggedIn": {
+    "title": "Not Logged In",
+    "subtitle": "Sign in to access your profile, listings, and messages",
+    "signInButton": "Sign In"
+  },
+  "header": {
+    "settings": "Settings",
+    "notifications": "Notifications"
+  },
+  "editProfile": "Edit Profile",
+  "testOnboarding": "🚀 Test Onboarding",
+  "stats": {
+    "rating": "Rating",
+    "reviews": "Reviews",
+    "completed": "Completed"
+  },
+  "skills": {
+    "title": "Skills",
+    "addTitle": "Add your skills",
+    "addSubtitle": "Let others know what you can help with"
+  },
+  "activity": {
+    "title": "Activity",
+    "jobsAndOfferings": "Jobs & Offerings",
+    "jobsAndOfferingsSubtitle": "View all your jobs and services"
+  },
+  "marketplace": {
+    "title": "Marketplace",
+    "myListings": "My Listings",
+    "myListingsSubtitle": "Buy and sell items in your area",
+    "comingSoon": "Coming Soon"
+  },
+  "logout": "Logout",
+  "logoutConfirm": {
+    "title": "Logout",
+    "message": "Are you sure you want to logout?"
+  },
+  "footer": {
+    "memberSince": "Member since {{date}}",
+    "appVersion": "App version {{version}}"
+  }
+}
