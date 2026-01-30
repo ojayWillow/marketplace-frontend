@@ -1,7 +1,7 @@
 import { View, StyleSheet, ScrollView } from 'react-native';
+import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Checkbox } from 'react-native-paper';
-import { useState } from 'react';
 import { router } from 'expo-router';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
@@ -10,14 +10,11 @@ export default function TermsScreen() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
-  
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
-  const canContinue = termsAccepted && privacyAccepted;
-
   const handleContinue = () => {
-    if (canContinue) {
+    if (termsAccepted && privacyAccepted) {
       router.push('/onboarding/notifications');
     }
   };
@@ -29,69 +26,79 @@ export default function TermsScreen() {
     },
     content: {
       flex: 1,
+    },
+    scrollContent: {
       padding: 24,
+      paddingBottom: 120,
     },
     header: {
-      alignItems: 'center',
-      marginBottom: 32,
-      marginTop: 20,
-    },
-    icon: {
-      fontSize: 64,
-      marginBottom: 16,
+      marginBottom: 24,
     },
     title: {
-      fontSize: 28,
+      fontSize: 32,
       fontWeight: 'bold',
       color: themeColors.text,
-      textAlign: 'center',
       marginBottom: 8,
     },
     subtitle: {
       fontSize: 16,
       color: themeColors.textSecondary,
-      textAlign: 'center',
       lineHeight: 24,
     },
-    scrollContent: {
-      flex: 1,
-      backgroundColor: themeColors.card,
-      borderRadius: 16,
-      padding: 20,
+    section: {
       marginBottom: 24,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: '600',
       color: themeColors.text,
       marginBottom: 12,
-      marginTop: 16,
     },
-    paragraph: {
-      fontSize: 14,
+    bulletPoint: {
+      fontSize: 15,
       color: themeColors.textSecondary,
-      lineHeight: 22,
-      marginBottom: 12,
+      lineHeight: 24,
+      marginBottom: 8,
+      paddingLeft: 8,
     },
     checkboxContainer: {
+      marginTop: 32,
+      gap: 16,
+    },
+    checkboxRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
-      paddingVertical: 8,
+      backgroundColor: themeColors.card,
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: themeColors.border,
+    },
+    checkboxRowChecked: {
+      borderColor: themeColors.primaryAccent,
+      backgroundColor: activeTheme === 'dark'
+        ? 'rgba(56, 189, 248, 0.1)'
+        : 'rgba(14, 165, 233, 0.05)',
+    },
+    checkbox: {
+      marginRight: 12,
     },
     checkboxLabel: {
-      flex: 1,
-      fontSize: 14,
+      fontSize: 16,
       color: themeColors.text,
-      marginLeft: 8,
-      lineHeight: 20,
-    },
-    link: {
-      color: themeColors.primaryAccent,
-      fontWeight: '600',
+      fontWeight: '500',
+      flex: 1,
     },
     buttonContainer: {
-      paddingBottom: 16,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: themeColors.background,
+      padding: 24,
+      paddingBottom: 32,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
     },
     continueButton: {
       borderRadius: 12,
@@ -101,92 +108,89 @@ export default function TermsScreen() {
       backgroundColor: themeColors.border,
     },
     buttonContent: {
-      paddingVertical: 8,
+      paddingVertical: 10,
     },
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.icon}>📜</Text>
-          <Text style={styles.title}>Terms & Privacy</Text>
-          <Text style={styles.subtitle}>
-            Please review and accept our terms to continue
-          </Text>
-        </View>
-
-        {/* Scrollable Terms Content */}
-        <ScrollView 
-          style={styles.scrollContent}
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
         >
-          <Text style={styles.sectionTitle}>Terms of Service</Text>
-          <Text style={styles.paragraph}>
-            By using Kolab, you agree to:
-          </Text>
-          <Text style={styles.paragraph}>
-            • Provide accurate information about yourself and your services{"\n"}
-            • Treat all users with respect and professionalism{"\n"}
-            • Complete jobs as agreed or communicate changes promptly{"\n"}
-            • Pay for services rendered as agreed{"\n"}
-            • Report any issues or violations to our team{"\n"}
-          </Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Terms & Privacy</Text>
+            <Text style={styles.subtitle}>
+              Please review and accept our terms to continue
+            </Text>
+          </View>
 
-          <Text style={styles.sectionTitle}>Privacy Policy</Text>
-          <Text style={styles.paragraph}>
-            We take your privacy seriously:
-          </Text>
-          <Text style={styles.paragraph}>
-            • Your personal data is encrypted and secure{"\n"}
-            • We only share information necessary for transactions{"\n"}
-            • You control your profile visibility{"\n"}
-            • We never sell your data to third parties{"\n"}
-            • You can delete your account anytime{"\n"}
-          </Text>
+          {/* Terms of Service */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📜 Terms of Service</Text>
+            <Text style={styles.bulletPoint}>• Treat all users with respect and professionalism</Text>
+            <Text style={styles.bulletPoint}>• Complete jobs as agreed or communicate changes promptly</Text>
+            <Text style={styles.bulletPoint}>• Pay for services rendered in a timely manner</Text>
+            <Text style={styles.bulletPoint}>• Report any violations or safety concerns immediately</Text>
+            <Text style={styles.bulletPoint}>• Do not engage in fraud, harassment, or illegal activities</Text>
+          </View>
 
-          <Text style={styles.sectionTitle}>Your Rights</Text>
-          <Text style={styles.paragraph}>
-            • Access and update your data anytime{"\n"}
-            • Request data deletion{"\n"}
-            • Opt out of non-essential communications{"\n"}
-            • Report safety concerns confidentially{"\n"}
-          </Text>
+          {/* Privacy Policy */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🔒 Privacy Policy</Text>
+            <Text style={styles.bulletPoint}>• Your data is encrypted and stored securely</Text>
+            <Text style={styles.bulletPoint}>• We never sell your personal information to third parties</Text>
+            <Text style={styles.bulletPoint}>• You control your profile visibility and privacy settings</Text>
+            <Text style={styles.bulletPoint}>• You can delete your account and data at any time</Text>
+            <Text style={styles.bulletPoint}>• We use data to improve your experience and ensure safety</Text>
+          </View>
+
+          {/* Acceptance Checkboxes with Clear Borders */}
+          <View style={styles.checkboxContainer}>
+            <View style={[
+              styles.checkboxRow,
+              termsAccepted && styles.checkboxRowChecked
+            ]}>
+              <Checkbox
+                status={termsAccepted ? 'checked' : 'unchecked'}
+                onPress={() => setTermsAccepted(!termsAccepted)}
+                color={themeColors.primaryAccent}
+                uncheckedColor={themeColors.textSecondary}
+              />
+              <Text style={styles.checkboxLabel}>
+                I accept the Terms of Service
+              </Text>
+            </View>
+
+            <View style={[
+              styles.checkboxRow,
+              privacyAccepted && styles.checkboxRowChecked
+            ]}>
+              <Checkbox
+                status={privacyAccepted ? 'checked' : 'unchecked'}
+                onPress={() => setPrivacyAccepted(!privacyAccepted)}
+                color={themeColors.primaryAccent}
+                uncheckedColor={themeColors.textSecondary}
+              />
+              <Text style={styles.checkboxLabel}>
+                I accept the Privacy Policy
+              </Text>
+            </View>
+          </View>
         </ScrollView>
-
-        {/* Checkboxes */}
-        <View style={styles.checkboxContainer}>
-          <Checkbox
-            status={termsAccepted ? 'checked' : 'unchecked'}
-            onPress={() => setTermsAccepted(!termsAccepted)}
-            color={themeColors.primaryAccent}
-          />
-          <Text style={styles.checkboxLabel}>
-            I accept the <Text style={styles.link}>Terms of Service</Text>
-          </Text>
-        </View>
-
-        <View style={styles.checkboxContainer}>
-          <Checkbox
-            status={privacyAccepted ? 'checked' : 'unchecked'}
-            onPress={() => setPrivacyAccepted(!privacyAccepted)}
-            color={themeColors.primaryAccent}
-          />
-          <Text style={styles.checkboxLabel}>
-            I accept the <Text style={styles.link}>Privacy Policy</Text>
-          </Text>
-        </View>
 
         {/* Continue Button */}
         <View style={styles.buttonContainer}>
           <Button
             mode="contained"
             onPress={handleContinue}
-            disabled={!canContinue}
+            disabled={!termsAccepted || !privacyAccepted}
             style={[
               styles.continueButton,
-              !canContinue && styles.continueButtonDisabled,
+              (!termsAccepted || !privacyAccepted) && styles.continueButtonDisabled
             ]}
             contentStyle={styles.buttonContent}
           >

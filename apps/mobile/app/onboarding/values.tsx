@@ -24,7 +24,7 @@ export default function ValuesScreen() {
     },
     scrollContent: {
       padding: 24,
-      paddingBottom: 100,
+      paddingBottom: 120, // Extra padding for button + commitment box
     },
     header: {
       alignItems: 'center',
@@ -87,6 +87,7 @@ export default function ValuesScreen() {
       borderRadius: 12,
       padding: 20,
       marginTop: 24,
+      marginBottom: 24, // Add margin bottom for spacing
       borderWidth: 2,
       borderColor: activeTheme === 'dark'
         ? 'rgba(56, 189, 248, 0.3)'
@@ -185,7 +186,7 @@ export default function ValuesScreen() {
             </View>
           </View>
 
-          {/* Our Commitment */}
+          {/* Our Commitment - Now fully visible with proper padding */}
           <View style={styles.commitmentBox}>
             <Text style={styles.commitmentTitle}>✨ Our Commitment to You</Text>
             <Text style={styles.commitmentText}>
