@@ -138,7 +138,14 @@ export default function PhoneAuthScreen() {
       } else {
         setAuth(user, access_token);
         setStep('success');
-        setTimeout(() => router.replace('/(tabs)'), 1500);
+        // Check if user needs onboarding
+        setTimeout(() => {
+          if (user && user.onboarding_completed === false) {
+            router.replace('/onboarding/welcome');
+          } else {
+            router.replace('/(tabs)');
+          }
+        }, 1500);
       }
     } catch (err: any) {
       console.error('Verification error:', err);
@@ -179,7 +186,8 @@ export default function PhoneAuthScreen() {
 
       setAuth(user, access_token);
       setStep('success');
-      setTimeout(() => router.replace('/(tabs)'), 1500);
+      // New users always see onboarding
+      setTimeout(() => router.replace('/onboarding/welcome'), 1500);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -348,7 +356,7 @@ export default function PhoneAuthScreen() {
                   ✓ Welcome!
                 </Text>
                 <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 8 }}>
-                  Redirecting you to the app...
+                  {isNewUser ? 'Setting up your experience...' : 'Redirecting you to the app...'}
                 </Text>
               </View>
             )}
