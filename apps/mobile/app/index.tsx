@@ -5,11 +5,7 @@ import { Text, Button } from 'react-native-paper';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
 import { EncryptedText } from '../src/components/EncryptedText';
-
-// CHOOSE YOUR ANIMATION:
-import { FloatingBubbles } from '../src/components/FloatingBubbles'; // OPTION 2 - ACTIVE
-// import { AnimatedGradient } from '../src/components/AnimatedGradient'; // OPTION 1
-// import { PulsingCircles } from '../src/components/PulsingCircles'; // OPTION 3
+import { FloatingBubbles } from '../src/components/FloatingBubbles';
 
 export default function WelcomeScreen() {
   const { getActiveTheme } = useThemeStore();
@@ -71,10 +67,8 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* ANIMATED BACKGROUND - Change the component to try different options */}
+      {/* Animated Background */}
       <FloatingBubbles />
-      {/* <AnimatedGradient /> */}
-      {/* <PulsingCircles /> */}
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.content}>
