@@ -1,9 +1,8 @@
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions, FlatList, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button } from 'react-native-paper';
 import { useState, useRef } from 'react';
 import { router } from 'expo-router';
-import Carousel from 'react-native-reanimated-carousel';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { useAuthStore } from '@marketplace/shared';
@@ -11,6 +10,7 @@ import { useAuthStore } from '@marketplace/shared';
 const { width: screenWidth } = Dimensions.get('window');
 
 interface TipSlide {
+  id: string;
   icon: string;
   title: string;
   description: string;
@@ -18,21 +18,25 @@ interface TipSlide {
 
 const tips: TipSlide[] = [
   {
+    id: '1',
     icon: '📝',
     title: 'Post or Find Jobs',
     description: 'Need something done? Post a job. Looking for work? Browse opportunities and apply instantly.',
   },
   {
+    id: '2',
     icon: '💬',
     title: 'Communicate Safely',
     description: 'Chat with others through our secure messaging. All conversations are monitored for safety.',
   },
   {
+    id: '3',
     icon: '✅',
     title: 'Complete & Review',
     description: 'Finish the job, confirm completion, and leave honest reviews to build your reputation.',
   },
   {
+    id: '4',
     icon: '⭐',
     title: 'Build Your Profile',
     description: 'A great profile with reviews and completed jobs helps you get hired faster and earn trust.',
@@ -44,7 +48,7 @@ export default function TutorialScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   const [currentIndex, setCurrentIndex] = useState(0);
-  const carouselRef = useRef<any>(null);
+  const flatListRef = useRef<FlatList>(null);
   const { updateUser } = useAuthStore();
 
   const isLastSlide = currentIndex === tips.length - 1;
@@ -53,7 +57,9 @@ export default function TutorialScreen() {
     if (isLastSlide) {
       handleFinish();
     } else {
-      carouselRef.current?.next();
+      const nextIndex = currentIndex + 1;
+      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+      setCurrentIndex(nextIndex);
     }
   };
 
@@ -63,14 +69,24 @@ export default function TutorialScreen() {
 
   const handleFinish = async () => {
     // Mark onboarding as completed
-    await updateUser({ onboarding_completed: true });
+    try {
+      await updateUser({ onboarding_completed: true });
+    } catch (error) {
+      console.error('Failed to update onboarding status:', error);
+    }
     // Navigate to main app
     router.replace('/(tabs)');
   };
 
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / screenWidth);
+    setCurrentIndex(index);
+  };
+
   const renderSlide = ({ item }: { item: TipSlide }) => {
     return (
-      <View style={[styles.slide, { backgroundColor: themeColors.background }]}>
+      <View style={[styles.slide, { width: screenWidth, backgroundColor: themeColors.background }]}>
         <Text style={styles.slideIcon}>{item.icon}</Text>
         <Text style={[styles.slideTitle, { color: themeColors.text }]}>
           {item.title}
@@ -90,7 +106,7 @@ export default function TutorialScreen() {
     content: {
       flex: 1,
     },
-    carouselContainer: {
+    flatListContainer: {
       flex: 1,
     },
     slide: {
@@ -152,16 +168,22 @@ export default function TutorialScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
-        {/* Carousel */}
-        <View style={styles.carouselContainer}>
-          <Carousel
-            ref={carouselRef}
-            width={screenWidth}
-            height={500}
+        {/* Horizontal Scrolling FlatList */}
+        <View style={styles.flatListContainer}>
+          <FlatList
+            ref={flatListRef}
             data={tips}
             renderItem={renderSlide}
-            onSnapToItem={(index) => setCurrentIndex(index)}
-            loop={false}
+            keyExtractor={(item) => item.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            bounces={false}
+            decelerationRate="fast"
+            snapToInterval={screenWidth}
+            snapToAlignment="center"
           />
         </View>
 
