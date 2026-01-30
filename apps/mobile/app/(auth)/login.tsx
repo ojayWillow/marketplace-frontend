@@ -8,6 +8,9 @@ import Constants from 'expo-constants';
 import { haptic } from '../../_utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { Video, ResizeMode } from 'expo-av';
+import { BlurView } from 'expo-blur';
+import { useRef } from 'react';
 
 // Check if phone auth is available (not in Expo Go)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -24,6 +27,7 @@ export default function LoginScreen() {
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+  const videoRef = useRef(null);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -72,7 +76,18 @@ export default function LoginScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: themeColors.background,
+      backgroundColor: '#000000', // Fallback if video doesn't load
+    },
+    videoBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+    },
+    blurOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)', // Dark overlay
     },
     keyboardView: {
       flex: 1,
@@ -88,26 +103,32 @@ export default function LoginScreen() {
     title: {
       fontWeight: 'bold',
       marginBottom: 8,
-      color: themeColors.text,
+      color: '#ffffff', // White over video
+      textShadowColor: 'rgba(0, 0, 0, 0.8)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
     },
     subtitle: {
       marginBottom: 24,
-      color: themeColors.textSecondary,
+      color: '#ffffff',
+      textShadowColor: 'rgba(0, 0, 0, 0.8)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
     },
     infoBanner: {
       marginBottom: 24,
       borderRadius: 12,
-      backgroundColor: activeTheme === 'dark' ? themeColors.card : themeColors.backgroundSecondary,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
       borderWidth: 1,
-      borderColor: themeColors.border,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     infoBannerText: {
-      color: themeColors.text,
+      color: '#000000',
       lineHeight: 20,
     },
     input: {
       marginBottom: 16,
-      backgroundColor: themeColors.card,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
     },
     forgotButton: {
       alignSelf: 'flex-end',
@@ -129,16 +150,17 @@ export default function LoginScreen() {
     dividerLine: {
       flex: 1,
       height: 1,
-      backgroundColor: themeColors.border,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
     },
     dividerText: {
       marginHorizontal: 16,
-      color: themeColors.textMuted,
+      color: '#ffffff',
     },
     phoneButton: {
       borderRadius: 12,
       marginBottom: 16,
-      borderColor: themeColors.primaryAccent,
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
     },
     registerRow: {
       flexDirection: 'row',
@@ -147,7 +169,7 @@ export default function LoginScreen() {
       marginTop: 8,
     },
     registerText: {
-      color: themeColors.textSecondary,
+      color: '#ffffff',
     },
     guestButton: {
       marginTop: 32,
@@ -155,149 +177,167 @@ export default function LoginScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.content}>
-            <Text variant="headlineLarge" style={styles.title}>
-              Welcome Back
-            </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              Sign in to continue
-            </Text>
+    <View style={styles.container}>
+      {/* Background Video - Replace with your video! */}
+      <Video
+        ref={videoRef}
+        style={styles.videoBackground}
+        source={require('../../assets/background-video.mov')}
+        resizeMode={ResizeMode.COVER}
+        shouldPlay
+        isLooping
+        isMuted
+        // Slow motion effect (optional - remove if you want normal speed)
+        rate={0.75}
+      />
+      
+      {/* Blur overlay for that sweet blurry effect */}
+      <BlurView intensity={60} style={styles.blurOverlay} tint="dark" />
 
-            {isExpoGo && (
-              <Card style={styles.infoBanner} elevation={0}>
-                <Card.Content>
-                  <Text variant="bodySmall" style={styles.infoBannerText}>
-                    📱 Running in Expo Go - Email login only. Phone authentication will be available in production builds.
-                  </Text>
-                </Card.Content>
-              </Card>
-            )}
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.content}>
+              <Text variant="headlineLarge" style={styles.title}>
+                Welcome Back
+              </Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Sign in to continue
+              </Text>
 
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              disabled={loading}
-              mode="outlined"
-              style={styles.input}
-              outlineColor={themeColors.border}
-              activeOutlineColor={themeColors.primaryAccent}
-              textColor={themeColors.text}
-              placeholderTextColor={themeColors.textMuted}
-              left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
-            />
+              {isExpoGo && (
+                <Card style={styles.infoBanner} elevation={0}>
+                  <Card.Content>
+                    <Text variant="bodySmall" style={styles.infoBannerText}>
+                      📱 Running in Expo Go - Email login only. Phone authentication will be available in production builds.
+                    </Text>
+                  </Card.Content>
+                </Card>
+              )}
 
-            <TextInput
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              disabled={loading}
-              mode="outlined"
-              style={styles.input}
-              outlineColor={themeColors.border}
-              activeOutlineColor={themeColors.primaryAccent}
-              textColor={themeColors.text}
-              placeholderTextColor={themeColors.textMuted}
-              left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
-              right={
-                <TextInput.Icon
-                  icon={showPassword ? 'eye-off' : 'eye'}
-                  color={themeColors.textMuted}
-                  onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
-                />
-              }
-            />
+              <TextInput
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                disabled={loading}
+                mode="outlined"
+                style={styles.input}
+                outlineColor="rgba(255, 255, 255, 0.5)"
+                activeOutlineColor={themeColors.primaryAccent}
+                textColor="#000000"
+                placeholderTextColor="#666666"
+                left={<TextInput.Icon icon="email" color={themeColors.primaryAccent} />}
+              />
 
-            <Button
-              mode="text"
-              onPress={handleForgotPassword}
-              disabled={loading}
-              style={styles.forgotButton}
-              textColor={themeColors.primaryAccent}
-            >
-              Forgot Password?
-            </Button>
+              <TextInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                disabled={loading}
+                mode="outlined"
+                style={styles.input}
+                outlineColor="rgba(255, 255, 255, 0.5)"
+                activeOutlineColor={themeColors.primaryAccent}
+                textColor="#000000"
+                placeholderTextColor="#666666"
+                left={<TextInput.Icon icon="lock" color={themeColors.primaryAccent} />}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    color="#666666"
+                    onPress={() => { haptic.soft(); setShowPassword(!showPassword); }}
+                  />
+                }
+              />
 
-            <Button
-              mode="contained"
-              onPress={handleLogin}
-              loading={loading}
-              disabled={loading}
-              style={styles.loginButton}
-              contentStyle={styles.buttonContent}
-              buttonColor={themeColors.primaryAccent}
-              textColor="#ffffff"
-            >
-              {loading ? 'Signing In...' : 'Sign In with Email'}
-            </Button>
+              <Button
+                mode="text"
+                onPress={handleForgotPassword}
+                disabled={loading}
+                style={styles.forgotButton}
+                textColor="#ffffff"
+              >
+                Forgot Password?
+              </Button>
 
-            {isPhoneAuthAvailable && (
-              <>
-                <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text variant="bodySmall" style={styles.dividerText}>
-                    or
-                  </Text>
-                  <View style={styles.dividerLine} />
-                </View>
+              <Button
+                mode="contained"
+                onPress={handleLogin}
+                loading={loading}
+                disabled={loading}
+                style={styles.loginButton}
+                contentStyle={styles.buttonContent}
+                buttonColor={themeColors.primaryAccent}
+                textColor="#ffffff"
+              >
+                {loading ? 'Signing In...' : 'Sign In with Email'}
+              </Button>
 
-                <Link href="/(auth)/phone" asChild>
-                  <Button
-                    mode="outlined"
-                    disabled={loading}
-                    style={styles.phoneButton}
-                    contentStyle={styles.buttonContent}
-                    icon="phone"
-                    textColor={themeColors.primaryAccent}
+              {isPhoneAuthAvailable && (
+                <>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text variant="bodySmall" style={styles.dividerText}>
+                      or
+                    </Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  <Link href="/(auth)/phone" asChild>
+                    <Button
+                      mode="outlined"
+                      disabled={loading}
+                      style={styles.phoneButton}
+                      contentStyle={styles.buttonContent}
+                      icon="phone"
+                      textColor="#ffffff"
+                      onPress={() => haptic.light()}
+                    >
+                      Sign In with Phone
+                    </Button>
+                  </Link>
+                </>
+              )}
+
+              <View style={styles.registerRow}>
+                <Text variant="bodyMedium" style={styles.registerText}>
+                  Don't have an account?{' '}
+                </Text>
+                <Link href="/(auth)/register" asChild>
+                  <Button 
+                    mode="text" 
+                    disabled={loading} 
+                    compact 
+                    textColor="#ffffff"
                     onPress={() => haptic.light()}
                   >
-                    Sign In with Phone
+                    Sign Up
                   </Button>
                 </Link>
-              </>
-            )}
+              </View>
 
-            <View style={styles.registerRow}>
-              <Text variant="bodyMedium" style={styles.registerText}>
-                Don't have an account?{' '}
-              </Text>
-              <Link href="/(auth)/register" asChild>
+              <Link href="/(tabs)" asChild>
                 <Button 
                   mode="text" 
                   disabled={loading} 
-                  compact 
-                  textColor={themeColors.primaryAccent}
+                  style={styles.guestButton} 
+                  textColor="rgba(255, 255, 255, 0.7)"
                   onPress={() => haptic.light()}
                 >
-                  Sign Up
+                  Continue as Guest
                 </Button>
               </Link>
             </View>
-
-            <Link href="/(tabs)" asChild>
-              <Button 
-                mode="text" 
-                disabled={loading} 
-                style={styles.guestButton} 
-                textColor={themeColors.textMuted}
-                onPress={() => haptic.light()}
-              >
-                Continue as Guest
-              </Button>
-            </Link>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
       <Snackbar
         visible={!!error}
@@ -310,6 +350,6 @@ export default function LoginScreen() {
       >
         {error}
       </Snackbar>
-    </SafeAreaView>
+    </View>
   );
 }
