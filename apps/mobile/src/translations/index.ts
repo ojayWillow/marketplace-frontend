@@ -1,4 +1,4 @@
-import { en } from './en';
+import { en } from './en/index';
 import { lv } from './lv';
 import { ru } from './ru';
 
