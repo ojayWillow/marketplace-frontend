@@ -10,7 +10,7 @@ export const common = {
   close: 'Aizvērt',
   back: 'Atpakaļ',
   next: 'Tālāk',
-  confirm: 'Apstināt',
+  confirm: 'Apstīnāt',
   dismiss: 'Aizvērt',
   yes: 'Jā',
   no: 'Nē',
@@ -20,4 +20,9 @@ export const common = {
   // Filter options
   all: 'Visi',
   active: 'Aktīvi',
+  filters: 'Filtri',
+  difficulty: 'Grūtība',
+  radius: 'Rādiuss',
+  clearAll: 'Notīrīt visu',
+  apply: 'Pielietot',
 };
