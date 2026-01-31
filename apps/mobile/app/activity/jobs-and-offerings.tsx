@@ -177,10 +177,10 @@ export default function JobsAndOfferingsScreen() {
 
   const getEmptyMessage = () => {
     switch (activeTab) {
-      case 'requests': return t('activity.postedJobs.empty.subtitle');
-      case 'work': return t('activity.myJobs.empty.subtitle');
-      case 'services': return t('activity.myServices.empty.subtitle');
-      default: return t('activity.noActivity');
+      case 'requests': return t.activity.postedJobs.empty.subtitle;
+      case 'work': return t.activity.myJobs.empty.subtitle;
+      case 'services': return t.activity.myServices.empty.subtitle;
+      default: return t.activity.noActivity;
     }
   };
 
@@ -229,15 +229,15 @@ export default function JobsAndOfferingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top']}>
       <Appbar.Header style={{ backgroundColor: themeColors.card }}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={t('activity.jobsAndOfferings.title')} titleStyle={{ color: themeColors.text }} />
+        <Appbar.Content title={t.activity.jobsAndOfferings.title} titleStyle={{ color: themeColors.text }} />
       </Appbar.Header>
 
       {/* Main Tabs with Badges */}
       <View style={[styles.tabContainer, { backgroundColor: themeColors.card }]}>
         <View style={styles.tabsRow}>
-          <TabButton value="requests" label={t('activity.jobsAndOfferings.tabs.postedJobs')} badgeCount={actionCounts.requests} />
-          <TabButton value="work" label={t('activity.jobsAndOfferings.tabs.myJobs')} badgeCount={actionCounts.work} />
-          <TabButton value="services" label={t('activity.jobsAndOfferings.tabs.myServices')} badgeCount={actionCounts.services} />
+          <TabButton value="requests" label={t.activity.jobsAndOfferings.tabs.postedJobs} badgeCount={actionCounts.requests} />
+          <TabButton value="work" label={t.activity.jobsAndOfferings.tabs.myJobs} badgeCount={actionCounts.work} />
+          <TabButton value="services" label={t.activity.jobsAndOfferings.tabs.myServices} badgeCount={actionCounts.services} />
         </View>
       </View>
 
@@ -250,7 +250,7 @@ export default function JobsAndOfferingsScreen() {
             style={styles.filterChip}
             mode={filter === 'all' ? 'flat' : 'outlined'}
           >
-            {t('common.all')}
+            {t.common.all}
           </Chip>
           <Chip
             selected={filter === 'active'}
@@ -258,7 +258,7 @@ export default function JobsAndOfferingsScreen() {
             style={styles.filterChip}
             mode={filter === 'active' ? 'flat' : 'outlined'}
           >
-            {t('common.active')}
+            {t.common.active}
           </Chip>
           <Chip
             selected={filter === 'done'}
@@ -266,7 +266,7 @@ export default function JobsAndOfferingsScreen() {
             style={styles.filterChip}
             mode={filter === 'done' ? 'flat' : 'outlined'}
           >
-            {t('common.done')}
+            {t.common.done}
           </Chip>
         </View>
       )}
@@ -274,7 +274,7 @@ export default function JobsAndOfferingsScreen() {
       {/* Content */}
       {isLoading() ? (
         <View style={styles.centerContainer}>
-          <Text style={{ color: themeColors.textSecondary }}>{t('activity.loading')}</Text>
+          <Text style={{ color: themeColors.textSecondary }}>{t.activity.loading}</Text>
         </View>
       ) : data.length === 0 ? (
         <View style={styles.centerContainer}>
