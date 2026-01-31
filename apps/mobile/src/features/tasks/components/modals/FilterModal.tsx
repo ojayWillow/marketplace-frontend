@@ -3,6 +3,7 @@ import { Modal, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { CATEGORIES } from '@marketplace/shared';
 import { haptic } from '../../../../../utils/haptics';
+import { useLanguageStore } from '../../../../stores/languageStore';
 import { DIFFICULTY_OPTIONS } from '../../constants';
 import { MainTab } from '../../constants';
 
@@ -29,6 +30,8 @@ export default function FilterModal({
   onClose,
   styles,
 }: FilterModalProps) {
+  const { t } = useLanguageStore();
+  
   const handleCategorySelect = (category: string) => {
     haptic.selection();
     onCategorySelect(category);
@@ -49,6 +52,12 @@ export default function FilterModal({
     onClear();
   };
 
+  // Translate difficulty options
+  const translatedDifficultyOptions = DIFFICULTY_OPTIONS.map(diff => ({
+    ...diff,
+    label: diff.value === null ? t('tasks.filters.all') : t(`tasks.filters.${diff.key}`)
+  }));
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity 
@@ -57,14 +66,14 @@ export default function FilterModal({
         onPress={() => { haptic.soft(); onClose(); }}
       >
         <View style={styles.filterModalContent}>
-          <Text style={styles.filterModalTitle}>Filters</Text>
+          <Text style={styles.filterModalTitle}>{t('tasks.filters.title')}</Text>
           
           {/* Difficulty Segment - Only show when Jobs or All tab */}
           {(mainTab === 'jobs' || mainTab === 'all') && (
             <>
-              <Text style={styles.filterSectionTitle}>Difficulty</Text>
+              <Text style={styles.filterSectionTitle}>{t('tasks.filters.difficultyLabel')}</Text>
               <View style={styles.segmentContainer}>
-                {DIFFICULTY_OPTIONS.map((diff) => (
+                {translatedDifficultyOptions.map((diff) => (
                   <TouchableOpacity
                     key={diff.key}
                     style={[
@@ -91,7 +100,7 @@ export default function FilterModal({
           )}
           
           {/* Category Section */}
-          <Text style={styles.filterSectionTitle}>Category</Text>
+          <Text style={styles.filterSectionTitle}>{t('tasks.filters.categoryLabel')}</Text>
           <ScrollView showsVerticalScrollIndicator={false} style={styles.categoryScrollView}>
             <View style={styles.categoryWrap}>
               {CATEGORIES.map((cat) => (
@@ -126,14 +135,14 @@ export default function FilterModal({
               onPress={handleClear}
               activeOpacity={0.7}
             >
-              <Text style={styles.clearFiltersText}>Clear All</Text>
+              <Text style={styles.clearFiltersText}>{t('tasks.filters.clearAll')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.applyFiltersButton} 
               onPress={handleApply}
               activeOpacity={0.7}
             >
-              <Text style={styles.applyFiltersText}>Apply</Text>
+              <Text style={styles.applyFiltersText}>{t('tasks.filters.apply')}</Text>
             </TouchableOpacity>
           </View>
         </View>
