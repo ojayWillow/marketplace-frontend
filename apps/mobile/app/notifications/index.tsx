@@ -7,8 +7,10 @@ import { getNotifications, markAsRead, markAllAsRead, deleteNotification, Notifi
 import { useState } from 'react';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const { getActiveTheme } = useThemeStore();
@@ -33,7 +35,7 @@ export default function NotificationsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
-      Alert.alert('Success', 'All notifications marked as read');
+      Alert.alert(t.common.success, t.notifications.markAllSuccess);
     },
   });
 
@@ -95,12 +97,12 @@ export default function NotificationsScreen() {
 
   const handleDelete = (notificationId: number) => {
     Alert.alert(
-      'Delete Notification',
-      'Are you sure you want to delete this notification?',
+      t.notifications.deleteTitle,
+      t.notifications.deleteMessage,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         { 
-          text: 'Delete', 
+          text: t.common.delete, 
           style: 'destructive',
           onPress: () => deleteMutation.mutate(notificationId)
         },
@@ -110,7 +112,7 @@ export default function NotificationsScreen() {
 
   const handleMarkAllRead = () => {
     if ((data?.unread_count || 0) === 0) {
-      Alert.alert('No Unread', 'You have no unread notifications');
+      Alert.alert(t.notifications.noUnread, t.notifications.noUnreadMessage);
       return;
     }
 
@@ -136,12 +138,25 @@ export default function NotificationsScreen() {
     }
   };
 
+  const getTimeAgo = (dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return t.notifications.timeAgo.justNow;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}${t.notifications.timeAgo.minutesAgo}`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}${t.notifications.timeAgo.hoursAgo}`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}${t.notifications.timeAgo.daysAgo}`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 604800)}${t.notifications.timeAgo.weeksAgo}`;
+    return date.toLocaleDateString();
+  };
+
   const notifications = data?.notifications || [];
   const unreadCount = data?.unread_count || 0;
 
   const headerOptions = {
     headerShown: true,
-    title: 'Notifications',
+    title: t.notifications.title,
     headerStyle: { backgroundColor: themeColors.card },
     headerTintColor: themeColors.primaryAccent,
     headerTitleStyle: { color: themeColors.text },
@@ -153,7 +168,7 @@ export default function NotificationsScreen() {
         disabled={unreadCount === 0}
         textColor={themeColors.primaryAccent}
       >
-        Mark All Read
+        {t.notifications.markAllRead}
       </Button>
     ),
   };
@@ -266,8 +281,8 @@ export default function NotificationsScreen() {
       {notifications.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🔔</Text>
-          <Text variant="headlineSmall" style={styles.emptyTitle}>No Notifications</Text>
-          <Text style={styles.emptySubtitle}>You're all caught up!</Text>
+          <Text variant="headlineSmall" style={styles.emptyTitle}>{t.notifications.noNotifications}</Text>
+          <Text style={styles.emptySubtitle}>{t.notifications.allCaughtUp}</Text>
         </View>
       ) : (
         <ScrollView
@@ -329,17 +344,4 @@ export default function NotificationsScreen() {
       )}
     </SafeAreaView>
   );
-}
-
-function getTimeAgo(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
-  return date.toLocaleDateString();
 }
