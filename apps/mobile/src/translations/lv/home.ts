@@ -1,6 +1,7 @@
 export const home = {
   title: 'Sākums',
   searchPlaceholder: 'Meklēt pakalpojumus vai uzdevumus...',
+  searchJobs: 'Meklēt darbus...',
   noResults: 'Nav atrasts nekas',
   categories: 'Kategorijas',
   featured: 'Ieteiktie',
