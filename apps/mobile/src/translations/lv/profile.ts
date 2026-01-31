@@ -1,0 +1,16 @@
+export const profile = {
+  title: 'Profils',
+  editProfile: 'Rediģēt profilu',
+  myOfferings: 'Mani piedāvājumi',
+  myActivity: 'Mana aktivitāte',
+  settings: 'Iestatījumi',
+  logout: 'Izrakstīties',
+  memberSince: 'Biedrs kopš',
+  verified: 'Verificēts',
+  notVerified: 'Nav verificēts',
+  notLoggedInTitle: 'Nav pierakstījies',
+  notLoggedInSubtitle: 'Pieslēdzies, lai piekļūtu savam profilam, slud inājumiem un ziņām',
+  logoutTitle: 'Izrakstīties',
+  logoutConfirm: 'Vai tiešām vēlies izrakstīties?',
+  appVersion: 'Lietotnes versija 1.0.0',
+};
