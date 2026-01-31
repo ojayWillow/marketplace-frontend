@@ -6,4 +6,14 @@ export const home = {
   featured: 'Ieteiktie',
   popular: 'Populārie',
   new: 'Jaunie',
+  
+  createModal: {
+    title: 'Izveidot',
+    subtitle: 'Ko tu vēlies darīt?',
+    postJob: 'Publicēt darbu',
+    postJobDesc: 'Atrodi kādu, kas var palīdzēt ar uzdevumu',
+    offerService: 'Piedāvāt pakalpojumu',
+    offerServiceDesc: 'Dalies ar savām prasmēm un pelni naudu',
+    cancel: 'Atcelt',
+  },
 };
