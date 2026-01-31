@@ -1,5 +1,5 @@
 import { en } from './en/index';
-import { lv } from './lv';
+import { lv } from './lv/index';
 import { ru } from './ru';
 
 export type Language = 'en' | 'lv' | 'ru';
