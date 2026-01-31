@@ -1,8 +1,9 @@
 import React, { memo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
-import { type Task, getCategoryByKey } from '@marketplace/shared';
+import { type Task } from '@marketplace/shared';
 import { calculateDistance, formatTimeAgo, getMarkerColor } from '../constants';
+import { useCategories } from '../../../hooks/useCategories';
 
 interface TaskCardProps {
   task: Task;
@@ -19,7 +20,7 @@ export const TaskCard = memo(function TaskCard({
   onPress, 
   styles 
 }: TaskCardProps) {
-  const categoryData = getCategoryByKey(task.category);
+  const { getCategoryLabel, getCategoryIcon } = useCategories();
   const distance = hasRealLocation && task.latitude && task.longitude
     ? calculateDistance(
         userLocation.latitude,
@@ -40,7 +41,7 @@ export const TaskCard = memo(function TaskCard({
         <View style={styles.jobCardContent}>
           <View style={styles.jobCardRow1}>
             <Text style={styles.jobCardCategory}>
-              {categoryData?.icon || '📋'} {categoryData?.label || task.category}
+              {getCategoryIcon(task.category)} {getCategoryLabel(task.category)}
             </Text>
             <Text style={styles.jobCardDot}>•</Text>
             <Text style={styles.jobCardTime}>{formatTimeAgo(task.created_at!)}</Text>

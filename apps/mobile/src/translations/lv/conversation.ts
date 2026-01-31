@@ -1,8 +1,8 @@
 export const conversation = {
   chat: 'Čats',
-  online: 'Tiesa istē',
-  lastSeen: 'Pēdējo reizi redz ams',
-  accessDenied: 'Piekļuve liegtā',
+  online: 'Tiešsaistē',
+  lastSeen: 'Pēdējo reizi redzēts',
+  accessDenied: 'Piekļuve liegta',
   accessDeniedMessage: 'Tev nav atļaujas skatīt šo sarunu.',
   redirecting: 'Pāradresē uz ziņām...',
   startingConversation: 'Sāk sarunu...',
@@ -12,8 +12,8 @@ export const conversation = {
   emptyConversation: 'Vēl nav ziņu',
   emptyHint: 'Sāc sarunu, nosūtot ziņu',
   typeMessage: 'Raksti ziņu...',
-  permissionNeeded: 'Nepiecicēama atļauja',
-  photoLibraryAccess: 'Lūdzu, atļauj piekļuvi tavai fotogr fiju bib liotekai',
+  permissionNeeded: 'Nepieciešama atļauja',
+  photoLibraryAccess: 'Lūdzu, atļauj piekļuvi tavai fotogrāfiju bibliotēkai',
   failedToSend: 'Neizdevās nosūtīt ziņu. Lūdzu, mēģini vēlreiz.',
   sendError: 'Kļūda',
 };
