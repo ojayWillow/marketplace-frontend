@@ -21,6 +21,34 @@ export const notifications = {
     weeksAgo: 'w ago',
   },
   
+  // Notification content by type (for i18n)
+  content: {
+    application_accepted: {
+      title: '🎉 Application Accepted!',
+      message: 'Congratulations! Your application for "{taskTitle}" has been accepted. You can now start working on this task.',
+    },
+    application_rejected: {
+      title: 'Application Update',
+      message: 'Your application for "{taskTitle}" was not selected. Keep applying to other tasks!',
+    },
+    new_application: {
+      title: 'New Application Received',
+      message: '{applicantName} applied for your task "{taskTitle}".',
+    },
+    task_marked_done: {
+      title: 'Task Marked as Done',
+      message: '{workerName} has marked "{taskTitle}" as complete. Please review and confirm.',
+    },
+    task_completed: {
+      title: '✅ Task Completed!',
+      message: 'Great job! "{taskTitle}" has been confirmed as complete.',
+    },
+    task_disputed: {
+      title: '⚠️ Task Disputed',
+      message: 'A dispute has been raised for "{taskTitle}". Our team will review it shortly.',
+    },
+  },
+  
   // Settings screen
   settings: {
     title: 'Notifications',
