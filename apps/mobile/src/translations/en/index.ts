@@ -18,6 +18,7 @@ export { onboarding } from './onboarding';
 export { dispute } from './dispute';
 export { common } from './common';
 export { categories } from './categories';
+export { difficulty } from './difficulty';
 
 import { auth } from './auth';
 import { tabs } from './tabs';
@@ -39,6 +40,7 @@ import { onboarding } from './onboarding';
 import { dispute } from './dispute';
 import { common } from './common';
 import { categories } from './categories';
+import { difficulty } from './difficulty';
 
 export const en = {
   auth,
@@ -61,4 +63,5 @@ export const en = {
   dispute,
   common,
   categories,
+  difficulty,
 };
