@@ -3,6 +3,7 @@ import { Modal, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { CATEGORIES } from '@marketplace/shared';
 import { haptic } from '../../../../../utils/haptics';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 const MAX_CATEGORIES = 5;
 
@@ -21,6 +22,8 @@ export default function CategoryModal({
   onClose, 
   styles 
 }: CategoryModalProps) {
+  const { t } = useTranslation();
+  
   const handleToggleCategory = (categoryKey: string) => {
     haptic.selection();
     
@@ -75,13 +78,13 @@ export default function CategoryModal({
       >
         <View style={styles.categoryModalContent}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={styles.modalTitle}>Select Categories</Text>
+            <Text style={styles.modalTitle}>{t.home.selectCategories}</Text>
           </View>
           
           <Text style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, textAlign: 'center' }}>
             {selectedCount === 0 
-              ? 'Showing all categories' 
-              : `${selectedCount} of ${MAX_CATEGORIES} selected`}
+              ? t.home.showingAllCategories 
+              : `${selectedCount} ${t.home.of} ${MAX_CATEGORIES} ${t.home.selected}`}
           </Text>
           
           <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
@@ -100,7 +103,7 @@ export default function CategoryModal({
                   styles.categoryPillLabel,
                   isAllSelected && styles.categoryPillLabelActive
                 ]}>
-                  All
+                  {t.common.all}
                 </Text>
                 {isAllSelected && (
                   <Text style={styles.categoryPillCheck}>✓</Text>
@@ -147,14 +150,14 @@ export default function CategoryModal({
               onPress={handleClearAll}
               activeOpacity={0.7}
             >
-              <Text style={styles.clearFiltersText}>Clear All</Text>
+              <Text style={styles.clearFiltersText}>{t.common.clearAll}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.applyFiltersButton} 
               onPress={handleApply}
               activeOpacity={0.7}
             >
-              <Text style={styles.applyFiltersText}>Apply</Text>
+              <Text style={styles.applyFiltersText}>{t.common.apply}</Text>
             </TouchableOpacity>
           </View>
         </View>
