@@ -16,6 +16,9 @@ export const profile = {
   rating: 'Рейтинг',
   reviews: 'Отзывов',
   completed: 'Завершено',
+  skills: 'Навыки',
+  addSkills: 'Добавьте свои навыки',
+  addSkillsSubtitle: 'Покажите другим, чем вы можете помочь',
   // ActivityMenu
   activitySection: 'Активность',
   jobsAndOfferings: 'Работы и предложения',
