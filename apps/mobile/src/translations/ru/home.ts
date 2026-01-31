@@ -17,4 +17,13 @@ export const home = {
     offerServiceDesc: 'Поделитесь своими навыками и зарабатывайте деньги',
     cancel: 'Отмена',
   },
+  
+  bottomSheet: {
+    jobDetails: 'Детали работы',
+    serviceDetails: 'Детали услуги',
+    jobsNearby: 'работ поблизости',
+    jobNearby: 'работа поблизости',
+    noJobsFound: 'Работы не найдены',
+    tryAdjustFilters: 'Попробуйте изменить фильтры',
+  },
 };
