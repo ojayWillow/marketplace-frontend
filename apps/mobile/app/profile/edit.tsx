@@ -8,8 +8,10 @@ import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function EditProfileScreen() {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
@@ -66,8 +68,8 @@ export default function EditProfileScreen() {
       }
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => router.back() }
+      Alert.alert(t.common.success, t.profile.edit.updateSuccess, [
+        { text: t.common.ok, onPress: () => router.back() }
       ]);
     },
     onError: (error: any) => {
@@ -75,22 +77,22 @@ export default function EditProfileScreen() {
       const message = error.response?.data?.error 
         || error.response?.data?.message 
         || error.message
-        || 'Failed to update profile.';
-      Alert.alert('Error', `Failed to update profile: ${message}`);
+        || t.profile.edit.updateFailed;
+      Alert.alert(t.common.error, `${t.profile.edit.updateFailed}: ${message}`);
     },
   });
 
   const pickImage = async () => {
     Alert.alert(
-      'Change Profile Photo',
-      'Choose an option',
+      t.profile.edit.changePhoto,
+      t.profile.edit.chooseOption,
       [
         {
-          text: 'Take Photo',
+          text: t.profile.edit.takePhoto,
           onPress: async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+              Alert.alert(t.profile.edit.permissionNeeded, t.profile.edit.cameraPermission);
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -106,11 +108,11 @@ export default function EditProfileScreen() {
           },
         },
         {
-          text: 'Choose from Gallery',
+          text: t.profile.edit.chooseGallery,
           onPress: async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Gallery permission is required to select photos.');
+              Alert.alert(t.profile.edit.permissionNeeded, t.profile.edit.galleryPermission);
               return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -125,7 +127,7 @@ export default function EditProfileScreen() {
             }
           },
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
       ]
     );
   };
@@ -156,7 +158,7 @@ export default function EditProfileScreen() {
         }
       } catch (error: any) {
         console.error('Avatar upload error:', error);
-        Alert.alert('Error', 'Failed to upload profile photo. Profile will be saved without the new photo.');
+        Alert.alert(t.common.error, t.profile.edit.photoUploadFailed);
       }
     }
 
@@ -338,8 +340,8 @@ export default function EditProfileScreen() {
         <Stack.Screen 
           options={{ 
             headerShown: true, 
-            title: 'Edit Profile', 
-            headerBackTitle: 'Back',
+            title: t.profile.edit.title, 
+            headerBackTitle: t.common.back,
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
             headerTitleStyle: { color: themeColors.text },
@@ -357,8 +359,8 @@ export default function EditProfileScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: 'Edit Profile',
-          headerBackTitle: 'Back',
+          title: t.profile.edit.title,
+          headerBackTitle: t.common.back,
           headerStyle: { backgroundColor: themeColors.card },
           headerTintColor: themeColors.primaryAccent,
           headerTitleStyle: { color: themeColors.text },
@@ -381,18 +383,18 @@ export default function EditProfileScreen() {
               <Text style={styles.cameraIconText}>📷</Text>
             </View>
           </Pressable>
-          <Text style={styles.changePhotoText}>Tap to change photo</Text>
+          <Text style={styles.changePhotoText}>{t.profile.edit.tapToChange}</Text>
           <Text style={styles.username}>@{profile?.username}</Text>
           <Text style={styles.email}>{profile?.email}</Text>
         </Surface>
 
         <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Basic Information</Text>
+          <Text variant="titleMedium" style={styles.sectionTitle}>{t.profile.edit.basicInfo}</Text>
           
           <View style={styles.nameRow}>
             <TextInput
               mode="outlined"
-              label="First Name"
+              label={t.profile.edit.firstName}
               value={firstName}
               onChangeText={setFirstName}
               style={[styles.input, styles.halfInput]}
@@ -403,7 +405,7 @@ export default function EditProfileScreen() {
             />
             <TextInput
               mode="outlined"
-              label="Last Name"
+              label={t.profile.edit.lastName}
               value={lastName}
               onChangeText={setLastName}
               style={[styles.input, styles.halfInput]}
@@ -416,14 +418,14 @@ export default function EditProfileScreen() {
 
           <TextInput
             mode="outlined"
-            label="Bio"
+            label={t.profile.edit.bio}
             value={bio}
             onChangeText={setBio}
             multiline
             numberOfLines={3}
             style={styles.input}
             outlineStyle={styles.inputOutline}
-            placeholder="Tell others about yourself..."
+            placeholder={t.profile.edit.bioPlaceholder}
             outlineColor={themeColors.border}
             activeOutlineColor={themeColors.primaryAccent}
             textColor={themeColors.text}
@@ -432,7 +434,7 @@ export default function EditProfileScreen() {
 
           <TextInput
             mode="outlined"
-            label="Phone"
+            label={t.profile.edit.phone}
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -445,12 +447,12 @@ export default function EditProfileScreen() {
 
           <TextInput
             mode="outlined"
-            label="City"
+            label={t.profile.edit.city}
             value={city}
             onChangeText={setCity}
             style={styles.input}
             outlineStyle={styles.inputOutline}
-            placeholder="e.g. Riga"
+            placeholder={t.profile.edit.cityPlaceholder}
             outlineColor={themeColors.border}
             activeOutlineColor={themeColors.primaryAccent}
             textColor={themeColors.text}
@@ -459,9 +461,9 @@ export default function EditProfileScreen() {
         </Surface>
 
         <Surface style={styles.section} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Your Skills</Text>
+          <Text variant="titleMedium" style={styles.sectionTitle}>{t.profile.edit.yourSkills}</Text>
           <Text style={styles.skillsDescription}>
-            Select the categories you can help with
+            {t.profile.edit.skillsDescription}
           </Text>
           <View style={styles.skillsContainer}>
             {FORM_CATEGORIES.map((category) => (
@@ -486,9 +488,9 @@ export default function EditProfileScreen() {
         <Surface style={styles.section} elevation={0}>
           <View style={styles.helperHeader}>
             <View style={styles.helperTextContainer}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Helper Mode</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t.profile.edit.helperMode}</Text>
               <Text style={styles.helperDescription}>
-                Enable to appear as available for hire
+                {t.profile.edit.helperDescription}
               </Text>
             </View>
             <Switch
@@ -502,13 +504,13 @@ export default function EditProfileScreen() {
             <View style={styles.helperFields}>
               <TextInput
                 mode="outlined"
-                label="Hourly Rate (€)"
+                label={t.profile.edit.hourlyRate}
                 value={hourlyRate}
                 onChangeText={setHourlyRate}
                 keyboardType="decimal-pad"
                 style={styles.input}
                 outlineStyle={styles.inputOutline}
-                placeholder="e.g. 15"
+                placeholder={t.profile.edit.hourlyRatePlaceholder}
                 outlineColor={themeColors.border}
                 activeOutlineColor={themeColors.primaryAccent}
                 textColor={themeColors.text}
@@ -532,7 +534,7 @@ export default function EditProfileScreen() {
           buttonColor={themeColors.primaryAccent}
           textColor="#ffffff"
         >
-          Save Changes
+          {t.profile.edit.saveChanges}
         </Button>
       </Surface>
     </SafeAreaView>
