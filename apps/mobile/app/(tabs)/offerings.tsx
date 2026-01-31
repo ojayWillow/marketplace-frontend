@@ -7,29 +7,31 @@ import { router } from 'expo-router';
 import { getOfferings, getMyOfferings, useAuthStore, type Offering } from '@marketplace/shared';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 type FilterTab = 'all' | 'my_offerings';
 
 const OFFERING_COLOR = '#f97316'; // Orange for services
 
-const CATEGORIES = [
-  { id: 'all', label: 'All', emoji: '💼' },
-  { id: 'cleaning', label: 'Cleaning', emoji: '🧹' },
-  { id: 'repair', label: 'Repair', emoji: '🔧' },
-  { id: 'delivery', label: 'Delivery', emoji: '🚚' },
-  { id: 'tutoring', label: 'Tutoring', emoji: '📚' },
-  { id: 'beauty', label: 'Beauty', emoji: '💇' },
-  { id: 'tech', label: 'Tech', emoji: '💻' },
-  { id: 'other', label: 'Other', emoji: '📦' },
-];
-
 export default function OfferingsScreen() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { user, isAuthenticated } = useAuthStore();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+
+  const CATEGORIES = [
+    { id: 'all', label: t('offerings.categories.all'), emoji: '💼' },
+    { id: 'cleaning', label: t('offerings.categories.cleaning'), emoji: '🧹' },
+    { id: 'repair', label: t('offerings.categories.repair'), emoji: '🔧' },
+    { id: 'delivery', label: t('offerings.categories.delivery'), emoji: '🚚' },
+    { id: 'tutoring', label: t('offerings.categories.tutoring'), emoji: '📚' },
+    { id: 'beauty', label: t('offerings.categories.beauty'), emoji: '💇' },
+    { id: 'tech', label: t('offerings.categories.tech'), emoji: '💻' },
+    { id: 'other', label: t('offerings.categories.other'), emoji: '📦' },
+  ];
 
   const {
     data,
@@ -69,8 +71,8 @@ export default function OfferingsScreen() {
   const totalCount = data?.pages[0]?.total || offerings.length;
 
   const tabs: { id: FilterTab; label: string; requiresAuth: boolean }[] = [
-    { id: 'all', label: 'Browse', requiresAuth: false },
-    { id: 'my_offerings', label: 'My Services', requiresAuth: true },
+    { id: 'all', label: t('offerings.tabs.browse'), requiresAuth: false },
+    { id: 'my_offerings', label: t('offerings.tabs.myServices'), requiresAuth: true },
   ];
 
   const visibleTabs = tabs.filter(tab => !tab.requiresAuth || isAuthenticated);
@@ -84,12 +86,21 @@ export default function OfferingsScreen() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active': return t('offerings.status.active');
+      case 'paused': return t('offerings.status.paused');
+      case 'closed': return t('offerings.status.closed');
+      default: return status;
+    }
+  };
+
   const getPriceLabel = (offering: Offering) => {
-    if (!offering.price) return 'Negotiable';
+    if (!offering.price) return t('offerings.priceTypes.negotiable');
     switch (offering.price_type) {
-      case 'hourly': return `€${offering.price}/hr`;
+      case 'hourly': return `€${offering.price}${t('offerings.priceTypes.hourly')}`;
       case 'fixed': return `€${offering.price}`;
-      case 'negotiable': return `From €${offering.price}`;
+      case 'negotiable': return `${t('offerings.priceTypes.from')} €${offering.price}`;
       default: return `€${offering.price}`;
     }
   };
@@ -219,7 +230,7 @@ export default function OfferingsScreen() {
             {isMyOffering ? (
               <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
                 <Text style={[styles.statusText2, { color: statusColors.text }]}>
-                  {offering.status.charAt(0).toUpperCase() + offering.status.slice(1)}
+                  {getStatusLabel(offering.status)}
                 </Text>
               </View>
             ) : null}
@@ -242,14 +253,14 @@ export default function OfferingsScreen() {
           <View style={styles.cardFooter}>
             <Text style={dynamicStyles.price}>{getPriceLabel(offering)}</Text>
             <Text style={dynamicStyles.location}>
-              📍 {offering.location || 'Location'}
+              📍 {offering.location || t('offerings.location')}
             </Text>
           </View>
 
           {/* Boost Badge */}
           {offering.is_boost_active ? (
             <View style={styles.boostBadge}>
-              <Text style={styles.boostText}>⚡ Boosted</Text>
+              <Text style={styles.boostText}>⚡ {t('offerings.boosted')}</Text>
             </View>
           ) : null}
         </Card.Content>
@@ -261,8 +272,8 @@ export default function OfferingsScreen() {
     <>
       {/* Header */}
       <Surface style={dynamicStyles.header} elevation={1}>
-        <Text variant="headlineMedium" style={dynamicStyles.title}>Services</Text>
-        <Text style={dynamicStyles.subtitle}>Find professionals for any task</Text>
+        <Text variant="headlineMedium" style={dynamicStyles.title}>{t('offerings.title')}</Text>
+        <Text style={dynamicStyles.subtitle}>{t('offerings.subtitle')}</Text>
       </Surface>
 
       {/* Tabs */}
@@ -309,8 +320,8 @@ export default function OfferingsScreen() {
       <Text style={styles.emptyIcon}>🛠️</Text>
       <Text style={dynamicStyles.statusText}>
         {activeTab === 'my_offerings'
-          ? "You haven't created any services yet"
-          : 'No services available'}
+          ? t('offerings.empty.myServices')
+          : t('offerings.empty.noServices')}
       </Text>
       {activeTab === 'my_offerings' ? (
         <Button 
@@ -319,7 +330,7 @@ export default function OfferingsScreen() {
           style={styles.createButton}
           buttonColor={OFFERING_COLOR}
         >
-          Offer Your First Service
+          {t('offerings.offerFirstService')}
         </Button>
       ) : null}
     </View>
@@ -330,7 +341,7 @@ export default function OfferingsScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={OFFERING_COLOR} />
-        <Text style={styles.footerText}>Loading more...</Text>
+        <Text style={styles.footerText}>{t('offerings.loadingMore')}</Text>
         <View style={styles.fabSpacer} />
       </View>
     );
@@ -342,7 +353,7 @@ export default function OfferingsScreen() {
         {renderListHeader()}
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={OFFERING_COLOR} />
-          <Text style={dynamicStyles.statusText}>Loading services...</Text>
+          <Text style={dynamicStyles.statusText}>{t('offerings.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -353,9 +364,9 @@ export default function OfferingsScreen() {
       <SafeAreaView style={dynamicStyles.container} edges={['top']}>
         {renderListHeader()}
         <View style={styles.centerContainer}>
-          <Text style={dynamicStyles.errorText}>Failed to load services</Text>
+          <Text style={dynamicStyles.errorText}>{t('offerings.error')}</Text>
           <Button mode="contained" onPress={() => refetch()} buttonColor={OFFERING_COLOR}>
-            Retry
+            {t('offerings.retry')}
           </Button>
         </View>
       </SafeAreaView>
@@ -387,7 +398,7 @@ export default function OfferingsScreen() {
         icon="plus"
         style={styles.fab}
         onPress={handleCreateOffering}
-        label="Offer Service"
+        label={t('offerings.offerService')}
       />
     </SafeAreaView>
   );
