@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { haptic } from '../../../../../utils/haptics';
 import { useThemeStore } from '../../../../stores/themeStore';
+import { useLanguageStore } from '../../../../stores/languageStore';
 import { colors } from '../../../../theme';
 
 interface CreateModalProps {
@@ -22,6 +23,7 @@ export default function CreateModal({
   onClose, 
 }: CreateModalProps) {
   const { getActiveTheme } = useThemeStore();
+  const { t } = useLanguageStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -125,8 +127,8 @@ export default function CreateModal({
         
         <View style={localStyles.container}>
           {/* Header */}
-          <Text style={localStyles.title}>Create</Text>
-          <Text style={localStyles.subtitle}>What would you like to do?</Text>
+          <Text style={localStyles.title}>{t('home.createModal.title')}</Text>
+          <Text style={localStyles.subtitle}>{t('home.createModal.subtitle')}</Text>
           
           {/* POST JOB */}
           <TouchableOpacity 
@@ -144,8 +146,8 @@ export default function CreateModal({
               <Text style={localStyles.icon}>💼</Text>
             </View>
             <View style={localStyles.optionContent}>
-              <Text style={localStyles.optionTitle}>Post a Job</Text>
-              <Text style={localStyles.optionDesc}>Find someone to help you with a task</Text>
+              <Text style={localStyles.optionTitle}>{t('home.createModal.postJob')}</Text>
+              <Text style={localStyles.optionDesc}>{t('home.createModal.postJobDesc')}</Text>
             </View>
             <Text style={localStyles.arrow}>›</Text>
           </TouchableOpacity>
@@ -166,8 +168,8 @@ export default function CreateModal({
               <Text style={localStyles.icon}>⚡</Text>
             </View>
             <View style={localStyles.optionContent}>
-              <Text style={localStyles.optionTitle}>Offer a Service</Text>
-              <Text style={localStyles.optionDesc}>Share your skills and earn money</Text>
+              <Text style={localStyles.optionTitle}>{t('home.createModal.offerService')}</Text>
+              <Text style={localStyles.optionDesc}>{t('home.createModal.offerServiceDesc')}</Text>
             </View>
             <Text style={localStyles.arrow}>›</Text>
           </TouchableOpacity>
@@ -178,7 +180,7 @@ export default function CreateModal({
             onPress={() => { haptic.soft(); onClose(); }}
             activeOpacity={0.7}
           >
-            <Text style={localStyles.cancelText}>Cancel</Text>
+            <Text style={localStyles.cancelText}>{t('home.createModal.cancel')}</Text>
           </TouchableOpacity>
         </View>
       </View>
