@@ -1,6 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import { Surface, Text, ActivityIndicator } from 'react-native-paper';
 import { colors } from '../../../../src/theme';
+import { useTranslation } from '../../../../src/hooks/useTranslation';
 
 interface ReviewStats {
   average_rating?: number;
@@ -15,6 +16,8 @@ interface ProfileStatsProps {
 }
 
 export function ProfileStats({ reviewStats, completedTasksCount, isLoading, themeColors }: ProfileStatsProps) {
+  const { t } = useTranslation();
+  
   return (
     <Surface style={[styles.statsCard, { backgroundColor: themeColors.card }]} elevation={2}>
       {isLoading ? (
@@ -28,21 +31,21 @@ export function ProfileStats({ reviewStats, completedTasksCount, isLoading, them
                 {reviewStats?.average_rating ? reviewStats.average_rating.toFixed(1) : '—'}
               </Text>
             </View>
-            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Rating</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t.profile.rating}</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
           <View style={styles.stat}>
             <Text style={[styles.statValue, { color: themeColors.text }]}>
               {reviewStats?.total_reviews || 0}
             </Text>
-            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Reviews</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t.profile.reviews}</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: themeColors.border }]} />
           <View style={styles.stat}>
             <Text style={[styles.statValue, { color: themeColors.text }]}>
               {completedTasksCount || 0}
             </Text>
-            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Completed</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t.profile.completed}</Text>
           </View>
         </View>
       )}
