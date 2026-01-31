@@ -2,6 +2,7 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import { colors } from '../../../../src/theme';
+import { useTranslation } from '../../../../src/hooks/useTranslation';
 
 interface ActivityMenuProps {
   themeColors: typeof colors.light;
@@ -43,18 +44,20 @@ function MenuItem({
 }
 
 export function ActivityMenu({ themeColors }: ActivityMenuProps) {
+  const { t } = useTranslation();
+  
   return (
     <>
       {/* Activity Section */}
       <View style={styles.menuSection}>
         <Text style={[styles.sectionTitle, { color: themeColors.text, marginBottom: 12, marginHorizontal: 20 }]}>
-          Activity
+          {t.profile.activitySection}
         </Text>
         <Surface style={[styles.menuCard, { backgroundColor: themeColors.card }]} elevation={1}>
           <View style={styles.menuCardContent}>
             <MenuItem 
-              title="Jobs & Offerings" 
-              subtitle="View all your jobs and services"
+              title={t.profile.jobsAndOfferings}
+              subtitle={t.profile.jobsAndOfferingsSubtitle}
               icon="📄" 
               onPress={() => router.push('/activity/jobs-and-offerings')}
               themeColors={themeColors}
@@ -66,7 +69,7 @@ export function ActivityMenu({ themeColors }: ActivityMenuProps) {
       {/* My Listings Section - Coming Soon */}
       <View style={styles.menuSection}>
         <Text style={[styles.sectionTitle, { color: themeColors.text, marginBottom: 12, marginHorizontal: 20 }]}>
-          Marketplace
+          {t.profile.marketplaceSection}
         </Text>
         <Surface style={[styles.menuCard, { backgroundColor: themeColors.card }]} elevation={1}>
           <View style={styles.menuCardContent}>
@@ -74,13 +77,13 @@ export function ActivityMenu({ themeColors }: ActivityMenuProps) {
               <Text style={styles.menuIcon}>🛍️</Text>
               <View style={styles.menuTextContainer}>
                 <View style={styles.comingSoonTitleRow}>
-                  <Text style={[styles.menuTitle, { color: themeColors.text }]}>My Listings</Text>
+                  <Text style={[styles.menuTitle, { color: themeColors.text }]}>{t.profile.myListings}</Text>
                   <View style={styles.comingSoonBadge}>
-                    <Text style={styles.comingSoonBadgeText}>Coming Soon</Text>
+                    <Text style={styles.comingSoonBadgeText}>{t.profile.comingSoon}</Text>
                   </View>
                 </View>
                 <Text style={[styles.menuSubtitle, { color: themeColors.textMuted }]}>
-                  Buy and sell items in your area
+                  {t.profile.myListingsSubtitle}
                 </Text>
               </View>
             </View>
