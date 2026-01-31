@@ -4,12 +4,13 @@ import { Text, TextInput, Button, Surface, SegmentedButtons } from 'react-native
 import { Stack, router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { createOffering, uploadImageFromUri, useAuthStore, FORM_CATEGORIES, getCategoryByKey } from '@marketplace/shared';
+import { createOffering, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
 import ImagePicker from '../../components/ImagePicker';
 import LocationPicker from '../../components/LocationPicker';
 import { haptic } from '../../utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { useLanguageStore } from '../../src/stores/languageStore';
+import { useCategories } from '../../src/hooks/useCategories';
 import { colors } from '../../src/theme';
 
 interface LocationData {
@@ -23,6 +24,7 @@ export default function CreateOfferingScreen() {
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
   const { t } = useLanguageStore();
+  const { formCategories, getCategoryByKey } = useCategories();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -480,7 +482,7 @@ export default function CreateOfferingScreen() {
             <Text style={styles.modalTitle}>{t('offering.create.selectCategory')}</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.categoryWrap}>
-                {FORM_CATEGORIES.map((cat) => (
+                {formCategories.map((cat) => (
                   <TouchableOpacity
                     key={cat.key}
                     style={[

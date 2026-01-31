@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import MapView, { PROVIDER_DEFAULT } from 'react-native-maps';
-import { getTasks, getOfferings, searchTasks, getCategoryByKey } from '@marketplace/shared';
+import { getTasks, getOfferings, searchTasks } from '@marketplace/shared';
 import { haptic } from '../../utils/haptics';
 import { BlurView } from 'expo-blur';
 import { calculateDistance } from '../../utils/mapClustering';
@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { darkMapStyle, lightMapStyle } from '../../src/theme/mapStyles';
 import { useTranslation } from '../../src/hooks/useTranslation';
+import { useCategories } from '../../src/hooks/useCategories';
 
 // Feature imports
 import { useLocation } from '../../src/features/home/hooks/useLocation';
@@ -33,6 +34,7 @@ import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const { getCategoryLabel } = useCategories();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const styles = useMemo(() => createStyles(activeTheme), [activeTheme]);
@@ -225,11 +227,11 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
   
+  // Get translated category button text
   const getCategoryButtonText = () => {
     if (!hasActiveCategory) return t.home.categories;
     if (selectedCategories.length === 1) {
-      const cat = getCategoryByKey(selectedCategories[0]);
-      return cat?.label || t.home.categories;
+      return getCategoryLabel(selectedCategories[0]);
     }
     return `${selectedCategories.length} ${t.home.categories}`;
   };

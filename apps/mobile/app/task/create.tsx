@@ -4,13 +4,14 @@ import { Text, TextInput, Button, Surface, Chip } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask, uploadImageFromUri, useAuthStore, FORM_CATEGORIES, getCategoryByKey } from '@marketplace/shared';
+import { createTask, uploadImageFromUri, useAuthStore } from '@marketplace/shared';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from '../../components/ImagePicker';
 import LocationPicker from '../../components/LocationPicker';
 import { haptic } from '../../utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { useLanguageStore } from '../../src/stores/languageStore';
+import { useCategories } from '../../src/hooks/useCategories';
 import { colors } from '../../src/theme';
 
 interface LocationData {
@@ -24,6 +25,7 @@ export default function CreateTaskScreen() {
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
   const { t } = useLanguageStore();
+  const { formCategories, getCategoryByKey } = useCategories();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -623,7 +625,7 @@ export default function CreateTaskScreen() {
             <Text style={styles.modalTitle}>{t('task.create.selectCategory')}</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.categoryWrap}>
-                {FORM_CATEGORIES.map((cat) => (
+                {formCategories.map((cat) => (
                   <TouchableOpacity
                     key={cat.key}
                     style={[

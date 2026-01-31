@@ -9,6 +9,11 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { useTranslation } from '../../src/hooks/useTranslation';
 
+// Helper to interpolate variables in translation strings
+const interpolate = (template: string, data: Record<string, string | undefined>): string => {
+  return template.replace(/\{(\w+)\}/g, (_, key) => data[key] || `{${key}}`);
+};
+
 export default function NotificationsScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -136,6 +141,47 @@ export default function NotificationsScreen() {
       default:
         return '🔔';
     }
+  };
+
+  // Get translated notification content
+  // Uses translation templates if available, falls back to backend-provided content
+  const getNotificationContent = (notification: Notification): { title: string; message: string } => {
+    const contentTemplates = t.notifications.content as Record<string, { title: string; message: string } | undefined>;
+    const template = contentTemplates?.[notification.type];
+    
+    // If we have a translation template for this notification type, use it
+    if (template) {
+      // Get data from notification (backend sends this in the data field)
+      const notificationData = notification.data || {};
+      
+      // Map backend field names to template placeholders
+      const templateData: Record<string, string> = {
+        taskTitle: notificationData.task_title || '',
+        applicantName: notificationData.applicant_name || '',
+        workerName: notificationData.worker_name || '',
+      };
+      
+      // If we have data, interpolate the template
+      if (Object.values(templateData).some(v => v)) {
+        return {
+          title: interpolate(template.title, templateData),
+          message: interpolate(template.message, templateData),
+        };
+      }
+      
+      // If no data available but we have a template, use template with original values
+      // This provides at least translated titles for notifications without dynamic data
+      return {
+        title: template.title.replace(/\{\w+\}/g, '').trim() || notification.title,
+        message: notification.message, // Keep original message if we can't interpolate
+      };
+    }
+    
+    // Fallback to backend-provided content for unknown notification types
+    return {
+      title: notification.title,
+      message: notification.message,
+    };
   };
 
   const getTimeAgo = (dateString: string): string => {
@@ -292,53 +338,56 @@ export default function NotificationsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
         >
-          {notifications.map((notification) => (
-            <Pressable
-              key={notification.id}
-              onPress={() => handleNotificationPress(notification)}
-              android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
-              style={({ pressed }) => [
-                pressed && styles.pressed
-              ]}
-            >
-              <Surface 
-                style={[
-                  styles.notificationCard,
-                  !notification.is_read && styles.unreadCard
-                ]} 
-                elevation={0}
+          {notifications.map((notification) => {
+            const content = getNotificationContent(notification);
+            return (
+              <Pressable
+                key={notification.id}
+                onPress={() => handleNotificationPress(notification)}
+                android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                style={({ pressed }) => [
+                  pressed && styles.pressed
+                ]}
               >
-                <View style={styles.notificationContent}>
-                  <View style={styles.notificationLeft}>
-                    <Text style={styles.notificationIcon}>
-                      {getNotificationIcon(notification.type)}
-                    </Text>
-                    {!notification.is_read && <View style={styles.unreadDot} />}
-                  </View>
-                  
-                  <View style={styles.notificationBody}>
-                    <Text variant="titleMedium" style={styles.notificationTitle}>
-                      {notification.title}
-                    </Text>
-                    <Text style={styles.notificationMessage} numberOfLines={2}>
-                      {notification.message}
-                    </Text>
-                    <Text style={styles.notificationTime}>
-                      {getTimeAgo(notification.created_at)}
-                    </Text>
-                  </View>
+                <Surface 
+                  style={[
+                    styles.notificationCard,
+                    !notification.is_read && styles.unreadCard
+                  ]} 
+                  elevation={0}
+                >
+                  <View style={styles.notificationContent}>
+                    <View style={styles.notificationLeft}>
+                      <Text style={styles.notificationIcon}>
+                        {getNotificationIcon(notification.type)}
+                      </Text>
+                      {!notification.is_read && <View style={styles.unreadDot} />}
+                    </View>
+                    
+                    <View style={styles.notificationBody}>
+                      <Text variant="titleMedium" style={styles.notificationTitle}>
+                        {content.title}
+                      </Text>
+                      <Text style={styles.notificationMessage} numberOfLines={2}>
+                        {content.message}
+                      </Text>
+                      <Text style={styles.notificationTime}>
+                        {getTimeAgo(notification.created_at)}
+                      </Text>
+                    </View>
 
-                  <IconButton
-                    icon="delete-outline"
-                    size={20}
-                    onPress={() => handleDelete(notification.id)}
-                    style={styles.deleteButton}
-                    iconColor={themeColors.textMuted}
-                  />
-                </View>
-              </Surface>
-            </Pressable>
-          ))}
+                    <IconButton
+                      icon="delete-outline"
+                      size={20}
+                      onPress={() => handleDelete(notification.id)}
+                      style={styles.deleteButton}
+                      iconColor={themeColors.textMuted}
+                    />
+                  </View>
+                </Surface>
+              </Pressable>
+            );
+          })}
           <View style={styles.bottomSpacer} />
         </ScrollView>
       )}

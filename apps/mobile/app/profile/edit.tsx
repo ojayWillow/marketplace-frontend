@@ -3,15 +3,17 @@ import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, TextInput, Avatar, Switch, Chip, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, FORM_CATEGORIES, normalizeSkills } from '@marketplace/shared';
+import { authApi, useAuthStore, getImageUrl, uploadImageFromUri, normalizeSkills } from '@marketplace/shared';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { useTranslation } from '../../src/hooks/useTranslation';
+import { useCategories } from '../../src/hooks/useCategories';
 
 export default function EditProfileScreen() {
   const { t } = useTranslation();
+  const { formCategories } = useCategories();
   const { user, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
@@ -466,7 +468,7 @@ export default function EditProfileScreen() {
             {t.profile.edit.skillsDescription}
           </Text>
           <View style={styles.skillsContainer}>
-            {FORM_CATEGORIES.map((category) => (
+            {formCategories.map((category) => (
               <Chip
                 key={category.key}
                 selected={skills.includes(category.key)}
