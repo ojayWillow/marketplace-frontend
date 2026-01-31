@@ -1,6 +1,7 @@
 export const home = {
   title: 'Sākums',
   search: 'Meklēt darbus...',
+  searchJobs: 'Meklēt darbus...',
   categories: 'Kategorijas',
   filters: 'Filtri',
   createTask: 'Izveidot uzdevumu',
@@ -20,5 +21,15 @@ export const home = {
     tryAdjustFilters: 'Mēģiniet mainīt meklēšanu vai filtrus',
     jobDetails: 'Darba informācija',
     serviceDetails: 'Pakalpojuma informācija',
+  },
+  // Create Modal
+  createModal: {
+    title: 'Ko jums nepieciešams?',
+    subtitle: 'Izvēlieties iespēju, lai sāktu',
+    postJob: 'Publicēt darbu',
+    postJobDesc: 'Atrodiet kādu, kas palīdzēs ar uzdevumu',
+    offerService: 'Piedāvāt pakalpojumu',
+    offerServiceDesc: 'Dalieties ar savām prasmēm un iegūstiet darbu',
+    cancel: 'Atcelt',
   },
 };

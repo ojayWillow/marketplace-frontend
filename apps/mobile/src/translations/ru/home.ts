@@ -1,6 +1,7 @@
 export const home = {
   title: 'Главная',
   search: 'Искать задачи...',
+  searchJobs: 'Искать задачи...',
   categories: 'Категории',
   filters: 'Фильтры',
   createTask: 'Создать задачу',
@@ -20,5 +21,15 @@ export const home = {
     tryAdjustFilters: 'Попробуйте изменить поиск или фильтры',
     jobDetails: 'Детали работы',
     serviceDetails: 'Детали услуги',
+  },
+  // Create Modal
+  createModal: {
+    title: 'Что вам нужно?',
+    subtitle: 'Выберите вариант для начала',
+    postJob: 'Разместить работу',
+    postJobDesc: 'Найдите кого-то для выполнения задачи',
+    offerService: 'Предложить услугу',
+    offerServiceDesc: 'Поделитесь своими навыками и получите работу',
+    cancel: 'Отмена',
   },
 };
