@@ -151,22 +151,21 @@ export default function NotificationsScreen() {
     
     // If we have a translation template for this notification type, use it
     if (template) {
-      // Parse data from notification (backend sends this in the data field)
-      const notificationData = (notification as any).data || {};
+      // Get data from notification (backend sends this in the data field)
+      const notificationData = notification.data || {};
       
-      // Also try to extract data from the existing message for backwards compatibility
-      // This handles old notifications that don't have the data field yet
-      const data: Record<string, string> = {
-        taskTitle: notificationData.task_title || notificationData.taskTitle || '',
-        applicantName: notificationData.applicant_name || notificationData.applicantName || '',
-        workerName: notificationData.worker_name || notificationData.workerName || '',
+      // Map backend field names to template placeholders
+      const templateData: Record<string, string> = {
+        taskTitle: notificationData.task_title || '',
+        applicantName: notificationData.applicant_name || '',
+        workerName: notificationData.worker_name || '',
       };
       
       // If we have data, interpolate the template
-      if (Object.values(data).some(v => v)) {
+      if (Object.values(templateData).some(v => v)) {
         return {
-          title: interpolate(template.title, data),
-          message: interpolate(template.message, data),
+          title: interpolate(template.title, templateData),
+          message: interpolate(template.message, templateData),
         };
       }
       
