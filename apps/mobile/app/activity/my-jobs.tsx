@@ -3,8 +3,16 @@ import { Text, Card, ActivityIndicator, Button } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { getMyTasks, type Task } from '@marketplace/shared';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function MyJobsScreen() {
+  const { t } = useTranslation();
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
+
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['my-working-jobs'],
     queryFn: getMyTasks,
@@ -25,22 +33,112 @@ export default function MyJobsScreen() {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'open': return 'Open';
-      case 'assigned': return 'Assigned';
-      case 'in_progress': return 'In Progress';
-      case 'pending_confirmation': return 'Pending';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
-    }
+    const statusMap: Record<string, string> = {
+      'open': t('task.status.open'),
+      'assigned': t('task.status.assigned'),
+      'in_progress': t('task.status.inProgress'),
+      'pending_confirmation': t('task.status.pendingConfirmation'),
+      'completed': t('task.status.completed'),
+      'cancelled': t('task.status.cancelled'),
+    };
+    return statusMap[status] || status;
   };
+
+  const styles = StyleSheet.create({
+    container: { 
+      flex: 1, 
+      backgroundColor: themeColors.backgroundSecondary
+    },
+    scrollView: { 
+      flex: 1 
+    },
+    scrollContent: { 
+      padding: 16,
+      paddingBottom: 32,
+    },
+    centerContainer: { 
+      alignItems: 'center', 
+      paddingVertical: 48 
+    },
+    errorText: { 
+      color: '#ef4444', 
+      marginBottom: 12 
+    },
+    emptyIcon: { 
+      fontSize: 48 
+    },
+    emptyText: { 
+      marginTop: 12, 
+      color: themeColors.textSecondary, 
+      fontSize: 16, 
+      fontWeight: '500' 
+    },
+    emptySubtext: { 
+      marginTop: 4, 
+      color: themeColors.textMuted, 
+      fontSize: 14 
+    },
+    browseButton: { 
+      marginTop: 16, 
+      backgroundColor: themeColors.primaryAccent
+    },
+    card: { 
+      marginBottom: 12, 
+      backgroundColor: themeColors.card, 
+      borderRadius: 12 
+    },
+    cardHeader: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      marginBottom: 4 
+    },
+    cardTitle: { 
+      fontWeight: '600', 
+      flex: 1, 
+      marginRight: 12, 
+      color: themeColors.text
+    },
+    statusBadge: { 
+      paddingHorizontal: 10, 
+      paddingVertical: 4, 
+      borderRadius: 12 
+    },
+    statusBadgeText: { 
+      fontSize: 12, 
+      fontWeight: '600' 
+    },
+    category: { 
+      color: themeColors.primaryAccent, 
+      fontSize: 13, 
+      marginBottom: 6 
+    },
+    description: { 
+      color: themeColors.textSecondary, 
+      marginBottom: 12, 
+      lineHeight: 20 
+    },
+    cardFooter: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center' 
+    },
+    price: { 
+      color: themeColors.primaryAccent, 
+      fontWeight: 'bold', 
+      fontSize: 16 
+    },
+    client: { 
+      color: themeColors.textMuted, 
+      fontSize: 13 
+    },
+  });
 
   return (
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: "Jobs I'm Working On", 
+          title: t('activity.myJobs.title'), 
           headerBackTitle: 'Back',
           headerShown: true,
         }} 
@@ -53,20 +151,20 @@ export default function MyJobsScreen() {
       >
         {isLoading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#0ea5e9" />
+            <ActivityIndicator size="large" color={themeColors.primaryAccent} />
           </View>
         ) : isError ? (
           <View style={styles.centerContainer}>
-            <Text style={styles.errorText}>Failed to load</Text>
-            <Button mode="contained" onPress={() => refetch()}>Retry</Button>
+            <Text style={styles.errorText}>{t('activity.error')}</Text>
+            <Button mode="contained" onPress={() => refetch()} buttonColor={themeColors.primaryAccent}>{t('activity.retry')}</Button>
           </View>
         ) : tasks.length === 0 ? (
           <View style={styles.centerContainer}>
-            <Text style={styles.emptyIcon}>💼</Text>
-            <Text style={styles.emptyText}>No active jobs</Text>
-            <Text style={styles.emptySubtext}>Jobs you're working on will appear here</Text>
+            <Text style={styles.emptyIcon}>{t('activity.myJobs.empty.icon')}</Text>
+            <Text style={styles.emptyText}>{t('activity.myJobs.empty.title')}</Text>
+            <Text style={styles.emptySubtext}>{t('activity.myJobs.empty.subtitle')}</Text>
             <Button mode="contained" onPress={() => router.push('/(tabs)/tasks')} style={styles.browseButton}>
-              Find Jobs
+              {t('activity.myJobs.empty.browseButton')}
             </Button>
           </View>
         ) : (
@@ -85,7 +183,7 @@ export default function MyJobsScreen() {
                   <Text style={styles.description} numberOfLines={2}>{task.description}</Text>
                   <View style={styles.cardFooter}>
                     <Text style={styles.price}>€{task.budget?.toFixed(0) || '0'}</Text>
-                    <Text style={styles.client}>Client: {task.creator_name || 'Anonymous'}</Text>
+                    <Text style={styles.client}>{t('task.client')}: {task.creator_name || t('user.anonymous')}</Text>
                   </View>
                 </Card.Content>
               </Card>
@@ -96,93 +194,3 @@ export default function MyJobsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f5f5f5' 
-  },
-  scrollView: { 
-    flex: 1 
-  },
-  scrollContent: { 
-    padding: 16,
-    paddingBottom: 32,
-  },
-  centerContainer: { 
-    alignItems: 'center', 
-    paddingVertical: 48 
-  },
-  errorText: { 
-    color: '#ef4444', 
-    marginBottom: 12 
-  },
-  emptyIcon: { 
-    fontSize: 48 
-  },
-  emptyText: { 
-    marginTop: 12, 
-    color: '#6b7280', 
-    fontSize: 16, 
-    fontWeight: '500' 
-  },
-  emptySubtext: { 
-    marginTop: 4, 
-    color: '#9ca3af', 
-    fontSize: 14 
-  },
-  browseButton: { 
-    marginTop: 16, 
-    backgroundColor: '#0ea5e9' 
-  },
-  card: { 
-    marginBottom: 12, 
-    backgroundColor: '#ffffff', 
-    borderRadius: 12 
-  },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 4 
-  },
-  cardTitle: { 
-    fontWeight: '600', 
-    flex: 1, 
-    marginRight: 12, 
-    color: '#1f2937' 
-  },
-  statusBadge: { 
-    paddingHorizontal: 10, 
-    paddingVertical: 4, 
-    borderRadius: 12 
-  },
-  statusBadgeText: { 
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
-  category: { 
-    color: '#0ea5e9', 
-    fontSize: 13, 
-    marginBottom: 6 
-  },
-  description: { 
-    color: '#6b7280', 
-    marginBottom: 12, 
-    lineHeight: 20 
-  },
-  cardFooter: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
-  },
-  price: { 
-    color: '#0ea5e9', 
-    fontWeight: 'bold', 
-    fontSize: 16 
-  },
-  client: { 
-    color: '#9ca3af', 
-    fontSize: 13 
-  },
-});
