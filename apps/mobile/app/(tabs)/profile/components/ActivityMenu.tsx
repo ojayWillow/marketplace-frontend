@@ -3,6 +3,7 @@ import { Surface, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import { colors } from '../../../../src/theme';
 import { useTranslation } from '../../../../src/hooks/useTranslation';
+import { useAuthStore } from '@marketplace/shared';
 
 interface ActivityMenuProps {
   themeColors: typeof colors.light;
@@ -45,9 +46,34 @@ function MenuItem({
 
 export function ActivityMenu({ themeColors }: ActivityMenuProps) {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  
+  // Check if user is admin (by email for now - you can customize this)
+  const adminEmails = ['dajsis@me.com', 'win10keypro@gmail.com', 'og.vitols@gmail.com'];
+  const isAdmin = user?.email && adminEmails.includes(user.email);
   
   return (
     <>
+      {/* Admin Section - Only visible to admins */}
+      {isAdmin && (
+        <View style={styles.menuSection}>
+          <Text style={[styles.sectionTitle, { color: themeColors.text, marginBottom: 12, marginHorizontal: 20 }]}>
+            {t.profile.adminSection || 'Admin'}
+          </Text>
+          <Surface style={[styles.menuCard, { backgroundColor: themeColors.card }]} elevation={1}>
+            <View style={styles.menuCardContent}>
+              <MenuItem 
+                title={t.profile.adminPanel || 'Admin Panel'}
+                subtitle={t.profile.adminPanelSubtitle || 'Manage users, jobs, and platform'}
+                icon="⚙️" 
+                onPress={() => router.push('/admin')}
+                themeColors={themeColors}
+              />
+            </View>
+          </Surface>
+        </View>
+      )}
+
       {/* Activity Section */}
       <View style={styles.menuSection}>
         <Text style={[styles.sectionTitle, { color: themeColors.text, marginBottom: 12, marginHorizontal: 20 }]}>
