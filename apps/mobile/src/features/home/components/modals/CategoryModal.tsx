@@ -1,9 +1,9 @@
 import React from 'react';
 import { Modal, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
-import { CATEGORIES } from '@marketplace/shared';
 import { haptic } from '../../../../../utils/haptics';
 import { useTranslation } from '../../../../hooks/useTranslation';
+import { useCategories } from '../../../../hooks/useCategories';
 
 const MAX_CATEGORIES = 5;
 
@@ -23,6 +23,7 @@ export default function CategoryModal({
   styles 
 }: CategoryModalProps) {
   const { t } = useTranslation();
+  const { formCategories, getCategoryLabel } = useCategories();
   
   const handleToggleCategory = (categoryKey: string) => {
     haptic.selection();
@@ -110,8 +111,8 @@ export default function CategoryModal({
                 )}
               </TouchableOpacity>
               
-              {/* Category options */}
-              {CATEGORIES.filter(cat => cat.key !== 'all').map((cat) => {
+              {/* Category options - using translated labels */}
+              {formCategories.map((cat) => {
                 const isSelected = selectedCategories.includes(cat.key);
                 const isDisabled = !isSelected && selectedCount >= MAX_CATEGORIES;
                 
