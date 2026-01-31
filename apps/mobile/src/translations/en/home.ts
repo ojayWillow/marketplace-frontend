@@ -8,6 +8,7 @@ export const home = {
   noTasksNearby: 'No tasks nearby',
   noTasksNearbyDesc: 'Try adjusting your search or filters',
   viewDetails: 'View Details',
+  allAreas: 'All Areas',
   // Category Modal
   selectCategories: 'Select Categories',
   showingAllCategories: 'Showing all categories',
