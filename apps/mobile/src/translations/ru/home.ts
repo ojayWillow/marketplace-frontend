@@ -1,6 +1,7 @@
 export const home = {
   title: 'Главная',
   searchPlaceholder: 'Поиск услуг или заданий...',
+  searchJobs: 'Поиск работ...',
   noResults: 'Ничего не найдено',
   categories: 'Категории',
   featured: 'Рекомендуемые',
