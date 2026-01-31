@@ -16,6 +16,9 @@ export const profile = {
   rating: 'Vērtējums',
   reviews: 'Atsauksmes',
   completed: 'Pabeigti',
+  skills: 'Prasmes',
+  addSkills: 'Pievieno savas prasmes',
+  addSkillsSubtitle: 'Palīdzi citiem uzzināt, kā tu vari palīdzēt',
   // ActivityMenu
   activitySection: 'Aktivitāte',
   jobsAndOfferings: 'Darbi un piedāvājumi',
@@ -33,9 +36,9 @@ export const profile = {
     chooseOption: 'Izvēlies variantu',
     takePhoto: 'Uztēt',
     chooseGallery: 'Izvēlēties no galerējas',
-    permissionNeeded: 'Nepieciesama atļauja',
-    cameraPermission: 'Kameras atļauja ir nepieciesama, lai uzfotētu.',
-    galleryPermission: 'Galerējas atļauja ir nepieciesama, lai izvēlētos fotoattēlus.',
+    permissionNeeded: 'Nepieciešama atļauja',
+    cameraPermission: 'Kameras atļauja ir nepieciešama, lai uzfotētu.',
+    galleryPermission: 'Galerējas atļauja ir nepieciešama, lai izvēlētos fotoattēlus.',
     
     basicInfo: 'Pamatinformācija',
     firstName: 'Vārds',

@@ -1,8 +1,9 @@
 import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { router } from 'expo-router';
-import { getCategoryIcon, getCategoryLabel } from '@marketplace/shared';
 import { colors } from '../../../../src/theme';
+import { useCategories } from '../../../../src/hooks/useCategories';
+import { useTranslation } from '../../../../src/hooks/useTranslation';
 
 interface ProfileSkillsProps {
   skills: string[];
@@ -10,6 +11,9 @@ interface ProfileSkillsProps {
 }
 
 export function ProfileSkills({ skills, themeColors }: ProfileSkillsProps) {
+  const { t } = useTranslation();
+  const { getCategoryLabel, getCategoryIcon } = useCategories();
+
   if (skills.length === 0) {
     return (
       <Pressable 
@@ -18,9 +22,9 @@ export function ProfileSkills({ skills, themeColors }: ProfileSkillsProps) {
       >
         <Text style={styles.addSkillsIcon}>🛠️</Text>
         <View style={styles.addSkillsText}>
-          <Text style={[styles.addSkillsTitle, { color: themeColors.text }]}>Add your skills</Text>
+          <Text style={[styles.addSkillsTitle, { color: themeColors.text }]}>{t.profile.addSkills}</Text>
           <Text style={[styles.addSkillsSubtitle, { color: themeColors.textSecondary }]}>
-            Let others know what you can help with
+            {t.profile.addSkillsSubtitle}
           </Text>
         </View>
         <Text style={[styles.addSkillsArrow, { color: themeColors.textMuted }]}>›</Text>
@@ -31,7 +35,7 @@ export function ProfileSkills({ skills, themeColors }: ProfileSkillsProps) {
   return (
     <View style={styles.skillsSection}>
       <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Skills</Text>
+        <Text style={[styles.sectionTitle, { color: themeColors.text }]}>{t.profile.skills}</Text>
       </View>
       <ScrollView 
         horizontal 

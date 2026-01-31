@@ -16,6 +16,9 @@ export const profile = {
   rating: 'Rating',
   reviews: 'Reviews',
   completed: 'Completed',
+  skills: 'Skills',
+  addSkills: 'Add your skills',
+  addSkillsSubtitle: 'Let others know what you can help with',
   // ActivityMenu
   activitySection: 'Activity',
   jobsAndOfferings: 'Jobs & Offerings',
