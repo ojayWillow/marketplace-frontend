@@ -1,6 +1,7 @@
 export const home = {
   title: 'Home',
   searchPlaceholder: 'Search services or tasks...',
+  searchJobs: 'Search jobs...',
   noResults: 'No results found',
   categories: 'Categories',
   featured: 'Featured',
