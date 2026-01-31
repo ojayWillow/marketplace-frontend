@@ -3,6 +3,7 @@ import { ActivityIndicator } from 'react-native-paper';
 import { BlurView } from 'expo-blur';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { JOB_COLOR } from '../../../../src/features/home/constants';
+import { useLanguageStore } from '../../../../src/stores/languageStore';
 
 interface HomeSearchBarProps {
   searchQuery: string;
@@ -23,6 +24,8 @@ export function HomeSearchBar({
   styles,
   searchInputRef,
 }: HomeSearchBarProps) {
+  const { t } = useLanguageStore();
+  
   return (
     <View style={styles.searchBar}>
       <BlurView intensity={80} tint={blurTint} style={styles.searchBlur}>
@@ -30,7 +33,7 @@ export function HomeSearchBar({
         <TextInput
           ref={searchInputRef}
           style={styles.searchInput}
-          placeholder="Search jobs..."
+          placeholder={t('home.searchJobs')}
           placeholderTextColor={styles.searchInput.color}
           value={searchQuery}
           onChangeText={onChangeText}
