@@ -1,8 +1,25 @@
 export const notifications = {
   title: 'Notifications',
-  noNotifications: 'No notifications',
-  markAllRead: 'Mark All as Read',
+  noNotifications: 'No Notifications',
+  allCaughtUp: "You're all caught up!",
+  markAllRead: 'Mark All Read',
   clearAll: 'Clear All',
+  
+  // Alerts
+  deleteTitle: 'Delete Notification',
+  deleteMessage: 'Are you sure you want to delete this notification?',
+  markAllSuccess: 'All notifications marked as read',
+  noUnread: 'No Unread',
+  noUnreadMessage: 'You have no unread notifications',
+  
+  // Time ago
+  timeAgo: {
+    justNow: 'Just now',
+    minutesAgo: 'm ago',
+    hoursAgo: 'h ago',
+    daysAgo: 'd ago',
+    weeksAgo: 'w ago',
+  },
   
   // Settings screen
   settings: {
