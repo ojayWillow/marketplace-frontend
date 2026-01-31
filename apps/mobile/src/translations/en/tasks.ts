@@ -19,4 +19,17 @@ export const tasks = {
   tabAll: 'All',
   tabJobs: 'Jobs',
   tabServices: 'Services',
+  
+  // Filters
+  filters: {
+    title: 'Filters',
+    difficultyLabel: 'DIFFICULTY',
+    categoryLabel: 'RADIUS',
+    all: 'All',
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+    clearAll: 'Clear All',
+    apply: 'Apply',
+  },
 };
