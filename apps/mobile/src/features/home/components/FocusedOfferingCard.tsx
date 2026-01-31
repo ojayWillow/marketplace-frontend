@@ -1,8 +1,9 @@
 import { View, TouchableOpacity } from 'react-native';
 import { Text, Avatar } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { type Offering, getCategoryByKey } from '@marketplace/shared';
+import { type Offering } from '@marketplace/shared';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useCategories } from '../../../hooks/useCategories';
 
 interface FocusedOfferingCardProps {
   offering: Offering;
@@ -15,8 +16,9 @@ export function FocusedOfferingCard({
   onViewDetails,
   styles,
 }: FocusedOfferingCardProps) {
+  const { getCategoryLabel, getCategoryIcon, getCategoryByKey } = useCategories();
   const category = getCategoryByKey(offering.category);
-  const categoryColor = category?.color || '#ec4899';
+  const categoryColor = '#ec4899'; // Default pink for offerings
   const avatarLabel = offering.provider?.username?.charAt(0).toUpperCase() || '?';
 
   return (
@@ -24,8 +26,8 @@ export function FocusedOfferingCard({
       {/* Top Row - Category & Price */}
       <View style={styles.focusedTopRow}>
         <View style={[styles.focusedCategoryBadge, { backgroundColor: categoryColor }]}>
-          <Text style={styles.focusedCategoryIcon}>{category?.icon || '💼'}</Text>
-          <Text style={styles.focusedCategoryText}>{category?.label || 'Service'}</Text>
+          <Text style={styles.focusedCategoryIcon}>{getCategoryIcon(offering.category)}</Text>
+          <Text style={styles.focusedCategoryText}>{getCategoryLabel(offering.category)}</Text>
         </View>
         <Text style={[styles.focusedPrice, { color: categoryColor }]}>
           €{offering.price?.toFixed(0) || '0'}
