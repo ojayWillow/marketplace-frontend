@@ -75,8 +75,8 @@ export default function NotificationSettingsScreen() {
           const success = await registerPushToken(token);
           if (!success) {
             Alert.alert(
-              t('notifications.settings.alerts.permissionRequired.title'),
-              t('notifications.settings.alerts.permissionRequired.message'),
+              t.notifications.settings.alerts.permissionRequired.title,
+              t.notifications.settings.alerts.permissionRequired.message,
               [{ text: 'OK' }]
             );
             // Revert setting
@@ -84,36 +84,36 @@ export default function NotificationSettingsScreen() {
             setSettings(revertedSettings);
             await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(revertedSettings));
           } else {
-            Alert.alert(t('notifications.settings.alerts.enabled.title'), t('notifications.settings.alerts.enabled.message'));
+            Alert.alert(t.notifications.settings.alerts.enabled.title, t.notifications.settings.alerts.enabled.message);
           }
         } else {
           // Disable push notifications
           await unregisterPushToken(token);
-          Alert.alert(t('notifications.settings.alerts.disabled'));
+          Alert.alert(t.notifications.settings.alerts.disabled);
         }
       }
     } catch (e) {
       console.error('Failed to save notification settings:', e);
-      Alert.alert(t('notifications.settings.alerts.saveFailed.title'), t('notifications.settings.alerts.saveFailed.message'));
+      Alert.alert(t.notifications.settings.alerts.saveFailed.title, t.notifications.settings.alerts.saveFailed.message);
     }
   };
 
   const handleTestNotification = async () => {
     if (!isAuthenticated || !token) {
-      Alert.alert(t('notifications.settings.test.error.title'), t('notifications.settings.test.error.notLoggedIn'));
+      Alert.alert(t.notifications.settings.test.error.title, t.notifications.settings.test.error.notLoggedIn);
       return;
     }
 
     if (!settings.pushEnabled) {
-      Alert.alert(t('notifications.settings.test.error.title'), t('notifications.settings.test.error.pushDisabled'));
+      Alert.alert(t.notifications.settings.test.error.title, t.notifications.settings.test.error.pushDisabled);
       return;
     }
 
     try {
       await sendTestNotification(token);
-      Alert.alert(t('notifications.settings.test.success.title'), t('notifications.settings.test.success.message'));
+      Alert.alert(t.notifications.settings.test.success.title, t.notifications.settings.test.success.message);
     } catch (error) {
-      Alert.alert(t('notifications.settings.test.error.title'), t('notifications.settings.test.error.message'));
+      Alert.alert(t.notifications.settings.test.error.title, t.notifications.settings.test.error.message);
     }
   };
 
@@ -204,7 +204,7 @@ export default function NotificationSettingsScreen() {
         <Stack.Screen 
           options={{ 
             headerShown: true, 
-            title: t('notifications.settings.title'),
+            title: t.notifications.settings.title,
             headerBackTitle: 'Back',
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
@@ -213,9 +213,9 @@ export default function NotificationSettingsScreen() {
         />
         <View style={styles.centerContainer}>
           <Text style={styles.emptyIcon}>🔔</Text>
-          <Text variant="titleLarge" style={styles.emptyTitle}>{t('notifications.settings.signInRequired.title')}</Text>
+          <Text variant="titleLarge" style={styles.emptyTitle}>{t.notifications.settings.signInRequired.title}</Text>
           <Text style={styles.emptyText}>
-            {t('notifications.settings.signInRequired.message')}
+            {t.notifications.settings.signInRequired.message}
           </Text>
         </View>
       </SafeAreaView>
@@ -227,7 +227,7 @@ export default function NotificationSettingsScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: t('notifications.settings.title'),
+          title: t.notifications.settings.title,
           headerBackTitle: 'Back',
           headerStyle: { backgroundColor: themeColors.card },
           headerTintColor: themeColors.primaryAccent,
@@ -237,12 +237,12 @@ export default function NotificationSettingsScreen() {
       
       {/* Main Toggles */}
       <Surface style={styles.section} elevation={0}>
-        <Text style={styles.sectionTitle}>{t('notifications.settings.channels.title')}</Text>
+        <Text style={styles.sectionTitle}>{t.notifications.settings.channels.title}</Text>
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>🔔 {t('notifications.settings.channels.push.label')}</Text>
-            <Text style={styles.settingDescription}>{t('notifications.settings.channels.push.description')}</Text>
+            <Text style={styles.settingLabel}>🔔 {t.notifications.settings.channels.push.label}</Text>
+            <Text style={styles.settingDescription}>{t.notifications.settings.channels.push.description}</Text>
           </View>
           <Switch
             value={settings.pushEnabled}
@@ -255,8 +255,8 @@ export default function NotificationSettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>✉️ {t('notifications.settings.channels.email.label')}</Text>
-            <Text style={styles.settingDescription}>{t('notifications.settings.channels.email.description')}</Text>
+            <Text style={styles.settingLabel}>✉️ {t.notifications.settings.channels.email.label}</Text>
+            <Text style={styles.settingDescription}>{t.notifications.settings.channels.email.description}</Text>
           </View>
           <Switch
             value={settings.emailEnabled}
@@ -268,12 +268,12 @@ export default function NotificationSettingsScreen() {
 
       {/* Notification Types */}
       <Surface style={styles.section} elevation={0}>
-        <Text style={styles.sectionTitle}>{t('notifications.settings.types.title')}</Text>
+        <Text style={styles.sectionTitle}>{t.notifications.settings.types.title}</Text>
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>💬 {t('notifications.settings.types.newMessages.label')}</Text>
-            <Text style={styles.settingDescription}>{t('notifications.settings.types.newMessages.description')}</Text>
+            <Text style={styles.settingLabel}>💬 {t.notifications.settings.types.newMessages.label}</Text>
+            <Text style={styles.settingDescription}>{t.notifications.settings.types.newMessages.description}</Text>
           </View>
           <Switch
             value={settings.newMessages}
@@ -287,8 +287,8 @@ export default function NotificationSettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>📥 {t('notifications.settings.types.taskApplications.label')}</Text>
-            <Text style={styles.settingDescription}>{t('notifications.settings.types.taskApplications.description')}</Text>
+            <Text style={styles.settingLabel}>📥 {t.notifications.settings.types.taskApplications.label}</Text>
+            <Text style={styles.settingDescription}>{t.notifications.settings.types.taskApplications.description}</Text>
           </View>
           <Switch
             value={settings.taskApplications}
@@ -302,8 +302,8 @@ export default function NotificationSettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>📋 {t('notifications.settings.types.taskUpdates.label')}</Text>
-            <Text style={styles.settingDescription}>{t('notifications.settings.types.taskUpdates.description')}</Text>
+            <Text style={styles.settingLabel}>📋 {t.notifications.settings.types.taskUpdates.label}</Text>
+            <Text style={styles.settingDescription}>{t.notifications.settings.types.taskUpdates.description}</Text>
           </View>
           <Switch
             value={settings.taskUpdates}
@@ -316,9 +316,9 @@ export default function NotificationSettingsScreen() {
         <Divider />
         
         <View style={styles.settingItem}>
-          <View style={settings.settingInfo}>
-            <Text style={styles.settingLabel}>🎁 {t('notifications.settings.types.promotions.label')}</Text>
-            <Text style={styles.settingDescription}>{t('notifications.settings.types.promotions.description')}</Text>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingLabel}>🎁 {t.notifications.settings.types.promotions.label}</Text>
+            <Text style={styles.settingDescription}>{t.notifications.settings.types.promotions.description}</Text>
           </View>
           <Switch
             value={settings.promotions}
@@ -338,7 +338,7 @@ export default function NotificationSettingsScreen() {
             icon="bell-ring"
             textColor={themeColors.text}
           >
-            {t('notifications.settings.test.button')}
+            {t.notifications.settings.test.button}
           </Button>
         </View>
       )}
@@ -347,14 +347,14 @@ export default function NotificationSettingsScreen() {
       {!settings.pushEnabled && !settings.emailEnabled ? (
         <View style={styles.warningContainer}>
           <Text style={styles.warningText}>
-            ⚠️ {t('notifications.settings.warning.allDisabled')}
+            ⚠️ {t.notifications.settings.warning.allDisabled}
           </Text>
         </View>
       ) : null}
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          {t('notifications.settings.footer')}
+          {t.notifications.settings.footer}
         </Text>
       </View>
     </SafeAreaView>
