@@ -13,6 +13,9 @@ export const profile = {
   logoutTitle: 'Выйти',
   logoutConfirm: 'Вы уверены, что хотите выйти?',
   appVersion: 'Версия приложения 1.0.0',
+  rating: 'Рейтинг',
+  reviews: 'Отзывов',
+  completed: 'Завершено',
   // ActivityMenu
   activitySection: 'Активность',
   jobsAndOfferings: 'Работы и предложения',
@@ -25,17 +28,14 @@ export const profile = {
   // Edit Profile
   edit: {
     title: 'Редактировать профиль',
-    back: 'Назад',
     tapToChange: 'Нажмите, чтобы изменить фото',
     changePhoto: 'Изменить фото профиля',
     chooseOption: 'Выберите вариант',
     takePhoto: 'Сделать фото',
     chooseGallery: 'Выбрать из галереи',
-    cancel: 'Отмена',
-    cameraPermission: 'Требуется разрешение',
-    cameraPermissionMsg: 'Для съёмки фото требуется разрешение камеры.',
-    galleryPermission: 'Требуется разрешение',
-    galleryPermissionMsg: 'Для выбора фото требуется разрешение галереи.',
+    permissionNeeded: 'Требуется разрешение',
+    cameraPermission: 'Для съёмки фото требуется разрешение камеры.',
+    galleryPermission: 'Для выбора фото требуется разрешение галереи.',
     
     basicInfo: 'Основная информация',
     firstName: 'Имя',
@@ -46,7 +46,7 @@ export const profile = {
     city: 'Город',
     cityPlaceholder: 'напр. Рига',
     
-    skills: 'Ваши навыки',
+    yourSkills: 'Ваши навыки',
     skillsDescription: 'Выберите категории, в которых вы можете помочь',
     
     helperMode: 'Режим помощника',
@@ -55,10 +55,8 @@ export const profile = {
     hourlyRatePlaceholder: 'напр. 15',
     
     saveChanges: 'Сохранить изменения',
-    success: 'Успех',
-    successMsg: 'Профиль успешно обновлён!',
-    error: 'Ошибка',
-    uploadError: 'Не удалось загрузить фото профиля. Профиль будет сохранён без новой фотографии.',
-    updateError: 'Не удалось обновить профиль',
+    updateSuccess: 'Профиль успешно обновлён!',
+    updateFailed: 'Не удалось обновить профиль',
+    photoUploadFailed: 'Не удалось загрузить фото профиля. Профиль будет сохранён без новой фотографии.',
   },
 };
