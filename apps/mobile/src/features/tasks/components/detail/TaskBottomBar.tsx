@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { type Task, useAuthStore } from '@marketplace/shared';
 import { styles } from '../../styles/taskDetailStyles';
 import { type TaskActionsReturn } from '../../hooks/useTaskActions';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface TaskBottomBarProps {
   task: Task;
@@ -13,6 +14,7 @@ interface TaskBottomBarProps {
 
 export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   
   const isOwnTask = user?.id === task.creator_id;
   const isAssignedToMe = user?.id === task.assigned_to_id;
@@ -29,27 +31,27 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
     <View style={styles.bottomBar}>
       {showApplyButton && (
         <Button mode="contained" onPress={actions.handleApply} loading={actions.isApplying} style={styles.primaryBtn} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
-          Apply Now
+          {t.task.applyNow}
         </Button>
       )}
 
       {canWithdraw && (
         <Button mode="outlined" onPress={actions.handleWithdraw} loading={actions.isWithdrawing} textColor="#ef4444" style={[styles.primaryBtn, styles.dangerBtn]} contentStyle={styles.btnContent}>
-          Withdraw Application
+          {t.task.withdrawApplication}
         </Button>
       )}
 
       {isOwnTask && task.status === 'open' && (
         <View style={styles.ownerActions}>
           <Button mode="contained" onPress={() => router.push(`/task/${taskId}/applications`)} style={styles.primaryBtn} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
-            View Applications ({applicantsCount})
+            {t.task.viewApplications} ({applicantsCount})
           </Button>
           <View style={styles.ownerBtnRow}>
             <Button mode="outlined" onPress={actions.handleCancel} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]}>
-              Cancel
+              {t.task.cancel}
             </Button>
             <Button mode="outlined" onPress={() => router.push(`/task/${taskId}/edit`)} style={styles.halfBtn}>
-              Edit
+              {t.task.edit}
             </Button>
           </View>
         </View>
@@ -58,10 +60,10 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
       {canConfirm && (
         <View style={styles.ownerBtnRow}>
           <Button mode="outlined" onPress={actions.handleDispute} textColor="#ef4444" style={[styles.halfBtn, styles.dangerBtn]}>
-            Dispute
+            {t.task.dispute}
           </Button>
           <Button mode="contained" onPress={actions.handleConfirm} style={[styles.halfBtn, styles.successBtn]} loading={actions.isConfirming}>
-            Confirm Done
+            {t.task.confirmDone}
           </Button>
         </View>
       )}
@@ -69,11 +71,11 @@ export function TaskBottomBar({ task, taskId, actions }: TaskBottomBarProps) {
       {canMarkDone && (
         <View style={styles.ownerActions}>
           <Button mode="contained" onPress={actions.handleMarkDone} loading={actions.isMarkingDone} style={[styles.primaryBtn, styles.successBtn]} contentStyle={styles.btnContent} labelStyle={styles.btnLabel}>
-            Mark as Done
+            {t.task.markAsDone}
           </Button>
           {canWorkerReportIssue && (
             <Button mode="outlined" onPress={actions.handleDispute} textColor="#ef4444" style={[styles.primaryBtn, styles.dangerBtn]}>
-              Report Issue
+              {t.task.reportIssue}
             </Button>
           )}
         </View>

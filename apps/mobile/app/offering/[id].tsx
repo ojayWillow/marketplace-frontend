@@ -6,6 +6,7 @@ import { getOffering, contactOfferingCreator, deleteOffering, pauseOffering, act
 import { useState, useMemo } from 'react';
 import StarRating from '../../components/StarRating';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { colors } from '../../src/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -54,6 +55,7 @@ export default function OfferingDetailScreen() {
   const [contactMessage, setContactMessage] = useState('');
   
   const { getActiveTheme } = useThemeStore();
+  const { t } = useTranslation();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -150,7 +152,6 @@ export default function OfferingDetailScreen() {
     if (offering?.creator_id) router.push(`/user/${offering.creator_id}`);
   };
 
-  // FIX: Use the same contactOfferingCreator API to properly create/get conversation
   const handleMessage = () => {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'You need to sign in to message.', [
@@ -159,7 +160,6 @@ export default function OfferingDetailScreen() {
       ]);
       return;
     }
-    // Use the contact dialog flow which properly creates the conversation
     setContactMessage(`Hi! I'd like to discuss your service: ${offering?.title}`);
     setShowContactDialog(true);
   };
@@ -221,7 +221,6 @@ export default function OfferingDetailScreen() {
     scrollView: { flex: 1 },
     scrollContent: { padding: 12, paddingBottom: 100 },
 
-    // HERO CARD
     heroCard: {
       backgroundColor: themeColors.card,
       borderRadius: 16,
@@ -247,7 +246,6 @@ export default function OfferingDetailScreen() {
 
     heroTitle: { fontSize: 20, fontWeight: '700', color: themeColors.text, marginBottom: 12 },
 
-    // Provider Row
     providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
     avatarSmall: { width: 40, height: 40, borderRadius: 20 },
     avatarSmallPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
@@ -258,7 +256,6 @@ export default function OfferingDetailScreen() {
     messageBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT_COLOR, justifyContent: 'center', alignItems: 'center' },
     messageBtnText: { fontSize: 16 },
 
-    // Stats
     statsRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -271,7 +268,6 @@ export default function OfferingDetailScreen() {
     statLabel: { fontSize: 9, color: themeColors.textMuted, marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
     statDivider: { width: 1, height: 20, backgroundColor: themeColors.border },
 
-    // Images
     imageCard: { 
       borderRadius: 12, 
       overflow: 'hidden', 
@@ -281,7 +277,6 @@ export default function OfferingDetailScreen() {
     },
     offeringImage: { width: SCREEN_WIDTH - 24, height: IMAGE_HEIGHT },
 
-    // Section Card
     sectionCard: {
       backgroundColor: themeColors.card,
       borderRadius: 12,
@@ -293,7 +288,6 @@ export default function OfferingDetailScreen() {
     sectionTitle: { fontSize: 11, fontWeight: '700', color: themeColors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
     descriptionText: { fontSize: 15, color: themeColors.text, lineHeight: 22 },
 
-    // Location
     locationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
     locationInfo: { flex: 1 },
     locationText: { fontSize: 14, color: themeColors.text, marginBottom: 4 },
@@ -303,7 +297,6 @@ export default function OfferingDetailScreen() {
     mapBtn: { backgroundColor: activeTheme === 'dark' ? '#422006' : '#fff7ed', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', marginTop: 8 },
     mapBtnText: { fontSize: 13, fontWeight: '600', color: ACCENT_COLOR },
 
-    // Notice
     noticeCard: { 
       borderRadius: 10, 
       padding: 10, 
@@ -316,7 +309,6 @@ export default function OfferingDetailScreen() {
     noticeSuccess: { backgroundColor: activeTheme === 'dark' ? '#064e3b' : '#dcfce7' },
     noticeText: { fontSize: 13, fontWeight: '600', color: themeColors.text },
 
-    // Bottom Bar
     bottomBar: {
       position: 'absolute',
       bottom: 0,
@@ -334,7 +326,6 @@ export default function OfferingDetailScreen() {
     ownerActions: { flexDirection: 'row', gap: 8 },
     ownerBtn: { flex: 1, borderRadius: 10 },
 
-    // Dialog
     dialogInput: { minHeight: 80 },
   }), [activeTheme, themeColors]);
 
@@ -345,8 +336,8 @@ export default function OfferingDetailScreen() {
           headerShown: true,
           headerTransparent: false,
           headerLargeTitle: false,
-          title: 'Service Details',
-          headerBackTitle: 'Back',
+          title: t.offering.serviceDetails,
+          headerBackTitle: t.offering.back,
           headerStyle: {
             backgroundColor: themeColors.card,
           },
@@ -381,8 +372,8 @@ export default function OfferingDetailScreen() {
           </View>
         ) : error || !offering ? (
           <View style={styles.centered}>
-            <Text style={styles.errorText}>Service not found</Text>
-            <Button mode="contained" onPress={() => router.back()} buttonColor={ACCENT_COLOR}>Go Back</Button>
+            <Text style={styles.errorText}>{t.offering.serviceNotFound}</Text>
+            <Button mode="contained" onPress={() => router.back()} buttonColor={ACCENT_COLOR}>{t.offering.goBack}</Button>
           </View>
         ) : (
           <>
@@ -423,17 +414,17 @@ export default function OfferingDetailScreen() {
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>✓ {completedJobs}</Text>
-                  <Text style={styles.statLabel}>COMPLETED</Text>
+                  <Text style={styles.statLabel}>{t.offering.completed}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>⚡ ~2h</Text>
-                  <Text style={styles.statLabel}>RESPONSE</Text>
+                  <Text style={styles.statLabel}>{t.offering.response}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
-                  <Text style={styles.statLabel}>POSTED</Text>
+                  <Text style={styles.statLabel}>{t.offering.posted}</Text>
                 </View>
               </View>
             </View>
@@ -449,7 +440,7 @@ export default function OfferingDetailScreen() {
             )}
 
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>About</Text>
+              <Text style={styles.sectionTitle}>{t.offering.about}</Text>
               <Text style={styles.descriptionText}>{offering.description}</Text>
             </View>
 
@@ -457,7 +448,7 @@ export default function OfferingDetailScreen() {
               <View style={styles.sectionCard}>
                 <View style={styles.locationRow}>
                   <View style={styles.locationInfo}>
-                    <Text style={styles.sectionTitle}>Service Area</Text>
+                    <Text style={styles.sectionTitle}>{t.offering.serviceArea}</Text>
                     <Text style={styles.locationText}>{offering.location}</Text>
                     {offering.service_radius && (
                       <Text style={styles.radiusText}>📍 {offering.service_radius}km radius</Text>
@@ -471,7 +462,7 @@ export default function OfferingDetailScreen() {
                 </View>
                 {offering.latitude && offering.longitude && (
                   <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap}>
-                    <Text style={styles.mapBtnText}>🗺️ Map</Text>
+                    <Text style={styles.mapBtnText}>🗺️ {t.offering.map}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -480,7 +471,7 @@ export default function OfferingDetailScreen() {
             {isOwnOffering && (
               <View style={[styles.noticeCard, offering.status === 'active' ? styles.noticeSuccess : styles.noticeWarning]}>
                 <Text style={styles.noticeText}>
-                  {offering.status === 'active' ? '✅ Live' : '⏸️ Paused'}
+                  {offering.status === 'active' ? t.offering.live : t.offering.paused}
                 </Text>
               </View>
             )}
@@ -499,17 +490,17 @@ export default function OfferingDetailScreen() {
               labelStyle={styles.btnLabel}
               buttonColor={ACCENT_COLOR}
             >
-              Contact Provider
+              {t.offering.contactProvider}
             </Button>
           )}
 
           {isOwnOffering && (
             <View style={styles.ownerActions}>
               <Button mode="outlined" onPress={handleToggleStatus} style={styles.ownerBtn} compact textColor={themeColors.text}>
-                {offering.status === 'active' ? 'Pause' : 'Activate'}
+                {offering.status === 'active' ? t.offering.pause : t.offering.activate}
               </Button>
               <Button mode="outlined" onPress={() => router.push(`/offering/${offeringId}/edit`)} style={styles.ownerBtn} compact textColor={themeColors.text}>
-                Edit
+                {t.offering.edit}
               </Button>
               {!offering.is_boost_active && (
                 <Button mode="contained" onPress={handleBoost} style={styles.ownerBtn} buttonColor="#f59e0b" compact>
@@ -526,7 +517,7 @@ export default function OfferingDetailScreen() {
 
       <Portal>
         <Dialog visible={showContactDialog} onDismiss={() => setShowContactDialog(false)}>
-          <Dialog.Title>Message</Dialog.Title>
+          <Dialog.Title>{t.offering.message}</Dialog.Title>
           <Dialog.Content>
             <TextInput
               mode="outlined"
@@ -535,17 +526,17 @@ export default function OfferingDetailScreen() {
               multiline
               numberOfLines={3}
               style={styles.dialogInput}
-              placeholder="Your message..."
+              placeholder={t.offering.messagePlaceholder}
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setShowContactDialog(false)}>Cancel</Button>
+            <Button onPress={() => setShowContactDialog(false)}>{t.offering.cancel}</Button>
             <Button 
               onPress={handleSendMessage} 
               disabled={!contactMessage.trim() || contactMutation.isPending}
               loading={contactMutation.isPending}
             >
-              Send
+              {t.offering.send}
             </Button>
           </Dialog.Actions>
         </Dialog>
