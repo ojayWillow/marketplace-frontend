@@ -1,9 +1,11 @@
 import React, { memo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
-import { type Task, getCategoryByKey } from '@marketplace/shared';
+import { type Task } from '@marketplace/shared';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { calculateDistance, formatPostedDate, getDifficultyIndicator, getMarkerColor } from '../constants';
+import { calculateDistance, formatPostedDate, getMarkerColor } from '../constants';
+import { useCategories } from '../../../hooks/useCategories';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface FocusedTaskCardProps {
   task: Task;
@@ -20,9 +22,22 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
   onViewDetails, 
   styles 
 }: FocusedTaskCardProps) {
-  const categoryData = getCategoryByKey(task.category);
+  const { t } = useTranslation();
+  const { getCategoryLabel, getCategoryIcon } = useCategories();
+  
   const categoryColor = getMarkerColor(task.category);
   const applicantsCount = task.pending_applications_count ?? 0;
+  
+  // Get translated difficulty
+  const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+    switch (difficulty) {
+      case 'easy': return { color: '#10b981', label: t.difficulty?.easy || 'Easy' };
+      case 'hard': return { color: '#ef4444', label: t.difficulty?.hard || 'Hard' };
+      case 'medium':
+      default: return { color: '#f59e0b', label: t.difficulty?.medium || 'Medium' };
+    }
+  };
+  
   const difficulty = getDifficultyIndicator(task.difficulty);
 
   const distanceKm = hasRealLocation && task.latitude && task.longitude
@@ -40,9 +55,9 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
     <View style={styles.focusedCard}>
       <View style={styles.focusedTopRow}>
         <View style={[styles.focusedCategoryBadge, { backgroundColor: categoryColor }]}>
-          <Text style={styles.focusedCategoryIcon}>{categoryData?.icon || '📋'}</Text>
+          <Text style={styles.focusedCategoryIcon}>{getCategoryIcon(task.category)}</Text>
           <Text style={styles.focusedCategoryText}>
-            {categoryData?.label || task.category}
+            {getCategoryLabel(task.category)}
           </Text>
         </View>
         <Text style={[styles.focusedPrice, { color: categoryColor }]}>
