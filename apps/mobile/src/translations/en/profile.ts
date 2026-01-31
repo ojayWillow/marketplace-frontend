@@ -13,4 +13,12 @@ export const profile = {
   logoutTitle: 'Log Out',
   logoutConfirm: 'Are you sure you want to logout?',
   appVersion: 'App version 1.0.0',
+  // ActivityMenu
+  activitySection: 'Activity',
+  jobsAndOfferings: 'Jobs & Offerings',
+  jobsAndOfferingsSubtitle: 'View all your jobs and services',
+  marketplaceSection: 'Marketplace',
+  myListings: 'My Listings',
+  myListingsSubtitle: 'Buy and sell items in your area',
+  comingSoon: 'Coming Soon',
 };
