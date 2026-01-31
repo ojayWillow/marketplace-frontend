@@ -15,4 +15,8 @@ export const tasks = {
   noServices: 'No services available',
   tryDifferentFilters: 'Try different filters',
   checkBackLater: 'Check back later for new items',
+  // Tabs
+  tabAll: 'All',
+  tabJobs: 'Jobs',
+  tabServices: 'Services',
 };
