@@ -8,6 +8,7 @@ export const home = {
   noTasksNearby: 'Tuvāk nav uzdevumu',
   noTasksNearbyDesc: 'Mēģiniet mainīt meklēšanu vai filtrus',
   viewDetails: 'Skatīt informāciju',
+  allAreas: 'Visas vietas',
   // Category Modal
   selectCategories: 'Izvēlēties kategorijas',
   showingAllCategories: 'Rāda visas kategorijas',
