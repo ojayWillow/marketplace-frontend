@@ -24,7 +24,7 @@ export const tasks = {
   filters: {
     title: 'Filters',
     difficultyLabel: 'DIFFICULTY',
-    categoryLabel: 'RADIUS',
+    categoryLabel: 'CATEGORIES',
     all: 'All',
     easy: 'Easy',
     medium: 'Medium',

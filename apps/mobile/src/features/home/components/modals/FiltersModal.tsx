@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { haptic } from '../../../../../utils/haptics';
 import { JOB_COLOR, RADIUS_OPTIONS, DIFFICULTY_OPTIONS } from '../../constants';
-import { useTranslation } from '../../../../../hooks/useTranslation';
+import { useTranslation } from '../../../../../src/hooks/useTranslation';
 
 interface FiltersModalProps {
   visible: boolean;
