@@ -11,6 +11,8 @@ export { settings } from './settings';
 export { legal } from './legal';
 export { activity } from './activity';
 export { offering } from './offering';
+export { offerings } from './offerings';
+export { listings } from './listings';
 export { notifications } from './notifications';
 export { onboarding } from './onboarding';
 export { dispute } from './dispute';
@@ -29,6 +31,8 @@ import { settings } from './settings';
 import { legal } from './legal';
 import { activity } from './activity';
 import { offering } from './offering';
+import { offerings } from './offerings';
+import { listings } from './listings';
 import { notifications } from './notifications';
 import { onboarding } from './onboarding';
 import { dispute } from './dispute';
@@ -48,6 +52,8 @@ export const en = {
   legal,
   activity,
   offering,
+  offerings,
+  listings,
   notifications,
   onboarding,
   dispute,
