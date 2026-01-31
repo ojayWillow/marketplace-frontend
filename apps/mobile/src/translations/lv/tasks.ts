@@ -1,0 +1,18 @@
+export const tasks = {
+  title: 'Uzdevumi',
+  myTasks: 'Mani uzdevumi',
+  createTask: 'Izveidot uzdevumu',
+  noTasks: 'Vēl nav uzdevumu',
+  statusOpen: 'Atvērts',
+  statusInProgress: 'Notiek',
+  statusCompleted: 'Pabeigts',
+  statusCancelled: 'Atcelts',
+  noFilterMatch: 'Neviena vienība neatbilst filtriem',
+  noJobsFilter: 'Nevienam darbam neatbilst filtriem',
+  noServicesCategory: 'Šajā kategorijā nav pakalpojumu',
+  noTasksEmpty: 'Nav pieejamu uzdevumu',
+  noJobs: 'Nav pieejamu darbu',
+  noServices: 'Nav pieejamu pakalpojumu',
+  tryDifferentFilters: 'Pamēģini citus filtrus',
+  checkBackLater: 'Paskaties vēlāk – būs jauni piedāvājumi',
+};

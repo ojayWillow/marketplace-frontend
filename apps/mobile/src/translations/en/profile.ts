@@ -1,0 +1,16 @@
+export const profile = {
+  title: 'Profile',
+  editProfile: 'Edit Profile',
+  myOfferings: 'My Offerings',
+  myActivity: 'My Activity',
+  settings: 'Settings',
+  logout: 'Log Out',
+  memberSince: 'Member since',
+  verified: 'Verified',
+  notVerified: 'Not Verified',
+  notLoggedInTitle: 'Not Logged In',
+  notLoggedInSubtitle: 'Sign in to access your profile, listings, and messages',
+  logoutTitle: 'Log Out',
+  logoutConfirm: 'Are you sure you want to logout?',
+  appVersion: 'App version 1.0.0',
+};

@@ -10,6 +10,7 @@ import ImagePicker from '../../components/ImagePicker';
 import LocationPicker from '../../components/LocationPicker';
 import { haptic } from '../../utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useLanguageStore } from '../../src/stores/languageStore';
 import { colors } from '../../src/theme';
 
 interface LocationData {
@@ -22,6 +23,7 @@ export default function CreateTaskScreen() {
   const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
+  const { t } = useLanguageStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -66,15 +68,15 @@ export default function CreateTaskScreen() {
       queryClient.invalidateQueries({ queryKey: ['tasks-map'] });
       queryClient.invalidateQueries({ queryKey: ['tasks-home'] });
       Alert.alert(
-        'Success!',
-        'Your task has been created.',
+        t('task.create.successTitle'),
+        t('task.create.successMessage'),
         [
           {
-            text: 'View Task',
+            text: t('task.create.viewTask'),
             onPress: () => router.replace(`/task/${task.id}`),
           },
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => router.back(),
           },
         ]
@@ -83,8 +85,8 @@ export default function CreateTaskScreen() {
     onError: (error: any) => {
       console.error('Create task error:', error);
       console.error('Error response:', error.response?.data);
-      const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to create task. Please try again.';
-      Alert.alert('Error', message);
+      const message = error.response?.data?.error || error.response?.data?.message || error.message || t('task.create.errorCreateFailed');
+      Alert.alert(t('task.create.errorTitle'), message);
     },
   });
 
@@ -96,23 +98,23 @@ export default function CreateTaskScreen() {
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      Alert.alert('Required', 'Please enter a title for your task.');
+      Alert.alert(t('task.create.errorRequired'), t('task.create.errorTitleRequired'));
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Required', 'Please enter a description.');
+      Alert.alert(t('task.create.errorRequired'), t('task.create.errorDescriptionRequired'));
       return;
     }
     if (!budget.trim() || isNaN(parseFloat(budget))) {
-      Alert.alert('Required', 'Please enter a valid budget.');
+      Alert.alert(t('task.create.errorRequired'), t('task.create.errorBudgetRequired'));
       return;
     }
     if (!location) {
-      Alert.alert('Required', 'Please select a location for your task.');
+      Alert.alert(t('task.create.errorRequired'), t('task.create.errorLocationRequired'));
       return;
     }
     if (!user?.id) {
-      Alert.alert('Error', 'User not found. Please log in again.');
+      Alert.alert(t('task.create.errorTitle'), t('task.create.errorUserNotFound'));
       return;
     }
 
@@ -368,17 +370,17 @@ export default function CreateTaskScreen() {
         <Stack.Screen 
           options={{ 
             headerShown: true, 
-            title: 'Create Task',
+            title: t('task.create.title'),
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
             headerTitleStyle: { color: themeColors.text },
           }} 
         />
         <View style={styles.centerContainer}>
-          <Text variant="headlineSmall" style={styles.notAuthTitle}>Sign In Required</Text>
-          <Text style={styles.notAuthText}>You need to sign in to create tasks.</Text>
+          <Text variant="headlineSmall" style={styles.notAuthTitle}>{t('task.create.signInRequired')}</Text>
+          <Text style={styles.notAuthText}>{t('task.create.signInText')}</Text>
           <Button mode="contained" onPress={() => router.push('/(auth)/login')} style={styles.signInButton}>
-            Sign In
+            {t('task.create.signInButton')}
           </Button>
         </View>
       </SafeAreaView>
@@ -390,8 +392,8 @@ export default function CreateTaskScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Create Task',
-          headerBackTitle: 'Cancel',
+          title: t('task.create.title'),
+          headerBackTitle: t('task.create.cancel'),
           headerStyle: { backgroundColor: themeColors.card },
           headerTintColor: themeColors.primaryAccent,
           headerTitleStyle: { color: themeColors.text },
@@ -405,10 +407,10 @@ export default function CreateTaskScreen() {
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Task Title *</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.taskTitleLabel')}</Text>
               <TextInput
                 mode="flat"
-                placeholder="What do you need help with?"
+                placeholder={t('task.create.taskTitlePlaceholder')}
                 value={title}
                 onChangeText={setTitle}
                 maxLength={100}
@@ -419,10 +421,10 @@ export default function CreateTaskScreen() {
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Description *</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.descriptionLabel')}</Text>
               <TextInput
                 mode="flat"
-                placeholder="Describe your task in detail..."
+                placeholder={t('task.create.descriptionPlaceholder')}
                 value={description}
                 onChangeText={setDescription}
                 multiline
@@ -439,30 +441,30 @@ export default function CreateTaskScreen() {
                 images={images}
                 onImagesChange={setImages}
                 maxImages={5}
-                label="Photos (Optional)"
+                label={t('task.create.photosLabel')}
               />
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Category</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.categoryLabel')}</Text>
               <TouchableOpacity 
                 style={styles.categorySelector}
                 onPress={() => { haptic.light(); setShowCategoryModal(true); }}
                 activeOpacity={0.7}
               >
                 <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '📋'}</Text>
-                <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || 'Select category'}</Text>
+                <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || t('task.create.selectCategory')}</Text>
                 <Text style={styles.categorySelectorArrow}>›</Text>
               </TouchableOpacity>
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Budget *</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.budgetLabel')}</Text>
               <View style={styles.budgetRow}>
                 <Text style={styles.euroSign}>€</Text>
                 <TextInput
                   mode="flat"
-                  placeholder="0.00"
+                  placeholder={t('task.create.budgetPlaceholder')}
                   value={budget}
                   onChangeText={setBudget}
                   keyboardType="decimal-pad"
@@ -474,8 +476,8 @@ export default function CreateTaskScreen() {
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Difficulty</Text>
-              <Text style={styles.sectionHint}>How challenging is this task?</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.difficultyLabel')}</Text>
+              <Text style={styles.sectionHint}>{t('task.create.difficultyHint')}</Text>
               <View style={styles.difficultyRow}>
                 <TouchableOpacity
                   style={[
@@ -490,7 +492,7 @@ export default function CreateTaskScreen() {
                   <Text style={[
                     styles.difficultyLabel,
                     difficulty === 'easy' && styles.difficultyLabelActive
-                  ]}>Easy</Text>
+                  ]}>{t('task.create.easy')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -506,7 +508,7 @@ export default function CreateTaskScreen() {
                   <Text style={[
                     styles.difficultyLabel,
                     difficulty === 'medium' && styles.difficultyLabelActive
-                  ]}>Medium</Text>
+                  ]}>{t('task.create.medium')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -522,7 +524,7 @@ export default function CreateTaskScreen() {
                   <Text style={[
                     styles.difficultyLabel,
                     difficulty === 'hard' && styles.difficultyLabelActive
-                  ]}>Hard</Text>
+                  ]}>{t('task.create.hard')}</Text>
                 </TouchableOpacity>
               </View>
             </Surface>
@@ -531,12 +533,12 @@ export default function CreateTaskScreen() {
               <LocationPicker
                 initialLocation={location || undefined}
                 onLocationSelect={setLocation}
-                label="Location *"
+                label={t('task.create.locationLabel')}
               />
             </Surface>
 
             <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>Deadline (Optional)</Text>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.deadlineLabel')}</Text>
               <Button
                 mode="outlined"
                 onPress={() => setShowDatePicker(true)}
@@ -544,7 +546,7 @@ export default function CreateTaskScreen() {
                 style={styles.dateButton}
                 textColor={themeColors.text}
               >
-                {deadline ? deadline.toLocaleDateString() : 'Select deadline'}
+                {deadline ? deadline.toLocaleDateString() : t('task.create.selectDeadline')}
               </Button>
               {deadline && (
                 <Button
@@ -553,7 +555,7 @@ export default function CreateTaskScreen() {
                   textColor="#ef4444"
                   compact
                 >
-                  Clear deadline
+                  {t('task.create.clearDeadline')}
                 </Button>
               )}
               {showDatePicker && (
@@ -572,8 +574,8 @@ export default function CreateTaskScreen() {
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
-                  <Text variant="titleMedium" style={{ color: themeColors.text }}>🔥 Mark as Urgent</Text>
-                  <Text style={styles.urgentHint}>Urgent tasks get more visibility</Text>
+                  <Text variant="titleMedium" style={{ color: themeColors.text }}>{t('task.create.markAsUrgent')}</Text>
+                  <Text style={styles.urgentHint}>{t('task.create.urgentHint')}</Text>
                 </View>
                 <Chip
                   selected={isUrgent}
@@ -581,7 +583,7 @@ export default function CreateTaskScreen() {
                   mode={isUrgent ? 'flat' : 'outlined'}
                   selectedColor={themeColors.primaryAccent}
                 >
-                  {isUrgent ? 'Yes' : 'No'}
+                  {isUrgent ? t('common.yes') : t('common.no')}
                 </Chip>
               </View>
             </Surface>
@@ -601,7 +603,7 @@ export default function CreateTaskScreen() {
             buttonColor={themeColors.primaryAccent}
             textColor="#ffffff"
           >
-            {uploading ? 'Uploading Images...' : 'Create Task'}
+            {uploading ? t('task.create.uploadingImages') : t('task.create.createButton')}
           </Button>
         </Surface>
       </KeyboardAvoidingView>
@@ -618,7 +620,7 @@ export default function CreateTaskScreen() {
           onPress={() => { haptic.soft(); setShowCategoryModal(false); }}
         >
           <View style={styles.categoryModalContent}>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={styles.modalTitle}>{t('task.create.selectCategory')}</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.categoryWrap}>
                 {FORM_CATEGORIES.map((cat) => (

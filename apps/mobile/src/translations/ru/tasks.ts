@@ -1,0 +1,18 @@
+export const tasks = {
+  title: 'Задания',
+  myTasks: 'Мои задания',
+  createTask: 'Создать задание',
+  noTasks: 'Пока нет заданий',
+  statusOpen: 'Открыто',
+  statusInProgress: 'В процессе',
+  statusCompleted: 'Завершено',
+  statusCancelled: 'Отменено',
+  noFilterMatch: 'Ни один элемент не соответствует фильтрам',
+  noJobsFilter: 'Ни одно задание не соответствует фильтрам',
+  noServicesCategory: 'В этой категории нет услуг',
+  noTasksEmpty: 'Нет доступных заданий',
+  noJobs: 'Нет доступных работ',
+  noServices: 'Нет доступных услуг',
+  tryDifferentFilters: 'Попробуйте другие фильтры',
+  checkBackLater: 'Загляните позже для новых предложений',
+};

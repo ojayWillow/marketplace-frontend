@@ -1,5 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
+import { useLanguageStore } from '../../../src/stores/languageStore';
 
 interface EmptyConversationProps {
   themeColors: any;
@@ -9,14 +10,16 @@ interface EmptyConversationProps {
  * Empty state shown when conversation has no messages yet
  */
 export function EmptyConversation({ themeColors }: EmptyConversationProps) {
+  const { t } = useLanguageStore();
+  
   return (
     <View style={styles.container}>
       <View style={[styles.iconContainer, { backgroundColor: themeColors.card }]}>
         <Text style={styles.icon}>👋</Text>
       </View>
-      <Text style={[styles.title, { color: themeColors.text }]}>Say hello!</Text>
+      <Text style={[styles.title, { color: themeColors.text }]}>{t('conversation.emptyConversation')}</Text>
       <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
-        Send a message to start the conversation
+        {t('conversation.emptyHint')}
       </Text>
     </View>
   );

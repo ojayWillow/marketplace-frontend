@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getMyApplications, type TaskApplication } from '@marketplace/shared';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function ApplicationsScreen() {
+  const { t } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['my-applications'],
     queryFn: getMyApplications,
@@ -29,13 +31,7 @@ export default function ApplicationsScreen() {
   };
 
   const getApplicationStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Pending';
-      case 'accepted': return 'Accepted';
-      case 'rejected': return 'Rejected';
-      case 'withdrawn': return 'Withdrawn';
-      default: return status;
-    }
+    return t(`activity.applications.status.${status}`);
   };
 
   const styles = StyleSheet.create({
@@ -127,7 +123,7 @@ export default function ApplicationsScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: 'My Applications', 
+          title: t('activity.applications.title'), 
           headerBackTitle: 'Back',
           headerShown: true,
         }} 
@@ -144,16 +140,16 @@ export default function ApplicationsScreen() {
           </View>
         ) : isError ? (
           <View style={styles.centerContainer}>
-            <Text style={styles.errorText}>Failed to load</Text>
-            <Button mode="contained" onPress={() => refetch()} buttonColor={themeColors.primaryAccent}>Retry</Button>
+            <Text style={styles.errorText}>{t('activity.error')}</Text>
+            <Button mode="contained" onPress={() => refetch()} buttonColor={themeColors.primaryAccent}>{t('activity.retry')}</Button>
           </View>
         ) : applications.length === 0 ? (
           <View style={styles.centerContainer}>
-            <Text style={styles.emptyIcon}>📨</Text>
-            <Text style={styles.emptyText}>No applications yet</Text>
-            <Text style={styles.emptySubtext}>Browse jobs and apply to get started</Text>
+            <Text style={styles.emptyIcon}>{t('activity.applications.empty.icon')}</Text>
+            <Text style={styles.emptyText}>{t('activity.applications.empty.title')}</Text>
+            <Text style={styles.emptySubtext}>{t('activity.applications.empty.subtitle')}</Text>
             <Button mode="contained" onPress={() => router.push('/(tabs)/tasks')} style={styles.browseButton}>
-              Browse Jobs
+              {t('activity.applications.empty.browseButton')}
             </Button>
           </View>
         ) : (
@@ -164,7 +160,7 @@ export default function ApplicationsScreen() {
                 <Card.Content>
                   <View style={styles.cardHeader}>
                     <Text variant="titleMedium" numberOfLines={1} style={styles.cardTitle}>
-                      {app.task?.title || 'Job'}
+                      {app.task?.title || t('activity.applications.job')}
                     </Text>
                     <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
                       <Text style={[styles.statusBadgeText, { color: statusColors.text }]}>
@@ -179,7 +175,7 @@ export default function ApplicationsScreen() {
                   
                   <View style={styles.cardFooter}>
                     <Text style={styles.price}>€{app.proposed_price?.toFixed(0) || app.task?.budget?.toFixed(0) || '0'}</Text>
-                    <Text style={styles.date}>Applied {new Date(app.created_at).toLocaleDateString()}</Text>
+                    <Text style={styles.date}>{t('activity.applications.applied')} {new Date(app.created_at).toLocaleDateString()}</Text>
                   </View>
                 </Card.Content>
               </Card>

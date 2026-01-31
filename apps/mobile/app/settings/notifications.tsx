@@ -13,6 +13,7 @@ import {
 } from '../../utils/pushNotifications';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 const NOTIFICATION_SETTINGS_KEY = '@marketplace_notification_settings';
 
@@ -35,6 +36,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 };
 
 export default function NotificationSettingsScreen() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const { token, isAuthenticated } = useAuthStore();
@@ -73,8 +75,8 @@ export default function NotificationSettingsScreen() {
           const success = await registerPushToken(token);
           if (!success) {
             Alert.alert(
-              'Permission Required',
-              'Please enable notifications in your device settings to receive push notifications.',
+              t('notifications.settings.alerts.permissionRequired.title'),
+              t('notifications.settings.alerts.permissionRequired.message'),
               [{ text: 'OK' }]
             );
             // Revert setting
@@ -82,36 +84,36 @@ export default function NotificationSettingsScreen() {
             setSettings(revertedSettings);
             await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(revertedSettings));
           } else {
-            Alert.alert('✅ Success', 'Push notifications enabled!');
+            Alert.alert(t('notifications.settings.alerts.enabled.title'), t('notifications.settings.alerts.enabled.message'));
           }
         } else {
           // Disable push notifications
           await unregisterPushToken(token);
-          Alert.alert('Push notifications disabled');
+          Alert.alert(t('notifications.settings.alerts.disabled'));
         }
       }
     } catch (e) {
       console.error('Failed to save notification settings:', e);
-      Alert.alert('Error', 'Failed to save settings');
+      Alert.alert(t('notifications.settings.alerts.saveFailed.title'), t('notifications.settings.alerts.saveFailed.message'));
     }
   };
 
   const handleTestNotification = async () => {
     if (!isAuthenticated || !token) {
-      Alert.alert('Error', 'You must be logged in to test notifications');
+      Alert.alert(t('notifications.settings.test.error.title'), t('notifications.settings.test.error.notLoggedIn'));
       return;
     }
 
     if (!settings.pushEnabled) {
-      Alert.alert('Push Disabled', 'Please enable push notifications first');
+      Alert.alert(t('notifications.settings.test.error.title'), t('notifications.settings.test.error.pushDisabled'));
       return;
     }
 
     try {
       await sendTestNotification(token);
-      Alert.alert('✅ Test Sent!', 'Check your notifications in a few seconds');
+      Alert.alert(t('notifications.settings.test.success.title'), t('notifications.settings.test.success.message'));
     } catch (error) {
-      Alert.alert('Error', 'Failed to send test notification');
+      Alert.alert(t('notifications.settings.test.error.title'), t('notifications.settings.test.error.message'));
     }
   };
 
@@ -202,7 +204,7 @@ export default function NotificationSettingsScreen() {
         <Stack.Screen 
           options={{ 
             headerShown: true, 
-            title: 'Notifications',
+            title: t('notifications.settings.title'),
             headerBackTitle: 'Back',
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
@@ -211,9 +213,9 @@ export default function NotificationSettingsScreen() {
         />
         <View style={styles.centerContainer}>
           <Text style={styles.emptyIcon}>🔔</Text>
-          <Text variant="titleLarge" style={styles.emptyTitle}>Sign In Required</Text>
+          <Text variant="titleLarge" style={styles.emptyTitle}>{t('notifications.settings.signInRequired.title')}</Text>
           <Text style={styles.emptyText}>
-            Please sign in to manage your notification preferences
+            {t('notifications.settings.signInRequired.message')}
           </Text>
         </View>
       </SafeAreaView>
@@ -225,7 +227,7 @@ export default function NotificationSettingsScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: 'Notifications',
+          title: t('notifications.settings.title'),
           headerBackTitle: 'Back',
           headerStyle: { backgroundColor: themeColors.card },
           headerTintColor: themeColors.primaryAccent,
@@ -235,12 +237,12 @@ export default function NotificationSettingsScreen() {
       
       {/* Main Toggles */}
       <Surface style={styles.section} elevation={0}>
-        <Text style={styles.sectionTitle}>Notification Channels</Text>
+        <Text style={styles.sectionTitle}>{t('notifications.settings.channels.title')}</Text>
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>🔔 Push Notifications</Text>
-            <Text style={styles.settingDescription}>Receive alerts on your device</Text>
+            <Text style={styles.settingLabel}>🔔 {t('notifications.settings.channels.push.label')}</Text>
+            <Text style={styles.settingDescription}>{t('notifications.settings.channels.push.description')}</Text>
           </View>
           <Switch
             value={settings.pushEnabled}
@@ -253,8 +255,8 @@ export default function NotificationSettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>✉️ Email Notifications</Text>
-            <Text style={styles.settingDescription}>Receive updates via email</Text>
+            <Text style={styles.settingLabel}>✉️ {t('notifications.settings.channels.email.label')}</Text>
+            <Text style={styles.settingDescription}>{t('notifications.settings.channels.email.description')}</Text>
           </View>
           <Switch
             value={settings.emailEnabled}
@@ -266,12 +268,12 @@ export default function NotificationSettingsScreen() {
 
       {/* Notification Types */}
       <Surface style={styles.section} elevation={0}>
-        <Text style={styles.sectionTitle}>Notification Types</Text>
+        <Text style={styles.sectionTitle}>{t('notifications.settings.types.title')}</Text>
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>💬 New Messages</Text>
-            <Text style={styles.settingDescription}>When someone sends you a message</Text>
+            <Text style={styles.settingLabel}>💬 {t('notifications.settings.types.newMessages.label')}</Text>
+            <Text style={styles.settingDescription}>{t('notifications.settings.types.newMessages.description')}</Text>
           </View>
           <Switch
             value={settings.newMessages}
@@ -285,8 +287,8 @@ export default function NotificationSettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>📥 Task Applications</Text>
-            <Text style={styles.settingDescription}>When someone applies to your task</Text>
+            <Text style={styles.settingLabel}>📥 {t('notifications.settings.types.taskApplications.label')}</Text>
+            <Text style={styles.settingDescription}>{t('notifications.settings.types.taskApplications.description')}</Text>
           </View>
           <Switch
             value={settings.taskApplications}
@@ -300,8 +302,8 @@ export default function NotificationSettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>📋 Task Updates</Text>
-            <Text style={styles.settingDescription}>Status changes on your tasks</Text>
+            <Text style={styles.settingLabel}>📋 {t('notifications.settings.types.taskUpdates.label')}</Text>
+            <Text style={styles.settingDescription}>{t('notifications.settings.types.taskUpdates.description')}</Text>
           </View>
           <Switch
             value={settings.taskUpdates}
@@ -314,9 +316,9 @@ export default function NotificationSettingsScreen() {
         <Divider />
         
         <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>🎁 Promotions & Tips</Text>
-            <Text style={styles.settingDescription}>Special offers and app tips</Text>
+          <View style={settings.settingInfo}>
+            <Text style={styles.settingLabel}>🎁 {t('notifications.settings.types.promotions.label')}</Text>
+            <Text style={styles.settingDescription}>{t('notifications.settings.types.promotions.description')}</Text>
           </View>
           <Switch
             value={settings.promotions}
@@ -336,7 +338,7 @@ export default function NotificationSettingsScreen() {
             icon="bell-ring"
             textColor={themeColors.text}
           >
-            Send Test Notification
+            {t('notifications.settings.test.button')}
           </Button>
         </View>
       )}
@@ -345,14 +347,14 @@ export default function NotificationSettingsScreen() {
       {!settings.pushEnabled && !settings.emailEnabled ? (
         <View style={styles.warningContainer}>
           <Text style={styles.warningText}>
-            ⚠️ All notifications are disabled. You won't receive any alerts.
+            ⚠️ {t('notifications.settings.warning.allDisabled')}
           </Text>
         </View>
       ) : null}
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Changes are saved automatically.
+          {t('notifications.settings.footer')}
         </Text>
       </View>
     </SafeAreaView>

@@ -1,0 +1,16 @@
+export const profile = {
+  title: 'Профиль',
+  editProfile: 'Редактировать профиль',
+  myOfferings: 'Мои предложения',
+  myActivity: 'Моя активность',
+  settings: 'Настройки',
+  logout: 'Выйти',
+  memberSince: 'Участник с',
+  verified: 'Верифицирован',
+  notVerified: 'Не верифицирован',
+  notLoggedInTitle: 'Не выполнен вход',
+  notLoggedInSubtitle: 'Войдите, чтобы получить доступ к вашему профилю, объявлениям и сообщениям',
+  logoutTitle: 'Выйти',
+  logoutConfirm: 'Вы уверены, что хотите выйти?',
+  appVersion: 'Версия приложения 1.0.0',
+};
