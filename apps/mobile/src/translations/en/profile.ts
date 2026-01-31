@@ -21,4 +21,44 @@ export const profile = {
   myListings: 'My Listings',
   myListingsSubtitle: 'Buy and sell items in your area',
   comingSoon: 'Coming Soon',
+  
+  // Edit Profile
+  edit: {
+    title: 'Edit Profile',
+    back: 'Back',
+    tapToChange: 'Tap to change photo',
+    changePhoto: 'Change Profile Photo',
+    chooseOption: 'Choose an option',
+    takePhoto: 'Take Photo',
+    chooseGallery: 'Choose from Gallery',
+    cancel: 'Cancel',
+    cameraPermission: 'Permission needed',
+    cameraPermissionMsg: 'Camera permission is required to take photos.',
+    galleryPermission: 'Permission needed',
+    galleryPermissionMsg: 'Gallery permission is required to select photos.',
+    
+    basicInfo: 'Basic Information',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    bio: 'Bio',
+    bioPlaceholder: 'Tell others about yourself...',
+    phone: 'Phone',
+    city: 'City',
+    cityPlaceholder: 'e.g. Riga',
+    
+    skills: 'Your Skills',
+    skillsDescription: 'Select the categories you can help with',
+    
+    helperMode: 'Helper Mode',
+    helperDescription: 'Enable to appear as available for hire',
+    hourlyRate: 'Hourly Rate (€)',
+    hourlyRatePlaceholder: 'e.g. 15',
+    
+    saveChanges: 'Save Changes',
+    success: 'Success',
+    successMsg: 'Profile updated successfully!',
+    error: 'Error',
+    uploadError: 'Failed to upload profile photo. Profile will be saved without the new photo.',
+    updateError: 'Failed to update profile',
+  },
 };
