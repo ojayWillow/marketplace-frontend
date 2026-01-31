@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Task, Offering } from '@marketplace/shared';
 import { FocusedTaskCard, FocusedOfferingCard, TaskCard } from '../../../../src/features/home/components';
 import { JOB_COLOR, OFFERING_COLOR } from '../../../../src/features/home/constants';
+import { useTranslation } from '../../../../src/hooks/useTranslation';
 
 interface HomeBottomSheetProps {
   sheetHeight: Animated.AnimatedInterpolation<number>;
@@ -40,6 +41,8 @@ export function HomeBottomSheet({
   listRef,
   styles,
 }: HomeBottomSheetProps) {
+  const { t } = useTranslation();
+  
   const renderJobItem = ({ item }: { item: Task }) => (
     <TaskCard
       task={item}
@@ -53,10 +56,18 @@ export function HomeBottomSheet({
   const renderEmptyList = () => (
     <View style={styles.emptySheet}>
       <Text style={styles.emptyIcon}>💬</Text>
-      <Text style={styles.emptyText}>No jobs found</Text>
-      <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+      <Text style={styles.emptyText}>{t.home.bottomSheet.noJobsFound}</Text>
+      <Text style={styles.emptySubtext}>{t.home.bottomSheet.tryAdjustFilters}</Text>
     </View>
   );
+  
+  const getSheetTitle = () => {
+    if (focusedTask) return t.home.bottomSheet.jobDetails;
+    if (focusedOffering) return t.home.bottomSheet.serviceDetails;
+    const count = sortedTasks.length;
+    const jobText = count === 1 ? t.home.bottomSheet.jobNearby : t.home.bottomSheet.jobsNearby;
+    return `${count} ${jobText}`;
+  };
 
   return (
     <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
@@ -64,7 +75,7 @@ export function HomeBottomSheet({
         <View style={styles.handleBar} />
         <View style={styles.sheetTitleRow}>
           <Text style={styles.sheetTitle}>
-            {focusedTask ? 'Job Details' : focusedOffering ? 'Service Details' : `${sortedTasks.length} job${sortedTasks.length !== 1 ? 's' : ''} nearby`}
+            {getSheetTitle()}
           </Text>
           {(focusedTask || focusedOffering) ? (
             <IconButton 

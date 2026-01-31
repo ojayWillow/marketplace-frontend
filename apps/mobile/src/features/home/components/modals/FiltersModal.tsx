@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { haptic } from '../../../../../utils/haptics';
 import { JOB_COLOR, RADIUS_OPTIONS, DIFFICULTY_OPTIONS } from '../../constants';
+import { useTranslation } from '../../../../../hooks/useTranslation';
 
 interface FiltersModalProps {
   visible: boolean;
@@ -26,6 +27,8 @@ export default function FiltersModal({
   onClose, 
   styles 
 }: FiltersModalProps) {
+  const { t } = useTranslation();
+  
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity 
@@ -34,9 +37,9 @@ export default function FiltersModal({
         onPress={() => { haptic.soft(); onClose(); }}
       >
         <View style={styles.filterModalContent}>
-          <Text style={styles.modalTitle}>Filters</Text>
+          <Text style={styles.modalTitle}>{t.common.filters}</Text>
           
-          <Text style={styles.filterSectionTitle}>Difficulty</Text>
+          <Text style={styles.filterSectionTitle}>{t.common.difficulty}</Text>
           <View style={styles.segmentContainer}>
             {DIFFICULTY_OPTIONS.map((diff) => (
               <TouchableOpacity
@@ -62,7 +65,7 @@ export default function FiltersModal({
             ))}
           </View>
           
-          <Text style={styles.filterSectionTitle}>Radius</Text>
+          <Text style={styles.filterSectionTitle}>{t.common.radius}</Text>
           <FlatList
             data={RADIUS_OPTIONS}
             keyExtractor={(item) => item.key}
@@ -88,14 +91,14 @@ export default function FiltersModal({
               onPress={() => { haptic.light(); onClear(); }}
               activeOpacity={0.7}
             >
-              <Text style={styles.clearFiltersText}>Clear All</Text>
+              <Text style={styles.clearFiltersText}>{t.common.clearAll}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.applyFiltersButton} 
               onPress={() => { haptic.selection(); onClose(); }}
               activeOpacity={0.7}
             >
-              <Text style={styles.applyFiltersText}>Apply</Text>
+              <Text style={styles.applyFiltersText}>{t.common.apply}</Text>
             </TouchableOpacity>
           </View>
         </View>

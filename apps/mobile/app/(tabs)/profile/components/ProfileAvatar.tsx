@@ -2,6 +2,7 @@ import { View, StyleSheet } from 'react-native';
 import { Avatar, Text, Button } from 'react-native-paper';
 import { router } from 'expo-router';
 import { colors } from '../../../../src/theme';
+import { useTranslation } from '../../../../src/hooks/useTranslation';
 
 interface ProfileAvatarProps {
   displayName: string;
@@ -20,6 +21,8 @@ export function ProfileAvatar({
   profilePictureUrl,
   themeColors 
 }: ProfileAvatarProps) {
+  const { t } = useTranslation();
+  
   return (
     <>
       {/* Avatar - overlapping gradient */}
@@ -66,7 +69,7 @@ export function ProfileAvatar({
           contentStyle={styles.editProfileButtonContent}
           icon="account-edit"
         >
-          Edit Profile
+          {t.profile.editProfile}
         </Button>
       </View>
 
