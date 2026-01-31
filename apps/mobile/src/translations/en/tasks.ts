@@ -1,0 +1,18 @@
+export const tasks = {
+  title: 'Tasks',
+  myTasks: 'My Tasks',
+  createTask: 'Create Task',
+  noTasks: 'No tasks yet',
+  statusOpen: 'Open',
+  statusInProgress: 'In Progress',
+  statusCompleted: 'Completed',
+  statusCancelled: 'Cancelled',
+  noFilterMatch: 'No items match your filters',
+  noJobsFilter: 'No jobs match your filters',
+  noServicesCategory: 'No services in this category',
+  noTasksEmpty: 'No tasks available',
+  noJobs: 'No jobs available',
+  noServices: 'No services available',
+  tryDifferentFilters: 'Try different filters',
+  checkBackLater: 'Check back later for new items',
+};
