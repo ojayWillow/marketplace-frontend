@@ -12,4 +12,13 @@ export const home = {
   showingAllCategories: 'Rāda visas kategorijas',
   of: 'no',
   selected: 'izvēlēti',
+  // Bottom Sheet
+  bottomSheet: {
+    jobNearby: 'darbs tuvāk',
+    jobsNearby: 'darbi tuvāk',
+    noJobsFound: 'Darbi nav atrasti',
+    tryAdjustFilters: 'Mēģiniet mainīt meklēšanu vai filtrus',
+    jobDetails: 'Darba informācija',
+    serviceDetails: 'Pakalpojuma informācija',
+  },
 };

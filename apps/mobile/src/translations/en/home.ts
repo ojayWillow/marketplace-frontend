@@ -12,4 +12,13 @@ export const home = {
   showingAllCategories: 'Showing all categories',
   of: 'of',
   selected: 'selected',
+  // Bottom Sheet
+  bottomSheet: {
+    jobNearby: 'job nearby',
+    jobsNearby: 'jobs nearby',
+    noJobsFound: 'No jobs found',
+    tryAdjustFilters: 'Try adjusting your search or filters',
+    jobDetails: 'Job Details',
+    serviceDetails: 'Service Details',
+  },
 };
