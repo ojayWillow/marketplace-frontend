@@ -17,4 +17,7 @@ export const common = {
   errorLoading: 'Ошибка загрузки данных',
   ok: 'ОК',
   success: 'Успех',
+  // Filter options
+  all: 'Все',
+  active: 'Активные',
 };

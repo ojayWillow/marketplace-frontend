@@ -21,4 +21,44 @@ export const profile = {
   myListings: 'Мои объявления',
   myListingsSubtitle: 'Покупайте и продавайте товары в вашем районе',
   comingSoon: 'Скоро',
+  
+  // Edit Profile
+  edit: {
+    title: 'Редактировать профиль',
+    back: 'Назад',
+    tapToChange: 'Нажмите, чтобы изменить фото',
+    changePhoto: 'Изменить фото профиля',
+    chooseOption: 'Выберите вариант',
+    takePhoto: 'Сделать фото',
+    chooseGallery: 'Выбрать из галереи',
+    cancel: 'Отмена',
+    cameraPermission: 'Требуется разрешение',
+    cameraPermissionMsg: 'Для съёмки фото требуется разрешение камеры.',
+    galleryPermission: 'Требуется разрешение',
+    galleryPermissionMsg: 'Для выбора фото требуется разрешение галереи.',
+    
+    basicInfo: 'Основная информация',
+    firstName: 'Имя',
+    lastName: 'Фамилия',
+    bio: 'О себе',
+    bioPlaceholder: 'Расскажите о себе...',
+    phone: 'Телефон',
+    city: 'Город',
+    cityPlaceholder: 'напр. Рига',
+    
+    skills: 'Ваши навыки',
+    skillsDescription: 'Выберите категории, в которых вы можете помочь',
+    
+    helperMode: 'Режим помощника',
+    helperDescription: 'Включите, чтобы показывать доступность для найма',
+    hourlyRate: 'Почасовая ставка (€)',
+    hourlyRatePlaceholder: 'напр. 15',
+    
+    saveChanges: 'Сохранить изменения',
+    success: 'Успех',
+    successMsg: 'Профиль успешно обновлён!',
+    error: 'Ошибка',
+    uploadError: 'Не удалось загрузить фото профиля. Профиль будет сохранён без новой фотографии.',
+    updateError: 'Не удалось обновить профиль',
+  },
 };

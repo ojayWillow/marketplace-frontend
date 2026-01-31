@@ -10,11 +10,14 @@ export const common = {
   close: 'Aizvērt',
   back: 'Atpakaļ',
   next: 'Tālāk',
-  confirm: 'Apstiprināt',
+  confirm: 'Apstināt',
   dismiss: 'Aizvērt',
   yes: 'Jā',
   no: 'Nē',
   errorLoading: 'Kļūda ielādējot datus',
   ok: 'Labi',
   success: 'Izdevās',
+  // Filter options
+  all: 'Visi',
+  active: 'Aktīvi',
 };

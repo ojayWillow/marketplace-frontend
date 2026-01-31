@@ -17,4 +17,13 @@ export const home = {
     offerServiceDesc: 'Share your skills and earn money',
     cancel: 'Cancel',
   },
+  
+  bottomSheet: {
+    jobDetails: 'Job Details',
+    serviceDetails: 'Service Details',
+    jobsNearby: 'jobs nearby',
+    jobNearby: 'job nearby',
+    noJobsFound: 'No jobs found',
+    tryAdjustFilters: 'Try adjusting your filters',
+  },
 };

@@ -21,4 +21,44 @@ export const profile = {
   myListings: 'Mani sludinājumi',
   myListingsSubtitle: 'Pērc un pārdod preces savā apkārtnē',
   comingSoon: 'Drīzumā',
+  
+  // Edit Profile
+  edit: {
+    title: 'Rediģēt profilu',
+    back: 'Atpakaļ',
+    tapToChange: 'Pieskaries, lai mainītu foto',
+    changePhoto: 'Mainīt profila foto',
+    chooseOption: 'Izvēlies variantu',
+    takePhoto: 'Uzfotēt',
+    chooseGallery: 'Izvēlēties no galerējas',
+    cancel: 'Atcelt',
+    cameraPermission: 'Nepieciešama atļauja',
+    cameraPermissionMsg: 'Kameras atļauja ir nepieciešama, lai uzfotētu.',
+    galleryPermission: 'Nepieciešama atļauja',
+    galleryPermissionMsg: 'Galerējas atļauja ir nepieciešama, lai izvēlētos fotoattēlus.',
+    
+    basicInfo: 'Pamatinformācija',
+    firstName: 'Vārds',
+    lastName: 'Uzvārds',
+    bio: 'Par sevi',
+    bioPlaceholder: 'Pastāsti citiem par sevi...',
+    phone: 'Tālrunis',
+    city: 'Pilsēta',
+    cityPlaceholder: 'piem., Rīga',
+    
+    skills: 'Tavas pras mes',
+    skillsDescription: 'Izvēlies kategorijas, kurās vari palīdzēt',
+    
+    helperMode: 'Palīga režīms',
+    helperDescription: 'Ieslēdz, lai parādītos kā pieejams darbā ieslēgšanai',
+    hourlyRate: 'Tarifs par stundu (€)',
+    hourlyRatePlaceholder: 'piem. 15',
+    
+    saveChanges: 'Saglabāt izmaiņas',
+    success: 'Izdevās',
+    successMsg: 'Profils veiksmīgi atjaunināts!',
+    error: 'Kļūda',
+    uploadError: 'Neizdevās augšupielādēt profila foto. Profils tiks saglabāts bez jaunā fotoattēla.',
+    updateError: 'Neizdevās atjaunināt profilu',
+  },
 };

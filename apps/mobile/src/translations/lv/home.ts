@@ -17,4 +17,13 @@ export const home = {
     offerServiceDesc: 'Dalies ar savām prasmēm un pelni naudu',
     cancel: 'Atcelt',
   },
+  
+  bottomSheet: {
+    jobDetails: 'Darba informācija',
+    serviceDetails: 'Pakalpojuma informācija',
+    jobsNearby: 'darbi tuvumā',
+    jobNearby: 'darbs tuvumā',
+    noJobsFound: 'Darbi nav atrasti',
+    tryAdjustFilters: 'Mēģini mainīt filtrus',
+  },
 };
