@@ -4,6 +4,7 @@ import { Text, Badge } from 'react-native-paper';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../../../src/theme';
+import { useTranslation } from '../../../../src/hooks/useTranslation';
 
 interface ProfileHeaderProps {
   activeTheme: 'light' | 'dark';
@@ -11,6 +12,8 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ activeTheme, unreadCount }: ProfileHeaderProps) {
+  const { t } = useTranslation();
+  
   return (
     <LinearGradient
       colors={activeTheme === 'dark' ? ['#1e3a5f', '#0c1929'] : ['#0ea5e9', '#0284c7']}
@@ -18,7 +21,7 @@ export function ProfileHeader({ activeTheme, unreadCount }: ProfileHeaderProps) 
     >
       <SafeAreaView edges={['top']} collapsable={false}>
         <View style={styles.topBar}>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t.profile.title}</Text>
           <View style={styles.topBarRight}>
             <Pressable onPress={() => router.push('/settings')} style={styles.iconButton}>
               <Text style={styles.iconEmoji}>⚙️</Text>
