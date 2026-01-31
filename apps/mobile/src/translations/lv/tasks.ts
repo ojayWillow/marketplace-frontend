@@ -4,11 +4,11 @@ export const tasks = {
   createTask: 'Izveidot uzdevumu',
   noTasks: 'Vēl nav uzdevumu',
   statusOpen: 'Atvērts',
-  statusInProgress: 'Prog resā',
+  statusInProgress: 'Progresā',
   statusCompleted: 'Pabeigts',
   statusCancelled: 'Atcelts',
-  noFilterMatch: 'Neviens elements neatbilst jūsu filtrie m',
-  noJobsFilter: 'Neviens darbs neatbilst jūsu filtrie m',
+  noFilterMatch: 'Neviens elements neatbilst jūsu filtriem',
+  noJobsFilter: 'Neviens darbs neatbilst jūsu filtriem',
   noServicesCategory: 'Nav pakalpojumu šajā kategorijā',
   noTasksEmpty: 'Nav pieejamu uzdevumu',
   noJobs: 'Nav pieejamu darbu',
@@ -19,4 +19,17 @@ export const tasks = {
   tabAll: 'Visi',
   tabJobs: 'Darbi',
   tabServices: 'Pakalpojumi',
+  
+  // Filters
+  filters: {
+    title: 'Filtri',
+    difficultyLabel: 'GRŪTĪBA',
+    categoryLabel: 'KATEGORIJAS',
+    all: 'Visi',
+    easy: 'Viegli',
+    medium: 'Vidēji',
+    hard: 'Grūti',
+    clearAll: 'Notīrīt visu',
+    apply: 'Pielietot',
+  },
 };

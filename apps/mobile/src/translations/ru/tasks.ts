@@ -19,4 +19,17 @@ export const tasks = {
   tabAll: 'Все',
   tabJobs: 'Работы',
   tabServices: 'Услуги',
+  
+  // Filters
+  filters: {
+    title: 'Фильтры',
+    difficultyLabel: 'СЛОЖНОСТЬ',
+    categoryLabel: 'КАТЕГОРИИ',
+    all: 'Все',
+    easy: 'Легко',
+    medium: 'Средне',
+    hard: 'Сложно',
+    clearAll: 'Очистить всё',
+    apply: 'Применить',
+  },
 };
