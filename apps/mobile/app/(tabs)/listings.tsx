@@ -3,8 +3,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Surface } from 'react-native-paper';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function ListingsScreen() {
+  const { t } = useTranslation();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
@@ -76,38 +78,38 @@ export default function ListingsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <Surface style={styles.header} elevation={1}>
-        <Text variant="headlineMedium" style={styles.title}>Listings</Text>
+        <Text variant="headlineMedium" style={styles.title}>{t('listings.title')}</Text>
       </Surface>
 
       <View style={styles.content}>
         <View style={styles.comingSoonContainer}>
           <Text style={styles.emoji}>🛍️</Text>
           <Text variant="headlineSmall" style={styles.comingSoonTitle}>
-            Coming Soon!
+            {t('listings.comingSoon')}
           </Text>
           <Text style={styles.comingSoonText}>
-            Buy & sell classifieds are coming to the mobile app soon.
+            {t('listings.comingSoonDescription')}
           </Text>
         </View>
 
         {/* Features Preview */}
         <Surface style={styles.featuresCard} elevation={0}>
-          <Text style={styles.featuresTitle}>What's coming:</Text>
+          <Text style={styles.featuresTitle}>{t('listings.featuresTitle')}</Text>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>📸</Text>
-            <Text style={styles.featureText}>Browse listings with photos</Text>
+            <Text style={styles.featureText}>{t('listings.features.browsePhotos')}</Text>
           </View>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>🏷️</Text>
-            <Text style={styles.featureText}>Filter by category & price</Text>
+            <Text style={styles.featureText}>{t('listings.features.filterCategory')}</Text>
           </View>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>➕</Text>
-            <Text style={styles.featureText}>Create and manage your listings</Text>
+            <Text style={styles.featureText}>{t('listings.features.createListings')}</Text>
           </View>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>💬</Text>
-            <Text style={styles.featureText}>Message sellers directly</Text>
+            <Text style={styles.featureText}>{t('listings.features.messageSellers')}</Text>
           </View>
         </Surface>
       </View>
