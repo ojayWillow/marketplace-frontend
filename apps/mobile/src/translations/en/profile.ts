@@ -13,6 +13,9 @@ export const profile = {
   logoutTitle: 'Log Out',
   logoutConfirm: 'Are you sure you want to logout?',
   appVersion: 'App version 1.0.0',
+  rating: 'Rating',
+  reviews: 'Reviews',
+  completed: 'Completed',
   // ActivityMenu
   activitySection: 'Activity',
   jobsAndOfferings: 'Jobs & Offerings',
@@ -25,17 +28,14 @@ export const profile = {
   // Edit Profile
   edit: {
     title: 'Edit Profile',
-    back: 'Back',
     tapToChange: 'Tap to change photo',
     changePhoto: 'Change Profile Photo',
     chooseOption: 'Choose an option',
     takePhoto: 'Take Photo',
     chooseGallery: 'Choose from Gallery',
-    cancel: 'Cancel',
-    cameraPermission: 'Permission needed',
-    cameraPermissionMsg: 'Camera permission is required to take photos.',
-    galleryPermission: 'Permission needed',
-    galleryPermissionMsg: 'Gallery permission is required to select photos.',
+    permissionNeeded: 'Permission needed',
+    cameraPermission: 'Camera permission is required to take photos.',
+    galleryPermission: 'Gallery permission is required to select photos.',
     
     basicInfo: 'Basic Information',
     firstName: 'First Name',
@@ -46,7 +46,7 @@ export const profile = {
     city: 'City',
     cityPlaceholder: 'e.g. Riga',
     
-    skills: 'Your Skills',
+    yourSkills: 'Your Skills',
     skillsDescription: 'Select the categories you can help with',
     
     helperMode: 'Helper Mode',
@@ -55,10 +55,8 @@ export const profile = {
     hourlyRatePlaceholder: 'e.g. 15',
     
     saveChanges: 'Save Changes',
-    success: 'Success',
-    successMsg: 'Profile updated successfully!',
-    error: 'Error',
-    uploadError: 'Failed to upload profile photo. Profile will be saved without the new photo.',
-    updateError: 'Failed to update profile',
+    updateSuccess: 'Profile updated successfully!',
+    updateFailed: 'Failed to update profile',
+    photoUploadFailed: 'Failed to upload profile photo. Profile will be saved without the new photo.',
   },
 };
