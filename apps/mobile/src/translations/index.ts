@@ -1,6 +1,6 @@
 import { en } from './en/index';
 import { lv } from './lv/index';
-import { ru } from './ru';
+import { ru } from './ru/index';
 
 export type Language = 'en' | 'lv' | 'ru';
 
