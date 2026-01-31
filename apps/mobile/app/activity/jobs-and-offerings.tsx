@@ -9,6 +9,7 @@ import TaskCard from '../../components/TaskCard';
 import OfferingCard from '../../components/OfferingCard';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 type TabValue = 'requests' | 'work' | 'services';
 type FilterValue = 'all' | 'active' | 'done';
@@ -43,6 +44,7 @@ const getActionPriority = (task: Task, userId: number, isCreator: boolean): numb
 };
 
 export default function JobsAndOfferingsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { getActiveTheme } = useThemeStore();
   const activeTheme = getActiveTheme();
@@ -175,10 +177,10 @@ export default function JobsAndOfferingsScreen() {
 
   const getEmptyMessage = () => {
     switch (activeTab) {
-      case 'requests': return 'You haven\'t posted any job requests yet';
-      case 'work': return 'You haven\'t applied to or started any work yet';
-      case 'services': return 'You haven\'t created any service offerings yet';
-      default: return 'No items found';
+      case 'requests': return t('activity.postedJobs.empty.subtitle');
+      case 'work': return t('activity.myJobs.empty.subtitle');
+      case 'services': return t('activity.myServices.empty.subtitle');
+      default: return t('activity.noActivity');
     }
   };
 
@@ -227,15 +229,15 @@ export default function JobsAndOfferingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.backgroundSecondary }]} edges={['top']}>
       <Appbar.Header style={{ backgroundColor: themeColors.card }}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Jobs & Offerings" titleStyle={{ color: themeColors.text }} />
+        <Appbar.Content title={t('activity.jobsAndOfferings.title')} titleStyle={{ color: themeColors.text }} />
       </Appbar.Header>
 
       {/* Main Tabs with Badges */}
       <View style={[styles.tabContainer, { backgroundColor: themeColors.card }]}>
         <View style={styles.tabsRow}>
-          <TabButton value="requests" label="Requests" badgeCount={actionCounts.requests} />
-          <TabButton value="work" label="My Work" badgeCount={actionCounts.work} />
-          <TabButton value="services" label="Services" badgeCount={actionCounts.services} />
+          <TabButton value="requests" label={t('activity.jobsAndOfferings.tabs.postedJobs')} badgeCount={actionCounts.requests} />
+          <TabButton value="work" label={t('activity.jobsAndOfferings.tabs.myJobs')} badgeCount={actionCounts.work} />
+          <TabButton value="services" label={t('activity.jobsAndOfferings.tabs.myServices')} badgeCount={actionCounts.services} />
         </View>
       </View>
 
@@ -248,7 +250,7 @@ export default function JobsAndOfferingsScreen() {
             style={styles.filterChip}
             mode={filter === 'all' ? 'flat' : 'outlined'}
           >
-            All
+            {t('common.all')}
           </Chip>
           <Chip
             selected={filter === 'active'}
@@ -256,7 +258,7 @@ export default function JobsAndOfferingsScreen() {
             style={styles.filterChip}
             mode={filter === 'active' ? 'flat' : 'outlined'}
           >
-            Active
+            {t('common.active')}
           </Chip>
           <Chip
             selected={filter === 'done'}
@@ -264,7 +266,7 @@ export default function JobsAndOfferingsScreen() {
             style={styles.filterChip}
             mode={filter === 'done' ? 'flat' : 'outlined'}
           >
-            Done
+            {t('common.done')}
           </Chip>
         </View>
       )}
@@ -272,7 +274,7 @@ export default function JobsAndOfferingsScreen() {
       {/* Content */}
       {isLoading() ? (
         <View style={styles.centerContainer}>
-          <Text style={{ color: themeColors.textSecondary }}>Loading...</Text>
+          <Text style={{ color: themeColors.textSecondary }}>{t('activity.loading')}</Text>
         </View>
       ) : data.length === 0 ? (
         <View style={styles.centerContainer}>
