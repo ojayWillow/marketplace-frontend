@@ -3,10 +3,12 @@ import { View, StyleSheet, Image } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 import type { Task } from '@marketplace/shared';
-import { getImageUrl, getCategoryByKey, useAuthStore } from '@marketplace/shared';
+import { getImageUrl, useAuthStore } from '@marketplace/shared';
 import StarRating from './StarRating';
 import { useThemeStore } from '../src/stores/themeStore';
 import { colors } from '../src/theme';
+import { useCategories } from '../src/hooks/useCategories';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 const JOB_COLOR = '#3B82F6'; // Blue for jobs
 
@@ -31,16 +33,6 @@ const formatTimeAgo = (dateString: string | undefined): string => {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return past.toLocaleDateString();
-};
-
-// Helper to get difficulty color indicator
-const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
-  switch (difficulty) {
-    case 'easy': return { color: '#10b981', label: 'Easy' };  // Green
-    case 'hard': return { color: '#ef4444', label: 'Hard' };  // Red
-    case 'medium':
-    default: return { color: '#f59e0b', label: 'Medium' }; // Yellow/Orange
-  }
 };
 
 // Helper to extract just the city name from location string
@@ -166,16 +158,29 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
+  const { t } = useTranslation();
+  const { getCategoryLabel, getCategoryIcon } = useCategories();
   const { getActiveTheme } = useThemeStore();
   const { user } = useAuthStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   
+  // Get translated difficulty
+  const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+    switch (difficulty) {
+      case 'easy': return { color: '#10b981', label: t.difficulty?.easy || 'Easy' };
+      case 'hard': return { color: '#ef4444', label: t.difficulty?.hard || 'Hard' };
+      case 'medium':
+      default: return { color: '#f59e0b', label: t.difficulty?.medium || 'Medium' };
+    }
+  };
+  
   const difficulty = getDifficultyIndicator(task.difficulty);
   const timeAgo = formatTimeAgo(task.created_at);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
   const hasRating = (task.creator_rating ?? 0) > 0;
-  const categoryData = getCategoryByKey(task.category);
+  const categoryLabel = getCategoryLabel(task.category);
+  const categoryIcon = getCategoryIcon(task.category);
   const locationDisplay = formatLocationDisplay(task);
   const statusBadge = getStatusBadge(task, user?.id);
 
@@ -332,7 +337,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
         {/* Row 1: Category + Status Badge (middle) + Price */}
         <View style={styles.row1}>
           <Text style={styles.category}>
-            {categoryData?.icon || '📋'} {categoryData?.label || task.category}
+            {categoryIcon} {categoryLabel}
           </Text>
           {statusBadge && (
             <View style={[styles.statusBadge, { backgroundColor: statusBadge.bgColor }]}>
