@@ -12,12 +12,21 @@ export enum NotificationType {
   TASK_DISPUTED = 'task_disputed',
 }
 
+// Data fields that can be included in notifications for i18n interpolation
+export interface NotificationData {
+  task_title?: string;
+  applicant_name?: string;
+  worker_name?: string;
+  is_creator?: boolean;
+}
+
 export interface Notification {
   id: number;
   user_id: number;
   type: NotificationType;
   title: string;
   message: string;
+  data?: NotificationData;  // Dynamic data for i18n interpolation
   is_read: boolean;
   read_at?: string;
   related_type?: string;
