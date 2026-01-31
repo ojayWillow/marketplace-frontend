@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, useTheme, Snackbar, HelperText } from 'react-native-paper';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { getFirebaseAuth } from '../../src/config/firebase';
-import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@marketplace/shared';
 import apiClient from '@marketplace/shared/src/api/client';
 import { useTranslation } from '../../src/hooks/useTranslation';
@@ -22,32 +19,44 @@ export default function PhoneAuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isNewUser, setIsNewUser] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
-  
+  const cooldownInterval = useRef<NodeJS.Timeout | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
   const theme = useTheme();
 
-  useEffect(() => {
-    return () => {
-      if (recaptchaVerifier) {
-        recaptchaVerifier.clear();
-      }
-    };
-  }, [recaptchaVerifier]);
-
   const formatPhoneNumber = (phone: string): string => {
     let formatted = phone.trim();
+    // Remove any non-digit characters except +
+    formatted = formatted.replace(/[^\d+]/g, '');
+    // Add Latvia country code if not present
     if (!formatted.startsWith('+')) {
       formatted = '+371' + formatted.replace(/^0+/, '');
     }
     return formatted;
   };
 
+  const startCooldown = (seconds: number) => {
+    setCooldownSeconds(seconds);
+    if (cooldownInterval.current) {
+      clearInterval(cooldownInterval.current);
+    }
+    cooldownInterval.current = setInterval(() => {
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          if (cooldownInterval.current) {
+            clearInterval(cooldownInterval.current);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const handleSendCode = async () => {
     if (!phoneNumber.trim() || phoneNumber.length < 8) {
-      setError(t.auth.forgotPassword.errorNoEmail);
+      setError(t.auth.phone.errorInvalidPhone || 'Please enter a valid phone number');
       return;
     }
 
@@ -56,13 +65,22 @@ export default function PhoneAuthScreen() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const auth = getFirebaseAuth();
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, undefined as any);
-      setConfirmationResult(confirmation);
-      setStep('code');
+      
+      // Send OTP via our backend (Twilio)
+      const response = await apiClient.post('/api/auth/phone/send-otp', {
+        phoneNumber: formattedPhone
+      });
+
+      if (response.data.success) {
+        setStep('code');
+        startCooldown(60); // 60 second cooldown before resend
+      } else {
+        setError(response.data.error || 'Failed to send verification code');
+      }
     } catch (err: any) {
       console.error('Phone auth error:', err);
-      setError(err.message || 'Failed to send verification code');
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to send verification code';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -70,13 +88,7 @@ export default function PhoneAuthScreen() {
 
   const handleVerifyCode = async () => {
     if (verificationCode.length !== 6) {
-      setError('Please enter the 6-digit code');
-      return;
-    }
-
-    if (!confirmationResult) {
-      setError('Verification session expired. Please request a new code.');
-      setStep('phone');
+      setError(t.auth.phone.errorInvalidCode || 'Please enter the 6-digit code');
       return;
     }
 
@@ -84,24 +96,25 @@ export default function PhoneAuthScreen() {
     setError('');
 
     try {
-      const userCredential = await confirmationResult.confirm(verificationCode);
-      if (!userCredential || !userCredential.user) {
-        throw new Error('Verification failed');
-      }
-
-      const idToken = await userCredential.user.getIdToken();
       const formattedPhone = formatPhoneNumber(phoneNumber);
 
-      const response = await apiClient.post('/api/auth/phone/verify', {
-        idToken,
-        phoneNumber: formattedPhone
+      // Verify OTP via our backend (Twilio)
+      const response = await apiClient.post('/api/auth/phone/verify-otp', {
+        phoneNumber: formattedPhone,
+        code: verificationCode
       });
+
+      if (!response.data.success) {
+        setError(response.data.error || 'Invalid verification code');
+        return;
+      }
 
       const { access_token, user, is_new_user } = response.data;
 
       if (is_new_user) {
         setIsNewUser(true);
         setStep('complete');
+        // Store temporarily for complete registration
         (global as any).tempToken = access_token;
         (global as any).tempUser = user;
       } else {
@@ -117,7 +130,8 @@ export default function PhoneAuthScreen() {
       }
     } catch (err: any) {
       console.error('Verification error:', err);
-      setError(err.response?.data?.message || err.message || 'Invalid verification code');
+      const errorMessage = err.response?.data?.error || err.message || 'Invalid verification code';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -125,7 +139,7 @@ export default function PhoneAuthScreen() {
 
   const handleCompleteRegistration = async () => {
     if (!username.trim() || username.length < 3) {
-      setError('Username must be at least 3 characters');
+      setError(t.auth.register.errorUsername || 'Username must be at least 3 characters');
       return;
     }
 
@@ -147,16 +161,29 @@ export default function PhoneAuthScreen() {
       setStep('success');
       setTimeout(() => router.replace('/onboarding/welcome'), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Registration failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleResendCode = async () => {
+    if (cooldownSeconds > 0) {
+      setError(`Please wait ${cooldownSeconds} seconds before requesting a new code`);
+      return;
+    }
     setVerificationCode('');
-    setConfirmationResult(null);
     await handleSendCode();
+  };
+
+  const handleChangeNumber = () => {
+    setStep('phone');
+    setVerificationCode('');
+    setCooldownSeconds(0);
+    if (cooldownInterval.current) {
+      clearInterval(cooldownInterval.current);
+    }
   };
 
   return (
@@ -172,7 +199,7 @@ export default function PhoneAuthScreen() {
             </Text>
             <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
               {step === 'phone' && t.auth.phone.subtitle}
-              {step === 'code' && t.auth.phone.codeLabel + ` ${formatPhoneNumber(phoneNumber)}`}
+              {step === 'code' && `${t.auth.phone.codeSent || 'Code sent to'} ${formatPhoneNumber(phoneNumber)}`}
               {step === 'complete' && t.auth.register.subtitle}
               {step === 'success' && t.onboarding.complete.title}
             </Text>
@@ -184,14 +211,15 @@ export default function PhoneAuthScreen() {
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   keyboardType="phone-pad"
-                  placeholder="+371 XXXXXXXX"
+                  placeholder="+371 20000000"
                   disabled={loading}
                   mode="outlined"
                   style={styles.input}
                   left={<TextInput.Icon icon="phone" />}
+                  autoFocus
                 />
                 <HelperText type="info">
-                  Include country code (e.g., +371 for Latvia)
+                  {t.auth.phone.helperText || 'Include country code (e.g., +371 for Latvia)'}
                 </HelperText>
 
                 <Button
@@ -212,7 +240,7 @@ export default function PhoneAuthScreen() {
                 <TextInput
                   label={t.auth.phone.codeLabel}
                   value={verificationCode}
-                  onChangeText={setVerificationCode}
+                  onChangeText={(text) => setVerificationCode(text.replace(/[^0-9]/g, ''))}
                   keyboardType="number-pad"
                   maxLength={6}
                   placeholder="000000"
@@ -220,7 +248,11 @@ export default function PhoneAuthScreen() {
                   mode="outlined"
                   style={styles.input}
                   left={<TextInput.Icon icon="shield-check" />}
+                  autoFocus
                 />
+                <HelperText type="info">
+                  {t.auth.phone.codeHelperText || 'Enter the 6-digit code sent to your phone'}
+                </HelperText>
 
                 <Button
                   mode="contained"
@@ -237,22 +269,20 @@ export default function PhoneAuthScreen() {
                   <Button
                     mode="text"
                     onPress={handleResendCode}
-                    disabled={loading}
+                    disabled={loading || cooldownSeconds > 0}
                     compact
                   >
-                    {t.auth.phone.resendCode}
+                    {cooldownSeconds > 0 
+                      ? `${t.auth.phone.resendCode} (${cooldownSeconds}s)` 
+                      : t.auth.phone.resendCode}
                   </Button>
                   <Button
                     mode="text"
-                    onPress={() => {
-                      setStep('phone');
-                      setConfirmationResult(null);
-                      setVerificationCode('');
-                    }}
+                    onPress={handleChangeNumber}
                     disabled={loading}
                     compact
                   >
-                    {t.auth.forgotPassword.backToLogin}
+                    {t.auth.phone.changeNumber || 'Change number'}
                   </Button>
                 </View>
               </View>
@@ -269,13 +299,18 @@ export default function PhoneAuthScreen() {
                   mode="outlined"
                   style={styles.input}
                   left={<TextInput.Icon icon="account" />}
+                  autoFocus
                 />
+                <HelperText type="info">
+                  {t.auth.register.usernameHelperText || 'Letters, numbers, and underscores only'}
+                </HelperText>
 
                 <TextInput
-                  label={t.auth.register.emailLabel + ' (Optional)'}
+                  label={`${t.auth.register.emailLabel} (${t.common.optional || 'Optional'})`}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
+                  autoCapitalize="none"
                   placeholder="your@email.com"
                   disabled={loading}
                   mode="outlined"
@@ -283,7 +318,7 @@ export default function PhoneAuthScreen() {
                   left={<TextInput.Icon icon="email" />}
                 />
                 <HelperText type="info">
-                  Used for account recovery and notifications
+                  {t.auth.register.emailHelperText || 'Used for account recovery and notifications'}
                 </HelperText>
 
                 <Button
@@ -302,10 +337,12 @@ export default function PhoneAuthScreen() {
             {step === 'success' && (
               <View style={styles.successContainer}>
                 <Text variant="headlineMedium" style={{ color: theme.colors.primary, textAlign: 'center' }}>
-                  ✓ {t.onboarding.welcome.title}
+                  ✓ {t.auth.phone.verificationSuccess || 'Verified!'}
                 </Text>
                 <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 8 }}>
-                  {isNewUser ? t.onboarding.complete.subtitle : 'Redirecting you to the app...'}
+                  {isNewUser 
+                    ? t.onboarding.complete.subtitle 
+                    : (t.auth.phone.redirecting || 'Redirecting you to the app...')}
                 </Text>
               </View>
             )}
@@ -348,7 +385,7 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   title: { fontWeight: 'bold', marginBottom: 8 },
   subtitle: { marginBottom: 32 },
-  input: { marginBottom: 8 },
+  input: { marginBottom: 4 },
   button: { borderRadius: 12, marginTop: 16 },
   buttonContent: { paddingVertical: 8 },
   codeActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
