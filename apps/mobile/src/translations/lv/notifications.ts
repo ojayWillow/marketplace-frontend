@@ -1,8 +1,25 @@
 export const notifications = {
   title: 'Paziņojumi',
   noNotifications: 'Nav paziņojumu',
-  markAllRead: 'Atzīmēt Visu Kā Lasitu',
+  allCaughtUp: 'Viss ir apskatīts!',
+  markAllRead: 'Atzīmēt visu',
   clearAll: 'Notīrīt Visu',
+  
+  // Alerts
+  deleteTitle: 'Dzēst paziņojumu',
+  deleteMessage: 'Vai tiešām vēlaties dzēst šo paziņojumu?',
+  markAllSuccess: 'Visi paziņojumi atzīmēti kā lasīti',
+  noUnread: 'Nav nelasītu',
+  noUnreadMessage: 'Jums nav nelasītu paziņojumu',
+  
+  // Time ago
+  timeAgo: {
+    justNow: 'Tikko',
+    minutesAgo: 'm atpakaļ',
+    hoursAgo: 'h atpakaļ',
+    daysAgo: 'd atpakaļ',
+    weeksAgo: 'n atpakaļ',
+  },
   
   settings: {
     title: 'Paziņojumi',
@@ -29,15 +46,15 @@ export const notifications = {
       },
       taskApplications: {
         label: 'Darbu Pieteikumi',
-        description: 'Kad kāds piesacas jsu darbam',
+        description: 'Kad kāds piesacas jūsu darbam',
       },
       taskUpdates: {
         label: 'Darbu Atjauninājumi',
-        description: 'Statusa izmaiņas jsu darbos',
+        description: 'Statusa izmaiņas jūsu darbos',
       },
       promotions: {
         label: 'Akcijas un Padomi',
-        description: 'īpaši piedāvājumi un lietotnes padomi',
+        description: 'Īpaši piedāvājumi un lietotnes padomi',
       },
     },
     test: {
@@ -69,8 +86,8 @@ export const notifications = {
       },
     },
     warning: {
-      allDisabled: 'Visi paziņojumi ir izslēgti. Jūs nesaņemsiet nekus brīdinājumus.',
+      allDisabled: 'Visi paziņojumi ir izslēgti. Jūs nesaņemsiet nekādus brīdinājumus.',
     },
-    footer: 'Izmaiņas tiek saglabātas automrtiski.',
+    footer: 'Izmaiņas tiek saglabātas automātiski.',
   },
 };
