@@ -20,4 +20,9 @@ export const common = {
   // Filter options
   all: 'Все',
   active: 'Активные',
+  filters: 'Фильтры',
+  difficulty: 'Сложность',
+  radius: 'Радиус',
+  clearAll: 'Очистить всё',
+  apply: 'Применить',
 };
