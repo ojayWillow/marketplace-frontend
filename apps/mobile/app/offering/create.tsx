@@ -9,13 +9,8 @@ import ImagePicker from '../../components/ImagePicker';
 import LocationPicker from '../../components/LocationPicker';
 import { haptic } from '../../utils/haptics';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useLanguageStore } from '../../src/stores/languageStore';
 import { colors } from '../../src/theme';
-
-const PRICE_TYPES = [
-  { value: 'hourly', label: 'Per Hour' },
-  { value: 'fixed', label: 'Fixed' },
-  { value: 'negotiable', label: 'Negotiable' },
-];
 
 interface LocationData {
   address: string;
@@ -27,6 +22,7 @@ export default function CreateOfferingScreen() {
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const { getActiveTheme } = useThemeStore();
+  const { t } = useLanguageStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
@@ -43,6 +39,12 @@ export default function CreateOfferingScreen() {
   const [uploading, setUploading] = useState(false);
 
   const selectedCategoryData = getCategoryByKey(category);
+
+  const PRICE_TYPES = [
+    { value: 'hourly', label: t('offering.create.priceTypeHourly') },
+    { value: 'fixed', label: t('offering.create.priceTypeFixed') },
+    { value: 'negotiable', label: t('offering.create.priceTypeNegotiable') },
+  ];
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -82,14 +84,14 @@ export default function CreateOfferingScreen() {
       queryClient.invalidateQueries({ queryKey: ['offerings'] });
       queryClient.invalidateQueries({ queryKey: ['offerings-map'] });
       Alert.alert(
-        'Service Created!',
-        'Your service has been listed.',
-        [{ text: 'View', onPress: () => router.replace(`/offering/${offering.id}`) }]
+        t('offering.create.successTitle'),
+        t('offering.create.successMessage'),
+        [{ text: t('offering.create.viewService'), onPress: () => router.replace(`/offering/${offering.id}`) }]
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error || error.message || 'Failed to create service.';
-      Alert.alert('Error', message);
+      const message = error.response?.data?.error || error.message || t('offering.create.errorCreateFailed');
+      Alert.alert(t('offering.create.errorTitle'), message);
     },
   });
 
@@ -101,15 +103,15 @@ export default function CreateOfferingScreen() {
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      Alert.alert('Required', 'Please enter a title for your service.');
+      Alert.alert(t('offering.create.errorRequired'), t('offering.create.errorTitleRequired'));
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Required', 'Please describe your service.');
+      Alert.alert(t('offering.create.errorRequired'), t('offering.create.errorDescriptionRequired'));
       return;
     }
     if (!location) {
-      Alert.alert('Required', 'Please select a location for your service.');
+      Alert.alert(t('offering.create.errorRequired'), t('offering.create.errorLocationRequired'));
       return;
     }
 
@@ -302,7 +304,7 @@ export default function CreateOfferingScreen() {
         <Stack.Screen 
           options={{ 
             headerShown: true, 
-            title: 'Offer a Service',
+            title: t('offering.create.title'),
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
             headerTitleStyle: { color: themeColors.text },
@@ -310,10 +312,10 @@ export default function CreateOfferingScreen() {
         />
         <View style={styles.authPrompt}>
           <Text style={styles.authIcon}>🔒</Text>
-          <Text variant="titleLarge" style={styles.authTitle}>Sign In Required</Text>
-          <Text style={styles.authText}>You need to sign in to offer services.</Text>
+          <Text variant="titleLarge" style={styles.authTitle}>{t('offering.create.signInRequired')}</Text>
+          <Text style={styles.authText}>{t('offering.create.signInText')}</Text>
           <Button mode="contained" onPress={() => router.push('/(auth)/login')} style={styles.authButton}>
-            Sign In
+            {t('offering.create.signInButton')}
           </Button>
         </View>
       </SafeAreaView>
@@ -327,8 +329,8 @@ export default function CreateOfferingScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true, 
-          title: 'Offer a Service',
-          headerBackTitle: 'Cancel',
+          title: t('offering.create.title'),
+          headerBackTitle: t('offering.create.cancel'),
           headerStyle: { backgroundColor: themeColors.card },
           headerTintColor: themeColors.primaryAccent,
           headerTitleStyle: { color: themeColors.text },
@@ -338,10 +340,10 @@ export default function CreateOfferingScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Service Title *</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('offering.create.serviceTitleLabel')}</Text>
             <TextInput
               mode="flat"
-              placeholder="e.g., Professional House Cleaning"
+              placeholder={t('offering.create.serviceTitlePlaceholder')}
               value={title}
               onChangeText={setTitle}
               style={styles.flatInput}
@@ -351,23 +353,23 @@ export default function CreateOfferingScreen() {
           </Surface>
 
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Category *</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('offering.create.categoryLabel')}</Text>
             <TouchableOpacity 
               style={styles.categorySelector}
               onPress={() => { haptic.light(); setShowCategoryModal(true); }}
               activeOpacity={0.7}
             >
               <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '💼'}</Text>
-              <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || 'Select category'}</Text>
+              <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || t('offering.create.selectCategory')}</Text>
               <Text style={styles.categorySelectorArrow}>›</Text>
             </TouchableOpacity>
           </Surface>
 
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Description *</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('offering.create.descriptionLabel')}</Text>
             <TextInput
               mode="flat"
-              placeholder="Describe your service, what's included, your experience..."
+              placeholder={t('offering.create.descriptionPlaceholder')}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -383,13 +385,13 @@ export default function CreateOfferingScreen() {
               images={images}
               onImagesChange={setImages}
               maxImages={5}
-              label="Portfolio Photos"
+              label={t('offering.create.photosLabel')}
             />
-            <Text style={styles.imageHint}>Show examples of your work</Text>
+            <Text style={styles.imageHint}>{t('offering.create.photosHint')}</Text>
           </Surface>
 
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Pricing</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('offering.create.pricingLabel')}</Text>
             <SegmentedButtons
               value={priceType}
               onValueChange={(value) => setPriceType(value as 'hourly' | 'fixed' | 'negotiable')}
@@ -400,7 +402,7 @@ export default function CreateOfferingScreen() {
               <Text style={styles.euroSign}>€</Text>
               <TextInput
                 mode="flat"
-                placeholder={priceType === 'negotiable' ? 'Starting from (optional)' : 'Enter price'}
+                placeholder={priceType === 'negotiable' ? t('offering.create.pricePlaceholderNegotiable') : t('offering.create.pricePlaceholder')}
                 value={price}
                 onChangeText={setPrice}
                 keyboardType="decimal-pad"
@@ -409,7 +411,7 @@ export default function CreateOfferingScreen() {
                 placeholderTextColor={themeColors.textMuted}
               />
               {priceType === 'hourly' ? (
-                <Text style={styles.priceLabel}>/ hour</Text>
+                <Text style={styles.priceLabel}>{t('offering.create.perHour')}</Text>
               ) : null}
             </View>
           </Surface>
@@ -418,15 +420,15 @@ export default function CreateOfferingScreen() {
             <LocationPicker
               initialLocation={location || undefined}
               onLocationSelect={setLocation}
-              label="Service Area *"
+              label={t('offering.create.locationLabel')}
             />
           </Surface>
 
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Availability</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('offering.create.availabilityLabel')}</Text>
             <TextInput
               mode="flat"
-              placeholder="e.g., Weekdays 9-18, Weekends by appointment"
+              placeholder={t('offering.create.availabilityPlaceholder')}
               value={availability}
               onChangeText={setAvailability}
               style={styles.flatInput}
@@ -436,10 +438,10 @@ export default function CreateOfferingScreen() {
           </Surface>
 
           <Surface style={styles.section} elevation={0}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Experience</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('offering.create.experienceLabel')}</Text>
             <TextInput
               mode="flat"
-              placeholder="e.g., 5 years of experience, certified..."
+              placeholder={t('offering.create.experiencePlaceholder')}
               value={experience}
               onChangeText={setExperience}
               style={styles.flatInput}
@@ -456,7 +458,7 @@ export default function CreateOfferingScreen() {
             style={styles.submitButton}
             contentStyle={styles.submitButtonContent}
           >
-            {uploading ? 'Uploading Images...' : 'Create Service Listing'}
+            {uploading ? t('offering.create.uploadingImages') : t('offering.create.createButton')}
           </Button>
 
           <View style={styles.bottomSpacer} />
@@ -475,7 +477,7 @@ export default function CreateOfferingScreen() {
           onPress={() => { haptic.soft(); setShowCategoryModal(false); }}
         >
           <View style={styles.categoryModalContent}>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={styles.modalTitle}>{t('offering.create.selectCategory')}</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.categoryWrap}>
                 {FORM_CATEGORIES.map((cat) => (
