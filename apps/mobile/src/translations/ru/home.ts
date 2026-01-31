@@ -8,6 +8,7 @@ export const home = {
   noTasksNearby: 'Поблизости нет задач',
   noTasksNearbyDesc: 'Попробуйте изменить поиск или фильтры',
   viewDetails: 'Подробнее',
+  allAreas: 'Все районы',
   // Category Modal
   selectCategories: 'Выберите категории',
   showingAllCategories: 'Показаны все категории',
