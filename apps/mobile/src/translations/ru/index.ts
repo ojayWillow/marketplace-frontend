@@ -17,6 +17,7 @@ export { notifications } from './notifications';
 export { onboarding } from './onboarding';
 export { dispute } from './dispute';
 export { common } from './common';
+export { categories } from './categories';
 
 import { auth } from './auth';
 import { tabs } from './tabs';
@@ -37,6 +38,7 @@ import { notifications } from './notifications';
 import { onboarding } from './onboarding';
 import { dispute } from './dispute';
 import { common } from './common';
+import { categories } from './categories';
 
 export const ru = {
   auth,
@@ -58,4 +60,5 @@ export const ru = {
   onboarding,
   dispute,
   common,
+  categories,
 };
