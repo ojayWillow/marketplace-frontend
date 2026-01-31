@@ -12,4 +12,13 @@ export const home = {
   showingAllCategories: 'Показаны все категории',
   of: 'из',
   selected: 'выбрано',
+  // Bottom Sheet
+  bottomSheet: {
+    jobNearby: 'работа рядом',
+    jobsNearby: 'работ рядом',
+    noJobsFound: 'Работы не найдены',
+    tryAdjustFilters: 'Попробуйте изменить поиск или фильтры',
+    jobDetails: 'Детали работы',
+    serviceDetails: 'Детали услуги',
+  },
 };
