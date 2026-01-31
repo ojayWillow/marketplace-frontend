@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, TouchableOpacity, View, FlatList } from 'react-native';
 import { Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { haptic } from '../../../../../utils/haptics';
-import { JOB_COLOR, RADIUS_OPTIONS, DIFFICULTY_OPTIONS } from '../../constants';
+import { JOB_COLOR } from '../../constants';
 import { useTranslation } from '../../../../../src/hooks/useTranslation';
 
 interface FiltersModalProps {
@@ -29,6 +29,23 @@ export default function FiltersModal({
 }: FiltersModalProps) {
   const { t } = useTranslation();
   
+  // Translated radius options
+  const radiusOptions = useMemo(() => [
+    { key: 'all', label: t.home.allAreas, value: null },
+    { key: '5', label: '5 km', value: 5 },
+    { key: '10', label: '10 km', value: 10 },
+    { key: '20', label: '20 km', value: 20 },
+    { key: '50', label: '50 km', value: 50 },
+  ], [t]);
+
+  // Translated difficulty options
+  const difficultyOptions = useMemo(() => [
+    { key: 'all', label: t.common.all, value: null, color: '#6b7280' },
+    { key: 'easy', label: t.difficulty.easy, value: 'easy', color: '#10b981' },
+    { key: 'medium', label: t.difficulty.medium, value: 'medium', color: '#f59e0b' },
+    { key: 'hard', label: t.difficulty.hard, value: 'hard', color: '#ef4444' },
+  ], [t]);
+  
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity 
@@ -41,7 +58,7 @@ export default function FiltersModal({
           
           <Text style={styles.filterSectionTitle}>{t.common.difficulty}</Text>
           <View style={styles.segmentContainer}>
-            {DIFFICULTY_OPTIONS.map((diff) => (
+            {difficultyOptions.map((diff) => (
               <TouchableOpacity
                 key={diff.key}
                 style={[
@@ -67,7 +84,7 @@ export default function FiltersModal({
           
           <Text style={styles.filterSectionTitle}>{t.common.radius}</Text>
           <FlatList
-            data={RADIUS_OPTIONS}
+            data={radiusOptions}
             keyExtractor={(item) => item.key}
             scrollEnabled={false}
             renderItem={({ item: rad }) => (
