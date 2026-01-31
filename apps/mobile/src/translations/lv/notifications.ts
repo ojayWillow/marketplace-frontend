@@ -21,6 +21,34 @@ export const notifications = {
     weeksAgo: 'n atpakaļ',
   },
   
+  // Notification content by type (for i18n)
+  content: {
+    application_accepted: {
+      title: '🎉 Pieteikums Apstiprināts!',
+      message: 'Apsveicam! Jūsu pieteikums darbam "{taskTitle}" ir apstiprināts. Tagad varat sākt strādāt pie šī uzdevuma.',
+    },
+    application_rejected: {
+      title: 'Pieteikuma Atjauninājums',
+      message: 'Jūsu pieteikums darbam "{taskTitle}" netika izvēlēts. Turpiniet pieteikties citiem darbiem!',
+    },
+    new_application: {
+      title: 'Saņemts Jauns Pieteikums',
+      message: '{applicantName} pieteicās jūsu darbam "{taskTitle}".',
+    },
+    task_marked_done: {
+      title: 'Darbs Atzīmēts kā Pabeigts',
+      message: '{workerName} ir atzīmējis "{taskTitle}" kā pabeigtu. Lūdzu, pārskatiet un apstipriniet.',
+    },
+    task_completed: {
+      title: '✅ Darbs Pabeigts!',
+      message: 'Lieliski! "{taskTitle}" ir apstiprināts kā pabeigts.',
+    },
+    task_disputed: {
+      title: '⚠️ Darbs Apstrīdēts',
+      message: 'Darbam "{taskTitle}" ir iesniegta sūdzība. Mūsu komanda to drīzumā izskatīs.',
+    },
+  },
+  
   settings: {
     title: 'Paziņojumi',
     signInRequired: {
@@ -30,7 +58,7 @@ export const notifications = {
     channels: {
       title: 'Paziņojumu Kanāli',
       push: {
-        label: 'Puspāru Paziņojumi',
+        label: 'Push Paziņojumi',
         description: 'Saņemiet brīdinājumus savā ierīcē',
       },
       email: {
@@ -66,20 +94,20 @@ export const notifications = {
       error: {
         title: 'Kļūda',
         message: 'Neizdevās nosūtīt testa paziņojumu',
-        notLoggedIn: 'Jūsu jāpiesakas, lai testētu paziņojumus',
-        pushDisabled: 'Lūdzu, vispirms ieslēdziet puspāru paziņojumus',
+        notLoggedIn: 'Jums jāpiesakās, lai testētu paziņojumus',
+        pushDisabled: 'Lūdzu, vispirms ieslēdziet push paziņojumus',
       },
     },
     alerts: {
       permissionRequired: {
         title: 'Nepieciešama Atļauja',
-        message: 'Lūdzu, ieslēdziet paziņojumus savās ierīces iestatījumos, lai saņemtu puspāru paziņojumus.',
+        message: 'Lūdzu, ieslēdziet paziņojumus savās ierīces iestatījumos, lai saņemtu push paziņojumus.',
       },
       enabled: {
         title: 'Veiksmīgi',
-        message: 'Puspāru paziņojumi ieslēgti!',
+        message: 'Push paziņojumi ieslēgti!',
       },
-      disabled: 'Puspāru paziņojumi izslēgti',
+      disabled: 'Push paziņojumi izslēgti',
       saveFailed: {
         title: 'Kļūda',
         message: 'Neizdevās saglabāt iestatījumus',
