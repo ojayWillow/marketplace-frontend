@@ -20,6 +20,24 @@ export const tasks = {
   tabJobs: 'Darbi',
   tabServices: 'Pakalpojumi',
   
+  // Status badge labels (for TaskCard bubbles)
+  status: {
+    open: 'Atvērts',
+    assigned: 'Piešķirts',
+    in_progress: 'Progresā',
+    pending_confirmation: 'Gaida apstiprinājumu',
+    completed: 'Pabeigts',
+    disputed: 'Apstrīdēts',
+    cancelled: 'Atcelts',
+  },
+
+  // Action labels for status badges
+  actionNeeded: 'Nepieciešama darbība',
+  waiting: 'Gaida',
+  applied: 'Pieteicies',
+  applicantLabel: 'pieteikums',
+  applicantsLabel: 'pieteikumi',
+  
   // Filters
   filters: {
     title: 'Filtri',
@@ -31,6 +49,13 @@ export const tasks = {
     hard: 'Grūti',
     clearAll: 'Notīrīt visu',
     apply: 'Pielietot',
+  },
+
+  // Difficulty labels
+  difficulty: {
+    easy: 'Viegli',
+    medium: 'Vidēji',
+    hard: 'Grūti',
   },
 
   // Progress Stepper
