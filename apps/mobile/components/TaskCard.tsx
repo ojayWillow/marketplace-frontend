@@ -17,8 +17,8 @@ interface TaskCardProps {
   onPress?: (task: Task) => void;
 }
 
-// Helper to format time ago
-const formatTimeAgo = (dateString: string | undefined): string => {
+// Helper to format time ago with translations
+const formatTimeAgo = (dateString: string | undefined, timeT: any): string => {
   if (!dateString) return '';
   
   const now = new Date();
@@ -28,10 +28,10 @@ const formatTimeAgo = (dateString: string | undefined): string => {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
   
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 1) return timeT?.justNow || 'Just now';
+  if (diffMins < 60) return timeT?.minutesAgo?.replace('{{count}}', String(diffMins)) || `${diffMins}m ago`;
+  if (diffHours < 24) return timeT?.hoursAgo?.replace('{{count}}', String(diffHours)) || `${diffHours}h ago`;
+  if (diffDays < 7) return timeT?.daysAgo?.replace('{{count}}', String(diffDays)) || `${diffDays}d ago`;
   return past.toLocaleDateString();
 };
 
@@ -74,7 +74,7 @@ const formatLocationDisplay = (task: Task): string => {
 const getStatusBadge = (
   task: Task, 
   userId: number | undefined,
-  t: any
+  tasksT: any
 ): { text: string; color: string; bgColor: string } | null => {
   const isMyTask = task.creator_id === userId;
   const isAssignedToMe = task.assigned_to_id === userId;
@@ -83,7 +83,7 @@ const getStatusBadge = (
   // Disputed - highest priority (check both status and dispute_status field)
   if (task.status === 'disputed' || (task as any).dispute_status === 'open') {
     return {
-      text: `⚠️ ${t.status?.disputed || 'Disputed'}`,
+      text: `⚠️ ${tasksT.status?.disputed || 'Disputed'}`,
       color: '#fff',
       bgColor: '#f59e0b', // Orange
     };
@@ -94,7 +94,7 @@ const getStatusBadge = (
     // Action needed: Worker marked done, needs confirmation
     if (task.status === 'pending_confirmation') {
       return {
-        text: t.actionNeeded || 'Action needed',
+        text: tasksT.actionNeeded || 'Action needed',
         color: '#fff',
         bgColor: '#ef4444', // Red
       };
@@ -103,8 +103,8 @@ const getStatusBadge = (
     // New applicants
     if (task.status === 'open' && applicantsCount > 0) {
       const label = applicantsCount > 1 
-        ? (t.applicantsLabel || 'applicants')
-        : (t.applicantLabel || 'applicant');
+        ? (tasksT.applicantsLabel || 'applicants')
+        : (tasksT.applicantLabel || 'applicant');
       return {
         text: `${applicantsCount} ${label}`,
         color: '#fff',
@@ -115,7 +115,7 @@ const getStatusBadge = (
     // Worker assigned
     if (task.status === 'assigned' || task.status === 'in_progress') {
       return {
-        text: t.status?.assigned || 'Assigned',
+        text: tasksT.status?.assigned || 'Assigned',
         color: '#fff',
         bgColor: '#10b981', // Green
       };
@@ -127,7 +127,7 @@ const getStatusBadge = (
     // Waiting for confirmation
     if (task.status === 'pending_confirmation') {
       return {
-        text: t.waiting || 'Waiting',
+        text: tasksT.waiting || 'Waiting',
         color: '#fff',
         bgColor: '#f59e0b', // Yellow
       };
@@ -136,7 +136,7 @@ const getStatusBadge = (
     // In progress
     if (task.status === 'in_progress') {
       return {
-        text: t.status?.in_progress || 'In progress',
+        text: tasksT.status?.in_progress || 'In Progress',
         color: '#fff',
         bgColor: '#10b981', // Green
       };
@@ -145,7 +145,7 @@ const getStatusBadge = (
     // Assigned
     if (task.status === 'assigned') {
       return {
-        text: t.status?.assigned || 'Assigned',
+        text: tasksT.status?.assigned || 'Assigned',
         color: '#fff',
         bgColor: '#3b82f6', // Blue
       };
@@ -155,9 +155,18 @@ const getStatusBadge = (
   // Completed
   if (task.status === 'completed') {
     return {
-      text: t.status?.completed || 'Completed',
+      text: tasksT.status?.completed || 'Completed',
       color: '#fff',
       bgColor: '#6b7280', // Gray
+    };
+  }
+
+  // User has applied (but not assigned yet)
+  if ((task as any).has_applied) {
+    return {
+      text: tasksT.applied || 'Applied',
+      color: '#fff',
+      bgColor: '#8b5cf6', // Purple
     };
   }
 
@@ -172,24 +181,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   
+  // Get translations for tasks
+  const tasksT = t.tasks || {};
+  
   // Get translated difficulty
   const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
+    const difficultyT = tasksT.difficulty || {};
     switch (difficulty) {
-      case 'easy': return { color: '#10b981', label: t.difficulty?.easy || 'Easy' };
-      case 'hard': return { color: '#ef4444', label: t.difficulty?.hard || 'Hard' };
+      case 'easy': return { color: '#10b981', label: difficultyT.easy || 'Easy' };
+      case 'hard': return { color: '#ef4444', label: difficultyT.hard || 'Hard' };
       case 'medium':
-      default: return { color: '#f59e0b', label: t.difficulty?.medium || 'Medium' };
+      default: return { color: '#f59e0b', label: difficultyT.medium || 'Medium' };
     }
   };
   
   const difficulty = getDifficultyIndicator(task.difficulty);
-  const timeAgo = formatTimeAgo(task.created_at);
+  const timeAgo = formatTimeAgo(task.created_at, tasksT.time);
   const hasApplicants = (task.pending_applications_count ?? 0) > 0;
   const hasRating = (task.creator_rating ?? 0) > 0;
   const categoryLabel = getCategoryLabel(task.category);
   const categoryIcon = getCategoryIcon(task.category);
   const locationDisplay = formatLocationDisplay(task);
-  const statusBadge = getStatusBadge(task, user?.id, t.tasks || {});
+  const statusBadge = getStatusBadge(task, user?.id, tasksT);
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -446,6 +459,7 @@ export default memo(TaskCard, (prevProps, nextProps) => {
     prevProps.task.status === nextProps.task.status &&
     (prevProps.task as any).dispute_status === (nextProps.task as any).dispute_status &&
     prevProps.task.pending_applications_count === nextProps.task.pending_applications_count &&
+    (prevProps.task as any).has_applied === (nextProps.task as any).has_applied &&
     prevProps.onPress === nextProps.onPress
   );
 });
