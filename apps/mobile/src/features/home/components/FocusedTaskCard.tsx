@@ -71,17 +71,17 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>DISTANCE</Text>
+          <Text style={styles.statLabel}>{t.task?.distance || 'DISTANCE'}</Text>
           <Text style={styles.statValue}>{distanceKm ? `${distanceKm}km` : '—'}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>POSTED</Text>
+          <Text style={styles.statLabel}>{t.task?.posted || 'POSTED'}</Text>
           <Text style={styles.statValue}>{formatPostedDate(task.created_at!)}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>APPLICANTS</Text>
+          <Text style={styles.statLabel}>{t.task?.applicants || 'APPLICANTS'}</Text>
           <Text style={styles.statValue}>{applicantsCount}</Text>
         </View>
       </View>
@@ -106,7 +106,7 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
         onPress={() => onViewDetails(task.id)}
         activeOpacity={0.8}
       >
-        <Text style={styles.viewButtonText}>View and apply</Text>
+        <Text style={styles.viewButtonText}>{t.task?.viewAndApply || 'View and apply'}</Text>
         <Icon name="arrow-forward" size={18} color="#ffffff" />
       </TouchableOpacity>
     </View>
