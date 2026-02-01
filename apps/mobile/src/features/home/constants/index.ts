@@ -83,23 +83,49 @@ export const getMarkerColor = (category: string): string => {
   return colors[category] || JOB_COLOR;
 };
 
-// Time formatting
-export const formatTimeAgo = (dateString: string): string => {
+export interface TimeTranslations {
+  justNow?: string;
+  minutesAgo?: string;
+  hoursAgo?: string;
+  daysAgo?: string;
+  weeksAgo?: string;
+}
+
+// Time formatting with translation support
+export const formatTimeAgo = (dateString: string, timeTranslations?: TimeTranslations): string => {
   const now = new Date();
   const date = new Date(dateString);
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return `${Math.floor(seconds / 604800)}w ago`;
+  const format = (template: string, count: number): string => {
+    return template.replace('{{count}}', String(count));
+  };
+
+  if (seconds < 60) {
+    return timeTranslations?.justNow || 'Just now';
+  }
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    return format(timeTranslations?.minutesAgo || '{{count}}m ago', mins);
+  }
+  if (seconds < 86400) {
+    const hours = Math.floor(seconds / 3600);
+    return format(timeTranslations?.hoursAgo || '{{count}}h ago', hours);
+  }
+  if (seconds < 604800) {
+    const days = Math.floor(seconds / 86400);
+    return format(timeTranslations?.daysAgo || '{{count}}d ago', days);
+  }
+  const weeks = Math.floor(seconds / 604800);
+  return format(timeTranslations?.weeksAgo || '{{count}}w ago', weeks);
 };
 
-export const formatPostedDate = (dateString: string): string => {
+// Format posted date (uses locale from device)
+export const formatPostedDate = (dateString: string, locale?: string): string => {
   const date = new Date(dateString);
   const day = date.getDate();
-  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  // Use provided locale or default to device locale
+  const month = date.toLocaleDateString(locale || undefined, { month: 'short' });
   return `${day} ${month}`;
 };
 

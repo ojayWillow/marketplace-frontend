@@ -20,6 +20,20 @@ export const task = {
   openInMaps: 'Открыть на карте',
   viewAndApply: 'Смотреть и подать',
   
+  // Time formatting
+  time: {
+    justNow: 'Только что',
+    minutesAgo: '{{count}}мин назад',
+    hoursAgo: '{{count}}ч назад',
+    daysAgo: '{{count}}д назад',
+  },
+  
+  // Notices
+  notices: {
+    youHaveApplied: 'Вы подали заявку на эту задачу',
+    workerMarkedDone: '{{name}} отметил как выполненное. Пожалуйста, проверьте и подтвердите.',
+  },
+  
   // Status messages
   taskNotFound: 'Задача не найдена',
   goBack: 'Назад',

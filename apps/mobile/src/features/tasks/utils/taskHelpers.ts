@@ -8,11 +8,23 @@ export interface DifficultyIndicator {
   label: string;
 }
 
+export interface TimeTranslations {
+  justNow?: string;
+  minutesAgo?: string;
+  hoursAgo?: string;
+  daysAgo?: string;
+}
+
 /**
  * Format a date string into a human-readable relative time
  * e.g., "Just now", "5m ago", "2h ago", "3d ago"
+ * @param dateString - ISO date string
+ * @param timeTranslations - Optional translations for time formatting
  */
-export const formatTimeAgo = (dateString: string | undefined): string => {
+export const formatTimeAgo = (
+  dateString: string | undefined,
+  timeTranslations?: TimeTranslations
+): string => {
   if (!dateString) return '';
   
   const now = new Date();
@@ -22,10 +34,26 @@ export const formatTimeAgo = (dateString: string | undefined): string => {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
   
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  // Helper to replace {{count}} with actual number
+  const format = (template: string, count: number): string => {
+    return template.replace('{{count}}', String(count));
+  };
+  
+  if (diffMins < 1) {
+    return timeTranslations?.justNow || 'Just now';
+  }
+  if (diffMins < 60) {
+    const template = timeTranslations?.minutesAgo || '{{count}}m ago';
+    return format(template, diffMins);
+  }
+  if (diffHours < 24) {
+    const template = timeTranslations?.hoursAgo || '{{count}}h ago';
+    return format(template, diffHours);
+  }
+  if (diffDays < 7) {
+    const template = timeTranslations?.daysAgo || '{{count}}d ago';
+    return format(template, diffDays);
+  }
   
   return past.toLocaleDateString();
 };
