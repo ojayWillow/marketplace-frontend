@@ -21,6 +21,60 @@ export const task = {
   // Status messages
   taskNotFound: 'Задача не найдена',
   goBack: 'Назад',
+
+  // Alert dialogs
+  alerts: {
+    // Apply
+    applyTitle: 'Подать заявку',
+    applyMessage: 'Подать заявку на эту задачу?',
+    applyButton: 'Подать',
+    signInRequired: 'Требуется вход',
+    signInToApply: 'Вам нужно войти, чтобы подать заявку.',
+    signInButton: 'Войти',
+    applySuccess: 'Успешно',
+    applySuccessMessage: 'Ваша заявка отправлена!',
+    
+    // Withdraw
+    withdrawTitle: 'Отозвать',
+    withdrawMessage: 'Отозвать вашу заявку?',
+    withdrawButton: 'Отозвать',
+    withdrawSuccess: 'Успешно',
+    withdrawSuccessMessage: 'Заявка отозвана',
+    
+    // Mark done
+    markDoneTitle: 'Отметить выполненным',
+    markDoneMessage: 'Отметить эту задачу как выполненную?',
+    markDoneButton: 'Отметить',
+    markDoneSuccess: 'Успешно',
+    markDoneSuccessMessage: 'Задача отмечена как выполненная!',
+    
+    // Confirm completion
+    confirmTitle: 'Подтвердить',
+    confirmMessage: 'Подтвердить выполнение задачи?',
+    confirmButton: 'Подтвердить',
+    
+    // Cancel task
+    cancelTitle: 'Отменить задачу',
+    cancelMessage: 'Отменить эту задачу?',
+    cancelYes: 'Да',
+    cancelNo: 'Нет',
+    cancelSuccess: 'Отменено',
+    cancelSuccessMessage: 'Задача отменена.',
+    
+    // Report
+    reportTitle: 'Пожаловаться',
+    reportMessage: 'Пожаловаться на эту задачу?',
+    reportButton: 'Пожаловаться',
+    reportedTitle: 'Отправлено',
+    reportedMessage: 'Спасибо.',
+    
+    // Message
+    signInToMessage: 'Вам нужно войти, чтобы написать сообщение.',
+    
+    // Common
+    error: 'Ошибка',
+    cancelButton: 'Отмена',
+  },
   
   // Task Create Form
   create: {
