@@ -20,6 +20,24 @@ export const tasks = {
   tabJobs: 'Jobs',
   tabServices: 'Services',
   
+  // Status badge labels (for TaskCard bubbles)
+  status: {
+    open: 'Open',
+    assigned: 'Assigned',
+    in_progress: 'In Progress',
+    pending_confirmation: 'Awaiting Confirmation',
+    completed: 'Completed',
+    disputed: 'Disputed',
+    cancelled: 'Cancelled',
+  },
+
+  // Action labels for status badges
+  actionNeeded: 'Action needed',
+  waiting: 'Waiting',
+  applied: 'Applied',
+  applicantLabel: 'applicant',
+  applicantsLabel: 'applicants',
+  
   // Filters
   filters: {
     title: 'Filters',
@@ -31,6 +49,13 @@ export const tasks = {
     hard: 'Hard',
     clearAll: 'Clear All',
     apply: 'Apply',
+  },
+
+  // Difficulty labels
+  difficulty: {
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
   },
 
   // Progress Stepper
