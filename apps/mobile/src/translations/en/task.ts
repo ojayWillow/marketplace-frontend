@@ -20,6 +20,20 @@ export const task = {
   openInMaps: 'Open in Maps',
   viewAndApply: 'View and apply',
   
+  // Time formatting
+  time: {
+    justNow: 'Just now',
+    minutesAgo: '{{count}}m ago',
+    hoursAgo: '{{count}}h ago',
+    daysAgo: '{{count}}d ago',
+  },
+  
+  // Notices
+  notices: {
+    youHaveApplied: 'You have applied for this task',
+    workerMarkedDone: '{{name}} marked this as done. Please review and confirm.',
+  },
+  
   // Status messages
   taskNotFound: 'Task not found',
   goBack: 'Go Back',
