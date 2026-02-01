@@ -37,6 +37,14 @@ export const tasks = {
   applied: 'Откликнулся',
   applicantLabel: 'отклик',
   applicantsLabel: 'откликов',
+
+  // Time ago labels
+  time: {
+    justNow: 'Только что',
+    minutesAgo: '{{count}} мин назад',
+    hoursAgo: '{{count}} ч назад',
+    daysAgo: '{{count}} дн назад',
+  },
   
   // Filters
   filters: {
