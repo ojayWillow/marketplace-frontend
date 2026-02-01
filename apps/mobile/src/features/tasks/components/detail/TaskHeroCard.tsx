@@ -26,7 +26,7 @@ export function TaskHeroCard({
   const { getCategoryLabel, getCategoryIcon } = useCategories();
   
   const difficulty = getDifficultyIndicator(task.difficulty, t);
-  const timeAgo = formatTimeAgo(task.created_at);
+  const timeAgo = formatTimeAgo(task.created_at, t.task?.time);
   const hasRating = (task.creator_rating ?? 0) > 0;
   const applicantsCount = task.pending_applications_count ?? 0;
 
