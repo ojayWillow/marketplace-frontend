@@ -37,6 +37,14 @@ export const tasks = {
   applied: 'Applied',
   applicantLabel: 'applicant',
   applicantsLabel: 'applicants',
+
+  // Time ago labels
+  time: {
+    justNow: 'Just now',
+    minutesAgo: '{{count}}m ago',
+    hoursAgo: '{{count}}h ago',
+    daysAgo: '{{count}}d ago',
+  },
   
   // Filters
   filters: {
