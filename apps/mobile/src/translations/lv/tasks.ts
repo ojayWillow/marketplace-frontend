@@ -37,6 +37,14 @@ export const tasks = {
   applied: 'Pieteicies',
   applicantLabel: 'pieteikums',
   applicantsLabel: 'pieteikumi',
+
+  // Time ago labels
+  time: {
+    justNow: 'Tikko',
+    minutesAgo: 'pirms {{count}}m',
+    hoursAgo: 'pirms {{count}}h',
+    daysAgo: 'pirms {{count}}d',
+  },
   
   // Filters
   filters: {
