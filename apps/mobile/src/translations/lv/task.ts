@@ -14,9 +14,11 @@ export const task = {
   applicants: 'PIETEIKUMI',
   difficulty: 'GRŪTĪBA',
   posted: 'PUBLICĒTS',
+  distance: 'ATTĀLUMS',
   description: 'Apraksts',
   location: 'Atrašanās vieta',
   openInMaps: 'Atvērt kartēs',
+  viewAndApply: 'Skatīt un pieteikties',
   
   // Status messages
   taskNotFound: 'Uzdevums nav atrasts',
