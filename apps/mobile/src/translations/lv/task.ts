@@ -21,6 +21,60 @@ export const task = {
   // Status messages
   taskNotFound: 'Uzdevums nav atrasts',
   goBack: 'Atpakaļ',
+
+  // Alert dialogs
+  alerts: {
+    // Apply
+    applyTitle: 'Pieteikties',
+    applyMessage: 'Pieteikties šim uzdevumam?',
+    applyButton: 'Pieteikties',
+    signInRequired: 'Nepieciešama pieteikšanās',
+    signInToApply: 'Jums jāpiesakās, lai pieteiktos.',
+    signInButton: 'Pieteikties',
+    applySuccess: 'Veiksmīgi',
+    applySuccessMessage: 'Jūsu pieteikums ir iesniegts!',
+    
+    // Withdraw
+    withdrawTitle: 'Atsaukt',
+    withdrawMessage: 'Atsaukt jūsu pieteikumu?',
+    withdrawButton: 'Atsaukt',
+    withdrawSuccess: 'Veiksmīgi',
+    withdrawSuccessMessage: 'Pieteikums atsaukts',
+    
+    // Mark done
+    markDoneTitle: 'Atzīmēt kā pabeigtu',
+    markDoneMessage: 'Atzīmēt šo uzdevumu kā pabeigtu?',
+    markDoneButton: 'Atzīmēt',
+    markDoneSuccess: 'Veiksmīgi',
+    markDoneSuccessMessage: 'Uzdevums atzīmēts kā pabeigts!',
+    
+    // Confirm completion
+    confirmTitle: 'Apstiprināt',
+    confirmMessage: 'Apstiprināt uzdevuma pabeigšanu?',
+    confirmButton: 'Apstiprināt',
+    
+    // Cancel task
+    cancelTitle: 'Atcelt uzdevumu',
+    cancelMessage: 'Atcelt šo uzdevumu?',
+    cancelYes: 'Jā',
+    cancelNo: 'Nē',
+    cancelSuccess: 'Atcelts',
+    cancelSuccessMessage: 'Uzdevums ir atcelts.',
+    
+    // Report
+    reportTitle: 'Ziņot',
+    reportMessage: 'Ziņot par šo uzdevumu?',
+    reportButton: 'Ziņot',
+    reportedTitle: 'Ziņots',
+    reportedMessage: 'Paldies.',
+    
+    // Message
+    signInToMessage: 'Jums jāpiesakās, lai rakstītu ziņas.',
+    
+    // Common
+    error: 'Kļūda',
+    cancelButton: 'Atcelt',
+  },
   
   // Task Create Form
   create: {

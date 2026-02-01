@@ -11,6 +11,7 @@ import {
   useAuthStore,
   type Task 
 } from '@marketplace/shared';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 export interface TaskActionsReturn {
   // State
@@ -41,6 +42,7 @@ export interface TaskActionsReturn {
 export function useTaskActions(taskId: number, task: Task | undefined): TaskActionsReturn {
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
   // ============ MUTATIONS ============
@@ -48,12 +50,12 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
   const applyMutation = useMutation({
     mutationFn: () => applyToTask(taskId),
     onSuccess: () => {
-      Alert.alert('Success', 'Your application has been submitted!');
+      Alert.alert(t.task.alerts.applySuccess, t.task.alerts.applySuccessMessage);
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to apply.');
+      Alert.alert(t.task.alerts.error, error.response?.data?.message || 'Failed to apply.');
     },
   });
 
@@ -63,23 +65,23 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
       return withdrawApplication(taskId, task.user_application.id);
     },
     onSuccess: () => {
-      Alert.alert('Success', 'Application withdrawn');
+      Alert.alert(t.task.alerts.withdrawSuccess, t.task.alerts.withdrawSuccessMessage);
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed.');
+      Alert.alert(t.task.alerts.error, error.response?.data?.message || 'Failed.');
     },
   });
 
   const markDoneMutation = useMutation({
     mutationFn: () => markTaskDone(taskId),
     onSuccess: () => {
-      Alert.alert('Success', 'Task marked as done!');
+      Alert.alert(t.task.alerts.markDoneSuccess, t.task.alerts.markDoneSuccessMessage);
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed.');
+      Alert.alert(t.task.alerts.error, error.response?.data?.message || 'Failed.');
     },
   });
 
@@ -90,21 +92,21 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
       setShowReviewPrompt(true);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed.');
+      Alert.alert(t.task.alerts.error, error.response?.data?.message || 'Failed.');
     },
   });
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelTask(taskId),
     onSuccess: () => {
-      Alert.alert('Cancelled', 'Task has been cancelled.');
+      Alert.alert(t.task.alerts.cancelSuccess, t.task.alerts.cancelSuccessMessage);
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       // Invalidate map and search queries to remove cancelled task from map
       queryClient.invalidateQueries({ queryKey: ['tasks-home-all'] });
       queryClient.invalidateQueries({ queryKey: ['tasks-search'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Failed.');
+      Alert.alert(t.task.alerts.error, error.response?.data?.message || 'Failed.');
     },
   });
 
@@ -123,38 +125,38 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
 
   const handleApply = useCallback(() => {
     if (!isAuthenticated) {
-      Alert.alert('Sign In Required', 'You need to sign in to apply.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+      Alert.alert(t.task.alerts.signInRequired, t.task.alerts.signInToApply, [
+        { text: t.task.alerts.cancelButton, style: 'cancel' },
+        { text: t.task.alerts.signInButton, onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
-    Alert.alert('Apply', 'Apply for this task?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Apply', onPress: () => applyMutation.mutate() },
+    Alert.alert(t.task.alerts.applyTitle, t.task.alerts.applyMessage, [
+      { text: t.task.alerts.cancelButton, style: 'cancel' },
+      { text: t.task.alerts.applyButton, onPress: () => applyMutation.mutate() },
     ]);
-  }, [isAuthenticated, applyMutation]);
+  }, [isAuthenticated, applyMutation, t]);
 
   const handleWithdraw = useCallback(() => {
-    Alert.alert('Withdraw', 'Withdraw your application?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Withdraw', style: 'destructive', onPress: () => withdrawMutation.mutate() },
+    Alert.alert(t.task.alerts.withdrawTitle, t.task.alerts.withdrawMessage, [
+      { text: t.task.alerts.cancelButton, style: 'cancel' },
+      { text: t.task.alerts.withdrawButton, style: 'destructive', onPress: () => withdrawMutation.mutate() },
     ]);
-  }, [withdrawMutation]);
+  }, [withdrawMutation, t]);
 
   const handleMarkDone = useCallback(() => {
-    Alert.alert('Mark Done', 'Mark this task as completed?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Mark Done', onPress: () => markDoneMutation.mutate() },
+    Alert.alert(t.task.alerts.markDoneTitle, t.task.alerts.markDoneMessage, [
+      { text: t.task.alerts.cancelButton, style: 'cancel' },
+      { text: t.task.alerts.markDoneButton, onPress: () => markDoneMutation.mutate() },
     ]);
-  }, [markDoneMutation]);
+  }, [markDoneMutation, t]);
 
   const handleConfirm = useCallback(() => {
-    Alert.alert('Confirm', 'Confirm task completion?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Confirm', onPress: () => confirmMutation.mutate() },
+    Alert.alert(t.task.alerts.confirmTitle, t.task.alerts.confirmMessage, [
+      { text: t.task.alerts.cancelButton, style: 'cancel' },
+      { text: t.task.alerts.confirmButton, onPress: () => confirmMutation.mutate() },
     ]);
-  }, [confirmMutation]);
+  }, [confirmMutation, t]);
 
   const handleDispute = useCallback(() => {
     // Navigate to dispute creation screen instead of old simple dispute
@@ -162,11 +164,11 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
   }, [taskId]);
 
   const handleCancel = useCallback(() => {
-    Alert.alert('Cancel Task', 'Cancel this task?', [
-      { text: 'No', style: 'cancel' },
-      { text: 'Yes', style: 'destructive', onPress: () => cancelMutation.mutate() },
+    Alert.alert(t.task.alerts.cancelTitle, t.task.alerts.cancelMessage, [
+      { text: t.task.alerts.cancelNo, style: 'cancel' },
+      { text: t.task.alerts.cancelYes, style: 'destructive', onPress: () => cancelMutation.mutate() },
     ]);
-  }, [cancelMutation]);
+  }, [cancelMutation, t]);
 
   const handleOpenMap = useCallback(() => {
     if (task?.latitude && task?.longitude) {
@@ -176,9 +178,9 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
 
   const handleMessage = useCallback(() => {
     if (!isAuthenticated) {
-      Alert.alert('Sign In Required', 'You need to sign in to message.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+      Alert.alert(t.task.alerts.signInRequired, t.task.alerts.signInToMessage, [
+        { text: t.task.alerts.cancelButton, style: 'cancel' },
+        { text: t.task.alerts.signInButton, onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
@@ -194,14 +196,14 @@ export function useTaskActions(taskId: number, task: Task | undefined): TaskActi
         }
       });
     }
-  }, [isAuthenticated, task]);
+  }, [isAuthenticated, task, t]);
 
   const handleReport = useCallback(() => {
-    Alert.alert('Report', 'Report this task?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: () => Alert.alert('Reported', 'Thanks.') },
+    Alert.alert(t.task.alerts.reportTitle, t.task.alerts.reportMessage, [
+      { text: t.task.alerts.cancelButton, style: 'cancel' },
+      { text: t.task.alerts.reportButton, style: 'destructive', onPress: () => Alert.alert(t.task.alerts.reportedTitle, t.task.alerts.reportedMessage) },
     ]);
-  }, []);
+  }, [t]);
 
   const handleViewProfile = useCallback(() => {
     if (task?.creator_id) {
