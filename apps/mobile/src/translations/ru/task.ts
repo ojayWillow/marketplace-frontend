@@ -14,9 +14,11 @@ export const task = {
   applicants: 'ЗАЯВКИ',
   difficulty: 'СЛОЖНОСТЬ',
   posted: 'ОПУБЛИКОВАНО',
+  distance: 'РАССТОЯНИЕ',
   description: 'Описание',
   location: 'Местоположение',
   openInMaps: 'Открыть на карте',
+  viewAndApply: 'Смотреть и подать',
   
   // Status messages
   taskNotFound: 'Задача не найдена',

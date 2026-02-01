@@ -4,6 +4,8 @@ import { type Task, getCategoryByKey, getImageUrl } from '@marketplace/shared';
 import StarRating from '../../../../../components/StarRating';
 import { styles } from '../../styles/taskDetailStyles';
 import { formatTimeAgo, getDifficultyIndicator } from '../../utils/taskHelpers';
+import { useTranslation } from '../../../../hooks/useTranslation';
+import { useCategories } from '../../../../hooks/useCategories';
 
 interface TaskHeroCardProps {
   task: Task;
@@ -20,8 +22,10 @@ export function TaskHeroCard({
   onReport, 
   onViewProfile 
 }: TaskHeroCardProps) {
-  const categoryData = getCategoryByKey(task.category);
-  const difficulty = getDifficultyIndicator(task.difficulty);
+  const { t } = useTranslation();
+  const { getCategoryLabel, getCategoryIcon } = useCategories();
+  
+  const difficulty = getDifficultyIndicator(task.difficulty, t);
   const timeAgo = formatTimeAgo(task.created_at);
   const hasRating = (task.creator_rating ?? 0) > 0;
   const applicantsCount = task.pending_applications_count ?? 0;
@@ -32,7 +36,7 @@ export function TaskHeroCard({
       <View style={styles.topRow}>
         <View style={styles.topRowLeft}>
           <Text style={styles.categoryText}>
-            {categoryData?.icon || '📋'} {categoryData?.label || task.category}
+            {getCategoryIcon(task.category)} {getCategoryLabel(task.category)}
           </Text>
           {task.is_urgent && (
             <View style={styles.urgentBadge}>
@@ -97,7 +101,7 @@ export function TaskHeroCard({
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{applicantsCount}</Text>
-          <Text style={styles.statLabel}>APPLICANTS</Text>
+          <Text style={styles.statLabel}>{t.task?.applicants || 'APPLICANTS'}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
@@ -105,12 +109,12 @@ export function TaskHeroCard({
             <View style={[styles.difficultyDot, { backgroundColor: difficulty.color }]} />
             <Text style={styles.statValue}>{difficulty.label}</Text>
           </View>
-          <Text style={styles.statLabel}>DIFFICULTY</Text>
+          <Text style={styles.statLabel}>{t.task?.difficulty || 'DIFFICULTY'}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{timeAgo || 'Now'}</Text>
-          <Text style={styles.statLabel}>POSTED</Text>
+          <Text style={styles.statLabel}>{t.task?.posted || 'POSTED'}</Text>
         </View>
       </View>
     </View>

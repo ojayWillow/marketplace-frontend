@@ -32,17 +32,20 @@ export const formatTimeAgo = (dateString: string | undefined): string => {
 
 /**
  * Get difficulty indicator color and label based on task difficulty
+ * @param difficulty - The difficulty level of the task
+ * @param t - Optional translations object for localized labels
  */
 export const getDifficultyIndicator = (
-  difficulty: 'easy' | 'medium' | 'hard' | undefined
+  difficulty: 'easy' | 'medium' | 'hard' | undefined,
+  t?: any
 ): DifficultyIndicator => {
   switch (difficulty) {
     case 'easy':
-      return { color: '#10b981', label: 'Easy' };
+      return { color: '#10b981', label: t?.difficulty?.easy || 'Easy' };
     case 'hard':
-      return { color: '#ef4444', label: 'Hard' };
+      return { color: '#ef4444', label: t?.difficulty?.hard || 'Hard' };
     default:
-      return { color: '#f59e0b', label: 'Medium' };
+      return { color: '#f59e0b', label: t?.difficulty?.medium || 'Medium' };
   }
 };
 

@@ -14,9 +14,11 @@ export const task = {
   applicants: 'APPLICANTS',
   difficulty: 'DIFFICULTY',
   posted: 'POSTED',
+  distance: 'DISTANCE',
   description: 'Description',
   location: 'Location',
   openInMaps: 'Open in Maps',
+  viewAndApply: 'View and apply',
   
   // Status messages
   taskNotFound: 'Task not found',
