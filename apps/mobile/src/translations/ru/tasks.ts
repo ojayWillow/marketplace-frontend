@@ -20,6 +20,32 @@ export const tasks = {
   tabJobs: 'Работы',
   tabServices: 'Услуги',
   
+  // Status badge labels (for TaskCard bubbles)
+  status: {
+    open: 'Открыто',
+    assigned: 'Назначено',
+    in_progress: 'В процессе',
+    pending_confirmation: 'Ожидает подтверждения',
+    completed: 'Завершено',
+    disputed: 'Оспорено',
+    cancelled: 'Отменено',
+  },
+
+  // Action labels for status badges
+  actionNeeded: 'Требуется действие',
+  waiting: 'Ожидание',
+  applied: 'Откликнулся',
+  applicantLabel: 'отклик',
+  applicantsLabel: 'откликов',
+
+  // Time ago labels
+  time: {
+    justNow: 'Только что',
+    minutesAgo: '{{count}} мин назад',
+    hoursAgo: '{{count}} ч назад',
+    daysAgo: '{{count}} дн назад',
+  },
+  
   // Filters
   filters: {
     title: 'Фильтры',
@@ -31,6 +57,13 @@ export const tasks = {
     hard: 'Сложно',
     clearAll: 'Очистить всё',
     apply: 'Применить',
+  },
+
+  // Difficulty labels
+  difficulty: {
+    easy: 'Легко',
+    medium: 'Средне',
+    hard: 'Сложно',
   },
 
   // Progress Stepper

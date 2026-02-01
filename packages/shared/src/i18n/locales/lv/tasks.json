@@ -1,6 +1,6 @@
 {
   "title": "Ātrā palīdzība",
-  "subtitle": "Atrodi darbus tuvumā un nopelni naudu",
+  "subtitle": "Atrodi darbus tuvējumā un nopelni naudu",
   "browseTasks": "Pārlūkot darbus",
   "createTask": "Publicēt darbu",
   "postJob": "Publicēt darbu",
@@ -16,10 +16,10 @@
   "noJobsFound": "Darbi nav atrasti",
   "noJobsNearby": "Tuvumā vēl nav publicētu darbu",
   "noJobsInLatvia": "Latvijā vēl nav publicētu darbu",
-  "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palieliniet rādiusu",
+  "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palielināt rādiusu",
   "tryDifferentFilters": "Mēģiniet pielāgot filtrus",
   "checkBackLater": "Pārbaudiet vēlāk",
-  "beFirstToPost": "Esiet pirmais, kas publicē darbu savā apkārtnē! Vajadzīga palīdzība ar pārvākšanos, uzkopšanu vai kādu citu uzdevumu? Publicējiet šeit.",
+  "beFirstToPost": "Esiet pirmais, kas publicē darbu savā apkārtnē! Vajadzīga palīdzība ar pārvākšanos, ukopšanu vai kādu citu uzdevumu? Publicējiet šeit.",
   "postFirstJob": "Publicēt savu pirmo darbu",
   "loginToPost": "Ieejiet, lai publicētu darbus vai piedāvātu pakalpojumus",
   "loginToPostJob": "Ieejiet, lai publicētu darbu",
@@ -34,6 +34,7 @@
   "processing": "Apstrādā...",
   "actionNeeded": "Nepieciešama darbība",
   "waiting": "Gaida",
+  "applied": "Pieteicies",
   "applicantLabel": "pieteikums",
   "applicantsLabel": "pieteikumi",
   "taskAccepted": "Darbs pieņemts! Pārbaudiet \"Mani darbi\" cilni navigācijai.",
@@ -67,8 +68,8 @@
   "serviceOfferings": "Pakalpojumu piedāvājumi",
   "locationSearch": "Meklēt adresi vai pilsētu",
   "locationSearchPlaceholder": "Meklēt adresi vai pilsētu (piem., Rīga vai Jelgava)",
-  "customLocation": "Pielāgota atrašanās vieta (noklilkšķiniet uz kartes, lai mainītu)",
-  "autoDetected": "Automātiski noteikta atrašanās vieta • Meklējiet vai noklilkšķiniet uz kartes",
+  "customLocation": "Pielāgota atrašanās vieta (noklilķšķiniet uz kartes, lai mainītu)",
+  "autoDetected": "Automātiski noteikta atrašanās vieta • Meklējiet vai noklilķšķiniet uz kartes",
   "resetLocation": "Atjaunot automātisko notekšanu",
   "yourLocation": "Jūsu atrašanās vieta",
   "selectedLocation": "Izvēlētā vieta",
@@ -111,7 +112,20 @@
   "createJobOrService": "Izveidot darbu vai pakalpojumu",
   "urgentOnMap": "{{count}} steidzāms(-i)",
   "time": {
-    "justNow": "Tikko"
+    "justNow": "Tikko",
+    "minutesAgo": "pirms {{count}}m",
+    "hoursAgo": "pirms {{count}}h",
+    "daysAgo": "pirms {{count}}d"
+  },
+  "detail": {
+    "applicants": "PIETEIKUMI",
+    "difficulty": "GRŪTĪBA",
+    "posted": "PUBLICĒTS"
+  },
+  "difficulty": {
+    "easy": "Viegls",
+    "medium": "Vidējs",
+    "hard": "Grūts"
   },
   "status": {
     "open": "Atvērts",
@@ -126,7 +140,7 @@
     "pet-care": "Mājdzīvnieku aprūpe",
     "moving": "Pārvākšanās",
     "shopping": "Iepirkšanās",
-    "cleaning": "Uzkopšana",
+    "cleaning": "Ukopšana",
     "delivery": "Piegāde",
     "outdoor": "Āra darbi",
     "handyman": "Saimnieks",

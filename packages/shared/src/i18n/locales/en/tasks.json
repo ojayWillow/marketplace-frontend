@@ -34,6 +34,7 @@
   "processing": "Processing...",
   "actionNeeded": "Action needed",
   "waiting": "Waiting",
+  "applied": "Applied",
   "applicantLabel": "applicant",
   "applicantsLabel": "applicants",
   "taskAccepted": "Job accepted! Check \"My Tasks\" tab for navigation.",
@@ -111,7 +112,20 @@
   "createJobOrService": "Create a job or service",
   "urgentOnMap": "{{count}} urgent",
   "time": {
-    "justNow": "Just now"
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "detail": {
+    "applicants": "APPLICANTS",
+    "difficulty": "DIFFICULTY",
+    "posted": "POSTED"
+  },
+  "difficulty": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
   },
   "status": {
     "open": "Open",
