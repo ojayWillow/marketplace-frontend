@@ -102,11 +102,11 @@ const getStatusBadge = (
     
     // New applicants
     if (task.status === 'open' && applicantsCount > 0) {
-      const applicantText = applicantsCount > 1 
-        ? (t.applicantsPlural || `${applicantsCount} applicants`)
-        : (t.applicantSingle || `${applicantsCount} applicant`);
+      const label = applicantsCount > 1 
+        ? (t.applicantsLabel || 'applicants')
+        : (t.applicantLabel || 'applicant');
       return {
-        text: `${applicantsCount} ${applicantsCount > 1 ? (t.applicantsLabel || 'applicants') : (t.applicantLabel || 'applicant')}`,
+        text: `${applicantsCount} ${label}`,
         color: '#fff',
         bgColor: '#3b82f6', // Blue
       };
