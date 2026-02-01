@@ -71,7 +71,11 @@ const formatLocationDisplay = (task: Task): string => {
 };
 
 // Helper to get status badge info
-const getStatusBadge = (task: Task, userId?: number): { text: string; color: string; bgColor: string } | null => {
+const getStatusBadge = (
+  task: Task, 
+  userId: number | undefined,
+  t: any
+): { text: string; color: string; bgColor: string } | null => {
   const isMyTask = task.creator_id === userId;
   const isAssignedToMe = task.assigned_to_id === userId;
   const applicantsCount = task.pending_applications_count ?? 0;
@@ -79,7 +83,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
   // Disputed - highest priority (check both status and dispute_status field)
   if (task.status === 'disputed' || (task as any).dispute_status === 'open') {
     return {
-      text: '⚠️ Disputed',
+      text: `⚠️ ${t.status?.disputed || 'Disputed'}`,
       color: '#fff',
       bgColor: '#f59e0b', // Orange
     };
@@ -90,7 +94,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Action needed: Worker marked done, needs confirmation
     if (task.status === 'pending_confirmation') {
       return {
-        text: 'Action needed',
+        text: t.actionNeeded || 'Action needed',
         color: '#fff',
         bgColor: '#ef4444', // Red
       };
@@ -98,8 +102,11 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     
     // New applicants
     if (task.status === 'open' && applicantsCount > 0) {
+      const applicantText = applicantsCount > 1 
+        ? (t.applicantsPlural || `${applicantsCount} applicants`)
+        : (t.applicantSingle || `${applicantsCount} applicant`);
       return {
-        text: `${applicantsCount} applicant${applicantsCount > 1 ? 's' : ''}`,
+        text: `${applicantsCount} ${applicantsCount > 1 ? (t.applicantsLabel || 'applicants') : (t.applicantLabel || 'applicant')}`,
         color: '#fff',
         bgColor: '#3b82f6', // Blue
       };
@@ -108,7 +115,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Worker assigned
     if (task.status === 'assigned' || task.status === 'in_progress') {
       return {
-        text: 'Assigned',
+        text: t.status?.assigned || 'Assigned',
         color: '#fff',
         bgColor: '#10b981', // Green
       };
@@ -120,7 +127,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Waiting for confirmation
     if (task.status === 'pending_confirmation') {
       return {
-        text: 'Waiting',
+        text: t.waiting || 'Waiting',
         color: '#fff',
         bgColor: '#f59e0b', // Yellow
       };
@@ -129,7 +136,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // In progress
     if (task.status === 'in_progress') {
       return {
-        text: 'In progress',
+        text: t.status?.in_progress || 'In progress',
         color: '#fff',
         bgColor: '#10b981', // Green
       };
@@ -138,7 +145,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
     // Assigned
     if (task.status === 'assigned') {
       return {
-        text: 'Assigned',
+        text: t.status?.assigned || 'Assigned',
         color: '#fff',
         bgColor: '#3b82f6', // Blue
       };
@@ -148,7 +155,7 @@ const getStatusBadge = (task: Task, userId?: number): { text: string; color: str
   // Completed
   if (task.status === 'completed') {
     return {
-      text: 'Completed',
+      text: t.status?.completed || 'Completed',
       color: '#fff',
       bgColor: '#6b7280', // Gray
     };
@@ -182,7 +189,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
   const categoryLabel = getCategoryLabel(task.category);
   const categoryIcon = getCategoryIcon(task.category);
   const locationDisplay = formatLocationDisplay(task);
-  const statusBadge = getStatusBadge(task, user?.id);
+  const statusBadge = getStatusBadge(task, user?.id, t.tasks || {});
 
   const handlePress = useCallback(() => {
     if (onPress) {
