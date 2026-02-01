@@ -20,6 +20,20 @@ export const task = {
   openInMaps: 'Atvērt kartēs',
   viewAndApply: 'Skatīt un pieteikties',
   
+  // Time formatting
+  time: {
+    justNow: 'Tikko',
+    minutesAgo: 'pirms {{count}}min',
+    hoursAgo: 'pirms {{count}}h',
+    daysAgo: 'pirms {{count}}d',
+  },
+  
+  // Notices
+  notices: {
+    youHaveApplied: 'Jūs esat pieteicies šim uzdevumam',
+    workerMarkedDone: '{{name}} atzīmēja kā pabeigtu. Lūdzu, pārskatiet un apstipriniet.',
+  },
+  
   // Status messages
   taskNotFound: 'Uzdevums nav atrasts',
   goBack: 'Atpakaļ',
