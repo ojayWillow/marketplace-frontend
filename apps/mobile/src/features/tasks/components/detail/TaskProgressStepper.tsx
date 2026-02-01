@@ -3,46 +3,12 @@ import { Text } from 'react-native-paper';
 import type { Task } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
 import { getTaskSteps, getCurrentStep, type TaskStep, type StepStatus } from '../../utils/taskSteps';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface TaskProgressStepperProps {
   task: Task;
   onActionPress?: (stepId: string) => void;
 }
-
-// Role labels (avoiding useTranslation hook issue)
-const ROLE_LABELS: Record<string, string> = {
-  creator: 'YOUR JOB PROGRESS',
-  worker: 'YOUR WORK PROGRESS', 
-  applicant: 'YOUR APPLICATION',
-};
-
-// Step labels
-const STEP_LABELS: Record<string, { title: string; description: string }> = {
-  // Creator steps
-  'creator_posted': { title: 'Job Posted', description: 'Your job is visible to helpers' },
-  'creator_reviewing': { title: 'Review Applicants', description: 'Check applications and choose a helper' },
-  'creator_assigned': { title: 'Helper Assigned', description: 'Someone is working on your job' },
-  'creator_in_progress': { title: 'Work in Progress', description: 'Wait for the helper to complete the work' },
-  'creator_pending_review': { title: 'Review Required', description: 'Confirm the work is done satisfactorily' },
-  'creator_completed': { title: 'Job Completed', description: 'Payment released to helper' },
-  // Worker steps
-  'worker_accepted': { title: 'Job Accepted', description: 'You are assigned to this job' },
-  'worker_in_progress': { title: 'Do the Work', description: 'Complete the job as described' },
-  'worker_pending_confirmation': { title: 'Awaiting Confirmation', description: 'Waiting for the poster to confirm' },
-  'worker_completed': { title: 'Job Completed', description: 'Payment received!' },
-  // Applicant steps
-  'applicant_applied': { title: 'Application Sent', description: 'Your application is pending review' },
-  'applicant_waiting': { title: 'Waiting for Response', description: 'The poster will review your application' },
-  'applicant_decision': { title: 'Decision Pending', description: 'You will be notified of the outcome' },
-};
-
-// Action prompts
-const ACTION_PROMPTS: Record<string, string> = {
-  'tasks:steps.actions.review_applicants': 'Review applicants and assign someone',
-  'tasks:steps.actions.confirm_completion': 'Review the work and confirm completion',
-  'tasks:steps.actions.mark_complete': 'Mark as complete when done',
-  'tasks:steps.actions.wait_for_decision': 'Waiting for poster to decide',
-};
 
 /**
  * Visual progress stepper showing task workflow status
@@ -50,6 +16,7 @@ const ACTION_PROMPTS: Record<string, string> = {
  */
 export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepperProps) => {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   
   const result = getTaskSteps(task, user?.id);
   
@@ -58,6 +25,52 @@ export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepper
   
   const { role, steps } = result;
   const currentStep = getCurrentStep(steps);
+
+  // Get role label from translations
+  const getRoleLabel = (role: string): string => {
+    switch (role) {
+      case 'creator': return t.tasks.progress.roles.creator;
+      case 'worker': return t.tasks.progress.roles.worker;
+      case 'applicant': return t.tasks.progress.roles.applicant;
+      default: return t.tasks.progress.roles.default;
+    }
+  };
+
+  // Get step labels from translations
+  const getStepLabels = (stepId: string): { title: string; description: string } => {
+    const p = t.tasks.progress;
+    switch (stepId) {
+      // Creator steps
+      case 'creator_posted': return p.creatorPosted;
+      case 'creator_reviewing': return p.creatorReviewing;
+      case 'creator_assigned': return p.creatorAssigned;
+      case 'creator_in_progress': return p.creatorInProgress;
+      case 'creator_pending_review': return p.creatorPendingReview;
+      case 'creator_completed': return p.creatorCompleted;
+      // Worker steps
+      case 'worker_accepted': return p.workerAccepted;
+      case 'worker_in_progress': return p.workerInProgress;
+      case 'worker_pending_confirmation': return p.workerPendingConfirmation;
+      case 'worker_completed': return p.workerCompleted;
+      // Applicant steps
+      case 'applicant_applied': return p.applicantApplied;
+      case 'applicant_waiting': return p.applicantWaiting;
+      case 'applicant_decision': return p.applicantDecision;
+      default: return { title: stepId, description: '' };
+    }
+  };
+
+  // Get action prompt from translations
+  const getActionPrompt = (actionKey: string): string => {
+    const actions = t.tasks.progress.actions;
+    switch (actionKey) {
+      case 'tasks:steps.actions.review_applicants': return actions.reviewApplicants;
+      case 'tasks:steps.actions.confirm_completion': return actions.confirmCompletion;
+      case 'tasks:steps.actions.mark_complete': return actions.markComplete;
+      case 'tasks:steps.actions.wait_for_decision': return actions.waitForDecision;
+      default: return actions.takeAction;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -68,7 +81,7 @@ export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepper
           {role === 'worker' && '🛠️'}
           {role === 'applicant' && '📩'}
           {' '}
-          {ROLE_LABELS[role] || 'PROGRESS'}
+          {getRoleLabel(role)}
         </Text>
       </View>
 
@@ -80,6 +93,8 @@ export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepper
             step={step}
             isLast={index === steps.length - 1}
             onActionPress={onActionPress}
+            labels={getStepLabels(step.id)}
+            badges={t.tasks.progress.badges}
           />
         ))}
       </View>
@@ -88,7 +103,7 @@ export const TaskProgressStepper = ({ task, onActionPress }: TaskProgressStepper
       {currentStep?.actionKey && currentStep.status === 'current' && (
         <View style={styles.actionPrompt}>
           <Text style={styles.actionPromptText}>
-            👉 {ACTION_PROMPTS[currentStep.actionKey] || 'Take action'}
+            👉 {getActionPrompt(currentStep.actionKey)}
           </Text>
         </View>
       )}
@@ -103,11 +118,12 @@ interface StepItemProps {
   step: TaskStep;
   isLast: boolean;
   onActionPress?: (stepId: string) => void;
+  labels: { title: string; description: string };
+  badges: { now: string; waiting: string };
 }
 
-const StepItem = ({ step, isLast }: StepItemProps) => {
+const StepItem = ({ step, isLast, labels, badges }: StepItemProps) => {
   const statusStyles = getStatusStyles(step.status);
-  const labels = STEP_LABELS[step.id] || { title: step.titleKey, description: step.descriptionKey };
 
   return (
     <View style={styles.stepRow}>
@@ -138,12 +154,12 @@ const StepItem = ({ step, isLast }: StepItemProps) => {
           </Text>
           {step.status === 'current' && (
             <View style={styles.currentBadge}>
-              <Text style={styles.currentBadgeText}>← Now</Text>
+              <Text style={styles.currentBadgeText}>← {badges.now}</Text>
             </View>
           )}
           {step.status === 'waiting' && (
             <View style={styles.waitingBadge}>
-              <Text style={styles.waitingBadgeText}>Waiting</Text>
+              <Text style={styles.waitingBadgeText}>{badges.waiting}</Text>
             </View>
           )}
         </View>
