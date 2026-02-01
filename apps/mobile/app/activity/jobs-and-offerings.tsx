@@ -298,8 +298,10 @@ export default function JobsAndOfferingsScreen() {
               return <OfferingCard offering={item} />;
             }
             // For work tab, check if item is an application with nested task
+            // FIX: Add has_applied flag so TaskCard shows the "Applied" badge
             if (activeTab === 'work' && item._type === 'application' && item.task) {
-              return <TaskCard task={item.task} />;
+              const taskWithAppliedFlag = { ...item.task, has_applied: true };
+              return <TaskCard task={taskWithAppliedFlag} />;
             }
             return <TaskCard task={item} />;
           }}
