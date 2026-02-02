@@ -7,14 +7,19 @@ const getApiUrl = (): string => {
   if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL
   }
-  // Vite (web) - check for window object instead of import.meta
-  if (typeof window !== 'undefined' && (window as any).__VITE_ENV__?.VITE_API_URL) {
-    return (window as any).__VITE_ENV__.VITE_API_URL
+  
+  // Vite (web) - use import.meta.env at build time
+  // @ts-ignore - import.meta.env is injected by Vite
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    // @ts-ignore
+    return import.meta.env.VITE_API_URL
   }
+  
   // Node.js
   if (typeof process !== 'undefined' && process.env?.API_URL) {
     return process.env.API_URL
   }
+  
   return 'http://localhost:5000'
 }
 
