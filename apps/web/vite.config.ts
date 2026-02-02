@@ -7,11 +7,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.svg', 'sw-push.js'],
+      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.png', 'sw-push.js'],
       manifest: {
-        name: 'Quick Help - Local Task Marketplace',
-        short_name: 'Quick Help',
-        description: 'Get help with everyday tasks or earn money by helping others. Dog walking, moving, cleaning, repairs, and more in Latvia.',
+        name: 'Kolab - Earn Money Helping Others',
+        short_name: 'Kolab',
+        description: 'Earn money by helping others with everyday tasks. Dog walking, moving, cleaning, repairs, and more in Latvia.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
