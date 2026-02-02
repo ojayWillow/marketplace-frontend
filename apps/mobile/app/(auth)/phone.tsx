@@ -6,12 +6,17 @@ import { Text, TextInput, Button, useTheme, Snackbar, HelperText } from 'react-n
 import { useAuthStore } from '@marketplace/shared';
 import apiClient from '@marketplace/shared/src/api/client';
 import { useTranslation } from '../../src/hooks/useTranslation';
+import CountryCodePicker, { COUNTRIES, Country } from '../../src/components/CountryCodePicker';
 
 type Step = 'phone' | 'code' | 'complete' | 'success';
+
+// Default to Latvia
+const DEFAULT_COUNTRY = COUNTRIES[0]; // Latvia is first in the list
 
 export default function PhoneAuthScreen() {
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>('phone');
+  const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [username, setUsername] = useState('');
@@ -25,15 +30,18 @@ export default function PhoneAuthScreen() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const theme = useTheme();
 
-  const formatPhoneNumber = (phone: string): string => {
+  const formatPhoneNumber = (phone: string, country: Country): string => {
     let formatted = phone.trim();
-    // Remove any non-digit characters except +
-    formatted = formatted.replace(/[^\d+]/g, '');
-    // Add Latvia country code if not present
-    if (!formatted.startsWith('+')) {
-      formatted = '+371' + formatted.replace(/^0+/, '');
-    }
-    return formatted;
+    // Remove any non-digit characters
+    formatted = formatted.replace(/[^\d]/g, '');
+    // Remove leading zeros
+    formatted = formatted.replace(/^0+/, '');
+    // Combine with selected country dial code
+    return country.dialCode + formatted;
+  };
+
+  const getFullPhoneNumber = (): string => {
+    return formatPhoneNumber(phoneNumber, selectedCountry);
   };
 
   const startCooldown = (seconds: number) => {
@@ -55,7 +63,7 @@ export default function PhoneAuthScreen() {
   };
 
   const handleSendCode = async () => {
-    if (!phoneNumber.trim() || phoneNumber.length < 8) {
+    if (!phoneNumber.trim() || phoneNumber.length < 6) {
       setError(t.auth.phone.errorInvalidPhone || 'Please enter a valid phone number');
       return;
     }
@@ -64,7 +72,7 @@ export default function PhoneAuthScreen() {
     setError('');
 
     try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const formattedPhone = getFullPhoneNumber();
       
       // Send OTP via our backend (Twilio)
       const response = await apiClient.post('/api/auth/phone/send-otp', {
@@ -96,7 +104,7 @@ export default function PhoneAuthScreen() {
     setError('');
 
     try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const formattedPhone = getFullPhoneNumber();
 
       // Verify OTP via our backend (Twilio)
       const response = await apiClient.post('/api/auth/phone/verify-otp', {
@@ -199,27 +207,35 @@ export default function PhoneAuthScreen() {
             </Text>
             <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
               {step === 'phone' && t.auth.phone.subtitle}
-              {step === 'code' && `${t.auth.phone.codeSent || 'Code sent to'} ${formatPhoneNumber(phoneNumber)}`}
+              {step === 'code' && `${t.auth.phone.codeSent || 'Code sent to'} ${getFullPhoneNumber()}`}
               {step === 'complete' && t.auth.register.subtitle}
               {step === 'success' && t.onboarding.complete.title}
             </Text>
 
             {step === 'phone' && (
               <View>
-                <TextInput
-                  label={t.auth.phone.phoneLabel}
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  keyboardType="phone-pad"
-                  placeholder="+371 20000000"
-                  disabled={loading}
-                  mode="outlined"
-                  style={styles.input}
-                  left={<TextInput.Icon icon="phone" />}
-                  autoFocus
-                />
+                <Text variant="labelLarge" style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant }]}>
+                  {t.auth.phone.phoneLabel}
+                </Text>
+                <View style={styles.phoneInputRow}>
+                  <CountryCodePicker
+                    selectedCountry={selectedCountry}
+                    onSelect={setSelectedCountry}
+                    disabled={loading}
+                  />
+                  <TextInput
+                    value={phoneNumber}
+                    onChangeText={(text) => setPhoneNumber(text.replace(/[^\d]/g, ''))}
+                    keyboardType="phone-pad"
+                    placeholder="20000000"
+                    disabled={loading}
+                    mode="outlined"
+                    style={styles.phoneInput}
+                    autoFocus
+                  />
+                </View>
                 <HelperText type="info">
-                  {t.auth.phone.helperText || 'Include country code (e.g., +371 for Latvia)'}
+                  {t.auth.phone.helperText || 'Select your country and enter your phone number'}
                 </HelperText>
 
                 <Button
@@ -385,6 +401,9 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   title: { fontWeight: 'bold', marginBottom: 8 },
   subtitle: { marginBottom: 32 },
+  inputLabel: { marginBottom: 8 },
+  phoneInputRow: { flexDirection: 'row', alignItems: 'center' },
+  phoneInput: { flex: 1, marginBottom: 4 },
   input: { marginBottom: 4 },
   button: { borderRadius: 12, marginTop: 16 },
   buttonContent: { paddingVertical: 8 },
