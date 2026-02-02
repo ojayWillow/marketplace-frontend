@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { apiClient } from '@marketplace/shared/src/api/client'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '@marketplace/shared/src/stores/authStore'
 
 interface LoginData {
   email: string
