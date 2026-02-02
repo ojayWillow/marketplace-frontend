@@ -32,5 +32,9 @@ export const home = {
     offerService: 'Offer Service',
     offerServiceDesc: 'Share your skills and get hired',
     cancel: 'Cancel',
+    // Auth required
+    signInRequired: 'Sign in required',
+    signInText: 'You need to sign in to create jobs or offer services',
+    signInButton: 'Sign In',
   },
 };

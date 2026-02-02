@@ -32,5 +32,9 @@ export const home = {
     offerService: 'Предложить услугу',
     offerServiceDesc: 'Поделитесь своими навыками и получите работу',
     cancel: 'Отмена',
+    // Auth required
+    signInRequired: 'Требуется вход',
+    signInText: 'Для создания работ или предложения услуг необходимо войти',
+    signInButton: 'Войти',
   },
 };
