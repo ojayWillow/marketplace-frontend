@@ -2,7 +2,7 @@ import { View, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Avatar, Button } from 'react-native-paper';
 import { router, Stack } from 'expo-router';
-import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, normalizeSkills } from '@marketplace/shared';
+import { useAuthStore, getUserProfile, getUserReviewStats, getImageUrl, getUnreadCount, getNotifications, normalizeSkills } from '@marketplace/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { useTranslation } from '../../src/hooks/useTranslation';
@@ -48,7 +48,17 @@ export default function ProfileScreen() {
       refetchUser();
       refetchStats();
       refetchUnread();
-    }, [refetchUser, refetchStats, refetchUnread])
+      
+      // Prefetch notifications so they're ready when user taps the bell
+      // This eliminates loading time on the notifications screen
+      if (isAuthenticated) {
+        queryClient.prefetchQuery({
+          queryKey: ['notifications'],
+          queryFn: () => getNotifications(1, 50, false),
+          staleTime: 2 * 60 * 1000, // Consider fresh for 2 minutes
+        });
+      }
+    }, [refetchUser, refetchStats, refetchUnread, isAuthenticated, queryClient])
   );
 
   const handleLogout = () => {
