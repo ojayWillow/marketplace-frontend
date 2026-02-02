@@ -35,12 +35,12 @@ import { useLanguageStore } from '../../src/stores/languageStore';
 import { colors } from '../../src/theme';
 import Constants from 'expo-constants';
 
-// Import extracted components
-import { ConversationHeader } from './components/ConversationHeader';
-import { MessageBubble } from './components/MessageBubble';
-import { DateSeparator } from './components/DateSeparator';
-import { EmptyConversation } from './components/EmptyConversation';
-import { formatLastSeen, formatDateSeparator, needsDateSeparator } from './utils/messageFormatters';
+// Import extracted components from _components (ignored by Expo Router)
+import { ConversationHeader } from './_components/ConversationHeader';
+import { MessageBubble } from './_components/MessageBubble';
+import { DateSeparator } from './_components/DateSeparator';
+import { EmptyConversation } from './_components/EmptyConversation';
+import { formatLastSeen, formatDateSeparator, needsDateSeparator } from './_utils/messageFormatters';
 
 export default function ConversationScreen() {
   const { id, userId, username } = useLocalSearchParams<{ 
