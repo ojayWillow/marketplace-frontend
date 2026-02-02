@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getConversations, getConversation, getMessages, sendMessage, markAsRead } from '../messages';
+import { getConversations, getConversation, getMessages, sendMessage, markAsRead } from '@marketplace/shared/src/api/messages';
 
 // Query keys for cache management
 export const messageKeys = {
