@@ -5,7 +5,7 @@ import {
   unsubscribeFromPush,
   sendTestNotification,
   urlBase64ToUint8Array,
-} from '../push';
+} from '@marketplace/shared/src/api/push';
 
 interface UsePushNotificationsReturn {
   isSupported: boolean;

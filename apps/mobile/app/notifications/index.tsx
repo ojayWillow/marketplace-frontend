@@ -203,6 +203,7 @@ export default function NotificationsScreen() {
   const headerOptions = {
     headerShown: true,
     title: t.notifications.title,
+    headerBackTitle: '',
     headerStyle: { backgroundColor: themeColors.card },
     headerTintColor: themeColors.primaryAccent,
     headerTitleStyle: { color: themeColors.text },

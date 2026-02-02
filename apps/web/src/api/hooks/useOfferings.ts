@@ -9,7 +9,7 @@ import {
   updateOffering, 
   boostOffering,
   OfferingsParams 
-} from '../offerings';
+} from '@marketplace/shared/src/api/offerings';
 
 // Query keys for cache management
 // Include language in keys that return translated content

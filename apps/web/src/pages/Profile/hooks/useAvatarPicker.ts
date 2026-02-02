@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useToastStore } from '@marketplace/shared';
-import { uploadImage, getImageUrl } from '@marketplace/shared';
+import { uploadImage, getImageUrl } from '@marketplace/shared/src/api/uploads';
 import { generateAvatarUrl, generateRandomSeed } from '../utils/avatarHelpers';
 import type { ProfileFormData } from '@marketplace/shared';
 
