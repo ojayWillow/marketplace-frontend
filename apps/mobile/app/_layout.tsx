@@ -140,8 +140,19 @@ export default function RootLayout() {
                 gestureEnabled: true,
                 gestureDirection: 'horizontal',
                 presentation: 'card',
+                // Fix back button showing "(tabs)" text
+                headerBackTitle: '',
               }}
-            />
+            >
+              {/* Explicitly configure (tabs) to have empty back title */}
+              <Stack.Screen 
+                name="(tabs)" 
+                options={{ 
+                  headerShown: false,
+                  headerBackTitle: '',
+                }} 
+              />
+            </Stack>
           </QueryClientProvider>
         </PaperProvider>
       </SafeAreaProvider>
