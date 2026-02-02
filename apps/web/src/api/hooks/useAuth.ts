@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
-import apiClient from '../client'
+import { apiClient } from '@marketplace/shared/src/api/client'
 import { useAuthStore } from '../../stores/authStore'
 
 interface LoginData {
