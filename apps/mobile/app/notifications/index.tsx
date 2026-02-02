@@ -14,6 +14,16 @@ const interpolate = (template: string, data: Record<string, string | undefined>)
   return template.replace(/\{(\w+)\}/g, (_, key) => data[key] || `{${key}}`);
 };
 
+// Empty placeholder data for instant rendering
+const EMPTY_NOTIFICATIONS = {
+  notifications: [],
+  total: 0,
+  page: 1,
+  per_page: 50,
+  has_more: false,
+  unread_count: 0,
+};
+
 export default function NotificationsScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -22,9 +32,13 @@ export default function NotificationsScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getNotifications(1, 50, false),
+    // Use cached data for 2 minutes before refetching
+    staleTime: 2 * 60 * 1000,
+    // Show empty list immediately while fetching (if no cached data)
+    placeholderData: EMPTY_NOTIFICATIONS,
   });
 
   const markReadMutation = useMutation({
@@ -199,6 +213,9 @@ export default function NotificationsScreen() {
 
   const notifications = data?.notifications || [];
   const unreadCount = data?.unread_count || 0;
+  
+  // Show loading only on initial load with no cached data
+  const showInitialLoading = isLoading && notifications.length === 0;
 
   const headerOptions = {
     headerShown: true,
@@ -310,7 +327,8 @@ export default function NotificationsScreen() {
     },
   });
 
-  if (isLoading) {
+  // Only show full-screen loading on very first load with no data at all
+  if (showInitialLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']} collapsable={false}>
         <Stack.Screen options={headerOptions} />
