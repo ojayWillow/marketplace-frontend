@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, RefreshControl, Pressable, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, Pressable, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Surface, ActivityIndicator, Button, IconButton } from 'react-native-paper';
 import { router, Stack } from 'expo-router';
@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { colors } from '../../src/theme';
 import { useTranslation } from '../../src/hooks/useTranslation';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 // Helper to interpolate variables in translation strings
 const interpolate = (template: string, data: Record<string, string | undefined>): string => {
@@ -217,10 +218,22 @@ export default function NotificationsScreen() {
   // Show loading only on initial load with no cached data
   const showInitialLoading = isLoading && notifications.length === 0;
 
+  // Custom back button to avoid iOS showing "(tabs)"
+  const CustomBackButton = () => (
+    <TouchableOpacity 
+      onPress={() => router.back()} 
+      style={{ marginLeft: -8, padding: 8 }}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <Icon name="chevron-left" size={32} color={themeColors.primaryAccent} />
+    </TouchableOpacity>
+  );
+
   const headerOptions = {
     headerShown: true,
     title: t.notifications.title,
-    headerBackTitle: '',
+    // Use custom back button to completely override iOS default
+    headerLeft: () => <CustomBackButton />,
     headerStyle: { backgroundColor: themeColors.card },
     headerTintColor: themeColors.primaryAccent,
     headerTitleStyle: { color: themeColors.text },
