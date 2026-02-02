@@ -32,5 +32,9 @@ export const home = {
     offerService: 'Piedāvāt pakalpojumu',
     offerServiceDesc: 'Dalieties ar savām prasmēm un iegūstiet darbu',
     cancel: 'Atcelt',
+    // Auth required
+    signInRequired: 'Nepieciešama pierakstīšanās',
+    signInText: 'Lai izveidotu darbus vai piedāvātu pakalpojumus, jums jāpierakstās',
+    signInButton: 'Pierakstīties',
   },
 };
