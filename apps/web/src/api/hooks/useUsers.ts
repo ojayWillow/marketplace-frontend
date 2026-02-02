@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPublicUser, getUserReviews, PublicUser, UserReview } from '../users';
-import { startConversation, Conversation } from '../messages';
+import { getPublicUser, getUserReviews, PublicUser, UserReview } from '@marketplace/shared/src/api/users';
+import { startConversation, Conversation } from '@marketplace/shared/src/api/messages';
 
 // Query keys for cache management
 export const userKeys = {
