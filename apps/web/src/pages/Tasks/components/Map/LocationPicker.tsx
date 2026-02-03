@@ -1,15 +1,10 @@
-import { useMapEvents } from 'react-leaflet';
+// LocationPicker - Previously handled map clicks to change location
+// Now disabled - users change location via the search modal instead
+// Keeping component for potential future use (e.g., location picker modal)
 
-interface LocationPickerProps {
-  onLocationSelect: (lat: number, lng: number) => void;
-}
-
-const LocationPicker = ({ onLocationSelect }: LocationPickerProps) => {
-  useMapEvents({
-    click: (e) => {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
+const LocationPicker = () => {
+  // Map click location change disabled for better UX
+  // Users found it confusing when clicking to explore changed their location
   return null;
 };
 
