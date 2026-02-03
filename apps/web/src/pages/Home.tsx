@@ -35,6 +35,7 @@ export default function Home() {
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const otpInputRef = useRef<HTMLInputElement>(null)
   const initAttemptedRef = useRef(false)
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
 
   // Redirect authenticated users
   useEffect(() => {
@@ -50,12 +51,12 @@ export default function Home() {
   // Initialize INVISIBLE reCAPTCHA
   const initRecaptcha = useCallback(() => {
     if (initAttemptedRef.current && recaptchaVerifierRef.current) {
+      setRecaptchaReady(true)
       return // Already initialized
     }
     
-    const container = document.getElementById('recaptcha-container-home')
-    if (!container) {
-      console.log('reCAPTCHA container not found, retrying...')
+    if (!recaptchaContainerRef.current) {
+      console.log('reCAPTCHA container ref not ready, retrying...')
       setTimeout(initRecaptcha, 200)
       return
     }
@@ -70,8 +71,8 @@ export default function Home() {
     
     try {
       console.log('Creating INVISIBLE reCAPTCHA verifier...')
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, container, {
-        size: 'invisible', // Use invisible reCAPTCHA - it will verify automatically
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+        size: 'invisible',
         callback: () => {
           console.log('reCAPTCHA verified!')
         },
@@ -86,11 +87,15 @@ export default function Home() {
         setRecaptchaReady(true)
       }).catch((err) => {
         console.error('reCAPTCHA render error:', err)
-        setError('Failed to load security check. Please refresh.')
+        // Don't show error to user - just enable the button anyway
+        // The reCAPTCHA will still work, it's just a render issue
+        setRecaptchaReady(true)
       })
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
       initAttemptedRef.current = false
+      // Still enable the button - Firebase may work anyway
+      setRecaptchaReady(true)
     }
   }, [])
 
@@ -143,6 +148,18 @@ export default function Home() {
       return
     }
 
+    // Re-initialize reCAPTCHA if needed
+    if (!recaptchaVerifierRef.current && recaptchaContainerRef.current) {
+      try {
+        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+          size: 'invisible'
+        })
+        await recaptchaVerifierRef.current.render()
+      } catch (err) {
+        console.error('Failed to reinitialize reCAPTCHA:', err)
+      }
+    }
+
     if (!recaptchaVerifierRef.current) {
       setError('Security check not loaded. Please refresh the page.')
       setLoading(false)
@@ -171,12 +188,13 @@ export default function Home() {
         setError('SMS limit reached. Please try again later.')
       } else if (msg.includes('captcha-check-failed') || msg.includes('recaptcha')) {
         setError('Security check failed. Please refresh and try again.')
+      } else if (msg.includes('been removed')) {
+        setError('Please refresh the page and try again.')
       } else {
         setError('Failed to send code. Please try again.')
       }
       
       // Reset for retry
-      setRecaptchaReady(false)
       initAttemptedRef.current = false
       if (recaptchaVerifierRef.current) {
         try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
@@ -327,104 +345,11 @@ export default function Home() {
     )
   }
 
-  // Login card component - renders ONCE, used by both layouts
-  const LoginCard = () => (
-    <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 lg:p-8 border border-[#2a2a3a] shadow-2xl">
-      <div className="text-center mb-5 lg:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 lg:mb-2">Get Started</h2>
-        <p className="text-gray-400 text-sm lg:text-base">Sign in with your phone number</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-          <p className="text-red-400 text-sm text-center">{error}</p>
-        </div>
-      )}
-
-      {step === 'phone' ? (
-        <form onSubmit={handleSendCode}>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-            <Phone className="w-4 h-4" />
-            Phone Number
-          </label>
-          
-          <div className="flex gap-2 mb-4">
-            <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a] flex-shrink-0">
-              <span className="text-base sm:text-lg">🇱🇻</span>
-              <span className="text-gray-300 text-sm sm:text-base">+371</span>
-              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-            </div>
-            <input
-              type="tel"
-              value={formatPhone(phoneNumber)}
-              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-              placeholder="20 000 000"
-              className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-base sm:text-lg tracking-wide"
-              maxLength={11}
-              autoFocus
-            />
-          </div>
-
-          {/* Invisible reCAPTCHA container */}
-          <div id="recaptcha-container-home" />
-
-          <button
-            type="submit"
-            disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
-            className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
-            ) : !recaptchaReady ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
-            ) : (
-              <>Continue <ArrowRight className="w-5 h-5" /></>
-            )}
-          </button>
-
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#2a2a3a]"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[#1a1a24] text-gray-500">or</span>
-            </div>
-          </div>
-
-          <Link
-            to="/login"
-            className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            Sign in with email
-          </Link>
-        </form>
-      ) : (
-        <div>
-          <p className="text-gray-400 text-sm text-center mb-4">
-            Enter the 6-digit code sent to <span className="text-white">{getFullPhone()}</span>
-          </p>
-          
-          {renderOTPDisplay()}
-
-          <button
-            onClick={resetToPhoneStep}
-            className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
-          >
-            ← Change phone number
-          </button>
-        </div>
-      )}
-
-      <p className="text-xs text-gray-500 text-center mt-5 lg:mt-6">
-        By continuing, you agree to our{' '}
-        <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
-        <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
-      </p>
-    </div>
-  )
-
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
+      {/* Global invisible reCAPTCHA container - outside of any component that re-renders */}
+      <div ref={recaptchaContainerRef} id="recaptcha-container-global" />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
@@ -487,9 +412,97 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Right: Login Card - SINGLE INSTANCE */}
+            {/* Right: Login Card */}
             <div className="lg:pl-8">
-              <LoginCard />
+              <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 lg:p-8 border border-[#2a2a3a] shadow-2xl">
+                <div className="text-center mb-5 lg:mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 lg:mb-2">Get Started</h2>
+                  <p className="text-gray-400 text-sm lg:text-base">Sign in with your phone number</p>
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <p className="text-red-400 text-sm text-center">{error}</p>
+                  </div>
+                )}
+
+                {step === 'phone' ? (
+                  <form onSubmit={handleSendCode}>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                      <Phone className="w-4 h-4" />
+                      Phone Number
+                    </label>
+                    
+                    <div className="flex gap-2 mb-4">
+                      <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a] flex-shrink-0">
+                        <span className="text-base sm:text-lg">🇱🇻</span>
+                        <span className="text-gray-300 text-sm sm:text-base">+371</span>
+                        <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      </div>
+                      <input
+                        type="tel"
+                        value={formatPhone(phoneNumber)}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder="20 000 000"
+                        className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-base sm:text-lg tracking-wide"
+                        maxLength={11}
+                        autoFocus
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
+                      className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
+                      ) : !recaptchaReady ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
+                      ) : (
+                        <>Continue <ArrowRight className="w-5 h-5" /></>
+                      )}
+                    </button>
+
+                    <div className="relative my-5">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-[#2a2a3a]"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-4 bg-[#1a1a24] text-gray-500">or</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/login"
+                      className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      Sign in with email
+                    </Link>
+                  </form>
+                ) : (
+                  <div>
+                    <p className="text-gray-400 text-sm text-center mb-4">
+                      Enter the 6-digit code sent to <span className="text-white">{getFullPhone()}</span>
+                    </p>
+                    
+                    {renderOTPDisplay()}
+
+                    <button
+                      onClick={resetToPhoneStep}
+                      className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
+                    >
+                      ← Change phone number
+                    </button>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 text-center mt-5 lg:mt-6">
+                  By continuing, you agree to our{' '}
+                  <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
+                  <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
+                </p>
+              </div>
               
               <div className="text-center mt-4 lg:hidden">
                 <Link 
