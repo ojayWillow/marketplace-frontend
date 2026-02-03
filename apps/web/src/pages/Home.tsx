@@ -31,7 +31,6 @@ export default function Home() {
   const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const [recaptchaLoading, setRecaptchaLoading] = useState(true)
   
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const otpInputRef = useRef<HTMLInputElement>(null)
@@ -48,7 +47,7 @@ export default function Home() {
     }
   }, [isAuthenticated, navigate])
 
-  // Initialize reCAPTCHA once
+  // Initialize INVISIBLE reCAPTCHA
   const initRecaptcha = useCallback(() => {
     if (initAttemptedRef.current && recaptchaVerifierRef.current) {
       return // Already initialized
@@ -68,37 +67,30 @@ export default function Home() {
     }
     
     initAttemptedRef.current = true
-    setRecaptchaLoading(true)
     
     try {
-      console.log('Creating reCAPTCHA verifier...')
+      console.log('Creating INVISIBLE reCAPTCHA verifier...')
       recaptchaVerifierRef.current = new RecaptchaVerifier(auth, container, {
-        size: 'normal',
+        size: 'invisible', // Use invisible reCAPTCHA - it will verify automatically
         callback: () => {
-          console.log('reCAPTCHA solved!')
-          setRecaptchaReady(true)
-          setRecaptchaLoading(false)
-          setError('')
+          console.log('reCAPTCHA verified!')
         },
         'expired-callback': () => {
           console.log('reCAPTCHA expired')
-          setRecaptchaReady(false)
-          setError('Security check expired. Please verify again.')
+          setError('Security check expired. Please try again.')
         }
       })
       
       recaptchaVerifierRef.current.render().then(() => {
-        console.log('reCAPTCHA rendered successfully')
-        setRecaptchaLoading(false)
+        console.log('Invisible reCAPTCHA ready')
+        setRecaptchaReady(true)
       }).catch((err) => {
         console.error('reCAPTCHA render error:', err)
         setError('Failed to load security check. Please refresh.')
-        setRecaptchaLoading(false)
       })
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
       initAttemptedRef.current = false
-      setRecaptchaLoading(false)
     }
   }, [])
 
@@ -153,12 +145,6 @@ export default function Home() {
 
     if (!recaptchaVerifierRef.current) {
       setError('Security check not loaded. Please refresh the page.')
-      setLoading(false)
-      return
-    }
-    
-    if (!recaptchaReady) {
-      setError('Please complete the security check first')
       setLoading(false)
       return
     }
@@ -265,7 +251,6 @@ export default function Home() {
     setError('')
     setConfirmationResult(null)
     setRecaptchaReady(false)
-    setRecaptchaLoading(true)
     initAttemptedRef.current = false
     if (recaptchaVerifierRef.current) {
       try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
@@ -380,20 +365,8 @@ export default function Home() {
             />
           </div>
 
-          {/* reCAPTCHA container - SINGLE instance */}
-          <div className="mb-4">
-            <div 
-              id="recaptcha-container-home" 
-              className="flex justify-center"
-              style={{ minHeight: '78px' }}
-            />
-            {recaptchaLoading && !recaptchaReady && (
-              <div className="flex justify-center items-center py-2">
-                <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
-                <span className="text-gray-400 text-sm">Loading security check...</span>
-              </div>
-            )}
-          </div>
+          {/* Invisible reCAPTCHA container */}
+          <div id="recaptcha-container-home" />
 
           <button
             type="submit"
@@ -401,9 +374,9 @@ export default function Home() {
             className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {loading ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
             ) : !recaptchaReady ? (
-              <>Complete security check above</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
             ) : (
               <>Continue <ArrowRight className="w-5 h-5" /></>
             )}
