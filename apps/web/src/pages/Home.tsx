@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
@@ -13,6 +13,8 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
+import type { ConfirmationResult } from '../lib/firebase'
 
 export default function Home() {
   const { t } = useTranslation()
@@ -23,11 +25,15 @@ export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [step, setStep] = useState<'phone' | 'code'>('phone')
   const [otpValue, setOtpValue] = useState('')
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const otpInputRef = useRef<HTMLInputElement>(null)
   const mountedRef = useRef(true)
 
@@ -42,19 +48,50 @@ export default function Home() {
     }
   }, [isAuthenticated, navigate])
 
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
+  // Initialize reCAPTCHA for Firebase phone auth
+  const initRecaptcha = useCallback(() => {
+    if (!recaptchaContainerRef.current || !mountedRef.current) return
+    if (recaptchaVerifierRef.current) {
+      setRecaptchaReady(true)
+      return
+    }
+    
+    try {
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+        size: 'invisible',
+        callback: () => console.log('reCAPTCHA solved'),
+        'expired-callback': () => {
+          recaptchaVerifierRef.current = null
+          setRecaptchaReady(false)
+        }
+      })
+      setRecaptchaReady(true)
+    } catch (err) {
+      console.error('reCAPTCHA init error:', err)
+      setRecaptchaReady(false)
     }
   }, [])
 
+  useEffect(() => {
+    mountedRef.current = true
+    const timer = setTimeout(() => initRecaptcha(), 100)
+    
+    return () => {
+      mountedRef.current = false
+      clearTimeout(timer)
+      if (recaptchaVerifierRef.current) {
+        try { recaptchaVerifierRef.current.clear() } catch (e) {}
+        recaptchaVerifierRef.current = null
+      }
+    }
+  }, [initRecaptcha])
+
   // Auto-verify when OTP is complete
   useEffect(() => {
-    if (otpValue.length === 6 && !loading) {
+    if (otpValue.length === 6 && confirmationResult && !loading) {
       handleVerifyCode(otpValue)
     }
-  }, [otpValue])
+  }, [otpValue, confirmationResult, loading])
 
   const formatPhone = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '')
@@ -68,7 +105,7 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
-  // Send OTP via Vonage backend
+  // Send OTP via Firebase
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -82,26 +119,34 @@ export default function Home() {
     }
 
     try {
-      await api.post('/api/auth/phone/send-otp', {
-        phoneNumber: fullPhone
-      })
-      
+      if (!recaptchaVerifierRef.current) {
+        initRecaptcha()
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+      if (!recaptchaVerifierRef.current) throw new Error('reCAPTCHA not ready')
+
+      const confirmation = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current)
+      setConfirmationResult(confirmation)
       setStep('code')
       setOtpValue('')
       setTimeout(() => otpInputRef.current?.focus(), 100)
     } catch (err: unknown) {
       console.error('Send code error:', err)
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { error?: string } } }
-        const backendError = axiosError.response?.data?.error
-        if (backendError) {
-          setError(backendError)
-        } else {
-          setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
-        }
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('too-many-requests')) {
+        setError(t('auth.tooManyRequests', 'Too many attempts. Try again later.'))
+      } else if (msg.includes('invalid-phone-number')) {
+        setError(t('auth.invalidPhone', 'Invalid phone number format.'))
       } else {
         setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
       }
+      // Reset reCAPTCHA on error
+      if (recaptchaVerifierRef.current) {
+        try { recaptchaVerifierRef.current.clear() } catch (e) {}
+        recaptchaVerifierRef.current = null
+        setRecaptchaReady(false)
+      }
+      setTimeout(() => initRecaptcha(), 500)
     } finally {
       setLoading(false)
     }
@@ -113,16 +158,26 @@ export default function Home() {
     setOtpValue(value)
   }
 
-  // Verify OTP via Vonage backend
+  // Focus the hidden input when clicking on OTP display boxes
+  const focusOtpInput = () => {
+    otpInputRef.current?.focus()
+  }
+
+  // Verify OTP via Firebase then sync with backend
   const handleVerifyCode = async (code: string) => {
-    if (loading || code.length !== 6) return
+    if (!confirmationResult || loading || code.length !== 6) return
     setError('')
     setLoading(true)
 
     try {
-      const response = await api.post('/api/auth/phone/verify-otp', {
-        phoneNumber: getFullPhone(),
-        code: code
+      // Verify with Firebase
+      const result = await confirmationResult.confirm(code)
+      const idToken = await result.user.getIdToken()
+      
+      // Sync with backend
+      const response = await api.post('/api/auth/phone/verify', {
+        idToken,
+        phoneNumber: getFullPhone()
       })
 
       const { access_token, user: userData, is_new_user } = response.data
@@ -138,14 +193,9 @@ export default function Home() {
       }
     } catch (err: unknown) {
       console.error('Verify error:', err)
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { error?: string } } }
-        const backendError = axiosError.response?.data?.error
-        if (backendError) {
-          setError(backendError)
-        } else {
-          setError(t('auth.verifyError', 'Verification failed. Please try again.'))
-        }
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('invalid-verification-code')) {
+        setError(t('auth.invalidCode', 'Invalid code. Please try again.'))
       } else {
         setError(t('auth.verifyError', 'Verification failed. Please try again.'))
       }
@@ -161,11 +211,6 @@ export default function Home() {
     if (user.first_name) return user.first_name
     if (user.username && !user.username.startsWith('user_')) return user.username
     return ''
-  }
-
-  // Focus the hidden input when clicking on OTP display boxes
-  const focusOtpInput = () => {
-    otpInputRef.current?.focus()
   }
 
   if (isAuthenticated || showWelcome) {
@@ -185,13 +230,13 @@ export default function Home() {
     )
   }
 
-  // OTP Display Component - Visual boxes with hidden input
+  // OTP Display Component - Visual boxes with hidden input for reliable autofill
   const renderOTPDisplay = () => {
     const digits = otpValue.split('')
     
     return (
       <div className="relative mb-4">
-        {/* Hidden input that captures autofill */}
+        {/* Hidden input that captures SMS autofill */}
         <input
           ref={otpInputRef}
           type="text"
@@ -237,6 +282,9 @@ export default function Home() {
 
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
+      {/* reCAPTCHA container for Firebase */}
+      <div ref={recaptchaContainerRef} id="recaptcha-container" />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
@@ -324,11 +372,13 @@ export default function Home() {
 
                   <button
                     type="submit"
-                    disabled={loading || phoneNumber.replace(/\D/g, '').length < 8}
+                    disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
                     className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                    ) : !recaptchaReady ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                     ) : (
                       <>Continue <ArrowRight className="w-5 h-5" /></>
                     )}
@@ -367,7 +417,7 @@ export default function Home() {
                   </button>
 
                   <button
-                    onClick={() => { setStep('phone'); setOtpValue(''); setError('') }}
+                    onClick={() => { setStep('phone'); setOtpValue(''); setError(''); setConfirmationResult(null) }}
                     className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                   >
                     Change phone number
@@ -492,11 +542,13 @@ export default function Home() {
 
                     <button
                       type="submit"
-                      disabled={loading || phoneNumber.replace(/\D/g, '').length < 8}
+                      disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
                       className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                      ) : !recaptchaReady ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                       ) : (
                         <>Continue <ArrowRight className="w-5 h-5" /></>
                       )}
@@ -577,7 +629,7 @@ export default function Home() {
                     </button>
 
                     <button
-                      onClick={() => { setStep('phone'); setOtpValue(''); setError('') }}
+                      onClick={() => { setStep('phone'); setOtpValue(''); setError(''); setConfirmationResult(null) }}
                       className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                     >
                       Change phone number
