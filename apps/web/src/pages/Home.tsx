@@ -13,8 +13,6 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
-import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
-import type { ConfirmationResult } from '../lib/firebase'
 
 export default function Home() {
   const { t } = useTranslation()
@@ -25,14 +23,10 @@ export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [step, setStep] = useState<'phone' | 'code'>('phone')
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const mountedRef = useRef(true)
 
@@ -47,43 +41,12 @@ export default function Home() {
     }
   }, [isAuthenticated, navigate])
 
-  // Initialize reCAPTCHA
-  const initRecaptcha = useCallback(() => {
-    if (!recaptchaContainerRef.current || !mountedRef.current) return
-    if (recaptchaVerifierRef.current) {
-      setRecaptchaReady(true)
-      return
-    }
-    
-    try {
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
-        size: 'invisible',
-        callback: () => console.log('reCAPTCHA solved'),
-        'expired-callback': () => {
-          recaptchaVerifierRef.current = null
-          setRecaptchaReady(false)
-        }
-      })
-      setRecaptchaReady(true)
-    } catch (err) {
-      console.error('reCAPTCHA init error:', err)
-      setRecaptchaReady(false)
-    }
-  }, [])
-
   useEffect(() => {
     mountedRef.current = true
-    const timer = setTimeout(() => initRecaptcha(), 100)
-    
     return () => {
       mountedRef.current = false
-      clearTimeout(timer)
-      if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear() } catch (e) {}
-        recaptchaVerifierRef.current = null
-      }
     }
-  }, [initRecaptcha])
+  }, [])
 
   const formatPhone = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '')
@@ -97,6 +60,7 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
+  // Send OTP via Vonage backend
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -110,32 +74,25 @@ export default function Home() {
     }
 
     try {
-      if (!recaptchaVerifierRef.current) {
-        initRecaptcha()
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-      if (!recaptchaVerifierRef.current) throw new Error('reCAPTCHA not ready')
-
-      const confirmation = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current)
-      setConfirmationResult(confirmation)
+      await api.post('/api/auth/phone/send-otp', {
+        phoneNumber: fullPhone
+      })
+      
       setStep('code')
       setTimeout(() => codeInputRefs.current[0]?.focus(), 100)
     } catch (err: unknown) {
       console.error('Send code error:', err)
-      const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('too-many-requests')) {
-        setError(t('auth.tooManyRequests', 'Too many attempts. Try again later.'))
-      } else if (msg.includes('invalid-phone-number')) {
-        setError(t('auth.invalidPhone', 'Invalid phone number format.'))
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { error?: string } } }
+        const backendError = axiosError.response?.data?.error
+        if (backendError) {
+          setError(backendError)
+        } else {
+          setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
+        }
       } else {
         setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
       }
-      if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear() } catch (e) {}
-        recaptchaVerifierRef.current = null
-        setRecaptchaReady(false)
-      }
-      setTimeout(() => initRecaptcha(), 500)
     } finally {
       setLoading(false)
     }
@@ -246,24 +203,21 @@ export default function Home() {
     e.target.select()
   }
 
+  // Verify OTP via Vonage backend
   const handleVerifyCode = async (code: string) => {
-    if (!confirmationResult || loading) return
+    if (loading) return
     setError('')
     setLoading(true)
 
     try {
-      const result = await confirmationResult.confirm(code)
-      const idToken = await result.user.getIdToken()
-      
-      const response = await api.post('/api/auth/phone/verify', {
-        idToken,
-        phoneNumber: getFullPhone()
+      const response = await api.post('/api/auth/phone/verify-otp', {
+        phoneNumber: getFullPhone(),
+        code: code
       })
 
       const { access_token, user: userData, is_new_user } = response.data
 
       if (access_token && userData) {
-        // FIXED: Correct argument order (user, token) and correct field names
         setAuth(userData, access_token)
         
         // Check if new user needs to complete profile
@@ -275,9 +229,14 @@ export default function Home() {
       }
     } catch (err: unknown) {
       console.error('Verify error:', err)
-      const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('invalid-verification-code')) {
-        setError(t('auth.invalidCode', 'Invalid code. Please try again.'))
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { error?: string } } }
+        const backendError = axiosError.response?.data?.error
+        if (backendError) {
+          setError(backendError)
+        } else {
+          setError(t('auth.verifyError', 'Verification failed. Please try again.'))
+        }
       } else {
         setError(t('auth.verifyError', 'Verification failed. Please try again.'))
       }
@@ -391,8 +350,6 @@ export default function Home() {
 
           {/* Mobile: Login Card SECOND */}
           <div className="lg:hidden mb-8">
-            <div ref={recaptchaContainerRef} id="recaptcha-container-home" />
-            
             <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 border border-[#2a2a3a] shadow-2xl">
               <div className="text-center mb-5">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Get Started</h2>
@@ -430,13 +387,11 @@ export default function Home() {
 
                   <button
                     type="submit"
-                    disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
+                    disabled={loading || phoneNumber.replace(/\D/g, '').length < 8}
                     className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
-                    ) : !recaptchaReady ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                     ) : (
                       <>Continue <ArrowRight className="w-5 h-5" /></>
                     )}
@@ -563,8 +518,6 @@ export default function Home() {
 
             {/* Right: Login Card - Desktop */}
             <div className="lg:pl-8">
-              <div ref={recaptchaContainerRef} id="recaptcha-container-home-desktop" />
-              
               <div className="bg-[#1a1a24] rounded-2xl p-6 md:p-8 border border-[#2a2a3a] shadow-2xl">
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-white mb-2">Get Started</h2>
@@ -602,13 +555,11 @@ export default function Home() {
 
                     <button
                       type="submit"
-                      disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
+                      disabled={loading || phoneNumber.replace(/\D/g, '').length < 8}
                       className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
-                      ) : !recaptchaReady ? (
-                        <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                       ) : (
                         <>Continue <ArrowRight className="w-5 h-5" /></>
                       )}
