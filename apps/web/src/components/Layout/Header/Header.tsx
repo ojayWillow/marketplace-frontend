@@ -38,7 +38,7 @@ export default function Header() {
 
   return (
     <header 
-      className="bg-slate-900/95 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-[9999]"
+      className="bg-slate-900/95 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-[10001]"
       role="banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
