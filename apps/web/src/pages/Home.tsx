@@ -54,7 +54,7 @@ export default function Home() {
       return // Already initialized
     }
     
-    const container = document.getElementById('recaptcha-container-main')
+    const container = document.getElementById('recaptcha-container-home')
     if (!container) {
       console.log('reCAPTCHA container not found, retrying...')
       setTimeout(initRecaptcha, 200)
@@ -342,9 +342,9 @@ export default function Home() {
     )
   }
 
-  // Shared login card content
-  const renderLoginCard = () => (
-    <>
+  // Login card component - renders ONCE, used by both layouts
+  const LoginCard = () => (
+    <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 lg:p-8 border border-[#2a2a3a] shadow-2xl">
       <div className="text-center mb-5 lg:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 lg:mb-2">Get Started</h2>
         <p className="text-gray-400 text-sm lg:text-base">Sign in with your phone number</p>
@@ -380,15 +380,15 @@ export default function Home() {
             />
           </div>
 
-          {/* reCAPTCHA container - with explicit styling to ensure visibility */}
+          {/* reCAPTCHA container - SINGLE instance */}
           <div className="mb-4">
             <div 
-              id="recaptcha-container-main" 
-              className="flex justify-center items-center"
+              id="recaptcha-container-home" 
+              className="flex justify-center"
               style={{ minHeight: '78px' }}
-            ></div>
+            />
             {recaptchaLoading && !recaptchaReady && (
-              <div className="flex justify-center items-center py-4">
+              <div className="flex justify-center items-center py-2">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
                 <span className="text-gray-400 text-sm">Loading security check...</span>
               </div>
@@ -447,7 +447,7 @@ export default function Home() {
         <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
         <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
       </p>
-    </>
+    </div>
   )
 
   return (
@@ -457,124 +457,74 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
         
         <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 md:py-16 lg:py-24">
-          {/* Mobile: Value Proposition */}
-          <div className="lg:hidden mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-medium mb-4">
-              <MapPin className="w-3 h-3" />
-              Available in Latvia
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
-              Get help with
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
-            </h1>
-            
-            <p className="text-base text-gray-400 mb-6 leading-relaxed">
-              Need someone to walk your dog, help you move, or fix something at home? 
-              Connect with trusted locals who can help.
-            </p>
-
-            <div className="grid grid-cols-3 gap-3 mb-8">
-              <div className="text-center">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Zap className="w-5 h-5 text-green-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Fast</div>
-                <div className="text-gray-500 text-xs">Get offers in minutes</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Verified</div>
-                <div className="text-gray-500 text-xs">Phone-verified</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Star className="w-5 h-5 text-purple-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Rated</div>
-                <div className="text-gray-500 text-xs">Trusted reviews</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile: Login Card - HIDDEN, only show desktop card */}
-          <div className="lg:hidden mb-8">
-            <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 border border-[#2a2a3a] shadow-2xl">
-              {renderLoginCard()}
-            </div>
-
-            <div className="text-center mt-4">
-              <Link 
-                to="/tasks" 
-                className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm"
-              >
-                Just browsing? See available tasks <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Desktop: Two Column Layout */}
-          <div className="hidden lg:grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-6">
-                <MapPin className="w-4 h-4" />
+          {/* Two Column Layout - responsive */}
+          <div className="lg:grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Value Proposition */}
+            <div className="mb-8 lg:mb-0">
+              <div className="inline-flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs lg:text-sm font-medium mb-4 lg:mb-6">
+                <MapPin className="w-3 h-3 lg:w-4 lg:h-4" />
                 Available in Latvia
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white mb-3 lg:mb-6 leading-tight">
                 Get help with
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
               </h1>
               
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              <p className="text-base lg:text-xl text-gray-400 mb-6 lg:mb-8 leading-relaxed">
                 Need someone to walk your dog, help you move, or fix something at home? 
-                Connect with trusted locals who can help — usually within hours.
+                Connect with trusted locals who can help<span className="hidden lg:inline"> — usually within hours</span>.
               </p>
 
-              <div className="flex flex-wrap gap-6 mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+              <div className="grid grid-cols-3 gap-3 lg:flex lg:flex-wrap lg:gap-6 mb-8">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 mb-1 lg:mb-0">
                     <Zap className="w-5 h-5 text-green-400" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Fast</div>
-                    <div className="text-gray-500 text-sm">Get offers in minutes</div>
+                    <div className="text-white font-medium lg:font-semibold text-sm">Fast</div>
+                    <div className="text-gray-500 text-xs lg:text-sm">Get offers in minutes</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 mb-1 lg:mb-0">
                     <Shield className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Verified</div>
-                    <div className="text-gray-500 text-sm">Phone-verified users</div>
+                    <div className="text-white font-medium lg:font-semibold text-sm">Verified</div>
+                    <div className="text-gray-500 text-xs lg:text-sm">Phone-verified<span className="hidden lg:inline"> users</span></div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 mb-1 lg:mb-0">
                     <Star className="w-5 h-5 text-purple-400" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Rated</div>
-                    <div className="text-gray-500 text-sm">Reviews you can trust</div>
+                    <div className="text-white font-medium lg:font-semibold text-sm">Rated</div>
+                    <div className="text-gray-500 text-xs lg:text-sm">Trusted reviews</div>
                   </div>
                 </div>
               </div>
 
               <Link 
                 to="/tasks" 
-                className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1"
+                className="hidden lg:inline-flex text-gray-400 hover:text-white transition-colors items-center gap-1"
               >
                 Just browsing? <span className="text-blue-400">See available tasks →</span>
               </Link>
             </div>
 
-            {/* Desktop: Login Card */}
+            {/* Right: Login Card - SINGLE INSTANCE */}
             <div className="lg:pl-8">
-              <div className="bg-[#1a1a24] rounded-2xl p-6 md:p-8 border border-[#2a2a3a] shadow-2xl">
-                {renderLoginCard()}
+              <LoginCard />
+              
+              <div className="text-center mt-4 lg:hidden">
+                <Link 
+                  to="/tasks" 
+                  className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm"
+                >
+                  Just browsing? See available tasks <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </div>
