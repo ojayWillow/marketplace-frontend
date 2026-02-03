@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
@@ -36,7 +36,7 @@ export default function Home() {
       setShowWelcome(true)
       const timer = setTimeout(() => {
         navigate('/tasks', { replace: true })
-      }, 1500) // Show loading for 1.5 seconds
+      }, 1500)
       return () => clearTimeout(timer)
     }
   }, [isAuthenticated, navigate])
@@ -98,53 +98,45 @@ export default function Home() {
     }
   }
 
-  // Handle paste event for OTP (e.g., from SMS autofill or manual paste)
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (pastedData.length > 0) {
-      const newCode = [...verificationCode]
-      for (let i = 0; i < 6; i++) {
-        newCode[i] = pastedData[i] || ''
-      }
-      setVerificationCode(newCode)
-      
-      // Auto-verify if we got full code
-      if (pastedData.length === 6) {
-        handleVerifyCode(pastedData)
-      } else {
-        // Focus last filled + 1
-        const lastFilledIndex = Math.min(pastedData.length - 1, 5)
-        codeInputRefs.current[lastFilledIndex + 1]?.focus()
+  // Fill all OTP inputs from a string (for autofill/paste)
+  const fillOTPFromString = (digits: string) => {
+    const cleanDigits = digits.replace(/\D/g, '').slice(0, 6)
+    if (cleanDigits.length === 0) return
+    
+    const newCode = ['', '', '', '', '', '']
+    for (let i = 0; i < cleanDigits.length && i < 6; i++) {
+      newCode[i] = cleanDigits[i]
+    }
+    setVerificationCode(newCode)
+    
+    // Auto-verify if we got full 6-digit code
+    if (cleanDigits.length === 6) {
+      // Small delay to ensure state is updated
+      setTimeout(() => handleVerifyCode(cleanDigits), 50)
+    } else {
+      // Focus the next empty input
+      const nextEmptyIndex = cleanDigits.length
+      if (nextEmptyIndex < 6) {
+        codeInputRefs.current[nextEmptyIndex]?.focus()
       }
     }
   }
 
-  // Handle input change with better mobile support
+  // Handle paste event for OTP
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pastedData = e.clipboardData.getData('text')
+    fillOTPFromString(pastedData)
+  }
+
+  // Handle input change - improved for mobile autofill
   const handleCodeInput = (index: number, e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget
     const value = input.value.replace(/\D/g, '')
     
-    // Handle multi-character input (SMS autofill often pastes full code)
+    // If we get multiple digits (SMS autofill), fill from the beginning
     if (value.length > 1) {
-      const newCode = [...verificationCode]
-      
-      // Distribute digits starting from current input position
-      for (let i = 0; i < value.length && (index + i) < 6; i++) {
-        newCode[index + i] = value[i]
-      }
-      
-      setVerificationCode(newCode)
-      
-      // Auto-verify if complete
-      const fullCode = newCode.join('')
-      if (fullCode.length === 6 && newCode.every(d => d !== '')) {
-        handleVerifyCode(fullCode)
-      } else {
-        // Focus next empty or last
-        const nextEmpty = newCode.findIndex(d => d === '')
-        codeInputRefs.current[nextEmpty !== -1 ? nextEmpty : 5]?.focus()
-      }
+      fillOTPFromString(value)
       return
     }
     
@@ -156,7 +148,6 @@ export default function Home() {
     
     // Auto-advance to next input
     if (digit && index < 5) {
-      // Use setTimeout to ensure state updates before focus
       setTimeout(() => {
         codeInputRefs.current[index + 1]?.focus()
       }, 0)
@@ -164,22 +155,46 @@ export default function Home() {
     
     // Auto-verify when complete
     if (digit && newCode.every(d => d !== '')) {
-      handleVerifyCode(newCode.join(''))
+      setTimeout(() => handleVerifyCode(newCode.join('')), 50)
+    }
+  }
+
+  // Handle onChange for better mobile compatibility
+  const handleCodeChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '')
+    
+    // If we get multiple digits (SMS autofill), fill from the beginning
+    if (value.length > 1) {
+      fillOTPFromString(value)
+      return
+    }
+    
+    // Single character - update just this field
+    const digit = value.slice(-1)
+    const newCode = [...verificationCode]
+    newCode[index] = digit
+    setVerificationCode(newCode)
+    
+    // Auto-advance
+    if (digit && index < 5) {
+      setTimeout(() => codeInputRefs.current[index + 1]?.focus(), 0)
+    }
+    
+    // Auto-verify when complete
+    if (digit && newCode.every(d => d !== '')) {
+      setTimeout(() => handleVerifyCode(newCode.join('')), 50)
     }
   }
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Handle backspace
     if (e.key === 'Backspace') {
       if (!verificationCode[index] && index > 0) {
-        // If current input is empty, go back and clear previous
         const newCode = [...verificationCode]
         newCode[index - 1] = ''
         setVerificationCode(newCode)
         codeInputRefs.current[index - 1]?.focus()
         e.preventDefault()
       } else if (verificationCode[index]) {
-        // Clear current input
         const newCode = [...verificationCode]
         newCode[index] = ''
         setVerificationCode(newCode)
@@ -187,7 +202,6 @@ export default function Home() {
       }
     }
     
-    // Handle left/right arrow keys
     if (e.key === 'ArrowLeft' && index > 0) {
       codeInputRefs.current[index - 1]?.focus()
       e.preventDefault()
@@ -198,14 +212,13 @@ export default function Home() {
     }
   }
 
-  // Handle focus - select all text in input
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     e.target.select()
   }
 
   // Verify OTP via Vonage backend
   const handleVerifyCode = async (code: string) => {
-    if (loading) return
+    if (loading || code.length !== 6) return
     setError('')
     setLoading(true)
 
@@ -220,7 +233,6 @@ export default function Home() {
       if (access_token && userData) {
         setAuth(userData, access_token)
         
-        // Check if new user needs to complete profile
         if (is_new_user || userData.username?.startsWith('user_')) {
           navigate('/complete-profile')
         } else {
@@ -247,7 +259,6 @@ export default function Home() {
     }
   }
 
-  // Get display name (first name or username)
   const getDisplayName = () => {
     if (!user) return ''
     if (user.first_name) return user.first_name
@@ -255,7 +266,6 @@ export default function Home() {
     return ''
   }
 
-  // Logged in users see welcome loading screen
   if (isAuthenticated || showWelcome) {
     const displayName = getDisplayName()
     return (
@@ -273,7 +283,7 @@ export default function Home() {
     )
   }
 
-  // OTP Input component for reuse
+  // OTP Input component - improved for mobile autofill
   const renderOTPInputs = () => (
     <div className="flex justify-center gap-1.5 sm:gap-2 mb-4">
       {verificationCode.map((digit, index) => (
@@ -285,10 +295,11 @@ export default function Home() {
           pattern="[0-9]*"
           autoComplete={index === 0 ? "one-time-code" : "off"}
           value={digit}
+          onChange={(e) => handleCodeChange(index, e)}
           onInput={(e) => handleCodeInput(index, e)}
           onKeyDown={(e) => handleKeyDown(index, e)}
           onFocus={handleFocus}
-          onPaste={index === 0 ? handlePaste : undefined}
+          onPaste={handlePaste}
           className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
           maxLength={6}
           disabled={loading}
@@ -301,7 +312,6 @@ export default function Home() {
     <div className="bg-[#0a0a0f] min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
         
         <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 md:py-16 lg:py-24">
@@ -597,10 +607,11 @@ export default function Home() {
                           pattern="[0-9]*"
                           autoComplete={index === 0 ? "one-time-code" : "off"}
                           value={digit}
+                          onChange={(e) => handleCodeChange(index, e)}
                           onInput={(e) => handleCodeInput(index, e)}
                           onKeyDown={(e) => handleKeyDown(index, e)}
                           onFocus={handleFocus}
-                          onPaste={index === 0 ? handlePaste : undefined}
+                          onPaste={handlePaste}
                           className="w-12 h-14 text-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
                           maxLength={6}
                           disabled={loading}
