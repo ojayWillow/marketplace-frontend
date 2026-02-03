@@ -10,8 +10,7 @@ import {
   Shield,
   Star,
   Zap,
-  MessageCircle,
-  RefreshCw
+  MessageCircle
 } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
@@ -32,10 +31,9 @@ export default function Home() {
   const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const [recaptchaKey, setRecaptchaKey] = useState(0)
-  const [retryCount, setRetryCount] = useState(0)
   
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
+  const recaptchaWidgetId = useRef<number | null>(null)
   const otpInputRef = useRef<HTMLInputElement>(null)
   const mountedRef = useRef(true)
 
@@ -50,35 +48,41 @@ export default function Home() {
     }
   }, [isAuthenticated, navigate])
 
-  // Initialize reCAPTCHA
+  // Initialize reCAPTCHA - VISIBLE for reliability
   const initRecaptcha = useCallback(() => {
+    const container = document.getElementById('recaptcha-container')
+    if (!container || !mountedRef.current) return
+    
+    // Clean up existing
     if (recaptchaVerifierRef.current) {
       try { recaptchaVerifierRef.current.clear() } catch (e) {}
       recaptchaVerifierRef.current = null
     }
-
-    const container = document.getElementById(`recaptcha-container-${recaptchaKey}`)
-    if (!container || !mountedRef.current) return
     
     try {
-      console.log('Initializing reCAPTCHA...')
+      console.log('Initializing visible reCAPTCHA...')
       recaptchaVerifierRef.current = new RecaptchaVerifier(auth, container, {
-        size: 'invisible',
-        callback: () => console.log('reCAPTCHA solved'),
+        size: 'normal', // VISIBLE - actually works!
+        callback: () => {
+          console.log('reCAPTCHA verified!')
+          setRecaptchaReady(true)
+          setError('')
+        },
         'expired-callback': () => {
           console.log('reCAPTCHA expired')
-          recaptchaVerifierRef.current = null
           setRecaptchaReady(false)
         }
       })
-      setRecaptchaReady(true)
-      setError('') // Clear any previous captcha errors
-      console.log('reCAPTCHA ready')
+      
+      // Render the widget
+      recaptchaVerifierRef.current.render().then((widgetId) => {
+        recaptchaWidgetId.current = widgetId
+        console.log('reCAPTCHA rendered')
+      })
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
-      setRecaptchaReady(false)
     }
-  }, [recaptchaKey])
+  }, [])
 
   useEffect(() => {
     mountedRef.current = true
@@ -89,11 +93,11 @@ export default function Home() {
       clearTimeout(timer)
       if (recaptchaVerifierRef.current) {
         try { recaptchaVerifierRef.current.clear() } catch (e) {}
-        recaptchaVerifierRef.current = null
       }
     }
   }, [initRecaptcha])
 
+  // AUTO-SUBMIT when 6 digits entered
   useEffect(() => {
     if (otpValue.length === 6 && confirmationResult && !loading) {
       handleVerifyCode(otpValue)
@@ -112,25 +116,8 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
-  // Reset reCAPTCHA completely
-  const resetRecaptcha = useCallback(() => {
-    if (recaptchaVerifierRef.current) {
-      try { recaptchaVerifierRef.current.clear() } catch (e) {}
-      recaptchaVerifierRef.current = null
-    }
-    setRecaptchaReady(false)
-    setRecaptchaKey(prev => prev + 1)
-  }, [])
-
-  // Manual retry button handler
-  const handleRetryRecaptcha = () => {
-    setError('')
-    setRetryCount(0)
-    resetRecaptcha()
-  }
-
   // Send OTP
-  const handleSendCode = async (e: React.FormEvent, isRetry = false) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -142,79 +129,54 @@ export default function Home() {
       return
     }
 
-    try {
-      // Ensure we have a fresh verifier
-      if (!recaptchaVerifierRef.current) {
-        console.log('Creating new reCAPTCHA verifier...')
-        initRecaptcha()
-        await new Promise(resolve => setTimeout(resolve, 800))
-      }
-      
-      if (!recaptchaVerifierRef.current) {
-        throw new Error('reCAPTCHA failed to initialize. Please refresh the page.')
-      }
+    if (!recaptchaVerifierRef.current || !recaptchaReady) {
+      setError('Please complete the security check first')
+      setLoading(false)
+      return
+    }
 
-      console.log('Sending verification code to:', fullPhone)
+    try {
+      console.log('Sending code to:', fullPhone)
       const confirmation = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current)
-      console.log('Code sent successfully')
+      console.log('Code sent!')
       
       setConfirmationResult(confirmation)
       setStep('code')
       setOtpValue('')
-      setRetryCount(0)
       setTimeout(() => otpInputRef.current?.focus(), 100)
-      
-      // Reset for next use
-      resetRecaptcha()
       
     } catch (err: unknown) {
       console.error('Send code error:', err)
       const msg = err instanceof Error ? err.message : String(err)
       
-      // Always reset recaptcha on error
-      resetRecaptcha()
-      
-      // Handle specific errors
       if (msg.includes('too-many-requests')) {
-        setError(t('auth.tooManyRequests', 'Too many attempts. Please wait a few minutes and try again.'))
+        setError('Too many attempts. Please wait a few minutes.')
       } else if (msg.includes('invalid-phone-number')) {
-        setError(t('auth.invalidPhone', 'Invalid phone number. Please check and try again.'))
+        setError('Invalid phone number format.')
       } else if (msg.includes('quota-exceeded')) {
-        setError('SMS limit reached. Please try again in a few hours.')
-      } else if (msg.includes('app-not-authorized')) {
-        setError('Service temporarily unavailable. Please try again later.')
-      } else if (msg.includes('captcha-check-failed') || msg.includes('recaptcha')) {
-        // Auto-retry once for captcha failures
-        if (!isRetry && retryCount < 2) {
-          console.log('Captcha failed, auto-retrying...')
-          setRetryCount(prev => prev + 1)
-          setLoading(false)
-          // Wait for new recaptcha to initialize then retry
-          setTimeout(() => {
-            const fakeEvent = { preventDefault: () => {} } as React.FormEvent
-            handleSendCode(fakeEvent, true)
-          }, 1500)
-          return
-        }
-        setError('Security verification failed. Please tap "Retry" below.')
-      } else if (msg.includes('network')) {
-        setError('Network error. Please check your connection and try again.')
+        setError('SMS limit reached. Try again later.')
       } else {
-        setError('Something went wrong. Please try again.')
-        console.log('Unhandled error:', msg)
+        setError('Failed to send code. Please try again.')
       }
+      
+      // Reset reCAPTCHA for retry
+      setRecaptchaReady(false)
+      initRecaptcha()
     } finally {
       setLoading(false)
     }
   }
 
+  // Handle OTP input - supports autofill
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6)
     setOtpValue(value)
+    // Auto-submit handled by useEffect above
   }
 
   const focusOtpInput = () => otpInputRef.current?.focus()
 
+  // Verify OTP
   const handleVerifyCode = async (code: string) => {
     if (!confirmationResult || loading || code.length !== 6) return
     setError('')
@@ -245,11 +207,13 @@ export default function Home() {
       const msg = err instanceof Error ? err.message : String(err)
       
       if (msg.includes('invalid-verification-code')) {
-        setError(t('auth.invalidCode', 'Invalid code. Please check and try again.'))
+        setError('Wrong code. Please try again.')
       } else if (msg.includes('code-expired')) {
         setError('Code expired. Please request a new one.')
         setStep('phone')
         setConfirmationResult(null)
+        setRecaptchaReady(false)
+        initRecaptcha()
       } else {
         setError('Verification failed. Please try again.')
       }
@@ -284,6 +248,7 @@ export default function Home() {
     )
   }
 
+  // OTP Display - visual boxes with hidden input for autofill
   const renderOTPDisplay = () => {
     const digits = otpValue.split('')
     
@@ -317,17 +282,16 @@ export default function Home() {
             </div>
           ))}
         </div>
+        
+        {otpValue.length === 6 && !loading && (
+          <p className="text-center text-green-400 text-sm mt-2">Verifying...</p>
+        )}
       </div>
     )
   }
 
-  // Check if error is captcha-related (show retry button)
-  const isCaptchaError = error.includes('Security') || error.includes('Retry')
-
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
-      <div key={recaptchaKey} id={`recaptcha-container-${recaptchaKey}`} />
-      
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
@@ -386,15 +350,6 @@ export default function Home() {
               {error && (
                 <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <p className="text-red-400 text-sm text-center">{error}</p>
-                  {isCaptchaError && (
-                    <button
-                      onClick={handleRetryRecaptcha}
-                      className="mt-2 w-full flex items-center justify-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Tap to retry
-                    </button>
-                  )}
                 </div>
               )}
 
@@ -421,15 +376,18 @@ export default function Home() {
                     />
                   </div>
 
+                  {/* Visible reCAPTCHA */}
+                  <div className="mb-4 flex justify-center">
+                    <div id="recaptcha-container"></div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
                     className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> {retryCount > 0 ? 'Retrying...' : 'Sending...'}</>
-                    ) : !recaptchaReady ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
                     ) : (
                       <>Continue <ArrowRight className="w-5 h-5" /></>
                     )}
@@ -460,18 +418,10 @@ export default function Home() {
                   {renderOTPDisplay()}
 
                   <button
-                    onClick={() => handleVerifyCode(otpValue)}
-                    disabled={loading || otpValue.length !== 6}
-                    className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
-                  </button>
-
-                  <button
-                    onClick={() => { setStep('phone'); setOtpValue(''); setError(''); setConfirmationResult(null) }}
+                    onClick={() => { setStep('phone'); setOtpValue(''); setError(''); setConfirmationResult(null); setRecaptchaReady(false); initRecaptcha(); }}
                     className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                   >
-                    Change phone number
+                    ← Change phone number
                   </button>
                 </div>
               )}
@@ -560,15 +510,6 @@ export default function Home() {
                 {error && (
                   <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                     <p className="text-red-400 text-sm text-center">{error}</p>
-                    {isCaptchaError && (
-                      <button
-                        onClick={handleRetryRecaptcha}
-                        className="mt-2 w-full flex items-center justify-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                        Click to retry
-                      </button>
-                    )}
                   </div>
                 )}
 
@@ -595,15 +536,18 @@ export default function Home() {
                       />
                     </div>
 
+                    {/* Visible reCAPTCHA - Desktop uses same container, will be moved by React */}
+                    <div className="mb-4 flex justify-center">
+                      <div id="recaptcha-container-desktop"></div>
+                    </div>
+
                     <button
                       type="submit"
                       disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
                       className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       {loading ? (
-                        <><Loader2 className="w-5 h-5 animate-spin" /> {retryCount > 0 ? 'Retrying...' : 'Sending...'}</>
-                      ) : !recaptchaReady ? (
-                        <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
                       ) : (
                         <>Continue <ArrowRight className="w-5 h-5" /></>
                       )}
@@ -663,21 +607,17 @@ export default function Home() {
                           )
                         })}
                       </div>
+                      
+                      {otpValue.length === 6 && !loading && (
+                        <p className="text-center text-green-400 text-sm mt-2">Verifying...</p>
+                      )}
                     </div>
 
                     <button
-                      onClick={() => handleVerifyCode(otpValue)}
-                      disabled={loading || otpValue.length !== 6}
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                    >
-                      {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
-                    </button>
-
-                    <button
-                      onClick={() => { setStep('phone'); setOtpValue(''); setError(''); setConfirmationResult(null) }}
+                      onClick={() => { setStep('phone'); setOtpValue(''); setError(''); setConfirmationResult(null); setRecaptchaReady(false); initRecaptcha(); }}
                       className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                     >
-                      Change phone number
+                      ← Change phone number
                     </button>
                   </div>
                 )}
