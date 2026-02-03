@@ -5,7 +5,6 @@ import { Phone, ArrowLeft, ArrowRight, Loader2, CheckCircle, User, Mail } from '
 import { usePhoneAuth } from '../../hooks/usePhoneAuth'
 import { PhoneInput } from '../../components/auth/PhoneInput'
 import { OTPInput } from '../../components/auth/OTPInput'
-import { clearRecaptcha } from '../../lib/firebase'
 
 export const PhoneLogin = () => {
   const { t } = useTranslation()
@@ -29,13 +28,6 @@ export const PhoneLogin = () => {
   const [email, setEmail] = useState('')
   const [usernameError, setUsernameError] = useState('')
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearRecaptcha()
-    }
-  }, [])
-
   // Redirect on success
   useEffect(() => {
     if (step === 'success') {
@@ -49,7 +41,7 @@ export const PhoneLogin = () => {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!phoneNumber || phoneNumber.length < 8) return
-    await sendCode('send-code-button')
+    await sendCode()
   }
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -123,7 +115,6 @@ export const PhoneLogin = () => {
               />
 
               <button
-                id="send-code-button"
                 type="submit"
                 disabled={isLoading || !phoneNumber || phoneNumber.length < 8}
                 className="w-full mt-6 py-4 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
