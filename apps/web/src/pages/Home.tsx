@@ -53,7 +53,7 @@ export default function Home() {
       return // Already initialized
     }
     
-    const container = document.getElementById('recaptcha-container')
+    const container = document.getElementById('recaptcha-container-main')
     if (!container) {
       console.log('reCAPTCHA container not found, retrying...')
       setTimeout(initRecaptcha, 200)
@@ -335,7 +335,7 @@ export default function Home() {
     )
   }
 
-  // Phone input form component
+  // Phone input form component (without reCAPTCHA - it's rendered separately)
   const renderPhoneForm = () => (
     <form onSubmit={handleSendCode}>
       <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
@@ -360,10 +360,8 @@ export default function Home() {
         />
       </div>
 
-      {/* reCAPTCHA - visible checkbox */}
-      <div className="mb-4 flex justify-center">
-        <div id="recaptcha-container"></div>
-      </div>
+      {/* reCAPTCHA placeholder - actual widget is portaled here */}
+      <div className="mb-4 flex justify-center" id="recaptcha-placeholder"></div>
 
       <button
         type="submit"
@@ -413,6 +411,89 @@ export default function Home() {
         ← Change phone number
       </button>
     </div>
+  )
+
+  // Shared login card content
+  const renderLoginCard = () => (
+    <>
+      <div className="text-center mb-5 lg:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 lg:mb-2">Get Started</h2>
+        <p className="text-gray-400 text-sm lg:text-base">Sign in with your phone number</p>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <p className="text-red-400 text-sm text-center">{error}</p>
+        </div>
+      )}
+
+      {step === 'phone' ? (
+        <form onSubmit={handleSendCode}>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+            <Phone className="w-4 h-4" />
+            Phone Number
+          </label>
+          
+          <div className="flex gap-2 mb-4">
+            <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a] flex-shrink-0">
+              <span className="text-base sm:text-lg">🇱🇻</span>
+              <span className="text-gray-300 text-sm sm:text-base">+371</span>
+              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+            </div>
+            <input
+              type="tel"
+              value={formatPhone(phoneNumber)}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+              placeholder="20 000 000"
+              className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-base sm:text-lg tracking-wide"
+              maxLength={11}
+              autoFocus
+            />
+          </div>
+
+          {/* reCAPTCHA - single container for both mobile and desktop */}
+          <div className="mb-4 flex justify-center">
+            <div id="recaptcha-container-main"></div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
+            className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+            ) : !recaptchaReady ? (
+              <>Complete security check above</>
+            ) : (
+              <>Continue <ArrowRight className="w-5 h-5" /></>
+            )}
+          </button>
+
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#2a2a3a]"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-[#1a1a24] text-gray-500">or</span>
+            </div>
+          </div>
+
+          <Link
+            to="/login"
+            className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            Sign in with email
+          </Link>
+        </form>
+      ) : renderOTPView()}
+
+      <p className="text-xs text-gray-500 text-center mt-5 lg:mt-6">
+        By continuing, you agree to our{' '}
+        <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
+        <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
+      </p>
+    </>
   )
 
   return (
@@ -467,24 +548,7 @@ export default function Home() {
           {/* Mobile: Login Card */}
           <div className="lg:hidden mb-8">
             <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 border border-[#2a2a3a] shadow-2xl">
-              <div className="text-center mb-5">
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Get Started</h2>
-                <p className="text-gray-400 text-sm">Sign in with your phone number</p>
-              </div>
-
-              {error && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <p className="text-red-400 text-sm text-center">{error}</p>
-                </div>
-              )}
-
-              {step === 'phone' ? renderPhoneForm() : renderOTPView()}
-
-              <p className="text-xs text-gray-500 text-center mt-5">
-                By continuing, you agree to our{' '}
-                <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
-                <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
-              </p>
+              {renderLoginCard()}
             </div>
 
             <div className="text-center mt-4">
@@ -556,24 +620,7 @@ export default function Home() {
             {/* Desktop: Login Card */}
             <div className="lg:pl-8">
               <div className="bg-[#1a1a24] rounded-2xl p-6 md:p-8 border border-[#2a2a3a] shadow-2xl">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">Get Started</h2>
-                  <p className="text-gray-400">Sign in with your phone number</p>
-                </div>
-
-                {error && (
-                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                    <p className="text-red-400 text-sm text-center">{error}</p>
-                  </div>
-                )}
-
-                {step === 'phone' ? renderPhoneForm() : renderOTPView()}
-
-                <p className="text-xs text-gray-500 text-center mt-6">
-                  By continuing, you agree to our{' '}
-                  <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
-                  <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
-                </p>
+                {renderLoginCard()}
               </div>
             </div>
           </div>
