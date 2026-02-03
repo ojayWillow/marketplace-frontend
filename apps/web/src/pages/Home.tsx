@@ -22,12 +22,13 @@ export default function Home() {
   // Phone auth state
   const [phoneNumber, setPhoneNumber] = useState('')
   const [step, setStep] = useState<'phone' | 'code'>('phone')
-  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
+  const [otpValue, setOtpValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showWelcome, setShowWelcome] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   
-  const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const otpInputRef = useRef<HTMLInputElement>(null)
   const mountedRef = useRef(true)
 
   // Redirect authenticated users with a brief loading screen
@@ -47,6 +48,13 @@ export default function Home() {
       mountedRef.current = false
     }
   }, [])
+
+  // Auto-verify when OTP is complete
+  useEffect(() => {
+    if (otpValue.length === 6 && !loading) {
+      handleVerifyCode(otpValue)
+    }
+  }, [otpValue])
 
   const formatPhone = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '')
@@ -79,7 +87,8 @@ export default function Home() {
       })
       
       setStep('code')
-      setTimeout(() => codeInputRefs.current[0]?.focus(), 100)
+      setOtpValue('')
+      setTimeout(() => otpInputRef.current?.focus(), 100)
     } catch (err: unknown) {
       console.error('Send code error:', err)
       if (err && typeof err === 'object' && 'response' in err) {
@@ -98,122 +107,10 @@ export default function Home() {
     }
   }
 
-  // Fill all OTP inputs from a string (for autofill/paste)
-  const fillOTPFromString = (digits: string) => {
-    const cleanDigits = digits.replace(/\D/g, '').slice(0, 6)
-    if (cleanDigits.length === 0) return
-    
-    const newCode = ['', '', '', '', '', '']
-    for (let i = 0; i < cleanDigits.length && i < 6; i++) {
-      newCode[i] = cleanDigits[i]
-    }
-    setVerificationCode(newCode)
-    
-    // Auto-verify if we got full 6-digit code
-    if (cleanDigits.length === 6) {
-      // Small delay to ensure state is updated
-      setTimeout(() => handleVerifyCode(cleanDigits), 50)
-    } else {
-      // Focus the next empty input
-      const nextEmptyIndex = cleanDigits.length
-      if (nextEmptyIndex < 6) {
-        codeInputRefs.current[nextEmptyIndex]?.focus()
-      }
-    }
-  }
-
-  // Handle paste event for OTP
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pastedData = e.clipboardData.getData('text')
-    fillOTPFromString(pastedData)
-  }
-
-  // Handle input change - improved for mobile autofill
-  const handleCodeInput = (index: number, e: React.FormEvent<HTMLInputElement>) => {
-    const input = e.currentTarget
-    const value = input.value.replace(/\D/g, '')
-    
-    // If we get multiple digits (SMS autofill), fill from the beginning
-    if (value.length > 1) {
-      fillOTPFromString(value)
-      return
-    }
-    
-    // Single character input
-    const digit = value.slice(-1)
-    const newCode = [...verificationCode]
-    newCode[index] = digit
-    setVerificationCode(newCode)
-    
-    // Auto-advance to next input
-    if (digit && index < 5) {
-      setTimeout(() => {
-        codeInputRefs.current[index + 1]?.focus()
-      }, 0)
-    }
-    
-    // Auto-verify when complete
-    if (digit && newCode.every(d => d !== '')) {
-      setTimeout(() => handleVerifyCode(newCode.join('')), 50)
-    }
-  }
-
-  // Handle onChange for better mobile compatibility
-  const handleCodeChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '')
-    
-    // If we get multiple digits (SMS autofill), fill from the beginning
-    if (value.length > 1) {
-      fillOTPFromString(value)
-      return
-    }
-    
-    // Single character - update just this field
-    const digit = value.slice(-1)
-    const newCode = [...verificationCode]
-    newCode[index] = digit
-    setVerificationCode(newCode)
-    
-    // Auto-advance
-    if (digit && index < 5) {
-      setTimeout(() => codeInputRefs.current[index + 1]?.focus(), 0)
-    }
-    
-    // Auto-verify when complete
-    if (digit && newCode.every(d => d !== '')) {
-      setTimeout(() => handleVerifyCode(newCode.join('')), 50)
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace') {
-      if (!verificationCode[index] && index > 0) {
-        const newCode = [...verificationCode]
-        newCode[index - 1] = ''
-        setVerificationCode(newCode)
-        codeInputRefs.current[index - 1]?.focus()
-        e.preventDefault()
-      } else if (verificationCode[index]) {
-        const newCode = [...verificationCode]
-        newCode[index] = ''
-        setVerificationCode(newCode)
-        e.preventDefault()
-      }
-    }
-    
-    if (e.key === 'ArrowLeft' && index > 0) {
-      codeInputRefs.current[index - 1]?.focus()
-      e.preventDefault()
-    }
-    if (e.key === 'ArrowRight' && index < 5) {
-      codeInputRefs.current[index + 1]?.focus()
-      e.preventDefault()
-    }
-  }
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.select()
+  // Handle OTP input change
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+    setOtpValue(value)
   }
 
   // Verify OTP via Vonage backend
@@ -252,8 +149,8 @@ export default function Home() {
       } else {
         setError(t('auth.verifyError', 'Verification failed. Please try again.'))
       }
-      setVerificationCode(['', '', '', '', '', ''])
-      codeInputRefs.current[0]?.focus()
+      setOtpValue('')
+      otpInputRef.current?.focus()
     } finally {
       setLoading(false)
     }
@@ -264,6 +161,11 @@ export default function Home() {
     if (user.first_name) return user.first_name
     if (user.username && !user.username.startsWith('user_')) return user.username
     return ''
+  }
+
+  // Focus the hidden input when clicking on OTP display boxes
+  const focusOtpInput = () => {
+    otpInputRef.current?.focus()
   }
 
   if (isAuthenticated || showWelcome) {
@@ -283,30 +185,55 @@ export default function Home() {
     )
   }
 
-  // OTP Input component - improved for mobile autofill
-  const renderOTPInputs = () => (
-    <div className="flex justify-center gap-1.5 sm:gap-2 mb-4">
-      {verificationCode.map((digit, index) => (
+  // OTP Display Component - Visual boxes with hidden input
+  const renderOTPDisplay = () => {
+    const digits = otpValue.split('')
+    
+    return (
+      <div className="relative mb-4">
+        {/* Hidden input that captures autofill */}
         <input
-          key={index}
-          ref={(el) => { codeInputRefs.current[index] = el }}
+          ref={otpInputRef}
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
-          autoComplete={index === 0 ? "one-time-code" : "off"}
-          value={digit}
-          onChange={(e) => handleCodeChange(index, e)}
-          onInput={(e) => handleCodeInput(index, e)}
-          onKeyDown={(e) => handleKeyDown(index, e)}
-          onFocus={handleFocus}
-          onPaste={handlePaste}
-          className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
+          autoComplete="one-time-code"
+          value={otpValue}
+          onChange={handleOtpChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="absolute opacity-0 w-full h-full top-0 left-0 z-10"
           maxLength={6}
           disabled={loading}
+          style={{ caretColor: 'transparent' }}
         />
-      ))}
-    </div>
-  )
+        
+        {/* Visual OTP boxes */}
+        <div 
+          className="flex justify-center gap-1.5 sm:gap-2 cursor-text"
+          onClick={focusOtpInput}
+        >
+          {[0, 1, 2, 3, 4, 5].map((index) => (
+            <div
+              key={index}
+              className={`w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border transition-colors ${
+                isFocused && index === digits.length
+                  ? 'border-blue-500'
+                  : digits[index]
+                  ? 'border-blue-500/50'
+                  : 'border-[#2a2a3a]'
+              }`}
+            >
+              {digits[index] || ''}
+              {/* Cursor indicator */}
+              {isFocused && index === digits.length && (
+                <span className="animate-pulse text-blue-400">|</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
@@ -429,18 +356,18 @@ export default function Home() {
                     Enter the code sent to <span className="text-white">{getFullPhone()}</span>
                   </p>
                   
-                  {renderOTPInputs()}
+                  {renderOTPDisplay()}
 
                   <button
-                    onClick={() => handleVerifyCode(verificationCode.join(''))}
-                    disabled={loading || verificationCode.some(d => d === '')}
+                    onClick={() => handleVerifyCode(otpValue)}
+                    disabled={loading || otpValue.length !== 6}
                     className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
                   </button>
 
                   <button
-                    onClick={() => { setStep('phone'); setVerificationCode(['', '', '', '', '', '']); setError('') }}
+                    onClick={() => { setStep('phone'); setOtpValue(''); setError('') }}
                     className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                   >
                     Change phone number
@@ -597,38 +524,60 @@ export default function Home() {
                       Enter the code sent to <span className="text-white">{getFullPhone()}</span>
                     </p>
                     
-                    <div className="flex justify-center gap-2 mb-4">
-                      {verificationCode.map((digit, index) => (
-                        <input
-                          key={index}
-                          ref={(el) => { codeInputRefs.current[index] = el }}
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          autoComplete={index === 0 ? "one-time-code" : "off"}
-                          value={digit}
-                          onChange={(e) => handleCodeChange(index, e)}
-                          onInput={(e) => handleCodeInput(index, e)}
-                          onKeyDown={(e) => handleKeyDown(index, e)}
-                          onFocus={handleFocus}
-                          onPaste={handlePaste}
-                          className="w-12 h-14 text-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
-                          maxLength={6}
-                          disabled={loading}
-                        />
-                      ))}
+                    {/* Desktop OTP Display */}
+                    <div className="relative mb-4">
+                      <input
+                        ref={otpInputRef}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        value={otpValue}
+                        onChange={handleOtpChange}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        className="absolute opacity-0 w-full h-full top-0 left-0 z-10"
+                        maxLength={6}
+                        disabled={loading}
+                        style={{ caretColor: 'transparent' }}
+                      />
+                      
+                      <div 
+                        className="flex justify-center gap-2 cursor-text"
+                        onClick={focusOtpInput}
+                      >
+                        {[0, 1, 2, 3, 4, 5].map((index) => {
+                          const digits = otpValue.split('')
+                          return (
+                            <div
+                              key={index}
+                              className={`w-12 h-14 flex items-center justify-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border transition-colors ${
+                                isFocused && index === digits.length
+                                  ? 'border-blue-500'
+                                  : digits[index]
+                                  ? 'border-blue-500/50'
+                                  : 'border-[#2a2a3a]'
+                              }`}
+                            >
+                              {digits[index] || ''}
+                              {isFocused && index === digits.length && (
+                                <span className="animate-pulse text-blue-400">|</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
 
                     <button
-                      onClick={() => handleVerifyCode(verificationCode.join(''))}
-                      disabled={loading || verificationCode.some(d => d === '')}
+                      onClick={() => handleVerifyCode(otpValue)}
+                      disabled={loading || otpValue.length !== 6}
                       className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
                     </button>
 
                     <button
-                      onClick={() => { setStep('phone'); setVerificationCode(['', '', '', '', '', '']); setError('') }}
+                      onClick={() => { setStep('phone'); setOtpValue(''); setError('') }}
                       className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                     >
                       Change phone number
