@@ -318,7 +318,8 @@ const MobileTasksView = () => {
 
       <div className="mobile-tasks-container">
         {/* TOP BAR - Menu + Notification Bell + Search + Radius */}
-        <div className="bg-white shadow-md z-50 flex-shrink-0">
+        {/* Higher z-index than map to ensure dropdowns appear above */}
+        <div className="bg-white shadow-md flex-shrink-0 relative" style={{ zIndex: 10000 }}>
           {/* Search Bar Row */}
           <div className="p-3 pb-2">
             <div className="flex gap-2 items-center">
@@ -407,7 +408,7 @@ const MobileTasksView = () => {
         </div>
 
         {/* MAP AREA */}
-        <div className="flex-1 relative" style={{ minHeight: '200px' }}>
+        <div className="flex-1 relative" style={{ minHeight: '200px', zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
@@ -506,6 +507,7 @@ const MobileTasksView = () => {
               height: `${sheetHeight}px`,
               transition: isDragging ? 'none' : 'height 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+              zIndex: 2,
             }}
           >
             {/* Drag Handle Area */}
