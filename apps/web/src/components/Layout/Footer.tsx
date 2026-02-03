@@ -19,10 +19,10 @@ export default function Footer() {
           <div>
             <Link to="/" className="flex items-center space-x-3 mb-5 group">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <span className="text-white font-bold text-xl">M</span>
+                <span className="text-white font-bold text-xl">K</span>
               </div>
               <span className="font-bold text-2xl text-white group-hover:text-blue-400 transition-colors">
-                {t('common.quickHelp')}
+                Kolab
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
@@ -30,10 +30,10 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Quick Help Links */}
-          <nav aria-label="Footer navigation - Quick Help">
+          {/* Kolab Links */}
+          <nav aria-label="Footer navigation - Kolab">
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5">
-              {t('common.quickHelp')}
+              Kolab
             </h3>
             <ul className="space-y-3" role="list">
               <li>
@@ -64,14 +64,14 @@ export default function Footer() {
               <ul className="space-y-3" role="list">
                 <li>
                   <a 
-                    href="mailto:info@marketplace.lv" 
+                    href="mailto:info@kollab.lv" 
                     className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
-                    aria-label="Send email to info@marketplace.lv"
+                    aria-label="Send email to info@kollab.lv"
                   >
                     <svg className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    info@marketplace.lv
+                    info@kollab.lv
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-slate-800/50">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-500">
-              &copy; {currentYear} {t('common.quickHelp')}. {t('footer.allRightsReserved', 'All rights reserved.')}
+              &copy; {currentYear} Kolab. {t('footer.allRightsReserved', 'All rights reserved.')}
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link 

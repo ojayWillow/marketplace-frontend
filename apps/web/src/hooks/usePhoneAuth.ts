@@ -1,13 +1,4 @@
 import { useState, useCallback } from 'react'
-import { FirebaseError } from 'firebase/app'
-import {
-  initRecaptcha,
-  sendVerificationCode,
-  verifyCode,
-  getFirebaseIdToken,
-  clearRecaptcha,
-  firebaseSignOut
-} from '../lib/firebase'
 import { useAuthStore } from '@marketplace/shared'
 import { apiClient } from '@marketplace/shared'
 import type { AuthResponse } from '@marketplace/shared'
@@ -25,33 +16,26 @@ interface UsePhoneAuthReturn {
   error: string | null
   isNewUser: boolean
   setPhoneNumber: (phone: string) => void
-  sendCode: (buttonId: string) => Promise<boolean>
+  sendCode: () => Promise<boolean>
   verifyOTP: (code: string) => Promise<boolean>
   completeRegistration: (username: string, email?: string) => Promise<boolean>
   reset: () => void
   goBack: () => void
 }
 
-// Map Firebase error codes to user-friendly messages
-const getErrorMessage = (error: FirebaseError): string => {
-  switch (error.code) {
-    case 'auth/invalid-phone-number':
-      return 'Invalid phone number format. Please use +371 XXXXXXXX'
-    case 'auth/too-many-requests':
-      return 'Too many attempts. Please try again later.'
-    case 'auth/quota-exceeded':
-      return 'SMS quota exceeded. Please try again tomorrow.'
-    case 'auth/invalid-verification-code':
-      return 'Invalid verification code. Please check and try again.'
-    case 'auth/code-expired':
-      return 'Verification code expired. Please request a new one.'
-    case 'auth/network-request-failed':
-      return 'Network error. Please check your connection.'
-    case 'auth/captcha-check-failed':
-      return 'Security check failed. Please try again.'
-    default:
-      return error.message || 'An error occurred. Please try again.'
+// Map backend error messages to user-friendly messages
+const getErrorMessage = (error: unknown): string => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const axiosError = error as { response?: { data?: { error?: string } } }
+    const backendError = axiosError.response?.data?.error
+    if (backendError) {
+      return backendError
+    }
   }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return 'An error occurred. Please try again.'
 }
 
 export const usePhoneAuth = (): UsePhoneAuthReturn => {
@@ -63,57 +47,41 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
   
   const { setAuth } = useAuthStore()
 
-  // Send verification code
-  const sendCode = useCallback(async (buttonId: string): Promise<boolean> => {
+  // Send verification code via Vonage
+  const sendCode = useCallback(async (): Promise<boolean> => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Initialize reCAPTCHA
-      initRecaptcha(buttonId)
-      
-      // Send SMS
-      await sendVerificationCode(phoneNumber)
+      await apiClient.post('/api/auth/phone/send-otp', {
+        phoneNumber: phoneNumber
+      })
       
       setStep('otp')
       return true
     } catch (err) {
-      const message = err instanceof FirebaseError 
-        ? getErrorMessage(err) 
-        : 'Failed to send verification code'
+      const message = getErrorMessage(err)
       setError(message)
-      clearRecaptcha()
       return false
     } finally {
       setIsLoading(false)
     }
   }, [phoneNumber])
 
-  // Verify OTP code
+  // Verify OTP code via Vonage
   const verifyOTP = useCallback(async (code: string): Promise<boolean> => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Verify with Firebase
-      await verifyCode(code)
-      
-      // Get Firebase ID token
-      const idToken = await getFirebaseIdToken()
-      if (!idToken) {
-        throw new Error('Failed to get authentication token')
-      }
-
-      // Verify with our backend
-      const response = await apiClient.post<PhoneVerifyResponse>('/api/auth/phone/verify', {
-        idToken,
-        phoneNumber
+      const response = await apiClient.post<PhoneVerifyResponse>('/api/auth/phone/verify-otp', {
+        phoneNumber: phoneNumber,
+        code: code
       })
 
       const { access_token, user, is_new_user } = response.data
 
       // Check if this is a new user that needs to complete registration
-      // Use the is_new_user flag from backend (true only when user was just created)
       if (is_new_user) {
         setIsNewUser(true)
         setStep('register')
@@ -128,13 +96,8 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       setStep('success')
       return true
     } catch (err) {
-      if (err instanceof FirebaseError) {
-        setError(getErrorMessage(err))
-      } else if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('Verification failed. Please try again.')
-      }
+      const message = getErrorMessage(err)
+      setError(message)
       return false
     } finally {
       setIsLoading(false)
@@ -175,11 +138,8 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       setStep('success')
       return true
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('Registration failed. Please try again.')
-      }
+      const message = getErrorMessage(err)
+      setError(message)
       return false
     } finally {
       setIsLoading(false)
@@ -192,8 +152,6 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     setPhoneNumber('')
     setError(null)
     setIsNewUser(false)
-    clearRecaptcha()
-    firebaseSignOut()
     sessionStorage.removeItem('temp_token')
     sessionStorage.removeItem('temp_user')
   }, [])
@@ -203,7 +161,6 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     setError(null)
     if (step === 'otp') {
       setStep('phone')
-      clearRecaptcha()
     } else if (step === 'register') {
       // Can't go back from register - would need to re-verify
       reset()

@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-interface QuickHelpIntroModalProps {
+interface KolabIntroModalProps {
   isOpen: boolean;
   onClose: () => void;
   showCheckboxes?: boolean; // If true, show checkboxes (first-time). If false, just show guidance
 }
 
-const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHelpIntroModalProps) => {
+const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroModalProps) => {
   const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState<'worker' | 'poster'>('worker'); // Default to worker view
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -21,7 +21,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
     if (showCheckboxes) {
       // First-time flow: require checkboxes
       if (agreedToTerms && agreedToPrivacy) {
-        localStorage.setItem('quickHelpIntroSeen', 'true');
+        localStorage.setItem('kolabIntroSeen', 'true');
         onClose();
       }
     } else {
@@ -37,29 +37,29 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
     {
       number: 1,
       icon: '🔍',
-      title: t('quickHelp.browse', 'Browse'),
-      description: t('quickHelp.browseDesc', 'Find jobs on the map near you'),
+      title: t('kolab.browse', 'Browse'),
+      description: t('kolab.browseDesc', 'Find jobs on the map near you'),
       bgColor: 'bg-green-100'
     },
     {
       number: 2,
       icon: '✋',
-      title: t('quickHelp.apply', 'Apply'),
-      description: t('quickHelp.applyDesc', 'Send your application'),
+      title: t('kolab.apply', 'Apply'),
+      description: t('kolab.applyDesc', 'Send your application'),
       bgColor: 'bg-blue-100'
     },
     {
       number: 3,
       icon: '🎯',
-      title: t('quickHelp.getSelected', 'Get Selected'),
-      description: t('quickHelp.getSelectedDesc', 'Job poster picks you'),
+      title: t('kolab.getSelected', 'Get Selected'),
+      description: t('kolab.getSelectedDesc', 'Job poster picks you'),
       bgColor: 'bg-purple-100'
     },
     {
       number: 4,
       icon: '💵',
-      title: t('quickHelp.getPaid', 'Get Paid'),
-      description: t('quickHelp.getPaidDesc', 'Complete & earn money'),
+      title: t('kolab.getPaid', 'Get Paid'),
+      description: t('kolab.getPaidDesc', 'Complete & earn money'),
       bgColor: 'bg-yellow-100'
     }
   ];
@@ -69,29 +69,29 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
     {
       number: 1,
       icon: '📝',
-      title: t('quickHelp.postJob', 'Post a Job'),
-      description: t('quickHelp.postJobDesc', 'Describe what you need'),
+      title: t('kolab.postJob', 'Post a Job'),
+      description: t('kolab.postJobDesc', 'Describe what you need'),
       bgColor: 'bg-orange-100'
     },
     {
       number: 2,
       icon: '👀',
-      title: t('quickHelp.review', 'Review'),
-      description: t('quickHelp.reviewDesc', 'See who wants to help'),
+      title: t('kolab.review', 'Review'),
+      description: t('kolab.reviewDesc', 'See who wants to help'),
       bgColor: 'bg-blue-100'
     },
     {
       number: 3,
       icon: '✅',
-      title: t('quickHelp.selectHelper', 'Select Helper'),
-      description: t('quickHelp.selectHelperDesc', 'Choose the best person'),
+      title: t('kolab.selectHelper', 'Select Helper'),
+      description: t('kolab.selectHelperDesc', 'Choose the best person'),
       bgColor: 'bg-green-100'
     },
     {
       number: 4,
       icon: '💳',
-      title: t('quickHelp.completePay', 'Complete & Pay'),
-      description: t('quickHelp.completePayDesc', 'Confirm & pay helper'),
+      title: t('kolab.completePay', 'Complete & Pay'),
+      description: t('kolab.completePayDesc', 'Confirm & pay helper'),
       bgColor: 'bg-purple-100'
     }
   ];
@@ -121,34 +121,34 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
               <div className="text-4xl sm:text-5xl mb-3">🤝</div>
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">
                 {showCheckboxes 
-                  ? t('quickHelp.welcomeTitle', 'How Quick Help Works')
-                  : t('quickHelp.howItWorks', 'How Quick Help Works')
+                  ? t('kolab.welcomeTitle', 'How Kolab Works')
+                  : t('kolab.howItWorks', 'How Kolab Works')
                 }
               </h2>
               <p className="text-blue-100 text-sm sm:text-base">
-                {t('quickHelp.subtitle', 'Connect with your local community - get help or earn money')}
+                {t('kolab.subtitle', 'Connect with your local community - get help or earn money')}
               </p>
             </div>
 
             {/* Content */}
             <div className="px-4 sm:px-6 py-6">
-              {/* What is Quick Help? */}
+              {/* What is Kolab? */}
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  💡 {t('quickHelp.whatIsTitle', 'What is Quick Help?')}
+                  💡 {t('kolab.whatIsTitle', 'What is Kolab?')}
                 </h3>
                 <div className="space-y-2 sm:space-y-3 text-sm text-gray-600">
                   <div className="flex items-start gap-3">
                     <span className="text-xl flex-shrink-0">🗺️</span>
-                    <p>{t('quickHelp.mapDescription', 'An interactive map showing jobs near you - the closer, the easier to help!')}</p>
+                    <p>{t('kolab.mapDescription', 'An interactive map showing jobs near you - the closer, the easier to help!')}</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <span className="text-xl flex-shrink-0">💰</span>
-                    <p>{t('quickHelp.postOrApply', 'Post tasks you need help with, or apply to jobs and earn money.')}</p>
+                    <p>{t('kolab.postOrApply', 'Post tasks you need help with, or apply to jobs and earn money.')}</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <span className="text-xl flex-shrink-0">⚡</span>
-                    <p>{t('quickHelp.services', 'From cleaning to deliveries to repairs - find or offer any local service!')}</p>
+                    <p>{t('kolab.services', 'From cleaning to deliveries to repairs - find or offer any local service!')}</p>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
               {/* How It Works */}
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  📋 {t('quickHelp.howItWorks', 'How It Works')}
+                  📋 {t('kolab.howItWorks', 'How It Works')}
                 </h3>
                 
                 {/* Two role selection buttons */}
@@ -169,7 +169,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    🔍 {t('quickHelp.lookingForWork', 'Looking for Work?')}
+                    🔍 {t('kolab.lookingForWork', 'Looking for Work?')}
                   </button>
                   <button
                     onClick={() => setSelectedRole('poster')}
@@ -179,7 +179,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    🆘 {t('quickHelp.needHelp', 'Need Help?')}
+                    🆘 {t('kolab.needHelp', 'Need Help?')}
                   </button>
                 </div>
 
@@ -208,10 +208,10 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                   <p className="text-sm text-pink-800 flex items-start gap-2">
                     <span className="text-lg sm:text-xl flex-shrink-0">👤</span>
                     <span>
-                      <strong>{t('quickHelp.createAccount', 'Create a free account to apply for jobs and start earning!')}</strong>
+                      <strong>{t('kolab.createAccount', 'Create a free account to apply for jobs and start earning!')}</strong>
                       <br />
                       <span className="text-xs text-pink-600">
-                        {t('quickHelp.browseWithoutAccount', 'You can browse jobs without an account, but you\'ll need to sign up to apply.')}
+                        {t('kolab.browseWithoutAccount', 'You can browse jobs without an account, but you\'ll need to sign up to apply.')}
                       </span>
                     </span>
                   </p>
@@ -230,7 +230,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                       className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
                     />
                     <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                      {t('quickHelp.agreeToTerms', 'I understand how Quick Help works and will treat other users with respect, complete jobs I commit to, and pay helpers fairly for completed work.')}
+                      {t('kolab.agreeToTerms', 'I understand how Kolab works and will treat other users with respect, complete jobs I commit to, and pay helpers fairly for completed work.')}
                     </span>
                   </label>
 
@@ -243,7 +243,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                       className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
                     />
                     <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                      {t('quickHelp.agreeToPrivacy', 'I agree to the')}{' '}
+                      {t('kolab.agreeToPrivacy', 'I agree to the')}{' '}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -252,7 +252,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                         }}
                         className="text-blue-600 hover:text-blue-700 underline font-medium"
                       >
-                        {t('quickHelp.termsAndPrivacy', 'Terms of Service and Privacy Policy')}
+                        {t('kolab.termsAndPrivacy', 'Terms of Service and Privacy Policy')}
                       </button>
                     </span>
                   </label>
@@ -272,18 +272,18 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                 {showCheckboxes ? (
                   canContinue
                     ? t('common.continue', 'Continue')
-                    : t('quickHelp.checkBoxes', 'Please check the boxes above to continue')
+                    : t('kolab.checkBoxes', 'Please check the boxes above to continue')
                 ) : (
-                  t('quickHelp.gotIt', 'Got it!') + ' 👍'
+                  t('kolab.gotIt', 'Got it!') + ' 👍'
                 )}
               </button>
 
               {/* Footer note - Only show on first-time */}
               {showCheckboxes && (
                 <p className="text-center text-xs text-gray-500 mt-4">
-                  {t('quickHelp.alwaysAccess', 'You can always access this guide from the')}{' '}
-                  <span className="font-medium">❓ {t('quickHelp.howItWorksButton', 'How it works')}</span>{' '}
-                  {t('quickHelp.button', 'button')}
+                  {t('kolab.alwaysAccess', 'You can always access this guide from the')}{' '}
+                  <span className="font-medium">❓ {t('kolab.howItWorksButton', 'How it works')}</span>{' '}
+                  {t('kolab.button', 'button')}
                 </p>
               )}
             </div>
@@ -313,7 +313,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
               <div className="prose prose-sm max-w-none">
                 <h4 className="text-lg font-semibold text-gray-900 mb-3">Terms of Service</h4>
                 <p className="text-gray-700 mb-4">
-                  By using Quick Help, you agree to use the platform responsibly and in good faith. 
+                  By using Kolab, you agree to use the platform responsibly and in good faith. 
                   You agree to:
                 </p>
                 <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-6">
@@ -362,7 +362,7 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-white"
               >
-                {t('quickHelp.acceptAndClose', 'Accept & Close')}
+                {t('kolab.acceptAndClose', 'Accept & Close')}
               </button>
             </div>
           </div>
@@ -372,4 +372,4 @@ const QuickHelpIntroModal = ({ isOpen, onClose, showCheckboxes = true }: QuickHe
   );
 };
 
-export default QuickHelpIntroModal;
+export default KolabIntroModal;

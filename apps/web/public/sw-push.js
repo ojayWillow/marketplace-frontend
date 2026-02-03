@@ -4,14 +4,14 @@
  */
 
 // Cache name for offline assets
-const CACHE_NAME = 'marketplace-v1';
+const CACHE_NAME = 'kolab-v1';
 
 // Handle push events
 self.addEventListener('push', function(event) {
   console.log('[Service Worker] Push received:', event);
   
   let data = {
-    title: 'Marketplace',
+    title: 'Kolab',
     body: 'You have a new notification',
     icon: '/favicon.svg',
     badge: '/favicon.svg',

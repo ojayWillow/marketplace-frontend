@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Define global constants that get replaced at build time
+  // This avoids import.meta usage which doesn't work in React Native/Hermes
+  define: {
+    __VITE_API_URL__: JSON.stringify(process.env.VITE_API_URL || '')
+  },
   plugins: [
     react(),
     VitePWA({

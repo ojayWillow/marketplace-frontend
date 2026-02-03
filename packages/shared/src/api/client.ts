@@ -2,28 +2,30 @@ import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
 // Environment-agnostic API URL getter
+// Note: The order matters! Check platform-specific env vars first.
 const getApiUrl = (): string => {  
-  // Expo (React Native)
+  // Expo (React Native) - check first since it's more specific
+  // @ts-ignore - EXPO_PUBLIC_* vars are injected by Expo
   if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
+    // @ts-ignore
     return process.env.EXPO_PUBLIC_API_URL
   }
   
-  // Vite (web) - use import.meta.env at build time
-  // @ts-ignore - import.meta.env is injected by Vite
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
-    // @ts-ignore
-    return import.meta.env.VITE_API_URL
-  }
-  
-  // Node.js
+  // Node.js fallback
   if (typeof process !== 'undefined' && process.env?.API_URL) {
     return process.env.API_URL
   }
   
+  // Default for development
   return 'http://localhost:5000'
 }
 
-export const API_URL = getApiUrl()
+// For Vite (web), this gets replaced at build time via define in vite.config
+// For Expo, this uses the runtime check above
+// @ts-ignore - __VITE_API_URL__ is injected by Vite's define config
+const VITE_URL = typeof __VITE_API_URL__ !== 'undefined' ? __VITE_API_URL__ : null
+
+export const API_URL = VITE_URL || getApiUrl()
 
 export const apiClient = axios.create({
   baseURL: API_URL,
