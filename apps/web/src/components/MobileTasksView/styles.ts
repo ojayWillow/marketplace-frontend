@@ -32,25 +32,7 @@ export const mobileTasksStyles = `
     display: flex;
     flex-direction: column;
     background: #f3f4f6;
-    z-index: 9999;
-  }
-  .mobile-tasks-container .leaflet-container {
-    z-index: 1 !important;
-  }
-  .mobile-tasks-container .leaflet-pane {
-    z-index: 1 !important;
-  }
-  .mobile-tasks-container .leaflet-top,
-  .mobile-tasks-container .leaflet-bottom {
-    z-index: 500 !important;
-  }
-  .mobile-top-bar {
-    position: relative;
-    z-index: 10000 !important;
-  }
-  .mobile-notification-dropdown {
-    position: fixed !important;
-    z-index: 99999 !important;
+    z-index: 1;
   }
   .selected-marker {
     z-index: 1000 !important;
