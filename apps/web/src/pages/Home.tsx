@@ -10,7 +10,8 @@ import {
   Shield,
   Star,
   Zap,
-  MessageCircle
+  MessageCircle,
+  RefreshCw
 } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
@@ -31,13 +32,14 @@ export default function Home() {
   const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const [recaptchaKey, setRecaptchaKey] = useState(0) // Force remount of recaptcha container
+  const [recaptchaKey, setRecaptchaKey] = useState(0)
+  const [retryCount, setRetryCount] = useState(0)
   
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const otpInputRef = useRef<HTMLInputElement>(null)
   const mountedRef = useRef(true)
 
-  // Redirect authenticated users with a brief loading screen
+  // Redirect authenticated users
   useEffect(() => {
     if (isAuthenticated) {
       setShowWelcome(true)
@@ -48,49 +50,39 @@ export default function Home() {
     }
   }, [isAuthenticated, navigate])
 
-  // Initialize reCAPTCHA for Firebase phone auth
+  // Initialize reCAPTCHA
   const initRecaptcha = useCallback(() => {
-    // Clean up any existing verifier first
     if (recaptchaVerifierRef.current) {
-      try { 
-        recaptchaVerifierRef.current.clear() 
-      } catch (e) {
-        console.log('Error clearing existing recaptcha:', e)
-      }
+      try { recaptchaVerifierRef.current.clear() } catch (e) {}
       recaptchaVerifierRef.current = null
     }
 
     const container = document.getElementById(`recaptcha-container-${recaptchaKey}`)
-    if (!container || !mountedRef.current) {
-      console.log('reCAPTCHA container not found or component unmounted')
-      return
-    }
+    if (!container || !mountedRef.current) return
     
     try {
       console.log('Initializing reCAPTCHA...')
       recaptchaVerifierRef.current = new RecaptchaVerifier(auth, container, {
         size: 'invisible',
-        callback: () => {
-          console.log('reCAPTCHA solved successfully')
-        },
+        callback: () => console.log('reCAPTCHA solved'),
         'expired-callback': () => {
-          console.log('reCAPTCHA expired, will reinitialize on next attempt')
+          console.log('reCAPTCHA expired')
           recaptchaVerifierRef.current = null
           setRecaptchaReady(false)
         }
       })
       setRecaptchaReady(true)
-      console.log('reCAPTCHA initialized successfully')
+      setError('') // Clear any previous captcha errors
+      console.log('reCAPTCHA ready')
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
       setRecaptchaReady(false)
     }
   }, [recaptchaKey])
 
-  // Initialize recaptcha when key changes (including initial mount)
   useEffect(() => {
     mountedRef.current = true
-    const timer = setTimeout(() => initRecaptcha(), 200)
+    const timer = setTimeout(() => initRecaptcha(), 300)
     
     return () => {
       mountedRef.current = false
@@ -102,7 +94,6 @@ export default function Home() {
     }
   }, [initRecaptcha])
 
-  // Auto-verify when OTP is complete
   useEffect(() => {
     if (otpValue.length === 6 && confirmationResult && !loading) {
       handleVerifyCode(otpValue)
@@ -121,7 +112,7 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
-  // Reset reCAPTCHA by incrementing key (forces new DOM element)
+  // Reset reCAPTCHA completely
   const resetRecaptcha = useCallback(() => {
     if (recaptchaVerifierRef.current) {
       try { recaptchaVerifierRef.current.clear() } catch (e) {}
@@ -131,8 +122,15 @@ export default function Home() {
     setRecaptchaKey(prev => prev + 1)
   }, [])
 
-  // Send OTP via Firebase
-  const handleSendCode = async (e: React.FormEvent) => {
+  // Manual retry button handler
+  const handleRetryRecaptcha = () => {
+    setError('')
+    setRetryCount(0)
+    resetRecaptcha()
+  }
+
+  // Send OTP
+  const handleSendCode = async (e: React.FormEvent, isRetry = false) => {
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -145,15 +143,15 @@ export default function Home() {
     }
 
     try {
-      // If no verifier exists, initialize one
+      // Ensure we have a fresh verifier
       if (!recaptchaVerifierRef.current) {
-        console.log('No recaptcha verifier, initializing...')
+        console.log('Creating new reCAPTCHA verifier...')
         initRecaptcha()
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 800))
       }
       
       if (!recaptchaVerifierRef.current) {
-        throw new Error('reCAPTCHA failed to initialize')
+        throw new Error('reCAPTCHA failed to initialize. Please refresh the page.')
       }
 
       console.log('Sending verification code to:', fullPhone)
@@ -163,64 +161,70 @@ export default function Home() {
       setConfirmationResult(confirmation)
       setStep('code')
       setOtpValue('')
+      setRetryCount(0)
       setTimeout(() => otpInputRef.current?.focus(), 100)
       
-      // Reset recaptcha for next use (verifier is consumed after use)
+      // Reset for next use
       resetRecaptcha()
       
     } catch (err: unknown) {
       console.error('Send code error:', err)
+      const msg = err instanceof Error ? err.message : String(err)
       
-      // Reset recaptcha on error
+      // Always reset recaptcha on error
       resetRecaptcha()
       
-      const msg = err instanceof Error ? err.message : String(err)
-      console.log('Error message:', msg)
-      
+      // Handle specific errors
       if (msg.includes('too-many-requests')) {
-        setError(t('auth.tooManyRequests', 'Too many attempts. Try again later.'))
+        setError(t('auth.tooManyRequests', 'Too many attempts. Please wait a few minutes and try again.'))
       } else if (msg.includes('invalid-phone-number')) {
-        setError(t('auth.invalidPhone', 'Invalid phone number format.'))
+        setError(t('auth.invalidPhone', 'Invalid phone number. Please check and try again.'))
       } else if (msg.includes('quota-exceeded')) {
-        setError('SMS quota exceeded. Please try again later.')
+        setError('SMS limit reached. Please try again in a few hours.')
       } else if (msg.includes('app-not-authorized')) {
-        setError('App not authorized for phone auth. Check Firebase settings.')
-      } else if (msg.includes('captcha-check-failed')) {
-        setError('Security check failed. Please refresh and try again.')
+        setError('Service temporarily unavailable. Please try again later.')
+      } else if (msg.includes('captcha-check-failed') || msg.includes('recaptcha')) {
+        // Auto-retry once for captcha failures
+        if (!isRetry && retryCount < 2) {
+          console.log('Captcha failed, auto-retrying...')
+          setRetryCount(prev => prev + 1)
+          setLoading(false)
+          // Wait for new recaptcha to initialize then retry
+          setTimeout(() => {
+            const fakeEvent = { preventDefault: () => {} } as React.FormEvent
+            handleSendCode(fakeEvent, true)
+          }, 1500)
+          return
+        }
+        setError('Security verification failed. Please tap "Retry" below.')
+      } else if (msg.includes('network')) {
+        setError('Network error. Please check your connection and try again.')
       } else {
-        // Show the actual error for debugging
-        setError(`Error: ${msg.substring(0, 100)}`)
+        setError('Something went wrong. Please try again.')
+        console.log('Unhandled error:', msg)
       }
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle OTP input change
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6)
     setOtpValue(value)
   }
 
-  // Focus the hidden input when clicking on OTP display boxes
-  const focusOtpInput = () => {
-    otpInputRef.current?.focus()
-  }
+  const focusOtpInput = () => otpInputRef.current?.focus()
 
-  // Verify OTP via Firebase then sync with backend
   const handleVerifyCode = async (code: string) => {
     if (!confirmationResult || loading || code.length !== 6) return
     setError('')
     setLoading(true)
 
     try {
-      // Verify with Firebase
-      console.log('Verifying code with Firebase...')
+      console.log('Verifying code...')
       const result = await confirmationResult.confirm(code)
       const idToken = await result.user.getIdToken()
-      console.log('Firebase verification successful, syncing with backend...')
       
-      // Sync with backend
       const response = await api.post('/api/auth/phone/verify', {
         idToken,
         phoneNumber: getFullPhone()
@@ -230,7 +234,6 @@ export default function Home() {
 
       if (access_token && userData) {
         setAuth(userData, access_token)
-        
         if (is_new_user || userData.username?.startsWith('user_')) {
           navigate('/complete-profile')
         } else {
@@ -242,13 +245,13 @@ export default function Home() {
       const msg = err instanceof Error ? err.message : String(err)
       
       if (msg.includes('invalid-verification-code')) {
-        setError(t('auth.invalidCode', 'Invalid code. Please try again.'))
+        setError(t('auth.invalidCode', 'Invalid code. Please check and try again.'))
       } else if (msg.includes('code-expired')) {
         setError('Code expired. Please request a new one.')
         setStep('phone')
         setConfirmationResult(null)
       } else {
-        setError(`Verification failed: ${msg.substring(0, 50)}`)
+        setError('Verification failed. Please try again.')
       }
       setOtpValue('')
       otpInputRef.current?.focus()
@@ -281,13 +284,11 @@ export default function Home() {
     )
   }
 
-  // OTP Display Component - Visual boxes with hidden input for reliable autofill
   const renderOTPDisplay = () => {
     const digits = otpValue.split('')
     
     return (
       <div className="relative mb-4">
-        {/* Hidden input that captures SMS autofill */}
         <input
           ref={otpInputRef}
           type="text"
@@ -303,27 +304,16 @@ export default function Home() {
           style={{ caretColor: 'transparent' }}
         />
         
-        {/* Visual OTP boxes */}
-        <div 
-          className="flex justify-center gap-1.5 sm:gap-2 cursor-text"
-          onClick={focusOtpInput}
-        >
+        <div className="flex justify-center gap-1.5 sm:gap-2 cursor-text" onClick={focusOtpInput}>
           {[0, 1, 2, 3, 4, 5].map((index) => (
             <div
               key={index}
               className={`w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border transition-colors ${
-                isFocused && index === digits.length
-                  ? 'border-blue-500'
-                  : digits[index]
-                  ? 'border-blue-500/50'
-                  : 'border-[#2a2a3a]'
+                isFocused && index === digits.length ? 'border-blue-500' : digits[index] ? 'border-blue-500/50' : 'border-[#2a2a3a]'
               }`}
             >
               {digits[index] || ''}
-              {/* Cursor indicator */}
-              {isFocused && index === digits.length && (
-                <span className="animate-pulse text-blue-400">|</span>
-              )}
+              {isFocused && index === digits.length && <span className="animate-pulse text-blue-400">|</span>}
             </div>
           ))}
         </div>
@@ -331,9 +321,11 @@ export default function Home() {
     )
   }
 
+  // Check if error is captcha-related (show retry button)
+  const isCaptchaError = error.includes('Security') || error.includes('Retry')
+
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
-      {/* reCAPTCHA container - key forces fresh DOM element */}
       <div key={recaptchaKey} id={`recaptcha-container-${recaptchaKey}`} />
       
       {/* Hero Section */}
@@ -341,7 +333,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
         
         <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 md:py-16 lg:py-24">
-          {/* Mobile: Value Proposition FIRST */}
+          {/* Mobile: Value Proposition */}
           <div className="lg:hidden mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-medium mb-4">
               <MapPin className="w-3 h-3" />
@@ -358,7 +350,6 @@ export default function Home() {
               Connect with trusted locals who can help.
             </p>
 
-            {/* Quick Stats - Mobile */}
             <div className="grid grid-cols-3 gap-3 mb-8">
               <div className="text-center">
                 <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
@@ -384,7 +375,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile: Login Card SECOND */}
+          {/* Mobile: Login Card */}
           <div className="lg:hidden mb-8">
             <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 border border-[#2a2a3a] shadow-2xl">
               <div className="text-center mb-5">
@@ -395,6 +386,15 @@ export default function Home() {
               {error && (
                 <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <p className="text-red-400 text-sm text-center">{error}</p>
+                  {isCaptchaError && (
+                    <button
+                      onClick={handleRetryRecaptcha}
+                      className="mt-2 w-full flex items-center justify-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Tap to retry
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -427,7 +427,7 @@ export default function Home() {
                     className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                      <><Loader2 className="w-5 h-5 animate-spin" /> {retryCount > 0 ? 'Retrying...' : 'Sending...'}</>
                     ) : !recaptchaReady ? (
                       <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                     ) : (
@@ -483,7 +483,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Browse as guest - Mobile */}
             <div className="text-center mt-4">
               <Link 
                 to="/tasks" 
@@ -494,10 +493,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Desktop: Original Two Column Layout */}
+          {/* Desktop: Two Column Layout */}
           <div className="hidden lg:grid lg:grid-cols-2 gap-12 items-center">
-            
-            {/* Left: Value Proposition */}
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-6">
                 <MapPin className="w-4 h-4" />
@@ -514,7 +511,6 @@ export default function Home() {
                 Connect with trusted locals who can help — usually within hours.
               </p>
 
-              {/* Quick Stats */}
               <div className="flex flex-wrap gap-6 mb-8">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -545,7 +541,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Browse as guest link - Desktop */}
               <Link 
                 to="/tasks" 
                 className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1"
@@ -554,7 +549,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Right: Login Card - Desktop */}
+            {/* Desktop: Login Card */}
             <div className="lg:pl-8">
               <div className="bg-[#1a1a24] rounded-2xl p-6 md:p-8 border border-[#2a2a3a] shadow-2xl">
                 <div className="text-center mb-6">
@@ -565,6 +560,15 @@ export default function Home() {
                 {error && (
                   <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                     <p className="text-red-400 text-sm text-center">{error}</p>
+                    {isCaptchaError && (
+                      <button
+                        onClick={handleRetryRecaptcha}
+                        className="mt-2 w-full flex items-center justify-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Click to retry
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -597,7 +601,7 @@ export default function Home() {
                       className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       {loading ? (
-                        <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                        <><Loader2 className="w-5 h-5 animate-spin" /> {retryCount > 0 ? 'Retrying...' : 'Sending...'}</>
                       ) : !recaptchaReady ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                       ) : (
@@ -627,7 +631,6 @@ export default function Home() {
                       Enter the code sent to <span className="text-white">{getFullPhone()}</span>
                     </p>
                     
-                    {/* Desktop OTP Display */}
                     <div className="relative mb-4">
                       <input
                         ref={otpInputRef}
@@ -644,27 +647,18 @@ export default function Home() {
                         style={{ caretColor: 'transparent' }}
                       />
                       
-                      <div 
-                        className="flex justify-center gap-2 cursor-text"
-                        onClick={focusOtpInput}
-                      >
+                      <div className="flex justify-center gap-2 cursor-text" onClick={focusOtpInput}>
                         {[0, 1, 2, 3, 4, 5].map((index) => {
                           const digits = otpValue.split('')
                           return (
                             <div
                               key={index}
                               className={`w-12 h-14 flex items-center justify-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border transition-colors ${
-                                isFocused && index === digits.length
-                                  ? 'border-blue-500'
-                                  : digits[index]
-                                  ? 'border-blue-500/50'
-                                  : 'border-[#2a2a3a]'
+                                isFocused && index === digits.length ? 'border-blue-500' : digits[index] ? 'border-blue-500/50' : 'border-[#2a2a3a]'
                               }`}
                             >
                               {digits[index] || ''}
-                              {isFocused && index === digits.length && (
-                                <span className="animate-pulse text-blue-400">|</span>
-                              )}
+                              {isFocused && index === digits.length && <span className="animate-pulse text-blue-400">|</span>}
                             </div>
                           )
                         })}
@@ -710,7 +704,6 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 lg:gap-16">
-            {/* Need Help Column */}
             <div className="bg-[#1a1a24]/50 rounded-2xl p-5 sm:p-6 md:p-8 border border-[#2a2a3a]">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-5 sm:mb-6">
                 Need help?
@@ -749,7 +742,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Want to Earn Column */}
             <div className="bg-[#1a1a24]/50 rounded-2xl p-5 sm:p-6 md:p-8 border border-[#2a2a3a]">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm font-medium mb-5 sm:mb-6">
                 Want to earn?
