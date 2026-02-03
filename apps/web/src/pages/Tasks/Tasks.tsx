@@ -298,7 +298,7 @@ const DesktopTasksView = () => {
             </div>
           </div>
 
-          <div className="relative" style={{ height: '350px' }}>
+          <div className="relative" style={{ height: '500px' }}>
             <MapLoadingOverlay isLoading={refreshing} searchRadius={searchRadius} />
             <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
