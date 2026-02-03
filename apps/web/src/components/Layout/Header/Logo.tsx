@@ -13,7 +13,7 @@ export const Logo = () => {
       <img 
         src="/logo.png" 
         alt="Kolab" 
-        className="h-8 w-auto"
+        className="h-12 w-auto"
         aria-hidden="true"
       />
       <span className="font-bold text-xl text-white">
