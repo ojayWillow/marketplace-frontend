@@ -165,14 +165,14 @@ const DesktopTasksView = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
-        {/* Header with Collab branding */}
+        {/* Header with Kolab branding */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            {/* Collab title with sparkles */}
+            {/* Kolab title with sparkles */}
             <div className="relative">
               <h1 className="text-3xl font-bold relative z-10">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
-                  Collab
+                  Kolab
                 </span>
               </h1>
               <p className="text-gray-600 relative z-10">
@@ -181,7 +181,7 @@ const DesktopTasksView = () => {
               {/* Sparkles effect */}
               <div className="absolute -inset-4 -top-2 pointer-events-none overflow-hidden" style={{ width: '180px', height: '70px' }}>
                 <SparklesCore
-                  id="collab-sparkles"
+                  id="kolab-sparkles"
                   background="transparent"
                   minSize={0.4}
                   maxSize={1.2}
