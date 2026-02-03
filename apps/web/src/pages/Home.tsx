@@ -31,8 +31,8 @@ export default function Home() {
   const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+  const [recaptchaKey, setRecaptchaKey] = useState(0) // Force remount of recaptcha container
   
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
   const otpInputRef = useRef<HTMLInputElement>(null)
   const mountedRef = useRef(true)
@@ -50,31 +50,47 @@ export default function Home() {
 
   // Initialize reCAPTCHA for Firebase phone auth
   const initRecaptcha = useCallback(() => {
-    if (!recaptchaContainerRef.current || !mountedRef.current) return
+    // Clean up any existing verifier first
     if (recaptchaVerifierRef.current) {
-      setRecaptchaReady(true)
+      try { 
+        recaptchaVerifierRef.current.clear() 
+      } catch (e) {
+        console.log('Error clearing existing recaptcha:', e)
+      }
+      recaptchaVerifierRef.current = null
+    }
+
+    const container = document.getElementById(`recaptcha-container-${recaptchaKey}`)
+    if (!container || !mountedRef.current) {
+      console.log('reCAPTCHA container not found or component unmounted')
       return
     }
     
     try {
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+      console.log('Initializing reCAPTCHA...')
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, container, {
         size: 'invisible',
-        callback: () => console.log('reCAPTCHA solved'),
+        callback: () => {
+          console.log('reCAPTCHA solved successfully')
+        },
         'expired-callback': () => {
+          console.log('reCAPTCHA expired, will reinitialize on next attempt')
           recaptchaVerifierRef.current = null
           setRecaptchaReady(false)
         }
       })
       setRecaptchaReady(true)
+      console.log('reCAPTCHA initialized successfully')
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
       setRecaptchaReady(false)
     }
-  }, [])
+  }, [recaptchaKey])
 
+  // Initialize recaptcha when key changes (including initial mount)
   useEffect(() => {
     mountedRef.current = true
-    const timer = setTimeout(() => initRecaptcha(), 100)
+    const timer = setTimeout(() => initRecaptcha(), 200)
     
     return () => {
       mountedRef.current = false
@@ -105,6 +121,16 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
+  // Reset reCAPTCHA by incrementing key (forces new DOM element)
+  const resetRecaptcha = useCallback(() => {
+    if (recaptchaVerifierRef.current) {
+      try { recaptchaVerifierRef.current.clear() } catch (e) {}
+      recaptchaVerifierRef.current = null
+    }
+    setRecaptchaReady(false)
+    setRecaptchaKey(prev => prev + 1)
+  }, [])
+
   // Send OTP via Firebase
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,34 +145,52 @@ export default function Home() {
     }
 
     try {
+      // If no verifier exists, initialize one
       if (!recaptchaVerifierRef.current) {
+        console.log('No recaptcha verifier, initializing...')
         initRecaptcha()
         await new Promise(resolve => setTimeout(resolve, 500))
       }
-      if (!recaptchaVerifierRef.current) throw new Error('reCAPTCHA not ready')
+      
+      if (!recaptchaVerifierRef.current) {
+        throw new Error('reCAPTCHA failed to initialize')
+      }
 
+      console.log('Sending verification code to:', fullPhone)
       const confirmation = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current)
+      console.log('Code sent successfully')
+      
       setConfirmationResult(confirmation)
       setStep('code')
       setOtpValue('')
       setTimeout(() => otpInputRef.current?.focus(), 100)
+      
+      // Reset recaptcha for next use (verifier is consumed after use)
+      resetRecaptcha()
+      
     } catch (err: unknown) {
       console.error('Send code error:', err)
-      const msg = err instanceof Error ? err.message : ''
+      
+      // Reset recaptcha on error
+      resetRecaptcha()
+      
+      const msg = err instanceof Error ? err.message : String(err)
+      console.log('Error message:', msg)
+      
       if (msg.includes('too-many-requests')) {
         setError(t('auth.tooManyRequests', 'Too many attempts. Try again later.'))
       } else if (msg.includes('invalid-phone-number')) {
         setError(t('auth.invalidPhone', 'Invalid phone number format.'))
+      } else if (msg.includes('quota-exceeded')) {
+        setError('SMS quota exceeded. Please try again later.')
+      } else if (msg.includes('app-not-authorized')) {
+        setError('App not authorized for phone auth. Check Firebase settings.')
+      } else if (msg.includes('captcha-check-failed')) {
+        setError('Security check failed. Please refresh and try again.')
       } else {
-        setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
+        // Show the actual error for debugging
+        setError(`Error: ${msg.substring(0, 100)}`)
       }
-      // Reset reCAPTCHA on error
-      if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear() } catch (e) {}
-        recaptchaVerifierRef.current = null
-        setRecaptchaReady(false)
-      }
-      setTimeout(() => initRecaptcha(), 500)
     } finally {
       setLoading(false)
     }
@@ -171,8 +215,10 @@ export default function Home() {
 
     try {
       // Verify with Firebase
+      console.log('Verifying code with Firebase...')
       const result = await confirmationResult.confirm(code)
       const idToken = await result.user.getIdToken()
+      console.log('Firebase verification successful, syncing with backend...')
       
       // Sync with backend
       const response = await api.post('/api/auth/phone/verify', {
@@ -193,11 +239,16 @@ export default function Home() {
       }
     } catch (err: unknown) {
       console.error('Verify error:', err)
-      const msg = err instanceof Error ? err.message : ''
+      const msg = err instanceof Error ? err.message : String(err)
+      
       if (msg.includes('invalid-verification-code')) {
         setError(t('auth.invalidCode', 'Invalid code. Please try again.'))
+      } else if (msg.includes('code-expired')) {
+        setError('Code expired. Please request a new one.')
+        setStep('phone')
+        setConfirmationResult(null)
       } else {
-        setError(t('auth.verifyError', 'Verification failed. Please try again.'))
+        setError(`Verification failed: ${msg.substring(0, 50)}`)
       }
       setOtpValue('')
       otpInputRef.current?.focus()
@@ -282,8 +333,8 @@ export default function Home() {
 
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
-      {/* reCAPTCHA container for Firebase */}
-      <div ref={recaptchaContainerRef} id="recaptcha-container" />
+      {/* reCAPTCHA container - key forces fresh DOM element */}
+      <div key={recaptchaKey} id={`recaptcha-container-${recaptchaKey}`} />
       
       {/* Hero Section */}
       <section className="relative overflow-hidden">
