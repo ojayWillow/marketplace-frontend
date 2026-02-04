@@ -9,16 +9,14 @@ export default function Layout() {
   const location = useLocation()
   const isMobile = useIsMobile()
   
-  // Pages that get fullscreen mobile experience (no header/footer, just bottom nav)
-  const isFullscreenMobilePage = isMobile && (
+  // Pages that show the mobile bottom nav (only the tasks/map page)
+  const showMobileBottomNav = isMobile && (
     location.pathname === '/tasks' || 
-    location.pathname === '/quick-help' ||
-    location.pathname === '/messages' ||
-    location.pathname.startsWith('/messages/')
+    location.pathname === '/quick-help'
   )
 
   // Fullscreen mobile pages: no header/footer, just content + bottom nav
-  if (isFullscreenMobilePage) {
+  if (showMobileBottomNav) {
     return (
       <div className="min-h-screen bg-gray-50">
         <main className="pb-20">
@@ -30,21 +28,20 @@ export default function Layout() {
     )
   }
 
-  // Mobile layout: header + content + bottom nav (no footer)
+  // Mobile layout without bottom nav (messages, profile, etc)
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 pb-20">
+        <main className="flex-1">
           <Outlet />
         </main>
-        <MobileBottomNav />
         <ToastContainer />
       </div>
     )
   }
 
-  // Desktop layout: header + content + footer (no bottom nav)
+  // Desktop layout: header + content + footer
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
