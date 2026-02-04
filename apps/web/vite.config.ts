@@ -13,7 +13,6 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       includeAssets: [
-        'favicon.svg',
         'favicon-32x32.png',
         'favicon-16x16.png',
         'apple-touch-icon.png',
@@ -66,8 +65,7 @@ export default defineConfig({
           {
             src: '/apple-touch-icon.png',
             sizes: '180x180',
-            type: 'image/png',
-            purpose: 'apple touch icon'
+            type: 'image/png'
           }
         ],
         shortcuts: [
@@ -92,7 +90,7 @@ export default defineConfig({
         importScripts: ['/sw-push.js'],
         // Don't cache API routes - always fetch fresh data
         navigateFallbackDenylist: [/^\/api\/.*/],
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
