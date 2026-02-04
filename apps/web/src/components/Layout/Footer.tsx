@@ -18,9 +18,11 @@ export default function Footer() {
           {/* Brand Section */}
           <div>
             <Link to="/" className="flex items-center space-x-3 mb-5 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <span className="text-white font-bold text-xl">K</span>
-              </div>
+              <img 
+                src="/android-chrome-192x192.png" 
+                alt="Kolab logo" 
+                className="w-10 h-10 rounded-xl shadow-lg"
+              />
               <span className="font-bold text-2xl text-white group-hover:text-blue-400 transition-colors">
                 Kolab
               </span>
@@ -64,14 +66,14 @@ export default function Footer() {
               <ul className="space-y-3" role="list">
                 <li>
                   <a 
-                    href="mailto:info@kollab.lv" 
+                    href="mailto:info@kolab.lv" 
                     className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
-                    aria-label="Send email to info@kollab.lv"
+                    aria-label="Send email to info@kolab.lv"
                   >
                     <svg className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    info@kollab.lv
+                    info@kolab.lv
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
