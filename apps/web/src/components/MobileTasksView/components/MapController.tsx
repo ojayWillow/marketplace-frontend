@@ -8,6 +8,8 @@ interface MapControllerProps {
   radius: number;
   recenterTrigger: number;
   selectedTask: Task | null;
+  isMenuOpen?: boolean;
+  sheetPosition?: string;
 }
 
 /**
@@ -20,8 +22,18 @@ const MapController = ({
   radius,
   recenterTrigger,
   selectedTask,
+  isMenuOpen,
+  sheetPosition,
 }: MapControllerProps) => {
   const map = useMap();
+
+  // Invalidate map size when menu closes or sheet position changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize({ pan: false });
+    }, 350); // Wait for animation to complete
+    return () => clearTimeout(timer);
+  }, [isMenuOpen, sheetPosition, map]);
 
   // Handle radius changes and recenter
   useEffect(() => {
