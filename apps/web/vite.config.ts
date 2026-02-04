@@ -12,7 +12,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.png', 'sw-push.js'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon-32x32.png',
+        'favicon-16x16.png',
+        'apple-touch-icon.png',
+        'android-chrome-192x192.png',
+        'android-chrome-512x512.png',
+        'logo.png',
+        'sw-push.js'
+      ],
       manifest: {
         name: 'Kolab - Earn Money Helping Others',
         short_name: 'Kolab',
@@ -26,6 +35,16 @@ export default defineConfig({
         lang: 'en',
         categories: ['business', 'lifestyle', 'productivity'],
         icons: [
+          {
+            src: '/favicon-16x16.png',
+            sizes: '16x16',
+            type: 'image/png'
+          },
+          {
+            src: '/favicon-32x32.png',
+            sizes: '32x32',
+            type: 'image/png'
+          },
           {
             src: '/android-chrome-192x192.png',
             sizes: '192x192',
@@ -43,6 +62,12 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
+          },
+          {
+            src: '/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'apple touch icon'
           }
         ],
         shortcuts: [
@@ -51,14 +76,14 @@ export default defineConfig({
             short_name: 'Tasks',
             description: 'Find tasks near you or post your own',
             url: '/tasks',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
+            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
-            name: 'My Applications',
-            short_name: 'Applications',
-            description: 'View your task applications',
-            url: '/applications',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
+            name: 'Messages',
+            short_name: 'Messages',
+            description: 'View your conversations',
+            url: '/messages',
+            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ]
       },
