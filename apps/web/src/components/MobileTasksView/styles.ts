@@ -32,7 +32,7 @@ export const mobileTasksStyles = `
     display: flex;
     flex-direction: column;
     background: #f3f4f6;
-    z-index: 9999;
+    z-index: 1;
   }
   .selected-marker {
     z-index: 1000 !important;

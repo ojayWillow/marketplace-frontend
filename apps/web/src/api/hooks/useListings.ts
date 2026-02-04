@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listingsApi } from '../listings';
+import { listingsApi } from '@marketplace/shared/src/api/listings';
 import { ListingsFilter, CreateListingData } from '../../types';
 
 export const useListings = (filters?: ListingsFilter) => {

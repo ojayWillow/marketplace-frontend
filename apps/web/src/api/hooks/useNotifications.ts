@@ -5,8 +5,8 @@ import {
   markAsRead,
   markAllAsRead,
   markReadByType,
-} from '../notifications';
-import { getUnreadCount as getMessagesUnreadCount } from '../messages';
+} from '@marketplace/shared/src/api/notifications';
+import { getUnreadCount as getMessagesUnreadCount } from '@marketplace/shared/src/api/messages';
 
 // Query keys for cache management
 export const notificationKeys = {

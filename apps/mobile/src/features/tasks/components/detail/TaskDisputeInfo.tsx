@@ -4,28 +4,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getTaskDisputes, respondToDispute, useAuthStore, type Dispute } from '@marketplace/shared';
 import { useThemeStore } from '../../../../stores/themeStore';
+import { useTranslation } from '../../../../hooks/useTranslation';
 import { colors } from '../../../../theme';
 
 interface TaskDisputeInfoProps {
   taskId: number;
 }
 
-const REASON_LABELS: Record<string, string> = {
-  'work_not_completed': 'Work Not Completed',
-  'poor_quality': 'Poor Quality Work',
-  'task_changed': 'Task Requirements Changed',
-  'payment_issue': 'Payment Issue',
-  'safety_concern': 'Safety Concern',
-  'communication': 'Communication Issue',
-  'other': 'Other'
-};
-
 export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   const { user } = useAuthStore();
   const { getActiveTheme } = useThemeStore();
+  const { t } = useTranslation();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
   const queryClient = useQueryClient();
+
+  // Reason labels mapping using translations
+  const REASON_LABELS: Record<string, string> = {
+    'work_not_completed': t.dispute.reasons.workNotCompleted,
+    'poor_quality': t.dispute.reasons.poorQuality,
+    'task_changed': t.dispute.reasons.taskChanged,
+    'payment_issue': t.dispute.reasons.paymentIssue,
+    'safety_concern': t.dispute.reasons.safetyConcern,
+    'communication': t.dispute.reasons.communication,
+    'other': t.dispute.reasons.other,
+  };
 
   // Response form state
   const [showResponseForm, setShowResponseForm] = useState(false);
@@ -45,9 +48,9 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
       respondToDispute(params.disputeId, { description: params.description }),
     onSuccess: () => {
       Alert.alert(
-        'Response Submitted',
-        'Your response has been submitted. The dispute is now under review by our support team.',
-        [{ text: 'OK' }]
+        t.dispute.alerts.responseSubmittedTitle,
+        t.dispute.alerts.responseSubmittedMessage,
+        [{ text: t.dispute.alerts.ok }]
       );
       setShowResponseForm(false);
       setResponseText('');
@@ -56,8 +59,8 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to submit response. Please try again.';
-      Alert.alert('Error', message);
+      const message = error?.response?.data?.error || t.dispute.alerts.errorSubmit;
+      Alert.alert(t.dispute.alerts.error, message);
     },
   });
 
@@ -86,7 +89,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
 
   const handleSubmitResponse = () => {
     if (responseText.trim().length < 20) {
-      Alert.alert('Error', 'Please provide a detailed response (at least 20 characters).');
+      Alert.alert(t.dispute.alerts.error, t.dispute.alerts.errorMinLength);
       return;
     }
     
@@ -112,18 +115,18 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open':
-        return 'Open';
+        return t.dispute.status.open;
       case 'under_review':
-        return 'Under Review';
+        return t.dispute.status.underReview;
       case 'resolved':
-        return 'Resolved';
+        return t.dispute.status.resolved;
       default:
         return status.replace('_', ' ').toUpperCase();
     }
   };
 
-  // Use filed_by_name if available, otherwise 'Unknown'
-  const filedByName = isFiledByMe ? 'You' : (activeDispute.filed_by_name || 'The other party');
+  // Use filed_by_name if available, otherwise translated text
+  const filedByName = isFiledByMe ? t.dispute.info.you : (activeDispute.filed_by_name || t.dispute.info.theOtherParty);
 
   const styles = StyleSheet.create({
     card: {
@@ -246,7 +249,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
       <Card.Content>
         <View style={styles.header}>
           <Text variant="titleMedium" style={styles.title}>
-            ⚠️ Dispute Status
+            ⚠️ {t.dispute.info.disputeStatus}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(activeDispute.status) }]}>
             <Text style={styles.statusText}>{getStatusLabel(activeDispute.status)}</Text>
@@ -255,7 +258,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
 
         <View style={styles.info}>
           <Text variant="bodyMedium" style={styles.label}>
-            Filed by:
+            {t.dispute.info.filedBy}
           </Text>
           <Text variant="bodyMedium" style={styles.value}>
             {filedByName}
@@ -264,7 +267,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
 
         <View style={styles.info}>
           <Text variant="bodyMedium" style={styles.label}>
-            Reason:
+            {t.dispute.info.reason}
           </Text>
           <Text variant="bodyMedium" style={styles.value}>
             {activeDispute.reason_label || REASON_LABELS[activeDispute.reason] || activeDispute.reason}
@@ -274,7 +277,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {activeDispute.description && (
           <View style={styles.descriptionSection}>
             <Text variant="bodyMedium" style={styles.label}>
-              Their complaint:
+              {t.dispute.info.theirComplaint}
             </Text>
             <Text variant="bodyMedium" style={styles.description}>
               {activeDispute.description}
@@ -286,7 +289,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {activeDispute.response_description && (
           <View style={styles.responseSection}>
             <Text variant="bodyMedium" style={styles.responseHeader}>
-              ✅ Response submitted:
+              ✅ {t.dispute.info.responseSubmitted}
             </Text>
             <Text variant="bodyMedium" style={styles.description}>
               {activeDispute.response_description}
@@ -298,14 +301,14 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {canRespond && showResponseForm && (
           <View style={styles.responseFormContainer}>
             <Text variant="bodyMedium" style={styles.responseFormTitle}>
-              📝 Your Response
+              📝 {t.dispute.responseForm.title}
             </Text>
             <Text variant="bodySmall" style={{ color: themeColors.textSecondary, marginBottom: 12 }}>
-              Explain your side of the story. Be specific and factual.
+              {t.dispute.responseForm.subtitle}
             </Text>
             <TextInput
               mode="outlined"
-              placeholder="Describe what happened from your perspective..."
+              placeholder={t.dispute.responseForm.placeholder}
               value={responseText}
               onChangeText={setResponseText}
               multiline
@@ -318,7 +321,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
               disabled={respondMutation.isPending}
             />
             <Text style={styles.characterCount}>
-              {responseText.length} / 20 minimum characters
+              {responseText.length} {t.dispute.responseForm.characterCount}
             </Text>
             <View style={styles.formButtons}>
               <Button 
@@ -331,7 +334,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
                 textColor={themeColors.textSecondary}
                 disabled={respondMutation.isPending}
               >
-                Cancel
+                {t.dispute.responseForm.cancelButton}
               </Button>
               <Button 
                 mode="contained" 
@@ -341,7 +344,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
                 disabled={respondMutation.isPending || responseText.trim().length < 20}
                 loading={respondMutation.isPending}
               >
-                Submit Response
+                {t.dispute.responseForm.submitButton}
               </Button>
             </View>
           </View>
@@ -351,7 +354,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {canRespond && !showResponseForm && (
           <View style={styles.respondNotice}>
             <Text variant="bodySmall" style={styles.respondText}>
-              ⚠️ A dispute has been filed against you. Please respond with your side of the story.
+              ⚠️ {t.dispute.notices.respondNotice}
             </Text>
             <Button 
               mode="contained" 
@@ -360,7 +363,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
               textColor="#fff"
               style={styles.respondButton}
             >
-              Respond to Dispute
+              {t.dispute.notices.respondButton}
             </Button>
           </View>
         )}
@@ -369,7 +372,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {isFiledByMe && activeDispute.status === 'open' && !activeDispute.response_description && (
           <View style={styles.reviewNotice}>
             <Text variant="bodySmall" style={styles.reviewText}>
-              ⏳ Waiting for the other party to respond to your dispute.
+              ⏳ {t.dispute.notices.waitingNotice}
             </Text>
           </View>
         )}
@@ -377,7 +380,7 @@ export function TaskDisputeInfo({ taskId }: TaskDisputeInfoProps) {
         {activeDispute.status === 'under_review' && (
           <View style={styles.reviewNotice}>
             <Text variant="bodySmall" style={styles.reviewText}>
-              ℹ️ Both sides have shared their stories. Support is reviewing this dispute and will reach out soon.
+              ℹ️ {t.dispute.notices.underReviewNotice}
             </Text>
           </View>
         )}

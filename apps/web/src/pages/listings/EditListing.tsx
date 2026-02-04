@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '@marketplace/shared'
-import { useToastStore } from '@marketplace/shared'
-import { listingsApi, type Listing } from '@marketplace/shared'
-import { uploadImage, getImageUrl } from '@marketplace/shared'
+import { useAuthStore, useToastStore, listingsApi, type Listing } from '@marketplace/shared'
+import { uploadImage, getImageUrl } from '@marketplace/shared/src/api/uploads'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const CATEGORIES = [
@@ -118,8 +116,8 @@ export default function EditListing() {
     try {
       for (const file of Array.from(files)) {
         const result = await uploadImage(file)
-        if (result.path) {
-          setImages(prev => [...prev, result.path])
+        if (result.url) {
+          setImages(prev => [...prev, result.url])
         }
       }
       toast.success('Image(s) uploaded successfully')

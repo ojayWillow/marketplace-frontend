@@ -3,9 +3,17 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { type Task } from '@marketplace/shared';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { calculateDistance, formatPostedDate, getMarkerColor } from '../constants';
+import { calculateDistance, formatPostedDate, formatTimeAgo, getMarkerColor } from '../constants';
 import { useCategories } from '../../../hooks/useCategories';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { useLanguageStore } from '../../../stores/languageStore';
+
+// Map language codes to locale strings
+const LOCALE_MAP: Record<string, string> = {
+  en: 'en-US',
+  lv: 'lv-LV',
+  ru: 'ru-RU',
+};
 
 interface FocusedTaskCardProps {
   task: Task;
@@ -23,10 +31,12 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
   styles 
 }: FocusedTaskCardProps) {
   const { t } = useTranslation();
+  const { language } = useLanguageStore();
   const { getCategoryLabel, getCategoryIcon } = useCategories();
   
   const categoryColor = getMarkerColor(task.category);
   const applicantsCount = task.pending_applications_count ?? 0;
+  const locale = LOCALE_MAP[language] || 'en-US';
   
   // Get translated difficulty
   const getDifficultyIndicator = (difficulty: 'easy' | 'medium' | 'hard' | undefined): { color: string; label: string } => {
@@ -51,6 +61,9 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
   
   const city = task.location?.split(',')[0]?.trim() || task.creator_city || '';
   
+  // Format time with translations
+  const timeDisplay = formatTimeAgo(task.created_at!, t.task?.time);
+  
   return (
     <View style={styles.focusedCard}>
       <View style={styles.focusedTopRow}>
@@ -71,17 +84,17 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>DISTANCE</Text>
+          <Text style={styles.statLabel}>{t.task?.distance || 'DISTANCE'}</Text>
           <Text style={styles.statValue}>{distanceKm ? `${distanceKm}km` : '—'}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>POSTED</Text>
-          <Text style={styles.statValue}>{formatPostedDate(task.created_at!)}</Text>
+          <Text style={styles.statLabel}>{t.task?.posted || 'POSTED'}</Text>
+          <Text style={styles.statValue}>{timeDisplay}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>APPLICANTS</Text>
+          <Text style={styles.statLabel}>{t.task?.applicants || 'APPLICANTS'}</Text>
           <Text style={styles.statValue}>{applicantsCount}</Text>
         </View>
       </View>
@@ -106,7 +119,7 @@ export const FocusedTaskCard = memo(function FocusedTaskCard({
         onPress={() => onViewDetails(task.id)}
         activeOpacity={0.8}
       >
-        <Text style={styles.viewButtonText}>View and apply</Text>
+        <Text style={styles.viewButtonText}>{t.task?.viewAndApply || 'View and apply'}</Text>
         <Icon name="arrow-forward" size={18} color="#ffffff" />
       </TouchableOpacity>
     </View>

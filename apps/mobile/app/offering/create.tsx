@@ -307,6 +307,7 @@ export default function CreateOfferingScreen() {
           options={{ 
             headerShown: true, 
             title: t('offering.create.title'),
+            headerBackTitle: '',
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
             headerTitleStyle: { color: themeColors.text },

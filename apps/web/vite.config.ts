@@ -3,15 +3,20 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Define global constants that get replaced at build time
+  // This avoids import.meta usage which doesn't work in React Native/Hermes
+  define: {
+    __VITE_API_URL__: JSON.stringify(process.env.VITE_API_URL || '')
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.svg', 'sw-push.js'],
+      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.png', 'sw-push.js'],
       manifest: {
-        name: 'Quick Help - Local Task Marketplace',
-        short_name: 'Quick Help',
-        description: 'Get help with everyday tasks or earn money by helping others. Dog walking, moving, cleaning, repairs, and more in Latvia.',
+        name: 'Kolab - Earn Money Helping Others',
+        short_name: 'Kolab',
+        description: 'Earn money by helping others with everyday tasks. Dog walking, moving, cleaning, repairs, and more in Latvia.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

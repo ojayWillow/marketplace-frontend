@@ -33,11 +33,11 @@ export function useBottomSheet(
       onPositionChange(newPosition);
     }
     
-    Animated.spring(sheetHeight, {
+    // Use timing instead of spring for better performance
+    Animated.timing(sheetHeight, {
       toValue: height,
-      useNativeDriver: false,
-      bounciness: 4,
-      speed: 12,
+      duration: 250,
+      useNativeDriver: false, // Can't use native driver for height/layout animations
     }).start();
   }, [sheetHeight, onPositionChange]);
 

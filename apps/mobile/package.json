@@ -41,7 +41,6 @@
     "expo-splash-screen": "~31.0.0",
     "expo-status-bar": "~3.0.0",
     "expo-web-browser": "~14.0.0",
-    "firebase": "^10.7.2",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-image-viewing": "^0.2.2",

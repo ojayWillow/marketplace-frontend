@@ -318,7 +318,8 @@ const MobileTasksView = () => {
 
       <div className="mobile-tasks-container">
         {/* TOP BAR - Menu + Notification Bell + Search + Radius */}
-        <div className="bg-white shadow-md z-50 flex-shrink-0">
+        {/* Higher z-index than map to ensure dropdowns appear above */}
+        <div className="bg-white shadow-md flex-shrink-0 relative" style={{ zIndex: 10000 }}>
           {/* Search Bar Row */}
           <div className="p-3 pb-2">
             <div className="flex gap-2 items-center">
@@ -406,8 +407,8 @@ const MobileTasksView = () => {
           </div>
         </div>
 
-        {/* MAP AREA */}
-        <div className="flex-1 relative" style={{ minHeight: '200px' }}>
+        {/* MAP AREA - Now takes full remaining height */}
+        <div className="flex-1 relative" style={{ zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
@@ -417,6 +418,9 @@ const MobileTasksView = () => {
             <TileLayer
               attribution="&copy; OpenStreetMap"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              keepBuffer={4}
+              updateWhenZooming={false}
+              updateWhenIdle={true}
             />
             <MapController
               lat={userLocation.lat}
@@ -424,6 +428,8 @@ const MobileTasksView = () => {
               radius={searchRadius}
               recenterTrigger={recenterTrigger}
               selectedTask={selectedTask}
+              isMenuOpen={isMenuOpen}
+              sheetPosition={sheetPosition}
             />
 
             {/* User Location Marker */}
@@ -459,11 +465,11 @@ const MobileTasksView = () => {
             })}
           </MapContainer>
 
-          {/* Floating Recenter Button */}
+          {/* Floating Recenter Button - Positioned above bottom sheet */}
           {!selectedTask && showJobList && (
             <div
               className="absolute right-4 z-[1000]"
-              style={{ bottom: '16px' }}
+              style={{ bottom: `${sheetHeight + 16}px`, transition: 'bottom 0.3s ease-out' }}
             >
               <button
                 onClick={handleRecenter}
@@ -498,14 +504,15 @@ const MobileTasksView = () => {
           )}
         </div>
 
-        {/* BOTTOM SHEET - Job List */}
+        {/* BOTTOM SHEET - Now a fixed overlay that slides over the map */}
         {!selectedTask && showJobList && (
           <div
-            className="bg-white rounded-t-3xl shadow-2xl flex-shrink-0 flex flex-col animate-slideUp"
+            className="fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
             style={{
               height: `${sheetHeight}px`,
               transition: isDragging ? 'none' : 'height 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+              zIndex: 100,
             }}
           >
             {/* Drag Handle Area */}

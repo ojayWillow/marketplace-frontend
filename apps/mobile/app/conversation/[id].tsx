@@ -10,6 +10,8 @@ import {
   TextInput as RNTextInput,
   Image as RNImage,
   Alert,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, ActivityIndicator, IconButton } from 'react-native-paper';
@@ -33,12 +35,12 @@ import { useLanguageStore } from '../../src/stores/languageStore';
 import { colors } from '../../src/theme';
 import Constants from 'expo-constants';
 
-// Import extracted components
-import { ConversationHeader } from './components/ConversationHeader';
-import { MessageBubble } from './components/MessageBubble';
-import { DateSeparator } from './components/DateSeparator';
-import { EmptyConversation } from './components/EmptyConversation';
-import { formatLastSeen, formatDateSeparator, needsDateSeparator } from './utils/messageFormatters';
+// Import extracted components from _components (ignored by Expo Router)
+import { ConversationHeader } from './_components/ConversationHeader';
+import { MessageBubble } from './_components/MessageBubble';
+import { DateSeparator } from './_components/DateSeparator';
+import { EmptyConversation } from './_components/EmptyConversation';
+import { formatLastSeen, formatDateSeparator, needsDateSeparator } from './_utils/messageFormatters';
 
 export default function ConversationScreen() {
   const { id, userId, username } = useLocalSearchParams<{ 
@@ -73,6 +75,20 @@ export default function ConversationScreen() {
 
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
 
+  // Handle app state changes - reconnect socket when app comes to foreground
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - force reconnect socket
+        console.log('[AppState] App active - reconnecting socket');
+        socketService.forceReconnect();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, []);
+
   // Create conversation if we have userId but no conversationId
   useEffect(() => {
     if (targetUserId && !conversationId && !isCreatingConversation) {
@@ -85,35 +101,37 @@ export default function ConversationScreen() {
         .catch((error) => {
           console.error('Failed to create conversation:', error);
           setIsCreatingConversation(false);
+          // Don't show error - silently handle
         });
     }
   }, [targetUserId, conversationId, isCreatingConversation]);
 
-  // Setup WebSocket connection
+  // Setup WebSocket connection - NEVER throws errors to UI
   useEffect(() => {
     if (!conversationId || !token) return;
 
     socketService.init(apiUrl);
 
     const connectSocket = async () => {
-      try {
-        await socketService.connect(token);
-        setSocketConnected(true);
-        await socketService.joinConversation(conversationId);
-        console.log('[Socket] Joined conversation:', conversationId);
-      } catch (error) {
-        console.error('[Socket] Connection failed:', error);
-        setSocketConnected(false);
-      }
+      // connect() never throws now - always resolves
+      await socketService.connect(token);
+      setSocketConnected(socketService.isConnected());
+      await socketService.joinConversation(conversationId);
+      console.log('[Socket] Setup complete for conversation:', conversationId);
     };
 
     connectSocket();
+
+    // Subscribe to connection state changes
+    const unsubscribeConnection = socketService.onConnectionStateChange((connected) => {
+      setSocketConnected(connected);
+    });
 
     return () => {
       if (conversationId) {
         socketService.leaveConversation(conversationId);
       }
-      setSocketConnected(false);
+      unsubscribeConnection();
     };
   }, [conversationId, token, apiUrl]);
 
@@ -163,22 +181,15 @@ export default function ConversationScreen() {
     if (!otherUserId) return;
 
     const requestStatus = () => {
-      if (socketService.isConnected()) {
-        console.log('[Socket] Requesting user status for:', otherUserId);
-        socketService.requestUserStatus(otherUserId);
-        return true;
-      }
-      return false;
+      // This now works even when offline - returns cached status
+      socketService.requestUserStatus(otherUserId);
     };
 
-    const requested = requestStatus();
+    // Request status immediately
+    requestStatus();
 
-    let retryTimer: NodeJS.Timeout | null = null;
-    if (!requested) {
-      retryTimer = setTimeout(() => {
-        requestStatus();
-      }, 500);
-    }
+    // Also request after a short delay in case socket is still connecting
+    const retryTimer = setTimeout(requestStatus, 500);
 
     const unsubscribe = socketService.onUserStatus(otherUserId, (data) => {
       console.log('[Socket] User status update:', data);
@@ -187,7 +198,7 @@ export default function ConversationScreen() {
     });
 
     return () => {
-      if (retryTimer) clearTimeout(retryTimer);
+      clearTimeout(retryTimer);
       unsubscribe();
     };
   }, [otherUserId, socketConnected]);
@@ -232,7 +243,9 @@ export default function ConversationScreen() {
   // Mark as read on mount
   useEffect(() => {
     if (conversationId && !accessDenied) {
-      markAsRead(conversationId).catch(console.error);
+      markAsRead(conversationId).catch(() => {
+        // Silently ignore - not critical
+      });
     }
   }, [conversationId, accessDenied]);
 
@@ -276,7 +289,7 @@ export default function ConversationScreen() {
     }
   };
 
-  // Send message mutation
+  // Send message mutation - NO ERROR ALERTS
   const sendMutation = useMutation({
     mutationFn: async ({ content, image }: { content: string; image?: ImagePicker.ImagePickerAsset }) => {
       if (!conversationId && targetUserId) {
@@ -302,8 +315,10 @@ export default function ConversationScreen() {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error: any) => {
-      console.error('Failed to send message:', error);
-      Alert.alert(t('conversation.sendError'), t('conversation.failedToSend'));
+      // Log error but DON'T show alert to user
+      console.log('[Message] Send failed (silent):', error?.message || error);
+      // Keep the message text so user can retry by pressing send again
+      // The mutation will auto-reset isPending so they can retry
     },
   });
 

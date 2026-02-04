@@ -12,6 +12,7 @@ import { useAuthStore } from '@marketplace/shared';
 import { useMatchingStore } from '@marketplace/shared';
 import { CATEGORY_OPTIONS } from '../../constants/categories';
 import CompactFilterBar from '../../components/ui/CompactFilterBar';
+import { SparklesCore } from '../../components/ui/SparklesCore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileTasksView from '../../components/MobileTasksView';
 import QuickHelpIntroModal from '../../components/QuickHelpIntroModal';
@@ -164,12 +165,32 @@ const DesktopTasksView = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
-        {/* Header */}
+        {/* Header with Kolab branding */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('tasks.title', 'Quick Help')}</h1>
-              <p className="text-gray-600">{t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰</p>
+            {/* Kolab title with sparkles */}
+            <div className="relative">
+              <h1 className="text-3xl font-bold relative z-10">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+                  Kolab
+                </span>
+              </h1>
+              <p className="text-gray-600 relative z-10">
+                {t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰
+              </p>
+              {/* Sparkles effect */}
+              <div className="absolute -inset-4 -top-2 pointer-events-none overflow-hidden" style={{ width: '180px', height: '70px' }}>
+                <SparklesCore
+                  id="kolab-sparkles"
+                  background="transparent"
+                  minSize={0.4}
+                  maxSize={1.2}
+                  particleDensity={50}
+                  particleColor="#8B5CF6"
+                  speed={0.3}
+                  className="w-full h-full"
+                />
+              </div>
             </div>
             <button
               onClick={() => setShowIntroModal(true)}
@@ -277,7 +298,7 @@ const DesktopTasksView = () => {
             </div>
           </div>
 
-          <div className="relative" style={{ height: '350px' }}>
+          <div className="relative" style={{ height: '500px' }}>
             <MapLoadingOverlay isLoading={refreshing} searchRadius={searchRadius} />
             <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

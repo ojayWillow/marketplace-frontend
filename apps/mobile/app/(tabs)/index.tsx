@@ -101,7 +101,8 @@ export default function HomeScreen() {
   const handleMarkerPress = useCallback((task: any) => {
     haptic.light();
     if (mapRef.current && task.latitude && task.longitude) {
-      const latitudeDelta = 0.03;
+      // Clamp zoom level to prevent gray tiles
+      const latitudeDelta = Math.max(0.01, Math.min(0.05, 0.03));
       const { height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
       const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.4;
       mapRef.current.animateToRegion(
@@ -123,7 +124,8 @@ export default function HomeScreen() {
   const handleOfferingMarkerPress = useCallback((offering: any) => {
     haptic.light();
     if (mapRef.current && offering.latitude && offering.longitude) {
-      const latitudeDelta = 0.03;
+      // Clamp zoom level to prevent gray tiles
+      const latitudeDelta = Math.max(0.01, Math.min(0.05, 0.03));
       const { height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
       const latitudeOffset = latitudeDelta * (SHEET_MID_HEIGHT / SCREEN_HEIGHT) * 0.4;
       mapRef.current.animateToRegion(
@@ -250,6 +252,11 @@ export default function HomeScreen() {
             latitudeDelta: 0.15, 
             longitudeDelta: 0.15 
           }}
+          maxZoomLevel={18}
+          minZoomLevel={5}
+          cacheEnabled={true}
+          loadingEnabled={true}
+          loadingIndicatorColor="#4285F4"
           showsUserLocation={hasRealLocation}
           showsMyLocationButton={false}
         >

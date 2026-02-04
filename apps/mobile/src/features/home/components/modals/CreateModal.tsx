@@ -1,11 +1,12 @@
 import React from 'react';
 import { Modal, TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, Button } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { router } from 'expo-router';
 import { haptic } from '../../../../../utils/haptics';
 import { useThemeStore } from '../../../../stores/themeStore';
 import { useLanguageStore } from '../../../../stores/languageStore';
+import { useAuthStore } from '@marketplace/shared';
 import { colors } from '../../../../theme';
 
 interface CreateModalProps {
@@ -24,8 +25,15 @@ export default function CreateModal({
 }: CreateModalProps) {
   const { getActiveTheme } = useThemeStore();
   const { t } = useLanguageStore();
+  const { isAuthenticated } = useAuthStore();
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
+
+  const handleSignIn = () => {
+    haptic.light();
+    onClose();
+    router.push('/(auth)/login');
+  };
 
   const localStyles = StyleSheet.create({
     overlay: {
@@ -118,6 +126,33 @@ export default function CreateModal({
       fontWeight: '600',
       color: themeColors.textSecondary,
     },
+    // Not authenticated styles
+    authContainer: {
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    authIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    authTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: themeColors.text,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    authSubtitle: {
+      fontSize: 14,
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 24,
+      lineHeight: 20,
+    },
+    signInButton: {
+      minWidth: 200,
+      borderRadius: 12,
+    },
   });
 
   return (
@@ -126,62 +161,93 @@ export default function CreateModal({
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { haptic.soft(); onClose(); }} />
         
         <View style={localStyles.container}>
-          {/* Header */}
-          <Text style={localStyles.title}>{t('home.createModal.title')}</Text>
-          <Text style={localStyles.subtitle}>{t('home.createModal.subtitle')}</Text>
-          
-          {/* POST JOB */}
-          <TouchableOpacity 
-            style={localStyles.optionCard} 
-            onPress={() => { haptic.light(); onCreateJob(); }} 
-            activeOpacity={0.85}
-          >
-            <LinearGradient
-              colors={['#0ea5e9', '#0369a1']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={localStyles.optionGradient}
-            />
-            <View style={localStyles.iconCircle}>
-              <Text style={localStyles.icon}>💼</Text>
-            </View>
-            <View style={localStyles.optionContent}>
-              <Text style={localStyles.optionTitle}>{t('home.createModal.postJob')}</Text>
-              <Text style={localStyles.optionDesc}>{t('home.createModal.postJobDesc')}</Text>
-            </View>
-            <Text style={localStyles.arrow}>›</Text>
-          </TouchableOpacity>
-          
-          {/* OFFER SERVICE */}
-          <TouchableOpacity 
-            style={localStyles.optionCard} 
-            onPress={() => { haptic.light(); onCreateService(); }} 
-            activeOpacity={0.85}
-          >
-            <LinearGradient
-              colors={['#f97316', '#c2410c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={localStyles.optionGradient}
-            />
-            <View style={localStyles.iconCircle}>
-              <Text style={localStyles.icon}>⚡</Text>
-            </View>
-            <View style={localStyles.optionContent}>
-              <Text style={localStyles.optionTitle}>{t('home.createModal.offerService')}</Text>
-              <Text style={localStyles.optionDesc}>{t('home.createModal.offerServiceDesc')}</Text>
-            </View>
-            <Text style={localStyles.arrow}>›</Text>
-          </TouchableOpacity>
-          
-          {/* Cancel */}
-          <TouchableOpacity 
-            style={localStyles.cancelButton} 
-            onPress={() => { haptic.soft(); onClose(); }}
-            activeOpacity={0.7}
-          >
-            <Text style={localStyles.cancelText}>{t('home.createModal.cancel')}</Text>
-          </TouchableOpacity>
+          {!isAuthenticated ? (
+            // Not authenticated - show sign in prompt
+            <>
+              <View style={localStyles.authContainer}>
+                <Text style={localStyles.authIcon}>🔐</Text>
+                <Text style={localStyles.authTitle}>{t('home.createModal.signInRequired')}</Text>
+                <Text style={localStyles.authSubtitle}>{t('home.createModal.signInText')}</Text>
+                <Button 
+                  mode="contained" 
+                  onPress={handleSignIn}
+                  style={localStyles.signInButton}
+                  buttonColor={themeColors.primaryAccent}
+                >
+                  {t('home.createModal.signInButton')}
+                </Button>
+              </View>
+              
+              {/* Cancel */}
+              <TouchableOpacity 
+                style={localStyles.cancelButton} 
+                onPress={() => { haptic.soft(); onClose(); }}
+                activeOpacity={0.7}
+              >
+                <Text style={localStyles.cancelText}>{t('home.createModal.cancel')}</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // Authenticated - show create options
+            <>
+              {/* Header */}
+              <Text style={localStyles.title}>{t('home.createModal.title')}</Text>
+              <Text style={localStyles.subtitle}>{t('home.createModal.subtitle')}</Text>
+              
+              {/* POST JOB */}
+              <TouchableOpacity 
+                style={localStyles.optionCard} 
+                onPress={() => { haptic.light(); onCreateJob(); }} 
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={['#0ea5e9', '#0369a1']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={localStyles.optionGradient}
+                />
+                <View style={localStyles.iconCircle}>
+                  <Text style={localStyles.icon}>💼</Text>
+                </View>
+                <View style={localStyles.optionContent}>
+                  <Text style={localStyles.optionTitle}>{t('home.createModal.postJob')}</Text>
+                  <Text style={localStyles.optionDesc}>{t('home.createModal.postJobDesc')}</Text>
+                </View>
+                <Text style={localStyles.arrow}>›</Text>
+              </TouchableOpacity>
+              
+              {/* OFFER SERVICE */}
+              <TouchableOpacity 
+                style={localStyles.optionCard} 
+                onPress={() => { haptic.light(); onCreateService(); }} 
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={['#f97316', '#c2410c']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={localStyles.optionGradient}
+                />
+                <View style={localStyles.iconCircle}>
+                  <Text style={localStyles.icon}>⚡</Text>
+                </View>
+                <View style={localStyles.optionContent}>
+                  <Text style={localStyles.optionTitle}>{t('home.createModal.offerService')}</Text>
+                  <Text style={localStyles.optionDesc}>{t('home.createModal.offerServiceDesc')}</Text>
+                </View>
+                <Text style={localStyles.arrow}>›</Text>
+              </TouchableOpacity>
+              
+              {/* Cancel */}
+              <TouchableOpacity 
+                style={localStyles.cancelButton} 
+                onPress={() => { haptic.soft(); onClose(); }}
+                activeOpacity={0.7}
+              >
+                <Text style={localStyles.cancelText}>{t('home.createModal.cancel')}</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     </Modal>

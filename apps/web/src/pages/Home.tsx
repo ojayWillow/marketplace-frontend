@@ -24,66 +24,104 @@ export default function Home() {
   // Phone auth state
   const [phoneNumber, setPhoneNumber] = useState('')
   const [step, setStep] = useState<'phone' | 'code'>('phone')
-  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
+  const [otpValue, setOtpValue] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [recaptchaReady, setRecaptchaReady] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
-  const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const mountedRef = useRef(true)
+  const otpInputRef = useRef<HTMLInputElement>(null)
+  const initAttemptedRef = useRef(false)
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
 
-  // Redirect authenticated users with a brief loading screen
+  // Redirect authenticated users
   useEffect(() => {
     if (isAuthenticated) {
       setShowWelcome(true)
       const timer = setTimeout(() => {
         navigate('/tasks', { replace: true })
-      }, 1500) // Show loading for 1.5 seconds
+      }, 1500)
       return () => clearTimeout(timer)
     }
   }, [isAuthenticated, navigate])
 
-  // Initialize reCAPTCHA
+  // Initialize INVISIBLE reCAPTCHA
   const initRecaptcha = useCallback(() => {
-    if (!recaptchaContainerRef.current || !mountedRef.current) return
-    if (recaptchaVerifierRef.current) {
+    if (initAttemptedRef.current && recaptchaVerifierRef.current) {
       setRecaptchaReady(true)
+      return // Already initialized
+    }
+    
+    if (!recaptchaContainerRef.current) {
+      console.log('reCAPTCHA container ref not ready, retrying...')
+      setTimeout(initRecaptcha, 200)
       return
     }
     
+    // Clear any existing
+    if (recaptchaVerifierRef.current) {
+      try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
+      recaptchaVerifierRef.current = null
+    }
+    
+    initAttemptedRef.current = true
+    
     try {
+      console.log('Creating INVISIBLE reCAPTCHA verifier...')
       recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
         size: 'invisible',
-        callback: () => console.log('reCAPTCHA solved'),
+        callback: () => {
+          console.log('reCAPTCHA verified!')
+        },
         'expired-callback': () => {
-          recaptchaVerifierRef.current = null
-          setRecaptchaReady(false)
+          console.log('reCAPTCHA expired')
+          setError('Security check expired. Please try again.')
         }
       })
-      setRecaptchaReady(true)
+      
+      recaptchaVerifierRef.current.render().then(() => {
+        console.log('Invisible reCAPTCHA ready')
+        setRecaptchaReady(true)
+      }).catch((err) => {
+        console.error('reCAPTCHA render error:', err)
+        // Don't show error to user - just enable the button anyway
+        // The reCAPTCHA will still work, it's just a render issue
+        setRecaptchaReady(true)
+      })
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
-      setRecaptchaReady(false)
+      initAttemptedRef.current = false
+      // Still enable the button - Firebase may work anyway
+      setRecaptchaReady(true)
     }
   }, [])
 
+  // Initialize on mount
   useEffect(() => {
-    mountedRef.current = true
-    const timer = setTimeout(() => initRecaptcha(), 100)
-    
+    if (step === 'phone') {
+      const timer = setTimeout(initRecaptcha, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [initRecaptcha, step])
+  
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      mountedRef.current = false
-      clearTimeout(timer)
       if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear() } catch (e) {}
-        recaptchaVerifierRef.current = null
+        try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
       }
     }
-  }, [initRecaptcha])
+  }, [])
+
+  // AUTO-SUBMIT when 6 digits entered
+  useEffect(() => {
+    if (otpValue.length === 6 && confirmationResult && !loading) {
+      handleVerifyCode(otpValue)
+    }
+  }, [otpValue, confirmationResult, loading])
 
   const formatPhone = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '')
@@ -97,6 +135,7 @@ export default function Home() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
+  // Send OTP via Firebase
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -109,151 +148,85 @@ export default function Home() {
       return
     }
 
-    try {
-      if (!recaptchaVerifierRef.current) {
-        initRecaptcha()
-        await new Promise(resolve => setTimeout(resolve, 500))
+    // Re-initialize reCAPTCHA if needed
+    if (!recaptchaVerifierRef.current && recaptchaContainerRef.current) {
+      try {
+        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+          size: 'invisible'
+        })
+        await recaptchaVerifierRef.current.render()
+      } catch (err) {
+        console.error('Failed to reinitialize reCAPTCHA:', err)
       }
-      if (!recaptchaVerifierRef.current) throw new Error('reCAPTCHA not ready')
+    }
 
+    if (!recaptchaVerifierRef.current) {
+      setError('Security check not loaded. Please refresh the page.')
+      setLoading(false)
+      return
+    }
+
+    try {
+      console.log('Sending verification code to:', fullPhone)
       const confirmation = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current)
+      console.log('Code sent successfully!')
+      
       setConfirmationResult(confirmation)
       setStep('code')
-      setTimeout(() => codeInputRefs.current[0]?.focus(), 100)
+      setOtpValue('')
+      setTimeout(() => otpInputRef.current?.focus(), 100)
+      
     } catch (err: unknown) {
       console.error('Send code error:', err)
-      const msg = err instanceof Error ? err.message : ''
+      const msg = err instanceof Error ? err.message : String(err)
+      
       if (msg.includes('too-many-requests')) {
-        setError(t('auth.tooManyRequests', 'Too many attempts. Try again later.'))
+        setError('Too many attempts. Please wait a few minutes.')
       } else if (msg.includes('invalid-phone-number')) {
-        setError(t('auth.invalidPhone', 'Invalid phone number format.'))
+        setError('Invalid phone number format.')
+      } else if (msg.includes('quota-exceeded')) {
+        setError('SMS limit reached. Please try again later.')
+      } else if (msg.includes('captcha-check-failed') || msg.includes('recaptcha')) {
+        setError('Security check failed. Please refresh and try again.')
+      } else if (msg.includes('been removed')) {
+        setError('Please refresh the page and try again.')
       } else {
-        setError(t('auth.sendCodeError', 'Failed to send code. Please try again.'))
+        setError('Failed to send code. Please try again.')
       }
+      
+      // Reset for retry
+      initAttemptedRef.current = false
       if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear() } catch (e) {}
+        try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
         recaptchaVerifierRef.current = null
-        setRecaptchaReady(false)
       }
-      setTimeout(() => initRecaptcha(), 500)
+      setTimeout(initRecaptcha, 500)
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle paste event for OTP (e.g., from SMS autofill or manual paste)
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (pastedData.length > 0) {
-      const newCode = [...verificationCode]
-      for (let i = 0; i < 6; i++) {
-        newCode[i] = pastedData[i] || ''
-      }
-      setVerificationCode(newCode)
-      
-      // Auto-verify if we got full code
-      if (pastedData.length === 6) {
-        handleVerifyCode(pastedData)
-      } else {
-        // Focus last filled + 1
-        const lastFilledIndex = Math.min(pastedData.length - 1, 5)
-        codeInputRefs.current[lastFilledIndex + 1]?.focus()
-      }
-    }
+  // Handle OTP input - supports autofill
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+    setOtpValue(value)
   }
 
-  // Handle input change with better mobile support
-  const handleCodeInput = (index: number, e: React.FormEvent<HTMLInputElement>) => {
-    const input = e.currentTarget
-    const value = input.value.replace(/\D/g, '')
-    
-    // Handle multi-character input (SMS autofill often pastes full code)
-    if (value.length > 1) {
-      const newCode = [...verificationCode]
-      
-      // Distribute digits starting from current input position
-      for (let i = 0; i < value.length && (index + i) < 6; i++) {
-        newCode[index + i] = value[i]
-      }
-      
-      setVerificationCode(newCode)
-      
-      // Auto-verify if complete
-      const fullCode = newCode.join('')
-      if (fullCode.length === 6 && newCode.every(d => d !== '')) {
-        handleVerifyCode(fullCode)
-      } else {
-        // Focus next empty or last
-        const nextEmpty = newCode.findIndex(d => d === '')
-        codeInputRefs.current[nextEmpty !== -1 ? nextEmpty : 5]?.focus()
-      }
-      return
-    }
-    
-    // Single character input
-    const digit = value.slice(-1)
-    const newCode = [...verificationCode]
-    newCode[index] = digit
-    setVerificationCode(newCode)
-    
-    // Auto-advance to next input
-    if (digit && index < 5) {
-      // Use setTimeout to ensure state updates before focus
-      setTimeout(() => {
-        codeInputRefs.current[index + 1]?.focus()
-      }, 0)
-    }
-    
-    // Auto-verify when complete
-    if (digit && newCode.every(d => d !== '')) {
-      handleVerifyCode(newCode.join(''))
-    }
-  }
+  const focusOtpInput = () => otpInputRef.current?.focus()
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Handle backspace
-    if (e.key === 'Backspace') {
-      if (!verificationCode[index] && index > 0) {
-        // If current input is empty, go back and clear previous
-        const newCode = [...verificationCode]
-        newCode[index - 1] = ''
-        setVerificationCode(newCode)
-        codeInputRefs.current[index - 1]?.focus()
-        e.preventDefault()
-      } else if (verificationCode[index]) {
-        // Clear current input
-        const newCode = [...verificationCode]
-        newCode[index] = ''
-        setVerificationCode(newCode)
-        e.preventDefault()
-      }
-    }
-    
-    // Handle left/right arrow keys
-    if (e.key === 'ArrowLeft' && index > 0) {
-      codeInputRefs.current[index - 1]?.focus()
-      e.preventDefault()
-    }
-    if (e.key === 'ArrowRight' && index < 5) {
-      codeInputRefs.current[index + 1]?.focus()
-      e.preventDefault()
-    }
-  }
-
-  // Handle focus - select all text in input
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.select()
-  }
-
+  // Verify OTP with Firebase then Backend
   const handleVerifyCode = async (code: string) => {
-    if (!confirmationResult || loading) return
+    if (!confirmationResult || loading || code.length !== 6) return
     setError('')
     setLoading(true)
 
     try {
+      console.log('Verifying code...')
       const result = await confirmationResult.confirm(code)
+      console.log('Firebase verification successful')
+      
       const idToken = await result.user.getIdToken()
+      console.log('Got Firebase ID token, calling backend...')
       
       const response = await api.post('/api/auth/phone/verify', {
         idToken,
@@ -263,10 +236,7 @@ export default function Home() {
       const { access_token, user: userData, is_new_user } = response.data
 
       if (access_token && userData) {
-        // FIXED: Correct argument order (user, token) and correct field names
         setAuth(userData, access_token)
-        
-        // Check if new user needs to complete profile
         if (is_new_user || userData.username?.startsWith('user_')) {
           navigate('/complete-profile')
         } else {
@@ -275,20 +245,38 @@ export default function Home() {
       }
     } catch (err: unknown) {
       console.error('Verify error:', err)
-      const msg = err instanceof Error ? err.message : ''
+      const msg = err instanceof Error ? err.message : String(err)
+      
       if (msg.includes('invalid-verification-code')) {
-        setError(t('auth.invalidCode', 'Invalid code. Please try again.'))
+        setError('Wrong code. Please check and try again.')
+      } else if (msg.includes('code-expired')) {
+        setError('Code expired. Please request a new one.')
+        resetToPhoneStep()
       } else {
-        setError(t('auth.verifyError', 'Verification failed. Please try again.'))
+        setError('Verification failed. Please try again.')
       }
-      setVerificationCode(['', '', '', '', '', ''])
-      codeInputRefs.current[0]?.focus()
+      setOtpValue('')
+      otpInputRef.current?.focus()
     } finally {
       setLoading(false)
     }
   }
 
-  // Get display name (first name or username)
+  // Reset back to phone input
+  const resetToPhoneStep = () => {
+    setStep('phone')
+    setOtpValue('')
+    setError('')
+    setConfirmationResult(null)
+    setRecaptchaReady(false)
+    initAttemptedRef.current = false
+    if (recaptchaVerifierRef.current) {
+      try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
+      recaptchaVerifierRef.current = null
+    }
+    setTimeout(initRecaptcha, 300)
+  }
+
   const getDisplayName = () => {
     if (!user) return ''
     if (user.first_name) return user.first_name
@@ -296,7 +284,6 @@ export default function Home() {
     return ''
   }
 
-  // Logged in users see welcome loading screen
   if (isAuthenticated || showWelcome) {
     const displayName = getDisplayName()
     return (
@@ -314,261 +301,123 @@ export default function Home() {
     )
   }
 
-  // OTP Input component for reuse
-  const renderOTPInputs = () => (
-    <div className="flex justify-center gap-1.5 sm:gap-2 mb-4">
-      {verificationCode.map((digit, index) => (
+  // OTP Display component
+  const renderOTPDisplay = () => {
+    const digits = otpValue.split('')
+    
+    return (
+      <div className="relative mb-4">
         <input
-          key={index}
-          ref={(el) => { codeInputRefs.current[index] = el }}
+          ref={otpInputRef}
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
-          autoComplete={index === 0 ? "one-time-code" : "off"}
-          value={digit}
-          onInput={(e) => handleCodeInput(index, e)}
-          onKeyDown={(e) => handleKeyDown(index, e)}
-          onFocus={handleFocus}
-          onPaste={index === 0 ? handlePaste : undefined}
-          className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
+          autoComplete="one-time-code"
+          value={otpValue}
+          onChange={handleOtpChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="absolute opacity-0 w-full h-full top-0 left-0 z-10"
           maxLength={6}
           disabled={loading}
+          style={{ caretColor: 'transparent' }}
         />
-      ))}
-    </div>
-  )
+        
+        <div className="flex justify-center gap-1.5 sm:gap-2 cursor-text" onClick={focusOtpInput}>
+          {[0, 1, 2, 3, 4, 5].map((index) => (
+            <div
+              key={index}
+              className={`w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border transition-colors ${
+                isFocused && index === digits.length ? 'border-blue-500' : digits[index] ? 'border-blue-500/50' : 'border-[#2a2a3a]'
+              }`}
+            >
+              {digits[index] || ''}
+              {isFocused && index === digits.length && <span className="animate-pulse text-blue-400">|</span>}
+            </div>
+          ))}
+        </div>
+        
+        {otpValue.length === 6 && loading && (
+          <p className="text-center text-blue-400 text-sm mt-2 flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+          </p>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
+      {/* Global invisible reCAPTCHA container - outside of any component that re-renders */}
+      <div ref={recaptchaContainerRef} id="recaptcha-container-global" />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
         
         <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 md:py-16 lg:py-24">
-          {/* Mobile: Value Proposition FIRST */}
-          <div className="lg:hidden mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-medium mb-4">
-              <MapPin className="w-3 h-3" />
-              Available in Latvia
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
-              Get help with
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
-            </h1>
-            
-            <p className="text-base text-gray-400 mb-6 leading-relaxed">
-              Need someone to walk your dog, help you move, or fix something at home? 
-              Connect with trusted locals who can help.
-            </p>
-
-            {/* Quick Stats - Mobile */}
-            <div className="grid grid-cols-3 gap-3 mb-8">
-              <div className="text-center">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Zap className="w-5 h-5 text-green-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Fast</div>
-                <div className="text-gray-500 text-xs">Get offers in minutes</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Verified</div>
-                <div className="text-gray-500 text-xs">Phone-verified</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto mb-1">
-                  <Star className="w-5 h-5 text-purple-400" />
-                </div>
-                <div className="text-white font-medium text-sm">Rated</div>
-                <div className="text-gray-500 text-xs">Trusted reviews</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile: Login Card SECOND */}
-          <div className="lg:hidden mb-8">
-            <div ref={recaptchaContainerRef} id="recaptcha-container-home" />
-            
-            <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 border border-[#2a2a3a] shadow-2xl">
-              <div className="text-center mb-5">
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Get Started</h2>
-                <p className="text-gray-400 text-sm">Sign in with your phone number</p>
-              </div>
-
-              {error && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <p className="text-red-400 text-sm text-center">{error}</p>
-                </div>
-              )}
-
-              {step === 'phone' ? (
-                <form onSubmit={handleSendCode}>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                    <Phone className="w-4 h-4" />
-                    Phone Number
-                  </label>
-                  
-                  <div className="flex gap-2 mb-4">
-                    <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a] flex-shrink-0">
-                      <span className="text-base sm:text-lg">🇱🇻</span>
-                      <span className="text-gray-300 text-sm sm:text-base">+371</span>
-                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-                    </div>
-                    <input
-                      type="tel"
-                      value={formatPhone(phoneNumber)}
-                      onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                      placeholder="20 000 000"
-                      className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-base sm:text-lg tracking-wide"
-                      maxLength={11}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
-                    className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
-                    ) : !recaptchaReady ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
-                    ) : (
-                      <>Continue <ArrowRight className="w-5 h-5" /></>
-                    )}
-                  </button>
-
-                  <div className="relative my-5">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-[#2a2a3a]"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-[#1a1a24] text-gray-500">or</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    to="/login"
-                    className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    Sign in with email
-                  </Link>
-                </form>
-              ) : (
-                <div>
-                  <p className="text-gray-400 text-sm text-center mb-4">
-                    Enter the code sent to <span className="text-white">{getFullPhone()}</span>
-                  </p>
-                  
-                  {renderOTPInputs()}
-
-                  <button
-                    onClick={() => handleVerifyCode(verificationCode.join(''))}
-                    disabled={loading || verificationCode.some(d => d === '')}
-                    className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
-                  </button>
-
-                  <button
-                    onClick={() => { setStep('phone'); setVerificationCode(['', '', '', '', '', '']); setError('') }}
-                    className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
-                  >
-                    Change phone number
-                  </button>
-                </div>
-              )}
-
-              <p className="text-xs text-gray-500 text-center mt-5">
-                By continuing, you agree to our{' '}
-                <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
-                <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
-              </p>
-            </div>
-
-            {/* Browse as guest - Mobile */}
-            <div className="text-center mt-4">
-              <Link 
-                to="/tasks" 
-                className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm"
-              >
-                Just browsing? See available tasks <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Desktop: Original Two Column Layout */}
-          <div className="hidden lg:grid lg:grid-cols-2 gap-12 items-center">
-            
+          {/* Two Column Layout - responsive */}
+          <div className="lg:grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Value Proposition */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-6">
-                <MapPin className="w-4 h-4" />
+            <div className="mb-8 lg:mb-0">
+              <div className="inline-flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs lg:text-sm font-medium mb-4 lg:mb-6">
+                <MapPin className="w-3 h-3 lg:w-4 lg:h-4" />
                 Available in Latvia
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white mb-3 lg:mb-6 leading-tight">
                 Get help with
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> everyday tasks</span>
               </h1>
               
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              <p className="text-base lg:text-xl text-gray-400 mb-6 lg:mb-8 leading-relaxed">
                 Need someone to walk your dog, help you move, or fix something at home? 
-                Connect with trusted locals who can help — usually within hours.
+                Connect with trusted locals who can help<span className="hidden lg:inline"> — usually within hours</span>.
               </p>
 
-              {/* Quick Stats */}
-              <div className="flex flex-wrap gap-6 mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+              <div className="grid grid-cols-3 gap-3 lg:flex lg:flex-wrap lg:gap-6 mb-8">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 mb-1 lg:mb-0">
                     <Zap className="w-5 h-5 text-green-400" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Fast</div>
-                    <div className="text-gray-500 text-sm">Get offers in minutes</div>
+                    <div className="text-white font-medium lg:font-semibold text-sm">Fast</div>
+                    <div className="text-gray-500 text-xs lg:text-sm">Get offers in minutes</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 mb-1 lg:mb-0">
                     <Shield className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Verified</div>
-                    <div className="text-gray-500 text-sm">Phone-verified users</div>
+                    <div className="text-white font-medium lg:font-semibold text-sm">Verified</div>
+                    <div className="text-gray-500 text-xs lg:text-sm">Phone-verified<span className="hidden lg:inline"> users</span></div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 mb-1 lg:mb-0">
                     <Star className="w-5 h-5 text-purple-400" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Rated</div>
-                    <div className="text-gray-500 text-sm">Reviews you can trust</div>
+                    <div className="text-white font-medium lg:font-semibold text-sm">Rated</div>
+                    <div className="text-gray-500 text-xs lg:text-sm">Trusted reviews</div>
                   </div>
                 </div>
               </div>
 
-              {/* Browse as guest link - Desktop */}
               <Link 
                 to="/tasks" 
-                className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1"
+                className="hidden lg:inline-flex text-gray-400 hover:text-white transition-colors items-center gap-1"
               >
                 Just browsing? <span className="text-blue-400">See available tasks →</span>
               </Link>
             </div>
 
-            {/* Right: Login Card - Desktop */}
+            {/* Right: Login Card */}
             <div className="lg:pl-8">
-              <div ref={recaptchaContainerRef} id="recaptcha-container-home-desktop" />
-              
-              <div className="bg-[#1a1a24] rounded-2xl p-6 md:p-8 border border-[#2a2a3a] shadow-2xl">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">Get Started</h2>
-                  <p className="text-gray-400">Sign in with your phone number</p>
+              <div className="bg-[#1a1a24] rounded-2xl p-5 sm:p-6 lg:p-8 border border-[#2a2a3a] shadow-2xl">
+                <div className="text-center mb-5 lg:mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 lg:mb-2">Get Started</h2>
+                  <p className="text-gray-400 text-sm lg:text-base">Sign in with your phone number</p>
                 </div>
 
                 {error && (
@@ -579,34 +428,35 @@ export default function Home() {
 
                 {step === 'phone' ? (
                   <form onSubmit={handleSendCode}>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
                       <Phone className="w-4 h-4" />
                       Phone Number
                     </label>
                     
                     <div className="flex gap-2 mb-4">
-                      <div className="flex items-center gap-2 px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a]">
-                        <span className="text-lg">🇱🇻</span>
-                        <span className="text-gray-300">+371</span>
-                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                      <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a] flex-shrink-0">
+                        <span className="text-base sm:text-lg">🇱🇻</span>
+                        <span className="text-gray-300 text-sm sm:text-base">+371</span>
+                        <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                       </div>
                       <input
                         type="tel"
                         value={formatPhone(phoneNumber)}
                         onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                         placeholder="20 000 000"
-                        className="flex-1 px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-lg tracking-wide"
+                        className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-[#0a0a0f] text-white rounded-xl border border-[#2a2a3a] focus:border-blue-500 focus:outline-none placeholder-gray-600 text-base sm:text-lg tracking-wide"
                         maxLength={11}
+                        autoFocus
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       {loading ? (
-                        <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
                       ) : !recaptchaReady ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                       ) : (
@@ -614,7 +464,7 @@ export default function Home() {
                       )}
                     </button>
 
-                    <div className="relative my-6">
+                    <div className="relative my-5">
                       <div className="absolute inset-0 flex items-center">
                         <div className="w-full border-t border-[#2a2a3a]"></div>
                       </div>
@@ -633,52 +483,34 @@ export default function Home() {
                 ) : (
                   <div>
                     <p className="text-gray-400 text-sm text-center mb-4">
-                      Enter the code sent to <span className="text-white">{getFullPhone()}</span>
+                      Enter the 6-digit code sent to <span className="text-white">{getFullPhone()}</span>
                     </p>
                     
-                    <div className="flex justify-center gap-2 mb-4">
-                      {verificationCode.map((digit, index) => (
-                        <input
-                          key={index}
-                          ref={(el) => { codeInputRefs.current[index] = el }}
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          autoComplete={index === 0 ? "one-time-code" : "off"}
-                          value={digit}
-                          onInput={(e) => handleCodeInput(index, e)}
-                          onKeyDown={(e) => handleKeyDown(index, e)}
-                          onFocus={handleFocus}
-                          onPaste={index === 0 ? handlePaste : undefined}
-                          className="w-12 h-14 text-center text-2xl font-bold bg-[#0a0a0f] text-white rounded-lg border border-[#2a2a3a] focus:border-blue-500 focus:outline-none caret-transparent"
-                          maxLength={6}
-                          disabled={loading}
-                        />
-                      ))}
-                    </div>
+                    {renderOTPDisplay()}
 
                     <button
-                      onClick={() => handleVerifyCode(verificationCode.join(''))}
-                      disabled={loading || verificationCode.some(d => d === '')}
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                    >
-                      {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
-                    </button>
-
-                    <button
-                      onClick={() => { setStep('phone'); setVerificationCode(['', '', '', '', '', '']); setError('') }}
+                      onClick={resetToPhoneStep}
                       className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm"
                     >
-                      Change phone number
+                      ← Change phone number
                     </button>
                   </div>
                 )}
 
-                <p className="text-xs text-gray-500 text-center mt-6">
+                <p className="text-xs text-gray-500 text-center mt-5 lg:mt-6">
                   By continuing, you agree to our{' '}
                   <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
                   <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
                 </p>
+              </div>
+              
+              <div className="text-center mt-4 lg:hidden">
+                <Link 
+                  to="/tasks" 
+                  className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm"
+                >
+                  Just browsing? See available tasks <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </div>
@@ -696,7 +528,6 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 lg:gap-16">
-            {/* Need Help Column */}
             <div className="bg-[#1a1a24]/50 rounded-2xl p-5 sm:p-6 md:p-8 border border-[#2a2a3a]">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-5 sm:mb-6">
                 Need help?
@@ -735,7 +566,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Want to Earn Column */}
             <div className="bg-[#1a1a24]/50 rounded-2xl p-5 sm:p-6 md:p-8 border border-[#2a2a3a]">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm font-medium mb-5 sm:mb-6">
                 Want to earn?

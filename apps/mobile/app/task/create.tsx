@@ -373,6 +373,7 @@ export default function CreateTaskScreen() {
           options={{ 
             headerShown: true, 
             title: t('task.create.title'),
+            headerBackTitle: '',
             headerStyle: { backgroundColor: themeColors.card },
             headerTintColor: themeColors.primaryAccent,
             headerTitleStyle: { color: themeColors.text },
