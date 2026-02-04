@@ -418,6 +418,9 @@ const MobileTasksView = () => {
             <TileLayer
               attribution="&copy; OpenStreetMap"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              keepBuffer={4}
+              updateWhenZooming={false}
+              updateWhenIdle={true}
             />
             <MapController
               lat={userLocation.lat}
@@ -425,6 +428,8 @@ const MobileTasksView = () => {
               radius={searchRadius}
               recenterTrigger={recenterTrigger}
               selectedTask={selectedTask}
+              isMenuOpen={isMenuOpen}
+              sheetPosition={sheetPosition}
             />
 
             {/* User Location Marker */}

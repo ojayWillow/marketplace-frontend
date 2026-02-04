@@ -23,6 +23,13 @@ interface SlideOutMenuProps {
 }
 
 /**
+ * Get scrollbar width to compensate for layout shift when locking scroll
+ */
+const getScrollbarWidth = (): number => {
+  return window.innerWidth - document.documentElement.clientWidth;
+};
+
+/**
  * Slide-out navigation menu with language switcher
  * Note: Notification badges removed - using dedicated NotificationBell component instead
  */
@@ -53,6 +60,26 @@ const SlideOutMenu = ({
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+
+  // Lock body scroll when menu is open to prevent layout shift
+  useEffect(() => {
+    if (isOpen) {
+      const scrollbarWidth = getScrollbarWidth();
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      
+      // Lock scroll and compensate for scrollbar width to prevent layout shift
+      document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [isOpen]);
 
   // Check for PWA install capability
   useEffect(() => {
