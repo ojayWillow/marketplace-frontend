@@ -16,7 +16,6 @@ interface SlideOutMenuProps {
   user: any;
   onLogout: () => void;
   navigate: (path: string) => void;
-  onShowIntro: () => void;
   // These props are kept for backwards compatibility but no longer used for badges
   unreadMessages?: number;
   newApplications?: number;
@@ -40,7 +39,6 @@ const SlideOutMenu = ({
   user,
   onLogout,
   navigate,
-  onShowIntro,
 }: SlideOutMenuProps) => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
@@ -163,11 +161,6 @@ const SlideOutMenu = ({
 
   const handleLanguageChange = (langCode: string) => {
     i18n.changeLanguage(langCode);
-  };
-
-  const handleShowIntro = () => {
-    onShowIntro();
-    onClose();
   };
 
   const handleInstallClick = async () => {
@@ -384,17 +377,6 @@ const SlideOutMenu = ({
               </span>
             </button>
           )}
-
-          {/* How it Works */}
-          <button
-            onClick={handleShowIntro}
-            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-          >
-            <span className="text-lg">❓</span>
-            <span className="font-medium text-sm text-gray-700">
-              {t('menu.howItWorks', 'How it works')}
-            </span>
-          </button>
 
           {/* Logout */}
           {isAuthenticated && (
