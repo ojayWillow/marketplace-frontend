@@ -200,17 +200,6 @@ export const NotificationBell = ({
           )}
         </div>
       )}
-      
-      {/* View All Link */}
-      <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 px-4 pb-1">
-        <button
-          onClick={() => handleNotificationClick('/notifications')}
-          className="block w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-          role="menuitem"
-        >
-          {t('notifications.viewAll', 'View all notifications')} →
-        </button>
-      </div>
     </div>
   );
 
