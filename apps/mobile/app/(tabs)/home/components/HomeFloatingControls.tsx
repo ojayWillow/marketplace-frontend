@@ -1,20 +1,13 @@
 import { View, TouchableOpacity, TextInput } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { HomeCategoryButton } from './HomeCategoryButton';
 import { HomeSearchBar } from './HomeSearchBar';
-import { JOB_COLOR } from '../../../../src/features/home/constants';
 
 interface HomeFloatingControlsProps {
-  getCategoryButtonText: () => string;
-  hasActiveCategory: boolean;
-  hasActiveFilters: boolean;
   searchQuery: string;
   onSearchChange: (text: string) => void;
   onSearchClear: () => void;
   showSearchLoading: boolean;
-  onCategoryPress: () => void;
-  onFiltersPress: () => void;
   blurTint: 'light' | 'dark';
   topInset: number;
   styles: any;
@@ -22,15 +15,10 @@ interface HomeFloatingControlsProps {
 }
 
 export function HomeFloatingControls({
-  getCategoryButtonText,
-  hasActiveCategory,
-  hasActiveFilters,
   searchQuery,
   onSearchChange,
   onSearchClear,
   showSearchLoading,
-  onCategoryPress,
-  onFiltersPress,
   blurTint,
   topInset,
   styles,
@@ -40,19 +28,12 @@ export function HomeFloatingControls({
     <View 
       style={[
         styles.floatingHeader, 
-        { paddingTop: topInset }
+        { paddingTop: topInset + 8 }
       ]} 
       collapsable={false}
     >
+      {/* Just search bar centered */}
       <View style={styles.topRow}>
-        <HomeCategoryButton
-          text={getCategoryButtonText()}
-          isActive={hasActiveCategory}
-          onPress={onCategoryPress}
-          blurTint={blurTint}
-          styles={styles}
-        />
-
         <HomeSearchBar
           searchQuery={searchQuery}
           onChangeText={onSearchChange}
@@ -62,17 +43,6 @@ export function HomeFloatingControls({
           styles={styles}
           searchInputRef={searchInputRef}
         />
-
-        <TouchableOpacity 
-          style={styles.filtersButton}
-          onPress={onFiltersPress}
-          activeOpacity={0.7}
-        >
-          <BlurView intensity={80} tint={blurTint} style={styles.filtersBlur}>
-            <Icon name="tune" size={20} color={hasActiveFilters ? JOB_COLOR : styles.categoryButtonText.color} />
-            {hasActiveFilters && <View style={styles.filterDot} />}
-          </BlurView>
-        </TouchableOpacity>
       </View>
     </View>
   );
