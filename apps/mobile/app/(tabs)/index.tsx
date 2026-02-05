@@ -28,8 +28,7 @@ import { applyOverlapOffset } from '../../src/features/home/utils/markerHelpers'
 import { HomeFloatingControls, HomeMapMarkers, HomeBottomSheet } from './home/components';
 
 // Modals
-import CategoryModal from '../../src/features/home/components/modals/CategoryModal';
-import FiltersModal from '../../src/features/home/components/modals/FiltersModal';
+import UnifiedFiltersModal from '../../src/features/home/components/modals/UnifiedFiltersModal';
 import CreateModal from '../../src/features/home/components/modals/CreateModal';
 
 export default function HomeScreen() {
@@ -63,7 +62,6 @@ export default function HomeScreen() {
   // UI State
   const [focusedOffering, setFocusedOffering] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
   const [sheetPosition, setSheetPosition] = useState<'min' | 'mid' | 'max'>('min');
@@ -190,6 +188,13 @@ export default function HomeScreen() {
     Keyboard.dismiss();
   }, [clearSearch]);
 
+  const handleClearAllFilters = useCallback(() => {
+    setSelectedCategories([]);
+    setSelectedRadius(null);
+    setSelectedDifficulty(null);
+    setFocusedTaskId(null);
+  }, [setSelectedCategories, setSelectedRadius, setSelectedDifficulty]);
+
   // Memoized data transformations
   const allTasks = useMemo(() => {
     if (debouncedSearchQuery.trim() && searchData) return searchData;
@@ -229,14 +234,8 @@ export default function HomeScreen() {
   const focusedTask = focusedTaskId ? sortedTasks.find(t => t.id === focusedTaskId) : null;
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
   
-  // Get translated category button text
-  const getCategoryButtonText = () => {
-    if (!hasActiveCategory) return t.home.categories;
-    if (selectedCategories.length === 1) {
-      return getCategoryLabel(selectedCategories[0]);
-    }
-    return `${selectedCategories.length} ${t.home.categories}`;
-  };
+  // Check if any filters are active for badge display
+  const hasAnyActiveFilters = selectedCategories.length > 0 || selectedRadius !== null || selectedDifficulty !== null;
 
   return (
     <View style={styles.container}>
@@ -270,17 +269,12 @@ export default function HomeScreen() {
           />
         </MapView>
 
-        {/* Floating Header */}
+        {/* Floating Search Bar (Transparent) */}
         <HomeFloatingControls
-          getCategoryButtonText={getCategoryButtonText}
-          hasActiveCategory={hasActiveCategory}
-          hasActiveFilters={hasActiveFilters}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onSearchClear={handleClearSearch}
           showSearchLoading={showSearchLoading}
-          onCategoryPress={() => { haptic.light(); setShowCategoryModal(true); }}
-          onFiltersPress={() => { haptic.light(); setShowFiltersModal(true); }}
           blurTint={blurTint}
           topInset={insets.top}
           styles={styles}
@@ -297,17 +291,40 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* My Location Button */}
+        {/* Bottom Right: Unified Filter Button + My Location Button (stacked) */}
         {sheetPosition === 'min' && (
-          <TouchableOpacity 
-            style={styles.myLocationButton} 
-            onPress={handleMyLocation}
-            activeOpacity={0.7}
-          >
-            <View style={styles.compassButton}>
+          <View style={{ position: 'absolute', bottom: 100, right: 16, gap: 12, zIndex: 10 }}>
+            {/* Unified Filters Button */}
+            <TouchableOpacity 
+              style={styles.compassButton}
+              onPress={() => { haptic.light(); setShowFiltersModal(true); }}
+              activeOpacity={0.7}
+            >
+              <Icon name="tune" size={24} color={hasAnyActiveFilters ? JOB_COLOR : '#4285F4'} />
+              {hasAnyActiveFilters && (
+                <View style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: JOB_COLOR,
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                }} />
+              )}
+            </TouchableOpacity>
+
+            {/* My Location Button */}
+            <TouchableOpacity 
+              style={styles.compassButton}
+              onPress={handleMyLocation}
+              activeOpacity={0.7}
+            >
               <Icon name="navigation" size={24} color="#4285F4" />
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Bottom Sheet */}
@@ -331,20 +348,15 @@ export default function HomeScreen() {
       </View>
 
       {/* Modals */}
-      <CategoryModal
-        visible={showCategoryModal}
-        selectedCategories={selectedCategories}
-        onSelect={(cats) => { setSelectedCategories(cats); setFocusedTaskId(null); }}
-        onClose={() => setShowCategoryModal(false)}
-        styles={styles}
-      />
-      <FiltersModal
+      <UnifiedFiltersModal
         visible={showFiltersModal}
+        selectedCategories={selectedCategories}
         selectedRadius={selectedRadius}
         selectedDifficulty={selectedDifficulty}
+        onCategoriesChange={setSelectedCategories}
         onRadiusChange={setSelectedRadius}
         onDifficultyChange={setSelectedDifficulty}
-        onClear={() => { setSelectedRadius(null); setSelectedDifficulty(null); }}
+        onClear={handleClearAllFilters}
         onClose={() => setShowFiltersModal(false)}
         styles={styles}
       />
