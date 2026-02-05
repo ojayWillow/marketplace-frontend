@@ -130,7 +130,7 @@ export const PWAInstallPrompt = () => {
         >
           <div className="text-center mb-4">
             <div className="text-4xl mb-2">📲</div>
-            <h3 className="text-lg font-bold text-gray-900">Instalējiet Tirgus</h3>
+            <h3 className="text-lg font-bold text-gray-900">Instalējiet Kolab</h3>
             <p className="text-gray-600 text-sm mt-1">Pievienojiet mājas ekrānam ātrai piekļuvei</p>
           </div>
           
@@ -180,10 +180,10 @@ export const PWAInstallPrompt = () => {
       
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-          <span className="text-2xl">🛒</span>
+          <span className="text-2xl">🤝</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900">Instalējiet Tirgus</p>
+          <p className="font-semibold text-gray-900">Instalējiet Kolab</p>
           <p className="text-sm text-gray-600 mt-0.5">
             {isIOS 
               ? 'Pievienojiet mājas ekrānam' 
