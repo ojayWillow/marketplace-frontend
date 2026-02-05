@@ -16,6 +16,12 @@ export default defineConfig({
         'favicon-32x32.png',
         'favicon-16x16.png',
         'apple-touch-icon.png',
+        'apple-touch-icon-180x180.png',
+        'apple-touch-icon-152x152.png',
+        'apple-touch-icon-120x120.png',
+        'apple-touch-icon-180x180-precomposed.png',
+        'apple-touch-icon-152x152-precomposed.png',
+        'apple-touch-icon-120x120-precomposed.png',
         'android-chrome-192x192.png',
         'android-chrome-512x512.png',
         'logo.png',
@@ -38,6 +44,24 @@ export default defineConfig({
           {
             src: 'apple-touch-icon.png',
             sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'apple-touch-icon-180x180.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'apple-touch-icon-152x152.png',
+            sizes: '152x152',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'apple-touch-icon-120x120.png',
+            sizes: '120x120',
             type: 'image/png',
             purpose: 'any'
           },
