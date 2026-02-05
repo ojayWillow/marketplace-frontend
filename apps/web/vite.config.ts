@@ -36,6 +36,12 @@ export default defineConfig({
         categories: ['business', 'lifestyle', 'productivity'],
         icons: [
           {
+            src: 'apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
             src: 'android-chrome-192x192.png',
             sizes: '192x192',
             type: 'image/png',
