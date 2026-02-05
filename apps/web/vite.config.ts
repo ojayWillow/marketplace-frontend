@@ -11,14 +11,23 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'logo.png', 'sw-push.js'],
+      registerType: 'autoUpdate',
+      includeAssets: [
+        'favicon-32x32.png',
+        'favicon-16x16.png',
+        'apple-touch-icon.png',
+        'android-chrome-192x192.png',
+        'android-chrome-512x512.png',
+        'logo.png',
+        'sw-push.js'
+      ],
       manifest: {
-        name: 'Kolab - Earn Money Helping Others',
+        name: 'Kolab',
         short_name: 'Kolab',
-        description: 'Earn money by helping others with everyday tasks. Dog walking, moving, cleaning, repairs, and more in Latvia.',
+        description: 'Earn money by helping others with everyday tasks.',
         start_url: '/',
         scope: '/',
+        id: '/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#3B82F6',
@@ -27,47 +36,29 @@ export default defineConfig({
         categories: ['business', 'lifestyle', 'productivity'],
         icons: [
           {
-            src: '/android-chrome-192x192.png',
+            src: 'android-chrome-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/android-chrome-512x512.png',
+            src: 'android-chrome-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/android-chrome-512x512.png',
+            src: 'android-chrome-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
           }
-        ],
-        shortcuts: [
-          {
-            name: 'Browse Tasks',
-            short_name: 'Tasks',
-            description: 'Find tasks near you or post your own',
-            url: '/tasks',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'My Applications',
-            short_name: 'Applications',
-            description: 'View your task applications',
-            url: '/applications',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192' }]
-          }
         ]
       },
       workbox: {
-        // Import the push notification handlers into the service worker
         importScripts: ['/sw-push.js'],
-        // Don't cache API routes - always fetch fresh data
         navigateFallbackDenylist: [/^\/api\/.*/],
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
@@ -76,7 +67,7 @@ export default defineConfig({
               cacheName: 'dicebear-avatars',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -90,7 +81,7 @@ export default defineConfig({
               cacheName: 'map-tiles',
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+                maxAgeSeconds: 60 * 60 * 24 * 7
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -104,7 +95,7 @@ export default defineConfig({
               cacheName: 'uploaded-images',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -114,7 +105,6 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        // Disable service worker in development to avoid caching issues
         enabled: false
       }
     })
