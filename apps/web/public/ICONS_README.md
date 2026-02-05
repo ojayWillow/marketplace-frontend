@@ -1,6 +1,6 @@
 # Icon Generation Guide
 
-This folder contains SVG source files for the Tirgus branding. PNG versions need to be generated for full browser/device compatibility.
+This folder contains SVG source files for the Kolab branding. PNG versions need to be generated for full browser/device compatibility.
 
 ## Source Files (SVG)
 
@@ -78,7 +78,8 @@ If you don't have Inkscape or ImageMagick:
 - Text Dark: `#1F2937`
 
 ### Icon Concept
-Shopping bag with location pin - represents:
-- Marketplace (buy/sell)
-- Local services (Quick Help)
+Handshake / collaboration icon - represents:
+- Task marketplace (Quick Help)
+- Local services
+- Community collaboration
 - Location-based discovery
