@@ -2,5 +2,11 @@
   "buildCommand": "pnpm --filter @marketplace/web build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "pnpm install",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/((?!apple-touch-icon\\.png|android-chrome-.*\\.png|favicon.*\\.png|manifest\\.json|sw-push\\.js|logo\\.png|og-image\\.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
