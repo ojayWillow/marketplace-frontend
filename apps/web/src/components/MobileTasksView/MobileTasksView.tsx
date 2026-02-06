@@ -308,12 +308,13 @@ const MobileTasksView = () => {
     }
   };
 
+  // Guest protection - redirect to landing
   const handleCreateClick = () => {
-    if (isAuthenticated) {
-      setShowCreateModal(true);
-    } else {
-      navigate('/login');
+    if (!isAuthenticated) {
+      navigate('/welcome');
+      return;
     }
+    setShowCreateModal(true);
   };
 
   // Sheet drag handlers
