@@ -8,7 +8,6 @@ import { getTasks } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
 import { useUnreadCounts } from '../../api/hooks';
 import { getCategoryIcon, CATEGORY_OPTIONS } from '../../constants/categories';
-import { NotificationBell } from '../Layout/Header/NotificationBell';
 import { useNotifications } from '../Layout/Header/hooks/useNotifications';
 
 import { Task, SheetPosition } from './types';
@@ -31,7 +30,7 @@ const LOCATION_TIMEOUT_MS = 3000;
 
 /**
  * Main Mobile Tasks View Component
- * Displays a map with task markers and a draggable bottom sheet with task list
+ * Displays a full-screen map with task markers and a draggable bottom sheet with task list
  */
 const MobileTasksView = () => {
   const { t } = useTranslation();
@@ -64,8 +63,10 @@ const MobileTasksView = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // Bottom sheet state
+  // Bottom sheet state - Start at 50% (taller than before)
   const [sheetPosition, setSheetPosition] = useState<SheetPosition>('half');
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
@@ -74,18 +75,18 @@ const MobileTasksView = () => {
   const hasAttemptedGeolocation = useRef(false);
   const hasFetchedInitial = useRef(false);
 
-  // Calculate sheet height based on position
+  // Calculate sheet height based on position - Made taller
   const getSheetHeight = () => {
     const vh = window.innerHeight;
     switch (sheetPosition) {
       case 'collapsed':
-        return 100;
+        return 120; // Slightly taller when collapsed
       case 'half':
-        return Math.round(vh * 0.4);
+        return Math.round(vh * 0.5); // 50% instead of 40%
       case 'full':
         return Math.round(vh * 0.85);
       default:
-        return Math.round(vh * 0.4);
+        return Math.round(vh * 0.5);
     }
   };
 
@@ -260,9 +261,6 @@ const MobileTasksView = () => {
     ...CATEGORY_OPTIONS.slice(1, 10),
   ];
 
-  // Calculate total badge count for hamburger menu
-  const totalUnread = unreadCounts?.total || 0;
-
   return (
     <>
       <style>{mobileTasksStyles}</style>
@@ -287,99 +285,85 @@ const MobileTasksView = () => {
         onOfferService={() => navigate('/offerings/create')}
       />
 
-      <div className="mobile-tasks-container">
-        {/* TOP BAR - Menu + Notification Bell + Search + Radius */}
-        {/* Higher z-index than map to ensure dropdowns appear above */}
-        <div className="bg-white shadow-md flex-shrink-0 relative" style={{ zIndex: 10000 }}>
-          {/* Search Bar Row */}
-          <div className="p-3 pb-2">
-            <div className="flex gap-2 items-center">
-              {/* Hamburger Menu Button */}
+      {/* Filter Sheet */}
+      {showFilterSheet && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[10000]"
+          onClick={() => setShowFilterSheet(false)}
+        >
+          <div 
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-[10001]"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '80vh' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">{t('filters.title', 'Filters')}</h2>
               <button
-                onClick={() => setIsMenuOpen(true)}
-                className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 active:bg-gray-200 relative"
+                onClick={() => setShowFilterSheet(false)}
+                className="text-gray-400 hover:text-gray-600"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#374151"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                >
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
+            </div>
 
-              {/* Search Input */}
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
-                  className="w-full bg-gray-100 rounded-full px-4 py-2.5 pl-10 text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                  🔍
-                </span>
-              </div>
-
-              {/* Radius Selector */}
+            {/* Location/Radius */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                📍 {t('filters.location', 'Location')}
+              </label>
               <select
                 value={searchRadius}
                 onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
-                style={{ minWidth: '70px' }}
+                className="w-full bg-gray-100 rounded-lg px-4 py-3 text-base border-0 focus:ring-2 focus:ring-blue-500"
               >
-                <option value={5}>5km</option>
-                <option value={10}>10km</option>
-                <option value={25}>25km</option>
-                <option value={50}>50km</option>
-                <option value={0}>
-                  🇱🇻 {t('tasks.allLatvia', 'All')}
-                </option>
+                <option value={5}>Within 5 km</option>
+                <option value={10}>Within 10 km</option>
+                <option value={25}>Within 25 km</option>
+                <option value={50}>Within 50 km</option>
+                <option value={0}>🇱🇻 {t('tasks.allLatvia', 'All Latvia')}</option>
               </select>
-
-              {/* Notification Bell - Visible when authenticated */}
-              {isAuthenticated && (
-                <NotificationBell
-                  notifications={notifications}
-                  totalNotifications={totalNotifications}
-                  onMarkAsRead={markNotificationsAsRead}
-                  onClearType={clearNotificationType}
-                  isMobile={true}
-                />
-              )}
             </div>
-          </div>
 
-          {/* Category Pills */}
-          <div className="px-3 pb-3">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-              {categories.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory === cat.value
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              ))}
+            {/* Category */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🏷️ {t('filters.category', 'Category')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedCategory === cat.value
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Apply Button */}
+            <button
+              onClick={() => setShowFilterSheet(false)}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium"
+            >
+              {t('filters.apply', 'Apply Filters')}
+            </button>
           </div>
         </div>
+      )}
 
-        {/* MAP AREA - Now takes full remaining height */}
-        <div className="flex-1 relative" style={{ zIndex: 1 }}>
+      {/* FULL SCREEN CONTAINER - No header, map from top */}
+      <div className="fixed inset-0 flex flex-col">
+        {/* FULL-SCREEN MAP */}
+        <div className="absolute inset-0" style={{ zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
@@ -435,47 +419,118 @@ const MobileTasksView = () => {
               );
             })}
           </MapContainer>
-
-          {/* Floating Recenter Button - Positioned above bottom sheet */}
-          {!selectedTask && showJobList && (
-            <div
-              className="absolute right-4 z-[1000]"
-              style={{ bottom: `${sheetHeight + 16}px`, transition: 'bottom 0.3s ease-out' }}
-            >
-              <button
-                onClick={handleRecenter}
-                className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
-                </svg>
-              </button>
-            </div>
-          )}
-
-          {/* Job Preview Card */}
-          {selectedTask && (
-            <JobPreviewCard
-              task={selectedTask}
-              userLocation={userLocation}
-              onViewDetails={handleViewDetails}
-              onClose={handleClosePreview}
-              onCreatorClick={handleCreatorClick}
-            />
-          )}
         </div>
 
-        {/* BOTTOM SHEET - Now a fixed overlay that slides over the map */}
+        {/* FLOATING SEARCH/FILTER BAR - Top */}
+        <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-2">
+          {!searchExpanded ? (
+            // Collapsed: Just search icon button
+            <>
+              <button
+                onClick={() => setSearchExpanded(true)}
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </button>
+              
+              {/* Spacer to push filter button to right */}
+              <div className="flex-1" />
+            </>
+          ) : (
+            // Expanded: Back button + search input
+            <>
+              <button
+                onClick={() => {
+                  setSearchExpanded(false);
+                  setSearchQuery('');
+                }}
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
+                className="flex-1 bg-white rounded-full px-4 py-3 text-base shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+                autoFocus
+              />
+            </>
+          )}
+          
+          {/* Filter Button - Always visible */}
+          <button
+            onClick={() => setShowFilterSheet(true)}
+            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+              <line x1="4" y1="21" x2="4" y2="14" />
+              <line x1="4" y1="10" x2="4" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12" y2="3" />
+              <line x1="20" y1="21" x2="20" y2="16" />
+              <line x1="20" y1="12" x2="20" y2="3" />
+              <line x1="1" y1="14" x2="7" y2="14" />
+              <line x1="9" y1="8" x2="15" y2="8" />
+              <line x1="17" y1="16" x2="23" y2="16" />
+            </svg>
+          </button>
+        </div>
+
+        {/* FLOATING RECENTER BUTTON - Positioned above bottom sheet */}
+        {!selectedTask && showJobList && (
+          <div
+            className="absolute right-4 z-[1000]"
+            style={{ 
+              bottom: `${sheetHeight + 20}px`, 
+              transition: 'bottom 0.3s ease-out' 
+            }}
+          >
+            <button
+              onClick={handleRecenter}
+              className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+              style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Job Preview Card */}
+        {selectedTask && (
+          <JobPreviewCard
+            task={selectedTask}
+            userLocation={userLocation}
+            onViewDetails={handleViewDetails}
+            onClose={handleClosePreview}
+            onCreatorClick={handleCreatorClick}
+          />
+        )}
+
+        {/* BOTTOM SHEET - Fixed overlay over the map */}
         {!selectedTask && showJobList && (
           <div
             className="fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
@@ -484,9 +539,10 @@ const MobileTasksView = () => {
               transition: isDragging ? 'none' : 'height 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
+              paddingBottom: '80px', // Add bottom padding to ensure content clears navigation
             }}
           >
-            {/* Drag Handle Area */}
+            {/* Drag Handle Area - Back to original compact spacing */}
             <div
               className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
@@ -496,7 +552,7 @@ const MobileTasksView = () => {
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
 
-              {/* Header Row */}
+              {/* Header Row - Original compact spacing */}
               <div className="flex items-center justify-between w-full px-4">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
