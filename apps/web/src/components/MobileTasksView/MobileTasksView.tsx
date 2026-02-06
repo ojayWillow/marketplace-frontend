@@ -6,9 +6,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { getTasks } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
-import { useUnreadCounts } from '../../api/hooks';
 import { getCategoryIcon, CATEGORY_OPTIONS, CATEGORIES } from '../../constants/categories';
-import { useNotifications } from '../Layout/Header/hooks/useNotifications';
 
 import { Task, SheetPosition } from './types';
 import { mobileTasksStyles } from './styles';
@@ -22,7 +20,6 @@ import {
   MobileJobCard,
   JobPreviewCard,
   CreateChoiceModal,
-  SlideOutMenu,
 } from './components';
 
 // Reduced timeout for faster perceived loading
@@ -59,18 +56,7 @@ const calculateDistance = (
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuthStore();
-
-  // Fetch unread counts for notifications (only when authenticated)
-  const { data: unreadCounts } = useUnreadCounts({ enabled: isAuthenticated });
-
-  // Use notifications hook for the bell component
-  const {
-    notifications,
-    totalNotifications,
-    markNotificationsAsRead,
-    clearNotificationType,
-  } = useNotifications(isAuthenticated);
+  const { isAuthenticated } = useAuthStore();
 
   // Task data state
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -83,7 +69,6 @@ const MobileTasksView = () => {
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
   // UI state
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
@@ -346,18 +331,6 @@ const MobileTasksView = () => {
     <>
       <style>{mobileTasksStyles}</style>
 
-      {/* Slide-out Menu */}
-      <SlideOutMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        isAuthenticated={isAuthenticated}
-        user={user}
-        onLogout={logout}
-        navigate={navigate}
-        unreadMessages={unreadCounts?.messages || 0}
-        newApplications={unreadCounts?.notifications || 0}
-      />
-
       {/* Create Choice Modal */}
       <CreateChoiceModal
         isOpen={showCreateModal}
@@ -485,7 +458,7 @@ const MobileTasksView = () => {
               radius={searchRadius}
               recenterTrigger={recenterTrigger}
               selectedTask={selectedTask}
-              isMenuOpen={isMenuOpen}
+              isMenuOpen={false}
               sheetPosition={sheetPosition}
             />
 
