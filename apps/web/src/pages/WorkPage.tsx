@@ -61,7 +61,6 @@ const WorkPage = () => {
           }));
           allItems = [...allItems, ...jobs];
         } else {
-          // Fetch for each category
           for (const category of categories) {
             const jobsResponse = await getTasks({ status: 'open', category });
             const jobs = jobsResponse.tasks.map((task: any) => ({
@@ -103,7 +102,6 @@ const WorkPage = () => {
           }));
           allItems = [...allItems, ...services];
         } else {
-          // Fetch for each category
           for (const category of categories) {
             const servicesResponse = await getOfferings({ status: 'active', category });
             const services = servicesResponse.offerings.map((offering: any) => ({
@@ -125,7 +123,6 @@ const WorkPage = () => {
         }
       }
 
-      // Remove duplicates and sort by created date (newest first)
       const uniqueItems = Array.from(
         new Map(allItems.map(item => [item.id, item])).values()
       );
@@ -140,17 +137,14 @@ const WorkPage = () => {
     setLoading(false);
   };
 
-  // Fetch data on mount and when filters change
   useEffect(() => {
     fetchData(mainTab, selectedCategories);
   }, [mainTab, selectedCategories]);
 
-  // Handle tab change
   const handleTabChange = (tab: MainTab) => {
     setMainTab(tab);
   };
 
-  // Handle category toggle
   const handleCategoryToggle = (categoryValue: string) => {
     if (selectedCategories.includes(categoryValue)) {
       setSelectedCategories(selectedCategories.filter(c => c !== categoryValue));
@@ -161,7 +155,6 @@ const WorkPage = () => {
     }
   };
 
-  // Handle item click
   const handleItemClick = (item: WorkItem) => {
     if (item.type === 'job') {
       navigate(`/tasks/${item.id}`);
@@ -170,7 +163,6 @@ const WorkPage = () => {
     }
   };
 
-  // Get time ago string
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
@@ -186,7 +178,6 @@ const WorkPage = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // Get difficulty level (based on price for jobs, just show for services)
   const getDifficulty = (item: WorkItem) => {
     const amount = item.type === 'job' ? item.budget : item.price;
     if (!amount) return 'Easy';
@@ -220,7 +211,6 @@ const WorkPage = () => {
               </button>
             </div>
 
-            {/* Categories */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 🏷️ {t('filters.categories', 'Categories')} 
@@ -250,9 +240,7 @@ const WorkPage = () => {
                     >
                       <span>{cat.icon}</span>
                       <span>{cat.label}</span>
-                      {isSelected && (
-                        <span className="ml-1 text-xs">✓</span>
-                      )}
+                      {isSelected && <span className="ml-1 text-xs">✓</span>}
                     </button>
                   );
                 })}
@@ -264,7 +252,6 @@ const WorkPage = () => {
               )}
             </div>
 
-            {/* Apply Button */}
             <button
               onClick={() => setShowFilterSheet(false)}
               className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium"
@@ -275,17 +262,14 @@ const WorkPage = () => {
         </div>
       )}
 
-      {/* Header with Tabs and Filter */}
+      {/* Header */}
       <div className="sticky top-0 bg-white shadow-sm z-50">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Tab Pills */}
           <div className="flex gap-2">
             <button
               onClick={() => handleTabChange('all')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                mainTab === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                mainTab === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
               }`}
             >
               {t('tasks.tabAll', 'All')}
@@ -293,9 +277,7 @@ const WorkPage = () => {
             <button
               onClick={() => handleTabChange('jobs')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                mainTab === 'jobs'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                mainTab === 'jobs' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
               }`}
             >
               {t('tasks.tabJobs', 'Jobs')}
@@ -303,16 +285,13 @@ const WorkPage = () => {
             <button
               onClick={() => handleTabChange('services')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                mainTab === 'services'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                mainTab === 'services' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
               }`}
             >
               {t('tasks.tabServices', 'Services')}
             </button>
           </div>
 
-          {/* Filter Button */}
           <button
             onClick={() => setShowFilterSheet(true)}
             className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full relative"
@@ -362,52 +341,50 @@ const WorkPage = () => {
               const timeAgo = getTimeAgo(item.created_at);
               const difficulty = getDifficulty(item);
               
-              // Color scheme based on type
               const isJob = item.type === 'job';
-              const headerBgColor = isJob ? 'bg-blue-50' : 'bg-orange-50';
+              const headerBg = isJob ? 'bg-blue-50' : 'bg-orange-50';
               const priceColor = isJob ? 'text-blue-600' : 'text-orange-600';
-              const iconColor = isJob ? 'text-blue-600' : 'text-orange-600';
               
               return (
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden active:shadow-lg transition-all cursor-pointer"
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden active:shadow-lg transition-all cursor-pointer"
                 >
-                  {/* Color-coded Header */}
-                  <div className={`${headerBgColor} px-4 py-2.5 flex items-center justify-between`}>
+                  {/* Header: Category + Price */}
+                  <div className={`${headerBg} px-4 py-3 flex items-center justify-between`}>
                     <div className="flex items-center gap-2">
-                      <span className={`text-lg ${iconColor}`}>{categoryIcon}</span>
-                      <span className="text-sm font-medium text-gray-700">{categoryLabel}</span>
+                      <span className="text-lg">{categoryIcon}</span>
+                      <span className="text-sm font-semibold text-gray-800">{categoryLabel}</span>
                     </div>
                     {price && (
-                      <div className={`text-xl font-bold ${priceColor}`}>
+                      <span className={`text-2xl font-bold ${priceColor}`}>
                         €{price}
-                      </div>
+                      </span>
                     )}
                   </div>
 
-                  {/* Card Body */}
-                  <div className="p-4">
+                  {/* Body */}
+                  <div className="p-4 space-y-3">
                     {/* Title */}
-                    <h3 className="text-base font-bold text-gray-900 mb-3 line-clamp-2">
+                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
                       {item.title}
                     </h3>
 
-                    {/* User Info Row */}
-                    <div className="flex items-center gap-2 mb-3">
+                    {/* User Info - ONE LINE */}
+                    <div className="flex items-center gap-2 text-sm">
                       {/* Avatar */}
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                         {item.creator_name?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                       
                       {/* Username */}
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="font-medium text-gray-900 truncate">
                         {item.creator_name || 'Anonymous'}
                       </span>
                       
-                      {/* Rating (placeholder - you can add real ratings later) */}
-                      <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                      {/* Rating */}
+                      <span className="flex items-center gap-0.5 text-xs text-gray-600">
                         <span className="text-yellow-500">⭐</span>
                         <span>4.8</span>
                         <span className="text-gray-400">(23)</span>
@@ -417,21 +394,28 @@ const WorkPage = () => {
                       {item.location && (
                         <>
                           <span className="text-gray-300">•</span>
-                          <span className="text-xs text-gray-500">{item.location}</span>
+                          <span className="text-xs text-gray-500 truncate">{item.location}</span>
                         </>
                       )}
                     </div>
 
                     {/* Description */}
                     {item.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      <p className="text-sm text-gray-600 line-clamp-2">
                         {item.description}
                       </p>
                     )}
 
-                    {/* Footer Metadata */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
-                      {/* Difficulty */}
+                    {/* Footer Metadata - ONE LINE */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <span>📍</span>
+                        <span>{item.location || 'Remote'}</span>
+                        <span className="text-gray-400">(2.3 km)</span>
+                      </span>
+                      
+                      <span className="text-gray-300">•</span>
+                      
                       <span className="flex items-center gap-1">
                         <span>🔨</span>
                         <span>{difficulty}</span>
@@ -439,7 +423,6 @@ const WorkPage = () => {
                       
                       <span className="text-gray-300">•</span>
                       
-                      {/* Time ago */}
                       <span>{timeAgo}</span>
                     </div>
                   </div>
