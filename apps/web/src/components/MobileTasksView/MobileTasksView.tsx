@@ -525,11 +525,11 @@ const MobileTasksView = () => {
         {/* FLOATING SEARCH/FILTER BAR - Top */}
         <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-2">
           {!searchExpanded ? (
-            // Collapsed: Search button + category chips
+            // Collapsed: Just search icon button
             <>
               <button
                 onClick={() => setSearchExpanded(true)}
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 flex-shrink-0"
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
                 style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
@@ -538,27 +538,8 @@ const MobileTasksView = () => {
                 </svg>
               </button>
               
-              {/* Category Chips - Show when categories are selected */}
-              {selectedCategories.length > 0 && (
-                <div className="flex items-center gap-2 flex-1 overflow-x-auto">
-                  {selectedCategories.map((catValue) => {
-                    const category = CATEGORIES.find(c => c.value === catValue);
-                    if (!category) return null;
-                    return (
-                      <div
-                        key={catValue}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0"
-                      >
-                        <span>{category.icon}</span>
-                        <span>{category.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              
               {/* Spacer to push filter button to right */}
-              {selectedCategories.length === 0 && <div className="flex-1" />}
+              <div className="flex-1" />
             </>
           ) : (
             // Expanded: Back button + search input
@@ -588,10 +569,10 @@ const MobileTasksView = () => {
             </>
           )}
           
-          {/* Filter Button - Always visible */}
+          {/* Filter Button - Always visible with badge */}
           <button
             onClick={() => setShowFilterSheet(true)}
-            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 flex-shrink-0 relative"
+            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 relative"
             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
