@@ -36,11 +36,22 @@ export default function LandingPage() {
   const initAttemptedRef = useRef(false)
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
 
+  // Mark landing as seen when component mounts
+  useEffect(() => {
+    localStorage.setItem('hasSeenLanding', 'true')
+  }, [])
+
+  // Handler for "Browse map" buttons - marks landing as seen
+  const handleEnterMap = () => {
+    localStorage.setItem('hasSeenLanding', 'true')
+    navigate('/')
+  }
+
   // Initialize INVISIBLE reCAPTCHA
   const initRecaptcha = useCallback(() => {
     if (initAttemptedRef.current && recaptchaVerifierRef.current) {
       setRecaptchaReady(true)
-      return // Already initialized
+      return
     }
     
     if (!recaptchaContainerRef.current) {
@@ -49,7 +60,6 @@ export default function LandingPage() {
       return
     }
     
-    // Clear any existing
     if (recaptchaVerifierRef.current) {
       try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
       recaptchaVerifierRef.current = null
@@ -75,19 +85,15 @@ export default function LandingPage() {
         setRecaptchaReady(true)
       }).catch((err) => {
         console.error('reCAPTCHA render error:', err)
-        // Don't show error to user - just enable the button anyway
-        // The reCAPTCHA will still work, it's just a render issue
         setRecaptchaReady(true)
       })
     } catch (err) {
       console.error('reCAPTCHA init error:', err)
       initAttemptedRef.current = false
-      // Still enable the button - Firebase may work anyway
       setRecaptchaReady(true)
     }
   }, [])
 
-  // Initialize on mount
   useEffect(() => {
     if (step === 'phone') {
       const timer = setTimeout(initRecaptcha, 300)
@@ -95,7 +101,6 @@ export default function LandingPage() {
     }
   }, [initRecaptcha, step])
   
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (recaptchaVerifierRef.current) {
@@ -104,7 +109,6 @@ export default function LandingPage() {
     }
   }, [])
 
-  // AUTO-SUBMIT when 6 digits entered
   useEffect(() => {
     if (otpValue.length === 6 && confirmationResult && !loading) {
       handleVerifyCode(otpValue)
@@ -123,7 +127,6 @@ export default function LandingPage() {
     return cleaned.startsWith('371') ? `+${cleaned}` : `+371${cleaned}`
   }
 
-  // Send OTP via Firebase
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -136,7 +139,6 @@ export default function LandingPage() {
       return
     }
 
-    // Re-initialize reCAPTCHA if needed
     if (!recaptchaVerifierRef.current && recaptchaContainerRef.current) {
       try {
         recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
@@ -182,7 +184,6 @@ export default function LandingPage() {
         setError('Failed to send code. Please try again.')
       }
       
-      // Reset for retry
       initAttemptedRef.current = false
       if (recaptchaVerifierRef.current) {
         try { recaptchaVerifierRef.current.clear() } catch (e) { /* ignore */ }
@@ -194,7 +195,6 @@ export default function LandingPage() {
     }
   }
 
-  // Handle OTP input - supports autofill
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6)
     setOtpValue(value)
@@ -202,7 +202,6 @@ export default function LandingPage() {
 
   const focusOtpInput = () => otpInputRef.current?.focus()
 
-  // Verify OTP with Firebase then Backend
   const handleVerifyCode = async (code: string) => {
     if (!confirmationResult || loading || code.length !== 6) return
     setError('')
@@ -250,7 +249,6 @@ export default function LandingPage() {
     }
   }
 
-  // Reset back to phone input
   const resetToPhoneStep = () => {
     setStep('phone')
     setOtpValue('')
@@ -265,7 +263,6 @@ export default function LandingPage() {
     setTimeout(initRecaptcha, 300)
   }
 
-  // OTP Display component
   const renderOTPDisplay = () => {
     const digits = otpValue.split('')
     
@@ -311,7 +308,6 @@ export default function LandingPage() {
 
   return (
     <div className="bg-[#0a0a0f] min-h-screen">
-      {/* Global invisible reCAPTCHA container */}
       <div ref={recaptchaContainerRef} id="recaptcha-container-global" />
       
       {/* Hero Section */}
@@ -319,9 +315,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-green-600/10" />
         
         <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 md:py-16 lg:py-24">
-          {/* Two Column Layout */}
           <div className="lg:grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left: Value Proposition */}
             <div className="mb-8 lg:mb-0">
               <div className="inline-flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs lg:text-sm font-medium mb-4 lg:mb-6">
                 <MapPin className="w-3 h-3 lg:w-4 lg:h-4" />
@@ -368,12 +362,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Link 
-                to="/" 
-                className="hidden lg:inline-flex text-gray-400 hover:text-white transition-colors items-center gap-1"
+              <button 
+                onClick={handleEnterMap}
+                className="hidden lg:inline-flex text-gray-400 hover:text-white transition-colors items-center gap-1 cursor-pointer"
               >
                 Just browsing? <span className="text-blue-400">See the map →</span>
-              </Link>
+              </button>
             </div>
 
             {/* Right: Login Card */}
@@ -469,12 +463,12 @@ export default function LandingPage() {
               </div>
               
               <div className="text-center mt-4 lg:hidden">
-                <Link 
-                  to="/" 
-                  className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm"
+                <button
+                  onClick={handleEnterMap}
+                  className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm cursor-pointer"
                 >
                   Just browsing? See the map <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -588,15 +582,15 @@ export default function LandingPage() {
               { icon: '🔧', label: 'Repairs', desc: 'Handyman tasks' },
               { icon: '💻', label: 'Tech Help', desc: 'Setup, support' },
             ].map((cat, i) => (
-              <Link 
+              <button
                 key={i}
-                to="/"
-                className="bg-[#1a1a24]/50 hover:bg-[#1a1a24] border border-[#2a2a3a] hover:border-[#3a3a4a] rounded-xl p-3 sm:p-4 text-center transition-all group"
+                onClick={handleEnterMap}
+                className="bg-[#1a1a24]/50 hover:bg-[#1a1a24] border border-[#2a2a3a] hover:border-[#3a3a4a] rounded-xl p-3 sm:p-4 text-center transition-all group cursor-pointer"
               >
                 <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{cat.icon}</div>
                 <div className="text-white font-medium text-xs sm:text-sm group-hover:text-blue-400 transition-colors">{cat.label}</div>
                 <div className="text-gray-500 text-[10px] sm:text-xs hidden sm:block">{cat.desc}</div>
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -655,12 +649,12 @@ export default function LandingPage() {
             >
               Sign up free <ArrowRight className="w-5 h-5" />
             </a>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 border border-[#2a2a3a] hover:bg-[#1a1a24] text-white font-semibold rounded-xl transition-colors"
+            <button
+              onClick={handleEnterMap}
+              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 border border-[#2a2a3a] hover:bg-[#1a1a24] text-white font-semibold rounded-xl transition-colors cursor-pointer"
             >
               Browse map first
-            </Link>
+            </button>
           </div>
         </div>
       </section>
