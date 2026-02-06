@@ -9,15 +9,26 @@ export default function Layout() {
   const location = useLocation()
   const isMobile = useIsMobile()
   
-  // Pages that show the mobile bottom nav
-  // Now includes home (/) so bottom nav is always present on the map
-  const showMobileBottomNav = isMobile && (
-    location.pathname === '/' ||
-    location.pathname === '/tasks' || 
-    location.pathname === '/quick-help'
-  )
+  // Pages that should NOT show the mobile bottom nav (exclusion list)
+  // These are "outside the app" - landing, auth, admin, legal
+  const excludeBottomNav = [
+    '/welcome',           // Landing/marketing page
+    '/login',
+    '/register', 
+    '/phone-login',
+    '/verify-phone',
+    '/complete-profile',
+    '/forgot-password',
+    '/reset-password',
+    '/terms',
+    '/privacy',
+  ].some(path => location.pathname.startsWith(path)) || 
+  location.pathname.startsWith('/admin')
 
-  // Fullscreen mobile pages: no header/footer, just content + bottom nav
+  // Show mobile bottom nav on ALL pages except the exclusion list
+  const showMobileBottomNav = isMobile && !excludeBottomNav
+
+  // Mobile layout WITH bottom nav (persistent across app)
   if (showMobileBottomNav) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -30,7 +41,7 @@ export default function Layout() {
     )
   }
 
-  // Mobile layout without bottom nav (messages, profile, etc)
+  // Mobile layout WITHOUT bottom nav (auth pages, landing, etc)
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col">
