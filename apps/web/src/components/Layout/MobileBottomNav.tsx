@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 const tabs = [
   { path: '/', icon: '🏠', labelKey: 'nav.home', fallback: 'Home' },
-  { path: '/tasks', icon: '💼', labelKey: 'nav.work', fallback: 'Work' },
+  { path: '/work', icon: '💼', labelKey: 'nav.work', fallback: 'Work' },
   { path: '/messages', icon: '💬', labelKey: 'nav.messages', fallback: 'Messages' },
   { path: '/profile', icon: '👤', labelKey: 'nav.profile', fallback: 'Profile' },
 ];
