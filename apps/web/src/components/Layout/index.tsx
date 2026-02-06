@@ -9,8 +9,10 @@ export default function Layout() {
   const location = useLocation()
   const isMobile = useIsMobile()
   
-  // Pages that show the mobile bottom nav (only the tasks/map page)
+  // Pages that show the mobile bottom nav
+  // Now includes home (/) so bottom nav is always present on the map
   const showMobileBottomNav = isMobile && (
+    location.pathname === '/' ||
     location.pathname === '/tasks' || 
     location.pathname === '/quick-help'
   )
