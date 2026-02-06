@@ -28,20 +28,17 @@ const WorkPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // State
   const [mainTab, setMainTab] = useState<MainTab>('all');
   const [items, setItems] = useState<WorkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  // Fetch data based on tab and filters
   const fetchData = async (tab: MainTab, categories: string[]) => {
     setLoading(true);
     try {
       let allItems: WorkItem[] = [];
 
-      // Fetch jobs if needed
       if (tab === 'all' || tab === 'jobs') {
         if (categories.length === 0) {
           const jobsResponse = await getTasks({ status: 'open' });
@@ -82,7 +79,6 @@ const WorkPage = () => {
         }
       }
 
-      // Fetch services if needed
       if (tab === 'all' || tab === 'services') {
         if (categories.length === 0) {
           const servicesResponse = await getOfferings({ status: 'active' });
@@ -339,62 +335,47 @@ const WorkPage = () => {
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
+                  className="bg-white rounded-lg p-3 border border-gray-200 active:bg-gray-50 transition-colors"
                 >
-                  <div className="p-4">
-                    {/* Header Row: Category + Price */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{categoryIcon}</span>
-                        <span className="text-sm font-medium text-gray-700">{categoryLabel}</span>
-                      </div>
-                      {price && (
-                        <span className={`text-2xl font-bold ${accentColor}`}>
-                          €{price}
-                        </span>
-                      )}
+                  {/* Header: Category + Price */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">{categoryIcon}</span>
+                      <span className="text-sm font-medium text-gray-700">{categoryLabel}</span>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">
-                      {item.title}
-                    </h3>
-
-                    {/* User + Location - ONE LINE */}
-                    <div className="flex items-center gap-2 mb-3 text-sm">
-                      {/* Avatar */}
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {item.creator_name?.charAt(0)?.toUpperCase() || '?'}
-                      </div>
-                      
-                      {/* Username */}
-                      <span className="font-medium text-gray-700">
-                        {item.creator_name || 'Anonymous'}
+                    {price && (
+                      <span className={`text-xl font-bold ${accentColor}`}>
+                        €{price}
                       </span>
-                      
-                      {/* Separator + Location */}
-                      {item.location && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span className="text-gray-500 flex items-center gap-1">
-                            <span>📍</span>
-                            <span className="truncate">{item.location}</span>
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    {item.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {item.description}
-                      </p>
                     )}
+                  </div>
 
-                    {/* Footer: Time */}
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span>{timeAgo}</span>
-                    </div>
+                  {/* Title */}
+                  <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {item.title}
+                  </h3>
+
+                  {/* User + Location */}
+                  <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                    <span className="font-medium">{item.creator_name || 'Anonymous'}</span>
+                    {item.location && (
+                      <>
+                        <span className="text-gray-300">•</span>
+                        <span className="truncate">{item.location}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {item.description && (
+                    <p className="text-sm text-gray-500 mb-2 line-clamp-2">
+                      {item.description}
+                    </p>
+                  )}
+
+                  {/* Time */}
+                  <div className="text-xs text-gray-400">
+                    {timeAgo}
                   </div>
                 </div>
               );
