@@ -8,7 +8,6 @@ import { getTasks } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
 import { useUnreadCounts } from '../../api/hooks';
 import { getCategoryIcon, CATEGORY_OPTIONS } from '../../constants/categories';
-import { NotificationBell } from '../Layout/Header/NotificationBell';
 import { useNotifications } from '../Layout/Header/hooks/useNotifications';
 
 import { Task, SheetPosition } from './types';
@@ -64,6 +63,8 @@ const MobileTasksView = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
 
   // Bottom sheet state
   const [sheetPosition, setSheetPosition] = useState<SheetPosition>('half');
@@ -260,9 +261,6 @@ const MobileTasksView = () => {
     ...CATEGORY_OPTIONS.slice(1, 10),
   ];
 
-  // Calculate total badge count for hamburger menu
-  const totalUnread = unreadCounts?.total || 0;
-
   return (
     <>
       <style>{mobileTasksStyles}</style>
@@ -287,94 +285,140 @@ const MobileTasksView = () => {
         onOfferService={() => navigate('/offerings/create')}
       />
 
-      <div className="mobile-tasks-container">
-        {/* TOP BAR - Menu + Notification Bell + Search + Radius */}
-        {/* Higher z-index than map to ensure dropdowns appear above */}
-        <div className="bg-white shadow-md flex-shrink-0 relative" style={{ zIndex: 10000 }}>
-          {/* Search Bar Row */}
-          <div className="p-3 pb-2">
-            <div className="flex gap-2 items-center">
-              {/* Hamburger Menu Button */}
+      {/* Search Overlay */}
+      {showSearchOverlay && (
+        <div className="fixed inset-0 bg-white z-[10001]">
+          <div className="p-4">
+            <div className="flex items-center gap-3 mb-4">
               <button
-                onClick={() => setIsMenuOpen(true)}
-                className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 active:bg-gray-200 relative"
+                onClick={() => setShowSearchOverlay(false)}
+                className="text-gray-600"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#374151"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                >
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
               </button>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('tasks.searchPlaceholder', 'Search jobs or categories...')}
+                className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                autoFocus
+              />
+            </div>
+            {/* Search suggestions could go here */}
+          </div>
+        </div>
+      )}
 
-              {/* Search Input */}
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
-                  className="w-full bg-gray-100 rounded-full px-4 py-2.5 pl-10 text-sm text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                  🔍
-                </span>
-              </div>
+      {/* Filter Sheet */}
+      {showFilterSheet && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[10000]"
+          onClick={() => setShowFilterSheet(false)}
+        >
+          <div 
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-[10001]"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '80vh' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">{t('filters.title', 'Filters')}</h2>
+              <button
+                onClick={() => setShowFilterSheet(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-              {/* Radius Selector */}
+            {/* Location/Radius */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                📍 {t('filters.location', 'Location')}
+              </label>
               <select
                 value={searchRadius}
                 onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                className="bg-gray-100 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 border-0 appearance-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
-                style={{ minWidth: '70px' }}
+                className="w-full bg-gray-100 rounded-lg px-4 py-3 text-base border-0 focus:ring-2 focus:ring-blue-500"
               >
-                <option value={5}>5km</option>
-                <option value={10}>10km</option>
-                <option value={25}>25km</option>
-                <option value={50}>50km</option>
-                <option value={0}>
-                  🇱🇻 {t('tasks.allLatvia', 'All')}
-                </option>
+                <option value={5}>Within 5 km</option>
+                <option value={10}>Within 10 km</option>
+                <option value={25}>Within 25 km</option>
+                <option value={50}>Within 50 km</option>
+                <option value={0}>🇱🇻 {t('tasks.allLatvia', 'All Latvia')}</option>
               </select>
-
-              {/* Notification Bell - Visible when authenticated */}
-              {isAuthenticated && (
-                <NotificationBell
-                  notifications={notifications}
-                  totalNotifications={totalNotifications}
-                  onMarkAsRead={markNotificationsAsRead}
-                  onClearType={clearNotificationType}
-                  isMobile={true}
-                />
-              )}
             </div>
+
+            {/* Category */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🏷️ {t('filters.category', 'Category')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedCategory === cat.value
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Apply Button */}
+            <button
+              onClick={() => setShowFilterSheet(false)}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium"
+            >
+              {t('filters.apply', 'Apply Filters')}
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Category Pills */}
-          <div className="px-3 pb-3">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-              {categories.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory === cat.value
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              ))}
-            </div>
+      <div className="mobile-tasks-container">
+        {/* MINIMAL TOP BAR - Only Search + Filter */}
+        <div className="bg-white shadow-md flex-shrink-0 relative" style={{ zIndex: 10000 }}>
+          <div className="p-3 flex items-center justify-between">
+            {/* Search Button */}
+            <button
+              onClick={() => setShowSearchOverlay(true)}
+              className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full active:bg-gray-200"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </button>
+
+            {/* Filter Button */}
+            <button
+              onClick={() => setShowFilterSheet(true)}
+              className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full active:bg-gray-200"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+                <line x1="4" y1="21" x2="4" y2="14" />
+                <line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" />
+                <line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" />
+                <line x1="9" y1="8" x2="15" y2="8" />
+                <line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+            </button>
           </div>
         </div>
 
