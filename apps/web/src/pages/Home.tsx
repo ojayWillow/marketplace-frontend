@@ -1,32 +1,13 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@marketplace/shared';
 import MapHomePage from './MapHomePage';
 
 /**
  * Home page routing logic:
- * - Unauthenticated users → Redirect to /welcome (landing page)
- * - Authenticated users → Show map (the app)
- * 
- * Landing page is the gateway. You must login to enter the app.
+ * - Show map for ALL users (authenticated AND guests)
+ * - Guests can browse map and see jobs, but need to login to apply/post
+ * - This is the "second world" - the interactive map experience
+ * - Landing page (/welcome) is the gateway that explains what this is
  */
 export default function Home() {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    // If not authenticated, send to landing page
-    if (!isAuthenticated) {
-      navigate('/welcome', { replace: true });
-    }
-    // If authenticated, stay here and show map
-  }, [isAuthenticated, navigate]);
-
-  // Only render map if authenticated
-  // (During redirect, this prevents flash of map content)
-  if (!isAuthenticated) {
-    return null;
-  }
-
+  // Always show map - both authenticated users and guests can browse
   return <MapHomePage />;
 }
