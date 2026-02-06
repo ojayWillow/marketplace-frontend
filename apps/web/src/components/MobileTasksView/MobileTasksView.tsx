@@ -63,7 +63,7 @@ const MobileTasksView = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
-  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
   // Bottom sheet state - Start at 50% (taller than before)
@@ -285,32 +285,6 @@ const MobileTasksView = () => {
         onOfferService={() => navigate('/offerings/create')}
       />
 
-      {/* Search Overlay */}
-      {showSearchOverlay && (
-        <div className="fixed inset-0 bg-white z-[10001]">
-          <div className="p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <button
-                onClick={() => setShowSearchOverlay(false)}
-                className="text-gray-600"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('tasks.searchPlaceholder', 'Search jobs or categories...')}
-                className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                autoFocus
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Filter Sheet */}
       {showFilterSheet && (
         <div 
@@ -447,22 +421,54 @@ const MobileTasksView = () => {
           </MapContainer>
         </div>
 
-        {/* FLOATING SEARCH BUTTON - Top Left */}
-        <div className="absolute top-4 left-4 z-[1000]">
-          <button
-            onClick={() => setShowSearchOverlay(true)}
-            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
-            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
-        </div>
-
-        {/* FLOATING FILTER BUTTON - Top Right */}
-        <div className="absolute top-4 right-4 z-[1000]">
+        {/* FLOATING SEARCH/FILTER BAR - Top */}
+        <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-2">
+          {!searchExpanded ? (
+            // Collapsed: Just search icon button
+            <>
+              <button
+                onClick={() => setSearchExpanded(true)}
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </button>
+              
+              {/* Spacer to push filter button to right */}
+              <div className="flex-1" />
+            </>
+          ) : (
+            // Expanded: Back button + search input
+            <>
+              <button
+                onClick={() => {
+                  setSearchExpanded(false);
+                  setSearchQuery('');
+                }}
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
+                className="flex-1 bg-white rounded-full px-4 py-3 text-base shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+                autoFocus
+              />
+            </>
+          )}
+          
+          {/* Filter Button - Always visible */}
           <button
             onClick={() => setShowFilterSheet(true)}
             className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
@@ -537,25 +543,25 @@ const MobileTasksView = () => {
           >
             {/* Drag Handle Area */}
             <div
-              className="flex flex-col items-center pt-3 pb-3 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="flex flex-col items-center pt-4 pb-4 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-3" />
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-4" />
 
-              {/* Header Row */}
-              <div className="flex items-center justify-between w-full px-4">
+              {/* Header Row - Raised higher with more padding */}
+              <div className="flex items-center justify-between w-full px-4 mb-2">
                 <span className="text-lg font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                 </span>
 
-                {/* Create Button */}
+                {/* Create Button - Slightly larger */}
                 <button
                   type="button"
                   onClick={handleCreateClick}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
                   aria-label={t(
                     'tasks.createJobOrService',
                     'Create job or service'
@@ -566,7 +572,7 @@ const MobileTasksView = () => {
               </div>
 
               {sheetPosition === 'collapsed' && (
-                <span className="text-xs text-gray-400 flex items-center gap-1 mt-2">
+                <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
                   <span>↑</span> {t('tasks.swipeUpForJobs', 'Swipe up for jobs')}
                 </span>
               )}
