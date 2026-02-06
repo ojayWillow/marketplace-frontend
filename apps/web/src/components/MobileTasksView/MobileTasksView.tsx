@@ -29,6 +29,29 @@ import {
 const LOCATION_TIMEOUT_MS = 3000;
 
 /**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in kilometers
+ */
+const calculateDistance = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+/**
  * Main Mobile Tasks View Component
  * Displays a full-screen map with task markers and a draggable bottom sheet with task list
  */
@@ -168,15 +191,37 @@ const MobileTasksView = () => {
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
+  // Filter and sort tasks by distance (closest first)
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const query = searchQuery.toLowerCase();
-    return tasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(query) ||
-        task.description?.toLowerCase().includes(query)
-    );
-  }, [tasks, searchQuery]);
+    let filtered = tasks;
+    
+    // Apply search filter if query exists
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = tasks.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort by distance from user location (closest first)
+    return filtered.sort((a, b) => {
+      const distanceA = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        a.latitude,
+        a.longitude
+      );
+      const distanceB = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        b.latitude,
+        b.longitude
+      );
+      return distanceA - distanceB;
+    });
+  }, [tasks, searchQuery, userLocation]);
 
   // Event handlers
   const handleRadiusChange = (newRadius: number) => {
@@ -579,7 +624,7 @@ const MobileTasksView = () => {
               )}
             </div>
 
-            {/* Jobs List - Scrollable */}
+            {/* Jobs List - Scrollable - NOW SORTED BY DISTANCE */}
             <div
               className="flex-1 overflow-y-auto overscroll-contain"
               style={{ touchAction: 'pan-y' }}
