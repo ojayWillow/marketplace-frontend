@@ -40,41 +40,34 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className={isMobile ? "fixed inset-0 z-[10000] bg-gray-50 flex items-center justify-center" : "min-h-screen bg-gray-50 flex items-center justify-center"}>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  // Mobile: Fixed fullscreen list that covers header/footer
+  // Mobile: Use standard layout that works with bottom nav
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-[10000] flex flex-col bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-gray-500 hover:text-gray-700 p-1 -ml-1">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <h1 className="text-xl font-bold text-gray-900">
-              💬 {t('messages.title', 'Messages')}
-            </h1>
-          </div>
+        <div className="bg-white border-b px-4 py-3 flex-shrink-0">
+          <h1 className="text-xl font-bold text-gray-900">
+            💬 {t('messages.title', 'Messages')}
+          </h1>
         </div>
 
         {/* Conversations list */}
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <div className="flex flex-col items-center justify-center p-8 text-center" style={{ minHeight: 'calc(100vh - 180px)' }}>
               <div className="text-6xl mb-4">📭</div>
               <p className="text-gray-500 mb-4">{t('messages.noConversations', 'No conversations yet')}</p>
               <Link
-                to="/tasks"
+                to="/"
                 className="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
               >
-                {t('messages.browseTasks', 'Browse Tasks')}
+                {t('messages.browseTasks', 'Browse Map')}
               </Link>
             </div>
           ) : (
@@ -158,10 +151,10 @@ export default function Messages() {
             <div className="text-6xl mb-4">📭</div>
             <p className="text-gray-500 mb-4">{t('messages.noConversations', 'No conversations yet')}</p>
             <Link
-              to="/tasks"
+              to="/"
               className="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
             >
-              {t('messages.browseTasks', 'Browse Tasks')}
+              {t('messages.browseTasks', 'Browse Map')}
             </Link>
           </div>
         ) : (
