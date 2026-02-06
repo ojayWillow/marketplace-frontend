@@ -30,7 +30,7 @@ const LOCATION_TIMEOUT_MS = 3000;
 
 /**
  * Main Mobile Tasks View Component
- * Displays a map with task markers and a draggable bottom sheet with task list
+ * Displays a full-screen map with task markers and a draggable bottom sheet with task list
  */
 const MobileTasksView = () => {
   const { t } = useTranslation();
@@ -66,7 +66,7 @@ const MobileTasksView = () => {
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // Bottom sheet state
+  // Bottom sheet state - Start at 50% (taller than before)
   const [sheetPosition, setSheetPosition] = useState<SheetPosition>('half');
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
@@ -75,18 +75,18 @@ const MobileTasksView = () => {
   const hasAttemptedGeolocation = useRef(false);
   const hasFetchedInitial = useRef(false);
 
-  // Calculate sheet height based on position
+  // Calculate sheet height based on position - Made taller
   const getSheetHeight = () => {
     const vh = window.innerHeight;
     switch (sheetPosition) {
       case 'collapsed':
-        return 100;
+        return 120; // Slightly taller when collapsed
       case 'half':
-        return Math.round(vh * 0.4);
+        return Math.round(vh * 0.5); // 50% instead of 40%
       case 'full':
         return Math.round(vh * 0.85);
       default:
-        return Math.round(vh * 0.4);
+        return Math.round(vh * 0.5);
     }
   };
 
@@ -307,7 +307,6 @@ const MobileTasksView = () => {
                 autoFocus
               />
             </div>
-            {/* Search suggestions could go here */}
           </div>
         </div>
       )}
@@ -387,43 +386,10 @@ const MobileTasksView = () => {
         </div>
       )}
 
-      <div className="mobile-tasks-container">
-        {/* MINIMAL TOP BAR - Only Search + Filter */}
-        <div className="bg-white shadow-md flex-shrink-0 relative" style={{ zIndex: 10000 }}>
-          <div className="p-3 flex items-center justify-between">
-            {/* Search Button */}
-            <button
-              onClick={() => setShowSearchOverlay(true)}
-              className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full active:bg-gray-200"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-            </button>
-
-            {/* Filter Button */}
-            <button
-              onClick={() => setShowFilterSheet(true)}
-              className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full active:bg-gray-200"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
-                <line x1="4" y1="21" x2="4" y2="14" />
-                <line x1="4" y1="10" x2="4" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12" y2="3" />
-                <line x1="20" y1="21" x2="20" y2="16" />
-                <line x1="20" y1="12" x2="20" y2="3" />
-                <line x1="1" y1="14" x2="7" y2="14" />
-                <line x1="9" y1="8" x2="15" y2="8" />
-                <line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* MAP AREA - Now takes full remaining height */}
-        <div className="flex-1 relative" style={{ zIndex: 1 }}>
+      {/* FULL SCREEN CONTAINER - No header, map from top */}
+      <div className="fixed inset-0 flex flex-col">
+        {/* FULL-SCREEN MAP */}
+        <div className="absolute inset-0" style={{ zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
@@ -479,47 +445,86 @@ const MobileTasksView = () => {
               );
             })}
           </MapContainer>
-
-          {/* Floating Recenter Button - Positioned above bottom sheet */}
-          {!selectedTask && showJobList && (
-            <div
-              className="absolute right-4 z-[1000]"
-              style={{ bottom: `${sheetHeight + 16}px`, transition: 'bottom 0.3s ease-out' }}
-            >
-              <button
-                onClick={handleRecenter}
-                className="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
-                </svg>
-              </button>
-            </div>
-          )}
-
-          {/* Job Preview Card */}
-          {selectedTask && (
-            <JobPreviewCard
-              task={selectedTask}
-              userLocation={userLocation}
-              onViewDetails={handleViewDetails}
-              onClose={handleClosePreview}
-              onCreatorClick={handleCreatorClick}
-            />
-          )}
         </div>
 
-        {/* BOTTOM SHEET - Now a fixed overlay that slides over the map */}
+        {/* FLOATING SEARCH BUTTON - Top Left */}
+        <div className="absolute top-4 left-4 z-[1000]">
+          <button
+            onClick={() => setShowSearchOverlay(true)}
+            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
+        </div>
+
+        {/* FLOATING FILTER BUTTON - Top Right */}
+        <div className="absolute top-4 right-4 z-[1000]">
+          <button
+            onClick={() => setShowFilterSheet(true)}
+            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
+              <line x1="4" y1="21" x2="4" y2="14" />
+              <line x1="4" y1="10" x2="4" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12" y2="3" />
+              <line x1="20" y1="21" x2="20" y2="16" />
+              <line x1="20" y1="12" x2="20" y2="3" />
+              <line x1="1" y1="14" x2="7" y2="14" />
+              <line x1="9" y1="8" x2="15" y2="8" />
+              <line x1="17" y1="16" x2="23" y2="16" />
+            </svg>
+          </button>
+        </div>
+
+        {/* FLOATING RECENTER BUTTON - Positioned above bottom sheet */}
+        {!selectedTask && showJobList && (
+          <div
+            className="absolute right-4 z-[1000]"
+            style={{ 
+              bottom: `${sheetHeight + 20}px`, 
+              transition: 'bottom 0.3s ease-out' 
+            }}
+          >
+            <button
+              onClick={handleRecenter}
+              className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+              style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Job Preview Card */}
+        {selectedTask && (
+          <JobPreviewCard
+            task={selectedTask}
+            userLocation={userLocation}
+            onViewDetails={handleViewDetails}
+            onClose={handleClosePreview}
+            onCreatorClick={handleCreatorClick}
+          />
+        )}
+
+        {/* BOTTOM SHEET - Fixed overlay over the map */}
         {!selectedTask && showJobList && (
           <div
             className="fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
@@ -532,17 +537,17 @@ const MobileTasksView = () => {
           >
             {/* Drag Handle Area */}
             <div
-              className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="flex flex-col items-center pt-3 pb-3 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-3" />
 
               {/* Header Row */}
               <div className="flex items-center justify-between w-full px-4">
-                <span className="text-base font-bold text-gray-800">
+                <span className="text-lg font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                 </span>
 
@@ -550,18 +555,18 @@ const MobileTasksView = () => {
                 <button
                   type="button"
                   onClick={handleCreateClick}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
                   aria-label={t(
                     'tasks.createJobOrService',
                     'Create job or service'
                   )}
                 >
-                  <span className="text-xl leading-none font-bold">+</span>
+                  <span className="text-2xl leading-none font-bold">+</span>
                 </button>
               </div>
 
               {sheetPosition === 'collapsed' && (
-                <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                <span className="text-xs text-gray-400 flex items-center gap-1 mt-2">
                   <span>↑</span> {t('tasks.swipeUpForJobs', 'Swipe up for jobs')}
                 </span>
               )}
