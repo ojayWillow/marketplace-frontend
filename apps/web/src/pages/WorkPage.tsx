@@ -330,7 +330,7 @@ const WorkPage = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {items.map((item) => {
               const categoryIcon = getCategoryIcon(item.category);
               const categoryLabel = getCategoryLabel(item.category);
@@ -341,43 +341,39 @@ const WorkPage = () => {
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-xl shadow-md overflow-hidden active:shadow-lg transition-all cursor-pointer"
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden active:shadow-lg transition-all cursor-pointer"
                 >
-                  {/* Card Header with Gradient (matching TaskDetail design) */}
-                  <div 
-                    className={`p-4 text-white relative ${
-                      item.type === 'job'
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600'
-                        : 'bg-gradient-to-r from-purple-500 to-purple-600'
-                    }`}
-                    style={{ minHeight: '100px' }}
-                  >
-                    {/* Top Left - Category Badge */}
-                    <div className="absolute top-4 left-4">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
-                        <span>{categoryIcon}</span>
-                        {categoryLabel}
-                      </span>
-                    </div>
-                    
-                    {/* Top Right - Price */}
-                    {price && (
-                      <div className="absolute top-4 right-4 text-right">
-                        <div className="text-2xl font-bold">€{price}</div>
-                        <div className="text-white/80 text-xs mt-0.5">
-                          {item.type === 'job' ? 'Budget' : 'Price'}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Title */}
-                    <div className="pt-8">
-                      <h3 className="text-lg font-bold line-clamp-2">{item.title}</h3>
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
+                  {/* Card Content */}
                   <div className="p-4">
+                    {/* Header Row: Type Badge + Category */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                          item.type === 'job'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {item.type === 'job' ? '💼 Job' : '🛠️ Service'}
+                        </span>
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <span>{categoryIcon}</span>
+                          <span>{categoryLabel}</span>
+                        </span>
+                      </div>
+                      {price && (
+                        <div className={`text-xl font-bold ${
+                          item.type === 'job' ? 'text-blue-600' : 'text-orange-600'
+                        }`}>
+                          €{price}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {item.title}
+                    </h3>
+
                     {/* Description */}
                     {item.description && (
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
@@ -385,7 +381,7 @@ const WorkPage = () => {
                       </p>
                     )}
 
-                    {/* Footer Info */}
+                    {/* Footer Row: Location, Time, Creator */}
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <div className="flex items-center gap-2">
                         {item.location && (
@@ -393,11 +389,12 @@ const WorkPage = () => {
                             📍 {item.location}
                           </span>
                         )}
+                        <span className="text-gray-400">•</span>
+                        <span>{timeAgo}</span>
                       </div>
-                      <span className="text-gray-400">{timeAgo}</span>
                     </div>
 
-                    {/* Creator Name */}
+                    {/* Creator */}
                     {item.creator_name && (
                       <div className="mt-2 pt-2 border-t border-gray-100">
                         <span className="text-xs text-gray-500">
@@ -406,6 +403,11 @@ const WorkPage = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Bottom Color Accent Bar */}
+                  <div className={`h-1 ${
+                    item.type === 'job' ? 'bg-blue-500' : 'bg-orange-500'
+                  }`} />
                 </div>
               );
             })}
