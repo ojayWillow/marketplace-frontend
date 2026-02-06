@@ -63,15 +63,14 @@ const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 function App() {
   return (
     <>
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<Layout><PageLoader /></Layout>}>
         <Routes>
-          {/* Landing Page - OUTSIDE Layout (no navigation) */}
-          <Route path="/welcome" element={<LandingPage />} />
-          
-          {/* App routes - INSIDE Layout (with navigation) */}
           <Route path="/" element={<Layout />}>
-            {/* Home - Shows landing for guests, map for authenticated */}
+            {/* Home - Redirects guests to /welcome, shows map for authenticated */}
             <Route index element={<Home />} />
+            
+            {/* Landing page - available to everyone with header/footer */}
+            <Route path="welcome" element={<LandingPage />} />
             
             {/* Auth routes */}
             <Route path="login" element={<Login />} />
