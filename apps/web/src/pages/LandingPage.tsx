@@ -36,17 +36,6 @@ export default function LandingPage() {
   const initAttemptedRef = useRef(false)
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
 
-  // Mark landing as seen when component mounts
-  useEffect(() => {
-    localStorage.setItem('hasSeenLanding', 'true')
-  }, [])
-
-  // Handler for "Browse map" buttons - marks landing as seen
-  const handleEnterMap = () => {
-    localStorage.setItem('hasSeenLanding', 'true')
-    navigate('/')
-  }
-
   // Initialize INVISIBLE reCAPTCHA
   const initRecaptcha = useCallback(() => {
     if (initAttemptedRef.current && recaptchaVerifierRef.current) {
@@ -361,13 +350,6 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-
-              <button 
-                onClick={handleEnterMap}
-                className="hidden lg:inline-flex text-gray-400 hover:text-white transition-colors items-center gap-1 cursor-pointer"
-              >
-                Just browsing? <span className="text-blue-400">See the map →</span>
-              </button>
             </div>
 
             {/* Right: Login Card */}
@@ -460,15 +442,6 @@ export default function LandingPage() {
                   <Link to="/terms" className="text-blue-400 hover:underline">Terms</Link> and{' '}
                   <Link to="/privacy" className="text-blue-400 hover:underline">Privacy Policy</Link>
                 </p>
-              </div>
-              
-              <div className="text-center mt-4 lg:hidden">
-                <button
-                  onClick={handleEnterMap}
-                  className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 text-sm cursor-pointer"
-                >
-                  Just browsing? See the map <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             </div>
           </div>
@@ -582,15 +555,14 @@ export default function LandingPage() {
               { icon: '🔧', label: 'Repairs', desc: 'Handyman tasks' },
               { icon: '💻', label: 'Tech Help', desc: 'Setup, support' },
             ].map((cat, i) => (
-              <button
+              <div
                 key={i}
-                onClick={handleEnterMap}
-                className="bg-[#1a1a24]/50 hover:bg-[#1a1a24] border border-[#2a2a3a] hover:border-[#3a3a4a] rounded-xl p-3 sm:p-4 text-center transition-all group cursor-pointer"
+                className="bg-[#1a1a24]/50 hover:bg-[#1a1a24] border border-[#2a2a3a] hover:border-[#3a3a4a] rounded-xl p-3 sm:p-4 text-center transition-all group"
               >
                 <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{cat.icon}</div>
                 <div className="text-white font-medium text-xs sm:text-sm group-hover:text-blue-400 transition-colors">{cat.label}</div>
                 <div className="text-gray-500 text-[10px] sm:text-xs hidden sm:block">{cat.desc}</div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -641,21 +613,13 @@ export default function LandingPage() {
           <p className="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8">
             Join your local community and start getting things done today.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-            <a 
-              href="#top"
-              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-            >
-              Sign up free <ArrowRight className="w-5 h-5" />
-            </a>
-            <button
-              onClick={handleEnterMap}
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 border border-[#2a2a3a] hover:bg-[#1a1a24] text-white font-semibold rounded-xl transition-colors cursor-pointer"
-            >
-              Browse map first
-            </button>
-          </div>
+          <a 
+            href="#top"
+            onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+            className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+          >
+            Sign up free <ArrowRight className="w-5 h-5" />
+          </a>
         </div>
       </section>
     </div>
