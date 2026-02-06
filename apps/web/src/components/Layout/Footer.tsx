@@ -7,7 +7,7 @@ export default function Footer() {
 
   return (
     <footer 
-      className="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-400 border-t border-slate-800/50"
+      className="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-400 border-t-2 border-slate-700"
       role="contentinfo"
       aria-label="Site footer"
     >
@@ -89,7 +89,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800/50">
+        <div className="mt-12 pt-8 border-t border-slate-700">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-500">
               &copy; {currentYear} Kolab. {t('footer.allRightsReserved', 'All rights reserved.')}
