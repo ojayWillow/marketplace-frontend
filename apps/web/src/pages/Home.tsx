@@ -1,10 +1,13 @@
-import { useAuthStore } from '@marketplace/shared';
-import LandingPage from './LandingPage';
 import MapHomePage from './MapHomePage';
 
+/**
+ * Home page - Always shows the interactive map for ALL users (guests and authenticated)
+ * 
+ * UX Philosophy: The map IS the app, not a feature you navigate to.
+ * - Guests can browse, search, and view job listings freely
+ * - Authentication is only required for ACTIONS (apply, post, message)
+ * - Landing/marketing page moved to /welcome route
+ */
 export default function Home() {
-  const { isAuthenticated } = useAuthStore();
-
-  // Show landing page for guests, interactive map for authenticated users
-  return isAuthenticated ? <MapHomePage /> : <LandingPage />;
+  return <MapHomePage />;
 }
