@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getTasks, getOfferings } from '@marketplace/shared';
-import { CATEGORIES } from '../constants/categories';
+import { CATEGORIES, getCategoryIcon, getCategoryLabel } from '../constants/categories';
 
 type MainTab = 'all' | 'jobs' | 'services';
 
@@ -155,10 +155,20 @@ const WorkPage = () => {
     }
   };
 
-  // Get category info
-  const getCategoryInfo = (categoryKey: string) => {
-    const cat = CATEGORIES.find(c => c.value === categoryKey);
-    return cat || { icon: '📋', label: categoryKey };
+  // Get time ago string
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -320,54 +330,80 @@ const WorkPage = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {items.map((item) => {
-              const category = getCategoryInfo(item.category);
+              const categoryIcon = getCategoryIcon(item.category);
+              const categoryLabel = getCategoryLabel(item.category);
               const price = item.type === 'job' ? item.budget : item.price;
+              const timeAgo = getTimeAgo(item.created_at);
               
               return (
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-xl p-4 shadow-sm active:shadow-md transition-all cursor-pointer"
+                  className="bg-white rounded-xl shadow-md overflow-hidden active:shadow-lg transition-all cursor-pointer"
                 >
-                  {/* Type Badge */}
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        item.type === 'job'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-purple-100 text-purple-700'
-                      }`}
-                    >
-                      {item.type === 'job' ? '💼 Job' : '🛠️ Service'}
-                    </span>
-                    {price && (
-                      <span className="text-lg font-bold text-gray-900">
-                        €{price}
+                  {/* Card Header with Gradient (matching TaskDetail design) */}
+                  <div 
+                    className={`p-4 text-white relative ${
+                      item.type === 'job'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+                        : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                    }`}
+                    style={{ minHeight: '100px' }}
+                  >
+                    {/* Top Left - Category Badge */}
+                    <div className="absolute top-4 left-4">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
+                        <span>{categoryIcon}</span>
+                        {categoryLabel}
                       </span>
+                    </div>
+                    
+                    {/* Top Right - Price */}
+                    {price && (
+                      <div className="absolute top-4 right-4 text-right">
+                        <div className="text-2xl font-bold">€{price}</div>
+                        <div className="text-white/80 text-xs mt-0.5">
+                          {item.type === 'job' ? 'Budget' : 'Price'}
+                        </div>
+                      </div>
                     )}
+                    
+                    {/* Title */}
+                    <div className="pt-8">
+                      <h3 className="text-lg font-bold line-clamp-2">{item.title}</h3>
+                    </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-base font-semibold text-gray-900 mb-1">
-                    {item.title}
-                  </h3>
+                  {/* Card Body */}
+                  <div className="p-4">
+                    {/* Description */}
+                    {item.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
 
-                  {/* Description */}
-                  {item.description && (
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                      {item.description}
-                    </p>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <span>{category.icon} {category.label}</span>
+                    {/* Footer Info */}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center gap-2">
+                        {item.location && (
+                          <span className="flex items-center gap-1">
+                            📍 {item.location}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-gray-400">{timeAgo}</span>
                     </div>
+
+                    {/* Creator Name */}
                     {item.creator_name && (
-                      <span>by {item.creator_name}</span>
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">
+                          Posted by <span className="font-medium text-gray-700">{item.creator_name}</span>
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
