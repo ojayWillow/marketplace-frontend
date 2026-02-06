@@ -1,20 +1,28 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@marketplace/shared';
-import LandingPage from './LandingPage';
 import MapHomePage from './MapHomePage';
 
 /**
  * Home page routing logic:
- * - NOT authenticated → Show landing page (explains the platform)
- * - Authenticated → Show map (browse and interact with jobs)
+ * - NOT authenticated → Redirect to /welcome (landing page, no nav)
+ * - Authenticated → Show map (second world)
  */
 export default function Home() {
   const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
 
-  // Guest users see landing page
+  useEffect(() => {
+    // Redirect unauthenticated users to landing page
+    if (!isAuthenticated) {
+      navigate('/welcome', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Only authenticated users see the map
   if (!isAuthenticated) {
-    return <LandingPage />;
+    return null; // Will redirect
   }
 
-  // Authenticated users see the map
   return <MapHomePage />;
 }
