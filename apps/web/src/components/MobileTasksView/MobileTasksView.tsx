@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import { getTasks } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
 import { useUnreadCounts } from '../../api/hooks';
-import { getCategoryIcon, CATEGORY_OPTIONS } from '../../constants/categories';
+import { getCategoryIcon, CATEGORY_OPTIONS, CATEGORIES } from '../../constants/categories';
 import { useNotifications } from '../Layout/Header/hooks/useNotifications';
 
 import { Task, SheetPosition } from './types';
@@ -27,6 +27,7 @@ import {
 
 // Reduced timeout for faster perceived loading
 const LOCATION_TIMEOUT_MS = 3000;
+const MAX_CATEGORIES = 5;
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -77,7 +78,7 @@ const MobileTasksView = () => {
   // Default location: Riga, Latvia
   const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
   const [searchRadius, setSearchRadius] = useState(25);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]); // Multi-select
   const [searchQuery, setSearchQuery] = useState('');
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
@@ -115,25 +116,53 @@ const MobileTasksView = () => {
 
   const sheetHeight = getSheetHeight();
 
-  // Fetch tasks function
-  const fetchTasks = async (lat: number, lng: number, radius: number, category: string) => {
+  // Fetch tasks function - now supports multiple categories
+  const fetchTasks = async (lat: number, lng: number, radius: number, categories: string[]) => {
     setLoading(true);
     try {
       const effectiveRadius = radius === 0 ? 500 : radius;
-      const response = await getTasks({
-        latitude: lat,
-        longitude: lng,
-        radius: effectiveRadius,
-        status: 'open',
-        category: category !== 'all' ? category : undefined,
-      });
-
-      const tasksWithIcons = response.tasks.map((task) => ({
-        ...task,
-        icon: getCategoryIcon(task.category),
-      }));
-
-      setTasks(tasksWithIcons);
+      
+      // If no categories selected, fetch all
+      if (categories.length === 0) {
+        const response = await getTasks({
+          latitude: lat,
+          longitude: lng,
+          radius: effectiveRadius,
+          status: 'open',
+        });
+        const tasksWithIcons = response.tasks.map((task) => ({
+          ...task,
+          icon: getCategoryIcon(task.category),
+        }));
+        setTasks(tasksWithIcons);
+      } else {
+        // Fetch for each category and combine results
+        const allTasks: Task[] = [];
+        const taskIds = new Set<string>();
+        
+        for (const category of categories) {
+          const response = await getTasks({
+            latitude: lat,
+            longitude: lng,
+            radius: effectiveRadius,
+            status: 'open',
+            category,
+          });
+          
+          // Add only unique tasks
+          response.tasks.forEach((task) => {
+            if (!taskIds.has(task.id)) {
+              taskIds.add(task.id);
+              allTasks.push({
+                ...task,
+                icon: getCategoryIcon(task.category),
+              });
+            }
+          });
+        }
+        
+        setTasks(allTasks);
+      }
     } catch (err) {
       console.error('Failed to load jobs', err);
     }
@@ -151,7 +180,7 @@ const MobileTasksView = () => {
     if (savedRadius) setSearchRadius(initialRadius);
 
     // Fetch immediately with default location (don't wait for geolocation)
-    fetchTasks(56.9496, 24.1052, initialRadius, 'all');
+    fetchTasks(56.9496, 24.1052, initialRadius, []);
 
     // Try to get user's actual location in background
     if (navigator.geolocation && !hasAttemptedGeolocation.current) {
@@ -170,7 +199,7 @@ const MobileTasksView = () => {
           };
           setUserLocation(newLocation);
           // Refresh data with actual location
-          fetchTasks(newLocation.lat, newLocation.lng, initialRadius, 'all');
+          fetchTasks(newLocation.lat, newLocation.lng, initialRadius, []);
         },
         () => {
           clearTimeout(timeoutId);
@@ -184,8 +213,8 @@ const MobileTasksView = () => {
   // Refetch when filters change (but not on initial mount)
   useEffect(() => {
     if (!hasFetchedInitial.current) return;
-    fetchTasks(userLocation.lat, userLocation.lng, searchRadius, selectedCategory);
-  }, [searchRadius, selectedCategory]);
+    fetchTasks(userLocation.lat, userLocation.lng, searchRadius, selectedCategories);
+  }, [searchRadius, selectedCategories]);
 
   // Memoized values
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
@@ -227,6 +256,18 @@ const MobileTasksView = () => {
   const handleRadiusChange = (newRadius: number) => {
     setSearchRadius(newRadius);
     localStorage.setItem('taskSearchRadius', newRadius.toString());
+  };
+
+  const handleCategoryToggle = (categoryValue: string) => {
+    if (selectedCategories.includes(categoryValue)) {
+      // Remove category
+      setSelectedCategories(selectedCategories.filter(c => c !== categoryValue));
+    } else {
+      // Add category (max 5)
+      if (selectedCategories.length < MAX_CATEGORIES) {
+        setSelectedCategories([...selectedCategories, categoryValue]);
+      }
+    }
   };
 
   const handleRecenter = () => {
@@ -300,12 +341,6 @@ const MobileTasksView = () => {
     }
   };
 
-  // Category pills data
-  const categories = [
-    { value: 'all', icon: '🌐', label: 'All' },
-    ...CATEGORY_OPTIONS.slice(1, 10),
-  ];
-
   return (
     <>
       <style>{mobileTasksStyles}</style>
@@ -337,9 +372,9 @@ const MobileTasksView = () => {
           onClick={() => setShowFilterSheet(false)}
         >
           <div 
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-[10001]"
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-[10001] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: '80vh' }}
+            style={{ maxHeight: '85vh' }}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">{t('filters.title', 'Filters')}</h2>
@@ -371,27 +406,48 @@ const MobileTasksView = () => {
               </select>
             </div>
 
-            {/* Category */}
+            {/* Categories - Multi-select */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                🏷️ {t('filters.category', 'Category')}
+                🏷️ {t('filters.categories', 'Categories')} 
+                {selectedCategories.length > 0 && (
+                  <span className="text-blue-600 ml-2">
+                    ({selectedCategories.length}/{MAX_CATEGORIES} selected)
+                  </span>
+                )}
               </label>
               <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setSelectedCategory(cat.value)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      selectedCategory === cat.value
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    <span>{cat.icon}</span>
-                    <span>{cat.label}</span>
-                  </button>
-                ))}
+                {CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategories.includes(cat.value);
+                  const isDisabled = !isSelected && selectedCategories.length >= MAX_CATEGORIES;
+                  
+                  return (
+                    <button
+                      key={cat.value}
+                      onClick={() => handleCategoryToggle(cat.value)}
+                      disabled={isDisabled}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        isSelected
+                          ? 'bg-blue-500 text-white'
+                          : isDisabled
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.label}</span>
+                      {isSelected && (
+                        <span className="ml-1 text-xs">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+              {selectedCategories.length >= MAX_CATEGORIES && (
+                <p className="text-xs text-gray-500 mt-2">
+                  ℹ️ Maximum {MAX_CATEGORIES} categories selected. Deselect one to choose another.
+                </p>
+              )}
             </div>
 
             {/* Apply Button */}
@@ -469,11 +525,11 @@ const MobileTasksView = () => {
         {/* FLOATING SEARCH/FILTER BAR - Top */}
         <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-2">
           {!searchExpanded ? (
-            // Collapsed: Just search icon button
+            // Collapsed: Search button + category chips
             <>
               <button
                 onClick={() => setSearchExpanded(true)}
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 flex-shrink-0"
                 style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
@@ -482,8 +538,27 @@ const MobileTasksView = () => {
                 </svg>
               </button>
               
+              {/* Category Chips - Show when categories are selected */}
+              {selectedCategories.length > 0 && (
+                <div className="flex items-center gap-2 flex-1 overflow-x-auto">
+                  {selectedCategories.map((catValue) => {
+                    const category = CATEGORIES.find(c => c.value === catValue);
+                    if (!category) return null;
+                    return (
+                      <div
+                        key={catValue}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0"
+                      >
+                        <span>{category.icon}</span>
+                        <span>{category.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
               {/* Spacer to push filter button to right */}
-              <div className="flex-1" />
+              {selectedCategories.length === 0 && <div className="flex-1" />}
             </>
           ) : (
             // Expanded: Back button + search input
@@ -516,7 +591,7 @@ const MobileTasksView = () => {
           {/* Filter Button - Always visible */}
           <button
             onClick={() => setShowFilterSheet(true)}
-            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 flex-shrink-0 relative"
             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
@@ -530,6 +605,12 @@ const MobileTasksView = () => {
               <line x1="9" y1="8" x2="15" y2="8" />
               <line x1="17" y1="16" x2="23" y2="16" />
             </svg>
+            {/* Badge showing active filter count */}
+            {selectedCategories.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {selectedCategories.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -624,7 +705,7 @@ const MobileTasksView = () => {
               )}
             </div>
 
-            {/* Jobs List - Scrollable - NOW SORTED BY DISTANCE */}
+            {/* Jobs List - Scrollable - SORTED BY DISTANCE */}
             <div
               className="flex-1 overflow-y-auto overscroll-contain"
               style={{ touchAction: 'pan-y' }}
