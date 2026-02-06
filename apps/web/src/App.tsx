@@ -40,6 +40,7 @@ const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Conversation = lazy(() => import('./pages/Conversation'))
 const Favorites = lazy(() => import('./pages/Favorites'))
+const WorkPage = lazy(() => import('./pages/WorkPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Legal pages
@@ -127,6 +128,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Work page - All jobs and services catalog */}
+            <Route path="work" element={<WorkPage />} />
             <Route path="listings/:id" element={<ListingDetail />} />
             <Route
               path="listings/create"
