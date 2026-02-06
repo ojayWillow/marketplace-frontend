@@ -5,32 +5,28 @@ import MapHomePage from './MapHomePage';
 
 /**
  * Home page routing logic:
- * - First-time visitors → Redirect to /welcome (landing page)
- * - Returning visitors who've seen landing → Show map
- * - Authenticated users → Always show map
+ * - Unauthenticated users → Redirect to /welcome (landing page)
+ * - Authenticated users → Show map (the app)
  * 
- * UX Philosophy: Landing page is for onboarding new users,
- * but the map IS the app for everyone else.
+ * Landing page is the gateway. You must login to enter the app.
  */
 export default function Home() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Check if user has seen the landing page before
-    const hasSeenLanding = localStorage.getItem('hasSeenLanding');
-    
-    // If authenticated, always show map (skip landing)
-    if (isAuthenticated) {
-      return;
-    }
-    
-    // If first-time visitor (not authenticated AND hasn't seen landing)
-    if (!hasSeenLanding) {
+    // If not authenticated, send to landing page
+    if (!isAuthenticated) {
       navigate('/welcome', { replace: true });
     }
-    // Otherwise, show map (returning visitor)
+    // If authenticated, stay here and show map
   }, [isAuthenticated, navigate]);
+
+  // Only render map if authenticated
+  // (During redirect, this prevents flash of map content)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return <MapHomePage />;
 }
