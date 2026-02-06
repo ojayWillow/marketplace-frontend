@@ -178,14 +178,6 @@ const WorkPage = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getDifficulty = (item: WorkItem) => {
-    const amount = item.type === 'job' ? item.budget : item.price;
-    if (!amount) return 'Easy';
-    if (amount < 30) return 'Easy';
-    if (amount < 70) return 'Medium';
-    return 'Hard';
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Filter Sheet */}
@@ -339,90 +331,68 @@ const WorkPage = () => {
               const categoryLabel = getCategoryLabel(item.category);
               const price = item.type === 'job' ? item.budget : item.price;
               const timeAgo = getTimeAgo(item.created_at);
-              const difficulty = getDifficulty(item);
               
               const isJob = item.type === 'job';
-              const headerBg = isJob ? 'bg-blue-50' : 'bg-orange-50';
-              const priceColor = isJob ? 'text-blue-600' : 'text-orange-600';
+              const accentColor = isJob ? 'text-blue-600' : 'text-orange-600';
               
               return (
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden active:shadow-lg transition-all cursor-pointer"
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
                 >
-                  {/* Header: Category + Price */}
-                  <div className={`${headerBg} px-4 py-3 flex items-center justify-between`}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{categoryIcon}</span>
-                      <span className="text-sm font-semibold text-gray-800">{categoryLabel}</span>
+                  <div className="p-4">
+                    {/* Header Row: Category + Price */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{categoryIcon}</span>
+                        <span className="text-sm font-medium text-gray-700">{categoryLabel}</span>
+                      </div>
+                      {price && (
+                        <span className={`text-2xl font-bold ${accentColor}`}>
+                          €{price}
+                        </span>
+                      )}
                     </div>
-                    {price && (
-                      <span className={`text-2xl font-bold ${priceColor}`}>
-                        €{price}
-                      </span>
-                    )}
-                  </div>
 
-                  {/* Body */}
-                  <div className="p-4 space-y-3">
                     {/* Title */}
-                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">
                       {item.title}
                     </h3>
 
-                    {/* User Info - ONE LINE */}
-                    <div className="flex items-center gap-2 text-sm">
+                    {/* User + Location - ONE LINE */}
+                    <div className="flex items-center gap-2 mb-3 text-sm">
                       {/* Avatar */}
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                         {item.creator_name?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                       
                       {/* Username */}
-                      <span className="font-medium text-gray-900 truncate">
+                      <span className="font-medium text-gray-700">
                         {item.creator_name || 'Anonymous'}
                       </span>
                       
-                      {/* Rating */}
-                      <span className="flex items-center gap-0.5 text-xs text-gray-600">
-                        <span className="text-yellow-500">⭐</span>
-                        <span>4.8</span>
-                        <span className="text-gray-400">(23)</span>
-                      </span>
-                      
-                      {/* Location */}
+                      {/* Separator + Location */}
                       {item.location && (
                         <>
                           <span className="text-gray-300">•</span>
-                          <span className="text-xs text-gray-500 truncate">{item.location}</span>
+                          <span className="text-gray-500 flex items-center gap-1">
+                            <span>📍</span>
+                            <span className="truncate">{item.location}</span>
+                          </span>
                         </>
                       )}
                     </div>
 
                     {/* Description */}
                     {item.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                         {item.description}
                       </p>
                     )}
 
-                    {/* Footer Metadata - ONE LINE */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <span>📍</span>
-                        <span>{item.location || 'Remote'}</span>
-                        <span className="text-gray-400">(2.3 km)</span>
-                      </span>
-                      
-                      <span className="text-gray-300">•</span>
-                      
-                      <span className="flex items-center gap-1">
-                        <span>🔨</span>
-                        <span>{difficulty}</span>
-                      </span>
-                      
-                      <span className="text-gray-300">•</span>
-                      
+                    {/* Footer: Time */}
+                    <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>{timeAgo}</span>
                     </div>
                   </div>
