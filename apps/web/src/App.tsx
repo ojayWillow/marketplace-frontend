@@ -17,6 +17,7 @@ const PageLoader = () => (
 
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
 const PhoneLogin = lazy(() => import('./pages/auth/PhoneLogin'))
@@ -65,7 +66,13 @@ function App() {
       <Suspense fallback={<Layout><PageLoader /></Layout>}>
         <Routes>
           <Route path="/" element={<Layout />}>
+            {/* Home - Always shows map for all users (guests can browse) */}
             <Route index element={<Home />} />
+            
+            {/* Marketing/Landing page - moved to /welcome */}
+            <Route path="welcome" element={<LandingPage />} />
+            
+            {/* Auth routes */}
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="phone-login" element={<PhoneLogin />} />
@@ -89,7 +96,28 @@ function App() {
             />
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password" element={<ResetPassword />} />
+            
+            {/* Listings */}
             <Route path="listings" element={<Listings />} />
+            <Route path="listings/:id" element={<ListingDetail />} />
+            <Route
+              path="listings/create"
+              element={
+                <ProtectedRoute>
+                  <CreateListing />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="listings/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditListing />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Tasks/Quick Help */}
             <Route path="tasks" element={<Tasks />} />
             <Route path="tasks/:id" element={<TaskDetail />} />
             {/* Alias for /tasks */}
@@ -110,6 +138,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
             {/* Offerings routes */}
             <Route path="offerings/:id" element={<OfferingDetail />} />
             <Route
@@ -128,25 +157,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
             {/* Work page - All jobs and services catalog */}
             <Route path="work" element={<WorkPage />} />
-            <Route path="listings/:id" element={<ListingDetail />} />
-            <Route
-              path="listings/create"
-              element={
-                <ProtectedRoute>
-                  <CreateListing />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="listings/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditListing />
-                </ProtectedRoute>
-              }
-            />
+            
+            {/* User Profile & Settings */}
             <Route
               path="profile"
               element={
@@ -155,8 +170,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
             {/* Favorites */}
             <Route path="favorites" element={<Favorites />} />
+            
             {/* Messaging */}
             <Route
               path="messages"
@@ -174,11 +191,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
             {/* Public user profile */}
             <Route path="users/:id" element={<UserProfile />} />
+            
             {/* Legal pages */}
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
+            
             {/* 404 catch-all route - must be last */}
             <Route path="*" element={<NotFound />} />
           </Route>
