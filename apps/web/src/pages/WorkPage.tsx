@@ -15,8 +15,11 @@ interface WorkItem {
   budget?: number;
   price?: number;
   creator_name?: string;
+  creator_id?: number;
   created_at: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const MAX_CATEGORIES = 5;
@@ -50,8 +53,11 @@ const WorkPage = () => {
             category: task.category,
             budget: task.budget || task.reward,
             creator_name: task.creator_name,
+            creator_id: task.creator_id,
             created_at: task.created_at,
             location: task.location,
+            latitude: task.latitude,
+            longitude: task.longitude,
           }));
           allItems = [...allItems, ...jobs];
         } else {
@@ -66,8 +72,11 @@ const WorkPage = () => {
               category: task.category,
               budget: task.budget || task.reward,
               creator_name: task.creator_name,
+              creator_id: task.creator_id,
               created_at: task.created_at,
               location: task.location,
+              latitude: task.latitude,
+              longitude: task.longitude,
             }));
             allItems = [...allItems, ...jobs];
           }
@@ -86,8 +95,11 @@ const WorkPage = () => {
             category: offering.category,
             price: offering.price,
             creator_name: offering.creator_name,
+            creator_id: offering.creator_id,
             created_at: offering.created_at,
             location: offering.location,
+            latitude: offering.latitude,
+            longitude: offering.longitude,
           }));
           allItems = [...allItems, ...services];
         } else {
@@ -102,8 +114,11 @@ const WorkPage = () => {
               category: offering.category,
               price: offering.price,
               creator_name: offering.creator_name,
+              creator_id: offering.creator_id,
               created_at: offering.created_at,
               location: offering.location,
+              latitude: offering.latitude,
+              longitude: offering.longitude,
             }));
             allItems = [...allItems, ...services];
           }
@@ -169,6 +184,15 @@ const WorkPage = () => {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Get difficulty level (based on price for jobs, just show for services)
+  const getDifficulty = (item: WorkItem) => {
+    const amount = item.type === 'job' ? item.budget : item.price;
+    if (!amount) return 'Easy';
+    if (amount < 30) return 'Easy';
+    if (amount < 70) return 'Medium';
+    return 'Hard';
   };
 
   return (
@@ -336,6 +360,13 @@ const WorkPage = () => {
               const categoryLabel = getCategoryLabel(item.category);
               const price = item.type === 'job' ? item.budget : item.price;
               const timeAgo = getTimeAgo(item.created_at);
+              const difficulty = getDifficulty(item);
+              
+              // Color scheme based on type
+              const isJob = item.type === 'job';
+              const headerBgColor = isJob ? 'bg-blue-50' : 'bg-orange-50';
+              const priceColor = isJob ? 'text-blue-600' : 'text-orange-600';
+              const iconColor = isJob ? 'text-blue-600' : 'text-orange-600';
               
               return (
                 <div
@@ -343,36 +374,53 @@ const WorkPage = () => {
                   onClick={() => handleItemClick(item)}
                   className="bg-white rounded-lg border border-gray-200 overflow-hidden active:shadow-lg transition-all cursor-pointer"
                 >
-                  {/* Card Content */}
-                  <div className="p-4">
-                    {/* Header Row: Type Badge + Category */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                          item.type === 'job'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-orange-100 text-orange-700'
-                        }`}>
-                          {item.type === 'job' ? '💼 Job' : '🛠️ Service'}
-                        </span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <span>{categoryIcon}</span>
-                          <span>{categoryLabel}</span>
-                        </span>
-                      </div>
-                      {price && (
-                        <div className={`text-xl font-bold ${
-                          item.type === 'job' ? 'text-blue-600' : 'text-orange-600'
-                        }`}>
-                          €{price}
-                        </div>
-                      )}
+                  {/* Color-coded Header */}
+                  <div className={`${headerBgColor} px-4 py-2.5 flex items-center justify-between`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg ${iconColor}`}>{categoryIcon}</span>
+                      <span className="text-sm font-medium text-gray-700">{categoryLabel}</span>
                     </div>
+                    {price && (
+                      <div className={`text-xl font-bold ${priceColor}`}>
+                        €{price}
+                      </div>
+                    )}
+                  </div>
 
+                  {/* Card Body */}
+                  <div className="p-4">
                     {/* Title */}
-                    <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="text-base font-bold text-gray-900 mb-3 line-clamp-2">
                       {item.title}
                     </h3>
+
+                    {/* User Info Row */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {/* Avatar */}
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                        {item.creator_name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      
+                      {/* Username */}
+                      <span className="text-sm font-medium text-gray-900">
+                        {item.creator_name || 'Anonymous'}
+                      </span>
+                      
+                      {/* Rating (placeholder - you can add real ratings later) */}
+                      <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                        <span className="text-yellow-500">⭐</span>
+                        <span>4.8</span>
+                        <span className="text-gray-400">(23)</span>
+                      </span>
+                      
+                      {/* Location */}
+                      {item.location && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="text-xs text-gray-500">{item.location}</span>
+                        </>
+                      )}
+                    </div>
 
                     {/* Description */}
                     {item.description && (
@@ -381,33 +429,20 @@ const WorkPage = () => {
                       </p>
                     )}
 
-                    {/* Footer Row: Location, Time, Creator */}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <div className="flex items-center gap-2">
-                        {item.location && (
-                          <span className="flex items-center gap-1">
-                            📍 {item.location}
-                          </span>
-                        )}
-                        <span className="text-gray-400">•</span>
-                        <span>{timeAgo}</span>
-                      </div>
+                    {/* Footer Metadata */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                      {/* Difficulty */}
+                      <span className="flex items-center gap-1">
+                        <span>🔨</span>
+                        <span>{difficulty}</span>
+                      </span>
+                      
+                      <span className="text-gray-300">•</span>
+                      
+                      {/* Time ago */}
+                      <span>{timeAgo}</span>
                     </div>
-
-                    {/* Creator */}
-                    {item.creator_name && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <span className="text-xs text-gray-500">
-                          Posted by <span className="font-medium text-gray-700">{item.creator_name}</span>
-                        </span>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Bottom Color Accent Bar */}
-                  <div className={`h-1 ${
-                    item.type === 'job' ? 'bg-blue-500' : 'bg-orange-500'
-                  }`} />
                 </div>
               );
             })}
