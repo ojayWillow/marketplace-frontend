@@ -539,35 +539,36 @@ const MobileTasksView = () => {
               transition: isDragging ? 'none' : 'height 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
+              paddingBottom: '80px', // Add bottom padding to ensure content clears navigation
             }}
           >
-            {/* Drag Handle Area */}
+            {/* Drag Handle Area - Back to original compact spacing */}
             <div
-              className="flex flex-col items-center pt-4 pb-4 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-4" />
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
 
-              {/* Header Row - Raised higher with more padding */}
-              <div className="flex items-center justify-between w-full px-4 mb-2">
-                <span className="text-lg font-bold text-gray-800">
+              {/* Header Row - Original compact spacing */}
+              <div className="flex items-center justify-between w-full px-4">
+                <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                 </span>
 
-                {/* Create Button - Slightly larger */}
+                {/* Create Button */}
                 <button
                   type="button"
                   onClick={handleCreateClick}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
                   aria-label={t(
                     'tasks.createJobOrService',
                     'Create job or service'
                   )}
                 >
-                  <span className="text-2xl leading-none font-bold">+</span>
+                  <span className="text-xl leading-none font-bold">+</span>
                 </button>
               </div>
 
