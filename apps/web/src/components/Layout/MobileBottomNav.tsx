@@ -29,11 +29,11 @@ const MobileBottomNav = () => {
       return;
     }
 
-    // If tab requires auth and user is not authenticated, show login
+    // If tab requires auth and user is not authenticated, redirect to landing page
     if (tab.requiresAuth && !isAuthenticated) {
       e.preventDefault();
-      // Navigate to login with return URL
-      navigate(`/login?redirect=${encodeURIComponent(tab.path)}`);
+      // Navigate to landing page - cleaner UX than going to login
+      navigate('/welcome');
       return;
     }
   };
