@@ -55,9 +55,20 @@ export const ProfileHeader = ({
     viewOnly ? (profile.avatar_url || profile.profile_picture_url) : (formData.avatar_url || profile.avatar_url || profile.profile_picture_url)
   );
 
-  const handleLogout = () => {
-    clearAuth();
-    navigate('/welcome');
+  const handleLogout = async () => {
+    try {
+      // Clear auth state
+      clearAuth();
+      
+      // Use setTimeout to ensure state clears before navigation
+      setTimeout(() => {
+        navigate('/welcome', { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate even if there's an error
+      navigate('/welcome', { replace: true });
+    }
   };
 
   return (
