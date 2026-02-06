@@ -90,8 +90,8 @@ const MobileTasksView = () => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // Bottom sheet state - Start at 50% (taller than before)
-  const [sheetPosition, setSheetPosition] = useState<SheetPosition>('half');
+  // Bottom sheet state - Start at COLLAPSED (only show header)
+  const [sheetPosition, setSheetPosition] = useState<SheetPosition>('collapsed');
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
   
@@ -290,7 +290,7 @@ const MobileTasksView = () => {
     setSelectedTask(null);
     setTimeout(() => {
       setShowJobList(true);
-      setSheetPosition('half');
+      setSheetPosition('collapsed'); // Reset to collapsed when closing
     }, 100);
   };
 
