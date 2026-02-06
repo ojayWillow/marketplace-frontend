@@ -405,10 +405,10 @@ export default function LandingPage() {
                       )}
                     </button>
 
-                    {/* Browse as Guest Button */}
+                    {/* Browse as Guest Button - Goes to /tasks (map) */}
                     <button
                       type="button"
-                      onClick={() => navigate('/')}
+                      onClick={() => navigate('/tasks')}
                       className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 mb-4"
                     >
                       <MapIcon className="w-4 h-4" />
