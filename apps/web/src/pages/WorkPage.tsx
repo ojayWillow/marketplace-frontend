@@ -133,16 +133,19 @@ const WorkPage = () => {
         if (categories.length === 0) {
           const jobsResponse = await getTasks({ status: 'open', ...locationParams });
           const jobs = jobsResponse.tasks.map((task: any) => {
-            // Calculate distance client-side if not provided by API
+            // Always calculate distance client-side if user location available
             let distance = task.distance;
-            if (!distance && userLocation && task.latitude && task.longitude) {
+            if (userLocation && task.latitude && task.longitude) {
               distance = calculateDistance(
                 userLocation.lat,
                 userLocation.lon,
                 task.latitude,
                 task.longitude
               );
-              console.log(`Calculated distance for task ${task.id}:`, distance);
+              console.log(`Distance for task ${task.id}: ${distance?.toFixed(2)}km`, {
+                user: userLocation,
+                task: { lat: task.latitude, lon: task.longitude }
+              });
             }
             
             return {
@@ -170,7 +173,7 @@ const WorkPage = () => {
             const jobsResponse = await getTasks({ status: 'open', category, ...locationParams });
             const jobs = jobsResponse.tasks.map((task: any) => {
               let distance = task.distance;
-              if (!distance && userLocation && task.latitude && task.longitude) {
+              if (userLocation && task.latitude && task.longitude) {
                 distance = calculateDistance(
                   userLocation.lat,
                   userLocation.lon,
@@ -208,14 +211,14 @@ const WorkPage = () => {
           const servicesResponse = await getOfferings({ status: 'active', ...locationParams });
           const services = servicesResponse.offerings.map((offering: any) => {
             let distance = offering.distance;
-            if (!distance && userLocation && offering.latitude && offering.longitude) {
+            if (userLocation && offering.latitude && offering.longitude) {
               distance = calculateDistance(
                 userLocation.lat,
                 userLocation.lon,
                 offering.latitude,
                 offering.longitude
               );
-              console.log(`Calculated distance for offering ${offering.id}:`, distance);
+              console.log(`Distance for offering ${offering.id}: ${distance?.toFixed(2)}km`);
             }
             
             return {
@@ -243,7 +246,7 @@ const WorkPage = () => {
             const servicesResponse = await getOfferings({ status: 'active', category, ...locationParams });
             const services = servicesResponse.offerings.map((offering: any) => {
               let distance = offering.distance;
-              if (!distance && userLocation && offering.latitude && offering.longitude) {
+              if (userLocation && offering.latitude && offering.longitude) {
                 distance = calculateDistance(
                   userLocation.lat,
                   userLocation.lon,
@@ -283,7 +286,11 @@ const WorkPage = () => {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      console.log('Final items with distances:', uniqueItems.map(i => ({ id: i.id, distance: i.distance })));
+      console.log('Final items with distances:', uniqueItems.map(i => ({ 
+        id: i.id, 
+        distance: i.distance,
+        hasCoords: !!(i.latitude && i.longitude)
+      })));
       setItems(uniqueItems);
     } catch (error) {
       console.error('Failed to fetch work items:', error);
@@ -529,15 +536,15 @@ const WorkPage = () => {
                     {item.title}
                   </h3>
 
-                  {/* LINES 3 & 4: BIG AVATAR + User Info */}
-                  <div className="flex gap-2.5 mb-3">
-                    {/* BIG AVATAR spanning both lines - now with self-start to prevent stretching */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-base font-bold flex-shrink-0 self-start">
+                  {/* LINES 3 & 4: AVATAR + User Info */}
+                  <div className="flex gap-2 mb-3">
+                    {/* Avatar - reduced to 40px */}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 self-start">
                       {(item.creator_name || 'A').charAt(0).toUpperCase()}
                     </div>
                     
-                    {/* Right side: Name + Reviews/City stacked - now with better spacing */}
-                    <div className="flex flex-col justify-center gap-1 flex-1 min-w-0">
+                    {/* Right side: Name + Reviews/City stacked */}
+                    <div className="flex flex-col justify-center gap-0.5 flex-1 min-w-0">
                       {/* Line 3: Name */}
                       <span className="text-xs font-semibold text-gray-800 truncate">
                         {item.creator_name || 'Anonymous'}
