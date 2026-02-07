@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getTasks, getOfferings } from '@marketplace/shared';
@@ -29,7 +29,7 @@ interface WorkItem {
 const MAX_CATEGORIES = 5;
 const LOCATION_TIMEOUT_MS = 3000;
 const MIN_RESULTS = 5;
-const RADIUS_STEPS = [5, 10, 25, 50]; // km — auto-expand if too few results, then fall back to all
+const RADIUS_STEPS = [5, 10, 25, 50];
 
 // --- Pure utility functions ---
 
@@ -96,18 +96,14 @@ const mapOffering = (offering: any): WorkItem => ({
   creator_review_count: offering.creator_review_count,
 });
 
-// --- Helper to extract a user-friendly error message ---
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
-    // Network / CORS errors
     if (error.message === 'Network Error' || error.message.includes('ERR_NETWORK')) {
       return 'Cannot reach server. Check your connection or try again later.';
     }
-    // Timeout
     if (error.message.includes('timeout')) {
       return 'Server took too long to respond. Please try again.';
     }
-    // Axios error with response
     if ((error as any).response) {
       const status = (error as any).response.status;
       if (status === 500) return 'Server error (500). The backend may be down.';
@@ -158,18 +154,30 @@ const WorkPage = () => {
 
   const [mainTab, setMainTab] = useState<MainTab>('all');
   const [items, setItems] = useState<WorkItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true); // Only true on very first load
+  const [refreshing, setRefreshing] = useState(false);        // True during background refetches
   const [error, setError] = useState<string | null>(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [activeRadius, setActiveRadius] = useState<number | null>(null); // null = no geo filter (show all)
+  const [locationResolved, setLocationResolved] = useState(false); // True once geo resolved or timed out
+  const [activeRadius, setActiveRadius] = useState<number | null>(null);
 
-  // --- Geolocation ---
+  // Track fetch version to ignore stale responses
+  const fetchVersionRef = useRef(0);
+  const hasLoadedOnce = useRef(false);
+
+  // --- Geolocation: resolve once, then mark as done ---
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setLocationResolved(true);
+      return;
+    }
 
-    const timeoutId = setTimeout(() => {}, LOCATION_TIMEOUT_MS);
+    // Timeout: if geolocation takes too long, proceed without it
+    const timeoutId = setTimeout(() => {
+      setLocationResolved(true);
+    }, LOCATION_TIMEOUT_MS);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -178,9 +186,11 @@ const WorkPage = () => {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+        setLocationResolved(true);
       },
       () => {
         clearTimeout(timeoutId);
+        setLocationResolved(true);
       },
       { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
     );
@@ -188,18 +198,25 @@ const WorkPage = () => {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // --- Fetch with auto-expanding radius ---
-  const fetchWithRadius = useCallback(
+  // --- Fetch logic ---
+  const fetchItems = useCallback(
     async (
       tab: MainTab,
       categories: string[],
       location: { lat: number; lng: number } | null
     ) => {
-      setLoading(true);
+      // Increment version so stale responses are ignored
+      const version = ++fetchVersionRef.current;
+
+      const isFirstLoad = !hasLoadedOnce.current;
+      if (isFirstLoad) {
+        setInitialLoading(true);
+      } else {
+        setRefreshing(true);
+      }
       setError(null);
 
       try {
-        // Build location params (if we have user location)
         const buildLocationParams = (radius?: number) => {
           if (!location) return {};
           return {
@@ -209,7 +226,6 @@ const WorkPage = () => {
           };
         };
 
-        // Only fetch jobs when tab is 'all' or 'jobs'
         const fetchJobs = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
           if (tab === 'services') return [];
           const baseParams = { status: 'open' as const, ...locationParams };
@@ -222,7 +238,6 @@ const WorkPage = () => {
           return response.tasks.map(mapTask);
         };
 
-        // Only fetch services when tab is 'all' or 'services'
         const fetchServices = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
           if (tab === 'jobs') return [];
           const baseParams = { status: 'active' as const, ...locationParams };
@@ -239,7 +254,6 @@ const WorkPage = () => {
         let usedRadius: number | null = null;
 
         if (location) {
-          // Try expanding radius until we have enough results
           for (const radius of RADIUS_STEPS) {
             const locationParams = buildLocationParams(radius);
             const [jobs, services] = await Promise.all([
@@ -248,21 +262,18 @@ const WorkPage = () => {
             ]);
             finalItems = [...jobs, ...services];
             usedRadius = radius;
-
             if (finalItems.length >= MIN_RESULTS) break;
           }
 
-          // If still too few results after all radius steps, fetch without radius (all)
           if (finalItems.length < MIN_RESULTS) {
             const [jobs, services] = await Promise.all([
-              fetchJobs(buildLocationParams()), // no radius = backend returns all
+              fetchJobs(buildLocationParams()),
               fetchServices(buildLocationParams()),
             ]);
             finalItems = [...jobs, ...services];
             usedRadius = null;
           }
         } else {
-          // No location — just fetch everything
           const [jobs, services] = await Promise.all([
             fetchJobs({}),
             fetchServices({}),
@@ -271,15 +282,15 @@ const WorkPage = () => {
           usedRadius = null;
         }
 
+        // Ignore if a newer fetch has started
+        if (version !== fetchVersionRef.current) return;
+
         setActiveRadius(usedRadius);
 
-        // Use composite key for dedup — jobs and services can share same numeric id
         const uniqueItems = Array.from(
           new Map(finalItems.map((item) => [`${item.type}-${item.id}`, item])).values()
         );
 
-        // Sort: if we have location, sort by distance (nearest first)
-        // Otherwise sort by newest first
         if (location) {
           uniqueItems.sort((a, b) => {
             const distA =
@@ -299,24 +310,38 @@ const WorkPage = () => {
         }
 
         setItems(uniqueItems);
+        hasLoadedOnce.current = true;
       } catch (err) {
+        // Ignore if a newer fetch has started
+        if (version !== fetchVersionRef.current) return;
+
         const message = getErrorMessage(err);
         console.error('Failed to fetch work items:', err);
         setError(message);
-        setItems([]);
+        // DON'T clear items on error if we already have data
+        // User sees stale data + error banner instead of blank page
+        if (!hasLoadedOnce.current) {
+          setItems([]);
+        }
       }
 
-      setLoading(false);
+      // Only update loading state if this is still the latest fetch
+      if (version === fetchVersionRef.current) {
+        setInitialLoading(false);
+        setRefreshing(false);
+      }
     },
     []
   );
 
-  // Fetch on mount, tab change, filter change, or when location arrives
+  // --- Wait for location to resolve, then fetch ---
+  // Only fetch once locationResolved is true (geo succeeded or timed out)
   useEffect(() => {
-    fetchWithRadius(mainTab, selectedCategories, userLocation);
-  }, [mainTab, selectedCategories, userLocation, fetchWithRadius]);
+    if (!locationResolved) return;
+    fetchItems(mainTab, selectedCategories, userLocation);
+  }, [mainTab, selectedCategories, locationResolved, userLocation, fetchItems]);
 
-  // --- Distance computation via useMemo ---
+  // --- Distance computation ---
   const itemsWithDistance = useMemo(() => {
     if (!userLocation)
       return items.map((item) => ({ ...item, distance: undefined as number | undefined }));
@@ -353,8 +378,8 @@ const WorkPage = () => {
   );
 
   const handleRetry = useCallback(() => {
-    fetchWithRadius(mainTab, selectedCategories, userLocation);
-  }, [fetchWithRadius, mainTab, selectedCategories, userLocation]);
+    fetchItems(mainTab, selectedCategories, userLocation);
+  }, [fetchItems, mainTab, selectedCategories, userLocation]);
 
   const getCategoryInfo = useCallback((categoryKey: string) => {
     return CATEGORIES.find((c) => c.value === categoryKey) || { icon: '📋', label: categoryKey };
@@ -369,7 +394,6 @@ const WorkPage = () => {
     []
   );
 
-  // --- Tab-specific empty state ---
   const getEmptyState = () => {
     const icon = mainTab === 'jobs' ? '💼' : mainTab === 'services' ? '🛠️' : '📭';
     const title =
@@ -402,7 +426,6 @@ const WorkPage = () => {
       {/* Sticky tab bar */}
       <div className="sticky top-0 bg-white shadow-sm z-50">
         <div className="relative flex items-center justify-center px-4 py-3">
-          {/* Centered tab buttons */}
           <div className="flex gap-2">
             {(['all', 'jobs', 'services'] as MainTab[]).map((tab) => (
               <button
@@ -420,7 +443,6 @@ const WorkPage = () => {
             ))}
           </div>
 
-          {/* Filter button — absolute right so tabs stay centered */}
           <button
             onClick={() => setShowFilterSheet(true)}
             className="absolute right-4 flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full"
@@ -444,12 +466,15 @@ const WorkPage = () => {
           </button>
         </div>
 
-        {/* Radius indicator — shows when geo-filtering is active */}
-        {userLocation && !loading && !error && items.length > 0 && (
+        {/* Radius indicator + refreshing spinner */}
+        {!initialLoading && !error && items.length > 0 && (
           <div className="px-4 pb-2">
             <p className="text-xs text-gray-400 text-center">
-              📍 {activeRadius ? `Showing within ${activeRadius}km` : 'Showing all distances'}
-              {' · '}{items.length} {items.length === 1 ? 'result' : 'results'}
+              {refreshing && <span className="inline-block animate-spin mr-1">↻</span>}
+              {userLocation && (
+                <>📍 {activeRadius ? `Within ${activeRadius}km` : 'All distances'} · </>
+              )}
+              {items.length} {items.length === 1 ? 'result' : 'results'}
             </p>
           </div>
         )}
@@ -457,14 +482,14 @@ const WorkPage = () => {
 
       {/* Content */}
       <div className="px-4 py-4">
-        {loading ? (
+        {initialLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
-        ) : error ? (
-          /* --- Error state with retry --- */
+        ) : error && items.length === 0 ? (
+          /* Error state — only show full-page error if we have NO items */
           <div className="text-center py-12">
             <div className="text-4xl mb-3">⚠️</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -484,7 +509,7 @@ const WorkPage = () => {
             </button>
           </div>
         ) : itemsWithDistance.length === 0 ? (
-          /* --- Tab-specific empty state --- */
+          /* Tab-specific empty state */
           (() => {
             const empty = getEmptyState();
             return (
@@ -500,89 +525,103 @@ const WorkPage = () => {
             );
           })()
         ) : (
-          <div className="space-y-2">
-            {itemsWithDistance.map((item) => {
-              const category = getCategoryInfo(item.category);
-              const price = item.type === 'job' ? item.budget : item.price;
-              const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
-              const isUrgent = (item as any).is_urgent;
-              const hasReviews = item.creator_review_count && item.creator_review_count > 0;
-              const difficultyColor = getDifficultyColor(item.difficulty);
-              const distanceText = formatItemDistance(item.distance, item.location);
-
-              return (
-                <div
-                  key={`${item.type}-${item.id}`}
-                  onClick={() => handleItemClick(item)}
-                  className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 active:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
-                    item.type === 'job' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-amber-500'
-                  }`}
+          <>
+            {/* Inline error banner if we have items but refresh failed */}
+            {error && (
+              <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+                <p className="text-xs text-amber-700 flex-1">⚠️ {error}</p>
+                <button
+                  onClick={handleRetry}
+                  className="ml-2 text-xs font-semibold text-amber-700 underline"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-lg">{category.icon}</span>
-                      <span className="text-xs font-semibold text-gray-700">{category.label}</span>
-                    </div>
-                    {isUrgent && (
-                      <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                        🔥 Urgent
-                      </span>
-                    )}
-                    {price && (
-                      <span
-                        className={`text-lg font-bold ${
-                          item.type === 'job' ? 'text-blue-600' : 'text-amber-600'
-                        }`}
-                      >
-                        €{price}
-                      </span>
-                    )}
-                  </div>
+                  Retry
+                </button>
+              </div>
+            )}
+            <div className="space-y-2">
+              {itemsWithDistance.map((item) => {
+                const category = getCategoryInfo(item.category);
+                const price = item.type === 'job' ? item.budget : item.price;
+                const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
+                const isUrgent = (item as any).is_urgent;
+                const hasReviews = item.creator_review_count && item.creator_review_count > 0;
+                const difficultyColor = getDifficultyColor(item.difficulty);
+                const distanceText = formatItemDistance(item.distance, item.location);
 
-                  <h3 className="text-sm font-bold text-gray-900 truncate mb-3">{item.title}</h3>
-
-                  <div className="flex gap-2 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 self-start">
-                      {(item.creator_name || 'A').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex flex-col justify-center gap-0.5 flex-1 min-w-0">
-                      <span className="text-xs font-semibold text-gray-800 truncate">
-                        {item.creator_name || 'Anonymous'}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-xs">
-                        {hasReviews ? (
-                          <>
-                            <span className="text-yellow-500 leading-none">
-                              {renderStars(item.creator_rating || 0)}
-                            </span>
-                            <span className="text-gray-400">({item.creator_review_count})</span>
-                          </>
-                        ) : (
-                          <span className="text-gray-400">New user</span>
-                        )}
-                        <span className="text-gray-300">•</span>
-                        <span className="text-gray-500 truncate">
-                          📍 {item.location?.split(',')[0] || 'Location'}
+                return (
+                  <div
+                    key={`${item.type}-${item.id}`}
+                    onClick={() => handleItemClick(item)}
+                    className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 active:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
+                      item.type === 'job' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-amber-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-lg">{category.icon}</span>
+                        <span className="text-xs font-semibold text-gray-700">{category.label}</span>
+                      </div>
+                      {isUrgent && (
+                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                          🔥 Urgent
                         </span>
+                      )}
+                      {price && (
+                        <span
+                          className={`text-lg font-bold ${
+                            item.type === 'job' ? 'text-blue-600' : 'text-amber-600'
+                          }`}
+                        >
+                          €{price}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-sm font-bold text-gray-900 truncate mb-3">{item.title}</h3>
+
+                    <div className="flex gap-2 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 self-start">
+                        {(item.creator_name || 'A').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col justify-center gap-0.5 flex-1 min-w-0">
+                        <span className="text-xs font-semibold text-gray-800 truncate">
+                          {item.creator_name || 'Anonymous'}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          {hasReviews ? (
+                            <>
+                              <span className="text-yellow-500 leading-none">
+                                {renderStars(item.creator_rating || 0)}
+                              </span>
+                              <span className="text-gray-400">({item.creator_review_count})</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">New user</span>
+                          )}
+                          <span className="text-gray-300">•</span>
+                          <span className="text-gray-500 truncate">
+                            📍 {item.location?.split(',')[0] || 'Location'}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {item.description && (
-                    <p className="text-xs text-gray-500 line-clamp-2 mb-3">{item.description}</p>
-                  )}
+                    {item.description && (
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">{item.description}</p>
+                    )}
 
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500 font-medium">📏 {distanceText}</span>
-                    <span className={`font-semibold ${difficultyColor}`}>
-                      ⚡ {item.difficulty || 'Medium'}
-                    </span>
-                    <span className="text-gray-400">{timeAgo}</span>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500 font-medium">📏 {distanceText}</span>
+                      <span className={`font-semibold ${difficultyColor}`}>
+                        ⚡ {item.difficulty || 'Medium'}
+                      </span>
+                      <span className="text-gray-400">{timeAgo}</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
