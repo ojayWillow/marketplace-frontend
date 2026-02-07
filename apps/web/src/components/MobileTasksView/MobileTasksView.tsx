@@ -1,264 +1,84 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
-import { getTasks } from '@marketplace/shared';
 import { useAuthStore } from '@marketplace/shared';
-import { getCategoryIcon, CATEGORY_OPTIONS, CATEGORIES } from '../../constants/categories';
 
-import { Task, SheetPosition } from './types';
+import { Task } from './types';
 import { mobileTasksStyles } from './styles';
-import {
-  addMarkerOffsets,
-  createUserLocationIcon,
-  getJobPriceIcon,
-} from './utils';
+import { addMarkerOffsets, createUserLocationIcon, getJobPriceIcon } from './utils';
+import { useTasksData, useUserLocation, useBottomSheet } from './hooks';
 import {
   MapController,
   MobileJobCard,
   JobPreviewCard,
   CreateChoiceModal,
+  FilterSheet,
+  FloatingSearchBar,
 } from './components';
-
-// Reduced timeout for faster perceived loading
-const LOCATION_TIMEOUT_MS = 3000;
-const MAX_CATEGORIES = 5;
-
-/**
- * Calculate distance between two coordinates using Haversine formula
- * Returns distance in kilometers
- */
-const calculateDistance = (
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number => {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
 
 /**
  * Main Mobile Tasks View Component
- * Displays a full-screen map with task markers and a draggable bottom sheet with task list
+ * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
  */
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
 
-  // Task data state
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  // Default location: Riga, Latvia
-  const [userLocation, setUserLocation] = useState({ lat: 56.9496, lng: 24.1052 });
-  const [searchRadius, setSearchRadius] = useState(25);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]); // Multi-select
-  const [searchQuery, setSearchQuery] = useState('');
-  const [recenterTrigger, setRecenterTrigger] = useState(0);
+  // --- Hooks ---
+  const {
+    userLocation,
+    recenterTrigger,
+    handleRecenter: recenterMap,
+  } = useUserLocation({
+    onInitialFetch: (lat, lng) => initializeFetch(lat, lng),
+    onLocationReady: (lat, lng) => refetchAtLocation(lat, lng),
+  });
 
-  // UI state
+  const {
+    tasks,
+    loading,
+    filteredTasks,
+    searchRadius,
+    selectedCategories,
+    searchQuery,
+    setSearchQuery,
+    handleRadiusChange,
+    handleCategoryToggle,
+    initializeFetch,
+    refetchAtLocation,
+    MAX_CATEGORIES,
+  } = useTasksData({ userLocation });
+
+  const {
+    sheetPosition,
+    sheetHeight,
+    isDragging,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    resetToCollapsed,
+  } = useBottomSheet();
+
+  // --- Local UI state (orchestration only) ---
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // Bottom sheet state - Start at COLLAPSED (only show header)
-  const [sheetPosition, setSheetPosition] = useState<SheetPosition>('collapsed');
-  const [isDragging, setIsDragging] = useState(false);
-  const startYRef = useRef(0);
-  
-  // Refs for controlling fetches and geolocation
-  const hasAttemptedGeolocation = useRef(false);
-  const hasFetchedInitial = useRef(false);
-
-  // Calculate sheet height based on position - Made taller
-  const getSheetHeight = () => {
-    const vh = window.innerHeight;
-    switch (sheetPosition) {
-      case 'collapsed':
-        return 120; // Slightly taller when collapsed
-      case 'half':
-        return Math.round(vh * 0.5); // 50% instead of 40%
-      case 'full':
-        return Math.round(vh * 0.85);
-      default:
-        return Math.round(vh * 0.5);
-    }
-  };
-
-  const sheetHeight = getSheetHeight();
-
-  // Fetch tasks function - now supports multiple categories
-  const fetchTasks = async (lat: number, lng: number, radius: number, categories: string[]) => {
-    setLoading(true);
-    try {
-      const effectiveRadius = radius === 0 ? 500 : radius;
-      
-      // If no categories selected, fetch all
-      if (categories.length === 0) {
-        const response = await getTasks({
-          latitude: lat,
-          longitude: lng,
-          radius: effectiveRadius,
-          status: 'open',
-        });
-        const tasksWithIcons = response.tasks.map((task) => ({
-          ...task,
-          icon: getCategoryIcon(task.category),
-        }));
-        setTasks(tasksWithIcons);
-      } else {
-        // Fetch for each category and combine results
-        const allTasks: Task[] = [];
-        const taskIds = new Set<string>();
-        
-        for (const category of categories) {
-          const response = await getTasks({
-            latitude: lat,
-            longitude: lng,
-            radius: effectiveRadius,
-            status: 'open',
-            category,
-          });
-          
-          // Add only unique tasks
-          response.tasks.forEach((task) => {
-            if (!taskIds.has(task.id)) {
-              taskIds.add(task.id);
-              allTasks.push({
-                ...task,
-                icon: getCategoryIcon(task.category),
-              });
-            }
-          });
-        }
-        
-        setTasks(allTasks);
-      }
-    } catch (err) {
-      console.error('Failed to load jobs', err);
-    }
-    setLoading(false);
-  };
-
-  // Initialize: Get saved radius, start geolocation, and fetch data immediately
-  useEffect(() => {
-    if (hasFetchedInitial.current) return;
-    hasFetchedInitial.current = true;
-
-    // Load saved radius
-    const savedRadius = localStorage.getItem('taskSearchRadius');
-    const initialRadius = savedRadius ? parseInt(savedRadius, 10) : 25;
-    if (savedRadius) setSearchRadius(initialRadius);
-
-    // Fetch immediately with default location (don't wait for geolocation)
-    fetchTasks(56.9496, 24.1052, initialRadius, []);
-
-    // Try to get user's actual location in background
-    if (navigator.geolocation && !hasAttemptedGeolocation.current) {
-      hasAttemptedGeolocation.current = true;
-      
-      const timeoutId = setTimeout(() => {
-        // Timeout - stay with default location, data already loaded
-      }, LOCATION_TIMEOUT_MS);
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(timeoutId);
-          const newLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setUserLocation(newLocation);
-          // Refresh data with actual location
-          fetchTasks(newLocation.lat, newLocation.lng, initialRadius, []);
-        },
-        () => {
-          clearTimeout(timeoutId);
-          // Permission denied - keep default location, data already loaded
-        },
-        { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
-      );
-    }
-  }, []);
-
-  // Refetch when filters change (but not on initial mount)
-  useEffect(() => {
-    if (!hasFetchedInitial.current) return;
-    fetchTasks(userLocation.lat, userLocation.lng, searchRadius, selectedCategories);
-  }, [searchRadius, selectedCategories]);
-
-  // Memoized values
+  // --- Memoised map data ---
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
-  // Filter and sort tasks by distance (closest first)
-  const filteredTasks = useMemo(() => {
-    let filtered = tasks;
-    
-    // Apply search filter if query exists
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = tasks.filter(
-        (task) =>
-          task.title.toLowerCase().includes(query) ||
-          task.description?.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort by distance from user location (closest first)
-    return filtered.sort((a, b) => {
-      const distanceA = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        a.latitude,
-        a.longitude
-      );
-      const distanceB = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        b.latitude,
-        b.longitude
-      );
-      return distanceA - distanceB;
-    });
-  }, [tasks, searchQuery, userLocation]);
-
-  // Event handlers
-  const handleRadiusChange = (newRadius: number) => {
-    setSearchRadius(newRadius);
-    localStorage.setItem('taskSearchRadius', newRadius.toString());
-  };
-
-  const handleCategoryToggle = (categoryValue: string) => {
-    if (selectedCategories.includes(categoryValue)) {
-      // Remove category
-      setSelectedCategories(selectedCategories.filter(c => c !== categoryValue));
-    } else {
-      // Add category (max 5)
-      if (selectedCategories.length < MAX_CATEGORIES) {
-        setSelectedCategories([...selectedCategories, categoryValue]);
-      }
-    }
-  };
-
+  // --- Event handlers ---
   const handleRecenter = () => {
     setSelectedTask(null);
     setShowJobList(true);
-    setRecenterTrigger((prev) => prev + 1);
+    recenterMap();
   };
 
   const handleJobSelect = (task: Task) => {
@@ -275,7 +95,7 @@ const MobileTasksView = () => {
     setSelectedTask(null);
     setTimeout(() => {
       setShowJobList(true);
-      setSheetPosition('collapsed'); // Reset to collapsed when closing
+      resetToCollapsed();
     }, 100);
   };
 
@@ -286,14 +106,11 @@ const MobileTasksView = () => {
   const handleCreatorClick = () => {
     if (selectedTask) {
       const creatorId =
-        selectedTask.creator_id ||
-        selectedTask.user_id ||
-        selectedTask.created_by;
+        selectedTask.creator_id || selectedTask.user_id || selectedTask.created_by;
       if (creatorId) navigate(`/users/${creatorId}`);
     }
   };
 
-  // Guest protection - redirect to landing
   const handleCreateClick = () => {
     if (!isAuthenticated) {
       navigate('/welcome');
@@ -302,36 +119,11 @@ const MobileTasksView = () => {
     setShowCreateModal(true);
   };
 
-  // Sheet drag handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    startYRef.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = () => {};
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-
-    const endY = e.changedTouches[0].clientY;
-    const deltaY = startYRef.current - endY;
-    const threshold = 50;
-
-    if (deltaY > threshold) {
-      if (sheetPosition === 'collapsed') setSheetPosition('half');
-      else if (sheetPosition === 'half') setSheetPosition('full');
-    } else if (deltaY < -threshold) {
-      if (sheetPosition === 'full') setSheetPosition('half');
-      else if (sheetPosition === 'half') setSheetPosition('collapsed');
-    }
-  };
-
+  // --- Render ---
   return (
     <>
       <style>{mobileTasksStyles}</style>
 
-      {/* Create Choice Modal */}
       <CreateChoiceModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -339,105 +131,18 @@ const MobileTasksView = () => {
         onOfferService={() => navigate('/offerings/create')}
       />
 
-      {/* Filter Sheet */}
-      {showFilterSheet && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-[10000]"
-          onClick={() => setShowFilterSheet(false)}
-        >
-          <div 
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-[10001] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: '85vh' }}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">{t('filters.title', 'Filters')}</h2>
-              <button
-                onClick={() => setShowFilterSheet(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <FilterSheet
+        isOpen={showFilterSheet}
+        onClose={() => setShowFilterSheet(false)}
+        searchRadius={searchRadius}
+        onRadiusChange={handleRadiusChange}
+        selectedCategories={selectedCategories}
+        onCategoryToggle={handleCategoryToggle}
+        maxCategories={MAX_CATEGORIES}
+      />
 
-            {/* Location/Radius */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                📍 {t('filters.location', 'Location')}
-              </label>
-              <select
-                value={searchRadius}
-                onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                className="w-full bg-gray-100 rounded-lg px-4 py-3 text-base border-0 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={5}>Within 5 km</option>
-                <option value={10}>Within 10 km</option>
-                <option value={25}>Within 25 km</option>
-                <option value={50}>Within 50 km</option>
-                <option value={0}>🇱🇻 {t('tasks.allLatvia', 'All Latvia')}</option>
-              </select>
-            </div>
-
-            {/* Categories - Multi-select */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                🏷️ {t('filters.categories', 'Categories')} 
-                {selectedCategories.length > 0 && (
-                  <span className="text-blue-600 ml-2">
-                    ({selectedCategories.length}/{MAX_CATEGORIES} selected)
-                  </span>
-                )}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => {
-                  const isSelected = selectedCategories.includes(cat.value);
-                  const isDisabled = !isSelected && selectedCategories.length >= MAX_CATEGORIES;
-                  
-                  return (
-                    <button
-                      key={cat.value}
-                      onClick={() => handleCategoryToggle(cat.value)}
-                      disabled={isDisabled}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        isSelected
-                          ? 'bg-blue-500 text-white'
-                          : isDisabled
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      <span>{cat.icon}</span>
-                      <span>{cat.label}</span>
-                      {isSelected && (
-                        <span className="ml-1 text-xs">✓</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedCategories.length >= MAX_CATEGORIES && (
-                <p className="text-xs text-gray-500 mt-2">
-                  ℹ️ Maximum {MAX_CATEGORIES} categories selected. Deselect one to choose another.
-                </p>
-              )}
-            </div>
-
-            {/* Apply Button */}
-            <button
-              onClick={() => setShowFilterSheet(false)}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium"
-            >
-              {t('filters.apply', 'Apply Filters')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* FULL SCREEN CONTAINER - No header, map from top */}
       <div className="fixed inset-0 flex flex-col">
-        {/* FULL-SCREEN MAP */}
+        {/* Full-screen map */}
         <div className="absolute inset-0" style={{ zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
@@ -462,11 +167,7 @@ const MobileTasksView = () => {
               sheetPosition={sheetPosition}
             />
 
-            {/* User Location Marker */}
-            <Marker
-              position={[userLocation.lat, userLocation.lng]}
-              icon={userLocationIcon}
-            >
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
               <Popup>
                 <div className="text-center p-2">
                   <p className="font-semibold text-blue-600">
@@ -476,7 +177,6 @@ const MobileTasksView = () => {
               </Popup>
             </Marker>
 
-            {/* Job Markers */}
             {tasksWithOffsets.map((task) => {
               const budget = task.budget || task.reward || 0;
               const isSelected = selectedTask?.id === task.id;
@@ -496,86 +196,23 @@ const MobileTasksView = () => {
           </MapContainer>
         </div>
 
-        {/* FLOATING SEARCH/FILTER BAR - Top */}
-        <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-2">
-          {!searchExpanded ? (
-            // Collapsed: Just search icon button
-            <>
-              <button
-                onClick={() => setSearchExpanded(true)}
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
-                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-              </button>
-              
-              {/* Spacer to push filter button to right */}
-              <div className="flex-1" />
-            </>
-          ) : (
-            // Expanded: Back button + search input
-            <>
-              <button
-                onClick={() => {
-                  setSearchExpanded(false);
-                  setSearchQuery('');
-                }}
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
-                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
-                className="flex-1 bg-white rounded-full px-4 py-3 text-base shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
-                autoFocus
-              />
-            </>
-          )}
-          
-          {/* Filter Button - Always visible with badge */}
-          <button
-            onClick={() => setShowFilterSheet(true)}
-            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 relative"
-            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
-              <line x1="4" y1="21" x2="4" y2="14" />
-              <line x1="4" y1="10" x2="4" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12" y2="3" />
-              <line x1="20" y1="21" x2="20" y2="16" />
-              <line x1="20" y1="12" x2="20" y2="3" />
-              <line x1="1" y1="14" x2="7" y2="14" />
-              <line x1="9" y1="8" x2="15" y2="8" />
-              <line x1="17" y1="16" x2="23" y2="16" />
-            </svg>
-            {/* Badge showing active filter count */}
-            {selectedCategories.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                {selectedCategories.length}
-              </span>
-            )}
-          </button>
-        </div>
+        {/* Floating search / filter bar */}
+        <FloatingSearchBar
+          searchExpanded={searchExpanded}
+          onToggleSearch={setSearchExpanded}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onOpenFilters={() => setShowFilterSheet(true)}
+          activeFilterCount={selectedCategories.length}
+        />
 
-        {/* FLOATING RECENTER BUTTON - Positioned above bottom sheet */}
+        {/* Recenter button */}
         {!selectedTask && showJobList && (
           <div
             className="absolute right-4 z-[1000]"
-            style={{ 
-              bottom: `${sheetHeight + 20}px`, 
-              transition: 'bottom 0.3s ease-out' 
+            style={{
+              bottom: `${sheetHeight + 20}px`,
+              transition: 'bottom 0.3s ease-out',
             }}
           >
             <button
@@ -600,7 +237,7 @@ const MobileTasksView = () => {
           </div>
         )}
 
-        {/* Job Preview Card */}
+        {/* Job preview card */}
         {selectedTask && (
           <JobPreviewCard
             task={selectedTask}
@@ -611,7 +248,7 @@ const MobileTasksView = () => {
           />
         )}
 
-        {/* BOTTOM SHEET - Fixed overlay over the map */}
+        {/* Bottom sheet */}
         {!selectedTask && showJobList && (
           <div
             className="fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
@@ -620,10 +257,10 @@ const MobileTasksView = () => {
               transition: isDragging ? 'none' : 'height 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
-              paddingBottom: '80px', // Add bottom padding to ensure content clears navigation
+              paddingBottom: '80px',
             }}
           >
-            {/* Drag Handle Area - Back to original compact spacing */}
+            {/* Drag handle */}
             <div
               className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
@@ -633,21 +270,15 @@ const MobileTasksView = () => {
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
 
-              {/* Header Row - Original compact spacing */}
               <div className="flex items-center justify-between w-full px-4">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                 </span>
-
-                {/* Create Button */}
                 <button
                   type="button"
                   onClick={handleCreateClick}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
-                  aria-label={t(
-                    'tasks.createJobOrService',
-                    'Create job or service'
-                  )}
+                  aria-label={t('tasks.createJobOrService', 'Create job or service')}
                 >
                   <span className="text-xl leading-none font-bold">+</span>
                 </button>
@@ -660,7 +291,7 @@ const MobileTasksView = () => {
               )}
             </div>
 
-            {/* Jobs List - Scrollable - SORTED BY DISTANCE */}
+            {/* Jobs list */}
             <div
               className="flex-1 overflow-y-auto overscroll-contain"
               style={{ touchAction: 'pan-y' }}
@@ -676,10 +307,7 @@ const MobileTasksView = () => {
                     {t('tasks.noJobsFound', 'No jobs found')}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {t(
-                      'tasks.tryDifferentCategory',
-                      'Try a different category or increase radius'
-                    )}
+                    {t('tasks.tryDifferentCategory', 'Try a different category or increase radius')}
                   </p>
                 </div>
               ) : (
