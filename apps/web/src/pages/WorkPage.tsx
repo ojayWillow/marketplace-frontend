@@ -28,8 +28,6 @@ interface WorkItem {
 
 const MAX_CATEGORIES = 5;
 const LOCATION_TIMEOUT_MS = 3000;
-const MIN_RESULTS = 5;
-const RADIUS_STEPS = [5, 10, 25, 50];
 
 // --- Pure utility functions ---
 
@@ -154,58 +152,36 @@ const WorkPage = () => {
 
   const [mainTab, setMainTab] = useState<MainTab>('all');
   const [items, setItems] = useState<WorkItem[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true); // Only true on very first load
-  const [refreshing, setRefreshing] = useState(false);        // True during background refetches
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationResolved, setLocationResolved] = useState(false); // True once geo resolved or timed out
-  const [activeRadius, setActiveRadius] = useState<number | null>(null);
 
   // Track fetch version to ignore stale responses
   const fetchVersionRef = useRef(0);
   const hasLoadedOnce = useRef(false);
 
-  // --- Geolocation: resolve once, then mark as done ---
+  // --- Geolocation: resolve in background, doesn't block fetching ---
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationResolved(true);
-      return;
-    }
-
-    // Timeout: if geolocation takes too long, proceed without it
-    const timeoutId = setTimeout(() => {
-      setLocationResolved(true);
-    }, LOCATION_TIMEOUT_MS);
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        clearTimeout(timeoutId);
         setUserLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
-        setLocationResolved(true);
       },
-      () => {
-        clearTimeout(timeoutId);
-        setLocationResolved(true);
-      },
+      () => { /* denied or failed — no problem, we already fetched without location */ },
       { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
     );
-
-    return () => clearTimeout(timeoutId);
   }, []);
 
-  // --- Fetch logic ---
+  // --- Fetch logic: always fetches ALL items, no radius filtering ---
   const fetchItems = useCallback(
-    async (
-      tab: MainTab,
-      categories: string[],
-      location: { lat: number; lng: number } | null
-    ) => {
-      // Increment version so stale responses are ignored
+    async (tab: MainTab, categories: string[]) => {
       const version = ++fetchVersionRef.current;
 
       const isFirstLoad = !hasLoadedOnce.current;
@@ -217,18 +193,9 @@ const WorkPage = () => {
       setError(null);
 
       try {
-        const buildLocationParams = (radius?: number) => {
-          if (!location) return {};
-          return {
-            latitude: location.lat,
-            longitude: location.lng,
-            ...(radius !== undefined && { radius }),
-          };
-        };
-
-        const fetchJobs = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
+        const fetchJobs = async (): Promise<WorkItem[]> => {
           if (tab === 'services') return [];
-          const baseParams = { status: 'open' as const, ...locationParams };
+          const baseParams = { status: 'open' as const };
           const response =
             categories.length === 0
               ? await getTasks(baseParams)
@@ -238,9 +205,9 @@ const WorkPage = () => {
           return response.tasks.map(mapTask);
         };
 
-        const fetchServices = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
+        const fetchServices = async (): Promise<WorkItem[]> => {
           if (tab === 'jobs') return [];
-          const baseParams = { status: 'active' as const, ...locationParams };
+          const baseParams = { status: 'active' as const };
           const response =
             categories.length === 0
               ? await getOfferings(baseParams)
@@ -250,82 +217,35 @@ const WorkPage = () => {
           return response.offerings.map(mapOffering);
         };
 
-        let finalItems: WorkItem[] = [];
-        let usedRadius: number | null = null;
-
-        if (location) {
-          for (const radius of RADIUS_STEPS) {
-            const locationParams = buildLocationParams(radius);
-            const [jobs, services] = await Promise.all([
-              fetchJobs(locationParams),
-              fetchServices(locationParams),
-            ]);
-            finalItems = [...jobs, ...services];
-            usedRadius = radius;
-            if (finalItems.length >= MIN_RESULTS) break;
-          }
-
-          if (finalItems.length < MIN_RESULTS) {
-            const [jobs, services] = await Promise.all([
-              fetchJobs(buildLocationParams()),
-              fetchServices(buildLocationParams()),
-            ]);
-            finalItems = [...jobs, ...services];
-            usedRadius = null;
-          }
-        } else {
-          const [jobs, services] = await Promise.all([
-            fetchJobs({}),
-            fetchServices({}),
-          ]);
-          finalItems = [...jobs, ...services];
-          usedRadius = null;
-        }
+        const [jobs, services] = await Promise.all([fetchJobs(), fetchServices()]);
+        const allItems = [...jobs, ...services];
 
         // Ignore if a newer fetch has started
         if (version !== fetchVersionRef.current) return;
 
-        setActiveRadius(usedRadius);
-
+        // Deduplicate by type+id
         const uniqueItems = Array.from(
-          new Map(finalItems.map((item) => [`${item.type}-${item.id}`, item])).values()
+          new Map(allItems.map((item) => [`${item.type}-${item.id}`, item])).values()
         );
 
-        if (location) {
-          uniqueItems.sort((a, b) => {
-            const distA =
-              a.latitude && a.longitude
-                ? calculateDistance(location.lat, location.lng, a.latitude, a.longitude)
-                : Infinity;
-            const distB =
-              b.latitude && b.longitude
-                ? calculateDistance(location.lat, location.lng, b.latitude, b.longitude)
-                : Infinity;
-            return distA - distB;
-          });
-        } else {
-          uniqueItems.sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        }
+        // Sort by newest first (distance sorting happens in useMemo below)
+        uniqueItems.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
 
         setItems(uniqueItems);
         hasLoadedOnce.current = true;
       } catch (err) {
-        // Ignore if a newer fetch has started
         if (version !== fetchVersionRef.current) return;
 
         const message = getErrorMessage(err);
         console.error('Failed to fetch work items:', err);
         setError(message);
-        // DON'T clear items on error if we already have data
-        // User sees stale data + error banner instead of blank page
         if (!hasLoadedOnce.current) {
           setItems([]);
         }
       }
 
-      // Only update loading state if this is still the latest fetch
       if (version === fetchVersionRef.current) {
         setInitialLoading(false);
         setRefreshing(false);
@@ -334,21 +254,17 @@ const WorkPage = () => {
     []
   );
 
-  // --- Wait for location to resolve, then fetch ---
-  // Only fetch once locationResolved is true (geo succeeded or timed out)
+  // --- Fetch on mount and when tab/filters change (NOT on location change) ---
   useEffect(() => {
-    if (!locationResolved) return;
-    fetchItems(mainTab, selectedCategories, userLocation);
-  }, [mainTab, selectedCategories, locationResolved, userLocation, fetchItems]);
+    fetchItems(mainTab, selectedCategories);
+  }, [mainTab, selectedCategories, fetchItems]);
 
-  // --- Distance computation ---
+  // --- Distance computation + sorting (recalculates when location arrives) ---
   const itemsWithDistance = useMemo(() => {
-    if (!userLocation)
-      return items.map((item) => ({ ...item, distance: undefined as number | undefined }));
-
-    return items.map((item) => {
-      if (!item.latitude || !item.longitude)
+    const enriched = items.map((item) => {
+      if (!userLocation || !item.latitude || !item.longitude) {
         return { ...item, distance: undefined as number | undefined };
+      }
       return {
         ...item,
         distance: calculateDistance(
@@ -359,6 +275,18 @@ const WorkPage = () => {
         ),
       };
     });
+
+    // If we have location, sort by distance (nearest first)
+    // Otherwise keep the default sort (newest first)
+    if (userLocation) {
+      enriched.sort((a, b) => {
+        const distA = a.distance ?? Infinity;
+        const distB = b.distance ?? Infinity;
+        return distA - distB;
+      });
+    }
+
+    return enriched;
   }, [items, userLocation]);
 
   // --- Handlers ---
@@ -378,8 +306,8 @@ const WorkPage = () => {
   );
 
   const handleRetry = useCallback(() => {
-    fetchItems(mainTab, selectedCategories, userLocation);
-  }, [fetchItems, mainTab, selectedCategories, userLocation]);
+    fetchItems(mainTab, selectedCategories);
+  }, [fetchItems, mainTab, selectedCategories]);
 
   const getCategoryInfo = useCallback((categoryKey: string) => {
     return CATEGORIES.find((c) => c.value === categoryKey) || { icon: '📋', label: categoryKey };
@@ -466,15 +394,13 @@ const WorkPage = () => {
           </button>
         </div>
 
-        {/* Radius indicator + refreshing spinner */}
+        {/* Result count + refreshing indicator */}
         {!initialLoading && !error && items.length > 0 && (
           <div className="px-4 pb-2">
             <p className="text-xs text-gray-400 text-center">
               {refreshing && <span className="inline-block animate-spin mr-1">↻</span>}
-              {userLocation && (
-                <>📍 {activeRadius ? `Within ${activeRadius}km` : 'All distances'} · </>
-              )}
               {items.length} {items.length === 1 ? 'result' : 'results'}
+              {userLocation && ' · sorted by distance'}
             </p>
           </div>
         )}
@@ -489,7 +415,6 @@ const WorkPage = () => {
             ))}
           </div>
         ) : error && items.length === 0 ? (
-          /* Error state — only show full-page error if we have NO items */
           <div className="text-center py-12">
             <div className="text-4xl mb-3">⚠️</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -509,7 +434,6 @@ const WorkPage = () => {
             </button>
           </div>
         ) : itemsWithDistance.length === 0 ? (
-          /* Tab-specific empty state */
           (() => {
             const empty = getEmptyState();
             return (
@@ -526,7 +450,6 @@ const WorkPage = () => {
           })()
         ) : (
           <>
-            {/* Inline error banner if we have items but refresh failed */}
             {error && (
               <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
                 <p className="text-xs text-amber-700 flex-1">⚠️ {error}</p>
