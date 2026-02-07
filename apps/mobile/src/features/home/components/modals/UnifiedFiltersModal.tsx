@@ -98,7 +98,7 @@ export default function UnifiedFiltersModal({
             {/* Categories Section */}
             <Text style={styles.filterSectionTitle}>{t.home.categories}</Text>
             <View style={styles.categoryWrap}>
-              {taskCategories.map((category) => {
+              {(taskCategories || []).map((category) => {
                 const isActive = selectedCategories.includes(category);
                 return (
                   <TouchableOpacity
