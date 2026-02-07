@@ -28,8 +28,10 @@ interface WorkItem {
 
 const MAX_CATEGORIES = 5;
 const LOCATION_TIMEOUT_MS = 3000;
+const MIN_RESULTS = 3;
+const RADIUS_STEPS = [25, 50, 100, 200]; // km — auto-expand if too few results
 
-// --- Pure utility functions (no state dependency) ---
+// --- Pure utility functions ---
 
 const formatTimeAgo = (dateString: string): string => {
   const now = new Date();
@@ -94,7 +96,7 @@ const mapOffering = (offering: any): WorkItem => ({
   creator_review_count: offering.creator_review_count,
 });
 
-// --- Skeleton loader for perceived performance ---
+// --- Skeleton loader ---
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 border-l-4 border-l-gray-200 animate-pulse">
@@ -135,14 +137,13 @@ const WorkPage = () => {
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeRadius, setActiveRadius] = useState<number | null>(null); // null = no geo filter (show all)
 
-  // --- Geolocation: runs in background, never blocks data ---
+  // --- Geolocation ---
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    const timeoutId = setTimeout(() => {
-      // Geolocation took too long — distances stay as "📍" until/if it resolves
-    }, LOCATION_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => {}, LOCATION_TIMEOUT_MS);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -154,7 +155,6 @@ const WorkPage = () => {
       },
       () => {
         clearTimeout(timeoutId);
-        // Permission denied — distances will show location name instead
       },
       { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
     );
@@ -162,64 +162,144 @@ const WorkPage = () => {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // --- Data fetching: no location dependency ---
-  const fetchData = useCallback(async (tab: MainTab, categories: string[]) => {
-    setLoading(true);
+  // --- Fetch with auto-expanding radius ---
+  const fetchWithRadius = useCallback(
+    async (
+      tab: MainTab,
+      categories: string[],
+      location: { lat: number; lng: number } | null
+    ) => {
+      setLoading(true);
 
-    try {
-      const fetchJobs = async (): Promise<WorkItem[]> => {
-        if (tab === 'services') return [];
-        const response = categories.length === 0
-          ? await getTasks({ status: 'open' })
-          : await Promise.all(
-              categories.map((cat) => getTasks({ status: 'open', category: cat }))
-            ).then((res) => ({ tasks: res.flatMap((r) => r.tasks) }));
-        return response.tasks.map(mapTask);
-      };
+      try {
+        // Build location params (if we have user location)
+        const buildLocationParams = (radius?: number) => {
+          if (!location) return {};
+          return {
+            latitude: location.lat,
+            longitude: location.lng,
+            ...(radius !== undefined && { radius }),
+          };
+        };
 
-      const fetchServices = async (): Promise<WorkItem[]> => {
-        if (tab === 'jobs') return [];
-        const response = categories.length === 0
-          ? await getOfferings({ status: 'active' })
-          : await Promise.all(
-              categories.map((cat) => getOfferings({ status: 'active', category: cat }))
-            ).then((res) => ({ offerings: res.flatMap((r) => r.offerings) }));
-        return response.offerings.map(mapOffering);
-      };
+        const fetchJobs = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
+          if (tab === 'services') return [];
+          const baseParams = { status: 'open' as const, ...locationParams };
+          const response =
+            categories.length === 0
+              ? await getTasks(baseParams)
+              : await Promise.all(
+                  categories.map((cat) => getTasks({ ...baseParams, category: cat }))
+                ).then((res) => ({ tasks: res.flatMap((r) => r.tasks) }));
+          return response.tasks.map(mapTask);
+        };
 
-      // Parallel fetch — both run at the same time on "all" tab
-      const [jobs, services] = await Promise.all([fetchJobs(), fetchServices()]);
+        const fetchServices = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
+          if (tab === 'jobs') return [];
+          const baseParams = { status: 'active' as const, ...locationParams };
+          const response =
+            categories.length === 0
+              ? await getOfferings(baseParams)
+              : await Promise.all(
+                  categories.map((cat) => getOfferings({ ...baseParams, category: cat }))
+                ).then((res) => ({ offerings: res.flatMap((r) => r.offerings) }));
+          return response.offerings.map(mapOffering);
+        };
 
-      const allItems = [...jobs, ...services];
-      const uniqueItems = Array.from(
-        new Map(allItems.map((item) => [item.id, item])).values()
-      );
-      uniqueItems.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+        let finalItems: WorkItem[] = [];
+        let usedRadius: number | null = null;
 
-      setItems(uniqueItems);
-    } catch (error) {
-      console.error('Failed to fetch work items:', error);
-    }
+        if (location) {
+          // Try expanding radius until we have enough results
+          for (const radius of RADIUS_STEPS) {
+            const locationParams = buildLocationParams(radius);
+            const [jobs, services] = await Promise.all([
+              fetchJobs(locationParams),
+              fetchServices(locationParams),
+            ]);
+            finalItems = [...jobs, ...services];
+            usedRadius = radius;
 
-    setLoading(false);
-  }, []);
+            if (finalItems.length >= MIN_RESULTS) break;
+          }
 
-  // Fetch immediately on mount, and when tab/filters change
+          // If still too few results after all radius steps, fetch without radius (all)
+          if (finalItems.length < MIN_RESULTS) {
+            const [jobs, services] = await Promise.all([
+              fetchJobs(buildLocationParams()), // no radius = backend returns all
+              fetchServices(buildLocationParams()),
+            ]);
+            finalItems = [...jobs, ...services];
+            usedRadius = null;
+          }
+        } else {
+          // No location — just fetch everything
+          const [jobs, services] = await Promise.all([
+            fetchJobs({}),
+            fetchServices({}),
+          ]);
+          finalItems = [...jobs, ...services];
+          usedRadius = null;
+        }
+
+        setActiveRadius(usedRadius);
+
+        // FIX: Use composite key for dedup — jobs and services can share same numeric id
+        const uniqueItems = Array.from(
+          new Map(finalItems.map((item) => [`${item.type}-${item.id}`, item])).values()
+        );
+
+        // Sort: if we have location, sort by distance (nearest first)
+        // Otherwise sort by newest first
+        if (location) {
+          uniqueItems.sort((a, b) => {
+            const distA =
+              a.latitude && a.longitude
+                ? calculateDistance(location.lat, location.lng, a.latitude, a.longitude)
+                : Infinity;
+            const distB =
+              b.latitude && b.longitude
+                ? calculateDistance(location.lat, location.lng, b.latitude, b.longitude)
+                : Infinity;
+            return distA - distB;
+          });
+        } else {
+          uniqueItems.sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        }
+
+        setItems(uniqueItems);
+      } catch (error) {
+        console.error('Failed to fetch work items:', error);
+      }
+
+      setLoading(false);
+    },
+    []
+  );
+
+  // Fetch on mount, tab change, filter change, or when location arrives
   useEffect(() => {
-    fetchData(mainTab, selectedCategories);
-  }, [mainTab, selectedCategories, fetchData]);
+    fetchWithRadius(mainTab, selectedCategories, userLocation);
+  }, [mainTab, selectedCategories, userLocation, fetchWithRadius]);
 
-  // --- Distance computation: derived via useMemo, always up-to-date ---
+  // --- Distance computation via useMemo ---
   const itemsWithDistance = useMemo(() => {
-    if (!userLocation) return items.map((item) => ({ ...item, distance: undefined as number | undefined }));
+    if (!userLocation)
+      return items.map((item) => ({ ...item, distance: undefined as number | undefined }));
 
     return items.map((item) => {
-      if (!item.latitude || !item.longitude) return { ...item, distance: undefined as number | undefined };
+      if (!item.latitude || !item.longitude)
+        return { ...item, distance: undefined as number | undefined };
       return {
         ...item,
-        distance: calculateDistance(userLocation.lat, userLocation.lng, item.latitude, item.longitude),
+        distance: calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          item.latitude,
+          item.longitude
+        ),
       };
     });
   }, [items, userLocation]);
@@ -256,7 +336,6 @@ const WorkPage = () => {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Reuse FilterSheet from MobileTasksView */}
       <FilterSheet
         isOpen={showFilterSheet}
         onClose={() => setShowFilterSheet(false)}
@@ -308,6 +387,16 @@ const WorkPage = () => {
             )}
           </button>
         </div>
+
+        {/* Radius indicator — shows when geo-filtering is active */}
+        {userLocation && !loading && items.length > 0 && (
+          <div className="px-4 pb-2">
+            <p className="text-xs text-gray-400">
+              📍 {activeRadius ? `Showing within ${activeRadius}km` : 'Showing all distances'}
+              {' · '}{items.length} {items.length === 1 ? 'result' : 'results'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -341,7 +430,7 @@ const WorkPage = () => {
 
               return (
                 <div
-                  key={item.id}
+                  key={`${item.type}-${item.id}`}
                   onClick={() => handleItemClick(item)}
                   className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 active:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
                     item.type === 'job' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-amber-500'
