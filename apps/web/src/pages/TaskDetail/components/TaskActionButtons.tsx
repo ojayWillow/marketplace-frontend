@@ -36,9 +36,9 @@ export const TaskActionButtons = ({
 
   const getApplicationStatusLabel = (status: string) => {
     switch (status) {
-      case 'pending': return '\u23f3 Pending review';
-      case 'accepted': return '\u2705 Accepted';
-      case 'rejected': return '\u274c Rejected';
+      case 'pending': return '⏳ Pending review';
+      case 'accepted': return '✅ Accepted';
+      case 'rejected': return '❌ Rejected';
       default: return status;
     }
   };
@@ -49,7 +49,7 @@ export const TaskActionButtons = ({
       {hasApplied && task.status === 'open' && (
         <div className="mb-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2">
-            <span className="text-base">\ud83d\udcdd</span>
+            <span className="text-base">📝</span>
             <div>
               <p className="font-semibold text-xs text-blue-800">Already applied</p>
               {userApplication && (
@@ -70,7 +70,7 @@ export const TaskActionButtons = ({
             disabled={actionLoading}
             className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
-            {actionLoading ? 'Processing...' : '\u2713 Mark as Done'}
+            {actionLoading ? 'Processing...' : '✓ Mark as Done'}
           </button>
         )}
 
@@ -82,14 +82,14 @@ export const TaskActionButtons = ({
               disabled={actionLoading}
               className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
             >
-              {actionLoading ? 'Processing...' : '\u2713 Confirm'}
+              {actionLoading ? 'Processing...' : '✓ Confirm'}
             </button>
             <button
               onClick={onDispute}
               disabled={actionLoading}
               className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
             >
-              \u26a0\ufe0f Dispute
+              ⚠️ Dispute
             </button>
           </>
         )}
@@ -101,14 +101,14 @@ export const TaskActionButtons = ({
               to={`/tasks/${task.id}/edit`}
               className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 transition-all font-bold text-sm text-center shadow-lg active:scale-[0.98]"
             >
-              \u270f\ufe0f Edit
+              ✏️ Edit
             </Link>
             <button
               onClick={onCancel}
               disabled={actionLoading}
               className="px-5 py-3 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-sm active:scale-[0.98]"
             >
-              \ud83d\uddd1\ufe0f
+              🗑️
             </button>
           </>
         )}
@@ -119,7 +119,7 @@ export const TaskActionButtons = ({
             onClick={onShowApplicationForm}
             className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 transition-all font-bold text-sm shadow-lg active:scale-[0.98]"
           >
-            \u2713 Apply for This Job
+            ✓ Apply for This Job
           </button>
         )}
 

@@ -45,9 +45,9 @@ const StarRating = ({ rating }: { rating: number }) => {
   
   return (
     <span className="text-yellow-500 text-sm">
-      {'\u2605'.repeat(fullStars)}
-      {hasHalfStar && '\u00bd'}
-      {'\u2606'.repeat(emptyStars)}
+      {'★'.repeat(fullStars)}
+      {hasHalfStar && '½'}
+      {'☆'.repeat(emptyStars)}
     </span>
   );
 };
@@ -180,7 +180,7 @@ const TaskDetail = () => {
       { taskId: Number(id), message: applicationMessage },
       {
         onSuccess: () => {
-          toast.success('\u2705 Application submitted! The task owner will review your application.');
+          toast.success('✅ Application submitted! The task owner will review your application.');
           setShowApplicationForm(false);
           setApplicationMessage('');
           setTimeout(() => {
@@ -212,7 +212,7 @@ const TaskDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center px-4">
-          <div className="text-5xl mb-3">\ud83d\ude15</div>
+          <div className="text-5xl mb-3">😕</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Job Not Found</h2>
           <p className="text-gray-600 mb-4 text-sm">This job may have been removed or is no longer available.</p>
           <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold">
@@ -232,7 +232,7 @@ const TaskDetail = () => {
   const categoryLabel = getCategoryLabel(task.category);
   const categoryIcon = getCategoryIcon(task.category);
   const applicantCount = task.pending_applications_count || 0;
-  const seoDescription = `${categoryLabel} job${task.budget ? ` - \u20ac${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
+  const seoDescription = `${categoryLabel} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
   const postedDate = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
@@ -259,7 +259,7 @@ const TaskDetail = () => {
           <ShareButton
             url={`/tasks/${task.id}`}
             title={task.title}
-            description={`${categoryLabel} job - \u20ac${task.budget || 0}`}
+            description={`${categoryLabel} job - €${task.budget || 0}`}
             size="sm"
           />
         </div>
@@ -278,11 +278,11 @@ const TaskDetail = () => {
                 </span>
                 {task.is_urgent && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                    \ud83d\udd25 Urgent
+                    🔥 Urgent
                   </span>
                 )}
               </div>
-              <span className="text-xl font-black text-blue-600">\u20ac{task.budget || task.reward || 0}</span>
+              <span className="text-xl font-black text-blue-600">€{task.budget || task.reward || 0}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 leading-snug">{task.title}</h1>
           </div>
@@ -299,7 +299,7 @@ const TaskDetail = () => {
                 <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 truncate">
                   {task.creator_name || 'Unknown'}
                 </Link>
-                <span className="text-gray-300">\u00b7</span>
+                <span className="text-gray-300">·</span>
                 <StarRating rating={task.creator_rating || 0} />
                 <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
               </div>
@@ -316,7 +316,7 @@ const TaskDetail = () => {
                   to={`/tasks/${task.id}/edit`}
                   className="text-xs text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
                 >
-                  \u270f\ufe0f Edit
+                  ✏️ Edit
                 </Link>
               )}
             </div>
@@ -332,25 +332,25 @@ const TaskDetail = () => {
             </p>
           </div>
 
-          {/* Meta chips row — no duplicate location or budget */}
+          {/* Meta chips row */}
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2 flex-wrap">
               {applicantCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
-                  \ud83d\udc65 {applicantCount} applied
+                  👥 {applicantCount} applied
                 </span>
               )}
               {applicantCount === 0 && task.status === 'open' && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                  \u2728 Be the first to apply
+                  ✨ Be the first to apply
                 </span>
               )}
               <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                \u26a1 {task.difficulty || 'Normal'}
+                ⚡ {task.difficulty || 'Normal'}
               </span>
               {postedDate && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                  \ud83d\udcc5 {postedDate}
+                  📅 {postedDate}
                 </span>
               )}
             </div>
@@ -365,7 +365,7 @@ const TaskDetail = () => {
           {task.assigned_to_name && (
             <div className="mx-4 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center gap-2.5">
-                <span className="text-lg">\ud83d\udee0\ufe0f</span>
+                <span className="text-lg">🛠️</span>
                 <div>
                   <p className="text-xs text-blue-600">Assigned to</p>
                   <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm text-blue-800 hover:underline">
@@ -407,7 +407,7 @@ const TaskDetail = () => {
                   disabled={applyMutation.isPending}
                   className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
                 >
-                  {applyMutation.isPending ? 'Submitting...' : '\u2713 Submit Application'}
+                  {applyMutation.isPending ? 'Submitting...' : '✓ Submit Application'}
                 </button>
                 <button
                   onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }}
@@ -422,22 +422,22 @@ const TaskDetail = () => {
           {/* Status Messages */}
           {isCreator && task.status === 'assigned' && (
             <div className="mx-4 mb-4 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              \u23f3 Waiting for worker to complete the task
+              ⏳ Waiting for worker to complete the task
             </div>
           )}
           {isAssigned && task.status === 'pending_confirmation' && (
             <div className="mx-4 mb-4 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              \u23f3 Waiting for task owner to confirm completion
+              ⏳ Waiting for task owner to confirm completion
             </div>
           )}
           {task.status === 'completed' && (
             <div className="mx-4 mb-4 text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              \u2705 This task has been completed
+              ✅ This task has been completed
             </div>
           )}
           {task.status === 'cancelled' && (
             <div className="mx-4 mb-4 text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              \u274c This task has been cancelled
+              ❌ This task has been cancelled
             </div>
           )}
         </div>
@@ -472,7 +472,7 @@ const TaskDetail = () => {
             className="w-full flex items-center justify-between px-4 py-3 text-left"
           >
             <span className="font-semibold text-sm text-gray-700 flex items-center gap-1.5">
-              \ud83d\udca1 How it works
+              💡 How it works
             </span>
             <svg
               className={`w-4 h-4 text-gray-400 transition-transform ${howItWorksOpen ? 'rotate-180' : ''}`}
