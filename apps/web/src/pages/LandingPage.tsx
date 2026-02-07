@@ -10,7 +10,8 @@ import {
   Shield,
   Star,
   Zap,
-  MessageCircle
+  MessageCircle,
+  Map as MapIcon
 } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
@@ -393,7 +394,7 @@ export default function LandingPage() {
                     <button
                       type="submit"
                       disabled={loading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
-                      className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 mb-3"
                     >
                       {loading ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
@@ -402,6 +403,16 @@ export default function LandingPage() {
                       ) : (
                         <>Continue <ArrowRight className="w-5 h-5" /></>
                       )}
+                    </button>
+
+                    {/* Browse as Guest Button - Goes to /tasks (map) */}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/tasks')}
+                      className="w-full py-3 border border-[#2a2a3a] hover:bg-[#0a0a0f] text-gray-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 mb-4"
+                    >
+                      <MapIcon className="w-4 h-4" />
+                      Just browsing? Explore the map
                     </button>
 
                     <div className="relative my-5">

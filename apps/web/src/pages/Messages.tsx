@@ -19,9 +19,9 @@ export default function Messages() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate('/welcome');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);

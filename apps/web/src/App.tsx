@@ -66,10 +66,10 @@ function App() {
       <Suspense fallback={<Layout><PageLoader /></Layout>}>
         <Routes>
           <Route path="/" element={<Layout />}>
-            {/* Home - Always shows map for all users (guests can browse) */}
+            {/* Home - Redirects guests to /welcome, shows map for authenticated */}
             <Route index element={<Home />} />
             
-            {/* Marketing/Landing page - moved to /welcome */}
+            {/* Landing page - available to everyone with header/footer */}
             <Route path="welcome" element={<LandingPage />} />
             
             {/* Auth routes */}

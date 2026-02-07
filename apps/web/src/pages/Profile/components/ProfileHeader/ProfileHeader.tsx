@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getImageUrl } from '@marketplace/shared';
+import { getImageUrl, useAuthStore } from '@marketplace/shared';
 import type { UserProfile, ProfileFormData } from '@marketplace/shared';
 
 interface ProfileHeaderProps {
@@ -33,6 +33,8 @@ export const ProfileHeader = ({
   messageLoading = false,
 }: ProfileHeaderProps) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { clearAuth } = useAuthStore();
 
   const memberSince = new Date(profile.created_at).toLocaleDateString(
     i18n.language === 'lv' ? 'lv-LV' : i18n.language === 'ru' ? 'ru-RU' : 'en-US',
@@ -52,6 +54,22 @@ export const ProfileHeader = ({
   const currentAvatarUrl = getAvatarDisplayUrl(
     viewOnly ? (profile.avatar_url || profile.profile_picture_url) : (formData.avatar_url || profile.avatar_url || profile.profile_picture_url)
   );
+
+  const handleLogout = async () => {
+    try {
+      // Clear auth state
+      clearAuth();
+      
+      // Use setTimeout to ensure state clears before navigation
+      setTimeout(() => {
+        navigate('/welcome', { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate even if there's an error
+      navigate('/welcome', { replace: true });
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -141,14 +159,22 @@ export const ProfileHeader = ({
               </button>
             )
           ) : (
-            // Own profile - show Edit buttons
+            // Own profile - show Edit/Logout buttons
             !editing ? (
-              <button
-                onClick={onEdit}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-              >
-                {t('profile.editProfile')}
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={onEdit}
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                >
+                  {t('profile.editProfile')}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  🚪 Logout
+                </button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <button

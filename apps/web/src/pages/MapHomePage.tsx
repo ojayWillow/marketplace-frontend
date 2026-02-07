@@ -128,6 +128,23 @@ const DesktopMapView = () => {
     });
   };
 
+  // Guest protection - redirect to landing page
+  const handlePostJob = () => {
+    if (!isAuthenticated) {
+      navigate('/welcome');
+      return;
+    }
+    navigate('/tasks/create');
+  };
+
+  const handleOfferService = () => {
+    if (!isAuthenticated) {
+      navigate('/welcome');
+      return;
+    }
+    navigate('/offerings/create');
+  };
+
   // Loading states
   if (locationLoading) {
     return <LocationLoadingState onSkip={skipLocationDetection} />;
@@ -201,20 +218,19 @@ const DesktopMapView = () => {
             </button>
           </div>
           <div className="flex gap-3 flex-wrap">
-            {isAuthenticated ? (
-              <>
-                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
-                  <span>💰</span> {t('tasks.postJob', 'Post a Job')}
-                </button>
-                <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
-                  <span>👋</span> {t('tasks.offerService', 'Offer Service')}
-                </button>
-              </>
-            ) : (
-              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                {t('tasks.loginToPost', 'Login to Post Jobs or Offer Services')}
-              </button>
-            )}
+            {/* Always show both buttons, redirect guests to login */}
+            <button 
+              onClick={handlePostJob}
+              className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2"
+            >
+              <span>💰</span> {t('tasks.postJob', 'Post a Job')}
+            </button>
+            <button 
+              onClick={handleOfferService}
+              className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2"
+            >
+              <span>👋</span> {t('tasks.offerService', 'Offer Service')}
+            </button>
           </div>
         </div>
 
