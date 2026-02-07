@@ -96,6 +96,31 @@ const mapOffering = (offering: any): WorkItem => ({
   creator_review_count: offering.creator_review_count,
 });
 
+// --- Helper to extract a user-friendly error message ---
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    // Network / CORS errors
+    if (error.message === 'Network Error' || error.message.includes('ERR_NETWORK')) {
+      return 'Cannot reach server. Check your connection or try again later.';
+    }
+    // Timeout
+    if (error.message.includes('timeout')) {
+      return 'Server took too long to respond. Please try again.';
+    }
+    // Axios error with response
+    if ((error as any).response) {
+      const status = (error as any).response.status;
+      if (status === 500) return 'Server error (500). The backend may be down.';
+      if (status === 502) return 'Bad gateway (502). The backend may be restarting.';
+      if (status === 503) return 'Service unavailable (503). Try again in a moment.';
+      if (status === 404) return 'API endpoint not found (404). Check backend deployment.';
+      return `Server returned error ${status}.`;
+    }
+    return error.message;
+  }
+  return 'An unexpected error occurred.';
+};
+
 // --- Skeleton loader ---
 
 const SkeletonCard = () => (
@@ -134,6 +159,7 @@ const WorkPage = () => {
   const [mainTab, setMainTab] = useState<MainTab>('all');
   const [items, setItems] = useState<WorkItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -170,6 +196,7 @@ const WorkPage = () => {
       location: { lat: number; lng: number } | null
     ) => {
       setLoading(true);
+      setError(null);
 
       try {
         // Build location params (if we have user location)
@@ -272,8 +299,11 @@ const WorkPage = () => {
         }
 
         setItems(uniqueItems);
-      } catch (error) {
-        console.error('Failed to fetch work items:', error);
+      } catch (err) {
+        const message = getErrorMessage(err);
+        console.error('Failed to fetch work items:', err);
+        setError(message);
+        setItems([]);
       }
 
       setLoading(false);
@@ -322,6 +352,10 @@ const WorkPage = () => {
     [navigate]
   );
 
+  const handleRetry = useCallback(() => {
+    fetchWithRadius(mainTab, selectedCategories, userLocation);
+  }, [fetchWithRadius, mainTab, selectedCategories, userLocation]);
+
   const getCategoryInfo = useCallback((categoryKey: string) => {
     return CATEGORIES.find((c) => c.value === categoryKey) || { icon: '📋', label: categoryKey };
   }, []);
@@ -334,6 +368,23 @@ const WorkPage = () => {
     },
     []
   );
+
+  // --- Tab-specific empty state ---
+  const getEmptyState = () => {
+    const icon = mainTab === 'jobs' ? '💼' : mainTab === 'services' ? '🛠️' : '📭';
+    const title =
+      mainTab === 'jobs'
+        ? t('work.noJobs', 'No jobs found')
+        : mainTab === 'services'
+        ? t('work.noServices', 'No services found')
+        : t('work.noItems', 'No jobs or services found');
+    const subtitle =
+      selectedCategories.length > 0
+        ? t('work.tryClearingFilters', 'Try clearing your category filters or check back later.')
+        : t('work.tryDifferentFilters', 'Try different filters or check back later.');
+
+    return { icon, title, subtitle };
+  };
 
   // --- Render ---
   return (
@@ -394,7 +445,7 @@ const WorkPage = () => {
         </div>
 
         {/* Radius indicator — shows when geo-filtering is active */}
-        {userLocation && !loading && items.length > 0 && (
+        {userLocation && !loading && !error && items.length > 0 && (
           <div className="px-4 pb-2">
             <p className="text-xs text-gray-400 text-center">
               📍 {activeRadius ? `Showing within ${activeRadius}km` : 'Showing all distances'}
@@ -412,16 +463,42 @@ const WorkPage = () => {
               <SkeletonCard key={i} />
             ))}
           </div>
-        ) : itemsWithDistance.length === 0 ? (
+        ) : error ? (
+          /* --- Error state with retry --- */
           <div className="text-center py-12">
-            <div className="text-4xl mb-2">📭</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-              {t('work.noItems', 'No items found')}
+            <div className="text-4xl mb-3">⚠️</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {t('work.failedToLoad', 'Failed to load')}
             </h3>
-            <p className="text-sm text-gray-500">
-              {t('work.tryDifferentFilters', 'Try different filters or check back later')}
+            <p className="text-sm text-gray-500 mb-1 max-w-xs mx-auto">
+              {error}
             </p>
+            <p className="text-xs text-gray-400 mb-4">
+              {t('work.checkConnection', 'Make sure you have internet and try again.')}
+            </p>
+            <button
+              onClick={handleRetry}
+              className="px-6 py-2.5 bg-blue-500 text-white rounded-full text-sm font-semibold hover:bg-blue-600 active:scale-95 transition-all shadow-sm"
+            >
+              🔄 {t('work.retry', 'Try again')}
+            </button>
           </div>
+        ) : itemsWithDistance.length === 0 ? (
+          /* --- Tab-specific empty state --- */
+          (() => {
+            const empty = getEmptyState();
+            return (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-2">{empty.icon}</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {empty.title}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {empty.subtitle}
+                </p>
+              </div>
+            );
+          })()
         ) : (
           <div className="space-y-2">
             {itemsWithDistance.map((item) => {
@@ -448,7 +525,7 @@ const WorkPage = () => {
                     </div>
                     {isUrgent && (
                       <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                        Urgent
+                        🔥 Urgent
                       </span>
                     )}
                     {price && (
