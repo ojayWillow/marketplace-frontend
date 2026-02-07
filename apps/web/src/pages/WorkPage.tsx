@@ -17,6 +17,8 @@ interface WorkItem {
   creator_name?: string;
   created_at: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   difficulty?: string;
   creator_rating?: number;
   creator_review_count?: number;
@@ -48,6 +50,35 @@ const getDifficultyColor = (difficulty?: string): string => {
   return 'text-yellow-600'; // medium or default
 };
 
+// Helper function to render star rating
+const renderStars = (rating: number): string => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  
+  return '⭐'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
+};
+
+// Helper function to calculate distance between two coordinates
+const calculateDistance = (lat1?: number, lon1?: number, lat2?: number, lon2?: number): string => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return '-- km';
+  
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  
+  if (distance < 1) {
+    return `${Math.round(distance * 1000)}m`;
+  }
+  return `${distance.toFixed(1)}km`;
+};
+
 const WorkPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -58,6 +89,24 @@ const WorkPage = () => {
   const [loading, setLoading] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    }
+  }, []);
 
   // Fetch data based on tab and filters
   const fetchData = async (tab: MainTab, categories: string[]) => {
@@ -79,6 +128,8 @@ const WorkPage = () => {
             creator_name: task.creator_name,
             created_at: task.created_at,
             location: task.location,
+            latitude: task.latitude,
+            longitude: task.longitude,
             difficulty: task.difficulty,
             creator_rating: task.creator_rating,
             creator_review_count: task.creator_review_count,
@@ -98,6 +149,8 @@ const WorkPage = () => {
               creator_name: task.creator_name,
               created_at: task.created_at,
               location: task.location,
+              latitude: task.latitude,
+              longitude: task.longitude,
               difficulty: task.difficulty,
               creator_rating: task.creator_rating,
               creator_review_count: task.creator_review_count,
@@ -121,6 +174,8 @@ const WorkPage = () => {
             creator_name: offering.creator_name,
             created_at: offering.created_at,
             location: offering.location,
+            latitude: offering.latitude,
+            longitude: offering.longitude,
             difficulty: offering.difficulty,
             creator_rating: offering.creator_rating,
             creator_review_count: offering.creator_review_count,
@@ -140,6 +195,8 @@ const WorkPage = () => {
               creator_name: offering.creator_name,
               created_at: offering.created_at,
               location: offering.location,
+              latitude: offering.latitude,
+              longitude: offering.longitude,
               difficulty: offering.difficulty,
               creator_rating: offering.creator_rating,
               creator_review_count: offering.creator_review_count,
@@ -367,6 +424,12 @@ const WorkPage = () => {
               const isUrgent = (item as any).is_urgent;
               const hasReviews = item.creator_review_count && item.creator_review_count > 0;
               const difficultyColor = getDifficultyColor(item.difficulty);
+              const distance = calculateDistance(
+                userLocation?.lat,
+                userLocation?.lon,
+                item.latitude,
+                item.longitude
+              );
 
               return (
                 <div
@@ -411,21 +474,25 @@ const WorkPage = () => {
                     </span>
                   </div>
 
-                  {/* LINE 4: Reviews/New + City (NO AVATAR) */}
-                  <div className="flex items-center gap-1.5 text-xs mb-3 ml-8">
-                    {hasReviews ? (
-                      <>
-                        <span className="text-yellow-500">⭐</span>
-                        <span className="font-medium text-gray-700">{item.creator_rating?.toFixed(1)}</span>
-                        <span className="text-gray-400">({item.creator_review_count})</span>
-                      </>
-                    ) : (
-                      <span className="text-gray-400 text-xs">New user</span>
-                    )}
-                    <span className="text-gray-300">•</span>
-                    <span className="text-gray-500 truncate">
-                      📍 {item.location?.split(',')[0] || 'Location'}
-                    </span>
+                  {/* LINE 4: Avatar + Reviews/New + City */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {(item.creator_name || 'A').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs flex-1 min-w-0">
+                      {hasReviews ? (
+                        <>
+                          <span className="text-yellow-500">{renderStars(item.creator_rating || 0)}</span>
+                          <span className="text-gray-400">({item.creator_review_count})</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-400 text-xs">New user</span>
+                      )}
+                      <span className="text-gray-300">•</span>
+                      <span className="text-gray-500 truncate">
+                        📍 {item.location?.split(',')[0] || 'Location'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* LINE 5: Description */}
@@ -437,7 +504,7 @@ const WorkPage = () => {
 
                   {/* LINE 6: Distance (left) | Difficulty (center) | Time (right) */}
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">📏 2.5km</span>
+                    <span className="text-gray-500">📏 {distance}</span>
                     <span className={`font-medium ${difficultyColor}`}>
                       ⚡ {item.difficulty || 'Medium'}
                     </span>
