@@ -21,6 +21,22 @@ interface WorkItem {
 
 const MAX_CATEGORIES = 5;
 
+// Helper function to format time ago
+const formatTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
 const WorkPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -320,27 +336,34 @@ const WorkPage = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {items.map((item) => {
               const category = getCategoryInfo(item.category);
               const price = item.type === 'job' ? item.budget : item.price;
+              const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
+              const isUrgent = (item as any).is_urgent;
 
               return (
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 active:shadow-md active:scale-[0.98] transition-all cursor-pointer"
+                  className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 active:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
+                    item.type === 'job' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-amber-500'
+                  }`}
                 >
-                  {/* Header Row: Category + Price */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{category.icon}</span>
-                      <span className="text-sm font-semibold text-gray-700">
-                        {category.label}
-                      </span>
+                  {/* LINE 1: Category (left) | Urgent badge (center if exists) | Price (right) */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg">{category.icon}</span>
+                      <span className="text-xs font-semibold text-gray-700">{category.label}</span>
                     </div>
+                    {isUrgent && (
+                      <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                        🔥 Urgent
+                      </span>
+                    )}
                     {price && (
-                      <span className={`text-xl font-bold ${
+                      <span className={`text-lg font-bold ${
                         item.type === 'job' ? 'text-blue-600' : 'text-amber-600'
                       }`}>
                         €{price}
@@ -348,34 +371,35 @@ const WorkPage = () => {
                     )}
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 leading-snug">
+                  {/* LINE 2: Title (bold, single line, truncated) */}
+                  <h3 className="text-sm font-bold text-gray-900 mb-2 truncate">
                     {item.title}
                   </h3>
 
-                  {/* Description */}
+                  {/* LINE 3: Avatar + Name + Reviews + Location (all inline, one line) */}
+                  <div className="flex items-center gap-1.5 mb-2 text-xs">
+                    <span className="text-gray-600">👤</span>
+                    <span className="text-gray-700 font-medium">{item.creator_name || 'Anonymous'}</span>
+                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
+                    <span className="text-gray-400">(0)</span>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-gray-500 truncate">📍 {item.location?.split(',')[0] || 'Location'}</span>
+                  </div>
+
+                  {/* LINE 4: Description (single line, truncated) */}
                   {item.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-gray-500 mb-3 truncate">
                       {item.description}
                     </p>
                   )}
 
-                  {/* Footer: Type Badge + Creator */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.type === 'job'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-amber-100 text-amber-700'
-                      }`}
-                    >
-                      {item.type === 'job' ? '💼 Job' : '🛠️ Service'}
-                    </span>
-                    {item.creator_name && (
-                      <span className="text-xs text-gray-500 font-medium">
-                        by {item.creator_name}
-                      </span>
-                    )}
+                  {/* LINE 5: Distance + Difficulty + Time posted (all inline, one line) */}
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <span>📏 2.5km</span>
+                    <span className="text-gray-300">•</span>
+                    <span>⚡ Medium</span>
+                    <span className="text-gray-300">•</span>
+                    <span>{timeAgo}</span>
                   </div>
                 </div>
               );

@@ -18,13 +18,17 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
   });
 
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Location</h2>
-      <div className="flex items-start gap-2 text-gray-600 mb-4">
-        <span className="text-red-500 text-lg">📍</span>
-        <span>{task.location || 'Location not specified'}</span>
+    <div className="mb-5">
+      <h2 className="text-base font-semibold text-gray-900 mb-2">Location</h2>
+
+      {/* Distance + Location row */}
+      <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
+        <span>📍</span>
+        <span className="font-medium">{task.location?.split(',')[0] || 'Riga'}</span>
       </div>
-      <div className="h-72 rounded-lg overflow-hidden border border-gray-200">
+
+      {/* Small compact map */}
+      <div className="h-40 rounded-lg overflow-hidden border border-gray-200 mb-2">
         <MapContainer
           center={[task.latitude, task.longitude]}
           zoom={13}
@@ -38,18 +42,19 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
           <Marker position={[task.latitude, task.longitude]} icon={taskIcon}>
             <Popup>
               <div className="text-center">
-                <p className="font-semibold">{task.title}</p>
-                <p className="text-sm text-gray-500">Job location</p>
+                <p className="font-semibold text-xs">{task.title}</p>
               </div>
             </Popup>
           </Marker>
         </MapContainer>
       </div>
-      <a 
-        href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="text-blue-600 hover:underline text-sm mt-3 inline-block"
+
+      {/* Google Maps link */}
+      <a
+        href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1"
       >
         Open in Google Maps →
       </a>

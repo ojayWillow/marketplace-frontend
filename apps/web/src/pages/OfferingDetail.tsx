@@ -409,18 +409,25 @@ const OfferingDetail = () => {
               </div>
             )}
 
-            {/* Location Map */}
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Service Area</h2>
-              <div className="flex items-center gap-2 text-gray-600 mb-3">
+            {/* Service Area - COMPACT VERSION */}
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-2">Location</h2>
+
+              {/* Distance + Location row */}
+              <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
                 <span>📍</span>
-                <span>{offering.location || 'Location not specified'}</span>
+                <span className="font-medium">{offering.location?.split(',')[0] || 'Riga'}</span>
                 {offering.service_radius && (
-                  <span className="text-amber-600">• {offering.service_radius}km service radius</span>
+                  <>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-amber-600">{offering.service_radius}km service radius</span>
+                  </>
                 )}
               </div>
+
+              {/* Small compact map */}
               {offering.latitude && offering.longitude && (
-                <div className="h-64 rounded-lg overflow-hidden border border-gray-200">
+                <div className="h-40 rounded-lg overflow-hidden border border-gray-200 mb-2">
                   <MapContainer
                     center={[offering.latitude, offering.longitude]}
                     zoom={13}
@@ -434,13 +441,24 @@ const OfferingDetail = () => {
                     <Marker position={[offering.latitude, offering.longitude]} icon={offeringIcon}>
                       <Popup>
                         <div className="text-center">
-                          <p className="font-semibold">{offering.title}</p>
-                          <p className="text-sm text-gray-500">Service location</p>
+                          <p className="font-semibold text-xs">{offering.title}</p>
                         </div>
                       </Popup>
                     </Marker>
                   </MapContainer>
                 </div>
+              )}
+
+              {/* Google Maps link */}
+              {offering.latitude && offering.longitude && (
+                <a
+                  href={`https://www.google.com/maps?q=${offering.latitude},${offering.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1"
+                >
+                  Open in Google Maps →
+                </a>
               )}
             </div>
 
