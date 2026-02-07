@@ -60,9 +60,22 @@ const renderStars = (rating: number): string => {
   return '⭐'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
 };
 
+// Helper function to calculate distance using Haversine formula
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 // Helper function to format distance
 const formatDistance = (distance?: number): string => {
-  if (!distance) return '-- km';
+  if (distance === undefined || distance === null) return '-- km';
   if (distance < 1) {
     return `${Math.round(distance * 1000)}m`;
   }
@@ -86,10 +99,12 @@ const WorkPage = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          const location = {
             lat: position.coords.latitude,
             lon: position.coords.longitude,
-          });
+          };
+          console.log('User location obtained:', location);
+          setUserLocation(location);
         },
         (error) => {
           console.error('Error getting location:', error);
@@ -111,33 +126,26 @@ const WorkPage = () => {
         radius: 50
       } : {};
 
+      console.log('Fetching with location params:', locationParams);
+
       // Fetch jobs if needed
       if (tab === 'all' || tab === 'jobs') {
         if (categories.length === 0) {
           const jobsResponse = await getTasks({ status: 'open', ...locationParams });
-          const jobs = jobsResponse.tasks.map((task: any) => ({
-            id: task.id,
-            type: 'job' as const,
-            title: task.title,
-            description: task.description,
-            category: task.category,
-            budget: task.budget || task.reward,
-            creator_name: task.creator_name,
-            created_at: task.created_at,
-            location: task.location,
-            latitude: task.latitude,
-            longitude: task.longitude,
-            difficulty: task.difficulty,
-            creator_rating: task.creator_rating,
-            creator_review_count: task.creator_review_count,
-            distance: task.distance,
-          }));
-          allItems = [...allItems, ...jobs];
-        } else {
-          // Fetch for each category
-          for (const category of categories) {
-            const jobsResponse = await getTasks({ status: 'open', category, ...locationParams });
-            const jobs = jobsResponse.tasks.map((task: any) => ({
+          const jobs = jobsResponse.tasks.map((task: any) => {
+            // Calculate distance client-side if not provided by API
+            let distance = task.distance;
+            if (!distance && userLocation && task.latitude && task.longitude) {
+              distance = calculateDistance(
+                userLocation.lat,
+                userLocation.lon,
+                task.latitude,
+                task.longitude
+              );
+              console.log(`Calculated distance for task ${task.id}:`, distance);
+            }
+            
+            return {
               id: task.id,
               type: 'job' as const,
               title: task.title,
@@ -152,8 +160,43 @@ const WorkPage = () => {
               difficulty: task.difficulty,
               creator_rating: task.creator_rating,
               creator_review_count: task.creator_review_count,
-              distance: task.distance,
-            }));
+              distance: distance,
+            };
+          });
+          allItems = [...allItems, ...jobs];
+        } else {
+          // Fetch for each category
+          for (const category of categories) {
+            const jobsResponse = await getTasks({ status: 'open', category, ...locationParams });
+            const jobs = jobsResponse.tasks.map((task: any) => {
+              let distance = task.distance;
+              if (!distance && userLocation && task.latitude && task.longitude) {
+                distance = calculateDistance(
+                  userLocation.lat,
+                  userLocation.lon,
+                  task.latitude,
+                  task.longitude
+                );
+              }
+              
+              return {
+                id: task.id,
+                type: 'job' as const,
+                title: task.title,
+                description: task.description,
+                category: task.category,
+                budget: task.budget || task.reward,
+                creator_name: task.creator_name,
+                created_at: task.created_at,
+                location: task.location,
+                latitude: task.latitude,
+                longitude: task.longitude,
+                difficulty: task.difficulty,
+                creator_rating: task.creator_rating,
+                creator_review_count: task.creator_review_count,
+                distance: distance,
+              };
+            });
             allItems = [...allItems, ...jobs];
           }
         }
@@ -163,29 +206,19 @@ const WorkPage = () => {
       if (tab === 'all' || tab === 'services') {
         if (categories.length === 0) {
           const servicesResponse = await getOfferings({ status: 'active', ...locationParams });
-          const services = servicesResponse.offerings.map((offering: any) => ({
-            id: offering.id,
-            type: 'service' as const,
-            title: offering.title,
-            description: offering.description,
-            category: offering.category,
-            price: offering.price,
-            creator_name: offering.creator_name,
-            created_at: offering.created_at,
-            location: offering.location,
-            latitude: offering.latitude,
-            longitude: offering.longitude,
-            difficulty: offering.difficulty,
-            creator_rating: offering.creator_rating,
-            creator_review_count: offering.creator_review_count,
-            distance: offering.distance,
-          }));
-          allItems = [...allItems, ...services];
-        } else {
-          // Fetch for each category
-          for (const category of categories) {
-            const servicesResponse = await getOfferings({ status: 'active', category, ...locationParams });
-            const services = servicesResponse.offerings.map((offering: any) => ({
+          const services = servicesResponse.offerings.map((offering: any) => {
+            let distance = offering.distance;
+            if (!distance && userLocation && offering.latitude && offering.longitude) {
+              distance = calculateDistance(
+                userLocation.lat,
+                userLocation.lon,
+                offering.latitude,
+                offering.longitude
+              );
+              console.log(`Calculated distance for offering ${offering.id}:`, distance);
+            }
+            
+            return {
               id: offering.id,
               type: 'service' as const,
               title: offering.title,
@@ -200,8 +233,43 @@ const WorkPage = () => {
               difficulty: offering.difficulty,
               creator_rating: offering.creator_rating,
               creator_review_count: offering.creator_review_count,
-              distance: offering.distance,
-            }));
+              distance: distance,
+            };
+          });
+          allItems = [...allItems, ...services];
+        } else {
+          // Fetch for each category
+          for (const category of categories) {
+            const servicesResponse = await getOfferings({ status: 'active', category, ...locationParams });
+            const services = servicesResponse.offerings.map((offering: any) => {
+              let distance = offering.distance;
+              if (!distance && userLocation && offering.latitude && offering.longitude) {
+                distance = calculateDistance(
+                  userLocation.lat,
+                  userLocation.lon,
+                  offering.latitude,
+                  offering.longitude
+                );
+              }
+              
+              return {
+                id: offering.id,
+                type: 'service' as const,
+                title: offering.title,
+                description: offering.description,
+                category: offering.category,
+                price: offering.price,
+                creator_name: offering.creator_name,
+                created_at: offering.created_at,
+                location: offering.location,
+                latitude: offering.latitude,
+                longitude: offering.longitude,
+                difficulty: offering.difficulty,
+                creator_rating: offering.creator_rating,
+                creator_review_count: offering.creator_review_count,
+                distance: distance,
+              };
+            });
             allItems = [...allItems, ...services];
           }
         }
@@ -215,6 +283,7 @@ const WorkPage = () => {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
+      console.log('Final items with distances:', uniqueItems.map(i => ({ id: i.id, distance: i.distance })));
       setItems(uniqueItems);
     } catch (error) {
       console.error('Failed to fetch work items:', error);
@@ -461,16 +530,16 @@ const WorkPage = () => {
                   </h3>
 
                   {/* LINES 3 & 4: BIG AVATAR + User Info */}
-                  <div className="flex gap-2 mb-3">
-                    {/* BIG AVATAR spanning both lines */}
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                  <div className="flex gap-2.5 mb-3">
+                    {/* BIG AVATAR spanning both lines - now with self-start to prevent stretching */}
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-base font-bold flex-shrink-0 self-start">
                       {(item.creator_name || 'A').charAt(0).toUpperCase()}
                     </div>
                     
-                    {/* Right side: Name + Reviews/City stacked */}
-                    <div className="flex flex-col justify-center flex-1 min-w-0">
+                    {/* Right side: Name + Reviews/City stacked - now with better spacing */}
+                    <div className="flex flex-col justify-center gap-1 flex-1 min-w-0">
                       {/* Line 3: Name */}
-                      <span className="text-xs font-medium text-gray-700 truncate">
+                      <span className="text-xs font-semibold text-gray-800 truncate">
                         {item.creator_name || 'Anonymous'}
                       </span>
                       
@@ -478,7 +547,7 @@ const WorkPage = () => {
                       <div className="flex items-center gap-1.5 text-xs">
                         {hasReviews ? (
                           <>
-                            <span className="text-yellow-500">{renderStars(item.creator_rating || 0)}</span>
+                            <span className="text-yellow-500 leading-none">{renderStars(item.creator_rating || 0)}</span>
                             <span className="text-gray-400">({item.creator_review_count})</span>
                           </>
                         ) : (
@@ -501,8 +570,8 @@ const WorkPage = () => {
 
                   {/* LINE 6: Distance (left) | Difficulty (center) | Time (right) */}
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">📏 {distance}</span>
-                    <span className={`font-medium ${difficultyColor}`}>
+                    <span className="text-gray-500 font-medium">📏 {distance}</span>
+                    <span className={`font-semibold ${difficultyColor}`}>
                       ⚡ {item.difficulty || 'Medium'}
                     </span>
                     <span className="text-gray-400">{timeAgo}</span>
