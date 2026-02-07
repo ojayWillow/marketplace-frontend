@@ -83,6 +83,7 @@ const WorkPage = () => {
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
   const isFetchingRef = useRef(false);
 
   useEffect(() => {
@@ -93,9 +94,15 @@ const WorkPage = () => {
             lat: position.coords.latitude,
             lon: position.coords.longitude,
           });
+          setLocationLoading(false);
         },
-        (error) => console.error('Error getting location:', error)
+        (error) => {
+          console.error('Error getting location:', error);
+          setLocationLoading(false);
+        }
       );
+    } else {
+      setLocationLoading(false);
     }
   }, []);
 
@@ -181,8 +188,26 @@ const WorkPage = () => {
   };
 
   useEffect(() => {
-    fetchData(mainTab, selectedCategories);
-  }, [mainTab, selectedCategories, userLocation]);
+    if (!locationLoading) {
+      fetchData(mainTab, selectedCategories);
+    }
+  }, [mainTab, selectedCategories, locationLoading]);
+
+  useEffect(() => {
+    if (userLocation && items.length > 0) {
+      setItems(currentItems => 
+        currentItems.map(item => {
+          if (item.latitude && item.longitude && !item.distance) {
+            return {
+              ...item,
+              distance: calculateDistance(userLocation.lat, userLocation.lon, item.latitude, item.longitude)
+            };
+          }
+          return item;
+        })
+      );
+    }
+  }, [userLocation]);
 
   const handleTabChange = (tab: MainTab) => {
     setMainTab(tab);
