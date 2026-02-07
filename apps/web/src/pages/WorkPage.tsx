@@ -324,50 +324,57 @@ const WorkPage = () => {
             {items.map((item) => {
               const category = getCategoryInfo(item.category);
               const price = item.type === 'job' ? item.budget : item.price;
-              
+
               return (
                 <div
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className="bg-white rounded-xl p-4 shadow-sm active:shadow-md transition-all cursor-pointer"
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 active:shadow-md active:scale-[0.98] transition-all cursor-pointer"
                 >
-                  {/* Type Badge */}
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        item.type === 'job'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-purple-100 text-purple-700'
-                      }`}
-                    >
-                      {item.type === 'job' ? '💼 Job' : '🛠️ Service'}
-                    </span>
+                  {/* Header Row: Category + Price */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{category.icon}</span>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {category.label}
+                      </span>
+                    </div>
                     {price && (
-                      <span className="text-lg font-bold text-gray-900">
+                      <span className={`text-xl font-bold ${
+                        item.type === 'job' ? 'text-blue-600' : 'text-amber-600'
+                      }`}>
                         €{price}
                       </span>
                     )}
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 leading-snug">
                     {item.title}
                   </h3>
 
                   {/* Description */}
                   {item.description && (
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
                       {item.description}
                     </p>
                   )}
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <span>{category.icon} {category.label}</span>
-                    </div>
+                  {/* Footer: Type Badge + Creator */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        item.type === 'job'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      {item.type === 'job' ? '💼 Job' : '🛠️ Service'}
+                    </span>
                     {item.creator_name && (
-                      <span>by {item.creator_name}</span>
+                      <span className="text-xs text-gray-500 font-medium">
+                        by {item.creator_name}
+                      </span>
                     )}
                   </div>
                 </div>

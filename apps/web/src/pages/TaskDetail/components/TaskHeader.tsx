@@ -12,36 +12,36 @@ export const TaskHeader = ({ task }: TaskHeaderProps) => {
   const categoryLabel = getCategoryLabel(task.category);
 
   return (
-    <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white relative" style={{ minHeight: '140px' }}>
-      {/* Top Left - Category Badge */}
-      <div className="absolute top-6 left-6">
-        <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
-          <span>{categoryIcon}</span>
-          {categoryLabel}
-        </span>
+    <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-5 text-white">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">{categoryIcon}</span>
+          <div>
+            <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
+              {categoryLabel}
+            </span>
+            {task.is_urgent && (
+              <span className="ml-2 px-2 py-0.5 bg-red-500 rounded-full text-xs font-bold">
+                🔥 Urgent
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right flex flex-col items-end gap-1">
+          <div className="text-2xl font-black">
+            €{task.budget || task.reward || 0}
+          </div>
+          <ShareButton
+            url={`/tasks/${task.id}`}
+            title={task.title}
+            description={`${categoryLabel} job - €${task.budget || 0}`}
+            size="sm"
+            className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
+          />
+        </div>
       </div>
-      
-      {/* Top Right - Price */}
-      <div className="absolute top-6 right-6 text-right">
-        <div className="text-3xl font-bold">€{task.budget || 0}</div>
-        <div className="text-blue-100 text-sm mt-1">Budget</div>
-      </div>
-      
-      {/* Center - Title */}
-      <div className="pt-10 pb-4">
-        <h1 className="text-2xl md:text-3xl font-bold">{task.title}</h1>
-      </div>
-      
-      {/* Bottom Right - Share Button */}
-      <div className="absolute bottom-6 right-6">
-        <ShareButton
-          url={`/tasks/${task.id}`}
-          title={task.title}
-          description={`${categoryLabel} job - €${task.budget || 0}`}
-          size="sm"
-          className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
-        />
-      </div>
+
+      <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
     </div>
   );
 };

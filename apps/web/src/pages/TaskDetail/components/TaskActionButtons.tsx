@@ -47,17 +47,17 @@ export const TaskActionButtons = ({
   };
 
   return (
-    <div className="mt-8">
+    <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 -mx-6 -mb-6 mt-6">
       {/* Already Applied Message */}
       {hasApplied && task.status === 'open' && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📝</span>
+            <span className="text-lg">📝</span>
             <div>
-              <p className="font-medium text-blue-800">You have already applied to this task</p>
+              <p className="font-semibold text-sm text-blue-800">Already applied</p>
               {userApplication && (
-                <p className="text-sm text-blue-600 mt-1">
-                  Status: {getApplicationStatusLabel(userApplication.status)}
+                <p className="text-xs text-blue-600 mt-0.5">
+                  {getApplicationStatusLabel(userApplication.status)}
                 </p>
               )}
             </div>
@@ -65,13 +65,13 @@ export const TaskActionButtons = ({
         </div>
       )}
 
-      <div className="flex gap-4">
+      <div className="flex gap-3">
         {/* Worker marking done - PRIORITY #1 */}
         {canMarkDone && (
           <button
             onClick={onMarkDone}
             disabled={actionLoading}
-            className="flex-1 bg-green-500 text-white py-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold text-lg"
+            className="flex-1 bg-green-500 text-white py-3.5 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-base shadow-lg active:scale-[0.98] transition-all"
           >
             {actionLoading ? 'Processing...' : '✓ Mark as Done'}
           </button>
@@ -83,35 +83,35 @@ export const TaskActionButtons = ({
             <button
               onClick={onConfirmDone}
               disabled={actionLoading}
-              className="flex-1 bg-green-500 text-white py-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 font-semibold text-lg"
+              className="flex-1 bg-green-500 text-white py-3.5 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-base shadow-lg active:scale-[0.98] transition-all"
             >
-              {actionLoading ? 'Processing...' : '✓ Confirm Completed'}
+              {actionLoading ? 'Processing...' : '✓ Confirm'}
             </button>
             <button
               onClick={onDispute}
               disabled={actionLoading}
-              className="px-8 py-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 font-medium"
+              className="px-6 py-3.5 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-base shadow-lg active:scale-[0.98] transition-all"
             >
               ⚠️ Dispute
             </button>
           </>
         )}
-        
+
         {/* Owner Edit/Cancel View */}
         {isCreator && canEdit && (
           <>
             <Link
               to={`/tasks/${task.id}/edit`}
-              className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg text-center"
+              className="flex-1 bg-blue-500 text-white py-3.5 rounded-xl hover:bg-blue-600 transition-all font-bold text-base text-center shadow-lg active:scale-[0.98]"
             >
-              ✏️ Edit Task
+              ✏️ Edit
             </Link>
             <button
               onClick={onCancel}
               disabled={actionLoading}
-              className="px-8 py-4 border border-gray-300 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium"
+              className="px-6 py-3.5 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-base active:scale-[0.98]"
             >
-              🗑️ Cancel Task
+              🗑️
             </button>
           </>
         )}
@@ -120,7 +120,7 @@ export const TaskActionButtons = ({
         {canApply && !showApplicationForm && (
           <button
             onClick={onShowApplicationForm}
-            className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
+            className="flex-1 bg-blue-500 text-white py-3.5 rounded-xl hover:bg-blue-600 transition-all font-bold text-base shadow-lg active:scale-[0.98]"
           >
             ✓ Apply for This Job
           </button>
@@ -128,9 +128,9 @@ export const TaskActionButtons = ({
 
         {/* Login prompt */}
         {!isAuthenticated && task.status === 'open' && (
-          <Link 
-            to="/login" 
-            className="flex-1 bg-blue-500 text-white py-4 rounded-lg hover:bg-blue-600 font-semibold text-lg text-center"
+          <Link
+            to="/login"
+            className="flex-1 bg-blue-500 text-white py-3.5 rounded-xl hover:bg-blue-600 font-bold text-base text-center shadow-lg active:scale-[0.98] transition-all"
           >
             Login to Apply
           </Link>

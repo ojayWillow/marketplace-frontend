@@ -253,30 +253,28 @@ const TaskDetail = () => {
           <TaskHeader task={task} />
 
           <div className="p-6">
-            {/* Profile Section - Header with View Profile button only (no Apply button here) */}
-            <div className="flex items-center justify-between gap-4 pb-6 border-b border-gray-200">
-              <div className="flex items-center gap-4">
-                <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
+            {/* Profile Section - Compact with inline message button */}
+            <div className="flex items-center gap-3 pb-5 border-b border-gray-200">
+              <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                  {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+              </Link>
+              <div className="flex-1 min-w-0">
+                <Link to={`/users/${task.creator_id}`} className="font-bold text-base text-gray-900 hover:text-blue-600 block truncate">
+                  {task.creator_name || 'Unknown'}
                 </Link>
-                <div>
-                  <Link to={`/users/${task.creator_id}`} className="font-semibold text-lg text-gray-900 hover:text-blue-600">
-                    {task.creator_name || 'Unknown'}
-                  </Link>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StarRating rating={0} />
-                    <span className="text-gray-500 text-sm">0.0 (0 reviews)</span>
-                  </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <StarRating rating={0} />
+                  <span className="text-gray-500 text-sm">0.0 (0 reviews)</span>
                 </div>
               </div>
-              
-              {/* Header button: ONLY View Profile for visitors (Apply button is at bottom only) */}
+
+              {/* Action buttons inline */}
               {!isCreator && (
                 <Link
                   to={`/users/${task.creator_id}`}
-                  className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

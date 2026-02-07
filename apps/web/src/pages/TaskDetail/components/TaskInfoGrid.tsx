@@ -7,30 +7,28 @@ interface TaskInfoGridProps {
 
 export const TaskInfoGrid = ({ task }: TaskInfoGridProps) => {
   return (
-    <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 bg-gray-50 p-6 rounded-xl">
-      <div className="text-center">
-        <div className="text-3xl mb-2">💰</div>
-        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Price</div>
-        <div className="text-lg font-semibold text-gray-900">€{task.budget || 0}</div>
+    <div className="grid grid-cols-2 gap-3 my-5 p-3.5 bg-gray-50 rounded-xl">
+      <div className="text-center p-2">
+        <div className="text-xl mb-1">💰</div>
+        <div className="text-xs text-gray-500 font-medium">Budget</div>
+        <div className="font-bold text-sm text-green-600">€{task.budget || 0}</div>
       </div>
-      <div className="text-center">
-        <div className="text-3xl mb-2">📊</div>
-        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Difficulty</div>
-        <div className="text-lg font-semibold text-gray-900">{getDifficultyLabel(task.priority || 'normal')}</div>
+      <div className="text-center p-2">
+        <div className="text-xl mb-1">📍</div>
+        <div className="text-xs text-gray-500 font-medium">Location</div>
+        <div className="font-bold text-sm truncate">{task.location?.split(',')[0] || 'N/A'}</div>
       </div>
-      <div className="text-center">
-        <div className="text-3xl mb-2">📅</div>
-        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Deadline</div>
-        <div className="text-lg font-semibold text-gray-900">
-          {task.deadline 
-            ? new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-            : 'Flexible'}
+      <div className="text-center p-2">
+        <div className="text-xl mb-1">⚡</div>
+        <div className="text-xs text-gray-500 font-medium">Difficulty</div>
+        <div className="font-bold text-sm capitalize">{task.difficulty || getDifficultyLabel(task.priority || 'normal')}</div>
+      </div>
+      <div className="text-center p-2">
+        <div className="text-xl mb-1">📅</div>
+        <div className="text-xs text-gray-500 font-medium">Posted</div>
+        <div className="font-bold text-sm">
+          {new Date(task.created_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </div>
-      </div>
-      <div className="text-center">
-        <div className="text-3xl mb-2">⚡</div>
-        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Status</div>
-        <div className="text-lg font-semibold text-gray-900">{getStatusLabel(task.status)}</div>
       </div>
     </div>
   );

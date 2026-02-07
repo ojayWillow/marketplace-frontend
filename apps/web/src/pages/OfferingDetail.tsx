@@ -267,28 +267,27 @@ const OfferingDetail = () => {
 
         {/* Main Card */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-4xl">{categoryIcon}</span>
+          {/* Header - More compact for mobile */}
+          <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 p-5 text-white">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{categoryIcon}</span>
                 <div>
-                  <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
+                  <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
                     {categoryLabel}
                   </span>
-                  <h1 className="text-2xl md:text-3xl font-bold mt-2">{offering.title}</h1>
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end gap-2">
-                <div className="text-3xl font-bold">
+              <div className="text-right flex flex-col items-end gap-1">
+                <div className="text-2xl font-black">
                   €{offering.price || 0}
-                  {offering.price_type === 'hourly' && <span className="text-lg">/hr</span>}
+                  {offering.price_type === 'hourly' && <span className="text-base font-semibold">/hr</span>}
                 </div>
                 {offering.price_type === 'negotiable' && (
-                  <span className="text-amber-100 text-sm">Negotiable</span>
+                  <span className="text-amber-100 text-xs font-medium">Negotiable</span>
                 )}
                 {offering.price_type === 'fixed' && (
-                  <span className="text-amber-100 text-sm">Fixed price</span>
+                  <span className="text-amber-100 text-xs font-medium">Fixed price</span>
                 )}
                 {/* Share Button */}
                 <ShareButton
@@ -300,86 +299,81 @@ const OfferingDetail = () => {
                 />
               </div>
             </div>
+
+            <h1 className="text-xl font-bold leading-tight">{offering.title}</h1>
           </div>
 
           {/* Content */}
           <div className="p-6">
-            {/* Creator Info - View Profile button only */}
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b">
+            {/* Creator Info - Compact mobile version */}
+            <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-200">
               <Link to={`/users/${offering.creator_id}`} className="flex-shrink-0">
                 {offering.creator_avatar ? (
-                  <img 
-                    src={offering.creator_avatar} 
-                    alt={offering.creator_name} 
-                    className="w-16 h-16 rounded-full object-cover border-2 border-amber-200"
+                  <img
+                    src={offering.creator_avatar}
+                    alt={offering.creator_name}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-200"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xl font-bold">
                     {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
                   </div>
                 )}
               </Link>
-              <div className="flex-1">
-                <Link to={`/users/${offering.creator_id}`} className="font-semibold text-lg text-gray-900 hover:text-amber-600">
+              <div className="flex-1 min-w-0">
+                <Link to={`/users/${offering.creator_id}`} className="font-bold text-base text-gray-900 hover:text-amber-600 block truncate">
                   {offering.creator_name}
                 </Link>
                 {offering.creator_rating !== undefined && (
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-1.5 mt-0.5">
                     <StarRating rating={offering.creator_rating} />
-                    <span className="text-gray-500">
-                      {offering.creator_rating.toFixed(1)} ({offering.creator_review_count || 0} reviews)
+                    <span className="text-xs text-gray-500 font-medium">
+                      {offering.creator_rating.toFixed(1)} ({offering.creator_review_count || 0})
                     </span>
                   </div>
                 )}
               </div>
-              {/* View Profile button in header area */}
-              <Link
-                to={`/users/${offering.creator_id}`}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
-              >
-                👤 View Profile
-              </Link>
+              {/* Message button inline */}
+              {!isOwner && (
+                <button
+                  onClick={handleContact}
+                  disabled={contacting}
+                  className="w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-600 flex items-center justify-center text-white text-lg transition-colors disabled:opacity-50"
+                >
+                  💬
+                </button>
+              )}
             </div>
 
-            {/* Boost Section - Only for owners */}
+            {/* Boost Section - Compact for mobile */}
             {isOwner && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div>
-                    <h3 className="font-semibold text-amber-800 flex items-center gap-2">
-                      🚀 Boost Your Visibility
+              <div className="mb-5 p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm text-amber-800 flex items-center gap-1.5 mb-1">
+                      🚀 Boost Visibility
                     </h3>
                     {offering.is_boost_active && boostTimeRemaining ? (
-                      <p className="text-sm text-green-700 mt-1">
-                        ✅ <strong>Boost active!</strong> Your offering is visible on the map. 
-                        <span className="ml-1">⏱️ {boostTimeRemaining} remaining</span>
+                      <p className="text-xs text-green-700 font-medium">
+                        ✅ Active • {boostTimeRemaining} left
                       </p>
                     ) : (
-                      <p className="text-sm text-amber-700 mt-1">
-                        Show your offering on the Quick Help map so customers can find you easily!
+                      <p className="text-xs text-amber-700">
+                        Show on map for 24h
                       </p>
                     )}
                   </div>
                   {offering.is_boost_active && boostTimeRemaining ? (
-                    <div className="flex items-center gap-2">
-                      <span className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium text-sm">
-                        🔥 Boosted
-                      </span>
-                    </div>
+                    <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg font-bold text-xs whitespace-nowrap">
+                      🔥 Boosted
+                    </span>
                   ) : (
                     <button
                       onClick={handleBoost}
                       disabled={boostMutation.isPending}
-                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-md disabled:opacity-50"
+                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all font-bold text-sm shadow-sm disabled:opacity-50 whitespace-nowrap"
                     >
-                      {boostMutation.isPending ? (
-                        <span className="flex items-center gap-2">
-                          <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                          Activating...
-                        </span>
-                      ) : (
-                        '🚀 Activate 24h Free Trial'
-                      )}
+                      {boostMutation.isPending ? '...' : '⚡ Boost'}
                     </button>
                   )}
                 </div>
@@ -450,41 +444,43 @@ const OfferingDetail = () => {
               )}
             </div>
 
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-2xl mb-1">💰</div>
-                <div className="text-sm text-gray-500">Price</div>
-                <div className="font-semibold">€{offering.price || 0}</div>
+            {/* Details Grid - 2 columns on mobile */}
+            <div className="grid grid-cols-2 gap-3 mb-5 p-3.5 bg-gray-50 rounded-xl">
+              <div className="text-center p-2">
+                <div className="text-xl mb-1">💰</div>
+                <div className="text-xs text-gray-500 font-medium">Price</div>
+                <div className="font-bold text-sm">€{offering.price || 0}</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl mb-1">📋</div>
-                <div className="text-sm text-gray-500">Type</div>
-                <div className="font-semibold capitalize">{offering.price_type || 'Fixed'}</div>
+              <div className="text-center p-2">
+                <div className="text-xl mb-1">📋</div>
+                <div className="text-xs text-gray-500 font-medium">Type</div>
+                <div className="font-bold text-sm capitalize">{offering.price_type || 'Fixed'}</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl mb-1">📍</div>
-                <div className="text-sm text-gray-500">Range</div>
-                <div className="font-semibold">{offering.service_radius || 10}km</div>
+              <div className="text-center p-2">
+                <div className="text-xl mb-1">📍</div>
+                <div className="text-xs text-gray-500 font-medium">Range</div>
+                <div className="font-bold text-sm">{offering.service_radius || 10}km</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl mb-1">📅</div>
-                <div className="text-sm text-gray-500">Posted</div>
-                <div className="font-semibold">
-                  {new Date(offering.created_at!).toLocaleDateString()}
+              <div className="text-center p-2">
+                <div className="text-xl mb-1">📅</div>
+                <div className="text-xs text-gray-500 font-medium">Posted</div>
+                <div className="font-bold text-sm">
+                  {new Date(offering.created_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </div>
               </div>
             </div>
 
-            {/* Action Button - Only Contact button at bottom for non-owners */}
+            {/* Action Button - Sticky on mobile */}
             {!isOwner && (
-              <button
-                onClick={handleContact}
-                disabled={contacting}
-                className="w-full bg-amber-500 text-white py-4 rounded-lg hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-semibold text-lg"
-              >
-                {contacting ? 'Starting conversation...' : '💬 Contact ' + (offering.creator_name?.split(' ')[0] || 'Seller')}
-              </button>
+              <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 -mx-6 -mb-6 mt-6">
+                <button
+                  onClick={handleContact}
+                  disabled={contacting}
+                  className="w-full bg-amber-500 text-white py-3.5 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-base shadow-lg active:scale-[0.98]"
+                >
+                  {contacting ? 'Starting...' : '💬 Contact ' + (offering.creator_name?.split(' ')[0] || 'Seller')}
+                </button>
+              </div>
             )}
           </div>
         </div>
