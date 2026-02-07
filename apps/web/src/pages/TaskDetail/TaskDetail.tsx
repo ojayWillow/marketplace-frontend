@@ -180,7 +180,7 @@ const TaskDetail = () => {
       { taskId: Number(id), message: applicationMessage },
       {
         onSuccess: () => {
-          toast.success('✅ Application submitted! The task owner will review your application.');
+          toast.success('Application submitted! The task owner will review your application.');
           setShowApplicationForm(false);
           setApplicationMessage('');
           setTimeout(() => {
@@ -193,6 +193,16 @@ const TaskDetail = () => {
         }
       }
     );
+  };
+
+  // Handle message creator
+  const handleMessageCreator = () => {
+    if (!isAuthenticated) {
+      toast.warning('Please login to send a message');
+      navigate('/login');
+      return;
+    }
+    navigate(`/messages?userId=${task?.creator_id}`);
   };
 
   // Loading state
@@ -232,13 +242,14 @@ const TaskDetail = () => {
   const categoryLabel = getCategoryLabel(task.category);
   const categoryIcon = getCategoryIcon(task.category);
   const applicantCount = task.pending_applications_count || 0;
-  const seoDescription = `${categoryLabel} job${task.budget ? ` - €${task.budget}` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
+  const seoDescription = `${categoryLabel} job${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
   const postedDate = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
+  const applicantLabel = applicantCount > 0 ? `${applicantCount} applied` : 'New';
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-36">
       <SEOHead
         title={task.title}
         description={seoDescription}
@@ -259,7 +270,7 @@ const TaskDetail = () => {
           <ShareButton
             url={`/tasks/${task.id}`}
             title={task.title}
-            description={`${categoryLabel} job - €${task.budget || 0}`}
+            description={`${categoryLabel} job - ${task.budget || 0} EUR`}
             size="sm"
           />
         </div>
@@ -278,16 +289,16 @@ const TaskDetail = () => {
                 </span>
                 {task.is_urgent && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                    🔥 Urgent
+                    Urgent
                   </span>
                 )}
               </div>
-              <span className="text-xl font-black text-blue-600">€{task.budget || task.reward || 0}</span>
+              <span className="text-xl font-black text-green-600">{`\u20AC`}{task.budget || task.reward || 0}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 leading-snug">{task.title}</h1>
           </div>
 
-          {/* Compact profile row */}
+          {/* Compact profile row with message button */}
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2.5">
               <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
@@ -299,16 +310,28 @@ const TaskDetail = () => {
                 <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 truncate">
                   {task.creator_name || 'Unknown'}
                 </Link>
-                <span className="text-gray-300">·</span>
+                <span className="text-gray-300">{`\u00B7`}</span>
                 <StarRating rating={task.creator_rating || 0} />
                 <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
               </div>
+              {/* Message button for non-creators */}
+              {!isCreator && (
+                <button
+                  onClick={handleMessageCreator}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                  title="Send message"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </button>
+              )}
               {!isCreator && (
                 <Link
                   to={`/users/${task.creator_id}`}
                   className="text-xs text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
                 >
-                  View Profile
+                  Profile
                 </Link>
               )}
               {isCreator && canEdit && (
@@ -316,7 +339,7 @@ const TaskDetail = () => {
                   to={`/tasks/${task.id}/edit`}
                   className="text-xs text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
                 >
-                  ✏️ Edit
+                  Edit
                 </Link>
               )}
             </div>
@@ -332,27 +355,23 @@ const TaskDetail = () => {
             </p>
           </div>
 
-          {/* Meta chips row */}
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              {applicantCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
-                  👥 {applicantCount} applied
-                </span>
-              )}
-              {applicantCount === 0 && task.status === 'open' && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                  ✨ Be the first to apply
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                ⚡ {task.difficulty || 'Normal'}
-              </span>
-              {postedDate && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                  📅 {postedDate}
-                </span>
-              )}
+          {/* Single-line info bar — 3 equal columns with dividers */}
+          <div className="mx-4 mb-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="grid grid-cols-3 divide-x divide-gray-200">
+              <div className="py-2.5 text-center">
+                <div className="text-xs text-gray-400 font-medium mb-0.5">Applicants</div>
+                <div className={`text-sm font-bold ${applicantCount > 0 ? 'text-purple-600' : 'text-green-600'}`}>
+                  {applicantLabel}
+                </div>
+              </div>
+              <div className="py-2.5 text-center">
+                <div className="text-xs text-gray-400 font-medium mb-0.5">Difficulty</div>
+                <div className="text-sm font-bold text-gray-800">{task.difficulty || 'Normal'}</div>
+              </div>
+              <div className="py-2.5 text-center">
+                <div className="text-xs text-gray-400 font-medium mb-0.5">Posted</div>
+                <div className="text-sm font-bold text-gray-800">{postedDate || 'N/A'}</div>
+              </div>
             </div>
           </div>
 
@@ -365,7 +384,9 @@ const TaskDetail = () => {
           {task.assigned_to_name && (
             <div className="mx-4 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center gap-2.5">
-                <span className="text-lg">🛠️</span>
+                <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 text-sm font-bold">
+                  {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
                 <div>
                   <p className="text-xs text-blue-600">Assigned to</p>
                   <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm text-blue-800 hover:underline">
@@ -407,7 +428,7 @@ const TaskDetail = () => {
                   disabled={applyMutation.isPending}
                   className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
                 >
-                  {applyMutation.isPending ? 'Submitting...' : '✓ Submit Application'}
+                  {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
                 </button>
                 <button
                   onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }}
@@ -422,22 +443,22 @@ const TaskDetail = () => {
           {/* Status Messages */}
           {isCreator && task.status === 'assigned' && (
             <div className="mx-4 mb-4 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              ⏳ Waiting for worker to complete the task
+              Waiting for worker to complete the task
             </div>
           )}
           {isAssigned && task.status === 'pending_confirmation' && (
             <div className="mx-4 mb-4 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              ⏳ Waiting for task owner to confirm completion
+              Waiting for task owner to confirm completion
             </div>
           )}
           {task.status === 'completed' && (
             <div className="mx-4 mb-4 text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              ✅ This task has been completed
+              This task has been completed
             </div>
           )}
           {task.status === 'cancelled' && (
             <div className="mx-4 mb-4 text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              ❌ This task has been cancelled
+              This task has been cancelled
             </div>
           )}
         </div>
@@ -472,7 +493,7 @@ const TaskDetail = () => {
             className="w-full flex items-center justify-between px-4 py-3 text-left"
           >
             <span className="font-semibold text-sm text-gray-700 flex items-center gap-1.5">
-              💡 How it works
+              How it works
             </span>
             <svg
               className={`w-4 h-4 text-gray-400 transition-transform ${howItWorksOpen ? 'rotate-180' : ''}`}
@@ -494,8 +515,8 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* Sticky bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      {/* Sticky bottom action bar — positioned above tab bar */}
+      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg">
         <div className="max-w-3xl mx-auto">
           <TaskActionButtons
             task={task}
