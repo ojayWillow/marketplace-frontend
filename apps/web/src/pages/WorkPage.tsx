@@ -22,6 +22,7 @@ interface WorkItem {
   difficulty?: string;
   creator_rating?: number;
   creator_review_count?: number;
+  distance?: number; // Distance in km from API
 }
 
 const MAX_CATEGORIES = 5;
@@ -59,27 +60,9 @@ const renderStars = (rating: number): string => {
   return '⭐'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
 };
 
-// Helper function to calculate distance between two coordinates
-const calculateDistance = (lat1?: number, lon1?: number, lat2?: number, lon2?: number): string => {
-  console.log('Distance calc:', { lat1, lon1, lat2, lon2 });
-  
-  if (!lat1 || !lon1 || !lat2 || !lon2) {
-    console.log('Missing coords, returning -- km');
-    return '-- km';
-  }
-  
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-  
-  console.log('Calculated distance:', distance);
-  
+// Helper function to format distance
+const formatDistance = (distance?: number): string => {
+  if (!distance) return '-- km';
   if (distance < 1) {
     return `${Math.round(distance * 1000)}m`;
   }
@@ -103,7 +86,6 @@ const WorkPage = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log('User location obtained:', position.coords);
           setUserLocation({
             lat: position.coords.latitude,
             lon: position.coords.longitude,
@@ -122,11 +104,17 @@ const WorkPage = () => {
     try {
       let allItems: WorkItem[] = [];
 
+      // Prepare params with location if available
+      const locationParams = userLocation ? {
+        latitude: userLocation.lat,
+        longitude: userLocation.lon,
+        radius: 50
+      } : {};
+
       // Fetch jobs if needed
       if (tab === 'all' || tab === 'jobs') {
         if (categories.length === 0) {
-          const jobsResponse = await getTasks({ status: 'open' });
-          console.log('Jobs response:', jobsResponse.tasks[0]); // Debug first job
+          const jobsResponse = await getTasks({ status: 'open', ...locationParams });
           const jobs = jobsResponse.tasks.map((task: any) => ({
             id: task.id,
             type: 'job' as const,
@@ -142,12 +130,13 @@ const WorkPage = () => {
             difficulty: task.difficulty,
             creator_rating: task.creator_rating,
             creator_review_count: task.creator_review_count,
+            distance: task.distance,
           }));
           allItems = [...allItems, ...jobs];
         } else {
           // Fetch for each category
           for (const category of categories) {
-            const jobsResponse = await getTasks({ status: 'open', category });
+            const jobsResponse = await getTasks({ status: 'open', category, ...locationParams });
             const jobs = jobsResponse.tasks.map((task: any) => ({
               id: task.id,
               type: 'job' as const,
@@ -163,6 +152,7 @@ const WorkPage = () => {
               difficulty: task.difficulty,
               creator_rating: task.creator_rating,
               creator_review_count: task.creator_review_count,
+              distance: task.distance,
             }));
             allItems = [...allItems, ...jobs];
           }
@@ -172,8 +162,7 @@ const WorkPage = () => {
       // Fetch services if needed
       if (tab === 'all' || tab === 'services') {
         if (categories.length === 0) {
-          const servicesResponse = await getOfferings({ status: 'active' });
-          console.log('Services response:', servicesResponse.offerings[0]); // Debug first service
+          const servicesResponse = await getOfferings({ status: 'active', ...locationParams });
           const services = servicesResponse.offerings.map((offering: any) => ({
             id: offering.id,
             type: 'service' as const,
@@ -189,12 +178,13 @@ const WorkPage = () => {
             difficulty: offering.difficulty,
             creator_rating: offering.creator_rating,
             creator_review_count: offering.creator_review_count,
+            distance: offering.distance,
           }));
           allItems = [...allItems, ...services];
         } else {
           // Fetch for each category
           for (const category of categories) {
-            const servicesResponse = await getOfferings({ status: 'active', category });
+            const servicesResponse = await getOfferings({ status: 'active', category, ...locationParams });
             const services = servicesResponse.offerings.map((offering: any) => ({
               id: offering.id,
               type: 'service' as const,
@@ -210,6 +200,7 @@ const WorkPage = () => {
               difficulty: offering.difficulty,
               creator_rating: offering.creator_rating,
               creator_review_count: offering.creator_review_count,
+              distance: offering.distance,
             }));
             allItems = [...allItems, ...services];
           }
@@ -234,7 +225,7 @@ const WorkPage = () => {
   // Fetch data on mount and when filters change
   useEffect(() => {
     fetchData(mainTab, selectedCategories);
-  }, [mainTab, selectedCategories]);
+  }, [mainTab, selectedCategories, userLocation]);
 
   // Handle tab change
   const handleTabChange = (tab: MainTab) => {
@@ -434,12 +425,7 @@ const WorkPage = () => {
               const isUrgent = (item as any).is_urgent;
               const hasReviews = item.creator_review_count && item.creator_review_count > 0;
               const difficultyColor = getDifficultyColor(item.difficulty);
-              const distance = calculateDistance(
-                userLocation?.lat,
-                userLocation?.lon,
-                item.latitude,
-                item.longitude
-              );
+              const distance = formatDistance(item.distance);
 
               return (
                 <div
@@ -474,34 +460,35 @@ const WorkPage = () => {
                     {item.title}
                   </h3>
 
-                  {/* LINE 3: Avatar + Name */}
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {/* LINES 3 & 4: BIG AVATAR + User Info */}
+                  <div className="flex gap-2 mb-3">
+                    {/* BIG AVATAR spanning both lines */}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                       {(item.creator_name || 'A').charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-xs font-medium text-gray-700 truncate">
-                      {item.creator_name || 'Anonymous'}
-                    </span>
-                  </div>
-
-                  {/* LINE 4: Avatar + Reviews/New + City */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {(item.creator_name || 'A').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs flex-1 min-w-0">
-                      {hasReviews ? (
-                        <>
-                          <span className="text-yellow-500">{renderStars(item.creator_rating || 0)}</span>
-                          <span className="text-gray-400">({item.creator_review_count})</span>
-                        </>
-                      ) : (
-                        <span className="text-gray-400 text-xs">New user</span>
-                      )}
-                      <span className="text-gray-300">•</span>
-                      <span className="text-gray-500 truncate">
-                        📍 {item.location?.split(',')[0] || 'Location'}
+                    
+                    {/* Right side: Name + Reviews/City stacked */}
+                    <div className="flex flex-col justify-center flex-1 min-w-0">
+                      {/* Line 3: Name */}
+                      <span className="text-xs font-medium text-gray-700 truncate">
+                        {item.creator_name || 'Anonymous'}
                       </span>
+                      
+                      {/* Line 4: Reviews + City */}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        {hasReviews ? (
+                          <>
+                            <span className="text-yellow-500">{renderStars(item.creator_rating || 0)}</span>
+                            <span className="text-gray-400">({item.creator_review_count})</span>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">New user</span>
+                        )}
+                        <span className="text-gray-300">•</span>
+                        <span className="text-gray-500 truncate">
+                          📍 {item.location?.split(',')[0] || 'Location'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
