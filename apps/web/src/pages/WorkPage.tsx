@@ -28,8 +28,8 @@ interface WorkItem {
 
 const MAX_CATEGORIES = 5;
 const LOCATION_TIMEOUT_MS = 3000;
-const MIN_RESULTS = 3;
-const RADIUS_STEPS = [25, 50, 100, 200]; // km — auto-expand if too few results
+const MIN_RESULTS = 5;
+const RADIUS_STEPS = [5, 10, 25, 50]; // km — auto-expand if too few results, then fall back to all
 
 // --- Pure utility functions ---
 
@@ -448,7 +448,7 @@ const WorkPage = () => {
                     </div>
                     {isUrgent && (
                       <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                        🔥 Urgent
+                        Urgent
                       </span>
                     )}
                     {price && (
