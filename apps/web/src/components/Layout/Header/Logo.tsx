@@ -7,18 +7,14 @@ export const Logo = () => {
   return (
     <Link 
       to="/" 
-      className="flex items-center space-x-2 flex-shrink-0"
+      className="flex items-center flex-shrink-0"
       aria-label={`${t('common.appName')} - ${t('common.home')}`}
     >
       <img 
         src="/logo.png" 
         alt="Kolab" 
-        className="h-8 md:h-12 w-auto rounded-md"
-        aria-hidden="true"
+        className="h-8 md:h-10 w-auto rounded-lg"
       />
-      <span className="font-bold text-xl text-white hidden sm:inline">
-        {t('common.appName')}
-      </span>
     </Link>
   );
 };
