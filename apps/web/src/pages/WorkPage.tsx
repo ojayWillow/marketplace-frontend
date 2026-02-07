@@ -17,6 +17,9 @@ interface WorkItem {
   creator_name?: string;
   created_at: string;
   location?: string;
+  difficulty?: string;
+  creator_rating?: number;
+  creator_review_count?: number;
 }
 
 const MAX_CATEGORIES = 5;
@@ -35,6 +38,14 @@ const formatTimeAgo = (dateString: string): string => {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Helper function to get difficulty color
+const getDifficultyColor = (difficulty?: string): string => {
+  const diff = difficulty?.toLowerCase();
+  if (diff === 'easy') return 'text-green-600';
+  if (diff === 'hard') return 'text-red-600';
+  return 'text-yellow-600'; // medium or default
 };
 
 const WorkPage = () => {
@@ -68,6 +79,9 @@ const WorkPage = () => {
             creator_name: task.creator_name,
             created_at: task.created_at,
             location: task.location,
+            difficulty: task.difficulty,
+            creator_rating: task.creator_rating,
+            creator_review_count: task.creator_review_count,
           }));
           allItems = [...allItems, ...jobs];
         } else {
@@ -84,6 +98,9 @@ const WorkPage = () => {
               creator_name: task.creator_name,
               created_at: task.created_at,
               location: task.location,
+              difficulty: task.difficulty,
+              creator_rating: task.creator_rating,
+              creator_review_count: task.creator_review_count,
             }));
             allItems = [...allItems, ...jobs];
           }
@@ -104,6 +121,9 @@ const WorkPage = () => {
             creator_name: offering.creator_name,
             created_at: offering.created_at,
             location: offering.location,
+            difficulty: offering.difficulty,
+            creator_rating: offering.creator_rating,
+            creator_review_count: offering.creator_review_count,
           }));
           allItems = [...allItems, ...services];
         } else {
@@ -120,6 +140,9 @@ const WorkPage = () => {
               creator_name: offering.creator_name,
               created_at: offering.created_at,
               location: offering.location,
+              difficulty: offering.difficulty,
+              creator_rating: offering.creator_rating,
+              creator_review_count: offering.creator_review_count,
             }));
             allItems = [...allItems, ...services];
           }
@@ -342,9 +365,8 @@ const WorkPage = () => {
               const price = item.type === 'job' ? item.budget : item.price;
               const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
               const isUrgent = (item as any).is_urgent;
-              const hasReviews = false; // TODO: Get from API
-              const reviewRating = 4.5; // TODO: Get from API
-              const reviewCount = 12; // TODO: Get from API
+              const hasReviews = item.creator_review_count && item.creator_review_count > 0;
+              const difficultyColor = getDifficultyColor(item.difficulty);
 
               return (
                 <div
@@ -355,7 +377,7 @@ const WorkPage = () => {
                   }`}
                 >
                   {/* LINE 1: Category | Urgent | Price */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-lg">{category.icon}</span>
                       <span className="text-xs font-semibold text-gray-700">{category.label}</span>
@@ -374,16 +396,13 @@ const WorkPage = () => {
                     )}
                   </div>
 
-                  {/* LINE 2: SPACE */}
-                  <div className="mb-3" />
-
-                  {/* LINE 3: Title (bold) */}
-                  <h3 className="text-sm font-bold text-gray-900 truncate">
+                  {/* LINE 2: Title (bold) */}
+                  <h3 className="text-sm font-bold text-gray-900 truncate mb-3">
                     {item.title}
                   </h3>
 
-                  {/* LINE 4: Avatar circle + Name */}
-                  <div className="flex items-center gap-2">
+                  {/* LINE 3: Avatar + Name */}
+                  <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       {(item.creator_name || 'A').charAt(0).toUpperCase()}
                     </div>
@@ -392,43 +411,37 @@ const WorkPage = () => {
                     </span>
                   </div>
 
-                  {/* LINE 5: Avatar circle + Reviews/New + City */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {(item.creator_name || 'A').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs flex-1 min-w-0">
-                      {hasReviews ? (
-                        <>
-                          <span className="text-yellow-500">⭐</span>
-                          <span className="font-medium text-gray-700">{reviewRating}</span>
-                          <span className="text-gray-400">({reviewCount})</span>
-                        </>
-                      ) : (
-                        <span className="text-gray-400 text-xs">New user</span>
-                      )}
-                      <span className="text-gray-300">•</span>
-                      <span className="text-gray-500 truncate">
-                        📍 {item.location?.split(',')[0] || 'Location'}
-                      </span>
-                    </div>
+                  {/* LINE 4: Reviews/New + City (NO AVATAR) */}
+                  <div className="flex items-center gap-1.5 text-xs mb-3 ml-8">
+                    {hasReviews ? (
+                      <>
+                        <span className="text-yellow-500">⭐</span>
+                        <span className="font-medium text-gray-700">{item.creator_rating?.toFixed(1)}</span>
+                        <span className="text-gray-400">({item.creator_review_count})</span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 text-xs">New user</span>
+                    )}
+                    <span className="text-gray-300">•</span>
+                    <span className="text-gray-500 truncate">
+                      📍 {item.location?.split(',')[0] || 'Location'}
+                    </span>
                   </div>
 
-                  {/* LINE 6: Description */}
+                  {/* LINE 5: Description */}
                   {item.description && (
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-gray-500 truncate mb-3">
                       {item.description}
                     </p>
                   )}
 
-                  {/* LINE 7: SPACE */}
-                  <div className="mb-3" />
-
-                  {/* LINE 8: Distance (left) | Difficulty (center) | Time (right) */}
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <span>📏 2.5km</span>
-                    <span>⚡ Medium</span>
-                    <span>{timeAgo}</span>
+                  {/* LINE 6: Distance (left) | Difficulty (center) | Time (right) */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">📏 2.5km</span>
+                    <span className={`font-medium ${difficultyColor}`}>
+                      ⚡ {item.difficulty || 'Medium'}
+                    </span>
+                    <span className="text-gray-400">{timeAgo}</span>
                   </div>
                 </div>
               );
