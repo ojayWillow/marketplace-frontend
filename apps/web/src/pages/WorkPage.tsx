@@ -342,6 +342,9 @@ const WorkPage = () => {
               const price = item.type === 'job' ? item.budget : item.price;
               const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
               const isUrgent = (item as any).is_urgent;
+              const hasReviews = false; // TODO: Get from API
+              const reviewRating = 4.5; // TODO: Get from API
+              const reviewCount = 12; // TODO: Get from API
 
               return (
                 <div
@@ -351,8 +354,8 @@ const WorkPage = () => {
                     item.type === 'job' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-amber-500'
                   }`}
                 >
-                  {/* LINE 1: Category (left) | Urgent badge (center if exists) | Price (right) */}
-                  <div className="flex items-center justify-between mb-3">
+                  {/* LINE 1: Category | Urgent | Price */}
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className="text-lg">{category.icon}</span>
                       <span className="text-xs font-semibold text-gray-700">{category.label}</span>
@@ -371,34 +374,60 @@ const WorkPage = () => {
                     )}
                   </div>
 
-                  {/* LINE 2: Title (bold, single line, truncated) */}
-                  <h3 className="text-sm font-bold text-gray-900 mb-2 truncate">
+                  {/* LINE 2: SPACE */}
+                  <div className="mb-3" />
+
+                  {/* LINE 3: Title (bold) */}
+                  <h3 className="text-sm font-bold text-gray-900 truncate">
                     {item.title}
                   </h3>
 
-                  {/* LINE 3: Avatar + Name + Reviews + Location (all inline, one line) */}
-                  <div className="flex items-center gap-1.5 mb-2 text-xs">
-                    <span className="text-gray-600">👤</span>
-                    <span className="text-gray-700 font-medium">{item.creator_name || 'Anonymous'}</span>
-                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                    <span className="text-gray-400">(0)</span>
-                    <span className="text-gray-300">•</span>
-                    <span className="text-gray-500 truncate">📍 {item.location?.split(',')[0] || 'Location'}</span>
+                  {/* LINE 4: Avatar circle + Name */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {(item.creator_name || 'A').charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 truncate">
+                      {item.creator_name || 'Anonymous'}
+                    </span>
                   </div>
 
-                  {/* LINE 4: Description (single line, truncated) */}
+                  {/* LINE 5: Avatar circle + Reviews/New + City */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {(item.creator_name || 'A').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs flex-1 min-w-0">
+                      {hasReviews ? (
+                        <>
+                          <span className="text-yellow-500">⭐</span>
+                          <span className="font-medium text-gray-700">{reviewRating}</span>
+                          <span className="text-gray-400">({reviewCount})</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-400 text-xs">New user</span>
+                      )}
+                      <span className="text-gray-300">•</span>
+                      <span className="text-gray-500 truncate">
+                        📍 {item.location?.split(',')[0] || 'Location'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* LINE 6: Description */}
                   {item.description && (
-                    <p className="text-xs text-gray-500 mb-3 truncate">
+                    <p className="text-xs text-gray-500 truncate">
                       {item.description}
                     </p>
                   )}
 
-                  {/* LINE 5: Distance + Difficulty + Time posted (all inline, one line) */}
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                  {/* LINE 7: SPACE */}
+                  <div className="mb-3" />
+
+                  {/* LINE 8: Distance (left) | Difficulty (center) | Time (right) */}
+                  <div className="flex items-center justify-between text-xs text-gray-400">
                     <span>📏 2.5km</span>
-                    <span className="text-gray-300">•</span>
                     <span>⚡ Medium</span>
-                    <span className="text-gray-300">•</span>
                     <span>{timeAgo}</span>
                   </div>
                 </div>
