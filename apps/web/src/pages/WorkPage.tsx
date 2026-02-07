@@ -61,7 +61,12 @@ const renderStars = (rating: number): string => {
 
 // Helper function to calculate distance between two coordinates
 const calculateDistance = (lat1?: number, lon1?: number, lat2?: number, lon2?: number): string => {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return '-- km';
+  console.log('Distance calc:', { lat1, lon1, lat2, lon2 });
+  
+  if (!lat1 || !lon1 || !lat2 || !lon2) {
+    console.log('Missing coords, returning -- km');
+    return '-- km';
+  }
   
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -72,6 +77,8 @@ const calculateDistance = (lat1?: number, lon1?: number, lat2?: number, lon2?: n
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
+  
+  console.log('Calculated distance:', distance);
   
   if (distance < 1) {
     return `${Math.round(distance * 1000)}m`;
@@ -96,6 +103,7 @@ const WorkPage = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log('User location obtained:', position.coords);
           setUserLocation({
             lat: position.coords.latitude,
             lon: position.coords.longitude,
@@ -118,6 +126,7 @@ const WorkPage = () => {
       if (tab === 'all' || tab === 'jobs') {
         if (categories.length === 0) {
           const jobsResponse = await getTasks({ status: 'open' });
+          console.log('Jobs response:', jobsResponse.tasks[0]); // Debug first job
           const jobs = jobsResponse.tasks.map((task: any) => ({
             id: task.id,
             type: 'job' as const,
@@ -164,6 +173,7 @@ const WorkPage = () => {
       if (tab === 'all' || tab === 'services') {
         if (categories.length === 0) {
           const servicesResponse = await getOfferings({ status: 'active' });
+          console.log('Services response:', servicesResponse.offerings[0]); // Debug first service
           const services = servicesResponse.offerings.map((offering: any) => ({
             id: offering.id,
             type: 'service' as const,
@@ -341,7 +351,7 @@ const WorkPage = () => {
       <div className="sticky top-0 bg-white shadow-sm z-50">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Tab Pills */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-1">
             <button
               onClick={() => handleTabChange('all')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
@@ -377,7 +387,7 @@ const WorkPage = () => {
           {/* Filter Button */}
           <button
             onClick={() => setShowFilterSheet(true)}
-            className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full relative"
+            className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full relative flex-shrink-0 ml-2"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
               <line x1="4" y1="21" x2="4" y2="14" />
