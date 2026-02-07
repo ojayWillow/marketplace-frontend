@@ -182,6 +182,7 @@ const WorkPage = () => {
           };
         };
 
+        // Only fetch jobs when tab is 'all' or 'jobs'
         const fetchJobs = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
           if (tab === 'services') return [];
           const baseParams = { status: 'open' as const, ...locationParams };
@@ -194,6 +195,7 @@ const WorkPage = () => {
           return response.tasks.map(mapTask);
         };
 
+        // Only fetch services when tab is 'all' or 'services'
         const fetchServices = async (locationParams: Record<string, any>): Promise<WorkItem[]> => {
           if (tab === 'jobs') return [];
           const baseParams = { status: 'active' as const, ...locationParams };
@@ -244,7 +246,7 @@ const WorkPage = () => {
 
         setActiveRadius(usedRadius);
 
-        // FIX: Use composite key for dedup — jobs and services can share same numeric id
+        // Use composite key for dedup — jobs and services can share same numeric id
         const uniqueItems = Array.from(
           new Map(finalItems.map((item) => [`${item.type}-${item.id}`, item])).values()
         );
@@ -348,8 +350,9 @@ const WorkPage = () => {
 
       {/* Sticky tab bar */}
       <div className="sticky top-0 bg-white shadow-sm z-50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex gap-2 flex-1">
+        <div className="relative flex items-center justify-center px-4 py-3">
+          {/* Centered tab buttons */}
+          <div className="flex gap-2">
             {(['all', 'jobs', 'services'] as MainTab[]).map((tab) => (
               <button
                 key={tab}
@@ -365,9 +368,11 @@ const WorkPage = () => {
               </button>
             ))}
           </div>
+
+          {/* Filter button — absolute right so tabs stay centered */}
           <button
             onClick={() => setShowFilterSheet(true)}
-            className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full relative flex-shrink-0 ml-2"
+            className="absolute right-4 flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
               <line x1="4" y1="21" x2="4" y2="14" />
@@ -391,7 +396,7 @@ const WorkPage = () => {
         {/* Radius indicator — shows when geo-filtering is active */}
         {userLocation && !loading && items.length > 0 && (
           <div className="px-4 pb-2">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 text-center">
               📍 {activeRadius ? `Showing within ${activeRadius}km` : 'Showing all distances'}
               {' · '}{items.length} {items.length === 1 ? 'result' : 'results'}
             </p>
