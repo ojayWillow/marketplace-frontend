@@ -15,8 +15,8 @@ import SEOHead from '../components/ui/SEOHead';
 
 // StarRating helper component
 const StarRating = ({ rating }: { rating: number }) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
+  const fullStars = Math.floor(rating || 0);
+  const hasHalfStar = (rating || 0) % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
   return (
     <span className="text-yellow-500 text-sm">
@@ -83,7 +83,7 @@ const OfferingDetail = () => {
       setContacting(true);
       const response = await apiClient.post('/api/messages/conversations', {
         user_id: offering.creator_id,
-        message: `Hi! I'm interested in your offering: "${offering.title}"`
+        message: `Hi! I'm interested in your offering: "${offering.title || 'Untitled'}"`
       });
       navigate(`/messages/${response.data.conversation.id}`);
     } catch (err: any) {
@@ -167,12 +167,12 @@ const OfferingDetail = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className="text-base">{getCategoryIcon(job.category)}</span>
-                        <h4 className="font-semibold text-gray-900 text-sm truncate">{job.title}</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm truncate">{job.title || 'Untitled'}</h4>
                         {job.is_urgent && (
                           <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">⚡</span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-600 line-clamp-1 md:line-clamp-2">{job.description}</p>
+                      <p className="text-xs text-gray-600 line-clamp-1 md:line-clamp-2">{job.description || ''}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-base font-bold text-green-600">€{job.budget || 0}</div>
@@ -225,6 +225,12 @@ const OfferingDetail = () => {
     );
   }
 
+  // Safe values — guard every field that could be null
+  const safeTitle = offering.title || 'Untitled Offering';
+  const safeDescription = offering.description || '';
+  const safeCreatorName = offering.creator_name || 'Unknown';
+  const safeLocation = offering.location || '';
+  const safePriceType = offering.price_type || 'fixed';
   const categoryIcon = getCategoryIcon(offering.category);
   const categoryLabel = getCategoryLabel(offering.category);
   const isOwner = user?.id === offering.creator_id;
@@ -232,21 +238,21 @@ const OfferingDetail = () => {
   const postedDate = offering.created_at
     ? new Date(offering.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
-  const priceDisplay = `€${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}`;
+  const priceDisplay = `€${offering.price || 0}${safePriceType === 'hourly' ? '/hr' : ''}`;
 
-  const seoDescription = `${categoryLabel} service by ${offering.creator_name || 'Provider'} - ${priceDisplay}${offering.location ? ` in ${offering.location}` : ''}. ${(offering.description || '').substring(0, 100)}...`;
+  const seoDescription = `${categoryLabel} service by ${safeCreatorName} - ${priceDisplay}${safeLocation ? ` in ${safeLocation}` : ''}. ${safeDescription.substring(0, 100)}${safeDescription.length > 100 ? '...' : ''}`;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-36 md:pb-8">
       <SEOHead
-        title={offering.title}
+        title={safeTitle}
         description={seoDescription}
         url={`/offerings/${offering.id}`}
         type="product"
         price={offering.price}
       />
 
-      {/* Top bar — sticky slim on mobile, standard on desktop */}
+      {/* Top bar */}
       <div className="sticky top-0 bg-white border-b border-gray-100 z-50 md:static md:border-b-0">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium">
@@ -258,7 +264,7 @@ const OfferingDetail = () => {
           </Link>
           <ShareButton
             url={`/offerings/${offering.id}`}
-            title={offering.title}
+            title={safeTitle}
             description={`${categoryLabel} service - ${priceDisplay}`}
             size="sm"
           />
@@ -280,15 +286,15 @@ const OfferingDetail = () => {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-black">{priceDisplay}</div>
-                {offering.price_type === 'negotiable' && (
+                {safePriceType === 'negotiable' && (
                   <span className="text-amber-100 text-xs font-medium">Negotiable</span>
                 )}
-                {offering.price_type === 'fixed' && (
+                {safePriceType === 'fixed' && (
                   <span className="text-amber-100 text-xs font-medium">Fixed price</span>
                 )}
               </div>
             </div>
-            <h1 className="text-xl font-bold leading-tight">{offering.title}</h1>
+            <h1 className="text-xl font-bold leading-tight">{safeTitle}</h1>
           </div>
 
           {/* ===== MOBILE HEADER: compact inline ===== */}
@@ -302,36 +308,36 @@ const OfferingDetail = () => {
               </div>
               <div className="text-right">
                 <span className="text-xl font-black text-amber-600">{priceDisplay}</span>
-                {offering.price_type && offering.price_type !== 'hourly' && (
-                  <div className="text-xs text-gray-400 capitalize">{offering.price_type}</div>
+                {safePriceType !== 'hourly' && safePriceType !== 'fixed' && (
+                  <div className="text-xs text-gray-400 capitalize">{safePriceType}</div>
                 )}
               </div>
             </div>
-            <h1 className="text-base font-bold text-gray-900 leading-snug">{offering.title}</h1>
+            <h1 className="text-base font-bold text-gray-900 leading-snug">{safeTitle}</h1>
           </div>
 
-          {/* Profile row — compact on mobile, richer on desktop */}
+          {/* Profile row */}
           <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200">
             <div className="flex items-center gap-2.5 md:gap-4">
               <Link to={`/users/${offering.creator_id}`} className="flex-shrink-0">
                 {offering.creator_avatar ? (
                   <img
                     src={offering.creator_avatar}
-                    alt={offering.creator_name || ''}
+                    alt={safeCreatorName}
                     className="w-9 h-9 md:w-12 md:h-12 rounded-full object-cover md:border-2 md:border-amber-200"
                   />
                 ) : (
                   <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-sm md:text-lg font-bold">
-                    {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
+                    {safeCreatorName.charAt(0).toUpperCase()}
                   </div>
                 )}
               </Link>
               <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm md:flex-col md:items-start md:gap-0.5">
                 <Link to={`/users/${offering.creator_id}`} className="font-semibold text-gray-900 hover:text-amber-600 truncate md:text-base">
-                  {offering.creator_name || 'Unknown'}
+                  {safeCreatorName}
                 </Link>
                 <span className="text-gray-300 md:hidden">·</span>
-                {offering.creator_rating !== undefined && (
+                {offering.creator_rating !== undefined && offering.creator_rating !== null && (
                   <div className="flex items-center gap-1">
                     <StarRating rating={offering.creator_rating} />
                     <span className="text-gray-400 text-xs">({offering.creator_review_count || 0})</span>
@@ -373,19 +379,21 @@ const OfferingDetail = () => {
           <div className="border-t border-gray-100 mx-4 md:hidden" />
 
           {/* Description */}
-          <div className="px-4 py-3 md:px-6 md:py-5">
-            <h2 className="hidden md:block text-lg font-semibold text-gray-900 mb-3">About this service</h2>
-            <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {offering.description}
-            </p>
-          </div>
+          {safeDescription && (
+            <div className="px-4 py-3 md:px-6 md:py-5">
+              <h2 className="hidden md:block text-lg font-semibold text-gray-900 mb-3">About this service</h2>
+              <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {safeDescription}
+              </p>
+            </div>
+          )}
 
-          {/* Info bar — 3 columns */}
+          {/* Info bar */}
           <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 rounded-lg border border-gray-100">
             <div className="grid grid-cols-3 divide-x divide-gray-200">
               <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Type</div>
-                <div className="text-sm md:text-base font-bold text-gray-800 capitalize">{offering.price_type || 'Fixed'}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 capitalize">{safePriceType}</div>
               </div>
               <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Range</div>
@@ -398,7 +406,7 @@ const OfferingDetail = () => {
             </div>
           </div>
 
-          {/* Experience & Availability — collapsible on mobile, always open on desktop */}
+          {/* Experience & Availability */}
           {(offering.experience || offering.availability) && (
             <div className="mx-4 mb-3 md:mx-6 md:mb-5">
               <button
@@ -435,7 +443,7 @@ const OfferingDetail = () => {
             </div>
           )}
 
-          {/* Boost Section — owner only */}
+          {/* Boost Section */}
           {isOwner && (
             <div className="mx-4 mb-3 md:mx-6 md:mb-5 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
               <div className="flex items-center justify-between gap-2">
@@ -470,7 +478,7 @@ const OfferingDetail = () => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 text-sm">
                   <span>📍</span>
-                  <span className="font-medium text-gray-700">{offering.location?.split(',')[0] || 'Location'}</span>
+                  <span className="font-medium text-gray-700">{safeLocation.split(',')[0] || 'Location'}</span>
                   {offering.service_radius && (
                     <>
                       <span className="text-gray-300">·</span>
@@ -502,7 +510,7 @@ const OfferingDetail = () => {
                   <Marker position={[offering.latitude, offering.longitude]} icon={offeringIcon}>
                     <Popup>
                       <div className="text-center">
-                        <p className="font-semibold text-xs">{offering.title}</p>
+                        <p className="font-semibold text-xs">{safeTitle}</p>
                       </div>
                     </Popup>
                   </Marker>
@@ -519,16 +527,16 @@ const OfferingDetail = () => {
                 disabled={contacting}
                 className="w-full bg-amber-500 text-white py-3.5 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-base shadow-md"
               >
-                {contacting ? 'Starting...' : `💬 Contact ${offering.creator_name?.split(' ')[0] || 'Provider'}`}
+                {contacting ? 'Starting...' : `💬 Contact ${safeCreatorName.split(' ')[0]}`}
               </button>
             </div>
           )}
         </div>
 
-        {/* Matching Jobs — owner only */}
+        {/* Matching Jobs */}
         {renderMatchingJobs()}
 
-        {/* How it works — collapsible on mobile, always open on desktop */}
+        {/* How it works */}
         <div className="mt-3 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
           <button
             onClick={() => setHowItWorksOpen(!howItWorksOpen)}
@@ -564,7 +572,7 @@ const OfferingDetail = () => {
               disabled={contacting}
               className="w-full bg-amber-500 text-white py-3 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-sm shadow-md active:scale-[0.98]"
             >
-              {contacting ? 'Starting...' : `💬 Contact ${offering.creator_name?.split(' ')[0] || 'Provider'}`}
+              {contacting ? 'Starting...' : `💬 Contact ${safeCreatorName.split(' ')[0]}`}
             </button>
           </div>
         </div>
