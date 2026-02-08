@@ -42,7 +42,6 @@ const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  
   return (
     <span className="text-yellow-500 text-sm">
       {'★'.repeat(fullStars)}
@@ -57,22 +56,22 @@ const TaskDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
-  
+
   // React Query for task data
   const { data: task, isLoading: loading, refetch: refetchTask } = useTask(Number(id));
   const applyMutation = useApplyToTask();
-  
+
   // Local state
   const [applications, setApplications] = useState<TaskApplication[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
-  
+
   // Recommended helpers state
   const [recommendedHelpers, setRecommendedHelpers] = useState<Offering[]>([]);
   const [helpersLoading, setHelpersLoading] = useState(false);
-  
+
   // Review state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
@@ -114,7 +113,6 @@ const TaskDetail = () => {
   // Fetch recommended helpers
   const fetchRecommendedHelpers = async () => {
     if (!task || !task.latitude || !task.longitude) return;
-    
     try {
       setHelpersLoading(true);
       const response = await getOfferings({
@@ -175,7 +173,6 @@ const TaskDetail = () => {
       navigate('/login');
       return;
     }
-
     applyMutation.mutate(
       { taskId: Number(id), message: applicationMessage },
       {
@@ -183,9 +180,7 @@ const TaskDetail = () => {
           toast.success('Application submitted! The task owner will review your application.');
           setShowApplicationForm(false);
           setApplicationMessage('');
-          setTimeout(() => {
-            navigate('/tasks');
-          }, 2000);
+          setTimeout(() => { navigate('/tasks'); }, 2000);
         },
         onError: (error: any) => {
           console.error('Error applying to task:', error);
@@ -249,7 +244,7 @@ const TaskDetail = () => {
   const applicantLabel = applicantCount > 0 ? `${applicantCount} applied` : 'New';
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-36">
+    <div className="min-h-screen bg-gray-50 pb-36 md:pb-8">
       <SEOHead
         title={task.title}
         description={seoDescription}
@@ -258,14 +253,15 @@ const TaskDetail = () => {
         price={task.budget}
       />
 
-      {/* Slim top bar */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-50">
-        <div className="flex items-center justify-between px-4 py-2.5">
+      {/* Top bar — slim on mobile, standard on desktop */}
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-50 md:static md:border-b-0">
+        <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            <span className="hidden md:inline">← Back to Quick Help</span>
+            <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
             url={`/tasks/${task.id}`}
@@ -276,11 +272,29 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
         {/* Main card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Compact header */}
-          <div className="p-4 pb-3">
+
+          {/* ===== DESKTOP HEADER: gradient banner ===== */}
+          <div className="hidden md:block bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 text-white">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{categoryIcon}</span>
+                <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
+                  {categoryLabel}
+                </span>
+                {task.is_urgent && (
+                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
+                )}
+              </div>
+              <div className="text-2xl font-black">€{task.budget || task.reward || 0}</div>
+            </div>
+            <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
+          </div>
+
+          {/* ===== MOBILE HEADER: compact inline ===== */}
+          <div className="md:hidden p-4 pb-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-lg">{categoryIcon}</span>
@@ -288,40 +302,40 @@ const TaskDetail = () => {
                   {categoryLabel}
                 </span>
                 {task.is_urgent && (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                    Urgent
-                  </span>
+                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">Urgent</span>
                 )}
               </div>
-              <span className="text-xl font-black text-green-600">{`\u20AC`}{task.budget || task.reward || 0}</span>
+              <span className="text-xl font-black text-green-600">€{task.budget || task.reward || 0}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 leading-snug">{task.title}</h1>
           </div>
 
-          {/* Compact profile row with message button */}
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2.5">
+          {/* Profile row — compact on mobile, richer on desktop */}
+          <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200">
+            <div className="flex items-center gap-2.5 md:gap-4">
               <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm md:text-lg font-bold">
                   {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               </Link>
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm">
-                <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 truncate">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm md:flex-col md:items-start md:gap-0.5">
+                <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 truncate md:text-base">
                   {task.creator_name || 'Unknown'}
                 </Link>
-                <span className="text-gray-300">{`\u00B7`}</span>
-                <StarRating rating={task.creator_rating || 0} />
-                <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
+                <span className="text-gray-300 md:hidden">·</span>
+                <div className="flex items-center gap-1">
+                  <StarRating rating={task.creator_rating || 0} />
+                  <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
+                </div>
               </div>
               {/* Message button for non-creators */}
               {!isCreator && (
                 <button
                   onClick={handleMessageCreator}
-                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                  className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                   title="Send message"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </button>
@@ -329,7 +343,7 @@ const TaskDetail = () => {
               {!isCreator && (
                 <Link
                   to={`/users/${task.creator_id}`}
-                  className="text-xs text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
+                  className="text-xs md:text-sm text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
                 >
                   Profile
                 </Link>
@@ -337,7 +351,7 @@ const TaskDetail = () => {
               {isCreator && canEdit && (
                 <Link
                   to={`/tasks/${task.id}/edit`}
-                  className="text-xs text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
+                  className="text-xs md:text-sm text-blue-600 font-medium hover:text-blue-700 flex-shrink-0"
                 >
                   Edit
                 </Link>
@@ -345,51 +359,52 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Thin divider */}
-          <div className="border-t border-gray-100 mx-4" />
+          {/* Thin divider — mobile only (desktop has border on profile section) */}
+          <div className="border-t border-gray-100 mx-4 md:hidden" />
 
           {/* Description */}
-          <div className="px-4 py-3">
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+          <div className="px-4 py-3 md:px-6 md:py-5">
+            <h2 className="hidden md:block text-lg font-semibold text-gray-900 mb-3">About this job</h2>
+            <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
               {task.description}
             </p>
           </div>
 
-          {/* Single-line info bar — 3 equal columns with dividers */}
-          <div className="mx-4 mb-3 bg-gray-50 rounded-lg border border-gray-100">
+          {/* Info bar — 3 columns */}
+          <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 rounded-lg border border-gray-100">
             <div className="grid grid-cols-3 divide-x divide-gray-200">
-              <div className="py-2.5 text-center">
+              <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Applicants</div>
-                <div className={`text-sm font-bold ${applicantCount > 0 ? 'text-purple-600' : 'text-green-600'}`}>
+                <div className={`text-sm md:text-base font-bold ${applicantCount > 0 ? 'text-purple-600' : 'text-green-600'}`}>
                   {applicantLabel}
                 </div>
               </div>
-              <div className="py-2.5 text-center">
+              <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Difficulty</div>
-                <div className="text-sm font-bold text-gray-800">{task.difficulty || 'Normal'}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800">{task.difficulty || 'Normal'}</div>
               </div>
-              <div className="py-2.5 text-center">
+              <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Posted</div>
-                <div className="text-sm font-bold text-gray-800">{postedDate || 'N/A'}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800">{postedDate || 'N/A'}</div>
               </div>
             </div>
           </div>
 
-          {/* Location map (single location display) */}
-          <div className="px-4 pb-4">
+          {/* Location map */}
+          <div className="px-4 pb-4 md:px-6 md:pb-6">
             <TaskLocationMap task={task} />
           </div>
 
           {/* Assigned Worker Info */}
           {task.assigned_to_name && (
-            <div className="mx-4 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mx-4 mb-4 md:mx-6 md:mb-5 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 text-sm font-bold">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 text-sm font-bold">
                   {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div>
                   <p className="text-xs text-blue-600">Assigned to</p>
-                  <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm text-blue-800 hover:underline">
+                  <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm md:text-base text-blue-800 hover:underline">
                     {task.assigned_to_name}
                   </Link>
                 </div>
@@ -399,7 +414,7 @@ const TaskDetail = () => {
 
           {/* Applications (Owner View) */}
           {showApplications && (
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-4 md:px-6 md:pb-5">
               <TaskApplications
                 applications={applications}
                 applicationsLoading={applicationsLoading}
@@ -414,8 +429,8 @@ const TaskDetail = () => {
 
           {/* Application Form */}
           {showApplicationForm && canApply && (
-            <div className="mx-4 mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">Apply for this job</h3>
+            <div className="mx-4 mb-4 md:mx-6 md:mb-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-3">Apply for this job</h3>
               <textarea
                 value={applicationMessage}
                 onChange={(e) => setApplicationMessage(e.target.value)}
@@ -442,25 +457,42 @@ const TaskDetail = () => {
 
           {/* Status Messages */}
           {isCreator && task.status === 'assigned' && (
-            <div className="mx-4 mb-4 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2.5 rounded-lg text-center text-sm">
+            <div className="mx-4 mb-4 md:mx-6 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2.5 rounded-lg text-center text-sm">
               Waiting for worker to complete the task
             </div>
           )}
           {isAssigned && task.status === 'pending_confirmation' && (
-            <div className="mx-4 mb-4 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2.5 rounded-lg text-center text-sm">
+            <div className="mx-4 mb-4 md:mx-6 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2.5 rounded-lg text-center text-sm">
               Waiting for task owner to confirm completion
             </div>
           )}
           {task.status === 'completed' && (
-            <div className="mx-4 mb-4 text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg text-center text-sm">
+            <div className="mx-4 mb-4 md:mx-6 text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg text-center text-sm">
               This task has been completed
             </div>
           )}
           {task.status === 'cancelled' && (
-            <div className="mx-4 mb-4 text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2.5 rounded-lg text-center text-sm">
+            <div className="mx-4 mb-4 md:mx-6 text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2.5 rounded-lg text-center text-sm">
               This task has been cancelled
             </div>
           )}
+
+          {/* Desktop inline action button */}
+          <div className="hidden md:block px-6 pb-6">
+            <TaskActionButtons
+              task={task}
+              isCreator={isCreator}
+              isAssigned={isAssigned}
+              isAuthenticated={isAuthenticated}
+              actionLoading={actionLoading}
+              showApplicationForm={showApplicationForm}
+              onShowApplicationForm={() => setShowApplicationForm(true)}
+              onMarkDone={handleMarkDone}
+              onConfirmDone={handleConfirmDone}
+              onDispute={handleDispute}
+              onCancel={handleCancel}
+            />
+          </div>
         </div>
 
         {/* Recommended Helpers */}
@@ -486,37 +518,36 @@ const TaskDetail = () => {
           />
         )}
 
-        {/* How it works — collapsible */}
+        {/* How it works — collapsible on mobile, always open on desktop */}
         <div className="mt-3 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
           <button
             onClick={() => setHowItWorksOpen(!howItWorksOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left"
+            className="w-full flex items-center justify-between px-4 py-3 md:px-6 text-left"
           >
-            <span className="font-semibold text-sm text-gray-700 flex items-center gap-1.5">
+            <span className="font-semibold text-sm md:text-base text-gray-700 flex items-center gap-1.5">
               How it works
             </span>
             <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${howItWorksOpen ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-gray-400 transition-transform md:hidden ${howItWorksOpen ? 'rotate-180' : ''}`}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          {howItWorksOpen && (
-            <div className="px-4 pb-4">
-              <ol className="text-gray-600 space-y-1.5 list-decimal list-inside text-sm">
-                <li>Apply for the job with a brief introduction</li>
-                <li>Task owner reviews applications and accepts the best fit</li>
-                <li>Complete the task and mark it as done</li>
-                <li>Get paid after the task owner confirms completion</li>
-              </ol>
-            </div>
-          )}
+          {/* Mobile: collapsible. Desktop: always visible */}
+          <div className={`px-4 pb-4 md:px-6 md:pb-5 ${howItWorksOpen ? 'block' : 'hidden md:block'}`}>
+            <ol className="text-gray-600 space-y-1.5 list-decimal list-inside text-sm md:text-base">
+              <li>Apply for the job with a brief introduction</li>
+              <li>Task owner reviews applications and accepts the best fit</li>
+              <li>Complete the task and mark it as done</li>
+              <li>Get paid after the task owner confirms completion</li>
+            </ol>
+          </div>
         </div>
       </div>
 
-      {/* Sticky bottom action bar — positioned above tab bar */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg">
+      {/* Sticky bottom action bar — MOBILE ONLY */}
+      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden">
         <div className="max-w-3xl mx-auto">
           <TaskActionButtons
             task={task}

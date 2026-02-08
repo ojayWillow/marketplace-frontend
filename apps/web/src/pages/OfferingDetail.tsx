@@ -13,7 +13,7 @@ import { apiClient } from '@marketplace/shared';
 import ShareButton from '../components/ui/ShareButton';
 import SEOHead from '../components/ui/SEOHead';
 
-// StarRating helper component (matches TaskDetail pattern)
+// StarRating helper component
 const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
@@ -130,18 +130,18 @@ const OfferingDetail = () => {
     if (!offering || user?.id !== offering.creator_id) return null;
     return (
       <div className="mt-3 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 text-white">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 md:p-4 text-white">
           <div className="flex items-center gap-2">
             <span className="text-2xl">💼</span>
             <div>
-              <h2 className="text-sm font-bold">Jobs Matching Your Service</h2>
-              <p className="text-blue-100 text-xs">
+              <h2 className="text-sm md:text-base font-bold">Jobs Matching Your Service</h2>
+              <p className="text-blue-100 text-xs md:text-sm">
                 Open {getCategoryLabel(offering.category)} jobs near you
               </p>
             </div>
           </div>
         </div>
-        <div className="p-3">
+        <div className="p-3 md:p-4">
           {jobsLoading ? (
             <div className="text-center py-6">
               <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
@@ -172,7 +172,7 @@ const OfferingDetail = () => {
                           <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">⚡</span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-600 line-clamp-1">{job.description}</p>
+                      <p className="text-xs text-gray-600 line-clamp-1 md:line-clamp-2">{job.description}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-base font-bold text-green-600">€{job.budget || 0}</div>
@@ -186,7 +186,7 @@ const OfferingDetail = () => {
             <div className="mt-3 text-center">
               <Link
                 to={`/tasks?tab=jobs&category=${offering.category}`}
-                className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                className="text-blue-600 hover:text-blue-700 text-xs md:text-sm font-medium"
               >
                 Browse all {getCategoryLabel(offering.category)} jobs →
               </Link>
@@ -232,11 +232,12 @@ const OfferingDetail = () => {
   const postedDate = offering.created_at
     ? new Date(offering.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
+  const priceDisplay = `€${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}`;
 
-  const seoDescription = `${categoryLabel} service by ${offering.creator_name} - €${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}${offering.location ? ` in ${offering.location}` : ''}. ${offering.description?.substring(0, 100)}...`;
+  const seoDescription = `${categoryLabel} service by ${offering.creator_name || 'Provider'} - ${priceDisplay}${offering.location ? ` in ${offering.location}` : ''}. ${(offering.description || '').substring(0, 100)}...`;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-36">
+    <div className="min-h-screen bg-gray-50 pb-36 md:pb-8">
       <SEOHead
         title={offering.title}
         description={seoDescription}
@@ -245,29 +246,53 @@ const OfferingDetail = () => {
         price={offering.price}
       />
 
-      {/* Sticky slim top bar */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-50">
-        <div className="flex items-center justify-between px-4 py-2.5">
+      {/* Top bar — sticky slim on mobile, standard on desktop */}
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-50 md:static md:border-b-0">
+        <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            <span className="hidden md:inline">← Back to Quick Help</span>
+            <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
             url={`/offerings/${offering.id}`}
             title={offering.title}
-            description={`${categoryLabel} service - €${offering.price || 0}${offering.price_type === 'hourly' ? '/hr' : ''}`}
+            description={`${categoryLabel} service - ${priceDisplay}`}
             size="sm"
           />
         </div>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
         {/* Main card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Compact header — category badge + price on same row, title below */}
-          <div className="p-4 pb-3">
+
+          {/* ===== DESKTOP HEADER: gradient banner ===== */}
+          <div className="hidden md:block bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 p-6 text-white">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{categoryIcon}</span>
+                <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
+                  {categoryLabel}
+                </span>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-black">{priceDisplay}</div>
+                {offering.price_type === 'negotiable' && (
+                  <span className="text-amber-100 text-xs font-medium">Negotiable</span>
+                )}
+                {offering.price_type === 'fixed' && (
+                  <span className="text-amber-100 text-xs font-medium">Fixed price</span>
+                )}
+              </div>
+            </div>
+            <h1 className="text-xl font-bold leading-tight">{offering.title}</h1>
+          </div>
+
+          {/* ===== MOBILE HEADER: compact inline ===== */}
+          <div className="md:hidden p-4 pb-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-lg">{categoryIcon}</span>
@@ -276,10 +301,7 @@ const OfferingDetail = () => {
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xl font-black text-amber-600">
-                  €{offering.price || 0}
-                  {offering.price_type === 'hourly' && <span className="text-sm font-semibold">/hr</span>}
-                </span>
+                <span className="text-xl font-black text-amber-600">{priceDisplay}</span>
                 {offering.price_type && offering.price_type !== 'hourly' && (
                   <div className="text-xs text-gray-400 capitalize">{offering.price_type}</div>
                 )}
@@ -288,43 +310,42 @@ const OfferingDetail = () => {
             <h1 className="text-base font-bold text-gray-900 leading-snug">{offering.title}</h1>
           </div>
 
-          {/* Compact profile row */}
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2.5">
+          {/* Profile row — compact on mobile, richer on desktop */}
+          <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200">
+            <div className="flex items-center gap-2.5 md:gap-4">
               <Link to={`/users/${offering.creator_id}`} className="flex-shrink-0">
                 {offering.creator_avatar ? (
                   <img
                     src={offering.creator_avatar}
-                    alt={offering.creator_name}
-                    className="w-9 h-9 rounded-full object-cover"
+                    alt={offering.creator_name || ''}
+                    className="w-9 h-9 md:w-12 md:h-12 rounded-full object-cover md:border-2 md:border-amber-200"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-sm font-bold">
+                  <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-sm md:text-lg font-bold">
                     {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
                   </div>
                 )}
               </Link>
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm">
-                <Link to={`/users/${offering.creator_id}`} className="font-semibold text-gray-900 hover:text-amber-600 truncate">
-                  {offering.creator_name}
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm md:flex-col md:items-start md:gap-0.5">
+                <Link to={`/users/${offering.creator_id}`} className="font-semibold text-gray-900 hover:text-amber-600 truncate md:text-base">
+                  {offering.creator_name || 'Unknown'}
                 </Link>
+                <span className="text-gray-300 md:hidden">·</span>
                 {offering.creator_rating !== undefined && (
-                  <>
-                    <span className="text-gray-300">·</span>
+                  <div className="flex items-center gap-1">
                     <StarRating rating={offering.creator_rating} />
                     <span className="text-gray-400 text-xs">({offering.creator_review_count || 0})</span>
-                  </>
+                  </div>
                 )}
               </div>
-              {/* Message button inline */}
               {!isOwner && (
                 <button
                   onClick={handleContact}
                   disabled={contacting}
-                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
+                  className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
                   title="Send message"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </button>
@@ -332,7 +353,7 @@ const OfferingDetail = () => {
               {!isOwner && (
                 <Link
                   to={`/users/${offering.creator_id}`}
-                  className="text-xs text-amber-600 font-medium hover:text-amber-700 flex-shrink-0"
+                  className="text-xs md:text-sm text-amber-600 font-medium hover:text-amber-700 flex-shrink-0"
                 >
                   Profile
                 </Link>
@@ -340,7 +361,7 @@ const OfferingDetail = () => {
               {isOwner && (
                 <Link
                   to={`/offerings/${offering.id}/edit`}
-                  className="text-xs text-amber-600 font-medium hover:text-amber-700 flex-shrink-0"
+                  className="text-xs md:text-sm text-amber-600 font-medium hover:text-amber-700 flex-shrink-0"
                 >
                   Edit
                 </Link>
@@ -348,76 +369,75 @@ const OfferingDetail = () => {
             </div>
           </div>
 
-          {/* Thin divider */}
-          <div className="border-t border-gray-100 mx-4" />
+          {/* Thin divider — mobile only */}
+          <div className="border-t border-gray-100 mx-4 md:hidden" />
 
-          {/* Description — directly in card, no heading */}
-          <div className="px-4 py-3">
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+          {/* Description */}
+          <div className="px-4 py-3 md:px-6 md:py-5">
+            <h2 className="hidden md:block text-lg font-semibold text-gray-900 mb-3">About this service</h2>
+            <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
               {offering.description}
             </p>
           </div>
 
-          {/* Single-row info bar — 3 equal columns with dividers */}
-          <div className="mx-4 mb-3 bg-gray-50 rounded-lg border border-gray-100">
+          {/* Info bar — 3 columns */}
+          <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 rounded-lg border border-gray-100">
             <div className="grid grid-cols-3 divide-x divide-gray-200">
-              <div className="py-2.5 text-center">
+              <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Type</div>
-                <div className="text-sm font-bold text-gray-800 capitalize">{offering.price_type || 'Fixed'}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 capitalize">{offering.price_type || 'Fixed'}</div>
               </div>
-              <div className="py-2.5 text-center">
+              <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Range</div>
-                <div className="text-sm font-bold text-gray-800">{offering.service_radius || 10}km</div>
+                <div className="text-sm md:text-base font-bold text-gray-800">{offering.service_radius || 10}km</div>
               </div>
-              <div className="py-2.5 text-center">
+              <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 font-medium mb-0.5">Posted</div>
-                <div className="text-sm font-bold text-gray-800">{postedDate || 'N/A'}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800">{postedDate || 'N/A'}</div>
               </div>
             </div>
           </div>
 
-          {/* Experience & Availability — collapsible */}
+          {/* Experience & Availability — collapsible on mobile, always open on desktop */}
           {(offering.experience || offering.availability) && (
-            <div className="mx-4 mb-3">
+            <div className="mx-4 mb-3 md:mx-6 md:mb-5">
               <button
                 onClick={() => setDetailsOpen(!detailsOpen)}
                 className="w-full flex items-center justify-between py-2 text-left"
               >
-                <span className="font-semibold text-sm text-gray-700 flex items-center gap-1.5">
+                <span className="font-semibold text-sm md:text-base text-gray-700 flex items-center gap-1.5">
                   📋 Details & Experience
                 </span>
                 <svg
-                  className={`w-4 h-4 text-gray-400 transition-transform ${detailsOpen ? 'rotate-180' : ''}`}
+                  className={`w-4 h-4 text-gray-400 transition-transform md:hidden ${detailsOpen ? 'rotate-180' : ''}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              {detailsOpen && (
-                <div className="pb-2 space-y-3">
-                  {offering.experience && (
-                    <div>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Experience & Qualifications</h3>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{offering.experience}</p>
+              <div className={`pb-2 space-y-3 ${detailsOpen ? 'block' : 'hidden md:block'}`}>
+                {offering.experience && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Experience & Qualifications</h3>
+                    <p className="text-sm md:text-base text-gray-700 whitespace-pre-wrap">{offering.experience}</p>
+                  </div>
+                )}
+                {offering.availability && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Availability</h3>
+                    <div className="flex items-center gap-1.5 text-sm md:text-base text-gray-700">
+                      <span>📅</span>
+                      <span>{offering.availability}</span>
                     </div>
-                  )}
-                  {offering.availability && (
-                    <div>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Availability</h3>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                        <span>📅</span>
-                        <span>{offering.availability}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Boost Section — compact, for owner only */}
+          {/* Boost Section — owner only */}
           {isOwner && (
-            <div className="mx-4 mb-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+            <div className="mx-4 mb-3 md:mx-6 md:mb-5 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-xs text-amber-800 flex items-center gap-1 mb-0.5">
@@ -444,9 +464,9 @@ const OfferingDetail = () => {
             </div>
           )}
 
-          {/* Compact location map */}
+          {/* Location map */}
           {offering.latitude && offering.longitude && (
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-4 md:px-6 md:pb-6">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 text-sm">
                   <span>📍</span>
@@ -467,7 +487,7 @@ const OfferingDetail = () => {
                   Open in Maps →
                 </a>
               </div>
-              <div className="h-32 rounded-lg overflow-hidden border border-gray-200">
+              <div className="h-32 md:h-48 rounded-lg overflow-hidden border border-gray-200">
                 <MapContainer
                   center={[offering.latitude, offering.longitude]}
                   zoom={13}
@@ -490,43 +510,54 @@ const OfferingDetail = () => {
               </div>
             </div>
           )}
+
+          {/* Desktop inline contact button */}
+          {!isOwner && (
+            <div className="hidden md:block px-6 pb-6">
+              <button
+                onClick={handleContact}
+                disabled={contacting}
+                className="w-full bg-amber-500 text-white py-3.5 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-base shadow-md"
+              >
+                {contacting ? 'Starting...' : `💬 Contact ${offering.creator_name?.split(' ')[0] || 'Provider'}`}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Matching Jobs — only for owner */}
+        {/* Matching Jobs — owner only */}
         {renderMatchingJobs()}
 
-        {/* How it works — collapsible, closed by default */}
+        {/* How it works — collapsible on mobile, always open on desktop */}
         <div className="mt-3 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
           <button
             onClick={() => setHowItWorksOpen(!howItWorksOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left"
+            className="w-full flex items-center justify-between px-4 py-3 md:px-6 text-left"
           >
-            <span className="font-semibold text-sm text-gray-700 flex items-center gap-1.5">
+            <span className="font-semibold text-sm md:text-base text-gray-700 flex items-center gap-1.5">
               💡 How it works
             </span>
             <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${howItWorksOpen ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-gray-400 transition-transform md:hidden ${howItWorksOpen ? 'rotate-180' : ''}`}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          {howItWorksOpen && (
-            <div className="px-4 pb-4">
-              <ul className="text-gray-600 space-y-1.5 text-sm">
-                <li>• Contact the service provider to discuss your needs</li>
-                <li>• Agree on scope, timing, and price</li>
-                <li>• Service provider comes to you or meets at agreed location</li>
-                <li>• Pay after the service is completed to your satisfaction</li>
-              </ul>
-            </div>
-          )}
+          <div className={`px-4 pb-4 md:px-6 md:pb-5 ${howItWorksOpen ? 'block' : 'hidden md:block'}`}>
+            <ul className="text-gray-600 space-y-1.5 text-sm md:text-base">
+              <li>• Contact the service provider to discuss your needs</li>
+              <li>• Agree on scope, timing, and price</li>
+              <li>• Service provider comes to you or meets at agreed location</li>
+              <li>• Pay after the service is completed to your satisfaction</li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      {/* Fixed bottom action bar — above tab bar */}
+      {/* Fixed bottom action bar — MOBILE ONLY */}
       {!isOwner && (
-        <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg">
+        <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden">
           <div className="max-w-3xl mx-auto px-4 py-3">
             <button
               onClick={handleContact}
