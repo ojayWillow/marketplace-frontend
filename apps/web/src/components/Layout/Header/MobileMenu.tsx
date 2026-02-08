@@ -41,43 +41,18 @@ export const MobileMenu = ({
       aria-label="Mobile navigation"
     >
       <nav className="flex flex-col space-y-2">
-        <NavLink
-          to="/"
-          end
-          className={navLinkClass}
-          onClick={onClose}
-        >
+        <NavLink to="/" end className={navLinkClass} onClick={onClose}>
           {t('common.home')}
         </NavLink>
-        {/* Listings/Marketplace removed - not needed for now */}
-        {/* <NavLink
-          to="/listings"
-          className={navLinkClass}
-          onClick={onClose}
-        >
-          {t('common.listings')}
-        </NavLink> */}
-        <NavLink
-          to="/tasks"
-          className={navLinkClass}
-          onClick={onClose}
-        >
+        <NavLink to="/tasks" className={navLinkClass} onClick={onClose}>
           {t('common.quickHelp')}
         </NavLink>
         {isAuthenticated && (
           <>
-            <NavLink
-              to="/favorites"
-              className={navLinkClass}
-              onClick={onClose}
-            >
+            <NavLink to="/favorites" className={navLinkClass} onClick={onClose}>
               <span className="text-red-500" aria-hidden="true">❤️</span> My Favorites
             </NavLink>
-            <NavLink
-              to="/messages"
-              className={navLinkClass}
-              onClick={onClose}
-            >
+            <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
               <span aria-hidden="true">💬</span> Messages
               {notifications.unreadMessages > 0 && (
                 <span className="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">
@@ -95,7 +70,6 @@ export const MobileMenu = ({
         <div className="mt-4 flex flex-col space-y-2">
           {isAuthenticated ? (
             <>
-              {/* Mobile Notifications Summary */}
               {totalNotifications > 0 && (
                 <div className="px-3 py-2 mb-2 bg-blue-50 rounded-lg" role="status" aria-live="polite">
                   <p className="text-sm font-medium text-blue-700">
@@ -103,16 +77,16 @@ export const MobileMenu = ({
                   </p>
                   <div className="mt-1 text-xs text-blue-600 space-y-1">
                     {notifications.acceptedApplications > 0 && (
-                      <p>• 🎉 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
+                      <p>\u2022 \ud83c\udf89 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
                     )}
                     {notifications.unreadMessages > 0 && (
-                      <p>• {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
+                      <p>\u2022 {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
                     )}
                     {notifications.pendingApplications > 0 && (
-                      <p>• {notifications.pendingApplications} new application{notifications.pendingApplications !== 1 ? 's' : ''}</p>
+                      <p>\u2022 {notifications.pendingApplications} new application{notifications.pendingApplications !== 1 ? 's' : ''}</p>
                     )}
                     {notifications.pendingConfirmation > 0 && (
-                      <p>• {notifications.pendingConfirmation} task{notifications.pendingConfirmation !== 1 ? 's' : ''} pending confirmation</p>
+                      <p>\u2022 {notifications.pendingConfirmation} task{notifications.pendingConfirmation !== 1 ? 's' : ''} pending confirmation</p>
                     )}
                   </div>
                 </div>
@@ -139,32 +113,20 @@ export const MobileMenu = ({
                 <span>{user?.username} - My Profile</span>
               </Link>
               <button
-                onClick={() => {
-                  onLogout();
-                  onClose();
-                }}
+                onClick={() => { onLogout(); onClose(); }}
                 className="btn-secondary text-sm"
               >
                 {t('common.logout')}
               </button>
             </>
           ) : (
-            <>
-              <Link
-                to="/login"
-                className="btn-secondary text-sm"
-                onClick={onClose}
-              >
-                {t('common.login')}
-              </Link>
-              <Link
-                to="/register"
-                className="btn-primary text-sm"
-                onClick={onClose}
-              >
-                {t('common.register')}
-              </Link>
-            </>
+            <Link
+              to="/login"
+              className="btn-primary text-sm text-center"
+              onClick={onClose}
+            >
+              {t('common.signIn', 'Sign in')}
+            </Link>
           )}
         </div>
       </div>

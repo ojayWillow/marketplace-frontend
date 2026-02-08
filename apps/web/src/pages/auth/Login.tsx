@@ -1,180 +1,348 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Phone, Mail, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
+import { Phone, Mail, Eye, EyeOff, ArrowRight, ArrowLeft, Loader2, CheckCircle, User, ChevronDown } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
+import { usePhoneAuth } from '../../hooks/usePhoneAuth'
 import { useAuthStore } from '@marketplace/shared'
+import { PhoneInput } from '../../components/auth/PhoneInput'
+import { OTPInput } from '../../components/auth/OTPInput'
 
 export default function Login() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const login = useLogin()
   const { user, isAuthenticated } = useAuthStore()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
+
+  // Phone auth
+  const {
+    step,
+    phoneNumber,
+    isLoading: phoneLoading,
+    error: phoneError,
+    isNewUser,
+    setPhoneNumber,
+    sendCode,
+    verifyOTP,
+    completeRegistration,
+    reset,
+    goBack,
+  } = usePhoneAuth()
+
+  const [otpValue, setOtpValue] = useState('')
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+
+  // Email fallback
+  const [showEmailLogin, setShowEmailLogin] = useState(false)
+  const [emailForm, setEmailForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users
   useEffect(() => {
     if (isAuthenticated && user) {
       navigate('/', { replace: true })
     }
   }, [isAuthenticated, user, navigate])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect on phone auth success
+  useEffect(() => {
+    if (step === 'success') {
+      const timer = setTimeout(() => navigate('/'), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [step, navigate])
+
+  // Auto-submit OTP
+  useEffect(() => {
+    if (otpValue.length === 6 && step === 'otp' && !phoneLoading) {
+      verifyOTP(otpValue)
+    }
+  }, [otpValue, step, phoneLoading, verifyOTP])
+
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    login.mutate(formData)
+    if (!phoneNumber || phoneNumber.length < 8) return
+    await sendCode()
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (otpValue.length !== 6) return
+    await verifyOTP(otpValue)
   }
 
-  // Don't render the form if already authenticated (will redirect)
+  const handleCompleteRegistration = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUsernameError('')
+    if (!username.trim()) { setUsernameError('Username is required'); return }
+    if (username.length < 3) { setUsernameError('Username must be at least 3 characters'); return }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) { setUsernameError('Letters, numbers, and underscores only'); return }
+    await completeRegistration(username, email || undefined)
+  }
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    login.mutate(emailForm)
+  }
+
   if (isAuthenticated && user) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-400">Redirecting...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Phone className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            {step === 'success' ? (
+              <CheckCircle className="w-7 h-7 text-green-600" />
+            ) : (
+              <Phone className="w-7 h-7 text-blue-600" />
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t('auth.loginTitle')}
+          <h1 className="text-2xl font-bold text-gray-900">
+            {step === 'register' ? 'Complete Your Profile'
+              : step === 'success' ? 'Welcome!'
+              : 'Sign in to Kolab'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Welcome back to Tirgus</p>
+          <p className="text-gray-500 text-sm mt-1">
+            {step === 'phone' && 'Enter your phone number to get started'}
+            {step === 'otp' && `Enter the code sent to ${phoneNumber}`}
+            {step === 'register' && 'Just a few more details'}
+            {step === 'success' && 'Redirecting you to the app...'}
+          </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
-          {/* Phone Login Button - Primary option */}
-          <Link
-            to="/phone-login"
-            className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors mb-6"
-          >
-            <Phone className="w-5 h-5" />
-            {t('auth.signInWithPhone', 'Sign in with Phone')}
-            <ArrowRight className="w-5 h-5 ml-auto" />
-          </Link>
+        <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-7">
 
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">
-                {t('auth.existingUserEmail', 'existing user? use email')}
-              </span>
-            </div>
-          </div>
-
-          {/* Error message */}
-          {login.isError && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
-              <p className="text-red-600 dark:text-red-400 text-sm text-center">{t('auth.loginError')}</p>
-            </div>
-          )}
-
-          {/* Email Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Mail className="w-4 h-4" />
-                {t('auth.email')}
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="your@email.com"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500"
-                required
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.password')}
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  {t('auth.forgotPassword', 'Forgot Password?')}
-                </Link>
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500 pr-12"
-                  required
+          {/* ===== STEP: Phone Number ===== */}
+          {step === 'phone' && !showEmailLogin && (
+            <>
+              <form onSubmit={handleSendCode}>
+                <PhoneInput
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
+                  disabled={phoneLoading}
+                  error={phoneError}
+                  autoFocus
                 />
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  type="submit"
+                  disabled={phoneLoading || !phoneNumber || phoneNumber.length < 8}
+                  className="w-full mt-5 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {phoneLoading ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                  ) : (
+                    <>{t('auth.sendCode', 'Send Verification Code')} <ArrowRight className="w-5 h-5" /></>
+                  )}
+                </button>
+              </form>
+
+              {/* Email fallback toggle */}
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailLogin(true)}
+                  className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  Have an email account? Sign in with email
+                  <ChevronDown className="w-3 h-3" />
                 </button>
               </div>
-            </div>
+            </>
+          )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={login.isPending}
-              className="w-full py-4 px-6 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-gray-900 dark:text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-            >
-              {login.isPending ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {t('auth.signingIn', 'Signing in...')}
-                </>
-              ) : (
-                <>
-                  {t('auth.loginButton')}
-                  <ArrowRight className="w-5 h-5" />
-                </>
+          {/* ===== EMAIL LOGIN (collapsed fallback) ===== */}
+          {step === 'phone' && showEmailLogin && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowEmailLogin(false)}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium mb-4"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to phone sign in
+              </button>
+
+              {login.isError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-red-600 text-sm text-center">{t('auth.loginError')}</p>
+                </div>
               )}
-            </button>
-          </form>
+
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+                    <Mail className="w-4 h-4" /> Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={emailForm.email}
+                    onChange={e => setEmailForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
+                    <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">Forgot?</Link>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      value={emailForm.password}
+                      onChange={e => setEmailForm(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors pr-12"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={login.isPending}
+                  className="w-full py-3.5 px-6 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {login.isPending ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Signing in...</>
+                  ) : (
+                    <>Sign in with Email <ArrowRight className="w-5 h-5" /></>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* ===== STEP: OTP ===== */}
+          {step === 'otp' && (
+            <form onSubmit={handleVerifyOTP}>
+              <OTPInput
+                value={otpValue}
+                onChange={setOtpValue}
+                disabled={phoneLoading}
+                error={phoneError}
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={phoneLoading || otpValue.length !== 6}
+                className="w-full mt-5 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {phoneLoading ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</>
+                ) : (
+                  <>Verify Code <ArrowRight className="w-5 h-5" /></>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={goBack}
+                disabled={phoneLoading}
+                className="w-full mt-3 py-2.5 text-gray-500 hover:text-gray-700 font-medium rounded-xl transition-colors flex items-center justify-center gap-1 text-sm"
+              >
+                <ArrowLeft className="w-4 h-4" /> Change phone number
+              </button>
+              <p className="text-center text-xs text-gray-400 mt-3">
+                Didn't receive the code?{' '}
+                <button type="button" onClick={() => { setOtpValue(''); goBack() }} className="text-blue-600 hover:underline font-medium">
+                  Resend
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* ===== STEP: Registration (new phone users) ===== */}
+          {step === 'register' && (
+            <form onSubmit={handleCompleteRegistration}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <User className="inline-block w-4 h-4 mr-1" /> Username *
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    placeholder="e.g., john_doe"
+                    disabled={phoneLoading}
+                    className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none focus:border-blue-500 ${
+                      usernameError ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                    autoFocus
+                  />
+                  {usernameError && <p className="mt-1 text-xs text-red-600">{usernameError}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Mail className="inline-block w-4 h-4 mr-1" /> Email <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    disabled={phoneLoading}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">For account recovery and notifications</p>
+                </div>
+              </div>
+              {phoneError && <p className="mt-3 text-sm text-red-600 text-center">{phoneError}</p>}
+              <button
+                type="submit"
+                disabled={phoneLoading || !username.trim()}
+                className="w-full mt-5 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {phoneLoading ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Creating account...</>
+                ) : (
+                  <>Create Account <ArrowRight className="w-5 h-5" /></>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* ===== STEP: Success ===== */}
+          {step === 'success' && (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">You're all set!</h2>
+              <p className="text-gray-500 text-sm">Redirecting you to the app...</p>
+            </div>
+          )}
         </div>
 
-        {/* New user prompt */}
-        <p className="mt-6 text-center text-gray-600 dark:text-gray-400">
-          {t('auth.newUser', 'New to Tirgus?')}{' '}
-          <Link
-            to="/phone-login"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            {t('auth.createAccountWithPhone', 'Create account with phone')}
-          </Link>
-        </p>
+        {/* Terms notice */}
+        {(step === 'phone' || step === 'register') && (
+          <p className="mt-5 text-[11px] text-gray-400 text-center">
+            By continuing, you agree to our{' '}
+            <Link to="/terms" className="underline hover:text-gray-600">Terms</Link>{' '}and{' '}
+            <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>
+          </p>
+        )}
       </div>
     </div>
   )
