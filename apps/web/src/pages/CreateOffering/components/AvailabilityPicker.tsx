@@ -155,7 +155,7 @@ const AvailabilityPicker = ({ value, onChange }: AvailabilityPickerProps) => {
       {/* Preview */}
       {value && (
         <p className="text-[11px] text-amber-600 mt-1.5 font-medium">
-          \ud83d\udcc5 {value}
+          📅 {value}
         </p>
       )}
     </div>
