@@ -19,6 +19,7 @@ export { dispute } from './dispute';
 export { common } from './common';
 export { categories } from './categories';
 export { difficulty } from './difficulty';
+export { locationPicker } from './locationPicker';
 
 import { auth } from './auth';
 import { tabs } from './tabs';
@@ -41,6 +42,7 @@ import { dispute } from './dispute';
 import { common } from './common';
 import { categories } from './categories';
 import { difficulty } from './difficulty';
+import { locationPicker } from './locationPicker';
 
 export const ru = {
   auth,
@@ -64,4 +66,5 @@ export const ru = {
   common,
   categories,
   difficulty,
+  locationPicker,
 };
