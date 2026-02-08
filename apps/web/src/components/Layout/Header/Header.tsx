@@ -19,7 +19,6 @@ export default function Header() {
   const logout = useLogout();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Use extracted notifications hook
   const { 
     notifications, 
     totalNotifications, 
@@ -27,7 +26,6 @@ export default function Header() {
     clearNotificationType 
   } = useNotifications(isAuthenticated);
 
-  // Close mobile menu on Escape
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMobileMenuOpen(false);
@@ -102,26 +100,17 @@ export default function Header() {
                 />
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
-                <Link 
-                  to="/login" 
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white border border-slate-600 hover:border-slate-500 rounded-lg transition-colors"
-                >
-                  {t('common.login')}
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
-                >
-                  {t('common.register')}
-                </Link>
-              </div>
+              <Link 
+                to="/login" 
+                className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+              >
+                {t('common.signIn', 'Sign in')}
+              </Link>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Mobile notification bell - Always visible when authenticated */}
             {isAuthenticated && (
               <NotificationBell
                 notifications={notifications}
@@ -147,19 +136,9 @@ export default function Header() {
                 aria-hidden="true"
               >
                 {mobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 )}
               </svg>
             </button>

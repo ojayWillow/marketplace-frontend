@@ -19,8 +19,6 @@ const PageLoader = () => (
 const Home = lazy(() => import('./pages/Home'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const Login = lazy(() => import('./pages/auth/Login'))
-const Register = lazy(() => import('./pages/auth/Register'))
-const PhoneLogin = lazy(() => import('./pages/auth/PhoneLogin'))
 const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
@@ -72,10 +70,11 @@ function App() {
             {/* Landing page - available to everyone with header/footer */}
             <Route path="welcome" element={<LandingPage />} />
             
-            {/* Auth routes */}
+            {/* Auth routes - unified login handles phone + email */}
             <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-            <Route path="phone-login" element={<PhoneLogin />} />
+            {/* Legacy routes - all redirect to unified login */}
+            <Route path="register" element={<Navigate to="/login" replace />} />
+            <Route path="phone-login" element={<Navigate to="/login" replace />} />
             {/* Verify phone - requires auth but skips phone check to avoid loop */}
             <Route
               path="verify-phone"
@@ -120,7 +119,6 @@ function App() {
             {/* Tasks/Quick Help */}
             <Route path="tasks" element={<Tasks />} />
             <Route path="tasks/:id" element={<TaskDetail />} />
-            {/* Alias for /tasks */}
             <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
             <Route
               path="tasks/create"
@@ -158,7 +156,7 @@ function App() {
               }
             />
             
-            {/* Work page - All jobs and services catalog */}
+            {/* Work page */}
             <Route path="work" element={<WorkPage />} />
             
             {/* User Profile & Settings */}
@@ -199,11 +197,11 @@ function App() {
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
             
-            {/* 404 catch-all route - must be last */}
+            {/* 404 catch-all */}
             <Route path="*" element={<NotFound />} />
           </Route>
 
-          {/* Admin Panel - Separate layout */}
+          {/* Admin Panel */}
           <Route
             path="/admin"
             element={
@@ -225,10 +223,7 @@ function App() {
         </Routes>
       </Suspense>
       
-      {/* PWA Install Prompt */}
       <PWAInstallPrompt />
-      
-      {/* PWA Update Prompt - notifies users when new version is available */}
       <PWAUpdatePrompt />
     </>
   )
