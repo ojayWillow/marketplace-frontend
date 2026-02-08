@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createOffering, boostOffering, useAuthStore, useToastStore } from '@marketplace/shared';
-import { GeocodingResult } from '@marketplace/shared';
+import { GeocodingResult, reverseGeocode } from '@marketplace/shared';
 import { OfferingFormData, INITIAL_FORM_DATA } from '../types';
 
 export const useOfferingForm = () => {
@@ -17,6 +17,7 @@ export const useOfferingForm = () => {
   const [createdOfferingId, setCreatedOfferingId] = useState<number | null>(null);
   const [activating, setActivating] = useState(false);
   const [isBoosted, setIsBoosted] = useState(false);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -34,8 +35,13 @@ export const useOfferingForm = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // If user manually edits the location text, un-confirm until they pick again
+    if (name === 'location') {
+      setLocationConfirmed(false);
+    }
   };
 
+  // When user selects an address from the suggestion dropdown
   const selectAddress = (result: GeocodingResult) => {
     setFormData(prev => ({
       ...prev,
@@ -43,7 +49,41 @@ export const useOfferingForm = () => {
       latitude: parseFloat(result.lat),
       longitude: parseFloat(result.lon),
     }));
+    setLocationConfirmed(true);
   };
+
+  // When user taps the map or drags the pin — reverse geocode to get address
+  const setCoordsFromMap = useCallback(async (lat: number, lng: number) => {
+    // Immediately update coordinates so pin moves
+    setFormData(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+    }));
+
+    // Reverse geocode to get the address string
+    try {
+      const result = await reverseGeocode(lat, lng);
+      if (result?.display_name) {
+        setFormData(prev => ({
+          ...prev,
+          location: result.display_name,
+          latitude: lat,
+          longitude: lng,
+        }));
+        setLocationConfirmed(true);
+      }
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error);
+      // Still keep the coords even if reverse geocode fails
+      // Generate a fallback location string
+      setFormData(prev => ({
+        ...prev,
+        location: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      }));
+      setLocationConfirmed(false);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,9 +175,11 @@ export const useOfferingForm = () => {
     createdOfferingId,
     activating,
     isBoosted,
+    locationConfirmed,
     updateField,
     handleChange,
     selectAddress,
+    setCoordsFromMap,
     handleSubmit,
     handleBoostTrial,
     handleViewOnMap,

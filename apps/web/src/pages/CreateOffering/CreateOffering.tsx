@@ -20,19 +20,16 @@ const CreateOffering = () => {
     createdOfferingId,
     activating,
     isBoosted,
+    locationConfirmed,
     updateField,
     handleChange,
     selectAddress,
+    setCoordsFromMap,
     handleSubmit,
     handleBoostTrial,
     handleViewOnMap,
     closeModalAndNavigate,
   } = useOfferingForm();
-
-  const handleCoordsChange = (lat: number, lng: number) => {
-    updateField('latitude', lat as any);
-    updateField('longitude', lng as any);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
@@ -93,7 +90,8 @@ const CreateOffering = () => {
               longitude={formData.longitude}
               onChange={handleChange}
               onSelect={selectAddress}
-              onCoordsChange={handleCoordsChange}
+              onCoordsChange={setCoordsFromMap}
+              locationConfirmed={locationConfirmed}
             />
 
             {/* 6. Radius */}
