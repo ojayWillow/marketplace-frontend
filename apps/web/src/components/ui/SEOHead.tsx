@@ -27,8 +27,9 @@ const SEOHead = ({
   siteName = 'Tirgus'
 }: SEOHeadProps) => {
   useEffect(() => {
-    // Update page title
-    const fullTitle = `${title} | ${siteName}`;
+    // Update page title — guard against null
+    const safeTitle = title || 'Tirgus';
+    const fullTitle = `${safeTitle} | ${siteName}`;
     document.title = fullTitle;
 
     // Helper to set or create meta tag
@@ -41,12 +42,12 @@ const SEOHead = ({
         meta.setAttribute(attribute, property);
         document.head.appendChild(meta);
       }
-      meta.content = content;
+      meta.content = content || '';
     };
 
     // Open Graph tags (Facebook, LinkedIn, etc.)
     setMetaTag('og:title', fullTitle);
-    setMetaTag('og:description', description);
+    setMetaTag('og:description', description || '');
     setMetaTag('og:type', type);
     setMetaTag('og:site_name', siteName);
     
@@ -65,21 +66,22 @@ const SEOHead = ({
     // Twitter Card tags
     setMetaTag('twitter:card', image ? 'summary_large_image' : 'summary', true);
     setMetaTag('twitter:title', fullTitle, true);
-    setMetaTag('twitter:description', description, true);
+    setMetaTag('twitter:description', description || '', true);
     if (image) {
       setMetaTag('twitter:image', image, true);
     }
 
     // Product-specific tags (for listings/offerings)
-    if (type === 'product' && price !== undefined) {
-      setMetaTag('og:price:amount', price.toString());
+    // Use != null to guard against both null AND undefined
+    if (type === 'product' && price != null) {
+      setMetaTag('og:price:amount', String(price));
       setMetaTag('og:price:currency', currency);
-      setMetaTag('product:price:amount', price.toString());
+      setMetaTag('product:price:amount', String(price));
       setMetaTag('product:price:currency', currency);
     }
 
     // Standard meta description
-    setMetaTag('description', description, true);
+    setMetaTag('description', description || '', true);
 
     // Cleanup function - reset to defaults when component unmounts
     return () => {
