@@ -12,28 +12,37 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
 
   const taskIcon = divIcon({
     className: 'custom-task-icon',
-    html: '<div style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    html: '<div style="background: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
   });
 
   return (
-    <div className="mb-5">
-      <h2 className="text-base font-semibold text-gray-900 mb-2">Location</h2>
-
-      {/* Distance + Location row */}
-      <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-        <span>📍</span>
-        <span className="font-medium">{task.location?.split(',')[0] || 'Riga'}</span>
+    <div>
+      {/* City name + Google Maps link in one row */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5 text-sm">
+          <span>📍</span>
+          <span className="font-medium text-gray-700">{task.location?.split(',')[0] || 'Location'}</span>
+        </div>
+        <a
+          href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+        >
+          Open in Maps →
+        </a>
       </div>
 
-      {/* Small compact map */}
-      <div className="h-40 rounded-lg overflow-hidden border border-gray-200 mb-2">
+      {/* Compact map */}
+      <div className="h-32 rounded-lg overflow-hidden border border-gray-200">
         <MapContainer
           center={[task.latitude, task.longitude]}
           zoom={13}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
+          zoomControl={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -48,16 +57,6 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
           </Marker>
         </MapContainer>
       </div>
-
-      {/* Google Maps link */}
-      <a
-        href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1"
-      >
-        Open in Google Maps →
-      </a>
     </div>
   );
 };

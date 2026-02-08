@@ -13,8 +13,8 @@ interface ShareButtonProps {
 
 const ShareButton = ({
   url,
-  title,
-  description = '',
+  title: rawTitle,
+  description: rawDescription = '',
   image,
   variant = 'button',
   size = 'md',
@@ -25,8 +25,12 @@ const ShareButton = ({
   const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Null-safe: guard against null/undefined props
+  const title = rawTitle || '';
+  const description = rawDescription || '';
+
   // Full URL (ensure it's absolute)
-  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+  const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
 
   // Close dropdown when clicking outside
   useEffect(() => {
