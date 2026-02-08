@@ -103,6 +103,7 @@ export const task = {
     descriptionLabel: 'Apraksts',
     descriptionPlaceholder: 'Aprakstiet uzdevumu detalizēti...',
     photosLabel: 'Fotogrāfijas',
+    photosHint: 'Neobligāti — pievienojiet līdz 5 fotogrāfijām',
     categoryLabel: 'Kategorija',
     selectCategory: 'Izvēlēties kategoriju',
     budgetLabel: 'Budžets',
@@ -114,10 +115,14 @@ export const task = {
     hard: 'Grūti',
     locationLabel: 'Atrašanās vieta',
     deadlineLabel: 'Termiņš',
+    setDeadline: 'Iestatīt termiņu',
     selectDeadline: 'Izvēlēties termiņu',
     clearDeadline: 'Notīrīt',
-    markAsUrgent: 'Atzīmēt kā steidzamu',
+    urgentLabel: 'Steidzami?',
     urgentHint: 'Prioritārs izvietojums',
+    urgent: 'Steidzami',
+    normal: 'Parasti',
+    markAsUrgent: 'Atzīmēt kā steidzamu',
     
     // Buttons
     createButton: 'Izveidot uzdevumu',
