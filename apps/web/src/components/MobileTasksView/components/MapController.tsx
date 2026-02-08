@@ -72,13 +72,44 @@ const MapController = ({
     }
   }, [selectedTask, map]);
 
-  // Invalidate size on mount to handle container size changes
+  // Invalidate size on mount to handle initial container size
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 100);
     return () => clearTimeout(timer);
-  });
+  }, [map]);
+
+  // Fix map tiles not rendering on back navigation (e.g. from job details)
+  // Leaflet doesn't know the container resized while it was off-screen,
+  // so we need to invalidateSize when the page becomes visible again.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Small delay to let the DOM settle after navigation
+        setTimeout(() => {
+          map.invalidateSize({ pan: false });
+        }, 150);
+      }
+    };
+
+    const handleResize = () => {
+      map.invalidateSize({ pan: false });
+    };
+
+    // Page Visibility API: fires when returning to the tab/app
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Window resize: catches orientation changes and navigation layout shifts
+    window.addEventListener('resize', handleResize);
+    // Focus: catches returning from another view in same-tab navigation
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [map]);
 
   return null;
 };
