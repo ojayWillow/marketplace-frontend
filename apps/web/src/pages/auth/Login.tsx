@@ -3,10 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Phone, Mail, Eye, EyeOff, ArrowRight, ArrowLeft, Loader2, CheckCircle, User, ChevronDown } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
-import { usePhoneAuth } from '../../hooks/usePhoneAuth'
+import { usePhoneAuth } from '../LandingPage/hooks/usePhoneAuth'
 import { useAuthStore } from '@marketplace/shared'
-import { PhoneInput } from '../../components/auth/PhoneInput'
-import { OTPInput } from '../../components/auth/OTPInput'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -14,25 +12,24 @@ export default function Login() {
   const login = useLogin()
   const { user, isAuthenticated } = useAuthStore()
 
-  // Phone auth
+  // Firebase phone auth
   const {
     step,
     phoneNumber,
-    isLoading: phoneLoading,
+    loading: phoneLoading,
     error: phoneError,
-    isNewUser,
+    recaptchaReady,
+    recaptchaContainerRef,
+    otpValue,
+    otpInputRef,
     setPhoneNumber,
-    sendCode,
-    verifyOTP,
-    completeRegistration,
-    reset,
-    goBack,
+    formatPhone,
+    getFullPhone,
+    handleSendCode,
+    handleOtpChange,
+    focusOtpInput,
+    resetToPhoneStep,
   } = usePhoneAuth()
-
-  const [otpValue, setOtpValue] = useState('')
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [usernameError, setUsernameError] = useState('')
 
   // Email fallback
   const [showEmailLogin, setShowEmailLogin] = useState(false)
@@ -45,42 +42,6 @@ export default function Login() {
       navigate('/', { replace: true })
     }
   }, [isAuthenticated, user, navigate])
-
-  // Redirect on phone auth success
-  useEffect(() => {
-    if (step === 'success') {
-      const timer = setTimeout(() => navigate('/'), 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [step, navigate])
-
-  // Auto-submit OTP
-  useEffect(() => {
-    if (otpValue.length === 6 && step === 'otp' && !phoneLoading) {
-      verifyOTP(otpValue)
-    }
-  }, [otpValue, step, phoneLoading, verifyOTP])
-
-  const handleSendCode = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!phoneNumber || phoneNumber.length < 8) return
-    await sendCode()
-  }
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (otpValue.length !== 6) return
-    await verifyOTP(otpValue)
-  }
-
-  const handleCompleteRegistration = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setUsernameError('')
-    if (!username.trim()) { setUsernameError('Username is required'); return }
-    if (username.length < 3) { setUsernameError('Username must be at least 3 characters'); return }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) { setUsernameError('Letters, numbers, and underscores only'); return }
-    await completeRegistration(username, email || undefined)
-  }
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,25 +59,20 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        {/* reCAPTCHA container for Firebase */}
+        <div ref={recaptchaContainerRef} id="recaptcha-container-login" />
+
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            {step === 'success' ? (
-              <CheckCircle className="w-7 h-7 text-green-600" />
-            ) : (
-              <Phone className="w-7 h-7 text-blue-600" />
-            )}
+            <Phone className="w-7 h-7 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'register' ? 'Complete Your Profile'
-              : step === 'success' ? 'Welcome!'
-              : 'Sign in to Kolab'}
+            {step === 'code' ? 'Enter Verification Code' : 'Sign in to Kolab'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {step === 'phone' && 'Enter your phone number to get started'}
-            {step === 'otp' && `Enter the code sent to ${phoneNumber}`}
-            {step === 'register' && 'Just a few more details'}
-            {step === 'success' && 'Redirecting you to the app...'}
+            {step === 'code' && `Enter the code sent to ${getFullPhone()}`}
           </p>
         </div>
 
@@ -126,21 +82,45 @@ export default function Login() {
           {/* ===== STEP: Phone Number ===== */}
           {step === 'phone' && !showEmailLogin && (
             <>
+              {phoneError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-red-600 text-sm text-center">{phoneError}</p>
+                </div>
+              )}
+
               <form onSubmit={handleSendCode}>
-                <PhoneInput
-                  value={phoneNumber}
-                  onChange={setPhoneNumber}
-                  disabled={phoneLoading}
-                  error={phoneError}
-                  autoFocus
-                />
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <Phone className="w-4 h-4" />
+                  Phone Number
+                </label>
+
+                <div className="flex gap-2 mb-4">
+                  <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-gray-50 rounded-xl border-2 border-gray-200 flex-shrink-0">
+                    <span className="text-base sm:text-lg">🇱🇻</span>
+                    <span className="text-gray-700 text-sm sm:text-base">+371</span>
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={formatPhone(phoneNumber)}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                    placeholder="20 000 000"
+                    className="flex-1 min-w-0 px-3 sm:px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors text-base sm:text-lg tracking-wide"
+                    maxLength={11}
+                    autoFocus
+                    disabled={phoneLoading}
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  disabled={phoneLoading || !phoneNumber || phoneNumber.length < 8}
-                  className="w-full mt-5 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  disabled={phoneLoading || phoneNumber.replace(/\D/g, '').length < 8 || !recaptchaReady}
+                  className="w-full mt-1 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {phoneLoading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</>
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
+                  ) : !recaptchaReady ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
                   ) : (
                     <>{t('auth.sendCode', 'Send Verification Code')} <ArrowRight className="w-5 h-5" /></>
                   )}
@@ -206,7 +186,7 @@ export default function Login() {
                       id="password"
                       value={emailForm.password}
                       onChange={e => setEmailForm(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                      placeholder="••••••••"
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors pr-12"
                       required
                     />
@@ -234,109 +214,77 @@ export default function Login() {
             </>
           )}
 
-          {/* ===== STEP: OTP ===== */}
-          {step === 'otp' && (
-            <form onSubmit={handleVerifyOTP}>
-              <OTPInput
-                value={otpValue}
-                onChange={setOtpValue}
-                disabled={phoneLoading}
-                error={phoneError}
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={phoneLoading || otpValue.length !== 6}
-                className="w-full mt-5 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                {phoneLoading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</>
-                ) : (
-                  <>Verify Code <ArrowRight className="w-5 h-5" /></>
+          {/* ===== STEP: OTP Code ===== */}
+          {step === 'code' && (
+            <div>
+              {phoneError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-red-600 text-sm text-center">{phoneError}</p>
+                </div>
+              )}
+
+              {/* Hidden input + visual OTP boxes */}
+              <div className="relative mb-4">
+                <input
+                  ref={otpInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otpValue}
+                  onChange={handleOtpChange}
+                  className="absolute opacity-0 w-full h-full top-0 left-0 z-10"
+                  maxLength={6}
+                  disabled={phoneLoading}
+                  autoFocus
+                  style={{ caretColor: 'transparent' }}
+                />
+
+                <div className="flex justify-center gap-2 cursor-text" onClick={focusOtpInput}>
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <div
+                      key={index}
+                      className={`w-11 h-14 flex items-center justify-center text-2xl font-bold rounded-xl border-2 transition-colors ${
+                        otpValue[index]
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : index === otpValue.length
+                            ? 'border-blue-400 bg-white'
+                            : 'border-gray-200 bg-gray-50 text-gray-400'
+                      }`}
+                    >
+                      {otpValue[index] || ''}
+                      {!otpValue[index] && index === otpValue.length && (
+                        <span className="animate-pulse text-blue-400">|</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {otpValue.length === 6 && phoneLoading && (
+                  <p className="text-center text-blue-600 text-sm mt-3 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                  </p>
                 )}
-              </button>
+              </div>
+
               <button
-                type="button"
-                onClick={goBack}
-                disabled={phoneLoading}
+                onClick={resetToPhoneStep}
                 className="w-full mt-3 py-2.5 text-gray-500 hover:text-gray-700 font-medium rounded-xl transition-colors flex items-center justify-center gap-1 text-sm"
               >
                 <ArrowLeft className="w-4 h-4" /> Change phone number
               </button>
+
               <p className="text-center text-xs text-gray-400 mt-3">
                 Didn't receive the code?{' '}
-                <button type="button" onClick={() => { setOtpValue(''); goBack() }} className="text-blue-600 hover:underline font-medium">
+                <button type="button" onClick={resetToPhoneStep} className="text-blue-600 hover:underline font-medium">
                   Resend
                 </button>
               </p>
-            </form>
-          )}
-
-          {/* ===== STEP: Registration (new phone users) ===== */}
-          {step === 'register' && (
-            <form onSubmit={handleCompleteRegistration}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    <User className="inline-block w-4 h-4 mr-1" /> Username *
-                  </label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    placeholder="e.g., john_doe"
-                    disabled={phoneLoading}
-                    className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none focus:border-blue-500 ${
-                      usernameError ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    autoFocus
-                  />
-                  {usernameError && <p className="mt-1 text-xs text-red-600">{usernameError}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    <Mail className="inline-block w-4 h-4 mr-1" /> Email <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    disabled={phoneLoading}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors"
-                  />
-                  <p className="mt-1 text-[11px] text-gray-400">For account recovery and notifications</p>
-                </div>
-              </div>
-              {phoneError && <p className="mt-3 text-sm text-red-600 text-center">{phoneError}</p>}
-              <button
-                type="submit"
-                disabled={phoneLoading || !username.trim()}
-                className="w-full mt-5 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                {phoneLoading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Creating account...</>
-                ) : (
-                  <>Create Account <ArrowRight className="w-5 h-5" /></>
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* ===== STEP: Success ===== */}
-          {step === 'success' && (
-            <div className="text-center py-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 mb-1">You're all set!</h2>
-              <p className="text-gray-500 text-sm">Redirecting you to the app...</p>
             </div>
           )}
         </div>
 
         {/* Terms notice */}
-        {(step === 'phone' || step === 'register') && (
+        {step === 'phone' && (
           <p className="mt-5 text-[11px] text-gray-400 text-center">
             By continuing, you agree to our{' '}
             <Link to="/terms" className="underline hover:text-gray-600">Terms</Link>{' '}and{' '}
