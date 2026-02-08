@@ -1,22 +1,24 @@
 import { useState, useCallback } from 'react';
 
+export const DEFAULT_RADIUS = 25; // km — default search radius
+
 export function useTaskFilters() {
   // Changed from single string to array of strings for multi-select
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
-  const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(DEFAULT_RADIUS);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
 
-  const hasActiveFilters = selectedRadius !== null || selectedDifficulty !== null;
+  const hasActiveFilters = selectedRadius !== DEFAULT_RADIUS || selectedDifficulty !== null;
   const hasActiveCategory = !selectedCategories.includes('all') && selectedCategories.length > 0;
 
   const clearFilters = useCallback(() => {
-    setSelectedRadius(null);
+    setSelectedRadius(DEFAULT_RADIUS);
     setSelectedDifficulty(null);
   }, []);
 
   const resetAll = useCallback(() => {
     setSelectedCategories(['all']);
-    setSelectedRadius(null);
+    setSelectedRadius(DEFAULT_RADIUS);
     setSelectedDifficulty(null);
   }, []);
 
