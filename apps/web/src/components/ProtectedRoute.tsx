@@ -16,11 +16,12 @@ export default function ProtectedRoute({ children, skipPhoneCheck = false }: Pro
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  // TODO: Re-enable before production launch
   // Logged in but phone not verified → redirect to verify phone
   // Skip this check for the verify-phone page itself to avoid redirect loop
-  if (!skipPhoneCheck && user && !user.phone_verified) {
-    return <Navigate to="/verify-phone" state={{ from: location }} replace />
-  }
+  // if (!skipPhoneCheck && user && !user.phone_verified) {
+  //   return <Navigate to="/verify-phone" state={{ from: location }} replace />
+  // }
 
   return <>{children}</>
 }
