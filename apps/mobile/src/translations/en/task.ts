@@ -103,6 +103,7 @@ export const task = {
     descriptionLabel: 'Description',
     descriptionPlaceholder: 'Describe the task in detail...',
     photosLabel: 'Photos',
+    photosHint: 'Optional — add up to 5 photos',
     categoryLabel: 'Category',
     selectCategory: 'Select Category',
     budgetLabel: 'Budget',
@@ -114,10 +115,14 @@ export const task = {
     hard: 'Hard',
     locationLabel: 'Location',
     deadlineLabel: 'Deadline',
+    setDeadline: 'Set a deadline',
     selectDeadline: 'Select Deadline',
     clearDeadline: 'Clear',
-    markAsUrgent: 'Mark as Urgent',
+    urgentLabel: 'Urgent?',
     urgentHint: 'Priority placement',
+    urgent: 'Urgent',
+    normal: 'Normal',
+    markAsUrgent: 'Mark as Urgent',
     
     // Buttons
     createButton: 'Create Task',

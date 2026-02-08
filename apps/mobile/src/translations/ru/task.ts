@@ -103,6 +103,7 @@ export const task = {
     descriptionLabel: 'Описание',
     descriptionPlaceholder: 'Опишите задачу подробно...',
     photosLabel: 'Фотографии',
+    photosHint: 'Необязательно — добавьте до 5 фото',
     categoryLabel: 'Категория',
     selectCategory: 'Выберите категорию',
     budgetLabel: 'Бюджет',
@@ -114,10 +115,14 @@ export const task = {
     hard: 'Сложно',
     locationLabel: 'Местоположение',
     deadlineLabel: 'Срок',
+    setDeadline: 'Установить срок',
     selectDeadline: 'Выбрать срок',
     clearDeadline: 'Очистить',
-    markAsUrgent: 'Отметить как срочное',
+    urgentLabel: 'Срочно?',
     urgentHint: 'Приоритетное размещение',
+    urgent: 'Срочно',
+    normal: 'Обычно',
+    markAsUrgent: 'Отметить как срочное',
     
     // Buttons
     createButton: 'Создать задачу',
