@@ -15,11 +15,15 @@ interface LocationInputProps {
   locationConfirmed?: boolean;
 }
 
+// Compact SVG drop-pin marker
 const pinIcon = divIcon({
-  className: 'custom-pin-icon',
-  html: '<div style="background:#f59e0b;width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
+  className: '',
+  html: `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 0C4.477 0 0 4.477 0 10c0 7.5 10 18 10 18s10-10.5 10-18C20 4.477 15.523 0 10 0z" fill="#f59e0b"/>
+    <circle cx="10" cy="10" r="4" fill="white"/>
+  </svg>`,
+  iconSize: [20, 28],
+  iconAnchor: [10, 28],
 });
 
 // Flies/pans the map when coordinates change from outside (e.g. address selection)
@@ -71,7 +75,6 @@ const LocationInput = ({
   const handleMapClick = useCallback((lat: number, lng: number) => {
     setReverseLoading(true);
     onCoordsChange(lat, lng);
-    // Parent will handle reverse geocoding; loading state cleared when location updates
   }, [onCoordsChange]);
 
   const handleMarkerDragEnd = useCallback((e: { target: { getLatLng: () => LatLng } }) => {
@@ -101,7 +104,6 @@ const LocationInput = ({
   };
 
   const handleInputBlur = () => {
-    // Delay to allow click on suggestion
     blurTimeoutRef.current = setTimeout(() => {
       setShowSuggestions(false);
     }, 200);
@@ -147,7 +149,7 @@ const LocationInput = ({
               <button
                 key={index}
                 type="button"
-                onMouseDown={(e) => e.preventDefault()} // prevent blur before click
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(result)}
                 className="w-full text-left px-3 py-2 hover:bg-amber-50 border-b border-gray-100 last:border-b-0 transition-colors"
               >
