@@ -9,24 +9,21 @@ const FormTips = ({ category }: FormTipsProps) => {
 
   return (
     <>
-      {/* Matching hint */}
       {category && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <h3 className="font-medium text-amber-800 mb-1">💡 Get connected with jobs</h3>
-          <p className="text-sm text-amber-700">
-            People who post {selectedCategory?.label || 'this type of'} jobs in your area will be able to find you and request your services!
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs text-amber-700">
+            <span className="font-semibold">💡 Tip:</span> People who post {selectedCategory?.label || 'this type of'} jobs in your area will find you automatically!
           </p>
         </div>
       )}
 
-      {/* Tips */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-        <h3 className="font-medium text-gray-800 mb-2">✨ Tips for a great offering</h3>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• Use a clear, specific title that describes your service</li>
-          <li>• Be detailed in the description — what's included?</li>
-          <li>• Set a competitive price based on your experience</li>
-          <li>• Respond quickly when people contact you</li>
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <p className="text-xs font-medium text-gray-700 mb-1">✨ Stand out tips</p>
+        <ul className="text-[11px] text-gray-500 space-y-0.5">
+          <li>\u2022 Clear title = more clicks</li>
+          <li>\u2022 Detailed description = more trust</li>
+          <li>\u2022 Competitive price = more inquiries</li>
+          <li>\u2022 Fast replies = higher ranking</li>
         </ul>
       </div>
     </>

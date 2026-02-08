@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_GROUPS, getCategoryByValue } from '../../../constants/categories';
+import { CATEGORY_GROUPS, getCategoryByValue } from '../../../constants/categories';
 
 interface CategoryPickerProps {
   value: string;
@@ -7,14 +7,14 @@ interface CategoryPickerProps {
 
 const CategoryPicker = ({ value, onChange }: CategoryPickerProps) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-3">
+    <label className="block text-sm font-medium text-gray-700 mb-2">
       What service do you offer? *
     </label>
 
     {CATEGORY_GROUPS.map(group => (
-      <div key={group.name} className="mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{group.name}</p>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+      <div key={group.name} className="mb-2.5">
+        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{group.name}</p>
+        <div className="flex flex-wrap gap-1.5">
           {group.categories.map(catValue => {
             const cat = getCategoryByValue(catValue);
             if (!cat) return null;
@@ -24,18 +24,14 @@ const CategoryPicker = ({ value, onChange }: CategoryPickerProps) => (
                 key={cat.value}
                 type="button"
                 onClick={() => onChange(cat.value)}
-                className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-center ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all text-xs font-medium ${
                   isSelected
-                    ? 'border-amber-500 bg-amber-50 shadow-sm scale-[1.02]'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
-                <span className="text-2xl">{cat.icon}</span>
-                <span className={`text-xs font-medium leading-tight ${
-                  isSelected ? 'text-amber-700' : 'text-gray-700'
-                }`}>
-                  {cat.label}
-                </span>
+                <span className="text-sm">{cat.icon}</span>
+                <span>{cat.label}</span>
               </button>
             );
           })}

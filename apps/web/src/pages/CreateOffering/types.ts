@@ -27,32 +27,33 @@ export const INITIAL_FORM_DATA: OfferingFormData = {
 };
 
 export const DAYS_OF_WEEK = [
-  { key: 'mon', label: 'Mon' },
-  { key: 'tue', label: 'Tue' },
-  { key: 'wed', label: 'Wed' },
-  { key: 'thu', label: 'Thu' },
-  { key: 'fri', label: 'Fri' },
-  { key: 'sat', label: 'Sat' },
-  { key: 'sun', label: 'Sun' },
+  { key: 'mon', label: 'M' },
+  { key: 'tue', label: 'T' },
+  { key: 'wed', label: 'W' },
+  { key: 'thu', label: 'T' },
+  { key: 'fri', label: 'F' },
+  { key: 'sat', label: 'S' },
+  { key: 'sun', label: 'S' },
 ] as const;
 
 export const TIME_SLOTS = [
   { key: 'morning', label: 'Morning', desc: '8–12' },
   { key: 'afternoon', label: 'Afternoon', desc: '12–17' },
   { key: 'evening', label: 'Evening', desc: '17–21' },
-  { key: 'flexible', label: 'Flexible', desc: 'Anytime' },
+  { key: 'flexible', label: 'Flexible', desc: 'Any' },
 ] as const;
 
 export const RADIUS_OPTIONS = [
-  { value: '5', label: '5 km', desc: 'Nearby' },
-  { value: '10', label: '10 km', desc: 'Local' },
-  { value: '25', label: '25 km', desc: 'City' },
-  { value: '50', label: '50 km', desc: 'Regional' },
-  { value: '100', label: '100 km', desc: 'Will travel' },
+  { value: '5', label: '5km' },
+  { value: '10', label: '10km' },
+  { value: '25', label: '25km' },
+  { value: '50', label: '50km' },
+  { value: '100', label: '100km' },
+  { value: '250', label: 'All Latvia' },
 ] as const;
 
 export const PRICE_TYPES = [
-  { value: 'hourly', label: 'Per Hour', icon: '⏱️' },
-  { value: 'fixed', label: 'Fixed Price', icon: '🎯' },
-  { value: 'negotiable', label: 'Negotiable', icon: '🤝' },
+  { value: 'hourly', label: '/hr', icon: '⏱️' },
+  { value: 'fixed', label: 'Fixed', icon: '🎯' },
+  { value: 'negotiable', label: 'Nego', icon: '🤝' },
 ] as const;
