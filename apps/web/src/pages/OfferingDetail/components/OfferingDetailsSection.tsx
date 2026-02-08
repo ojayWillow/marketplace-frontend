@@ -13,7 +13,7 @@ const OfferingDetailsSection = ({ experience, availability }: OfferingDetailsSec
         className="w-full flex items-center justify-between py-2 text-left"
       >
         <span className="font-semibold text-sm md:text-base text-gray-700 flex items-center gap-1.5">
-          \ud83d\udccb Details & Experience
+          📋 Details & Experience
         </span>
         <svg
           className={`w-4 h-4 text-gray-400 transition-transform md:hidden ${detailsOpen ? 'rotate-180' : ''}`}
@@ -33,7 +33,7 @@ const OfferingDetailsSection = ({ experience, availability }: OfferingDetailsSec
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Availability</h3>
             <div className="flex items-center gap-1.5 text-sm md:text-base text-gray-700">
-              <span>\ud83d\udcc5</span>
+              <span>📅</span>
               <span>{availability}</span>
             </div>
           </div>

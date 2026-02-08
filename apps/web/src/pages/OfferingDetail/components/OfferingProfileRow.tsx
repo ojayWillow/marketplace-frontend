@@ -22,7 +22,7 @@ const OfferingProfileRow = ({ offering, safeCreatorName, isOwner, contacting, on
         <Link to={`/users/${offering.creator_id}`} className="font-semibold text-gray-900 hover:text-amber-600 truncate md:text-base">
           {safeCreatorName}
         </Link>
-        <span className="text-gray-300 md:hidden">\u00b7</span>
+        <span className="text-gray-300 md:hidden">·</span>
         {offering.creator_rating !== undefined && offering.creator_rating !== null && (
           <div className="flex items-center gap-1">
             <StarRating rating={offering.creator_rating} />

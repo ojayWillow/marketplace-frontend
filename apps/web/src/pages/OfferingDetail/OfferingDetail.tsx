@@ -39,7 +39,7 @@ const OfferingDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center px-4">
-          <div className="text-5xl mb-3">\ud83d\ude15</div>
+          <div className="text-5xl mb-3">😕</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Offering Not Found</h2>
           <p className="text-gray-600 mb-4 text-sm">This offering may have been removed or is no longer available.</p>
           <Link to="/tasks" className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 transition-colors text-sm font-semibold">
@@ -71,7 +71,7 @@ const OfferingDetail = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden md:inline">\u2190 Back to Quick Help</span>
+            <span className="hidden md:inline">← Back to Quick Help</span>
             <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
@@ -102,7 +102,7 @@ const OfferingDetail = () => {
             onContact={handleContact}
           />
 
-          {/* Thin divider \u2014 mobile only */}
+          {/* Thin divider — mobile only */}
           <div className="border-t border-gray-100 mx-4 md:hidden" />
 
           {/* Description */}
@@ -153,7 +153,7 @@ const OfferingDetail = () => {
                 disabled={contacting}
                 className="w-full bg-amber-500 text-white py-3.5 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-base shadow-md"
               >
-                {contacting ? 'Starting...' : `\ud83d\udcac Contact ${safe.safeCreatorName.split(' ')[0]}`}
+                {contacting ? 'Starting...' : `💬 Contact ${safe.safeCreatorName.split(' ')[0]}`}
               </button>
             </div>
           )}
@@ -166,7 +166,7 @@ const OfferingDetail = () => {
         <HowItWorksSection />
       </div>
 
-      {/* Fixed bottom action bar \u2014 MOBILE ONLY */}
+      {/* Fixed bottom action bar — MOBILE ONLY */}
       {!isOwner && (
         <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden">
           <div className="max-w-3xl mx-auto px-4 py-3">
@@ -175,7 +175,7 @@ const OfferingDetail = () => {
               disabled={contacting}
               className="w-full bg-amber-500 text-white py-3 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-sm shadow-md active:scale-[0.98]"
             >
-              {contacting ? 'Starting...' : `\ud83d\udcac Contact ${safe.safeCreatorName.split(' ')[0]}`}
+              {contacting ? 'Starting...' : `💬 Contact ${safe.safeCreatorName.split(' ')[0]}`}
             </button>
           </div>
         </div>

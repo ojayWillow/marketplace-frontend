@@ -4,9 +4,9 @@ const StarRating = ({ rating }: { rating: number }) => {
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
   return (
     <span className="text-yellow-500 text-sm">
-      {'\u2605'.repeat(fullStars)}
-      {hasHalfStar && '\u00bd'}
-      {'\u2606'.repeat(emptyStars)}
+      {'★'.repeat(fullStars)}
+      {hasHalfStar && '½'}
+      {'☆'.repeat(emptyStars)}
     </span>
   );
 };

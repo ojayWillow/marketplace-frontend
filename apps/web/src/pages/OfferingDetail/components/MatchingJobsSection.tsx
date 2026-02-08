@@ -12,7 +12,7 @@ const MatchingJobsSection = ({ offering, userId }: MatchingJobsSectionProps) => 
     <div className="mt-3 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 md:p-4 text-white">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">\ud83d\udcbc</span>
+          <span className="text-2xl">💼</span>
           <div>
             <h2 className="text-sm md:text-base font-bold">Jobs Matching Your Service</h2>
             <p className="text-blue-100 text-xs md:text-sm">
@@ -29,7 +29,7 @@ const MatchingJobsSection = ({ offering, userId }: MatchingJobsSectionProps) => 
           </div>
         ) : matchingJobs.length === 0 ? (
           <div className="text-center py-6 bg-gray-50 rounded-lg">
-            <div className="text-3xl mb-1">\ud83d\udc40</div>
+            <div className="text-3xl mb-1">👀</div>
             <p className="text-gray-600 font-medium text-sm">No matching jobs yet</p>
             <p className="text-xs text-gray-500 mt-1">
               No one is looking for {getCategoryLabel(offering.category)} help in your area right now.
@@ -49,13 +49,13 @@ const MatchingJobsSection = ({ offering, userId }: MatchingJobsSectionProps) => 
                       <span className="text-base">{getCategoryIcon(job.category)}</span>
                       <h4 className="font-semibold text-gray-900 text-sm truncate">{job.title || 'Untitled'}</h4>
                       {job.is_urgent && (
-                        <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">\u26a1</span>
+                        <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">⚡</span>
                       )}
                     </div>
                     <p className="text-xs text-gray-600 line-clamp-1 md:line-clamp-2">{job.description || ''}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-base font-bold text-green-600">\u20ac{job.budget || 0}</div>
+                    <div className="text-base font-bold text-green-600">€{job.budget || 0}</div>
                   </div>
                 </div>
               </Link>
@@ -68,7 +68,7 @@ const MatchingJobsSection = ({ offering, userId }: MatchingJobsSectionProps) => 
               to={`/tasks?tab=jobs&category=${offering.category}`}
               className="text-blue-600 hover:text-blue-700 text-xs md:text-sm font-medium"
             >
-              Browse all {getCategoryLabel(offering.category)} jobs \u2192
+              Browse all {getCategoryLabel(offering.category)} jobs →
             </Link>
           </div>
         )}

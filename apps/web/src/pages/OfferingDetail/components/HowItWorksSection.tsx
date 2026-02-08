@@ -10,7 +10,7 @@ const HowItWorksSection = () => {
         className="w-full flex items-center justify-between px-4 py-3 md:px-6 text-left"
       >
         <span className="font-semibold text-sm md:text-base text-gray-700 flex items-center gap-1.5">
-          \ud83d\udca1 How it works
+          💡 How it works
         </span>
         <svg
           className={`w-4 h-4 text-gray-400 transition-transform md:hidden ${howItWorksOpen ? 'rotate-180' : ''}`}
@@ -21,10 +21,10 @@ const HowItWorksSection = () => {
       </button>
       <div className={`px-4 pb-4 md:px-6 md:pb-5 ${howItWorksOpen ? 'block' : 'hidden md:block'}`}>
         <ul className="text-gray-600 space-y-1.5 text-sm md:text-base">
-          <li>\u2022 Contact the service provider to discuss your needs</li>
-          <li>\u2022 Agree on scope, timing, and price</li>
-          <li>\u2022 Service provider comes to you or meets at agreed location</li>
-          <li>\u2022 Pay after the service is completed to your satisfaction</li>
+          <li>• Contact the service provider to discuss your needs</li>
+          <li>• Agree on scope, timing, and price</li>
+          <li>• Service provider comes to you or meets at agreed location</li>
+          <li>• Pay after the service is completed to your satisfaction</li>
         </ul>
       </div>
     </div>
