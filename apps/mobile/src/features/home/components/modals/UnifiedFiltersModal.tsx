@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { useCategories } from '../../../../hooks/useCategories';
 import { JOB_COLOR } from '../../constants';
+import { DEFAULT_RADIUS } from '../../hooks/useTaskFilters';
 
 interface UnifiedFiltersModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ const RADIUS_OPTIONS = [
   { value: 10, label: '10 km', icon: 'location-on' },
   { value: 25, label: '25 km', icon: 'location-on' },
   { value: 50, label: '50 km', icon: 'location-on' },
+  { value: null as number | null, label: 'All Latvia', icon: 'public' },
 ];
 
 const DIFFICULTY_OPTIONS = [
@@ -64,7 +66,7 @@ export default function UnifiedFiltersModal({
     }
   };
 
-  const hasActiveFilters = selectedCategories.length > 0 || selectedRadius !== null || selectedDifficulty !== null;
+  const hasActiveFilters = selectedCategories.length > 0 || selectedRadius !== DEFAULT_RADIUS || selectedDifficulty !== null;
 
   return (
     <Modal
@@ -136,13 +138,13 @@ export default function UnifiedFiltersModal({
                 const isActive = selectedRadius === option.value;
                 return (
                   <TouchableOpacity
-                    key={option.value}
+                    key={option.value ?? 'all'}
                     style={[
                       styles.segmentButton,
                       isActive && styles.segmentButtonActive,
                       isActive && { borderColor: JOB_COLOR },
                     ]}
-                    onPress={() => onRadiusChange(isActive ? null : option.value)}
+                    onPress={() => onRadiusChange(option.value)}
                     activeOpacity={0.7}
                   >
                     <View style={[styles.segmentDot, { backgroundColor: isActive ? JOB_COLOR : styles.segmentText.color }]} />

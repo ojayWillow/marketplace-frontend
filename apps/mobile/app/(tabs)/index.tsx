@@ -17,7 +17,7 @@ import { useCategories } from '../../src/hooks/useCategories';
 
 // Feature imports
 import { useLocation } from '../../src/features/home/hooks/useLocation';
-import { useTaskFilters } from '../../src/features/home/hooks/useTaskFilters';
+import { useTaskFilters, DEFAULT_RADIUS } from '../../src/features/home/hooks/useTaskFilters';
 import { useSearchDebounce } from '../../src/features/home/hooks/useSearchDebounce';
 import { useBottomSheet } from '../../src/features/home/hooks/useBottomSheet';
 import { createStyles } from '../../src/features/home/styles/homeStyles';
@@ -69,11 +69,25 @@ export default function HomeScreen() {
   // Bottom sheet animation
   const { sheetHeight, panResponder, animateSheetTo } = useBottomSheet('min', setSheetPosition);
 
-  // Data fetching
+  // Build API params — always include location when available for consistent filtering
+  const taskQueryParams = useMemo(() => {
+    const params: any = { page: 1, per_page: 500, status: 'open' };
+    if (hasRealLocation) {
+      params.latitude = userLocation.latitude;
+      params.longitude = userLocation.longitude;
+      // Only send radius to backend if user has set a specific radius (not "All Latvia")
+      if (selectedRadius !== null) {
+        params.radius = selectedRadius;
+      }
+    }
+    return params;
+  }, [hasRealLocation, userLocation.latitude, userLocation.longitude, selectedRadius]);
+
+  // Data fetching — re-fetches when location or radius changes
   const { data: tasksData, isLoading } = useQuery({
-    queryKey: ['tasks-home-all'],
+    queryKey: ['tasks-home', taskQueryParams],
     queryFn: async () => {
-      const result = await getTasks({ page: 1, per_page: 500, status: 'open' });
+      const result = await getTasks(taskQueryParams);
       return result.tasks;
     },
     staleTime: 30000,
@@ -190,7 +204,7 @@ export default function HomeScreen() {
 
   const handleClearAllFilters = useCallback(() => {
     setSelectedCategories([]);
-    setSelectedRadius(null);
+    setSelectedRadius(DEFAULT_RADIUS);
     setSelectedDifficulty(null);
     setFocusedTaskId(null);
   }, [setSelectedCategories, setSelectedRadius, setSelectedDifficulty]);
@@ -207,13 +221,17 @@ export default function HomeScreen() {
     [offeringsData]
   );
 
+  // Client-side filtering: category, difficulty, and radius as a safety net
+  // (backend already filters by radius when location is sent, but this ensures
+  //  consistency if backend returns slightly outside radius due to bounding-box approximation)
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       if (!task.latitude || !task.longitude) return false;
       if (!matchesCategory(task.category)) return false;
-      if (selectedRadius && hasRealLocation) {
-        const distance = calculateDistance(userLocation.latitude, userLocation.longitude, task.latitude, task.longitude);
-        if (distance > selectedRadius) return false;
+      // Always apply radius filter client-side when we have real location and a radius set
+      if (selectedRadius !== null && hasRealLocation) {
+        const dist = calculateDistance(userLocation.latitude, userLocation.longitude, task.latitude, task.longitude);
+        if (dist > selectedRadius) return false;
       }
       if (selectedDifficulty && task.difficulty !== selectedDifficulty) return false;
       return true;
@@ -235,7 +253,7 @@ export default function HomeScreen() {
   const showSearchLoading = debouncedSearchQuery.trim() && isSearchFetching && !searchData;
   
   // Check if any filters are active for badge display
-  const hasAnyActiveFilters = selectedCategories.length > 0 || selectedRadius !== null || selectedDifficulty !== null;
+  const hasAnyActiveFilters = selectedCategories.length > 0 || selectedRadius !== DEFAULT_RADIUS || selectedDifficulty !== null;
 
   return (
     <View style={styles.container}>
