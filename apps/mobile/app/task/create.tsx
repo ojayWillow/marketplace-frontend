@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Modal } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Platform, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, Surface, Chip } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
@@ -29,8 +29,6 @@ export default function CreateTaskScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
-  const isWeb = Platform.OS === 'web';
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
@@ -45,6 +43,11 @@ export default function CreateTaskScreen() {
   const [uploading, setUploading] = useState(false);
 
   const selectedCategoryData = getCategoryByKey(category);
+
+  // Task accent color (blue) — distinct from offering's orange
+  const TASK_ACCENT = '#3b82f6';
+  const TASK_ACCENT_DARK = '#1d4ed8';
+  const TASK_ACCENT_LIGHT = activeTheme === 'dark' ? themeColors.elevated : '#eff6ff';
 
   const createMutation = useMutation({
     mutationFn: async (data: Parameters<typeof createTask>[0]) => {
@@ -144,35 +147,11 @@ export default function CreateTaskScreen() {
       flex: 1,
       backgroundColor: themeColors.backgroundSecondary,
     },
-    keyboardView: {
-      flex: 1,
-    },
     scrollView: {
       flex: 1,
     },
     content: {
       padding: 16,
-      ...(isWeb ? { maxWidth: 640, alignSelf: 'center' as const, width: '100%' as any } : {}),
-    },
-    centerContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 24,
-    },
-    notAuthTitle: {
-      fontWeight: '600',
-      marginBottom: 8,
-      color: themeColors.text,
-    },
-    notAuthText: {
-      color: themeColors.textSecondary,
-      marginBottom: 24,
-      textAlign: 'center',
-    },
-    signInButton: {
-      minWidth: 120,
-      backgroundColor: themeColors.primaryAccent,
     },
     section: {
       backgroundColor: themeColors.card,
@@ -201,22 +180,6 @@ export default function CreateTaskScreen() {
       fontSize: 16,
       minHeight: 120,
     },
-    budgetRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    euroSign: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: themeColors.text,
-      marginRight: 8,
-    },
-    budgetInput: {
-      flex: 1,
-      backgroundColor: themeColors.inputBackground,
-      borderRadius: 8,
-      fontSize: 16,
-    },
     categorySelector: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -239,6 +202,27 @@ export default function CreateTaskScreen() {
     categorySelectorArrow: {
       fontSize: 24,
       color: themeColors.textMuted,
+    },
+    imageHint: {
+      color: themeColors.textMuted,
+      fontSize: 13,
+      marginTop: -8,
+    },
+    budgetRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    euroSign: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: themeColors.text,
+      marginRight: 8,
+    },
+    budgetInput: {
+      flex: 1,
+      backgroundColor: themeColors.inputBackground,
+      borderRadius: 8,
+      fontSize: 16,
     },
     difficultyRow: {
       flexDirection: 'row',
@@ -288,25 +272,39 @@ export default function CreateTaskScreen() {
       fontSize: 13,
       marginTop: 2,
     },
-    bottomSpacer: {
-      height: 100,
-    },
-    bottomBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: themeColors.card,
-      padding: 16,
-      paddingBottom: 32,
-      ...(isWeb ? { maxWidth: 640, alignSelf: 'center' as const, width: '100%' as any } : {}),
-    },
     submitButton: {
+      marginTop: 8,
       borderRadius: 12,
-      backgroundColor: themeColors.primaryAccent,
+      backgroundColor: TASK_ACCENT,
     },
     submitButtonContent: {
       paddingVertical: 8,
+    },
+    bottomSpacer: {
+      height: 40,
+    },
+    authPrompt: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    authIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    authTitle: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+      marginBottom: 8,
+    },
+    authText: {
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    authButton: {
+      minWidth: 150,
     },
     modalOverlay: {
       flex: 1,
@@ -346,8 +344,8 @@ export default function CreateTaskScreen() {
       borderColor: themeColors.border,
     },
     categoryPillActive: {
-      backgroundColor: activeTheme === 'dark' ? themeColors.elevated : '#e0f2fe',
-      borderColor: themeColors.primaryAccent,
+      backgroundColor: TASK_ACCENT_LIGHT,
+      borderColor: TASK_ACCENT,
     },
     categoryPillIcon: {
       fontSize: 16,
@@ -359,12 +357,12 @@ export default function CreateTaskScreen() {
       color: themeColors.text,
     },
     categoryPillLabelActive: {
-      color: themeColors.primaryAccent,
+      color: TASK_ACCENT_DARK,
       fontWeight: '700',
     },
     categoryPillCheck: {
       fontSize: 14,
-      color: themeColors.primaryAccent,
+      color: TASK_ACCENT,
       fontWeight: 'bold',
       marginLeft: 6,
     },
@@ -383,10 +381,11 @@ export default function CreateTaskScreen() {
             headerTitleStyle: { color: themeColors.text },
           }} 
         />
-        <View style={styles.centerContainer}>
-          <Text variant="headlineSmall" style={styles.notAuthTitle}>{t('task.create.signInRequired')}</Text>
-          <Text style={styles.notAuthText}>{t('task.create.signInText')}</Text>
-          <Button mode="contained" onPress={() => router.push('/(auth)/login')} style={styles.signInButton}>
+        <View style={styles.authPrompt}>
+          <Text style={styles.authIcon}>🔒</Text>
+          <Text variant="titleLarge" style={styles.authTitle}>{t('task.create.signInRequired')}</Text>
+          <Text style={styles.authText}>{t('task.create.signInText')}</Text>
+          <Button mode="contained" onPress={() => router.push('/(auth)/login')} style={styles.authButton}>
             {t('task.create.signInButton')}
           </Button>
         </View>
@@ -407,209 +406,202 @@ export default function CreateTaskScreen() {
         }}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            {/* 1. Title */}
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.taskTitleLabel')}</Text>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* 1. Title */}
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.taskTitleLabel')}</Text>
+            <TextInput
+              mode="flat"
+              placeholder={t('task.create.taskTitlePlaceholder')}
+              value={title}
+              onChangeText={setTitle}
+              maxLength={100}
+              style={styles.flatInput}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.textMuted}
+            />
+          </Surface>
+
+          {/* 2. Category */}
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.categoryLabel')}</Text>
+            <TouchableOpacity 
+              style={styles.categorySelector}
+              onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '📋'}</Text>
+              <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || t('task.create.selectCategory')}</Text>
+              <Text style={styles.categorySelectorArrow}>›</Text>
+            </TouchableOpacity>
+          </Surface>
+
+          {/* 3. Description */}
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.descriptionLabel')}</Text>
+            <TextInput
+              mode="flat"
+              placeholder={t('task.create.descriptionPlaceholder')}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={5}
+              maxLength={1000}
+              style={styles.flatTextArea}
+              textColor={themeColors.text}
+              placeholderTextColor={themeColors.textMuted}
+            />
+          </Surface>
+
+          {/* 4. Photos */}
+          <Surface style={styles.section} elevation={0}>
+            <ImagePicker
+              images={images}
+              onImagesChange={setImages}
+              maxImages={5}
+              label={t('task.create.photosLabel')}
+            />
+            <Text style={styles.imageHint}>{t('task.create.photosHint')}</Text>
+          </Surface>
+
+          {/* 5. Budget */}
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.budgetLabel')}</Text>
+            <View style={styles.budgetRow}>
+              <Text style={styles.euroSign}>€</Text>
               <TextInput
                 mode="flat"
-                placeholder={t('task.create.taskTitlePlaceholder')}
-                value={title}
-                onChangeText={setTitle}
-                maxLength={100}
-                style={styles.flatInput}
+                placeholder={t('task.create.budgetPlaceholder')}
+                value={budget}
+                onChangeText={setBudget}
+                keyboardType="decimal-pad"
+                style={styles.budgetInput}
                 textColor={themeColors.text}
                 placeholderTextColor={themeColors.textMuted}
               />
-            </Surface>
+            </View>
+          </Surface>
 
-            {/* 2. Category (moved up to match offering order) */}
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.categoryLabel')}</Text>
-              <TouchableOpacity 
-                style={styles.categorySelector}
-                onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+          {/* 6. Difficulty */}
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.difficultyLabel')}</Text>
+            <Text style={styles.sectionHint}>{t('task.create.difficultyHint')}</Text>
+            <View style={styles.difficultyRow}>
+              <TouchableOpacity
+                style={[
+                  styles.difficultyOption,
+                  difficulty === 'easy' && styles.difficultyOptionActive,
+                  { borderColor: '#10b981' }
+                ]}
+                onPress={() => { haptic.selection(); setDifficulty('easy'); }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '📋'}</Text>
-                <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || t('task.create.selectCategory')}</Text>
-                <Text style={styles.categorySelectorArrow}>›</Text>
+                <View style={[styles.difficultyDot, { backgroundColor: '#10b981' }]} />
+                <Text style={[
+                  styles.difficultyLabel,
+                  difficulty === 'easy' && styles.difficultyLabelActive
+                ]}>{t('task.create.easy')}</Text>
               </TouchableOpacity>
-            </Surface>
 
-            {/* 3. Description */}
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.descriptionLabel')}</Text>
-              <TextInput
-                mode="flat"
-                placeholder={t('task.create.descriptionPlaceholder')}
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={5}
-                maxLength={1000}
-                style={styles.flatTextArea}
-                textColor={themeColors.text}
-                placeholderTextColor={themeColors.textMuted}
-              />
-            </Surface>
-
-            {/* 4. Photos */}
-            <Surface style={styles.section} elevation={0}>
-              <ImagePicker
-                images={images}
-                onImagesChange={setImages}
-                maxImages={5}
-                label={t('task.create.photosLabel')}
-              />
-            </Surface>
-
-            {/* 5. Budget */}
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.budgetLabel')}</Text>
-              <View style={styles.budgetRow}>
-                <Text style={styles.euroSign}>€</Text>
-                <TextInput
-                  mode="flat"
-                  placeholder={t('task.create.budgetPlaceholder')}
-                  value={budget}
-                  onChangeText={setBudget}
-                  keyboardType="decimal-pad"
-                  style={styles.budgetInput}
-                  textColor={themeColors.text}
-                  placeholderTextColor={themeColors.textMuted}
-                />
-              </View>
-            </Surface>
-
-            {/* 6. Difficulty */}
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.difficultyLabel')}</Text>
-              <Text style={styles.sectionHint}>{t('task.create.difficultyHint')}</Text>
-              <View style={styles.difficultyRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.difficultyOption,
-                    difficulty === 'easy' && styles.difficultyOptionActive,
-                    { borderColor: '#10b981' }
-                  ]}
-                  onPress={() => { haptic.selection(); setDifficulty('easy'); }}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.difficultyDot, { backgroundColor: '#10b981' }]} />
-                  <Text style={[
-                    styles.difficultyLabel,
-                    difficulty === 'easy' && styles.difficultyLabelActive
-                  ]}>{t('task.create.easy')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.difficultyOption,
-                    difficulty === 'medium' && styles.difficultyOptionActive,
-                    { borderColor: '#f59e0b' }
-                  ]}
-                  onPress={() => { haptic.selection(); setDifficulty('medium'); }}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.difficultyDot, { backgroundColor: '#f59e0b' }]} />
-                  <Text style={[
-                    styles.difficultyLabel,
-                    difficulty === 'medium' && styles.difficultyLabelActive
-                  ]}>{t('task.create.medium')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.difficultyOption,
-                    difficulty === 'hard' && styles.difficultyOptionActive,
-                    { borderColor: '#ef4444' }
-                  ]}
-                  onPress={() => { haptic.selection(); setDifficulty('hard'); }}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.difficultyDot, { backgroundColor: '#ef4444' }]} />
-                  <Text style={[
-                    styles.difficultyLabel,
-                    difficulty === 'hard' && styles.difficultyLabelActive
-                  ]}>{t('task.create.hard')}</Text>
-                </TouchableOpacity>
-              </View>
-            </Surface>
-
-            {/* 7. Location */}
-            <Surface style={styles.section} elevation={0}>
-              <LocationPicker
-                initialLocation={location || undefined}
-                onLocationSelect={setLocation}
-                label={t('task.create.locationLabel')}
-              />
-            </Surface>
-
-            {/* 8. Deadline */}
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.deadlineLabel')}</Text>
-              <Button
-                mode="outlined"
-                onPress={() => setShowDatePicker(true)}
-                icon="calendar"
-                style={styles.dateButton}
-                textColor={themeColors.text}
+              <TouchableOpacity
+                style={[
+                  styles.difficultyOption,
+                  difficulty === 'medium' && styles.difficultyOptionActive,
+                  { borderColor: '#f59e0b' }
+                ]}
+                onPress={() => { haptic.selection(); setDifficulty('medium'); }}
+                activeOpacity={0.7}
               >
-                {deadline ? deadline.toLocaleDateString() : t('task.create.selectDeadline')}
-              </Button>
-              {deadline && (
-                <Button
-                  mode="text"
-                  onPress={() => setDeadline(null)}
-                  textColor="#ef4444"
-                  compact
-                >
-                  {t('task.create.clearDeadline')}
-                </Button>
-              )}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={deadline || new Date()}
-                  mode="date"
-                  minimumDate={new Date()}
-                  onChange={(event, date) => {
-                    setShowDatePicker(false);
-                    if (date) setDeadline(date);
-                  }}
-                />
-              )}
-            </Surface>
+                <View style={[styles.difficultyDot, { backgroundColor: '#f59e0b' }]} />
+                <Text style={[
+                  styles.difficultyLabel,
+                  difficulty === 'medium' && styles.difficultyLabelActive
+                ]}>{t('task.create.medium')}</Text>
+              </TouchableOpacity>
 
-            {/* 9. Urgent */}
-            <Surface style={styles.section} elevation={0}>
-              <View style={styles.urgentRow}>
-                <View style={styles.urgentInfo}>
-                  <Text variant="titleMedium" style={{ color: themeColors.text }}>{t('task.create.markAsUrgent')}</Text>
-                  <Text style={styles.urgentHint}>{t('task.create.urgentHint')}</Text>
-                </View>
+              <TouchableOpacity
+                style={[
+                  styles.difficultyOption,
+                  difficulty === 'hard' && styles.difficultyOptionActive,
+                  { borderColor: '#ef4444' }
+                ]}
+                onPress={() => { haptic.selection(); setDifficulty('hard'); }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.difficultyDot, { backgroundColor: '#ef4444' }]} />
+                <Text style={[
+                  styles.difficultyLabel,
+                  difficulty === 'hard' && styles.difficultyLabelActive
+                ]}>{t('task.create.hard')}</Text>
+              </TouchableOpacity>
+            </View>
+          </Surface>
+
+          {/* 7. Location */}
+          <Surface style={styles.section} elevation={0}>
+            <LocationPicker
+              initialLocation={location || undefined}
+              onLocationSelect={setLocation}
+              label={t('task.create.locationLabel')}
+            />
+          </Surface>
+
+          {/* 8. Deadline */}
+          <Surface style={styles.section} elevation={0}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.deadlineLabel')}</Text>
+            {deadline ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Chip
-                  selected={isUrgent}
-                  onPress={() => setIsUrgent(!isUrgent)}
-                  mode={isUrgent ? 'flat' : 'outlined'}
-                  selectedColor={themeColors.primaryAccent}
+                  icon="calendar"
+                  onPress={() => setShowDatePicker(true)}
+                  onClose={() => setDeadline(null)}
                 >
-                  {isUrgent ? t('common.yes') : t('common.no')}
+                  {deadline.toLocaleDateString()}
                 </Chip>
               </View>
-            </Surface>
+            ) : (
+              <Button
+                mode="outlined"
+                icon="calendar-plus"
+                onPress={() => setShowDatePicker(true)}
+                style={styles.dateButton}
+              >
+                {t('task.create.setDeadline')}
+              </Button>
+            )}
+            {showDatePicker && (
+              <DateTimePicker
+                value={deadline || new Date()}
+                mode="date"
+                minimumDate={new Date()}
+                onChange={(event, date) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (date) setDeadline(date);
+                }}
+              />
+            )}
+          </Surface>
 
-            <View style={styles.bottomSpacer} />
-          </View>
-        </ScrollView>
+          {/* 9. Urgent */}
+          <Surface style={styles.section} elevation={0}>
+            <View style={styles.urgentRow}>
+              <View style={styles.urgentInfo}>
+                <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.urgentLabel')}</Text>
+                <Text style={styles.urgentHint}>{t('task.create.urgentHint')}</Text>
+              </View>
+              <Chip
+                selected={isUrgent}
+                onPress={() => { haptic.selection(); setIsUrgent(!isUrgent); }}
+                showSelectedCheck
+                icon={isUrgent ? 'lightning-bolt' : 'lightning-bolt-outline'}
+              >
+                {isUrgent ? t('task.create.urgent') : t('task.create.normal')}
+              </Chip>
+            </View>
+          </Surface>
 
-        {/* Sticky bottom submit bar */}
-        <Surface style={styles.bottomBar} elevation={4}>
+          {/* Submit — inline like offering, not sticky */}
           <Button
             mode="contained"
             onPress={handleSubmit}
@@ -617,14 +609,15 @@ export default function CreateTaskScreen() {
             disabled={isLoading}
             style={styles.submitButton}
             contentStyle={styles.submitButtonContent}
-            buttonColor={themeColors.primaryAccent}
-            textColor="#ffffff"
           >
             {uploading ? t('task.create.uploadingImages') : t('task.create.createButton')}
           </Button>
-        </Surface>
-      </KeyboardAvoidingView>
 
+          <View style={styles.bottomSpacer} />
+        </View>
+      </ScrollView>
+
+      {/* Category Modal */}
       <Modal
         visible={showCategoryModal}
         transparent
