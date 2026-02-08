@@ -29,6 +29,8 @@ export default function CreateTaskScreen() {
   const activeTheme = getActiveTheme();
   const themeColors = colors[activeTheme];
 
+  const isWeb = Platform.OS === 'web';
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
@@ -150,6 +152,7 @@ export default function CreateTaskScreen() {
     },
     content: {
       padding: 16,
+      ...(isWeb ? { maxWidth: 640, alignSelf: 'center' as const, width: '100%' as any } : {}),
     },
     centerContainer: {
       flex: 1,
@@ -296,6 +299,7 @@ export default function CreateTaskScreen() {
       backgroundColor: themeColors.card,
       padding: 16,
       paddingBottom: 32,
+      ...(isWeb ? { maxWidth: 640, alignSelf: 'center' as const, width: '100%' as any } : {}),
     },
     submitButton: {
       borderRadius: 12,
@@ -409,6 +413,7 @@ export default function CreateTaskScreen() {
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
+            {/* 1. Title */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.taskTitleLabel')}</Text>
               <TextInput
@@ -423,6 +428,21 @@ export default function CreateTaskScreen() {
               />
             </Surface>
 
+            {/* 2. Category (moved up to match offering order) */}
+            <Surface style={styles.section} elevation={0}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.categoryLabel')}</Text>
+              <TouchableOpacity 
+                style={styles.categorySelector}
+                onPress={() => { haptic.light(); setShowCategoryModal(true); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '📋'}</Text>
+                <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || t('task.create.selectCategory')}</Text>
+                <Text style={styles.categorySelectorArrow}>›</Text>
+              </TouchableOpacity>
+            </Surface>
+
+            {/* 3. Description */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.descriptionLabel')}</Text>
               <TextInput
@@ -439,6 +459,7 @@ export default function CreateTaskScreen() {
               />
             </Surface>
 
+            {/* 4. Photos */}
             <Surface style={styles.section} elevation={0}>
               <ImagePicker
                 images={images}
@@ -448,19 +469,7 @@ export default function CreateTaskScreen() {
               />
             </Surface>
 
-            <Surface style={styles.section} elevation={0}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.categoryLabel')}</Text>
-              <TouchableOpacity 
-                style={styles.categorySelector}
-                onPress={() => { haptic.light(); setShowCategoryModal(true); }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.categorySelectorIcon}>{selectedCategoryData?.icon || '📋'}</Text>
-                <Text style={styles.categorySelectorText}>{selectedCategoryData?.label || t('task.create.selectCategory')}</Text>
-                <Text style={styles.categorySelectorArrow}>›</Text>
-              </TouchableOpacity>
-            </Surface>
-
+            {/* 5. Budget */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.budgetLabel')}</Text>
               <View style={styles.budgetRow}>
@@ -478,6 +487,7 @@ export default function CreateTaskScreen() {
               </View>
             </Surface>
 
+            {/* 6. Difficulty */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.difficultyLabel')}</Text>
               <Text style={styles.sectionHint}>{t('task.create.difficultyHint')}</Text>
@@ -532,6 +542,7 @@ export default function CreateTaskScreen() {
               </View>
             </Surface>
 
+            {/* 7. Location */}
             <Surface style={styles.section} elevation={0}>
               <LocationPicker
                 initialLocation={location || undefined}
@@ -540,6 +551,7 @@ export default function CreateTaskScreen() {
               />
             </Surface>
 
+            {/* 8. Deadline */}
             <Surface style={styles.section} elevation={0}>
               <Text variant="titleMedium" style={styles.sectionTitle}>{t('task.create.deadlineLabel')}</Text>
               <Button
@@ -574,6 +586,7 @@ export default function CreateTaskScreen() {
               )}
             </Surface>
 
+            {/* 9. Urgent */}
             <Surface style={styles.section} elevation={0}>
               <View style={styles.urgentRow}>
                 <View style={styles.urgentInfo}>
@@ -595,6 +608,7 @@ export default function CreateTaskScreen() {
           </View>
         </ScrollView>
 
+        {/* Sticky bottom submit bar */}
         <Surface style={styles.bottomBar} elevation={4}>
           <Button
             mode="contained"
