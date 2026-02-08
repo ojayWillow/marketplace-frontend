@@ -17,12 +17,11 @@ const CreateTask = () => {
   const {
     formData,
     loading,
-    searchingAddress,
-    addressSuggestions,
-    locationStatus,
+    locationConfirmed,
     updateField,
     handleChange,
     selectAddress,
+    setCoordsFromMap,
     handleSubmit,
   } = useTaskForm();
 
@@ -81,26 +80,26 @@ const CreateTask = () => {
               />
             </div>
 
-            {/* 4. Location */}
+            {/* 4. Location with map */}
             <LocationInput
               location={formData.location}
               latitude={formData.latitude}
               longitude={formData.longitude}
-              locationStatus={locationStatus}
-              searchingAddress={searchingAddress}
-              addressSuggestions={addressSuggestions}
               onChange={handleChange}
               onSelect={selectAddress}
+              onCoordsChange={setCoordsFromMap}
+              locationConfirmed={locationConfirmed}
             />
 
             {/* 5. Budget */}
             <BudgetInput value={formData.budget} onChange={handleChange} />
 
-            {/* 6. Deadline */}
+            {/* 6. Deadline with time slots */}
             <DeadlinePicker
               deadlineDate={formData.deadlineDate}
               deadlineTime={formData.deadlineTime}
               onChange={handleChange}
+              onTimeChange={(time) => updateField('deadlineTime', time)}
             />
 
             {/* 7. Difficulty */}
@@ -122,14 +121,12 @@ const CreateTask = () => {
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                disabled={loading || searchingAddress}
+                disabled={loading}
                 className="flex-1 bg-blue-500 text-white py-2.5 px-4 rounded-xl hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold text-sm shadow-sm"
               >
                 {loading
                   ? t('createTask.creating', 'Creating...')
-                  : searchingAddress
-                    ? t('createTask.findingLocation', 'Finding location...')
-                    : t('createTask.createButton', '⚡ Create Task')}
+                  : t('createTask.createButton', '⚡ Create Task')}
               </button>
               <button
                 type="button"

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TIME_OPTIONS } from '../types';
 
@@ -5,47 +6,98 @@ interface DeadlinePickerProps {
   deadlineDate: string;
   deadlineTime: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onTimeChange: (time: string) => void;
 }
 
-const DeadlinePicker = ({ deadlineDate, deadlineTime, onChange }: DeadlinePickerProps) => {
+const TIME_SLOTS = [
+  { key: 'morning', label: '🌅 Morning', time: '10:00', desc: '8–12' },
+  { key: 'afternoon', label: '☀️ Afternoon', time: '14:00', desc: '12–17' },
+  { key: 'evening', label: '🌙 Evening', time: '18:00', desc: '17–21' },
+  { key: 'custom', label: '🕒 Custom', time: '', desc: 'Pick time' },
+] as const;
+
+const DeadlinePicker = ({ deadlineDate, deadlineTime, onChange, onTimeChange }: DeadlinePickerProps) => {
   const { t } = useTranslation();
   const today = new Date().toISOString().split('T')[0];
+  const [showCustomTime, setShowCustomTime] = useState(false);
+
+  // Determine which slot is active based on current deadlineTime
+  const activeSlot = (() => {
+    if (!deadlineTime) return null;
+    const slot = TIME_SLOTS.find(s => s.key !== 'custom' && s.time === deadlineTime);
+    if (slot) return slot.key;
+    return 'custom';
+  })();
+
+  const handleSlotClick = (slot: typeof TIME_SLOTS[number]) => {
+    if (slot.key === 'custom') {
+      setShowCustomTime(true);
+    } else {
+      setShowCustomTime(false);
+      onTimeChange(slot.time);
+    }
+  };
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {t('createTask.deadline', 'Deadline')} <span className="text-gray-400 font-normal text-xs">({t('common.optional', 'Optional')})</span>
       </label>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="deadlineDate" className="block text-xs text-gray-500 mb-0.5">{t('createTask.date', 'Date')}</label>
-          <input
-            type="date"
-            id="deadlineDate"
-            name="deadlineDate"
-            value={deadlineDate}
-            onChange={onChange}
-            min={today}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="deadlineTime" className="block text-xs text-gray-500 mb-0.5">{t('createTask.time', 'Time')}</label>
-          <select
-            id="deadlineTime"
-            name="deadlineTime"
-            value={deadlineTime}
-            onChange={onChange}
-            disabled={!deadlineDate}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:text-gray-400"
-          >
-            <option value="">{t('createTask.anyTime', 'Any time')}</option>
-            {TIME_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+
+      {/* Date input */}
+      <input
+        type="date"
+        id="deadlineDate"
+        name="deadlineDate"
+        value={deadlineDate}
+        onChange={onChange}
+        min={today}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm mb-2"
+      />
+
+      {/* Time slot chips — only show when date is selected */}
+      {deadlineDate && (
+        <>
+          <p className="text-xs text-gray-500 mb-1.5">{t('createTask.preferredTime', 'Preferred time')}</p>
+          <div className="flex gap-1.5 flex-wrap">
+            {TIME_SLOTS.map(slot => {
+              const isActive = activeSlot === slot.key;
+              return (
+                <button
+                  key={slot.key}
+                  type="button"
+                  onClick={() => handleSlotClick(slot)}
+                  className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-medium ${
+                    isActive
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {slot.label}
+                  <span className="text-[10px] text-gray-400 ml-1">{slot.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom time dropdown */}
+          {showCustomTime && (
+            <select
+              id="deadlineTime"
+              name="deadlineTime"
+              value={deadlineTime}
+              onChange={onChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm mt-2"
+            >
+              <option value="">{t('createTask.anyTime', 'Select time')}</option>
+              {TIME_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          )}
+        </>
+      )}
+
       <p className="text-xs text-gray-500 mt-1">{t('createTask.deadlineHint', 'When do you need this task completed by?')}</p>
     </div>
   );
