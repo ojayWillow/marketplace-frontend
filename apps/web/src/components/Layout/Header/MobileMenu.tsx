@@ -77,16 +77,16 @@ export const MobileMenu = ({
                   </p>
                   <div className="mt-1 text-xs text-blue-600 space-y-1">
                     {notifications.acceptedApplications > 0 && (
-                      <p>\u2022 \ud83c\udf89 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
+                      <p>• 🎉 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
                     )}
                     {notifications.unreadMessages > 0 && (
-                      <p>\u2022 {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
+                      <p>• {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
                     )}
                     {notifications.pendingApplications > 0 && (
-                      <p>\u2022 {notifications.pendingApplications} new application{notifications.pendingApplications !== 1 ? 's' : ''}</p>
+                      <p>• {notifications.pendingApplications} new application{notifications.pendingApplications !== 1 ? 's' : ''}</p>
                     )}
                     {notifications.pendingConfirmation > 0 && (
-                      <p>\u2022 {notifications.pendingConfirmation} task{notifications.pendingConfirmation !== 1 ? 's' : ''} pending confirmation</p>
+                      <p>• {notifications.pendingConfirmation} task{notifications.pendingConfirmation !== 1 ? 's' : ''} pending confirmation</p>
                     )}
                   </div>
                 </div>

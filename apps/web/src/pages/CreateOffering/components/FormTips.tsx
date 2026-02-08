@@ -20,10 +20,10 @@ const FormTips = ({ category }: FormTipsProps) => {
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
         <p className="text-xs font-medium text-gray-700 mb-1">✨ Stand out tips</p>
         <ul className="text-[11px] text-gray-500 space-y-0.5">
-          <li>\u2022 Clear title = more clicks</li>
-          <li>\u2022 Detailed description = more trust</li>
-          <li>\u2022 Competitive price = more inquiries</li>
-          <li>\u2022 Fast replies = higher ranking</li>
+          <li>• Clear title = more clicks</li>
+          <li>• Detailed description = more trust</li>
+          <li>• Competitive price = more inquiries</li>
+          <li>• Fast replies = higher ranking</li>
         </ul>
       </div>
     </>
