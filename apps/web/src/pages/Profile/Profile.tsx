@@ -95,7 +95,6 @@ const Profile = () => {
   // Calculate counts and stats
   const myTasksCount = createdTasks.length;
   const myJobsCount = myApplications.filter(app => app.status === 'accepted').length;
-  const pendingAppsCount = myApplications.filter(app => app.status === 'pending').length;
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
     return sum + (task.pending_applications_count || 0);
   }, 0);
@@ -153,7 +152,7 @@ const Profile = () => {
             offerings: myOfferings.length,
             listings: myListings.length,
             reviews: reviews.length,
-            pendingNotifications: totalPendingApplicationsOnMyTasks + pendingAppsCount,
+            pendingNotifications: totalPendingApplicationsOnMyTasks,
           }}
           hasContent={{
             tasks: hasTasks,
