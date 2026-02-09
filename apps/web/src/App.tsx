@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
+import SocketProvider from './components/SocketProvider'
 
 // Loading spinner component
 const PageLoader = () => (
@@ -60,7 +61,7 @@ const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 
 function App() {
   return (
-    <>
+    <SocketProvider>
       <Suspense fallback={<Layout><PageLoader /></Layout>}>
         <Routes>
           <Route path="/" element={<Layout />}>
@@ -225,7 +226,7 @@ function App() {
       
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
-    </>
+    </SocketProvider>
   )
 }
 

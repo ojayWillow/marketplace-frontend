@@ -7,10 +7,11 @@ import { getOnlineStatusText } from '../utils';
 interface ChatHeaderProps {
   otherUser: any;
   onlineStatus?: 'online' | 'recently' | 'inactive';
+  isOtherTyping?: boolean;
   isMobile?: boolean;
 }
 
-const ChatHeader = ({ otherUser, onlineStatus, isMobile }: ChatHeaderProps) => {
+const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHeaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -18,18 +19,27 @@ const ChatHeader = ({ otherUser, onlineStatus, isMobile }: ChatHeaderProps) => {
     ? `${otherUser.first_name} ${otherUser.last_name}`
     : otherUser?.username || 'Unknown';
 
-  const statusColorClass = onlineStatus === 'online'
-    ? 'text-green-600'
-    : onlineStatus === 'inactive'
-      ? 'text-amber-600'
-      : 'text-gray-500';
+  // Determine status line: typing beats regular status
+  const statusText = isOtherTyping
+    ? t('messages.typing', 'typing...')
+    : onlineStatus
+      ? getOnlineStatusText(t, onlineStatus, otherUser?.last_seen_display)
+      : null;
+
+  const statusColorClass = isOtherTyping
+    ? 'text-blue-500'
+    : onlineStatus === 'online'
+      ? 'text-green-600'
+      : onlineStatus === 'inactive'
+        ? 'text-amber-600'
+        : 'text-gray-500';
 
   return (
     <div
       className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0"
       style={isMobile ? { paddingTop: 'max(16px, env(safe-area-inset-top))' } : undefined}
     >
-      {/* Back button — goes to /messages or navigate(-1) */}
+      {/* Back button */}
       <button
         onClick={() => navigate('/messages')}
         className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-1 -ml-1' : ''}`}
@@ -41,7 +51,7 @@ const ChatHeader = ({ otherUser, onlineStatus, isMobile }: ChatHeaderProps) => {
 
       <Link to={`/users/${otherUser?.id}`} className={`flex items-center gap-3 flex-1 ${isMobile ? 'min-w-0' : ''}`}>
         {/* Avatar */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 relative">
           {otherUser?.avatar_url ? (
             <img
               src={getImageUrl(otherUser.avatar_url)}
@@ -53,26 +63,20 @@ const ChatHeader = ({ otherUser, onlineStatus, isMobile }: ChatHeaderProps) => {
               {otherUser?.username?.charAt(0).toUpperCase() || '?'}
             </div>
           )}
-        </div>
-
-        {/* Online status icon */}
-        {onlineStatus && (
-          <div className="flex-shrink-0">
-            <OnlineStatus
-              status={onlineStatus}
-              lastSeenDisplay={otherUser?.last_seen_display}
-              size="md"
-              showTooltip={false}
+          {/* Online dot on avatar */}
+          {onlineStatus === 'online' && (
+            <span
+              className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"
             />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Name and status */}
         <div className={isMobile ? 'min-w-0 flex-1' : ''}>
           <p className={`font-medium text-gray-900 ${isMobile ? 'truncate' : ''}`}>{displayName}</p>
-          {onlineStatus && (
-            <p className={`text-xs ${isMobile ? 'truncate' : ''} ${statusColorClass}`}>
-              {getOnlineStatusText(t, onlineStatus, otherUser?.last_seen_display)}
+          {statusText && (
+            <p className={`text-xs ${isMobile ? 'truncate' : ''} ${statusColorClass} ${isOtherTyping ? 'italic' : ''}`}>
+              {statusText}
             </p>
           )}
         </div>

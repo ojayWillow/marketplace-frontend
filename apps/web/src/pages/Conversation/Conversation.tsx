@@ -20,6 +20,7 @@ export default function Conversation() {
     user,
     otherUser,
     onlineStatus,
+    isOtherTyping,
     sendMutation,
     handleSend,
   } = useConversationPage();
@@ -31,7 +32,7 @@ export default function Conversation() {
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-[10000] flex flex-col bg-white">
-        <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} isMobile />
+        <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} isOtherTyping={isOtherTyping} isMobile />
         <MessageList
           messages={sortedMessages}
           currentUserId={user?.id}
@@ -56,7 +57,7 @@ export default function Conversation() {
         className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col"
         style={{ height: 'calc(100vh - 200px)', minHeight: '500px', maxHeight: '700px' }}
       >
-        <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} />
+        <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} isOtherTyping={isOtherTyping} />
         <MessageList
           messages={sortedMessages}
           currentUserId={user?.id}
