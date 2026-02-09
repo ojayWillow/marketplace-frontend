@@ -76,6 +76,9 @@ const Profile = () => {
   // Mobile reviews expansion
   const [showAllReviews, setShowAllReviews] = useState(false);
 
+  // Mobile settings view — use local state for reliability
+  const [showMobileSettings, setShowMobileSettings] = useState(false);
+
   // Update avatar seed when profile loads
   useEffect(() => {
     if (profile?.username) {
@@ -95,6 +98,16 @@ const Profile = () => {
   // Helper to update formData fields directly (for skills, country+city reset, etc.)
   const handleFormDataChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleOpenMobileSettings = () => {
+    setShowMobileSettings(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCloseMobileSettings = () => {
+    setShowMobileSettings(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Loading state
@@ -175,10 +188,10 @@ const Profile = () => {
         {!editing && (
           <div className="md:hidden space-y-4">
             {/* Show SettingsTab when active on mobile (replaces normal content) */}
-            {activeTab === 'settings' ? (
+            {showMobileSettings ? (
               <div>
                 <button
-                  onClick={() => setActiveTab('about')}
+                  onClick={handleCloseMobileSettings}
                   className="flex items-center gap-1 text-sm text-blue-600 mb-4 hover:text-blue-700"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,8 +205,8 @@ const Profile = () => {
               <>
                 {/* Settings button - visible and easy to find right at the top */}
                 <button
-                  onClick={() => setActiveTab('settings')}
-                  className="w-full flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"
+                  onClick={handleOpenMobileSettings}
+                  className="w-full flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">

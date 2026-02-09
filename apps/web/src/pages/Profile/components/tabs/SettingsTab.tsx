@@ -9,6 +9,22 @@ interface DeviceInfo {
   created_at: string;
 }
 
+// Detect if we're on iOS Safari (not in standalone PWA mode)
+const isIOSSafari = () => {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+  return isIOS && !isStandalone;
+};
+
+// Detect if we're on iOS PWA (home screen)
+const isIOSPWA = () => {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+  return isIOS && isStandalone;
+};
+
 export const SettingsTab = () => {
   const { t } = useTranslation();
   const {
@@ -26,6 +42,12 @@ export const SettingsTab = () => {
   const [devicesLoading, setDevicesLoading] = useState(false);
   const [testSent, setTestSent] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
+  const [showIOSHelp, setShowIOSHelp] = useState(false);
+
+  // Check iOS state on mount
+  useEffect(() => {
+    setShowIOSHelp(isIOSSafari());
+  }, []);
 
   // Fetch registered devices
   useEffect(() => {
@@ -38,7 +60,7 @@ export const SettingsTab = () => {
     setDevicesLoading(true);
     try {
       const data = await getPushSubscriptions();
-      setDevices(data.subscriptions);
+      setDevices(data.subscriptions || []);
     } catch (err) {
       console.error('Failed to fetch devices:', err);
     } finally {
@@ -97,8 +119,43 @@ export const SettingsTab = () => {
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          {/* Browser not supported */}
-          {!isSupported && (
+          {/* iOS Safari — needs to install as PWA first */}
+          {showIOSHelp && !isSupported && (
+            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  {t('settings.notifications.iosInstallTitle', 'Install the app for notifications')}
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  {t('settings.notifications.iosInstallHelp', 'On iPhone, push notifications only work when Kolab is installed on your home screen:')}
+                </p>
+                <ol className="text-sm text-blue-700 mt-2 space-y-1 list-decimal list-inside">
+                  <li>{t('settings.notifications.iosStep1', 'Tap the Share button (square with arrow) in Safari')}</li>
+                  <li>{t('settings.notifications.iosStep2', 'Scroll down and tap "Add to Home Screen"')}</li>
+                  <li>{t('settings.notifications.iosStep3', 'Open Kolab from your home screen')}</li>
+                  <li>{t('settings.notifications.iosStep4', 'Come back here to enable notifications')}</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* iOS PWA — supported but might need iOS 16.4+ */}
+          {isIOSPWA() && !isSupported && (
+            <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <p className="text-sm text-yellow-800">
+                {t('settings.notifications.iosVersionRequired', 'Push notifications require iOS 16.4 or later. Please update your iPhone to use this feature.')}
+              </p>
+            </div>
+          )}
+
+          {/* Browser not supported (non-iOS) */}
+          {!isSupported && !showIOSHelp && !isIOSPWA() && (
             <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
