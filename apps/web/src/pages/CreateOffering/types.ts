@@ -10,6 +10,7 @@ export interface OfferingFormData {
   availability: string;
   experience: string;
   service_radius: string;
+  images: File[];
 }
 
 export const INITIAL_FORM_DATA: OfferingFormData = {
@@ -24,6 +25,7 @@ export const INITIAL_FORM_DATA: OfferingFormData = {
   availability: '',
   experience: '',
   service_radius: '25',
+  images: [],
 };
 
 export const DAYS_OF_WEEK = [
