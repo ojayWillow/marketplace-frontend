@@ -50,11 +50,24 @@ export default function Messages() {
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0">
-          <h1 className="text-xl font-bold text-gray-900">
-            💬 {t('messages.title', 'Messages')}
-          </h1>
+        {/* Header with back button */}
+        <div
+          className="bg-white border-b px-4 py-3 flex-shrink-0"
+          style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1 -ml-1 text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">
+              💬 {t('messages.title', 'Messages')}
+            </h1>
+          </div>
         </div>
 
         {/* Conversations list */}

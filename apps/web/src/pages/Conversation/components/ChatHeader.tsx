@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '@marketplace/shared';
 import OnlineStatus from '../../../components/ui/OnlineStatus';
@@ -12,6 +12,7 @@ interface ChatHeaderProps {
 
 const ChatHeader = ({ otherUser, onlineStatus, isMobile }: ChatHeaderProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const displayName = otherUser?.first_name && otherUser?.last_name
     ? `${otherUser.first_name} ${otherUser.last_name}`
@@ -26,16 +27,17 @@ const ChatHeader = ({ otherUser, onlineStatus, isMobile }: ChatHeaderProps) => {
   return (
     <div
       className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0"
-      style={isMobile ? { paddingTop: 'max(12px, env(safe-area-inset-top))' } : undefined}
+      style={isMobile ? { paddingTop: 'max(16px, env(safe-area-inset-top))' } : undefined}
     >
-      <Link
-        to="/messages"
+      {/* Back button — goes to /messages or navigate(-1) */}
+      <button
+        onClick={() => navigate('/messages')}
         className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-1 -ml-1' : ''}`}
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-      </Link>
+      </button>
 
       <Link to={`/users/${otherUser?.id}`} className={`flex items-center gap-3 flex-1 ${isMobile ? 'min-w-0' : ''}`}>
         {/* Avatar */}
