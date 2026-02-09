@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getImageUrl, useAuthStore } from '@marketplace/shared';
@@ -35,6 +36,7 @@ export const ProfileHeader = ({
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
 
   const memberSince = new Date(profile.created_at).toLocaleDateString(
     i18n.language === 'lv' ? 'lv-LV' : i18n.language === 'ru' ? 'ru-RU' : 'en-US',
@@ -44,7 +46,6 @@ export const ProfileHeader = ({
     }
   );
 
-  // Helper to get full avatar URL
   const getAvatarDisplayUrl = (url: string | undefined): string | undefined => {
     if (!url) return undefined;
     if (url.startsWith('http')) return url;
@@ -57,19 +58,22 @@ export const ProfileHeader = ({
 
   const handleLogout = async () => {
     try {
-      // Clear auth state
       clearAuth();
-      
-      // Use setTimeout to ensure state clears before navigation
       setTimeout(() => {
         navigate('/welcome', { replace: true });
       }, 100);
     } catch (error) {
       console.error('Logout error:', error);
-      // Still navigate even if there's an error
       navigate('/welcome', { replace: true });
     }
   };
+
+  // Helper to check if email is a placeholder
+  const isPlaceholderEmail = (email: string) => {
+    return email.includes('@phone.tirgus.local');
+  };
+
+  const displayEmail = profile.email && !isPlaceholderEmail(profile.email) ? profile.email : null;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -143,12 +147,34 @@ export const ProfileHeader = ({
               <span className="text-gray-500 text-sm">{t('profile.tasksDone')}</span>
             </div>
           </div>
+
+          {/* Bio - shown inline on mobile, part of About tab on desktop */}
+          {!editing && profile.bio && (
+            <div className="md:hidden mt-3">
+              <p className="text-gray-600 text-sm">{profile.bio}</p>
+            </div>
+          )}
+
+          {/* Contact info - mobile only, inline */}
+          {!viewOnly && !editing && (displayEmail || profile.phone) && (
+            <div className="md:hidden flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
+              {displayEmail && (
+                <span className="flex items-center gap-1">
+                  📧 {displayEmail}
+                </span>
+              )}
+              {profile.phone && (
+                <span className="flex items-center gap-1">
+                  📱 {profile.phone}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div className="flex-shrink-0">
           {viewOnly ? (
-            // Public profile - show Message button
             onMessage && (
               <button
                 onClick={onMessage}
@@ -159,21 +185,45 @@ export const ProfileHeader = ({
               </button>
             )
           ) : (
-            // Own profile - show Edit/Logout buttons
             !editing ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={onEdit}
                   className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
                 >
                   {t('profile.editProfile')}
                 </button>
+                
+                {/* Desktop: normal logout button */}
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                  className="hidden md:block px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                 >
                   🚪 Logout
                 </button>
+
+                {/* Mobile: overflow menu */}
+                <div className="relative md:hidden">
+                  <button
+                    onClick={() => setShowOverflowMenu(!showOverflowMenu)}
+                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    ⋯
+                  </button>
+                  {showOverflowMenu && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowOverflowMenu(false)} />
+                      <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                        <button
+                          onClick={() => { handleLogout(); setShowOverflowMenu(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          🚪 Logout
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex gap-2">
@@ -196,9 +246,9 @@ export const ProfileHeader = ({
         </div>
       </div>
 
-      {/* Quick Actions - Only show for own profile */}
-      {!viewOnly && (
-        <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-100">
+      {/* Quick Actions - DESKTOP ONLY */}
+      {!viewOnly && !editing && (
+        <div className="hidden md:flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-100">
           <Link
             to="/tasks/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition-colors"
