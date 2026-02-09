@@ -71,13 +71,13 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
         <p className="text-xs text-gray-500 line-clamp-2 mb-2">{item.description}</p>
       )}
 
-      {/* Footer: distance, difficulty, time — wraps cleanly on narrow screens */}
-      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] pt-2 border-t border-gray-50">
-        <span className="text-gray-500 font-medium truncate max-w-[40%]">📏 {distanceText}</span>
+      {/* Footer: distance left, difficulty center, time right */}
+      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-50">
+        <span className="text-gray-500 font-medium flex-1 truncate">📏 {distanceText}</span>
         <span className={`font-semibold flex-shrink-0 ${difficultyColor}`}>
           ⚡ {item.difficulty || 'Medium'}
         </span>
-        <span className="text-gray-400 ml-auto flex-shrink-0">{timeAgo}</span>
+        <span className="text-gray-400 flex-1 text-right flex-shrink-0">{timeAgo}</span>
       </div>
     </div>
   );
