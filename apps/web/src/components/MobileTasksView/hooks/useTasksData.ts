@@ -5,6 +5,7 @@ import { calculateDistance } from '../utils/distance';
 import { Task } from '../types';
 
 const MAX_CATEGORIES = 5;
+const DEFAULT_MIN_RESULTS = 5; // Backend auto-expands radius if fewer results
 
 interface UseTasksDataOptions {
   userLocation: { lat: number; lng: number };
@@ -12,6 +13,11 @@ interface UseTasksDataOptions {
 
 /**
  * Hook managing task data: fetching, filtering, sorting, and category/radius state.
+ *
+ * Key improvements:
+ * - Uses min_results param so backend auto-expands radius for rural areas
+ * - Sends comma-separated categories in single API call (no more N sequential calls)
+ * - Tracks effective_radius from backend response
  */
 export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,10 +25,16 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   const [searchRadius, setSearchRadius] = useState(25);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  // Track whether backend expanded beyond our requested radius
+  const [effectiveRadius, setEffectiveRadius] = useState<number | null>(null);
+  const [radiusExpanded, setRadiusExpanded] = useState(false);
 
   const hasFetchedInitial = useRef(false);
 
-  // Fetch tasks — supports multiple categories
+  /**
+   * Fetch tasks — single API call with comma-separated categories.
+   * Backend handles min_results auto-expansion.
+   */
   const fetchTasks = async (
     lat: number,
     lng: number,
@@ -31,53 +43,37 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   ) => {
     setLoading(true);
     try {
-      const effectiveRadius = radius === 0 ? 500 : radius;
+      const effectiveRequestRadius = radius === 0 ? 500 : radius;
 
-      if (categories.length === 0) {
-        const response = await getTasks({
-          latitude: lat,
-          longitude: lng,
-          radius: effectiveRadius,
-          status: 'open',
-        });
-        const tasksWithIcons = response.tasks.map((task) => ({
-          ...task,
-          icon: getCategoryIcon(task.category),
-        }));
-        setTasks(tasksWithIcons);
-      } else {
-        const allTasks: Task[] = [];
-        const taskIds = new Set<string>();
+      const response = await getTasks({
+        latitude: lat,
+        longitude: lng,
+        radius: effectiveRequestRadius,
+        status: 'open',
+        min_results: DEFAULT_MIN_RESULTS,
+        // Send comma-separated categories in one request
+        ...(categories.length > 0 && { category: categories.join(',') }),
+      });
 
-        for (const category of categories) {
-          const response = await getTasks({
-            latitude: lat,
-            longitude: lng,
-            radius: effectiveRadius,
-            status: 'open',
-            category,
-          });
+      const tasksWithIcons = response.tasks.map((task) => ({
+        ...task,
+        icon: getCategoryIcon(task.category),
+      }));
 
-          response.tasks.forEach((task) => {
-            if (!taskIds.has(task.id)) {
-              taskIds.add(task.id);
-              allTasks.push({
-                ...task,
-                icon: getCategoryIcon(task.category),
-              });
-            }
-          });
-        }
+      setTasks(tasksWithIcons);
 
-        setTasks(allTasks);
+      // Track backend's effective radius for UI feedback
+      if (response.effective_radius != null) {
+        setEffectiveRadius(response.effective_radius);
       }
+      setRadiusExpanded(response.radius_expanded ?? false);
     } catch (err) {
       console.error('Failed to load jobs', err);
     }
     setLoading(false);
   };
 
-  // Initial fetch with default location + saved radius
+  // Initial fetch with best-known location + saved radius
   const initializeFetch = (lat: number, lng: number) => {
     if (hasFetchedInitial.current) return;
     hasFetchedInitial.current = true;
@@ -158,6 +154,8 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
     handleCategoryToggle,
     initializeFetch,
     refetchAtLocation,
+    effectiveRadius,
+    radiusExpanded,
     MAX_CATEGORIES,
   };
 };
