@@ -168,7 +168,10 @@ const OfferingDetail = () => {
 
       {/* Fixed bottom action bar — MOBILE ONLY */}
       {!isOwner && (
-        <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden">
+        <div 
+          className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
+          style={{ bottom: 'var(--nav-total-height, 64px)' }}
+        >
           <div className="max-w-3xl mx-auto px-4 py-3">
             <button
               onClick={handleContact}

@@ -40,6 +40,7 @@ export const useProfileData = () => {
     city: '',
     country: '',
     avatar_url: '',
+    skills: '',
   });
 
   // Individual fetch functions (for refreshing specific data after actions)
@@ -92,7 +93,7 @@ export const useProfileData = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -124,6 +125,7 @@ export const useProfileData = () => {
           city: data.profile.city || '',
           country: data.profile.country || '',
           avatar_url: data.profile.avatar_url || data.profile.profile_picture_url || '',
+          skills: data.profile.skills || '',
         });
         
         // Set all related data

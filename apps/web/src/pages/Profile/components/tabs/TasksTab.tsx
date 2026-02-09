@@ -124,18 +124,22 @@ export const TasksTab = ({
         return true;
       });
     } else {
-      const acceptedApps = myApplications.filter(app => app.status === 'accepted');
-      return acceptedApps.filter(app => {
+      // Jobs I'm doing - show all applications (pending + accepted)
+      return myApplications.filter(app => {
         const task = app.task;
         if (!task) return false;
+        
         if (taskStatusFilter === 'active') {
-          return ['assigned', 'in_progress', 'pending_confirmation'].includes(task.status);
+          // Only accepted applications with active tasks
+          return app.status === 'accepted' && ['assigned', 'in_progress', 'pending_confirmation'].includes(task.status);
         }
         if (taskStatusFilter === 'completed') {
-          return task.status === 'completed';
+          // Only accepted + completed
+          return app.status === 'accepted' && task.status === 'completed';
         }
-        return true;
-      }).map(app => app.task!).filter(Boolean);
+        // All: show pending + accepted (exclude rejected)
+        return ['pending', 'accepted'].includes(app.status);
+      });
     }
   };
 
@@ -177,6 +181,30 @@ export const TasksTab = ({
       });
     }
     handleReviewModalClose();
+  };
+
+  // Helper to get application status badge
+  const getApplicationStatusBadge = (application: TaskApplication) => {
+    if (application.status === 'pending') {
+      return {
+        text: '⏳ Gaida apstiprinājumu',
+        className: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
+      };
+    }
+    if (application.status === 'accepted') {
+      const task = application.task;
+      if (task?.status === 'completed') {
+        return {
+          text: '✓ Pabeigts',
+          className: 'bg-green-100 text-green-700 border border-green-200',
+        };
+      }
+      return {
+        text: '✓ Aktīvs',
+        className: 'bg-blue-100 text-blue-700 border border-blue-200',
+      };
+    }
+    return null;
   };
 
   return (
@@ -406,43 +434,40 @@ export const TasksTab = ({
               })
             ) : (
               // My Jobs (applications) - only for own profile
-              myApplications.filter(app => app.status === 'accepted').map(application => {
+              getDisplayTasks().map((item) => {
+                const application = item as TaskApplication;
                 const task = application.task;
                 if (!task) return null;
                 
-                if (taskStatusFilter === 'active' && !['assigned', 'in_progress', 'pending_confirmation'].includes(task.status)) return null;
-                if (taskStatusFilter === 'completed' && task.status !== 'completed') return null;
+                const statusBadge = getApplicationStatusBadge(application);
+                const isPending = application.status === 'pending';
+                const isCompleted = application.status === 'accepted' && task.status === 'completed';
                 
                 // Check if this task needs a review
                 const reviewStatus = canReviewStatuses.get(task.id);
-                const needsReview = task.status === 'completed' && reviewStatus?.canReview;
+                const needsReview = isCompleted && reviewStatus?.canReview;
                 
                 return (
                   <div 
                     key={application.id} 
                     className={`p-4 border rounded-lg ${
-                      needsReview 
-                        ? 'border-yellow-200 bg-white' 
-                        : 'border-green-200 bg-green-50/50'
+                      isPending ? 'border-yellow-200 bg-yellow-50/30' :
+                      needsReview ? 'border-yellow-200 bg-white' : 
+                      'border-green-200 bg-green-50/30'
                     }`}
                   >
-                    <div className="flex items-center gap-2 text-green-700 text-sm mb-2">
-                      <span>🎉</span>
-                      <span className="font-medium">
-                        {task.status === 'completed' ? t('profile.jobsTab.completed') : t('profile.jobsTab.assigned')}
-                      </span>
-                    </div>
-                    
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span>{getCategoryIcon(task.category)}</span>
                           <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
                             {task.title}
                           </Link>
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                            {task.status.replace('_', ' ')}
-                          </span>
+                          {statusBadge && (
+                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${statusBadge.className}`}>
+                              {statusBadge.text}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
                           <span>📍 {task.location}</span>

@@ -21,25 +21,26 @@ const MobileBottomNav = () => {
   };
 
   const handleTabClick = (e: React.MouseEvent, tab: typeof tabs[0]) => {
-    // If clicking Home and already on home, prevent navigation (stay on map)
     if (tab.path === '/' && location.pathname === '/') {
       e.preventDefault();
-      // Optional: Add scroll to top or map recenter logic here
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // If tab requires auth and user is not authenticated, redirect to landing page
     if (tab.requiresAuth && !isAuthenticated) {
       e.preventDefault();
-      // Navigate to landing page - cleaner UX than going to login
       navigate('/welcome');
       return;
     }
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-bottom">
+    <nav
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
       <div className="flex justify-around items-center h-14">
         {tabs.map((tab) => {
           const needsAuth = tab.requiresAuth && !isAuthenticated;

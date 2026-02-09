@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ProfileHeader,
   AvatarPicker,
@@ -19,6 +19,9 @@ import {
   useAvatarPicker,
   useProfileActions,
 } from './hooks';
+import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
+import { MobileActivitySection } from './components/mobile/MobileActivitySection';
+import { MobileListingsTeaser } from './components/mobile/MobileListingsTeaser';
 
 const Profile = () => {
   // Data management
@@ -66,6 +69,12 @@ const Profile = () => {
     setFormData,
   });
 
+  // Mobile activity toggle
+  const [mobileActivityMode, setMobileActivityMode] = useState<'jobs' | 'services'>('jobs');
+
+  // Mobile reviews expansion
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
   // Update avatar seed when profile loads
   useEffect(() => {
     if (profile?.username) {
@@ -82,6 +91,11 @@ const Profile = () => {
     fetchApplications,
   });
 
+  // Helper to update formData fields directly (for skills, country+city reset, etc.)
+  const handleFormDataChange = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
   // Loading state
   if (loading) {
     return <LoadingState />;
@@ -95,7 +109,6 @@ const Profile = () => {
   // Calculate counts and stats
   const myTasksCount = createdTasks.length;
   const myJobsCount = myApplications.filter(app => app.status === 'accepted').length;
-  const pendingAppsCount = myApplications.filter(app => app.status === 'pending').length;
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
     return sum + (task.pending_applications_count || 0);
   }, 0);
@@ -115,7 +128,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Profile Header */}
+        {/* Profile Header (both mobile + desktop) */}
         <ProfileHeader
           profile={profile}
           formData={formData}
@@ -144,76 +157,136 @@ const Profile = () => {
           fileInputRef={avatarPicker.fileInputRef}
         />
 
-        {/* Tabs */}
-        <ProfileTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          counts={{
-            tasks: myTasksCount + myJobsCount,
-            offerings: myOfferings.length,
-            listings: myListings.length,
-            reviews: reviews.length,
-            pendingNotifications: totalPendingApplicationsOnMyTasks + pendingAppsCount,
-          }}
-          hasContent={{
-            tasks: hasTasks,
-            offerings: hasOfferings,
-            listings: hasListings,
-            reviews: hasReviews,
-          }}
-        />
-
-        {/* Tab Content */}
-        {activeTab === 'about' && (
-          <AboutTab
-            profile={profile}
-            editing={editing}
-            formData={formData}
-            onChange={handleChange}
-          />
+        {/* About Tab edit form - show on mobile when editing */}
+        {editing && (
+          <div className="md:hidden mb-4">
+            <AboutTab
+              profile={profile}
+              editing={editing}
+              formData={formData}
+              onChange={handleChange}
+              onFormDataChange={handleFormDataChange}
+            />
+          </div>
         )}
 
-        {activeTab === 'listings' && (
-          <ListingsTab
-            listings={myListings}
-            loading={listingsLoading}
-            onDelete={actions.handleDeleteListing}
-          />
+        {/* ========== MOBILE LAYOUT (< md) ========== */}
+        {!editing && (
+          <div className="md:hidden space-y-4">
+            {/* Reviews Section - inline */}
+            <MobileReviewsSection
+              reviews={reviews}
+              showAll={showAllReviews}
+              onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
+              currentUserId={user?.id}
+              onDeleteReview={actions.handleDeleteReview}
+              setReviews={setReviews}
+            />
+
+            {/* Listings Teaser - compact banner ABOVE activity */}
+            <MobileListingsTeaser />
+
+            {/* Activity Section - Jobs + Services combined */}
+            <MobileActivitySection
+              activeMode={mobileActivityMode}
+              onModeChange={setMobileActivityMode}
+              // Jobs props
+              createdTasks={createdTasks}
+              myApplications={myApplications}
+              taskMatchCounts={taskMatchCounts}
+              tasksLoading={tasksLoading}
+              applicationsLoading={applicationsLoading}
+              taskViewMode={taskViewMode}
+              taskStatusFilter={taskStatusFilter}
+              onViewModeChange={setTaskViewMode}
+              onStatusFilterChange={setTaskStatusFilter}
+              onCancelTask={actions.handleCancelTask}
+              onTaskConfirmed={fetchTasks}
+              userId={user?.id}
+              // Services props
+              offerings={myOfferings}
+              offeringsLoading={offeringsLoading}
+              onDeleteOffering={actions.handleDeleteOffering}
+              // Notification count
+              pendingNotifications={totalPendingApplicationsOnMyTasks}
+            />
+          </div>
         )}
 
-        {activeTab === 'offerings' && (
-          <OfferingsTab
-            offerings={myOfferings}
-            loading={offeringsLoading}
-            onDelete={actions.handleDeleteOffering}
+        {/* ========== DESKTOP LAYOUT (>= md) ========== */}
+        <div className="hidden md:block">
+          {/* Tabs */}
+          <ProfileTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            counts={{
+              tasks: myTasksCount + myJobsCount,
+              offerings: myOfferings.length,
+              listings: myListings.length,
+              reviews: reviews.length,
+              pendingNotifications: totalPendingApplicationsOnMyTasks,
+            }}
+            hasContent={{
+              tasks: hasTasks,
+              offerings: hasOfferings,
+              listings: hasListings,
+              reviews: hasReviews,
+            }}
           />
-        )}
 
-        {activeTab === 'tasks' && (
-          <TasksTab
-            createdTasks={createdTasks}
-            myApplications={myApplications}
-            taskMatchCounts={taskMatchCounts}
-            tasksLoading={tasksLoading}
-            applicationsLoading={applicationsLoading}
-            taskViewMode={taskViewMode}
-            taskStatusFilter={taskStatusFilter}
-            onViewModeChange={setTaskViewMode}
-            onStatusFilterChange={setTaskStatusFilter}
-            onCancelTask={actions.handleCancelTask}
-            onTaskConfirmed={fetchTasks}
-            userId={user?.id}
-          />
-        )}
+          {/* Tab Content */}
+          {activeTab === 'about' && (
+            <AboutTab
+              profile={profile}
+              editing={editing}
+              formData={formData}
+              onChange={handleChange}
+              onFormDataChange={handleFormDataChange}
+            />
+          )}
 
-        {activeTab === 'reviews' && (
-          <ReviewsTab
-            reviews={reviews}
-            currentUserId={user?.id}
-            onDeleteReview={actions.handleDeleteReview}
-            setReviews={setReviews}
-          />
-        )}
+          {activeTab === 'listings' && (
+            <ListingsTab
+              listings={myListings}
+              loading={listingsLoading}
+              onDelete={actions.handleDeleteListing}
+            />
+          )}
+
+          {activeTab === 'offerings' && (
+            <OfferingsTab
+              offerings={myOfferings}
+              loading={offeringsLoading}
+              onDelete={actions.handleDeleteOffering}
+            />
+          )}
+
+          {activeTab === 'tasks' && (
+            <TasksTab
+              createdTasks={createdTasks}
+              myApplications={myApplications}
+              taskMatchCounts={taskMatchCounts}
+              tasksLoading={tasksLoading}
+              applicationsLoading={applicationsLoading}
+              taskViewMode={taskViewMode}
+              taskStatusFilter={taskStatusFilter}
+              onViewModeChange={setTaskViewMode}
+              onStatusFilterChange={setTaskStatusFilter}
+              onCancelTask={actions.handleCancelTask}
+              onTaskConfirmed={fetchTasks}
+              userId={user?.id}
+            />
+          )}
+
+          {activeTab === 'reviews' && (
+            <ReviewsTab
+              reviews={reviews}
+              currentUserId={user?.id}
+              onDeleteReview={actions.handleDeleteReview}
+              setReviews={setReviews}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { Task } from './types';
 import { mobileTasksStyles } from './styles';
 import { addMarkerOffsets, createUserLocationIcon, getJobPriceIcon } from './utils';
 import { useTasksData, useUserLocation, useBottomSheet } from './hooks';
+import { useMobileMapStore } from './stores';
 import {
   MapController,
   MobileJobCard,
@@ -22,11 +23,18 @@ import {
 /**
  * Main Mobile Tasks View Component
  * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
+ *
+ * Now restores selectedTask and map viewport from Zustand store on mount,
+ * so navigating away and back preserves the user's context.
  */
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+
+  // Read persisted selectedTaskId from store
+  const storedSelectedTaskId = useMobileMapStore((s) => s.selectedTaskId);
+  const setStoredSelectedTaskId = useMobileMapStore((s) => s.setSelectedTaskId);
 
   // --- Hooks ---
   const {
@@ -56,6 +64,7 @@ const MobileTasksView = () => {
   const {
     sheetPosition,
     sheetHeight,
+    navHeight,
     isDragging,
     handleTouchStart,
     handleTouchMove,
@@ -70,6 +79,20 @@ const MobileTasksView = () => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
+  // --- Restore selected task from store on mount ---
+  useEffect(() => {
+    if (storedSelectedTaskId && tasks.length > 0 && !selectedTask) {
+      const restored = tasks.find((t) => t.id === storedSelectedTaskId);
+      if (restored) {
+        setSelectedTask(restored);
+        setShowJobList(false);
+      } else {
+        // Task no longer in results — clear stored ID
+        setStoredSelectedTaskId(null);
+      }
+    }
+  }, [storedSelectedTaskId, tasks, selectedTask, setStoredSelectedTaskId]);
+
   // --- Memoised map data ---
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
@@ -77,22 +100,26 @@ const MobileTasksView = () => {
   // --- Event handlers ---
   const handleRecenter = () => {
     setSelectedTask(null);
+    setStoredSelectedTaskId(null);
     setShowJobList(true);
     recenterMap();
   };
 
   const handleJobSelect = (task: Task) => {
     setShowJobList(false);
+    setStoredSelectedTaskId(task.id);
     setTimeout(() => setSelectedTask(task), 50);
   };
 
   const handleMarkerClick = (task: Task) => {
     setShowJobList(false);
+    setStoredSelectedTaskId(task.id);
     setTimeout(() => setSelectedTask(task), 50);
   };
 
   const handleClosePreview = () => {
     setSelectedTask(null);
+    setStoredSelectedTaskId(null);
     setTimeout(() => {
       setShowJobList(true);
       resetToCollapsed();
@@ -239,25 +266,27 @@ const MobileTasksView = () => {
 
         {/* Job preview card */}
         {selectedTask && (
-          <JobPreviewCard
-            task={selectedTask}
-            userLocation={userLocation}
-            onViewDetails={handleViewDetails}
-            onClose={handleClosePreview}
-            onCreatorClick={handleCreatorClick}
-          />
+          <div style={{ paddingBottom: `${navHeight}px` }}>
+            <JobPreviewCard
+              task={selectedTask}
+              userLocation={userLocation}
+              onViewDetails={handleViewDetails}
+              onClose={handleClosePreview}
+              onCreatorClick={handleCreatorClick}
+            />
+          </div>
         )}
 
         {/* Bottom sheet */}
         {!selectedTask && showJobList && (
           <div
-            className="fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            className="fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
             style={{
-              height: `${sheetHeight}px`,
-              transition: isDragging ? 'none' : 'height 0.3s ease-out',
+              bottom: `${navHeight}px`,
+              height: `${sheetHeight - navHeight}px`,
+              transition: isDragging ? 'none' : 'height 0.3s ease-out, bottom 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
-              paddingBottom: '80px',
             }}
           >
             {/* Drag handle */}
@@ -321,7 +350,7 @@ const MobileTasksView = () => {
                       isSelected={selectedTask?.id === task.id}
                     />
                   ))}
-                  <div className="h-8" />
+                  <div className="h-4" />
                 </div>
               )}
             </div>
