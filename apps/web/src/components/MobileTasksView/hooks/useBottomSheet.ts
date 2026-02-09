@@ -21,9 +21,9 @@ const getNavTotalHeight = (): number => {
   return measured || 56;
 };
 
-// Collapsed peek height: just enough for drag handle + title + swipe hint.
-// Keep this small so the map stays maximally visible.
-const COLLAPSED_PEEK_HEIGHT = 80;
+// Collapsed peek height: drag handle + title row only.
+// Keep minimal so the map stays maximally visible.
+const COLLAPSED_PEEK_HEIGHT = 64;
 
 /**
  * Hook managing bottom sheet drag interaction and position state.
