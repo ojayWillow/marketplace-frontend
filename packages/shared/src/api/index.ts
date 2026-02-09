@@ -1,5 +1,5 @@
 // Core client
-export { apiClient, default as api } from './client';
+export { apiClient, API_URL, default as api } from './client';
 
 // API modules
 export { authApi } from './auth';
