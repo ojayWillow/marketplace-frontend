@@ -3,10 +3,14 @@ import Header from './Header';
 import Footer from './Footer';
 import MobileBottomNav from './MobileBottomNav';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useAutoPromptPush } from '../../hooks/useAutoPromptPush';
 
 const Layout = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
+  
+  // Auto-prompt push notification permission for authenticated users
+  useAutoPromptPush();
   
   // Landing page on mobile should have footer (not bottom nav)
   const isLandingPage = location.pathname === '/welcome';

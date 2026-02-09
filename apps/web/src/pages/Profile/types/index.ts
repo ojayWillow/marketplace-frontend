@@ -46,6 +46,6 @@ export interface ProfileFormData {
   avatar_url: string;
 }
 
-export type ActiveTab = 'about' | 'listings' | 'offerings' | 'tasks' | 'reviews';
+export type ActiveTab = 'about' | 'listings' | 'offerings' | 'tasks' | 'reviews' | 'settings';
 export type TaskViewMode = 'my-tasks' | 'my-jobs';
 export type TaskStatusFilter = 'all' | 'active' | 'completed';
