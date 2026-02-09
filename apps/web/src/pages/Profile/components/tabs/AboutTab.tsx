@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserProfile, ProfileFormData } from '@marketplace/shared';
 import { COUNTRIES, CITIES, AVAILABLE_SKILLS, getLocalizedLabel } from '../../../../constants/locations';
@@ -15,18 +14,14 @@ interface AboutTabProps {
 export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChange, viewOnly = false }: AboutTabProps) => {
   const { t, i18n } = useTranslation();
 
-  // Helper to check if email is a placeholder (auto-generated for phone users)
   const isPlaceholderEmail = (email: string) => {
     return email.includes('@phone.tirgus.local');
   };
 
-  // Get display email (null if it's a placeholder)
   const displayEmail = profile.email && !isPlaceholderEmail(profile.email) ? profile.email : null;
 
-  // Get available cities for selected country
   const availableCities = formData.country ? (CITIES[formData.country] || []) : [];
 
-  // Parse current skills (category keys, comma-separated)
   const currentSkills = formData.skills
     ? formData.skills.split(',').map(s => s.trim()).filter(Boolean)
     : [];
@@ -163,7 +158,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
                   >
                     <span>{skill.icon}</span>
                     <span>{skill.label}</span>
-                    {isSelected && <span className="text-blue-400 ml-0.5">\u2713</span>}
+                    {isSelected && <span className="text-blue-400 ml-0.5">✓</span>}
                   </button>
                 );
               })}
@@ -174,11 +169,10 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
     );
   }
 
-  // Parse display skills with icons
   const displaySkills = profile.skills
     ? profile.skills.split(',').map(s => s.trim()).filter(Boolean).map(key => {
         const found = AVAILABLE_SKILLS.find(sk => sk.key === key);
-        return found || { key, label: key, icon: '\ud83d\udccb' };
+        return found || { key, label: key, icon: '📋' };
       })
     : [];
 
@@ -198,7 +192,6 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
           </div>
         )}
 
-        {/* Skills display */}
         {displaySkills.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-2">{t('profile.skills', 'Skills')}</h3>
@@ -212,20 +205,19 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
           </div>
         )}
         
-        {/* Contact info - only show for own profile */}
         {!viewOnly && (displayEmail || profile.phone) && (
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-3">{t('profile.contact')}</h3>
             <div className="space-y-2">
               {displayEmail && (
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-400">\ud83d\udce7</span>
+                  <span className="text-gray-400">📧</span>
                   <span className="text-gray-700">{displayEmail}</span>
                 </div>
               )}
               {profile.phone && (
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-400">\ud83d\udcf1</span>
+                  <span className="text-gray-400">📱</span>
                   <span className="text-gray-700">{profile.phone}</span>
                 </div>
               )}
@@ -233,12 +225,11 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
           </div>
         )}
 
-        {/* Location info - show for everyone if available */}
         {(profile.city || profile.country) && (
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-3">{t('profile.location')}</h3>
             <div className="flex items-center gap-3 text-sm">
-              <span className="text-gray-400">\ud83d\udccd</span>
+              <span className="text-gray-400">📍</span>
               <span className="text-gray-700">{[profile.city, profile.country].filter(Boolean).join(', ')}</span>
             </div>
           </div>
