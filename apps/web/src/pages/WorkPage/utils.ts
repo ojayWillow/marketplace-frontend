@@ -26,7 +26,7 @@ export const renderStars = (rating: number): string => {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  return '\u2B50'.repeat(fullStars) + (hasHalfStar ? '\u00BD' : '') + '\u2606'.repeat(emptyStars);
+  return '⭐'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
 };
 
 export const mapTask = (task: any): WorkItem => ({
@@ -85,11 +85,20 @@ export const getErrorMessage = (error: unknown): string => {
   return 'An unexpected error occurred.';
 };
 
+/**
+ * Format item distance for display
+ * Prioritizes showing calculated distance over location name
+ */
 export const formatItemDistance = (distance: number | undefined, location?: string): string => {
+  // If we have a calculated distance, show it
   if (distance !== undefined) {
-    if (distance < 1) return `${Math.round(distance * 1000)}m`;
-    return `${distance.toFixed(1)}km`;
+    if (distance < 1) return `${Math.round(distance * 1000)}m away`;
+    return `${distance.toFixed(1)}km away`;
   }
-  if (location) return `\uD83D\uDCCD ${location.split(',')[0]}`;
-  return '\uD83D\uDCCD';
+  // Fallback to location name if no distance available
+  if (location) {
+    const cityName = location.split(',')[0].trim();
+    return cityName;
+  }
+  return 'Location unknown';
 };

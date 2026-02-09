@@ -49,6 +49,7 @@ const TabBar = ({
         <button
           onClick={onFilterClick}
           className="absolute right-4 flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full"
+          aria-label="Filter"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
             <line x1="4" y1="21" x2="4" y2="14" />
@@ -69,13 +70,20 @@ const TabBar = ({
         </button>
       </div>
 
-      {/* Result count */}
+      {/* Result count with loading spinner */}
       {!initialLoading && !hasError && itemCount > 0 && (
-        <div className="px-4 pb-2">
-          <p className="text-xs text-gray-400 text-center">
-            {refreshing && <span className="inline-block animate-spin mr-1">\u21BB</span>}
+        <div className="px-4 pb-2 flex items-center justify-center gap-1">
+          {refreshing && (
+            <span className="inline-block animate-spin text-blue-500 text-sm">↻</span>
+          )}
+          <p className="text-xs text-gray-500">
             {itemCount} {itemCount === 1 ? 'result' : 'results'}
-            {hasUserLocation && ' \u00B7 sorted by distance'}
+            {hasUserLocation && (
+              <>
+                <span className="mx-1.5">·</span>
+                <span className="text-gray-400">sorted by distance</span>
+              </>
+            )}
           </p>
         </div>
       )}
