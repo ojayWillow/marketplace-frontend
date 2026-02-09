@@ -21,6 +21,7 @@ import {
 } from './hooks';
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
 import { MobileActivitySection } from './components/mobile/MobileActivitySection';
+import { MobileListingsTeaser } from './components/mobile/MobileListingsTeaser';
 
 const Profile = () => {
   // Data management
@@ -90,6 +91,11 @@ const Profile = () => {
     fetchApplications,
   });
 
+  // Helper to update formData fields directly (for skills, country+city reset, etc.)
+  const handleFormDataChange = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
   // Loading state
   if (loading) {
     return <LoadingState />;
@@ -153,53 +159,59 @@ const Profile = () => {
 
         {/* About Tab edit form - show on mobile when editing */}
         {editing && (
-          <div className="md:hidden">
+          <div className="md:hidden mb-4">
             <AboutTab
               profile={profile}
               editing={editing}
               formData={formData}
               onChange={handleChange}
+              onFormDataChange={handleFormDataChange}
             />
           </div>
         )}
 
         {/* ========== MOBILE LAYOUT (< md) ========== */}
-        <div className="md:hidden space-y-4">
-          {/* Reviews Section - inline */}
-          <MobileReviewsSection
-            reviews={reviews}
-            showAll={showAllReviews}
-            onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
-            currentUserId={user?.id}
-            onDeleteReview={actions.handleDeleteReview}
-            setReviews={setReviews}
-          />
+        {!editing && (
+          <div className="md:hidden space-y-4">
+            {/* Reviews Section - inline */}
+            <MobileReviewsSection
+              reviews={reviews}
+              showAll={showAllReviews}
+              onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
+              currentUserId={user?.id}
+              onDeleteReview={actions.handleDeleteReview}
+              setReviews={setReviews}
+            />
 
-          {/* Activity Section - Jobs + Services combined */}
-          <MobileActivitySection
-            activeMode={mobileActivityMode}
-            onModeChange={setMobileActivityMode}
-            // Jobs props
-            createdTasks={createdTasks}
-            myApplications={myApplications}
-            taskMatchCounts={taskMatchCounts}
-            tasksLoading={tasksLoading}
-            applicationsLoading={applicationsLoading}
-            taskViewMode={taskViewMode}
-            taskStatusFilter={taskStatusFilter}
-            onViewModeChange={setTaskViewMode}
-            onStatusFilterChange={setTaskStatusFilter}
-            onCancelTask={actions.handleCancelTask}
-            onTaskConfirmed={fetchTasks}
-            userId={user?.id}
-            // Services props
-            offerings={myOfferings}
-            offeringsLoading={offeringsLoading}
-            onDeleteOffering={actions.handleDeleteOffering}
-            // Notification count
-            pendingNotifications={totalPendingApplicationsOnMyTasks}
-          />
-        </div>
+            {/* Activity Section - Jobs + Services combined */}
+            <MobileActivitySection
+              activeMode={mobileActivityMode}
+              onModeChange={setMobileActivityMode}
+              // Jobs props
+              createdTasks={createdTasks}
+              myApplications={myApplications}
+              taskMatchCounts={taskMatchCounts}
+              tasksLoading={tasksLoading}
+              applicationsLoading={applicationsLoading}
+              taskViewMode={taskViewMode}
+              taskStatusFilter={taskStatusFilter}
+              onViewModeChange={setTaskViewMode}
+              onStatusFilterChange={setTaskStatusFilter}
+              onCancelTask={actions.handleCancelTask}
+              onTaskConfirmed={fetchTasks}
+              userId={user?.id}
+              // Services props
+              offerings={myOfferings}
+              offeringsLoading={offeringsLoading}
+              onDeleteOffering={actions.handleDeleteOffering}
+              // Notification count
+              pendingNotifications={totalPendingApplicationsOnMyTasks}
+            />
+
+            {/* Listings Teaser - bottom of mobile profile */}
+            <MobileListingsTeaser />
+          </div>
+        )}
 
         {/* ========== DESKTOP LAYOUT (>= md) ========== */}
         <div className="hidden md:block">
@@ -229,6 +241,7 @@ const Profile = () => {
               editing={editing}
               formData={formData}
               onChange={handleChange}
+              onFormDataChange={handleFormDataChange}
             />
           )}
 

@@ -36,7 +36,6 @@ export const ProfileHeader = ({
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
-  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
 
   const memberSince = new Date(profile.created_at).toLocaleDateString(
     i18n.language === 'lv' ? 'lv-LV' : i18n.language === 'ru' ? 'ru-RU' : 'en-US',
@@ -74,6 +73,9 @@ export const ProfileHeader = ({
   };
 
   const displayEmail = profile.email && !isPlaceholderEmail(profile.email) ? profile.email : null;
+
+  // Parse skills from comma-separated string
+  const skillsList = profile.skills ? profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -155,6 +157,17 @@ export const ProfileHeader = ({
             </div>
           )}
 
+          {/* Skills pills - shown inline on mobile */}
+          {!editing && skillsList.length > 0 && (
+            <div className="md:hidden flex flex-wrap gap-1.5 mt-2">
+              {skillsList.map((skill, i) => (
+                <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Contact info - mobile only, inline */}
           {!viewOnly && !editing && (displayEmail || profile.phone) && (
             <div className="md:hidden flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
@@ -194,36 +207,13 @@ export const ProfileHeader = ({
                   {t('profile.editProfile')}
                 </button>
                 
-                {/* Desktop: normal logout button */}
+                {/* Desktop only: logout button */}
                 <button
                   onClick={handleLogout}
                   className="hidden md:block px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                 >
                   🚪 Logout
                 </button>
-
-                {/* Mobile: overflow menu */}
-                <div className="relative md:hidden">
-                  <button
-                    onClick={() => setShowOverflowMenu(!showOverflowMenu)}
-                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                  >
-                    ⋯
-                  </button>
-                  {showOverflowMenu && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setShowOverflowMenu(false)} />
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                        <button
-                          onClick={() => { handleLogout(); setShowOverflowMenu(false); }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          🚪 Logout
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
             ) : (
               <div className="flex gap-2">
