@@ -174,68 +174,9 @@ const Profile = () => {
         {/* ========== MOBILE LAYOUT (< md) ========== */}
         {!editing && (
           <div className="md:hidden space-y-4">
-            {/* Reviews Section - inline */}
-            <MobileReviewsSection
-              reviews={reviews}
-              showAll={showAllReviews}
-              onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
-              currentUserId={user?.id}
-              onDeleteReview={actions.handleDeleteReview}
-              setReviews={setReviews}
-            />
-
-            {/* Listings Teaser - compact banner ABOVE activity */}
-            <MobileListingsTeaser />
-
-            {/* Activity Section - Jobs + Services combined */}
-            <MobileActivitySection
-              activeMode={mobileActivityMode}
-              onModeChange={setMobileActivityMode}
-              // Jobs props
-              createdTasks={createdTasks}
-              myApplications={myApplications}
-              taskMatchCounts={taskMatchCounts}
-              tasksLoading={tasksLoading}
-              applicationsLoading={applicationsLoading}
-              taskViewMode={taskViewMode}
-              taskStatusFilter={taskStatusFilter}
-              onViewModeChange={setTaskViewMode}
-              onStatusFilterChange={setTaskStatusFilter}
-              onCancelTask={actions.handleCancelTask}
-              onTaskConfirmed={fetchTasks}
-              userId={user?.id}
-              // Services props
-              offerings={myOfferings}
-              offeringsLoading={offeringsLoading}
-              onDeleteOffering={actions.handleDeleteOffering}
-              // Notification count
-              pendingNotifications={totalPendingApplicationsOnMyTasks}
-            />
-
-            {/* Settings Section on Mobile */}
-            <div className="mt-4">
-              <button
-                onClick={() => setActiveTab('settings')}
-                className="w-full flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">Settings</span>
-                </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Show SettingsTab when active on mobile */}
-            {activeTab === 'settings' && (
-              <div className="mt-4">
+            {/* Show SettingsTab when active on mobile (replaces normal content) */}
+            {activeTab === 'settings' ? (
+              <div>
                 <button
                   onClick={() => setActiveTab('about')}
                   className="flex items-center gap-1 text-sm text-blue-600 mb-4 hover:text-blue-700"
@@ -247,6 +188,65 @@ const Profile = () => {
                 </button>
                 <SettingsTab />
               </div>
+            ) : (
+              <>
+                {/* Settings button - visible and easy to find right at the top */}
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className="w-full flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">Settings</span>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                {/* Reviews Section - inline */}
+                <MobileReviewsSection
+                  reviews={reviews}
+                  showAll={showAllReviews}
+                  onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
+                  currentUserId={user?.id}
+                  onDeleteReview={actions.handleDeleteReview}
+                  setReviews={setReviews}
+                />
+
+                {/* Listings Teaser - compact banner ABOVE activity */}
+                <MobileListingsTeaser />
+
+                {/* Activity Section - Jobs + Services combined */}
+                <MobileActivitySection
+                  activeMode={mobileActivityMode}
+                  onModeChange={setMobileActivityMode}
+                  // Jobs props
+                  createdTasks={createdTasks}
+                  myApplications={myApplications}
+                  taskMatchCounts={taskMatchCounts}
+                  tasksLoading={tasksLoading}
+                  applicationsLoading={applicationsLoading}
+                  taskViewMode={taskViewMode}
+                  taskStatusFilter={taskStatusFilter}
+                  onViewModeChange={setTaskViewMode}
+                  onStatusFilterChange={setTaskStatusFilter}
+                  onCancelTask={actions.handleCancelTask}
+                  onTaskConfirmed={fetchTasks}
+                  userId={user?.id}
+                  // Services props
+                  offerings={myOfferings}
+                  offeringsLoading={offeringsLoading}
+                  onDeleteOffering={actions.handleDeleteOffering}
+                  // Notification count
+                  pendingNotifications={totalPendingApplicationsOnMyTasks}
+                />
+              </>
             )}
           </div>
         )}
