@@ -28,10 +28,12 @@ export default function Layout() {
   // Show mobile bottom nav on ALL pages except the exclusion list
   const showMobileBottomNav = isMobile && !excludeBottomNav
 
-  // Mobile layout WITH bottom nav (persistent across app)
+  // Mobile layout WITH bottom nav (persistent across app — "second world")
+  // No header here — the map and content are full-screen interactive.
+  // safe-area-top handles iOS notch/Dynamic Island since there's no header to absorb it.
   if (showMobileBottomNav) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 safe-area-top">
         <main className="pb-20">
           <Outlet />
         </main>
