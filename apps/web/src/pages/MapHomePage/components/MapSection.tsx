@@ -35,24 +35,24 @@ const MapSection = ({
         </div>
         {searchRadius === 0 && (
           <div className="flex items-center gap-1.5 bg-blue-100 px-2 py-1 rounded-full">
-            <span className="text-sm">\uD83C\uDDF1\uD83C\uDDFB</span>
+            <span className="text-sm">🇱🇻</span>
             <span className="text-blue-700 font-medium text-xs">{t('tasks.viewingAllLatvia', 'Viewing all of Latvia')}</span>
           </div>
         )}
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold">\u20AC25</span>
+          <span className="px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-bold">€25</span>
           <span className="text-gray-500 text-xs">{t('map.quickTasks', 'Quick tasks')}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-blue-500 text-white rounded-full text-xs font-bold">\u20AC50</span>
+          <span className="px-2 py-0.5 bg-blue-500 text-white rounded-full text-xs font-bold">€50</span>
           <span className="text-gray-500 text-xs">{t('map.mediumJobs', 'Medium')}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)' }}>\u20AC100+</span>
-          <span className="text-gray-500 text-xs">{t('map.premiumJobs', 'Premium')} \u2728</span>
+          <span className="px-2 py-0.5 text-white rounded-full text-xs font-bold" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)' }}>€100+</span>
+          <span className="text-gray-500 text-xs">{t('map.premiumJobs', 'Premium')} ✨</span>
         </div>
         <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
-          <span className="w-6 h-6 flex items-center justify-center text-white rounded-full text-sm" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>\uD83E\uDDF9</span>
+          <span className="w-6 h-6 flex items-center justify-center text-white rounded-full text-sm" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>🧹</span>
           <span className="text-gray-500 text-xs">{t('map.boostedOfferings', 'Boosted services')}</span>
         </div>
       </div>
@@ -77,11 +77,11 @@ const MapSection = ({
       {/* Stats bar */}
       {(mapTasks.length > 0 || mapBoostedOfferings.length > 0) && (
         <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex flex-wrap items-center gap-4 text-sm">
-          <span className="font-medium text-blue-700">\uD83D\uDCB0 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}</span>
-          {urgentJobsCount > 0 && <span className="font-medium text-red-600">\u26A1 {t('tasks.urgentOnMap', '{{count}} urgent', { count: urgentJobsCount })}</span>}
-          {mapBoostedOfferings.length > 0 && <span className="font-medium text-amber-700">\uD83D\uDC4B {t('offerings.boostedOnMap', '{{count}} boosted service(s)', { count: mapBoostedOfferings.length })}</span>}
-          {maxBudget > 0 && <span className="text-green-600">{t('tasks.topPayout', 'Top payout')}: \u20AC{maxBudget}</span>}
-          {hasHighValueJobs && <span className="text-purple-600 font-medium">\u2728 {t('tasks.premiumAvailable', 'Premium jobs available!')}</span>}
+          <span className="font-medium text-blue-700">💰 {t('tasks.jobsOnMap', '{{count}} job(s) on map', { count: mapTasks.length })}</span>
+          {urgentJobsCount > 0 && <span className="font-medium text-red-600">⚡ {t('tasks.urgentOnMap', '{{count}} urgent', { count: urgentJobsCount })}</span>}
+          {mapBoostedOfferings.length > 0 && <span className="font-medium text-amber-700">👋 {t('offerings.boostedOnMap', '{{count}} boosted service(s)', { count: mapBoostedOfferings.length })}</span>}
+          {maxBudget > 0 && <span className="text-green-600">{t('tasks.topPayout', 'Top payout')}: €{maxBudget}</span>}
+          {hasHighValueJobs && <span className="text-purple-600 font-medium">✨ {t('tasks.premiumAvailable', 'Premium jobs available!')}</span>}
         </div>
       )}
     </div>

@@ -26,7 +26,7 @@ const ItemLists = ({
         <div className="mb-8">
           {activeTab === 'all' && (
             <h2 className="text-2xl font-bold mb-4 text-gray-900">
-              \uD83D\uDCB0 {t('tasks.availableJobs', 'Available Jobs')}
+              💰 {t('tasks.availableJobs', 'Available Jobs')}
             </h2>
           )}
           {filteredTasks.length === 0 ? (
@@ -58,7 +58,7 @@ const ItemLists = ({
         <div>
           {activeTab === 'all' && (
             <h2 className="text-2xl font-bold mb-4 text-gray-900">
-              \uD83D\uDC4B {t('offerings.availableServices', 'Available Services')}
+              👋 {t('offerings.availableServices', 'Available Services')}
             </h2>
           )}
           {filteredOfferings.length === 0 ? (

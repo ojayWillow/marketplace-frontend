@@ -20,7 +20,7 @@ const PageHeader = ({ onHowItWorks, onPostJob, onOfferService }: PageHeaderProps
             </span>
           </h1>
           <p className="text-gray-600 relative z-10">
-            {t('tasks.subtitle', 'Find jobs nearby and earn money')} \uD83D\uDCB0
+            {t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰
           </p>
           <div className="absolute -inset-4 -top-2 pointer-events-none overflow-hidden" style={{ width: '180px', height: '70px' }}>
             <SparklesCore
@@ -39,7 +39,7 @@ const PageHeader = ({ onHowItWorks, onPostJob, onOfferService }: PageHeaderProps
           onClick={onHowItWorks}
           className="flex items-center gap-1.5 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors text-sm whitespace-nowrap"
         >
-          <span>\u2753</span>
+          <span>❓</span>
           <span className="hidden sm:inline">{t('quickHelp.howItWorks', 'How it works')}</span>
         </button>
       </div>
@@ -48,13 +48,13 @@ const PageHeader = ({ onHowItWorks, onPostJob, onOfferService }: PageHeaderProps
           onClick={onPostJob}
           className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2"
         >
-          <span>\uD83D\uDCB0</span> {t('tasks.postJob', 'Post a Job')}
+          <span>💰</span> {t('tasks.postJob', 'Post a Job')}
         </button>
         <button
           onClick={onOfferService}
           className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2"
         >
-          <span>\uD83D\uDC4B</span> {t('tasks.offerService', 'Offer Service')}
+          <span>👋</span> {t('tasks.offerService', 'Offer Service')}
         </button>
       </div>
     </div>
