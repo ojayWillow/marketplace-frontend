@@ -28,13 +28,11 @@ import { useAuthStore, API_URL } from '@marketplace/shared';
 // ── Zustand store for socket state (accessible anywhere) ──────────────
 interface SocketState {
   isConnected: boolean;
-  // Map<userId, { status, lastSeen, lastSeenDisplay }>
   presenceMap: Record<number, {
     status: 'online' | 'recently' | 'offline';
     lastSeen: string | null;
     lastSeenDisplay: string | null;
   }>;
-  // Map<conversationId, userId[]> — who is currently typing
   typingMap: Record<number, number[]>;
   setConnected: (v: boolean) => void;
   updatePresence: (userId: number, data: {
@@ -67,127 +65,139 @@ export const useSocketStore = create<SocketState>((set) => ({
     }),
 }));
 
-// ── Singleton socket ref (shared across hook instances) ───────────────
+// ── Singleton socket management (outside React) ───────────────────────
 let globalSocket: Socket | null = null;
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let currentToken: string | null = null;
 
+function cleanupSocket() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+  if (globalSocket) {
+    globalSocket.removeAllListeners();
+    globalSocket.disconnect();
+    globalSocket = null;
+  }
+  currentToken = null;
+  useSocketStore.getState().setConnected(false);
+}
+
+function setupSocket(token: string, socketUrl: string) {
+  // Already connected with same token? Skip.
+  if (globalSocket?.connected && currentToken === token) return;
+
+  // Different token or disconnected — clean up old socket first
+  if (globalSocket) {
+    cleanupSocket();
+  }
+
+  currentToken = token;
+  const store = useSocketStore.getState();
+
+  const socket = io(socketUrl, {
+    auth: { token: `Bearer ${token}` },
+    transports: ['polling'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+    reconnectionDelayMax: 30000,
+    timeout: 60000,
+  });
+
+  globalSocket = socket;
+
+  // ─── Connection events ──────────────────────────────────
+  socket.on('connect', () => {
+    console.log('[Socket] ✅ Connected:', socket.id);
+    useSocketStore.getState().setConnected(true);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('[Socket] ❌ Disconnected:', reason);
+    useSocketStore.getState().setConnected(false);
+  });
+
+  socket.on('connect_error', (err) => {
+    console.warn('[Socket] Connection error:', err.message);
+    useSocketStore.getState().setConnected(false);
+  });
+
+  // ─── Presence events ────────────────────────────────────
+  const handlePresence = (data: any) => {
+    if (!data?.user_id) return;
+    useSocketStore.getState().updatePresence(data.user_id, {
+      status: data.status || (data.is_online ? 'online' : 'offline'),
+      lastSeen: data.last_seen || null,
+      lastSeenDisplay: data.last_seen_display || null,
+    });
+  };
+
+  socket.on('user_presence', handlePresence);
+  socket.on('user_status_changed', handlePresence);
+  socket.on('user_status', handlePresence);
+
+  // ─── Typing events ──────────────────────────────────────
+  socket.on('user_typing', (data: any) => {
+    if (data?.conversation_id && data?.user_id != null) {
+      useSocketStore.getState().setTyping(data.conversation_id, data.user_id, data.is_typing);
+
+      if (data.is_typing) {
+        setTimeout(() => {
+          useSocketStore.getState().setTyping(data.conversation_id, data.user_id, false);
+        }, 5000);
+      }
+    }
+  });
+
+  // ─── Heartbeat ──────────────────────────────────────────
+  heartbeatInterval = setInterval(() => {
+    if (globalSocket?.connected && currentToken) {
+      globalSocket.emit('heartbeat', { token: `Bearer ${currentToken}` });
+    }
+  }, 25000);
+}
+
+// ── React hook ────────────────────────────────────────────────────────
 export function useSocket() {
   const { token, isAuthenticated } = useAuthStore();
-  const { setConnected, updatePresence, setTyping } = useSocketStore();
   const tokenRef = useRef(token);
   tokenRef.current = token;
 
-  // Derive the Socket.IO server URL from API_URL
   const socketUrl = useMemo(() => {
-    // API_URL might be empty string in dev (proxy), or full URL in prod
     if (!API_URL || API_URL === '') {
-      // Dev: vite proxies /api but socket needs the actual backend
       return 'http://localhost:5000';
     }
-    // Prod: same origin as the API
     return API_URL;
   }, []);
 
+  // Only depend on isAuthenticated + token — NOT on Zustand actions
   useEffect(() => {
     if (!isAuthenticated || !token) {
-      // Disconnect if we have a lingering socket
-      if (globalSocket) {
-        globalSocket.disconnect();
-        globalSocket = null;
-      }
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-      }
-      setConnected(false);
+      cleanupSocket();
       return;
     }
 
-    // Already connected with this token? Skip.
-    if (globalSocket?.connected) return;
+    setupSocket(token, socketUrl);
 
-    // Create socket — matches backend's Flask-SocketIO config
-    const socket = io(socketUrl, {
-      auth: { token: `Bearer ${token}` },
-      transports: ['polling'], // Backend has allow_upgrades=False
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 30000,
-      timeout: 60000,
-    });
+    // Only cleanup on actual unmount of the app or logout
+    // Do NOT cleanup on re-renders
+  }, [isAuthenticated, token, socketUrl]);
 
-    globalSocket = socket;
-
-    // ─── Connection events ──────────────────────────────────
-    socket.on('connect', () => {
-      console.log('[Socket] ✅ Connected:', socket.id);
-      setConnected(true);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('[Socket] ❌ Disconnected:', reason);
-      setConnected(false);
-    });
-
-    socket.on('connect_error', (err) => {
-      console.warn('[Socket] Connection error:', err.message);
-      setConnected(false);
-    });
-
-    // ─── Presence events ────────────────────────────────────
-    const handlePresence = (data: any) => {
-      if (!data?.user_id) return;
-      updatePresence(data.user_id, {
-        status: data.status || (data.is_online ? 'online' : 'offline'),
-        lastSeen: data.last_seen || null,
-        lastSeenDisplay: data.last_seen_display || null,
-      });
-    };
-
-    socket.on('user_presence', handlePresence);
-    socket.on('user_status_changed', handlePresence);
-    socket.on('user_status', handlePresence);
-
-    // ─── Typing events ──────────────────────────────────────
-    socket.on('user_typing', (data: any) => {
-      if (data?.conversation_id && data?.user_id != null) {
-        setTyping(data.conversation_id, data.user_id, data.is_typing);
-
-        // Auto-clear typing after 5s (safety net)
-        if (data.is_typing) {
-          setTimeout(() => {
-            setTyping(data.conversation_id, data.user_id, false);
-          }, 5000);
-        }
-      }
-    });
-
-    // ─── Heartbeat ──────────────────────────────────────────
-    heartbeatInterval = setInterval(() => {
-      if (socket.connected && tokenRef.current) {
-        socket.emit('heartbeat', { token: `Bearer ${tokenRef.current}` });
-      }
-    }, 25000);
-
-    // ─── Cleanup ────────────────────────────────────────────
-    return () => {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-      }
-      socket.disconnect();
-      globalSocket = null;
-      setConnected(false);
-    };
-  }, [isAuthenticated, token, socketUrl, setConnected, updatePresence, setTyping]);
+  // Also cleanup on full page unload
+  useEffect(() => {
+    const handleUnload = () => cleanupSocket();
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, []);
 
   // ── Imperative helpers ──────────────────────────────────────────────
   const joinConversation = useCallback((conversationId: number) => {
-    if (globalSocket?.connected && tokenRef.current) {
+    if (globalSocket?.connected && currentToken) {
       globalSocket.emit('join_conversation', {
         conversation_id: conversationId,
-        token: `Bearer ${tokenRef.current}`,
+        token: `Bearer ${currentToken}`,
       });
     }
   }, []);
@@ -201,11 +211,11 @@ export function useSocket() {
   }, []);
 
   const emitTyping = useCallback((conversationId: number, isTyping: boolean) => {
-    if (globalSocket?.connected && tokenRef.current) {
+    if (globalSocket?.connected && currentToken) {
       globalSocket.emit('typing', {
         conversation_id: conversationId,
         is_typing: isTyping,
-        token: `Bearer ${tokenRef.current}`,
+        token: `Bearer ${currentToken}`,
       });
     }
   }, []);
@@ -216,7 +226,6 @@ export function useSocket() {
     }
   }, []);
 
-  // Listen for new_message events (caller provides callback)
   const onNewMessage = useCallback((cb: (data: any) => void) => {
     if (!globalSocket) return () => {};
     globalSocket.on('new_message', cb);
