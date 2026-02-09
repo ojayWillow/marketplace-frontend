@@ -1,5 +1,29 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { SheetPosition } from '../types';
+
+/**
+ * Returns the total bottom nav height (nav bar + safe area inset).
+ * Reads the CSS custom property --nav-total-height at runtime so the
+ * bottom sheet positions itself above the nav on all devices / PWA modes.
+ */
+const getNavTotalHeight = (): number => {
+  if (typeof window === 'undefined') return 56;
+  // Read computed value of the CSS custom property
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--nav-total-height')
+    .trim();
+  // Fallback: if the browser doesn't resolve it, use 56 + rough safe area
+  if (!raw) return 56;
+  // Create a temporary element to measure calc() value
+  const el = document.createElement('div');
+  el.style.position = 'absolute';
+  el.style.visibility = 'hidden';
+  el.style.height = raw;
+  document.body.appendChild(el);
+  const measured = el.getBoundingClientRect().height;
+  document.body.removeChild(el);
+  return measured || 56;
+};
 
 /**
  * Hook managing bottom sheet drag interaction and position state.
@@ -7,13 +31,28 @@ import { SheetPosition } from '../types';
 export const useBottomSheet = () => {
   const [sheetPosition, setSheetPosition] = useState<SheetPosition>('collapsed');
   const [isDragging, setIsDragging] = useState(false);
+  const [navHeight, setNavHeight] = useState(56);
   const startYRef = useRef(0);
+
+  // Measure the actual nav height (including safe area) on mount and on resize
+  useEffect(() => {
+    const measure = () => setNavHeight(getNavTotalHeight());
+    measure();
+    window.addEventListener('resize', measure);
+    // Also re-measure on orientation change for PWA
+    window.addEventListener('orientationchange', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
+  }, []);
 
   const getSheetHeight = useCallback(() => {
     const vh = window.innerHeight;
     switch (sheetPosition) {
       case 'collapsed':
-        return 120;
+        // Peek height: enough for the drag handle + title row, above the nav
+        return 120 + navHeight;
       case 'half':
         return Math.round(vh * 0.5);
       case 'full':
@@ -21,7 +60,7 @@ export const useBottomSheet = () => {
       default:
         return Math.round(vh * 0.5);
     }
-  }, [sheetPosition]);
+  }, [sheetPosition, navHeight]);
 
   const sheetHeight = getSheetHeight();
 
@@ -59,6 +98,7 @@ export const useBottomSheet = () => {
   return {
     sheetPosition,
     sheetHeight,
+    navHeight,
     isDragging,
     handleTouchStart,
     handleTouchMove,

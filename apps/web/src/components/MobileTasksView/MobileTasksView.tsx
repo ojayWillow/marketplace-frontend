@@ -56,6 +56,7 @@ const MobileTasksView = () => {
   const {
     sheetPosition,
     sheetHeight,
+    navHeight,
     isDragging,
     handleTouchStart,
     handleTouchMove,
@@ -206,7 +207,7 @@ const MobileTasksView = () => {
           activeFilterCount={selectedCategories.length}
         />
 
-        {/* Recenter button */}
+        {/* Recenter button - positioned above the bottom sheet */}
         {!selectedTask && showJobList && (
           <div
             className="absolute right-4 z-[1000]"
@@ -237,27 +238,29 @@ const MobileTasksView = () => {
           </div>
         )}
 
-        {/* Job preview card */}
+        {/* Job preview card - positioned above nav bar with safe area */}
         {selectedTask && (
-          <JobPreviewCard
-            task={selectedTask}
-            userLocation={userLocation}
-            onViewDetails={handleViewDetails}
-            onClose={handleClosePreview}
-            onCreatorClick={handleCreatorClick}
-          />
+          <div style={{ paddingBottom: `${navHeight}px` }}>
+            <JobPreviewCard
+              task={selectedTask}
+              userLocation={userLocation}
+              onViewDetails={handleViewDetails}
+              onClose={handleClosePreview}
+              onCreatorClick={handleCreatorClick}
+            />
+          </div>
         )}
 
-        {/* Bottom sheet */}
+        {/* Bottom sheet - sits above the nav bar */}
         {!selectedTask && showJobList && (
           <div
-            className="fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            className="fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
             style={{
-              height: `${sheetHeight}px`,
-              transition: isDragging ? 'none' : 'height 0.3s ease-out',
+              bottom: `${navHeight}px`,
+              height: `${sheetHeight - navHeight}px`,
+              transition: isDragging ? 'none' : 'height 0.3s ease-out, bottom 0.3s ease-out',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
-              paddingBottom: '80px',
             }}
           >
             {/* Drag handle */}
@@ -321,7 +324,7 @@ const MobileTasksView = () => {
                       isSelected={selectedTask?.id === task.id}
                     />
                   ))}
-                  <div className="h-8" />
+                  <div className="h-4" />
                 </div>
               )}
             </div>

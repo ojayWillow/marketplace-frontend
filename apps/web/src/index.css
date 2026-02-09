@@ -81,6 +81,14 @@ button:focus-visible,
 }
 
 @layer base {
+  :root {
+    /* Safe area insets - used by bottom sheet, nav, and other fixed elements */
+    --sab: env(safe-area-inset-bottom, 0px);
+    /* Mobile bottom nav: 56px (h-14) + safe area */
+    --nav-height: 56px;
+    --nav-total-height: calc(var(--nav-height) + var(--sab));
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
     /* Smooth scrolling with reduced motion fallback */
@@ -184,7 +192,7 @@ button:focus-visible,
    CUSTOM MAP MARKER STYLES
    =========================================== */
 
-/* User Location Pin - Red distinct marker (📍 style) */
+/* User Location Pin - Red distinct marker */
 .user-location-icon {
   background: transparent !important;
 }
@@ -211,7 +219,7 @@ button:focus-visible,
   transform: translate(-50%, -50%);
 }
 
-/* Job/Money Marker Styles - 💰 sized by budget */
+/* Job/Money Marker Styles */
 .job-money-icon {
   background: transparent !important;
 }
@@ -236,7 +244,7 @@ button:focus-visible,
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
 }
 
-/* XL Job markers - Glow animation for high-value jobs (€100+) */
+/* XL Job markers - Glow animation for high-value jobs */
 .job-icon--xl .job-money-pin {
   animation: jobMoneyPulse 1.6s ease-out infinite;
   box-shadow: 
@@ -262,7 +270,7 @@ button:focus-visible,
   }
 }
 
-/* Offering Marker - Orange/Amber (existing style enhanced) */
+/* Offering Marker - Orange/Amber */
 .custom-offering-icon {
   background: transparent !important;
 }
