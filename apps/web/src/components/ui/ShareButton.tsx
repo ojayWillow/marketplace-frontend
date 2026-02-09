@@ -174,13 +174,15 @@ const ShareButton = ({
   /* ── The share sheet content (reused for mobile + desktop) ── */
   const sheetContent = (
     <>
-      {/* ── Header with Kolab branding ── */}
+      {/* ── Header with Kolab logo ── */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-black tracking-tight">K</span>
-          </div>
-          <span className="text-sm font-bold text-gray-900 tracking-tight">Share via Kolab</span>
+          <img
+            src="/logo.png"
+            alt="Kolab"
+            className="h-8 w-auto rounded-lg"
+          />
+          <span className="text-sm font-bold text-gray-900 tracking-tight">Share</span>
         </div>
         <button
           onClick={closeSheet}
