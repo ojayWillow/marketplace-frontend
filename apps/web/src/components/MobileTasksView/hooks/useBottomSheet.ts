@@ -1,20 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SheetPosition } from '../types';
+import { useMobileMapStore } from '../stores';
 
 /**
  * Returns the total bottom nav height (nav bar + safe area inset).
- * Reads the CSS custom property --nav-total-height at runtime so the
- * bottom sheet positions itself above the nav on all devices / PWA modes.
  */
 const getNavTotalHeight = (): number => {
   if (typeof window === 'undefined') return 56;
-  // Read computed value of the CSS custom property
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue('--nav-total-height')
     .trim();
-  // Fallback: if the browser doesn't resolve it, use 56 + rough safe area
   if (!raw) return 56;
-  // Create a temporary element to measure calc() value
   const el = document.createElement('div');
   el.style.position = 'absolute';
   el.style.visibility = 'hidden';
@@ -27,19 +23,30 @@ const getNavTotalHeight = (): number => {
 
 /**
  * Hook managing bottom sheet drag interaction and position state.
+ * 
+ * Now reads/writes sheetPosition from Zustand store so the position
+ * survives tab switches (Home → Work → Home).
  */
 export const useBottomSheet = () => {
-  const [sheetPosition, setSheetPosition] = useState<SheetPosition>('collapsed');
+  // Read persisted position from Zustand store
+  const storePosition = useMobileMapStore((s) => s.sheetPosition);
+  const setStorePosition = useMobileMapStore((s) => s.setSheetPosition);
+
+  const [sheetPosition, setSheetPosition] = useState<SheetPosition>(storePosition);
   const [isDragging, setIsDragging] = useState(false);
   const [navHeight, setNavHeight] = useState(56);
   const startYRef = useRef(0);
 
-  // Measure the actual nav height (including safe area) on mount and on resize
+  // Sync local state → store whenever it changes
+  useEffect(() => {
+    setStorePosition(sheetPosition);
+  }, [sheetPosition, setStorePosition]);
+
+  // Measure nav height on mount and resize
   useEffect(() => {
     const measure = () => setNavHeight(getNavTotalHeight());
     measure();
     window.addEventListener('resize', measure);
-    // Also re-measure on orientation change for PWA
     window.addEventListener('orientationchange', measure);
     return () => {
       window.removeEventListener('resize', measure);
@@ -51,7 +58,6 @@ export const useBottomSheet = () => {
     const vh = window.innerHeight;
     switch (sheetPosition) {
       case 'collapsed':
-        // Peek height: enough for the drag handle + title row, above the nav
         return 120 + navHeight;
       case 'half':
         return Math.round(vh * 0.5);

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { Task } from '@marketplace/shared';
+import { useMobileMapStore } from '../stores';
 
 interface MapControllerProps {
   lat: number;
@@ -13,8 +14,11 @@ interface MapControllerProps {
 }
 
 /**
- * Map controller component for handling zoom/center changes
- * Must be used inside a MapContainer
+ * Map controller component for handling zoom/center changes.
+ *
+ * Now persists viewport (center + zoom) to Zustand store on every
+ * moveend/zoomend so the map restores position after tab switches
+ * or back-navigation from task detail.
  */
 const MapController = ({
   lat,
@@ -26,19 +30,57 @@ const MapController = ({
   sheetPosition,
 }: MapControllerProps) => {
   const map = useMap();
+  const store = useMobileMapStore();
+  const hasRestoredViewport = useRef(false);
+  const isSettingView = useRef(false);
+
+  // --- Persist viewport on every map move/zoom ---
+  useEffect(() => {
+    const saveViewport = () => {
+      if (isSettingView.current) return; // Don't save during programmatic setView
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      store.setMapViewport([center.lat, center.lng], zoom);
+    };
+
+    map.on('moveend', saveViewport);
+    map.on('zoomend', saveViewport);
+    return () => {
+      map.off('moveend', saveViewport);
+      map.off('zoomend', saveViewport);
+    };
+  }, [map, store]);
+
+  // --- Restore viewport on mount (if persisted) ---
+  useEffect(() => {
+    if (hasRestoredViewport.current) return;
+    hasRestoredViewport.current = true;
+
+    if (store.mapCenter && store.mapZoom) {
+      isSettingView.current = true;
+      map.setView(store.mapCenter, store.mapZoom, { animate: false });
+      // Allow saves again after a short delay
+      setTimeout(() => { isSettingView.current = false; }, 200);
+      return; // Skip the default radius-based view
+    }
+    // No persisted viewport — fall through to radius-based view below
+  }, [map, store]);
 
   // Invalidate map size when menu closes or sheet position changes
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize({ pan: false });
-    }, 350); // Wait for animation to complete
+    }, 350);
     return () => clearTimeout(timer);
   }, [isMenuOpen, sheetPosition, map]);
 
   // Handle radius changes and recenter
   useEffect(() => {
+    // Skip if we just restored a persisted viewport
+    if (store.mapCenter && store.mapZoom && !recenterTrigger) return;
+
+    isSettingView.current = true;
     if (radius === 0) {
-      // Show all of Latvia
       map.setView([56.8796, 24.6032], 7);
     } else {
       let zoom = 13;
@@ -49,14 +91,16 @@ const MapController = ({
       else zoom = 9;
       map.setView([lat, lng], zoom);
     }
+    setTimeout(() => { isSettingView.current = false; }, 200);
   }, [lat, lng, radius, map, recenterTrigger]);
 
-  // Pan to selected task - Position marker in UPPER portion of map
+  // Pan to selected task
   useEffect(() => {
     if (selectedTask) {
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
 
+      isSettingView.current = true;
       map.invalidateSize();
       map.setView([taskLat, taskLng], 14, { animate: false });
 
@@ -68,11 +112,12 @@ const MapController = ({
         const panAmount = currentMarkerPosition - desiredMarkerPosition;
 
         map.panBy([0, panAmount], { animate: true, duration: 0.4 });
+        setTimeout(() => { isSettingView.current = false; }, 500);
       }, 150);
     }
   }, [selectedTask, map]);
 
-  // Invalidate size on mount to handle initial container size
+  // Invalidate size on mount
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
@@ -80,13 +125,10 @@ const MapController = ({
     return () => clearTimeout(timer);
   }, [map]);
 
-  // Fix map tiles not rendering on back navigation (e.g. from job details)
-  // Leaflet doesn't know the container resized while it was off-screen,
-  // so we need to invalidateSize when the page becomes visible again.
+  // Fix map tiles on back-navigation
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Small delay to let the DOM settle after navigation
         setTimeout(() => {
           map.invalidateSize({ pan: false });
         }, 150);
@@ -97,11 +139,8 @@ const MapController = ({
       map.invalidateSize({ pan: false });
     };
 
-    // Page Visibility API: fires when returning to the tab/app
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    // Window resize: catches orientation changes and navigation layout shifts
     window.addEventListener('resize', handleResize);
-    // Focus: catches returning from another view in same-tab navigation
     window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
