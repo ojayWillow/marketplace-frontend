@@ -10,7 +10,7 @@ interface UseAvatarPickerProps {
 
 export const useAvatarPicker = ({ initialSeed, setFormData }: UseAvatarPickerProps) => {
   const toast = useToastStore();
-  const { setUser, user } = useAuthStore();
+  const { updateUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -49,10 +49,8 @@ export const useAvatarPicker = ({ initialSeed, setFormData }: UseAvatarPickerPro
       // Use uploadAvatarFile which uploads to Supabase and updates the user's avatar_url in the DB
       const avatarUrl = await uploadAvatarFile(file);
       setFormData(prev => ({ ...prev, avatar_url: avatarUrl }));
-      // Also update the auth store so the avatar updates everywhere immediately
-      if (user) {
-        setUser({ ...user, avatar_url: avatarUrl });
-      }
+      // Update the auth store so the avatar updates everywhere immediately
+      updateUser({ avatar_url: avatarUrl });
       setShowAvatarPicker(false);
       toast.success('Avatar uploaded successfully!');
     } catch (error: any) {
