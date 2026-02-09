@@ -21,10 +21,14 @@ const getNavTotalHeight = (): number => {
   return measured || 56;
 };
 
+// Collapsed peek height: just enough for drag handle + title + swipe hint.
+// Keep this small so the map stays maximally visible.
+const COLLAPSED_PEEK_HEIGHT = 80;
+
 /**
  * Hook managing bottom sheet drag interaction and position state.
  * 
- * Now reads/writes sheetPosition from Zustand store so the position
+ * Reads/writes sheetPosition from Zustand store so the position
  * survives tab switches (Home → Work → Home).
  */
 export const useBottomSheet = () => {
@@ -58,7 +62,7 @@ export const useBottomSheet = () => {
     const vh = window.innerHeight;
     switch (sheetPosition) {
       case 'collapsed':
-        return 120 + navHeight;
+        return COLLAPSED_PEEK_HEIGHT + navHeight;
       case 'half':
         return Math.round(vh * 0.5);
       case 'full':
