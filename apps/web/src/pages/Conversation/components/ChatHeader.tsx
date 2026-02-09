@@ -34,6 +34,16 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
         ? 'text-amber-600'
         : 'text-gray-500';
 
+  const handleBack = () => {
+    // Use history back if we came from messages, otherwise navigate directly.
+    // This avoids pushing a new /messages entry that creates a back-button loop.
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/messages', { replace: true });
+    }
+  };
+
   return (
     <div
       className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0"
@@ -41,7 +51,7 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
     >
       {/* Back button */}
       <button
-        onClick={() => navigate('/messages')}
+        onClick={handleBack}
         className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-1 -ml-1' : ''}`}
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
