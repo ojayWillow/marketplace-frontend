@@ -10,6 +10,7 @@ import {
   UrgentToggle,
   FormTips,
 } from './components';
+import ImagePicker from '../../components/ImagePicker';
 
 const CreateTask = () => {
   const { t } = useTranslation();
@@ -80,7 +81,15 @@ const CreateTask = () => {
               />
             </div>
 
-            {/* 4. Location with map */}
+            {/* 4. Photos */}
+            <ImagePicker
+              images={formData.images}
+              onChange={(imgs) => updateField('images', imgs)}
+              maxImages={5}
+              label={t('createTask.photos', '📸 Photos (optional)')}
+            />
+
+            {/* 5. Location with map */}
             <LocationInput
               location={formData.location}
               latitude={formData.latitude}
@@ -91,10 +100,10 @@ const CreateTask = () => {
               locationConfirmed={locationConfirmed}
             />
 
-            {/* 5. Budget */}
+            {/* 6. Budget */}
             <BudgetInput value={formData.budget} onChange={handleChange} />
 
-            {/* 6. Deadline with time slots */}
+            {/* 7. Deadline with time slots */}
             <DeadlinePicker
               deadlineDate={formData.deadlineDate}
               deadlineTime={formData.deadlineTime}
@@ -102,13 +111,13 @@ const CreateTask = () => {
               onTimeChange={(time) => updateField('deadlineTime', time)}
             />
 
-            {/* 7. Difficulty */}
+            {/* 8. Difficulty */}
             <DifficultyPicker
               value={formData.difficulty}
               onChange={(d) => updateField('difficulty', d)}
             />
 
-            {/* 8. Urgent */}
+            {/* 9. Urgent */}
             <UrgentToggle
               value={formData.is_urgent}
               onChange={(u) => updateField('is_urgent', u)}

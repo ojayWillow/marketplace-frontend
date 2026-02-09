@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createTask, geocodeAddress, GeocodingResult, reverseGeocode, useAuthStore, useToastStore } from '@marketplace/shared';
+import { createTask, geocodeAddress, GeocodingResult, reverseGeocode, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
 import { TaskFormData, INITIAL_TASK_FORM } from '../types';
 
 export const useTaskForm = () => {
@@ -113,6 +113,21 @@ export const useTaskForm = () => {
     }
   };
 
+  // Upload images and return their URLs
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      try {
+        const url = await uploadTaskImageFile(file);
+        urls.push(url);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        // Continue uploading remaining images
+      }
+    }
+    return urls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -142,6 +157,16 @@ export const useTaskForm = () => {
     }
 
     try {
+      // Upload images first
+      let imageUrls: string[] = [];
+      if (formData.images.length > 0) {
+        toast.info(t('createTask.uploadingImages', 'Uploading images...'));
+        imageUrls = await uploadImages(formData.images);
+        if (imageUrls.length < formData.images.length) {
+          toast.warning(t('createTask.someImagesFailed', 'Some images failed to upload, but continuing with task creation.'));
+        }
+      }
+
       let deadline: string | undefined;
       if (formData.deadlineDate) {
         deadline = formData.deadlineTime
@@ -161,6 +186,7 @@ export const useTaskForm = () => {
         deadline,
         priority: formData.difficulty,
         is_urgent: formData.is_urgent,
+        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
       await createTask(taskData);
