@@ -183,6 +183,9 @@ const Profile = () => {
               setReviews={setReviews}
             />
 
+            {/* Listings Teaser - compact banner ABOVE activity */}
+            <MobileListingsTeaser />
+
             {/* Activity Section - Jobs + Services combined */}
             <MobileActivitySection
               activeMode={mobileActivityMode}
@@ -207,9 +210,6 @@ const Profile = () => {
               // Notification count
               pendingNotifications={totalPendingApplicationsOnMyTasks}
             />
-
-            {/* Listings Teaser - bottom of mobile profile */}
-            <MobileListingsTeaser />
           </div>
         )}
 

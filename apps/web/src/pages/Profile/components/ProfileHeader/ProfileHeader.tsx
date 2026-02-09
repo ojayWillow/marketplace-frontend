@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getImageUrl, useAuthStore } from '@marketplace/shared';
 import type { UserProfile, ProfileFormData } from '@marketplace/shared';
+import { AVAILABLE_SKILLS } from '../../../../constants/locations';
 
 interface ProfileHeaderProps {
   profile: UserProfile;
@@ -74,8 +74,13 @@ export const ProfileHeader = ({
 
   const displayEmail = profile.email && !isPlaceholderEmail(profile.email) ? profile.email : null;
 
-  // Parse skills from comma-separated string
-  const skillsList = profile.skills ? profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+  // Parse skills from comma-separated string and match to category data
+  const skillsList = profile.skills
+    ? profile.skills.split(',').map(s => s.trim()).filter(Boolean).map(key => {
+        const found = AVAILABLE_SKILLS.find(sk => sk.key === key);
+        return found || { key, label: key, icon: '\ud83d\udccb' };
+      })
+    : [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -118,7 +123,7 @@ export const ProfileHeader = ({
             <h1 className="text-xl font-bold text-gray-900">{profile.username}</h1>
             {profile.is_verified && (
               <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full font-medium">
-                ✓ {t('profile.verified')}
+                \u2713 {t('profile.verified')}
               </span>
             )}
           </div>
@@ -130,7 +135,7 @@ export const ProfileHeader = ({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
             {(profile.city || profile.country) && (
               <span className="flex items-center gap-1">
-                📍 {[profile.city, profile.country].filter(Boolean).join(', ')}
+                \ud83d\udccd {[profile.city, profile.country].filter(Boolean).join(', ')}
               </span>
             )}
             <span>{t('profile.memberSince', { date: memberSince })}</span>
@@ -139,7 +144,7 @@ export const ProfileHeader = ({
           {/* Stats inline */}
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-1">
-              <span className="text-yellow-500">★</span>
+              <span className="text-yellow-500">\u2605</span>
               <span className="font-semibold text-gray-900">{profile.average_rating?.toFixed(1) || '0.0'}</span>
               <span className="text-gray-400 text-sm">({profile.reviews_count || 0})</span>
             </div>
@@ -157,12 +162,12 @@ export const ProfileHeader = ({
             </div>
           )}
 
-          {/* Skills pills - shown inline on mobile */}
+          {/* Skills pills - shown inline on mobile with icons */}
           {!editing && skillsList.length > 0 && (
             <div className="md:hidden flex flex-wrap gap-1.5 mt-2">
               {skillsList.map((skill, i) => (
-                <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
-                  {skill}
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+                  <span>{skill.icon}</span> {skill.label}
                 </span>
               ))}
             </div>
@@ -173,12 +178,12 @@ export const ProfileHeader = ({
             <div className="md:hidden flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
               {displayEmail && (
                 <span className="flex items-center gap-1">
-                  📧 {displayEmail}
+                  \ud83d\udce7 {displayEmail}
                 </span>
               )}
               {profile.phone && (
                 <span className="flex items-center gap-1">
-                  📱 {profile.phone}
+                  \ud83d\udcf1 {profile.phone}
                 </span>
               )}
             </div>
@@ -194,7 +199,7 @@ export const ProfileHeader = ({
                 disabled={messageLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 flex items-center gap-2"
               >
-                💬 {messageLoading ? t('profile.messageLoading') : t('profile.message')}
+                \ud83d\udcac {messageLoading ? t('profile.messageLoading') : t('profile.message')}
               </button>
             )
           ) : (
@@ -212,7 +217,7 @@ export const ProfileHeader = ({
                   onClick={handleLogout}
                   className="hidden md:block px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                 >
-                  🚪 Logout
+                  \ud83d\udeaa Logout
                 </button>
               </div>
             ) : (
@@ -243,25 +248,25 @@ export const ProfileHeader = ({
             to="/tasks/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition-colors"
           >
-            📋 {t('profile.quickActions.postJob')}
+            \ud83d\udccb {t('profile.quickActions.postJob')}
           </Link>
           <Link
             to="/offerings/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium hover:bg-amber-100 transition-colors"
           >
-            👋 {t('profile.quickActions.offerService')}
+            \ud83d\udc4b {t('profile.quickActions.offerService')}
           </Link>
           <Link
             to="/listings/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-100 transition-colors"
           >
-            🏷️ {t('profile.quickActions.sellItem')}
+            \ud83c\udff7\ufe0f {t('profile.quickActions.sellItem')}
           </Link>
           <Link
             to="/favorites"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 text-pink-700 rounded-full text-sm font-medium hover:bg-pink-100 transition-colors"
           >
-            ❤️ {t('profile.quickActions.favorites')}
+            \u2764\ufe0f {t('profile.quickActions.favorites')}
           </Link>
         </div>
       )}

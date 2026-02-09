@@ -14,7 +14,6 @@ interface AboutTabProps {
 
 export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChange, viewOnly = false }: AboutTabProps) => {
   const { t, i18n } = useTranslation();
-  const [skillInput, setSkillInput] = useState('');
 
   // Helper to check if email is a placeholder (auto-generated for phone users)
   const isPlaceholderEmail = (email: string) => {
@@ -27,52 +26,30 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
   // Get available cities for selected country
   const availableCities = formData.country ? (CITIES[formData.country] || []) : [];
 
-  // Parse current skills
+  // Parse current skills (category keys, comma-separated)
   const currentSkills = formData.skills
     ? formData.skills.split(',').map(s => s.trim()).filter(Boolean)
     : [];
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // When country changes, reset city
     if (onFormDataChange) {
       onFormDataChange({ country: e.target.value, city: '' });
     } else {
-      // Fallback: use standard onChange
       onChange(e);
     }
   };
 
-  const addSkill = (skill: string) => {
-    if (!skill.trim()) return;
-    const trimmed = skill.trim();
-    if (currentSkills.includes(trimmed)) return;
-    const newSkills = [...currentSkills, trimmed].join(', ');
+  const toggleSkill = (skillKey: string) => {
+    let newSkills: string[];
+    if (currentSkills.includes(skillKey)) {
+      newSkills = currentSkills.filter(s => s !== skillKey);
+    } else {
+      newSkills = [...currentSkills, skillKey];
+    }
     if (onFormDataChange) {
-      onFormDataChange({ skills: newSkills });
-    }
-    setSkillInput('');
-  };
-
-  const removeSkill = (skillToRemove: string) => {
-    const newSkills = currentSkills.filter(s => s !== skillToRemove).join(', ');
-    if (onFormDataChange) {
-      onFormDataChange({ skills: newSkills });
+      onFormDataChange({ skills: newSkills.join(', ') });
     }
   };
-
-  const handleSkillKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addSkill(skillInput);
-    }
-  };
-
-  // Filter suggestions
-  const skillSuggestions = skillInput.length > 0
-    ? AVAILABLE_SKILLS.filter(
-        s => s.toLowerCase().includes(skillInput.toLowerCase()) && !currentSkills.includes(s)
-      )
-    : [];
 
   if (!viewOnly && editing) {
     return (
@@ -162,84 +139,48 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
             </div>
           </div>
 
-          {/* Skills section */}
+          {/* Skills = Category toggles */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              🛠️ {t('profile.skills', 'Skills')}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('profile.skills', 'What can you help with?')}
             </label>
-            
-            {/* Current skills pills */}
-            {currentSkills.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {currentSkills.map((skill, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium"
+            <p className="text-xs text-gray-400 mb-2">
+              {t('profile.skillsHint', 'Select categories that match your skills. These help people find you.')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_SKILLS.map(skill => {
+                const isSelected = currentSkills.includes(skill.key);
+                return (
+                  <button
+                    key={skill.key}
+                    type="button"
+                    onClick={() => toggleSkill(skill.key)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                      isSelected
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'
+                    }`}
                   >
-                    {skill}
-                    <button
-                      onClick={() => removeSkill(skill)}
-                      className="text-blue-400 hover:text-blue-600 ml-0.5"
-                      type="button"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Skill input */}
-            <div className="relative">
-              <input
-                type="text"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={handleSkillKeyDown}
-                placeholder={t('profile.skillsPlaceholder', 'Type a skill or choose below...')}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              
-              {/* Autocomplete dropdown */}
-              {skillSuggestions.length > 0 && (
-                <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                  {skillSuggestions.map(suggestion => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => addSkill(suggestion)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
+                    <span>{skill.icon}</span>
+                    <span>{skill.label}</span>
+                    {isSelected && <span className="text-blue-400 ml-0.5">\u2713</span>}
+                  </button>
+                );
+              })}
             </div>
-
-            {/* Quick-add popular skills (when input is empty) */}
-            {skillInput.length === 0 && currentSkills.length < 8 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {AVAILABLE_SKILLS
-                  .filter(s => !currentSkills.includes(s))
-                  .slice(0, 8)
-                  .map(skill => (
-                    <button
-                      key={skill}
-                      type="button"
-                      onClick={() => addSkill(skill)}
-                      className="px-2 py-0.5 text-xs text-gray-500 border border-gray-200 rounded-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-                    >
-                      + {skill}
-                    </button>
-                  ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
     );
   }
+
+  // Parse display skills with icons
+  const displaySkills = profile.skills
+    ? profile.skills.split(',').map(s => s.trim()).filter(Boolean).map(key => {
+        const found = AVAILABLE_SKILLS.find(sk => sk.key === key);
+        return found || { key, label: key, icon: '\ud83d\udccb' };
+      })
+    : [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -258,13 +199,13 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
         )}
 
         {/* Skills display */}
-        {profile.skills && (
+        {displaySkills.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">🛠️ {t('profile.skills', 'Skills')}</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">{t('profile.skills', 'Skills')}</h3>
             <div className="flex flex-wrap gap-1.5">
-              {profile.skills.split(',').map((skill, i) => (
-                <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium">
-                  {skill.trim()}
+              {displaySkills.map((skill, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium">
+                  <span>{skill.icon}</span> {skill.label}
                 </span>
               ))}
             </div>
@@ -278,13 +219,13 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
             <div className="space-y-2">
               {displayEmail && (
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-400">📧</span>
+                  <span className="text-gray-400">\ud83d\udce7</span>
                   <span className="text-gray-700">{displayEmail}</span>
                 </div>
               )}
               {profile.phone && (
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-400">📱</span>
+                  <span className="text-gray-400">\ud83d\udcf1</span>
                   <span className="text-gray-700">{profile.phone}</span>
                 </div>
               )}
@@ -297,7 +238,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-3">{t('profile.location')}</h3>
             <div className="flex items-center gap-3 text-sm">
-              <span className="text-gray-400">📍</span>
+              <span className="text-gray-400">\ud83d\udccd</span>
               <span className="text-gray-700">{[profile.city, profile.country].filter(Boolean).join(', ')}</span>
             </div>
           </div>
