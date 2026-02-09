@@ -1,27 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@marketplace/shared';
-import { useToastStore } from '@marketplace/shared';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useAuthStore, useToastStore, apiClient } from '@marketplace/shared';
 import { useStartConversation } from '../api/hooks';
-import { apiClient } from '@marketplace/shared';
+import { usePublicProfileData } from './Profile/hooks';
 import { useQueryClient } from '@tanstack/react-query';
-
-// Import shared Profile components
-import {
-  ProfileHeader,
-  ProfileTabs,
-  LoadingState,
-  ErrorState,
-} from './Profile/components';
-import {
-  AboutTab,
-  ListingsTab,
-  OfferingsTab,
-  TasksTab,
-  ReviewsTab,
-} from './Profile/components/tabs';
-import { usePublicProfileData, useProfileTabs } from './Profile/hooks';
-import type { ActiveTab } from './Profile/types';
+import { getCategoryIcon, getCategoryLabel } from '../constants/categories';
 
 interface ReviewableTransaction {
   type: string;
@@ -35,10 +19,10 @@ interface ReviewableTransaction {
 export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const toast = useToastStore();
   const queryClient = useQueryClient();
-  
-  // Public profile data
+
   const {
     profile,
     reviews,
@@ -47,19 +31,12 @@ export default function UserProfile() {
     offerings,
     tasks,
     loading,
-    listingsLoading,
-    offeringsLoading,
-    tasksLoading,
     error,
     currentUser,
   } = usePublicProfileData(id ? Number(id) : undefined);
-  
-  // Tab state
-  const { activeTab, setActiveTab } = useProfileTabs();
-  
-  // Messaging
+
   const startConversationMutation = useStartConversation();
-  
+
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewData, setReviewData] = useState({ rating: 5, content: '', taskId: 0 });
@@ -67,7 +44,7 @@ export default function UserProfile() {
   const [reviewableTransactions, setReviewableTransactions] = useState<ReviewableTransaction[]>([]);
   const [canReview, setCanReview] = useState(false);
 
-  // Check if current user can review this user
+  // Check if current user can review
   useEffect(() => {
     const checkCanReview = async () => {
       if (!currentUser || !id || currentUser.id === Number(id)) {
@@ -75,80 +52,51 @@ export default function UserProfile() {
         setReviewableTransactions([]);
         return;
       }
-
       try {
         const response = await apiClient.get(`/api/reviews/can-review-user/${id}`);
         setCanReview(response.data.can_review);
         setReviewableTransactions(response.data.reviewable_transactions || []);
-        
         if (response.data.reviewable_transactions?.length > 0) {
-          setReviewData(prev => ({ 
-            ...prev, 
-            taskId: response.data.reviewable_transactions[0].id 
-          }));
+          setReviewData(prev => ({ ...prev, taskId: response.data.reviewable_transactions[0].id }));
         }
-      } catch (err) {
+      } catch {
         setCanReview(false);
         setReviewableTransactions([]);
       }
     };
-
     checkCanReview();
   }, [currentUser, id]);
 
-  const handleStartConversation = async () => {
+  /* ── Handlers ── */
+  const handleMessage = async () => {
     if (!currentUser) {
-      toast.error('Please login to send messages');
+      toast.error(t('common.loginRequired', 'Please login to send messages'));
       navigate('/login');
       return;
     }
-
     if (!id) return;
-
     startConversationMutation.mutate(Number(id), {
-      onSuccess: (data) => {
-        navigate(`/messages/${data.conversation.id}`);
-      },
-      onError: (err: any) => {
-        toast.error(err?.response?.data?.error || 'Failed to start conversation');
-      }
+      onSuccess: (data) => navigate(`/messages/${data.conversation.id}`),
+      onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to start conversation'),
     });
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!currentUser) {
-      toast.error('Please login to leave a review');
-      return;
-    }
-
-    if (!reviewData.content.trim()) {
-      toast.error('Please write a review comment');
-      return;
-    }
-
-    if (!reviewData.taskId) {
-      toast.error('Please select a transaction to review');
-      return;
-    }
+    if (!currentUser) { toast.error('Please login to leave a review'); return; }
+    if (!reviewData.content.trim()) { toast.error('Please write a review comment'); return; }
+    if (!reviewData.taskId) { toast.error('Please select a transaction to review'); return; }
 
     try {
       setSubmittingReview(true);
-      
       await apiClient.post(`/api/reviews/task/${reviewData.taskId}`, {
         rating: reviewData.rating,
-        content: reviewData.content
+        content: reviewData.content,
       });
-
       queryClient.invalidateQueries({ queryKey: ['user-reviews', Number(id)] });
       queryClient.invalidateQueries({ queryKey: ['user-profile', Number(id)] });
-      
       setReviewableTransactions(prev => prev.filter(t => t.id !== reviewData.taskId));
-      if (reviewableTransactions.length <= 1) {
-        setCanReview(false);
-      }
-      
+      if (reviewableTransactions.length <= 1) setCanReview(false);
       setShowReviewModal(false);
       setReviewData({ rating: 5, content: '', taskId: 0 });
       toast.success('Review submitted successfully!');
@@ -159,188 +107,415 @@ export default function UserProfile() {
     }
   };
 
-  const renderStars = (rating: number, interactive = false, onChange?: (rating: number) => void) => {
+  /* ── Derived data ── */
+  const displayName = profile?.first_name && profile?.last_name
+    ? `${profile.first_name} ${profile.last_name}`
+    : profile?.username || '';
+
+  const avatarUrl = profile?.avatar_url || profile?.profile_picture_url;
+  const initials = profile
+    ? (profile.first_name?.[0] || profile.username?.[0] || '?').toUpperCase()
+    : '?';
+
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+    : '';
+
+  // Derive skills from offerings categories
+  const skills = [...new Set(offerings.map(o => (o as any).category).filter(Boolean))];
+
+  // Work items count
+  const workCount = offerings.length + tasks.length + listings.length;
+
+  /* ── Loading ── */
+  if (loading) {
     return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map(star => (
-          interactive && onChange ? (
-            <button
-              key={star}
-              type="button"
-              onClick={() => onChange(star)}
-              className={`text-3xl transition-colors ${
-                star <= rating ? 'text-yellow-400' : 'text-gray-300'
-              } hover:text-yellow-400`}
-            >
-              ★
-            </button>
-          ) : (
-            <span 
-              key={star} 
-              className={`text-xl ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
-            >
-              ★
-            </span>
-          )
-        ))}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">Loading profile…</p>
+        </div>
       </div>
     );
-  };
-
-  // Loading state
-  if (loading) {
-    return <LoadingState />;
   }
 
-  // Error state
+  /* ── Error ── */
   if (error || !profile) {
-    return <ErrorState message={error || 'User not found'} />;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="text-5xl mb-4">😕</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">User not found</h2>
+          <p className="text-gray-500 mb-6">{error || 'This profile doesn\'t exist or has been removed.'}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-2.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+          >
+            Go back
+          </button>
+        </div>
+      </div>
+    );
   }
-
-  // Calculate counts for tabs
-  const hasListings = listings.length > 0;
-  const hasOfferings = offerings.length > 0;
-  const hasTasks = tasks.length > 0;
-  const hasReviews = reviews.length > 0;
-
-  // Empty form data for ProfileHeader (not editing in viewOnly mode)
-  const emptyFormData = {
-    first_name: '',
-    last_name: '',
-    bio: '',
-    phone: '',
-    city: '',
-    country: '',
-    avatar_url: '',
-  };
-
-  const displayName = profile.first_name && profile.last_name 
-    ? `${profile.first_name} ${profile.last_name}` 
-    : profile.username;
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 py-6">
-        <div className="max-w-4xl mx-auto px-4">
-          {/* Profile Header with viewOnly mode */}
-          <ProfileHeader
-            profile={profile}
-            formData={emptyFormData}
-            editing={false}
-            saving={false}
-            totalTasksCompleted={profile.tasks_completed || 0}
-            viewOnly={true}
-            onEdit={() => {}}
-            onCancel={() => {}}
-            onSave={() => {}}
-            onChangeAvatar={() => {}}
-            onMessage={currentUser ? handleStartConversation : undefined}
-            messageLoading={startConversationMutation.isPending}
-          />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-lg mx-auto px-4 py-6">
 
-          {/* Review button for users who can review */}
-          {canReview && (
-            <div className="mb-6">
+          {/* ── Back button ── */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-gray-500 hover:text-gray-800 transition-colors mb-6 -ml-1"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium">Back</span>
+          </button>
+
+          {/* ═══════════════════════════════════════
+              IDENTITY SECTION
+              Avatar + Name + Bio
+             ═══════════════════════════════════════ */}
+          <div className="flex flex-col items-center text-center mb-6">
+            {/* Avatar */}
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 mb-4 ring-4 ring-white shadow-lg">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 text-white text-3xl font-bold">
+                  {initials}
+                </div>
+              )}
+            </div>
+
+            {/* Name */}
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{displayName}</h1>
+
+            {/* Bio */}
+            {profile.bio && (
+              <p className="text-gray-500 text-sm leading-relaxed max-w-xs mb-3">
+                {profile.bio}
+              </p>
+            )}
+
+            {/* Verified + Member since */}
+            <div className="flex items-center gap-3 text-sm">
+              {profile.is_verified && (
+                <span className="inline-flex items-center gap-1 text-green-600 font-medium">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                  </svg>
+                  Verified
+                </span>
+              )}
+              {memberSince && (
+                <span className="text-gray-400">
+                  Member since {memberSince}
+                </span>
+              )}
+            </div>
+
+            {/* Rating */}
+            {(profile.average_rating != null && profile.reviews_count != null && profile.reviews_count > 0) && (
+              <div className="flex items-center gap-1.5 mt-3">
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <span
+                      key={star}
+                      className={`text-lg ${
+                        star <= Math.round(profile.average_rating || 0)
+                          ? 'text-yellow-400'
+                          : 'text-gray-200'
+                      }`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-gray-700">
+                  {profile.average_rating?.toFixed(1)}
+                </span>
+                <span className="text-sm text-gray-400">
+                  ({profile.reviews_count} {profile.reviews_count === 1 ? 'review' : 'reviews'})
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ═══════════════════════════════════════
+              ACTION BUTTONS
+             ═══════════════════════════════════════ */}
+          <div className="flex gap-3 mb-8">
+            <button
+              onClick={handleMessage}
+              disabled={startConversationMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              {startConversationMutation.isPending ? 'Opening…' : 'Message'}
+            </button>
+
+            {workCount > 0 && (
               <button
-                onClick={() => setShowReviewModal(true)}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+                onClick={() => {
+                  const el = document.getElementById('user-work');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 border border-gray-200 active:scale-[0.98] transition-all"
               >
-                ✍️ Leave a Review for {displayName}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                View Work
               </button>
+            )}
+          </div>
+
+          {/* ═══════════════════════════════════════
+              REVIEW BUTTON (if can review)
+             ═══════════════════════════════════════ */}
+          {canReview && (
+            <button
+              onClick={() => setShowReviewModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 mb-8 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl font-medium hover:bg-yellow-100 transition-colors"
+            >
+              ✍️ Leave a Review
+            </button>
+          )}
+
+          {/* ═══════════════════════════════════════
+              SKILLS (derived from offerings)
+             ═══════════════════════════════════════ */}
+          {skills.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Skills</h2>
+              <div className="flex flex-wrap gap-2">
+                {skills.map(skill => (
+                  <span
+                    key={skill}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 shadow-sm"
+                  >
+                    <span>{getCategoryIcon(skill)}</span>
+                    <span>{getCategoryLabel(skill)}</span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Tabs */}
-          <ProfileTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            counts={{
-              tasks: tasks.length,
-              offerings: offerings.length,
-              listings: listings.length,
-              reviews: reviews.length,
-              pendingNotifications: 0,
-            }}
-            hasContent={{
-              tasks: hasTasks,
-              offerings: hasOfferings,
-              listings: hasListings,
-              reviews: hasReviews,
-            }}
-            viewOnly={true}
-          />
+          {/* ═══════════════════════════════════════
+              WORK (offerings, tasks, listings)
+             ═══════════════════════════════════════ */}
+          {workCount > 0 && (
+            <div className="mb-8" id="user-work">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Work</h2>
+              <div className="space-y-3">
+                {/* Offerings */}
+                {offerings.map(offering => (
+                  <Link
+                    key={`offering-${offering.id}`}
+                    to={`/offerings/${offering.id}`}
+                    className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
+                        {getCategoryIcon((offering as any).category || '')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 line-clamp-1">{offering.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{offering.description}</p>
+                        {(offering as any).price && (
+                          <p className="text-sm font-bold text-green-600 mt-1">€{(offering as any).price}</p>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                        Offering
+                      </span>
+                    </div>
+                  </Link>
+                ))}
 
-          {/* Tab Content */}
-          {activeTab === 'about' && (
-            <AboutTab
-              profile={profile}
-              editing={false}
-              formData={emptyFormData}
-              onChange={() => {}}
-              viewOnly={true}
-            />
+                {/* Tasks */}
+                {tasks.map(task => (
+                  <Link
+                    key={`task-${task.id}`}
+                    to={`/tasks/${task.id}`}
+                    className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
+                        {getCategoryIcon((task as any).category || '')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 line-clamp-1">{task.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{task.description}</p>
+                        {task.budget && (
+                          <p className="text-sm font-bold text-green-600 mt-1">€{task.budget}</p>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                        Task
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+
+                {/* Listings */}
+                {listings.map(listing => (
+                  <Link
+                    key={`listing-${listing.id}`}
+                    to={`/listings/${listing.id}`}
+                    className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        {(listing as any).images?.[0] ? (
+                          <img src={(listing as any).images[0]} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-lg">📋</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 line-clamp-1">{listing.title}</p>
+                        {(listing as any).price && (
+                          <p className="text-sm font-bold text-green-600 mt-1">€{(listing as any).price}</p>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                        Listing
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
 
-          {activeTab === 'listings' && (
-            <ListingsTab
-              listings={listings}
-              loading={listingsLoading}
-              viewOnly={true}
-            />
+          {/* ═══════════════════════════════════════
+              REVIEWS
+             ═══════════════════════════════════════ */}
+          {reviews.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Reviews ({reviews.length})
+              </h2>
+              <div className="space-y-3">
+                {reviews.map(review => (
+                  <div
+                    key={review.id}
+                    className="bg-white border border-gray-200 rounded-xl p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Reviewer avatar */}
+                      <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                        {review.reviewer_avatar ? (
+                          <img
+                            src={review.reviewer_avatar}
+                            alt={review.reviewer_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-300 text-white text-sm font-bold">
+                            {(review.reviewer_name?.[0] || '?').toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        {/* Reviewer name + date */}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {review.reviewer_name}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(review.created_at).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+
+                        {/* Stars */}
+                        <div className="flex items-center gap-0.5 mb-2">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <span
+                              key={star}
+                              className={`text-sm ${
+                                star <= review.rating ? 'text-yellow-400' : 'text-gray-200'
+                              }`}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Content */}
+                        {review.content && (
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {review.content}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
-          {activeTab === 'offerings' && (
-            <OfferingsTab
-              offerings={offerings}
-              loading={offeringsLoading}
-              viewOnly={true}
-            />
-          )}
-
-          {activeTab === 'tasks' && (
-            <TasksTab
-              createdTasks={tasks}
-              myApplications={[]}
-              taskMatchCounts={{}}
-              tasksLoading={tasksLoading}
-              applicationsLoading={false}
-              taskViewMode="my-tasks"
-              taskStatusFilter="all"
-              onViewModeChange={() => {}}
-              onStatusFilterChange={() => {}}
-              viewOnly={true}
-            />
-          )}
-
-          {activeTab === 'reviews' && (
-            <ReviewsTab
-              reviews={reviews}
-              currentUserId={currentUser?.id}
-              onDeleteReview={() => {}}
-              setReviews={setReviews}
-            />
+          {/* Empty state if no work and no reviews */}
+          {workCount === 0 && reviews.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">👋</div>
+              <p className="text-gray-500 text-sm">
+                {displayName} is new to Kolab. Stay tuned!
+              </p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Review Modal */}
+      {/* ═══════════════════════════════════════
+          REVIEW MODAL
+         ═══════════════════════════════════════ */}
       {showReviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Leave a Review for {displayName}
-            </h3>
-            
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-50">
+          <div className="bg-white w-full max-w-md rounded-t-2xl md:rounded-2xl p-6 animate-in slide-in-from-bottom">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900">
+                Review {displayName}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowReviewModal(false);
+                  setReviewData({ rating: 5, content: '', taskId: reviewableTransactions[0]?.id || 0 });
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
+              >
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
             <form onSubmit={handleSubmitReview}>
+              {/* Transaction selector */}
               {reviewableTransactions.length > 1 && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Transaction
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Transaction</label>
                   <select
                     value={reviewData.taskId}
                     onChange={(e) => setReviewData(prev => ({ ...prev, taskId: Number(e.target.value) }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
                   >
                     {reviewableTransactions.map(tx => (
                       <option key={tx.id} value={tx.id}>
@@ -352,41 +527,46 @@ export default function UserProfile() {
               )}
 
               {reviewableTransactions.length === 1 && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mb-4 p-3 bg-gray-50 rounded-xl">
                   <p className="text-sm text-gray-600">
-                    Reviewing for: <span className="font-medium">{reviewableTransactions[0].title}</span>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Your role: {reviewableTransactions[0].your_role}
+                    For: <span className="font-medium">{reviewableTransactions[0].title}</span>
                   </p>
                 </div>
               )}
 
+              {/* Rating */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rating
-                </label>
-                <div className="flex justify-center">
-                  {renderStars(reviewData.rating, true, (rating) => 
-                    setReviewData(prev => ({ ...prev, rating }))
-                  )}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                <div className="flex justify-center gap-1">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewData(prev => ({ ...prev, rating: star }))}
+                      className={`text-4xl transition-all hover:scale-110 ${
+                        star <= reviewData.rating ? 'text-yellow-400' : 'text-gray-200'
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
                 </div>
               </div>
 
+              {/* Comment */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Review
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Your review</label>
                 <textarea
                   value={reviewData.content}
                   onChange={(e) => setReviewData(prev => ({ ...prev, content: e.target.value }))}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Share your experience working with this user..."
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm resize-none"
+                  placeholder="Share your experience…"
                   required
                 />
               </div>
 
+              {/* Actions */}
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -394,16 +574,16 @@ export default function UserProfile() {
                     setShowReviewModal(false);
                     setReviewData({ rating: 5, content: '', taskId: reviewableTransactions[0]?.id || 0 });
                   }}
-                  className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  {submittingReview ? 'Submitting…' : 'Submit'}
                 </button>
               </div>
             </form>
