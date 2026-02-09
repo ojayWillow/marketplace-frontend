@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '@marketplace/shared';
@@ -9,6 +10,36 @@ interface ChatHeaderProps {
   onlineStatus?: 'online' | 'recently' | 'inactive';
   isOtherTyping?: boolean;
   isMobile?: boolean;
+}
+
+/**
+ * Avatar with automatic fallback to initials if the image fails to load.
+ */
+function ChatAvatar({ user, size = 'w-10 h-10' }: { user: any; size?: string }) {
+  const [imgError, setImgError] = useState(false);
+  const avatarUrl = user?.avatar_url;
+  const initial = user?.username?.charAt(0).toUpperCase() || '?';
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !imgError) {
+    return (
+      <img
+        src={getImageUrl(avatarUrl)}
+        alt=""
+        className={`${size} rounded-full object-cover`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${size} rounded-full bg-blue-500 flex items-center justify-center text-white font-bold`}>
+      {initial}
+    </div>
+  );
 }
 
 const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHeaderProps) => {
@@ -60,19 +91,9 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
       </button>
 
       <Link to={`/users/${otherUser?.id}`} className={`flex items-center gap-3 flex-1 ${isMobile ? 'min-w-0' : ''}`}>
-        {/* Avatar */}
+        {/* Avatar with fallback */}
         <div className="flex-shrink-0 relative">
-          {otherUser?.avatar_url ? (
-            <img
-              src={getImageUrl(otherUser.avatar_url)}
-              alt=""
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-              {otherUser?.username?.charAt(0).toUpperCase() || '?'}
-            </div>
-          )}
+          <ChatAvatar user={otherUser} />
           {/* Online dot on avatar */}
           {onlineStatus === 'online' && (
             <span
