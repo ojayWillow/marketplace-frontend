@@ -8,7 +8,9 @@ interface ShareButtonProps {
   description?: string;
   image?: string;
   categoryIcon?: string;
+  categoryEmoji?: string;
   price?: string;
+  location?: string;
   variant?: 'button' | 'icon';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -25,7 +27,9 @@ const ShareButton = ({
   description: rawDescription = '',
   image,
   categoryIcon,
+  categoryEmoji,
   price,
+  location,
   variant = 'button',
   size = 'md',
   className = '',
@@ -42,18 +46,34 @@ const ShareButton = ({
   const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  // Branded share message
-  const shareText = [
-    title,
-    description ? description : null,
-    price ? `💰 ${price}` : null,
-    '',
-    `👉 ${fullUrl}`,
-    '',
-    'Found on Kolab — kolab.lv',
-  ]
-    .filter((line) => line !== null)
-    .join('\n');
+  // Build clean share message (Option C style)
+  const buildShareText = () => {
+    const lines: string[] = [];
+
+    // Line 1: emoji + title
+    const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
+    lines.push(titleLine);
+
+    // Line 2: price · location (compact)
+    const details: string[] = [];
+    if (price) details.push(`\u{1F4B0} ${price}`);
+    if (location) details.push(`\u{1F4CD} ${location}`);
+    if (details.length > 0) {
+      lines.push(details.join('  \u00B7  '));
+    }
+
+    // Blank line + URL
+    lines.push('');
+    lines.push(`\u{1F449} ${fullUrl}`);
+
+    // Blank line + tagline
+    lines.push('');
+    lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
+
+    return lines.join('\n');
+  };
+
+  const shareText = buildShareText();
 
   // Open / close with animation
   const openSheet = () => {
@@ -174,13 +194,15 @@ const ShareButton = ({
   /* ── The share sheet content (reused for mobile + desktop) ── */
   const sheetContent = (
     <>
-      {/* ── Header with Kolab branding ── */}
+      {/* ── Header with Kolab logo ── */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-black tracking-tight">K</span>
-          </div>
-          <span className="text-sm font-bold text-gray-900 tracking-tight">Share via Kolab</span>
+          <img
+            src="/logo.png"
+            alt="Kolab"
+            className="h-8 w-auto rounded-lg"
+          />
+          <span className="text-sm font-bold text-gray-900 tracking-tight">Share</span>
         </div>
         <button
           onClick={closeSheet}
