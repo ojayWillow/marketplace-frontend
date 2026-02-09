@@ -108,10 +108,11 @@ export interface TasksParams {
   page?: number;
   per_page?: number;
   status?: string;
-  category?: string;
+  category?: string; // Supports comma-separated: "cleaning,delivery,repair"
   latitude?: number;
   longitude?: number;
   radius?: number;
+  min_results?: number; // Minimum results before auto-expanding radius (default 5, 0 = disable)
   lang?: string; // Language for translation - only send if different from default
 }
 
@@ -134,6 +135,10 @@ export interface GetTasksResponse {
   tasks: Task[];
   total: number;
   page: number;
+  per_page?: number;
+  has_more?: boolean;
+  effective_radius?: number | null; // Actual radius used (may be larger if auto-expanded)
+  radius_expanded?: boolean; // True if backend expanded beyond requested radius
 }
 
 export interface GetHelpersResponse {
@@ -148,8 +153,12 @@ export interface GetApplicationsResponse {
 }
 
 /**
- * Get all tasks with optional filtering and geolocation
- * Only requests translation if user's language differs from default (lv)
+ * Get all tasks with optional filtering and geolocation.
+ * 
+ * Now supports:
+ * - min_results: auto-expand radius if too few results (default 5)
+ * - category: comma-separated multi-category ("cleaning,delivery")
+ * - Response includes effective_radius and radius_expanded
  */
 export const getTasks = async (params: TasksParams = {}): Promise<GetTasksResponse> => {
   const lang = getLangParam();
