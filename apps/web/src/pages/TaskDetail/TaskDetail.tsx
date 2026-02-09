@@ -546,8 +546,14 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* Sticky bottom action bar — MOBILE ONLY */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden">
+      {/* Sticky bottom action bar — MOBILE ONLY
+          Uses --nav-total-height CSS var (set by BottomNav) to sit exactly
+          above the nav bar. Falls back to 64px. Adds safe-area padding
+          for PWA standalone mode where the home indicator eats into space. */}
+      <div
+        className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
+        style={{ bottom: 'var(--nav-total-height, 64px)' }}
+      >
         <div className="max-w-3xl mx-auto">
           <TaskActionButtons
             task={task}
