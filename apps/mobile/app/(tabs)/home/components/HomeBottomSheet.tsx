@@ -1,4 +1,4 @@
-import { View, FlatList, Animated, TouchableOpacity } from 'react-native';
+import { View, FlatList, Animated, TouchableOpacity, ScrollView } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Task, Offering } from '@marketplace/shared';
@@ -102,19 +102,31 @@ export function HomeBottomSheet({
       </View>
 
       {focusedTask ? (
-        <FocusedTaskCard 
-          task={focusedTask} 
-          userLocation={userLocation} 
-          hasRealLocation={hasRealLocation} 
-          onViewDetails={onViewTaskDetails} 
-          styles={styles} 
-        />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <FocusedTaskCard 
+            task={focusedTask} 
+            userLocation={userLocation} 
+            hasRealLocation={hasRealLocation} 
+            onViewDetails={onViewTaskDetails} 
+            styles={styles} 
+          />
+        </ScrollView>
       ) : focusedOffering ? (
-        <FocusedOfferingCard
-          offering={focusedOffering}
-          onViewDetails={onViewOfferingDetails}
-          styles={styles}
-        />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <FocusedOfferingCard
+            offering={focusedOffering}
+            onViewDetails={onViewOfferingDetails}
+            styles={styles}
+          />
+        </ScrollView>
       ) : sortedTasks.length === 0 ? (
         renderEmptyList()
       ) : (
