@@ -368,38 +368,38 @@ const MobileTasksView = () => {
               zIndex: 100,
             }}
           >
-            {/* Drag handle area — larger touch target */}
+            {/* Drag handle area */}
             <div
-              className="flex flex-col items-center pt-2 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
-              {/* Animated up arrow — visible when not fully expanded */}
+              {/* Drag handle bar */}
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+
+              {/* Small up chevron below the bar — only when not fully expanded */}
               {sheetPosition !== 'full' && (
-                <div className="flex flex-col items-center mb-1">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#9ca3af"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="animate-bounce"
-                    style={{ animationDuration: '2s' }}
-                  >
-                    <path d="M18 15l-6-6-6 6" />
-                  </svg>
-                </div>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#d1d5db"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mt-0.5"
+                >
+                  <path d="M18 15l-6-6-6 6" />
+                </svg>
               )}
 
-              {/* Drag handle bar */}
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
+              {/* Spacer when arrow is hidden (full state) to keep layout consistent */}
+              {sheetPosition === 'full' && <div className="h-2" />}
 
-              <div className="flex items-center justify-between w-full px-4">
+              <div className="flex items-center justify-between w-full px-4 mt-1">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                   {urgentCount > 0 && (
