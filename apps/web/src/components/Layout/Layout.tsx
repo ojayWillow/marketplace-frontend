@@ -15,10 +15,11 @@ const Layout = () => {
   // Landing page on mobile should have footer (not bottom nav)
   const isLandingPage = location.pathname === '/welcome';
   
-  // All four bottom-nav tabs + conversations get the fullscreen treatment.
-  // This ensures every primary mobile screen fits exactly within the
-  // dynamic viewport (100dvh) with proper safe-area handling.
+  // All primary mobile screens get the fullscreen treatment.
+  // This ensures they fit exactly within the dynamic viewport (100dvh)
+  // with proper safe-area handling and no Header/gray background leaking through.
   const isFullscreenMobilePage = isMobile && (
+    location.pathname === '/' ||
     location.pathname === '/tasks' || 
     location.pathname === '/quick-help' ||
     location.pathname === '/messages' ||
