@@ -26,7 +26,8 @@ interface JobPreviewCardProps {
 }
 
 /**
- * Job preview card - Shows when a job marker is selected on the map
+ * Job preview card - Shows when a job marker is selected on the map.
+ * Positioned above the MobileBottomNav (h-14 = 56px + safe-area-inset-bottom).
  */
 const JobPreviewCard = ({
   task,
@@ -71,16 +72,22 @@ const JobPreviewCard = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp flex flex-col" style={{ maxHeight: '65vh' }}>
+    <div
+      className="absolute left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp flex flex-col"
+      style={{
+        bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+        maxHeight: '55vh',
+      }}
+    >
       {/* Urgent top accent bar */}
       {isUrgent && (
         <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse flex-shrink-0" />
       )}
 
       {/* Scrollable content area */}
-      <div className="p-4 pb-0 overflow-y-auto flex-1 min-h-0">
+      <div className="px-4 pt-4 pb-2 overflow-y-auto flex-1 min-h-0">
         {/* Top row: Category on left, Distance in CENTER, X button on right */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           {/* Category pill with urgent dot overlay */}
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
@@ -110,7 +117,7 @@ const JobPreviewCard = ({
         </div>
 
         {/* Price - BIG and prominent */}
-        <div className="text-center mb-2">
+        <div className="text-center mb-1">
           <span
             className={`text-3xl font-bold ${
               isUrgent
@@ -127,12 +134,12 @@ const JobPreviewCard = ({
         </div>
 
         {/* Title (cleaned) */}
-        <h3 className="font-bold text-gray-900 text-lg text-center mb-3 line-clamp-2">
+        <h3 className="font-bold text-gray-900 text-lg text-center mb-2 line-clamp-2">
           {displayTitle}
         </h3>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 mb-4 py-2 bg-gray-50 rounded-xl text-center">
+        <div className="grid grid-cols-3 gap-2 mb-3 py-2 bg-gray-50 rounded-xl text-center">
           <div>
             <div className="text-[10px] text-gray-400 uppercase tracking-wide">
               {t('tasks.distance', 'ATTĀLUMS')}
@@ -229,8 +236,8 @@ const JobPreviewCard = ({
         </button>
       </div>
 
-      {/* Action buttons - PINNED at bottom, never scrolled away */}
-      <div className="flex gap-3 p-4 pt-3 bg-white flex-shrink-0 border-t border-gray-100">
+      {/* Action buttons - PINNED at bottom, always visible */}
+      <div className="flex gap-3 px-4 py-3 bg-white flex-shrink-0 border-t border-gray-100">
         <button
           onClick={onViewDetails}
           className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
@@ -248,9 +255,6 @@ const JobPreviewCard = ({
           className="!rounded-xl !w-12 !h-12"
         />
       </div>
-
-      {/* Safe area padding for phones with home indicator */}
-      <div className="h-safe-area-bottom bg-white flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }} />
     </div>
   );
 };
