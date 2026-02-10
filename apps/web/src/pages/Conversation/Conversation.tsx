@@ -28,10 +28,10 @@ export default function Conversation() {
   if (loading) return <LoadingSpinner isMobile={isMobile} />;
   if (!conversation) return <NotFoundState isMobile={isMobile} />;
 
-  // Mobile: fullscreen fixed chat
+  // Mobile: fullscreen fixed chat (overlays bottom nav — intentional for chat UX)
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-[10000] flex flex-col bg-white">
+      <div className="fixed inset-0 z-[200] flex flex-col bg-white">
         <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} isOtherTyping={isOtherTyping} isMobile />
         <MessageList
           messages={sortedMessages}

@@ -15,16 +15,19 @@ const Layout = () => {
   // Landing page on mobile should have footer (not bottom nav)
   const isLandingPage = location.pathname === '/welcome';
   
-  // Check if we're on pages that need fullscreen mobile experience
-  // These pages get a fullscreen mobile experience without header/footer
+  // All four bottom-nav tabs + conversations get the fullscreen treatment.
+  // This ensures every primary mobile screen fits exactly within the
+  // dynamic viewport (100dvh) with proper safe-area handling.
   const isFullscreenMobilePage = isMobile && (
     location.pathname === '/tasks' || 
     location.pathname === '/quick-help' ||
     location.pathname === '/messages' ||
-    location.pathname.startsWith('/messages/')
+    location.pathname.startsWith('/messages/') ||
+    location.pathname === '/work' ||
+    location.pathname === '/profile'
   );
 
-  // For fullscreen mobile pages, render without header/footer but with bottom nav
+  // For fullscreen mobile pages, render without header/footer but with bottom nav.
   // Use dvh so the page fits exactly within the dynamic viewport (accounting for
   // mobile browser chrome). The main area is flex-1 + overflow-hidden so child
   // pages handle their own scrolling.
@@ -73,7 +76,8 @@ const Layout = () => {
     );
   }
 
-  // Mobile app pages - has bottom nav (no footer)
+  // Mobile app pages (secondary pages like /tasks/:id, /users/:id, etc.)
+  // These still get Header + bottom nav + scroll padding
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col">
