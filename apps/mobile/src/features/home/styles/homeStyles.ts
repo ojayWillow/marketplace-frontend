@@ -232,8 +232,8 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     jobCardPrice: { fontSize: 18, fontWeight: '700', color: JOB_COLOR },
     jobCardDistance: { fontSize: 12, color: themeColors.textSecondary, marginTop: 2 },
     
-    // Focused Job Card
-    focusedCard: { paddingHorizontal: 20, paddingVertical: 16 },
+    // Focused Job Card — paddingBottom ensures button clears the tab bar on PWA/mobile Chrome
+    focusedCard: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
     focusedTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     focusedCategoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6 },
     focusedCategoryIcon: { fontSize: 14 },
