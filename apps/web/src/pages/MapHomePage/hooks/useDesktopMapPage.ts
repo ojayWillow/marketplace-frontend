@@ -4,6 +4,7 @@ import { useAuthStore, useMatchingStore } from '@marketplace/shared';
 import { useTaskLocation } from '../../Tasks/hooks/useTaskLocation';
 import { useTaskFilters } from '../../Tasks/hooks/useTaskFilters';
 import { useTaskData } from '../../Tasks/hooks/useTaskData';
+import { COMMUNITY_RULES_KEY } from '../../../components/QuickHelpIntroModal';
 
 export type ActiveTab = 'jobs' | 'offerings' | 'all';
 
@@ -58,10 +59,10 @@ export const useDesktopMapPage = () => {
     category: filters.category,
   });
 
-  // Show intro modal on first visit
+  // Show community rules modal on first visit (unified key)
   useEffect(() => {
-    const hasSeenIntro = localStorage.getItem('quickHelpIntroSeen');
-    if (!hasSeenIntro) setShowIntroModal(true);
+    const hasAccepted = localStorage.getItem(COMMUNITY_RULES_KEY);
+    if (!hasAccepted) setShowIntroModal(true);
   }, []);
 
   // Load user offerings for matching
