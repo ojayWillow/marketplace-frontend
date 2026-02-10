@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 
 import { useAuthStore } from '@marketplace/shared';
 
@@ -20,6 +22,34 @@ import {
   FloatingSearchBar,
 } from './components';
 import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal';
+
+/** Custom cluster icon matching app theme */
+const createClusterCustomIcon = (cluster: any) => {
+  const count = cluster.getChildCount();
+  let size = 36;
+  let fontSize = 14;
+  if (count >= 10) { size = 42; fontSize = 15; }
+  if (count >= 25) { size = 48; fontSize = 16; }
+
+  return L.divIcon({
+    html: `<div style="
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: ${fontSize}px;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+      border: 2.5px solid white;
+    ">${count}</div>`,
+    className: 'custom-cluster-icon',
+    iconSize: L.point(size, size, true),
+  });
+};
 
 /** Skeleton placeholder for loading state */
 const SkeletonCard = () => (
@@ -242,22 +272,33 @@ const MobileTasksView = () => {
               </Popup>
             </Marker>
 
-            {tasksWithOffsets.map((task) => {
-              const budget = task.budget || task.reward || 0;
-              const isSelected = selectedTask?.id === task.id;
-              return (
-                <Marker
-                  key={task.id}
-                  position={[
-                    task.displayLatitude || task.latitude,
-                    task.displayLongitude || task.longitude,
-                  ]}
-                  icon={getJobPriceIcon(budget, isSelected, task.is_urgent)}
-                  eventHandlers={{ click: () => handleMarkerClick(task) }}
-                  zIndexOffset={isSelected ? 1000 : task.is_urgent ? 500 : 0}
-                />
-              );
-            })}
+            {/* Clustered task markers */}
+            <MarkerClusterGroup
+              chunkedLoading
+              iconCreateFunction={createClusterCustomIcon}
+              maxClusterRadius={50}
+              spiderfyOnMaxZoom
+              showCoverageOnHover={false}
+              zoomToBoundsOnClick
+              disableClusteringAtZoom={16}
+            >
+              {tasksWithOffsets.map((task) => {
+                const budget = task.budget || task.reward || 0;
+                const isSelected = selectedTask?.id === task.id;
+                return (
+                  <Marker
+                    key={task.id}
+                    position={[
+                      task.displayLatitude || task.latitude,
+                      task.displayLongitude || task.longitude,
+                    ]}
+                    icon={getJobPriceIcon(budget, isSelected, task.is_urgent)}
+                    eventHandlers={{ click: () => handleMarkerClick(task) }}
+                    zIndexOffset={isSelected ? 1000 : task.is_urgent ? 500 : 0}
+                  />
+                );
+              })}
+            </MarkerClusterGroup>
           </MapContainer>
         </div>
 
