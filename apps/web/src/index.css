@@ -286,3 +286,40 @@ button:focus-visible,
   border: 3px solid white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
+
+/* ===========================================
+   LEAFLET POPUP OVERRIDES - MOBILE FIX
+   Ensures popup content (including View & Apply
+   button) is fully visible on mobile viewports.
+   =========================================== */
+
+/* Remove Leaflet's default max-height clipping on mobile */
+.job-marker-popup .leaflet-popup-content,
+.offering-marker-popup .leaflet-popup-content {
+  margin: 8px 12px;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.job-marker-popup .leaflet-popup-content-wrapper,
+.offering-marker-popup .leaflet-popup-content-wrapper {
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+/* On very small screens, allow the popup to be scrollable */
+@media (max-height: 700px) {
+  .job-marker-popup .leaflet-popup-content-wrapper,
+  .offering-marker-popup .leaflet-popup-content-wrapper {
+    max-height: 70vh;
+  }
+}
+
+@media (max-height: 550px) {
+  .job-marker-popup .leaflet-popup-content-wrapper,
+  .offering-marker-popup .leaflet-popup-content-wrapper {
+    max-height: 60vh;
+  }
+}

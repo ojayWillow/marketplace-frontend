@@ -78,32 +78,32 @@ export const createUserLocationIcon = () =>
   });
 
 /**
- * Create job price marker icon
+ * Create job price marker icon — compact version
  * @param budget - Job budget amount
  * @param isSelected - Whether this marker is currently selected
  * @param isUrgent - Whether this job is marked as urgent
  */
 export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false, isUrgent: boolean = false) => {
   let bgColor = '#22c55e';
-  let shadow = '0 2px 6px rgba(0,0,0,0.3)';
-  let border = `${isSelected ? 3 : 2}px solid white`;
+  let shadow = '0 2px 4px rgba(0,0,0,0.25)';
+  let border = `${isSelected ? 2.5 : 1.5}px solid white`;
 
   if (budget <= 25) bgColor = '#22c55e';
   else if (budget <= 75) bgColor = '#3b82f6';
   else {
     bgColor = 'linear-gradient(135deg, #8b5cf6 0%, #d97706 100%)';
-    shadow = '0 2px 10px rgba(139, 92, 246, 0.6)';
+    shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
   }
 
   // Urgent: red border + red glow
   if (isUrgent) {
-    border = `${isSelected ? 3 : 2}px solid #ef4444`;
-    shadow = '0 0 0 2px rgba(239, 68, 68, 0.3), ' + shadow;
+    border = `${isSelected ? 2.5 : 1.5}px solid #ef4444`;
+    shadow = '0 0 0 1.5px rgba(239, 68, 68, 0.3), ' + shadow;
   }
 
-  const fontSize = isSelected ? 14 : 12;
-  const padding = isSelected ? '5px 11px' : '4px 10px';
-  const selectedShadow = isSelected ? '0 4px 16px rgba(0,0,0,0.4)' : shadow;
+  const fontSize = isSelected ? 12 : 11;
+  const padding = isSelected ? '3px 8px' : '2px 6px';
+  const selectedShadow = isSelected ? '0 3px 12px rgba(0,0,0,0.35)' : shadow;
 
   const priceText =
     budget >= 1000 ? `&euro;${(budget / 1000).toFixed(1)}k` : `&euro;${budget}`;
@@ -120,9 +120,9 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
         transform: translate(-50%, -50%);
         width: 100%;
         height: 100%;
-        border-radius: 14px;
+        border-radius: 10px;
         animation: urgentPulse 1.5s ease-out infinite;
-        border: 2px solid #ef4444;
+        border: 1.5px solid #ef4444;
         pointer-events: none;
       "></div>`
     : '';
@@ -137,7 +137,7 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
         font-size: ${fontSize}px;
         font-weight: 700;
         padding: ${padding};
-        border-radius: 14px;
+        border-radius: 10px;
         white-space: nowrap;
         box-shadow: ${selectedShadow};
         border: ${border};
@@ -145,12 +145,12 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 44px;
+        min-width: 38px;
         position: relative;
         z-index: 1;
       ">${priceText}</div>
     </div>`,
-    iconSize: isSelected ? [65, 36] : [55, 30],
-    iconAnchor: isSelected ? [32, 18] : [27, 15],
+    iconSize: isSelected ? [55, 28] : [45, 24],
+    iconAnchor: isSelected ? [27, 14] : [22, 12],
   });
 };

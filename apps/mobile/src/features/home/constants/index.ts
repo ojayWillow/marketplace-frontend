@@ -4,9 +4,12 @@ import { calculateDistance as calcDistance } from '../../../../utils/mapClusteri
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Sheet dimensions
+// NOTE: Mid height must be tall enough to show the full FocusedTaskCard
+// including the "View and apply" button on all platforms (PWA, mobile Chrome, native).
+// Mobile web browsers reduce viewport with their address bar, so we use 62%.
 export const SHEET_MIN_HEIGHT = 80;
-export const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.4;
-export const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
+export const SHEET_MID_HEIGHT = SCREEN_HEIGHT * 0.62;
+export const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.85;
 
 // Default location (Riga)
 export const DEFAULT_LOCATION = { latitude: 56.9496, longitude: 24.1052 };

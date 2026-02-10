@@ -157,7 +157,7 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
       fontSize: 18,
     },
     
-    // Bottom Sheet
+    // Bottom Sheet — positioned at bottom: 0 (tab bar is part of layout flow)
     bottomSheet: { 
       position: 'absolute', 
       bottom: 0, 
@@ -233,7 +233,7 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     jobCardDistance: { fontSize: 12, color: themeColors.textSecondary, marginTop: 2 },
     
     // Focused Job Card
-    focusedCard: { paddingHorizontal: 20, paddingVertical: 16 },
+    focusedCard: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
     focusedTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     focusedCategoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6 },
     focusedCategoryIcon: { fontSize: 14 },

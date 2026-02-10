@@ -67,7 +67,6 @@ const MobileBottomNav = () => {
     >
       <div className="flex justify-around items-center h-14">
         {tabs.map((tab) => {
-          const needsAuth = tab.requiresAuth && !isAuthenticated;
           const badgeCount = getBadgeCount(tab.badgeKey);
 
           return (
@@ -94,9 +93,6 @@ const MobileBottomNav = () => {
               >
                 {t(tab.labelKey, tab.fallback)}
               </span>
-              {needsAuth && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
             </NavLink>
           );
         })}

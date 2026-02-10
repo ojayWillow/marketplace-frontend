@@ -15,20 +15,35 @@ const Layout = () => {
   // Landing page on mobile should have footer (not bottom nav)
   const isLandingPage = location.pathname === '/welcome';
   
-  // Check if we're on pages that need fullscreen mobile experience
-  // These pages get a fullscreen mobile experience without header/footer
+  // All primary mobile screens get the fullscreen treatment.
+  // This ensures they fit exactly within the dynamic viewport (100dvh)
+  // with proper safe-area handling and no Header/gray background leaking through.
   const isFullscreenMobilePage = isMobile && (
+    location.pathname === '/' ||
     location.pathname === '/tasks' || 
     location.pathname === '/quick-help' ||
     location.pathname === '/messages' ||
-    location.pathname.startsWith('/messages/')
+    location.pathname.startsWith('/messages/') ||
+    location.pathname === '/work' ||
+    location.pathname === '/profile'
   );
 
-  // For fullscreen mobile pages, render without header/footer but with bottom nav
+  // For fullscreen mobile pages, render without header/footer but with bottom nav.
+  // Use dvh so the page fits exactly within the dynamic viewport (accounting for
+  // mobile browser chrome). The main area is flex-1 + overflow-hidden so child
+  // pages handle their own scrolling.
   if (isFullscreenMobilePage) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <main id="main-content" tabIndex={-1} className="pb-20">
+      <div
+        className="flex flex-col bg-gray-50"
+        style={{ height: '100dvh' }}
+      >
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 flex flex-col overflow-hidden"
+          style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
+        >
           <Outlet />
         </main>
         <MobileBottomNav />
@@ -62,7 +77,8 @@ const Layout = () => {
     );
   }
 
-  // Mobile app pages - has bottom nav (no footer)
+  // Mobile app pages (secondary pages like /tasks/:id, /users/:id, etc.)
+  // These still get Header + bottom nav + scroll padding
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col">

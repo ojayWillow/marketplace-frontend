@@ -26,7 +26,8 @@ interface JobPreviewCardProps {
 }
 
 /**
- * Job preview card - Shows when a job marker is selected on the map
+ * Job preview card - Shows when a job marker is selected on the map.
+ * Positioned above the MobileBottomNav (h-14 = 56px + safe-area-inset-bottom).
  */
 const JobPreviewCard = ({
   task,
@@ -71,15 +72,22 @@ const JobPreviewCard = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
+    <div
+      className="absolute left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp flex flex-col"
+      style={{
+        bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+        maxHeight: '55vh',
+      }}
+    >
       {/* Urgent top accent bar */}
       {isUrgent && (
-        <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse" />
+        <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse flex-shrink-0" />
       )}
 
-      <div className="p-4">
+      {/* Scrollable content area */}
+      <div className="px-4 pt-4 pb-2 overflow-y-auto flex-1 min-h-0">
         {/* Top row: Category on left, Distance in CENTER, X button on right */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           {/* Category pill with urgent dot overlay */}
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
@@ -109,7 +117,7 @@ const JobPreviewCard = ({
         </div>
 
         {/* Price - BIG and prominent */}
-        <div className="text-center mb-2">
+        <div className="text-center mb-1">
           <span
             className={`text-3xl font-bold ${
               isUrgent
@@ -126,12 +134,12 @@ const JobPreviewCard = ({
         </div>
 
         {/* Title (cleaned) */}
-        <h3 className="font-bold text-gray-900 text-lg text-center mb-3 line-clamp-2">
+        <h3 className="font-bold text-gray-900 text-lg text-center mb-2 line-clamp-2">
           {displayTitle}
         </h3>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 mb-4 py-2 bg-gray-50 rounded-xl text-center">
+        <div className="grid grid-cols-3 gap-2 mb-3 py-2 bg-gray-50 rounded-xl text-center">
           <div>
             <div className="text-[10px] text-gray-400 uppercase tracking-wide">
               {t('tasks.distance', 'ATTĀLUMS')}
@@ -172,7 +180,7 @@ const JobPreviewCard = ({
             e.stopPropagation();
             onCreatorClick();
           }}
-          className="flex items-center gap-2 text-sm mb-4 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
+          className="flex items-center gap-2 text-sm hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
         >
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
@@ -226,30 +234,27 @@ const JobPreviewCard = ({
           
           <span className="text-gray-400 text-xs flex-shrink-0">→</span>
         </button>
-
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={onViewDetails}
-            className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
-              isUrgent
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-blue-500 hover:bg-blue-600'
-            }`}
-          >
-            {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
-          </button>
-          <FavoriteButton
-            itemType="task"
-            itemId={task.id}
-            size="md"
-            className="!rounded-xl !w-12 !h-12"
-          />
-        </div>
       </div>
 
-      {/* Safe area padding for phones with home indicator */}
-      <div className="h-6 bg-white" />
+      {/* Action buttons - PINNED at bottom, always visible */}
+      <div className="flex gap-3 px-4 py-3 bg-white flex-shrink-0 border-t border-gray-100">
+        <button
+          onClick={onViewDetails}
+          className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
+            isUrgent
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-blue-500 hover:bg-blue-600'
+          }`}
+        >
+          {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
+        </button>
+        <FavoriteButton
+          itemType="task"
+          itemId={task.id}
+          size="md"
+          className="!rounded-xl !w-12 !h-12"
+        />
+      </div>
     </div>
   );
 };

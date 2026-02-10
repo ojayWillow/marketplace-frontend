@@ -67,7 +67,13 @@ const MapMarkers = ({
             position={[displayLat, displayLng]}
             icon={jobIcon}
           >
-            <Popup>
+            <Popup
+              maxWidth={260}
+              minWidth={240}
+              autoPan={true}
+              autoPanPadding={[20, 20]}
+              className="job-marker-popup"
+            >
               <JobMapPopup task={task} userLocation={userLocation} />
             </Popup>
           </Marker>
@@ -84,7 +90,13 @@ const MapMarkers = ({
             position={[offering.latitude, offering.longitude]} 
             icon={offeringIcon}
           >
-            <Popup>
+            <Popup
+              maxWidth={260}
+              minWidth={240}
+              autoPan={true}
+              autoPanPadding={[20, 20]}
+              className="offering-marker-popup"
+            >
               <OfferingMapPopup offering={offering} userLocation={userLocation} />
             </Popup>
           </Marker>
