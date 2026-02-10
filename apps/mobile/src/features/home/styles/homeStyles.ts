@@ -4,6 +4,9 @@ import { JOB_COLOR, OFFERING_COLOR } from '../constants';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Tab bar height from _layout.tsx — keep in sync
+const TAB_BAR_HEIGHT = 65;
+
 export const createStyles = (activeTheme: 'light' | 'dark') => {
   const themeColors = colors[activeTheme];
   
@@ -157,10 +160,10 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
       fontSize: 18,
     },
     
-    // Bottom Sheet
+    // Bottom Sheet — positioned above the tab bar so content isn't hidden
     bottomSheet: { 
       position: 'absolute', 
-      bottom: 0, 
+      bottom: TAB_BAR_HEIGHT, 
       left: 0, 
       right: 0, 
       backgroundColor: themeColors.card,
@@ -232,8 +235,8 @@ export const createStyles = (activeTheme: 'light' | 'dark') => {
     jobCardPrice: { fontSize: 18, fontWeight: '700', color: JOB_COLOR },
     jobCardDistance: { fontSize: 12, color: themeColors.textSecondary, marginTop: 2 },
     
-    // Focused Job Card — paddingBottom ensures button clears the tab bar on PWA/mobile Chrome
-    focusedCard: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+    // Focused Job Card — extra paddingBottom so button clears any overlap
+    focusedCard: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
     focusedTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     focusedCategoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6 },
     focusedCategoryIcon: { fontSize: 14 },
