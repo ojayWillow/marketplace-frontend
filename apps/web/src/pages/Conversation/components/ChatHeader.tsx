@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '@marketplace/shared';
@@ -9,6 +10,36 @@ interface ChatHeaderProps {
   onlineStatus?: 'online' | 'recently' | 'inactive';
   isOtherTyping?: boolean;
   isMobile?: boolean;
+}
+
+/**
+ * Avatar with automatic fallback to initials if the image fails to load.
+ */
+function ChatAvatar({ user, size = 'w-10 h-10' }: { user: any; size?: string }) {
+  const [imgError, setImgError] = useState(false);
+  const avatarUrl = user?.avatar_url;
+  const initial = user?.username?.charAt(0).toUpperCase() || '?';
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !imgError) {
+    return (
+      <img
+        src={getImageUrl(avatarUrl)}
+        alt=""
+        className={`${size} rounded-full object-cover`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${size} rounded-full bg-blue-500 flex items-center justify-center text-white font-bold`}>
+      {initial}
+    </div>
+  );
 }
 
 const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHeaderProps) => {
@@ -34,6 +65,16 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
         ? 'text-amber-600'
         : 'text-gray-500';
 
+  const handleBack = () => {
+    // Use history back if we came from messages, otherwise navigate directly.
+    // This avoids pushing a new /messages entry that creates a back-button loop.
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/messages', { replace: true });
+    }
+  };
+
   return (
     <div
       className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0"
@@ -41,7 +82,7 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
     >
       {/* Back button */}
       <button
-        onClick={() => navigate('/messages')}
+        onClick={handleBack}
         className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-1 -ml-1' : ''}`}
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,19 +91,9 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
       </button>
 
       <Link to={`/users/${otherUser?.id}`} className={`flex items-center gap-3 flex-1 ${isMobile ? 'min-w-0' : ''}`}>
-        {/* Avatar */}
+        {/* Avatar with fallback */}
         <div className="flex-shrink-0 relative">
-          {otherUser?.avatar_url ? (
-            <img
-              src={getImageUrl(otherUser.avatar_url)}
-              alt=""
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-              {otherUser?.username?.charAt(0).toUpperCase() || '?'}
-            </div>
-          )}
+          <ChatAvatar user={otherUser} />
           {/* Online dot on avatar */}
           {onlineStatus === 'online' && (
             <span

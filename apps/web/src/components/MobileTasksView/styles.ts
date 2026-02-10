@@ -7,6 +7,11 @@ export const mobileTasksStyles = `
     0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
   }
+  @keyframes urgentPulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    70% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+  }
   @keyframes slideUp {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -39,5 +44,8 @@ export const mobileTasksStyles = `
   }
   .leaflet-marker-icon.selected-marker {
     z-index: 1000 !important;
+  }
+  .urgent-marker {
+    z-index: 500 !important;
   }
 `;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ProfileHeader,
   AvatarPicker,
@@ -12,6 +13,7 @@ import {
   OfferingsTab,
   TasksTab,
   ReviewsTab,
+  SettingsTab,
 } from './components/tabs';
 import {
   useProfileData,
@@ -22,8 +24,14 @@ import {
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
 import { MobileActivitySection } from './components/mobile/MobileActivitySection';
 import { MobileListingsTeaser } from './components/mobile/MobileListingsTeaser';
+import CommunityRulesModal from '../../components/QuickHelpIntroModal';
 
 const Profile = () => {
+  const { t } = useTranslation();
+
+  // How it works modal
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
   // Data management
   const {
     profile,
@@ -75,6 +83,9 @@ const Profile = () => {
   // Mobile reviews expansion
   const [showAllReviews, setShowAllReviews] = useState(false);
 
+  // Mobile settings view — use local state for reliability
+  const [showMobileSettings, setShowMobileSettings] = useState(false);
+
   // Update avatar seed when profile loads
   useEffect(() => {
     if (profile?.username) {
@@ -94,6 +105,16 @@ const Profile = () => {
   // Helper to update formData fields directly (for skills, country+city reset, etc.)
   const handleFormDataChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleOpenMobileSettings = () => {
+    setShowMobileSettings(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCloseMobileSettings = () => {
+    setShowMobileSettings(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Loading state
@@ -157,6 +178,13 @@ const Profile = () => {
           fileInputRef={avatarPicker.fileInputRef}
         />
 
+        {/* How It Works Modal (re-viewable, no checkboxes) */}
+        <CommunityRulesModal
+          isOpen={showHowItWorks}
+          onClose={() => setShowHowItWorks(false)}
+          showCheckboxes={false}
+        />
+
         {/* About Tab edit form - show on mobile when editing */}
         {editing && (
           <div className="md:hidden mb-4">
@@ -173,43 +201,101 @@ const Profile = () => {
         {/* ========== MOBILE LAYOUT (< md) ========== */}
         {!editing && (
           <div className="md:hidden space-y-4">
-            {/* Reviews Section - inline */}
-            <MobileReviewsSection
-              reviews={reviews}
-              showAll={showAllReviews}
-              onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
-              currentUserId={user?.id}
-              onDeleteReview={actions.handleDeleteReview}
-              setReviews={setReviews}
-            />
+            {/* Show SettingsTab when active on mobile (replaces normal content) */}
+            {showMobileSettings ? (
+              <div>
+                <button
+                  onClick={handleCloseMobileSettings}
+                  className="flex items-center gap-1 text-sm text-blue-600 mb-4 hover:text-blue-700"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to profile
+                </button>
+                <SettingsTab />
+              </div>
+            ) : (
+              <>
+                {/* How It Works + Settings row */}
+                <div className="flex gap-3">
+                  {/* How It Works button */}
+                  <button
+                    onClick={() => setShowHowItWorks(true)}
+                    className="flex-1 flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <span className="text-lg">❓</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {t('quickHelp.howItWorks', 'How it works')}
+                      </span>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
 
-            {/* Listings Teaser - compact banner ABOVE activity */}
-            <MobileListingsTeaser />
+                  {/* Settings button */}
+                  <button
+                    onClick={handleOpenMobileSettings}
+                    className="flex-1 flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">Settings</span>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
 
-            {/* Activity Section - Jobs + Services combined */}
-            <MobileActivitySection
-              activeMode={mobileActivityMode}
-              onModeChange={setMobileActivityMode}
-              // Jobs props
-              createdTasks={createdTasks}
-              myApplications={myApplications}
-              taskMatchCounts={taskMatchCounts}
-              tasksLoading={tasksLoading}
-              applicationsLoading={applicationsLoading}
-              taskViewMode={taskViewMode}
-              taskStatusFilter={taskStatusFilter}
-              onViewModeChange={setTaskViewMode}
-              onStatusFilterChange={setTaskStatusFilter}
-              onCancelTask={actions.handleCancelTask}
-              onTaskConfirmed={fetchTasks}
-              userId={user?.id}
-              // Services props
-              offerings={myOfferings}
-              offeringsLoading={offeringsLoading}
-              onDeleteOffering={actions.handleDeleteOffering}
-              // Notification count
-              pendingNotifications={totalPendingApplicationsOnMyTasks}
-            />
+                {/* Reviews Section - inline */}
+                <MobileReviewsSection
+                  reviews={reviews}
+                  showAll={showAllReviews}
+                  onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
+                  currentUserId={user?.id}
+                  onDeleteReview={actions.handleDeleteReview}
+                  setReviews={setReviews}
+                />
+
+                {/* Listings Teaser - compact banner ABOVE activity */}
+                <MobileListingsTeaser />
+
+                {/* Activity Section - Jobs + Services combined */}
+                <MobileActivitySection
+                  activeMode={mobileActivityMode}
+                  onModeChange={setMobileActivityMode}
+                  // Jobs props
+                  createdTasks={createdTasks}
+                  myApplications={myApplications}
+                  taskMatchCounts={taskMatchCounts}
+                  tasksLoading={tasksLoading}
+                  applicationsLoading={applicationsLoading}
+                  taskViewMode={taskViewMode}
+                  taskStatusFilter={taskStatusFilter}
+                  onViewModeChange={setTaskViewMode}
+                  onStatusFilterChange={setTaskStatusFilter}
+                  onCancelTask={actions.handleCancelTask}
+                  onTaskConfirmed={fetchTasks}
+                  userId={user?.id}
+                  // Services props
+                  offerings={myOfferings}
+                  offeringsLoading={offeringsLoading}
+                  onDeleteOffering={actions.handleDeleteOffering}
+                  // Notification count
+                  pendingNotifications={totalPendingApplicationsOnMyTasks}
+                />
+              </>
+            )}
           </div>
         )}
 
@@ -284,6 +370,12 @@ const Profile = () => {
               currentUserId={user?.id}
               onDeleteReview={actions.handleDeleteReview}
               setReviews={setReviews}
+            />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsTab
+              onHowItWorks={() => setShowHowItWorks(true)}
             />
           )}
         </div>

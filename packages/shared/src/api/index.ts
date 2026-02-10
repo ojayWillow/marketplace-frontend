@@ -1,5 +1,5 @@
 // Core client
-export { apiClient, default as api } from './client';
+export { apiClient, API_URL, default as api } from './client';
 
 // API modules
 export { authApi } from './auth';
@@ -27,7 +27,6 @@ export * from './offerings';
 export * from './payments';
 export * from './push';
 export * from './reviews';
-export * from './taskResponses';
 
 // Tasks - export everything except Task type (it conflicts with types.ts)
 export {

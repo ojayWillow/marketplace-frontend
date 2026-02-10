@@ -8,6 +8,19 @@ interface MessageBubbleProps {
   maxWidthClass?: string;
 }
 
+const isImageUrl = (content: string): boolean => {
+  if (!content) return false;
+  // Check if the content is a URL pointing to an image
+  const trimmed = content.trim();
+  if (!trimmed.startsWith('http')) return false;
+  // Check for common image extensions or Supabase storage URLs
+  return (
+    /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(trimmed) ||
+    trimmed.includes('/storage/v1/object/') ||
+    trimmed.includes('/chat-images/')
+  );
+};
+
 const MessageBubble = ({ message, isOwn, showDate, maxWidthClass = 'max-w-[80%]' }: MessageBubbleProps) => (
   <div>
     {showDate && (
@@ -23,7 +36,18 @@ const MessageBubble = ({ message, isOwn, showDate, maxWidthClass = 'max-w-[80%]'
             : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
         }`}
       >
-        <p className="break-words">{message.content}</p>
+        {isImageUrl(message.content) ? (
+          <a href={message.content} target="_blank" rel="noopener noreferrer">
+            <img
+              src={message.content}
+              alt="Shared image"
+              className="max-w-full rounded-lg max-h-64 object-contain"
+              loading="lazy"
+            />
+          </a>
+        ) : (
+          <p className="break-words">{message.content}</p>
+        )}
         <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-400'}`}>
           {formatTime(message.created_at)}
         </p>

@@ -15,6 +15,14 @@ import { useAuthStore } from '@marketplace/shared';
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
+// Dev-only logger — stripped from production builds
+const log = (...args: any[]) => {
+  if (__DEV__) console.log(...args);
+};
+const logError = (...args: any[]) => {
+  if (__DEV__) console.error(...args);
+};
+
 interface UserPresence {
   user_id: number;
   is_online: boolean;
@@ -41,15 +49,14 @@ class SocketService {
    */
   connect(token: string): void {
     if (this.socket?.connected) {
-      console.log('✅ Socket already connected');
+      log('Socket already connected');
       return;
     }
     
-    console.log('🔌 Connecting to Socket.IO:', SOCKET_URL);
+    log('Connecting to Socket.IO:', SOCKET_URL);
     
     this.socket = io(SOCKET_URL, {
       auth: { token },
-      query: { token },
       // IMPORTANT: Use polling only - backend (gunicorn+gevent) doesn't support WebSocket
       // Polling is reliable and works perfectly for real-time messaging
       transports: ['polling'],
@@ -61,7 +68,7 @@ class SocketService {
     });
     
     this.setupEventListeners();
-    this.startHeartbeat(token);
+    this.startHeartbeat();
   }
   
   /**
@@ -74,7 +81,7 @@ class SocketService {
     }
     
     if (this.socket) {
-      console.log('🔌 Disconnecting from Socket.IO');
+      log('Disconnecting from Socket.IO');
       this.socket.disconnect();
       this.socket = null;
     }
@@ -91,21 +98,21 @@ class SocketService {
     
     // Connection events
     this.socket.on('connect', () => {
-      console.log('✅ Socket.IO connected:', this.socket?.id);
+      log('Socket.IO connected:', this.socket?.id);
     });
     
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket.IO disconnected:', reason);
+      log('Socket.IO disconnected:', reason);
     });
     
     this.socket.on('connect_error', (error) => {
-      console.error('❌ Socket.IO connection error:', error.message);
+      logError('Socket.IO connection error:', error.message);
     });
     
     // Presence events (CRITICAL)
     this.socket.on('user_presence', (data: UserPresence) => {
-      console.log(`👤 Presence update for user ${data.user_id}:`, 
-        data.is_online ? '🟢 ONLINE' : '🔴 OFFLINE',
+      log(`Presence update for user ${data.user_id}:`, 
+        data.is_online ? 'ONLINE' : 'OFFLINE',
         data.last_seen_display || ''
       );
       
@@ -118,24 +125,25 @@ class SocketService {
     
     // Message events
     this.socket.on('new_message', (data) => {
-      console.log('💬 New message received:', data);
+      log('New message received:', data);
       this.messageListeners.forEach(listener => listener(data));
     });
     
     // Typing indicators
     this.socket.on('user_typing', (data) => {
-      console.log('✍️ User typing:', data);
+      log('User typing:', data);
     });
   }
   
   /**
-   * Start heartbeat to keep connection alive and last_seen fresh
+   * Start heartbeat to keep connection alive and last_seen fresh.
+   * No token needed — server identifies the client from the authenticated socket session.
    */
-  private startHeartbeat(token: string): void {
+  private startHeartbeat(): void {
     // Send heartbeat every 30 seconds
     this.heartbeatInterval = setInterval(() => {
       if (this.socket?.connected) {
-        this.socket.emit('heartbeat', { token });
+        this.socket.emit('heartbeat');
       }
     }, 30000);
   }
@@ -176,13 +184,13 @@ class SocketService {
   }
   
   /**
-   * Join a conversation room
+   * Join a conversation room.
+   * No token needed — server identifies the client from the authenticated socket session.
    */
-  joinConversation(conversationId: number, token: string): void {
+  joinConversation(conversationId: number): void {
     if (this.socket?.connected) {
       this.socket.emit('join_conversation', {
         conversation_id: conversationId,
-        token,
       });
     }
   }
@@ -199,14 +207,14 @@ class SocketService {
   }
   
   /**
-   * Send typing indicator
+   * Send typing indicator.
+   * No token needed — server identifies the client from the authenticated socket session.
    */
-  sendTyping(conversationId: number, isTyping: boolean, token: string): void {
+  sendTyping(conversationId: number, isTyping: boolean): void {
     if (this.socket?.connected) {
       this.socket.emit('typing', {
         conversation_id: conversationId,
         is_typing: isTyping,
-        token,
       });
     }
   }

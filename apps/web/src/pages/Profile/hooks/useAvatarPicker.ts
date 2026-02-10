@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
-import { useToastStore } from '@marketplace/shared';
-import { uploadImage, getImageUrl } from '@marketplace/shared/src/api/uploads';
+import { useToastStore, uploadAvatarFile, useAuthStore } from '@marketplace/shared';
 import { generateAvatarUrl, generateRandomSeed } from '../utils/avatarHelpers';
 import type { ProfileFormData } from '@marketplace/shared';
 
@@ -11,6 +10,7 @@ interface UseAvatarPickerProps {
 
 export const useAvatarPicker = ({ initialSeed, setFormData }: UseAvatarPickerProps) => {
   const toast = useToastStore();
+  const { updateUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -46,16 +46,23 @@ export const useAvatarPicker = ({ initialSeed, setFormData }: UseAvatarPickerPro
 
     try {
       setUploadingAvatar(true);
-      const result = await uploadImage(file);
-      const imageUrl = getImageUrl(result.url);
-      setFormData(prev => ({ ...prev, avatar_url: imageUrl }));
+      // Use uploadAvatarFile which uploads to Supabase and updates the user's avatar_url in the DB
+      const avatarUrl = await uploadAvatarFile(file);
+      setFormData(prev => ({ ...prev, avatar_url: avatarUrl }));
+      // Update the auth store so the avatar updates everywhere immediately
+      updateUser({ avatar_url: avatarUrl });
       setShowAvatarPicker(false);
       toast.success('Avatar uploaded successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      toast.error('Failed to upload avatar');
+      const message = error?.response?.data?.error || error?.response?.data?.message || 'Failed to upload avatar';
+      toast.error(message);
     } finally {
       setUploadingAvatar(false);
+      // Reset file input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 

@@ -10,6 +10,7 @@ export interface TaskFormData {
   deadlineTime: string;
   difficulty: string;
   is_urgent: boolean;
+  images: File[];
 }
 
 export const INITIAL_TASK_FORM: TaskFormData = {
@@ -24,6 +25,7 @@ export const INITIAL_TASK_FORM: TaskFormData = {
   deadlineTime: '',
   difficulty: 'medium',
   is_urgent: false,
+  images: [],
 };
 
 export const DIFFICULTIES = [

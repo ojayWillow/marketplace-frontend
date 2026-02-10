@@ -19,6 +19,7 @@ import {
   FilterSheet,
   FloatingSearchBar,
 } from './components';
+import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal';
 
 /**
  * Main Mobile Tasks View Component
@@ -31,6 +32,14 @@ const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+
+  // Community rules modal state
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem(COMMUNITY_RULES_KEY);
+    if (!hasAccepted) setShowRulesModal(true);
+  }, []);
 
   // Read persisted selectedTaskId from store
   const storedSelectedTaskId = useMobileMapStore((s) => s.selectedTaskId);
@@ -97,6 +106,12 @@ const MobileTasksView = () => {
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
+  // Urgent job count
+  const urgentCount = useMemo(
+    () => filteredTasks.filter((t) => t.is_urgent).length,
+    [filteredTasks]
+  );
+
   // --- Event handlers ---
   const handleRecenter = () => {
     setSelectedTask(null);
@@ -150,6 +165,13 @@ const MobileTasksView = () => {
   return (
     <>
       <style>{mobileTasksStyles}</style>
+
+      {/* Community rules modal — blocks until accepted */}
+      <CommunityRulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+        showCheckboxes={!localStorage.getItem(COMMUNITY_RULES_KEY)}
+      />
 
       <CreateChoiceModal
         isOpen={showCreateModal}
@@ -214,9 +236,9 @@ const MobileTasksView = () => {
                     task.displayLatitude || task.latitude,
                     task.displayLongitude || task.longitude,
                   ]}
-                  icon={getJobPriceIcon(budget, isSelected)}
+                  icon={getJobPriceIcon(budget, isSelected, task.is_urgent)}
                   eventHandlers={{ click: () => handleMarkerClick(task) }}
-                  zIndexOffset={isSelected ? 1000 : 0}
+                  zIndexOffset={isSelected ? 1000 : task.is_urgent ? 500 : 0}
                 />
               );
             })}
@@ -302,6 +324,9 @@ const MobileTasksView = () => {
               <div className="flex items-center justify-between w-full px-4">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
+                  {urgentCount > 0 && (
+                    <span className="text-red-600"> · ⚡{urgentCount}</span>
+                  )}
                 </span>
                 <button
                   type="button"

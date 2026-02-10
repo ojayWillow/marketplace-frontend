@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createOffering, boostOffering, useAuthStore, useToastStore } from '@marketplace/shared';
+import { createOffering, boostOffering, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
 import { GeocodingResult, reverseGeocode } from '@marketplace/shared';
 import { OfferingFormData, INITIAL_FORM_DATA } from '../types';
 
@@ -85,6 +85,20 @@ export const useOfferingForm = () => {
     }
   }, []);
 
+  // Upload images and return their URLs
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      try {
+        const url = await uploadTaskImageFile(file);
+        urls.push(url);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    }
+    return urls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -117,6 +131,16 @@ export const useOfferingForm = () => {
     setLoading(true);
 
     try {
+      // Upload images first
+      let imageUrls: string[] = [];
+      if (formData.images.length > 0) {
+        toast.info(t('createOffering.uploadingImages', 'Uploading images...'));
+        imageUrls = await uploadImages(formData.images);
+        if (imageUrls.length < formData.images.length) {
+          toast.warning(t('createOffering.someImagesFailed', 'Some images failed to upload, but continuing.'));
+        }
+      }
+
       const offeringData = {
         title: formData.title,
         description: formData.description,
@@ -129,6 +153,7 @@ export const useOfferingForm = () => {
         availability: formData.availability || undefined,
         experience: formData.experience || undefined,
         service_radius: parseFloat(formData.service_radius) || 25,
+        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
       const response = await createOffering(offeringData);

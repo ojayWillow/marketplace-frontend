@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
@@ -6,6 +6,37 @@ import { useConversations } from '../api/hooks';
 import { getImageUrl } from '@marketplace/shared';
 import OnlineStatus from '../components/ui/OnlineStatus';
 import { useIsMobile } from '../hooks/useIsMobile';
+
+/**
+ * Avatar with automatic fallback to initials if the image fails to load.
+ */
+function ConversationAvatar({ participant, size = 'w-12 h-12' }: { participant: any; size?: string }) {
+  const [imgError, setImgError] = useState(false);
+  const avatarUrl = participant?.avatar_url;
+  const initial = participant?.username?.charAt(0).toUpperCase() || '?';
+
+  // Reset error state if avatar URL changes
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !imgError) {
+    return (
+      <img
+        src={getImageUrl(avatarUrl)}
+        alt=""
+        className={`${size} rounded-full object-cover`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${size} rounded-full bg-blue-500 flex items-center justify-center text-white font-bold`}>
+      {initial}
+    </div>
+  );
+}
 
 export default function Messages() {
   const { t } = useTranslation();
@@ -23,7 +54,7 @@ export default function Messages() {
     }
   }, [isAuthenticated, navigate]);
 
-  const formatTime = (dateString: string) => {
+  const formatTime = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -36,7 +67,7 @@ export default function Messages() {
       return date.toLocaleDateString('en-US', { weekday: 'short' });
     }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  }, [t]);
 
   if (loading) {
     return (
@@ -46,28 +77,15 @@ export default function Messages() {
     );
   }
 
-  // Mobile: Use standard layout that works with bottom nav
+  // Mobile: standard layout that works with bottom nav
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Header with back button */}
-        <div
-          className="bg-white border-b px-4 py-3 flex-shrink-0"
-          style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
-        >
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-1 -ml-1 text-gray-500 hover:text-gray-800 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-xl font-bold text-gray-900">
-              💬 {t('messages.title', 'Messages')}
-            </h1>
-          </div>
+        {/* Header — no back button since Messages is a top-level tab */}
+        <div className="bg-white border-b px-4 py-3 flex-shrink-0">
+          <h1 className="text-xl font-bold text-gray-900">
+            💬 {t('messages.title', 'Messages')}
+          </h1>
         </div>
 
         {/* Conversations list */}
@@ -91,19 +109,9 @@ export default function Messages() {
                   to={`/messages/${conv.id}`}
                   className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                 >
-                  {/* Avatar */}
+                  {/* Avatar with fallback */}
                   <div className="flex-shrink-0">
-                    {conv.other_participant?.avatar_url ? (
-                      <img
-                        src={getImageUrl(conv.other_participant.avatar_url)}
-                        alt=""
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                        {conv.other_participant?.username?.charAt(0).toUpperCase() || '?'}
-                      </div>
-                    )}
+                    <ConversationAvatar participant={conv.other_participant} />
                   </div>
 
                   {/* Online Status Icon */}
@@ -151,7 +159,7 @@ export default function Messages() {
     );
   }
 
-  // Desktop: Card-style layout (no changes needed)
+  // Desktop: Card-style layout
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
@@ -178,19 +186,9 @@ export default function Messages() {
                 to={`/messages/${conv.id}`}
                 className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
               >
-                {/* Avatar */}
+                {/* Avatar with fallback */}
                 <div className="flex-shrink-0">
-                  {conv.other_participant?.avatar_url ? (
-                    <img
-                      src={getImageUrl(conv.other_participant.avatar_url)}
-                      alt=""
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                      {conv.other_participant?.username?.charAt(0).toUpperCase() || '?'}
-                    </div>
-                  )}
+                  <ConversationAvatar participant={conv.other_participant} />
                 </div>
 
                 {/* Online Status Icon */}

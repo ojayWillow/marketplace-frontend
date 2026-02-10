@@ -3,6 +3,18 @@ import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import FavoriteButton from '../../ui/FavoriteButton';
 
+/**
+ * Strip common "urgent" prefixes users may have manually typed in titles.
+ */
+const cleanTitle = (title: string): string => {
+  return title
+    .replace(/^\s*(⚡\s*)?urgent[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?steidzami[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?срочно[:\-!\s]*/i, '')
+    .replace(/^\s*⚡\s*/, '')
+    .trim() || title;
+};
+
 interface MobileJobCardProps {
   task: Task;
   userLocation: { lat: number; lng: number };
@@ -27,6 +39,8 @@ const MobileJobCard = ({
   );
   const budget = task.budget || task.reward || 0;
   const hasRating = task.creator_rating != null;
+  const isUrgent = task.is_urgent;
+  const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   // Render star rating
   const renderStars = (rating: number) => {
@@ -38,7 +52,7 @@ const MobileJobCard = ({
       if (i < fullStars) {
         stars.push(<span key={i} className="text-yellow-400">★</span>);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">⯨</span>);
+        stars.push(<span key={i} className="text-yellow-400">⯪</span>);
       } else {
         stars.push(<span key={i} className="text-gray-300">★</span>);
       }
@@ -50,21 +64,34 @@ const MobileJobCard = ({
     <div
       onClick={onClick}
       className={`flex items-center gap-3 p-3 border-b border-gray-100 active:bg-gray-50 cursor-pointer transition-colors ${
-        isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'bg-white'
+        isSelected
+          ? 'bg-blue-50 border-l-4 border-l-blue-500'
+          : isUrgent
+          ? 'bg-red-50/40 border-l-4 border-l-red-500'
+          : 'bg-white'
       }`}
     >
-      <div
-        className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-          isSelected ? 'bg-blue-100' : 'bg-blue-50'
-        }`}
-      >
-        {task.icon || '📋'}
+      {/* Icon with optional urgent pulse dot */}
+      <div className="relative">
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
+            isSelected ? 'bg-blue-100' : isUrgent ? 'bg-red-50' : 'bg-blue-50'
+          }`}
+        >
+          {task.icon || '📋'}
+        </div>
+        {isUrgent && (
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
+          </span>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
-        {/* Line 1: Title */}
+        {/* Line 1: Title (cleaned) */}
         <h3 className="font-semibold text-gray-900 text-sm truncate">
-          {task.title}
+          {displayTitle}
         </h3>
         
         {/* Line 2: Distance and Time */}
@@ -74,7 +101,7 @@ const MobileJobCard = ({
           <span>{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</span>
         </div>
         
-        {/* Line 3: Creator with avatar, name, rating, and city - ALL ON ONE LINE */}
+        {/* Line 3: Creator with avatar, name, rating, and city */}
         <div className="flex items-center gap-1.5 mt-1 text-xs">
           {/* Avatar */}
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 overflow-hidden">
@@ -128,7 +155,9 @@ const MobileJobCard = ({
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <span
           className={`text-lg font-bold ${
-            budget <= 25
+            isUrgent
+              ? 'text-red-600'
+              : budget <= 25
               ? 'text-green-600'
               : budget <= 75
               ? 'text-blue-600'

@@ -12,10 +12,9 @@ import { useAuthStore } from '@marketplace/shared';
 import { useMatchingStore } from '@marketplace/shared';
 import { CATEGORY_OPTIONS } from '../../constants/categories';
 import CompactFilterBar from '../../components/ui/CompactFilterBar';
-import { SparklesCore } from '../../components/ui/SparklesCore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileTasksView from '../../components/MobileTasksView';
-import QuickHelpIntroModal from '../../components/QuickHelpIntroModal';
+import QuickHelpIntroModal, { COMMUNITY_RULES_KEY } from '../../components/QuickHelpIntroModal';
 
 // Modular components
 import { TaskCard } from './components/TaskCard';
@@ -92,10 +91,10 @@ const DesktopTasksView = () => {
     category: filters.category,
   });
 
-  // Show intro modal on first visit
+  // Show community rules modal on first visit (unified key)
   useEffect(() => {
-    const hasSeenIntro = localStorage.getItem('quickHelpIntroSeen');
-    if (!hasSeenIntro) setShowIntroModal(true);
+    const hasAccepted = localStorage.getItem(COMMUNITY_RULES_KEY);
+    if (!hasAccepted) setShowIntroModal(true);
   }, []);
 
   // Load user offerings for matching
@@ -165,57 +164,22 @@ const DesktopTasksView = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
-        {/* Header with Kolab branding */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
-            {/* Kolab title with sparkles */}
-            <div className="relative">
-              <h1 className="text-3xl font-bold relative z-10">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
-                  Kolab
-                </span>
-              </h1>
-              <p className="text-gray-600 relative z-10">
-                {t('tasks.subtitle', 'Find jobs nearby and earn money')} 💰
-              </p>
-              {/* Sparkles effect */}
-              <div className="absolute -inset-4 -top-2 pointer-events-none overflow-hidden" style={{ width: '180px', height: '70px' }}>
-                <SparklesCore
-                  id="kolab-sparkles"
-                  background="transparent"
-                  minSize={0.4}
-                  maxSize={1.2}
-                  particleDensity={50}
-                  particleColor="#8B5CF6"
-                  speed={0.3}
-                  className="w-full h-full"
-                />
-              </div>
-            </div>
-            <button
-              onClick={() => setShowIntroModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors text-sm whitespace-nowrap"
-            >
-              <span>❓</span>
-              <span className="hidden sm:inline">{t('quickHelp.howItWorks', 'How it works')}</span>
-            </button>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            {isAuthenticated ? (
-              <>
-                <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
-                  <span>💰</span> {t('tasks.postJob', 'Post a Job')}
-                </button>
-                <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
-                  <span>👋</span> {t('tasks.offerService', 'Offer Service')}
-                </button>
-              </>
-            ) : (
-              <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
-                {t('tasks.loginToPost', 'Login to Post Jobs or Offer Services')}
+        {/* Header - action buttons only */}
+        <div className="mb-4 flex justify-end items-center gap-3">
+          {isAuthenticated ? (
+            <>
+              <button onClick={() => navigate('/tasks/create')} className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium transition-colors flex items-center gap-2">
+                <span>💰</span> {t('tasks.postJob', 'Post a Job')}
               </button>
-            )}
-          </div>
+              <button onClick={() => navigate('/offerings/create')} className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 font-medium transition-colors flex items-center gap-2">
+                <span>👋</span> {t('tasks.offerService', 'Offer Service')}
+              </button>
+            </>
+          ) : (
+            <button onClick={() => navigate('/login')} className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+              {t('tasks.loginToPost', 'Login to Post Jobs or Offer Services')}
+            </button>
+          )}
         </div>
 
         {/* Banners */}
@@ -364,7 +328,7 @@ const DesktopTasksView = () => {
         )}
       </div>
 
-      <QuickHelpIntroModal isOpen={showIntroModal} onClose={() => setShowIntroModal(false)} showCheckboxes={!localStorage.getItem('quickHelpIntroSeen')} />
+      <QuickHelpIntroModal isOpen={showIntroModal} onClose={() => setShowIntroModal(false)} showCheckboxes={!localStorage.getItem(COMMUNITY_RULES_KEY)} />
     </div>
   );
 };
