@@ -374,12 +374,6 @@ const MobileTasksView = () => {
                   <span className="text-xl leading-none font-bold">+</span>
                 </button>
               </div>
-
-              {sheetPosition === 'collapsed' && (
-                <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                  {t('tasks.swipeUpForJobs', 'Swipe up for jobs')}
-                </span>
-              )}
             </div>
 
             {/* Jobs list */}
