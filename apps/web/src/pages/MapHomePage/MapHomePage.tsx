@@ -8,7 +8,7 @@ import { CATEGORY_OPTIONS } from '../../constants/categories';
 import CompactFilterBar from '../../components/ui/CompactFilterBar';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileTasksView from '../../components/MobileTasksView';
-import QuickHelpIntroModal from '../../components/QuickHelpIntroModal';
+import QuickHelpIntroModal, { COMMUNITY_RULES_KEY } from '../../components/QuickHelpIntroModal';
 import LocationModal from '../Tasks/components/LocationModal';
 import { LocationLoadingState, DataLoadingState, ErrorState } from '../Tasks/components/LoadingStates';
 import { UrgentJobsBanner, MatchingJobsBanner } from '../Tasks/components/Banners';
@@ -124,7 +124,7 @@ const DesktopMapView = () => {
       <QuickHelpIntroModal
         isOpen={showIntroModal}
         onClose={() => setShowIntroModal(false)}
-        showCheckboxes={!localStorage.getItem('quickHelpIntroSeen')}
+        showCheckboxes={!localStorage.getItem(COMMUNITY_RULES_KEY)}
       />
     </div>
   );

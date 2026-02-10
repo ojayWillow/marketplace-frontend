@@ -2,113 +2,63 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-interface KolabIntroModalProps {
+interface CommunityRulesModalProps {
   isOpen: boolean;
   onClose: () => void;
-  showCheckboxes?: boolean; // If true, show checkboxes (first-time). If false, just show guidance
+  showCheckboxes?: boolean;
 }
 
-const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroModalProps) => {
+/** Unified localStorage key — used everywhere. */
+export const COMMUNITY_RULES_KEY = 'communityRulesAccepted';
+
+const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: CommunityRulesModalProps) => {
   const { t } = useTranslation();
-  const [selectedRole, setSelectedRole] = useState<'worker' | 'poster'>('worker'); // Default to worker view
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
   if (!isOpen) return null;
 
   const handleContinue = () => {
     if (showCheckboxes) {
-      // First-time flow: require checkboxes
-      if (agreedToTerms && agreedToPrivacy) {
-        localStorage.setItem('kolabIntroSeen', 'true');
+      if (agreed) {
+        localStorage.setItem(COMMUNITY_RULES_KEY, 'true');
         onClose();
       }
     } else {
-      // Manual viewing: just close
       onClose();
     }
   };
 
-  const canContinue = showCheckboxes ? (agreedToTerms && agreedToPrivacy) : true;
+  const canContinue = showCheckboxes ? agreed : true;
 
-  // Steps for workers (looking for work)
-  const workerSteps = [
+  const communityRules = [
     {
-      number: 1,
-      icon: '🔍',
-      title: t('kolab.browse', 'Browse'),
-      description: t('kolab.browseDesc', 'Find jobs on the map near you'),
-      bgColor: 'bg-green-100'
+      icon: '🤝',
+      text: t('community.respectRule', 'Be respectful to everyone'),
     },
     {
-      number: 2,
-      icon: '✋',
-      title: t('kolab.apply', 'Apply'),
-      description: t('kolab.applyDesc', 'Send your application'),
-      bgColor: 'bg-blue-100'
-    },
-    {
-      number: 3,
-      icon: '🎯',
-      title: t('kolab.getSelected', 'Get Selected'),
-      description: t('kolab.getSelectedDesc', 'Job poster picks you'),
-      bgColor: 'bg-purple-100'
-    },
-    {
-      number: 4,
-      icon: '💵',
-      title: t('kolab.getPaid', 'Get Paid'),
-      description: t('kolab.getPaidDesc', 'Complete & earn money'),
-      bgColor: 'bg-yellow-100'
-    }
-  ];
-
-  // Steps for job posters (need help)
-  const posterSteps = [
-    {
-      number: 1,
-      icon: '📝',
-      title: t('kolab.postJob', 'Post a Job'),
-      description: t('kolab.postJobDesc', 'Describe what you need'),
-      bgColor: 'bg-orange-100'
-    },
-    {
-      number: 2,
-      icon: '👀',
-      title: t('kolab.review', 'Review'),
-      description: t('kolab.reviewDesc', 'See who wants to help'),
-      bgColor: 'bg-blue-100'
-    },
-    {
-      number: 3,
       icon: '✅',
-      title: t('kolab.selectHelper', 'Select Helper'),
-      description: t('kolab.selectHelperDesc', 'Choose the best person'),
-      bgColor: 'bg-green-100'
+      text: t('community.commitRule', 'Complete jobs you commit to'),
     },
     {
-      number: 4,
-      icon: '💳',
-      title: t('kolab.completePay', 'Complete & Pay'),
-      description: t('kolab.completePayDesc', 'Confirm & pay helper'),
-      bgColor: 'bg-purple-100'
-    }
+      icon: '💰',
+      text: t('community.payRule', 'Pay fairly for completed work'),
+    },
+    {
+      icon: '🚫',
+      text: t('community.noAbuseRule', 'No fraud, spam, or abuse'),
+    },
   ];
-
-  const currentSteps = selectedRole === 'worker' ? workerSteps : posterSteps;
 
   return (
     <>
-      {/* Full-screen modal with gradient background - FIXED for mobile scroll */}
+      {/* Full-screen modal */}
       <div className="fixed inset-0 z-[10000] bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-y-auto">
-        {/* Scrollable container with proper padding */}
-        <div className="min-h-full px-4 py-6 sm:py-8 flex flex-col items-center">
-          {/* Content card - responsive width */}
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl">
+        <div className="min-h-full px-4 py-6 sm:py-8 flex flex-col items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-6 sm:py-8 text-center rounded-t-2xl relative">
-              {/* Close button - only show when manually opened */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-6 text-center rounded-t-2xl relative">
+              {/* Close button — only when re-viewing */}
               {!showCheckboxes && (
                 <button
                   onClick={onClose}
@@ -119,169 +69,77 @@ const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroM
                 </button>
               )}
               <div className="text-4xl sm:text-5xl mb-3">🤝</div>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-                {showCheckboxes 
-                  ? t('kolab.welcomeTitle', 'How Kolab Works')
-                  : t('kolab.howItWorks', 'How Kolab Works')
-                }
+              <h2 className="text-xl sm:text-2xl font-bold mb-1">
+                {t('community.title', 'Kolab Community Rules')}
               </h2>
-              <p className="text-blue-100 text-sm sm:text-base">
-                {t('kolab.subtitle', 'Connect with your local community - get help or earn money')}
+              <p className="text-blue-100 text-sm">
+                {t('community.subtitle', 'Before you start, please agree to our community guidelines')}
               </p>
             </div>
 
-            {/* Content */}
-            <div className="px-4 sm:px-6 py-6">
-              {/* What is Kolab? */}
-              <div className="mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  💡 {t('kolab.whatIsTitle', 'What is Kolab?')}
-                </h3>
-                <div className="space-y-2 sm:space-y-3 text-sm text-gray-600">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl flex-shrink-0">🗺️</span>
-                    <p>{t('kolab.mapDescription', 'An interactive map showing jobs near you - the closer, the easier to help!')}</p>
+            {/* Rules */}
+            <div className="px-5 sm:px-6 py-5">
+              <div className="space-y-3 mb-6">
+                {communityRules.map((rule, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                  >
+                    <span className="text-2xl flex-shrink-0">{rule.icon}</span>
+                    <span className="text-sm sm:text-base font-medium text-gray-800">
+                      {rule.text}
+                    </span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl flex-shrink-0">💰</span>
-                    <p>{t('kolab.postOrApply', 'Post tasks you need help with, or apply to jobs and earn money.')}</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl flex-shrink-0">⚡</span>
-                    <p>{t('kolab.services', 'From cleaning to deliveries to repairs - find or offer any local service!')}</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* How It Works */}
-              <div className="mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  📋 {t('kolab.howItWorks', 'How It Works')}
-                </h3>
-                
-                {/* Two role selection buttons */}
-                <div className="mb-6 flex gap-2 sm:gap-3">
-                  <button
-                    onClick={() => setSelectedRole('worker')}
-                    className={`flex-1 py-3 px-3 sm:px-4 rounded-xl font-semibold text-sm sm:text-base transition-all ${
-                      selectedRole === 'worker'
-                        ? 'bg-blue-500 text-white shadow-lg transform scale-[1.02]'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🔍 {t('kolab.lookingForWork', 'Looking for Work?')}
-                  </button>
-                  <button
-                    onClick={() => setSelectedRole('poster')}
-                    className={`flex-1 py-3 px-3 sm:px-4 rounded-xl font-semibold text-sm sm:text-base transition-all ${
-                      selectedRole === 'poster'
-                        ? 'bg-amber-500 text-white shadow-lg transform scale-[1.02]'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🆘 {t('kolab.needHelp', 'Need Help?')}
-                  </button>
-                </div>
-
-                {/* 4 Steps - Responsive grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
-                  {currentSteps.map((step) => (
-                    <div key={step.number} className="text-center">
-                      <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto ${step.bgColor} rounded-2xl flex items-center justify-center text-2xl sm:text-3xl mb-2 shadow-sm`}>
-                        {step.icon}
-                      </div>
-                      <div className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold mb-1 ${
-                        selectedRole === 'worker' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white'
-                      }`}>
-                        {step.number}
-                      </div>
-                      <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-1">{step.title}</p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 leading-snug">{step.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Create account notice - Only show on first-time */}
+              {/* Single checkbox — only on first time */}
               {showCheckboxes && (
-                <div className="mb-6 p-3 sm:p-4 bg-pink-50 border border-pink-200 rounded-xl">
-                  <p className="text-sm text-pink-800 flex items-start gap-2">
-                    <span className="text-lg sm:text-xl flex-shrink-0">👤</span>
-                    <span>
-                      <strong>{t('kolab.createAccount', 'Create a free account to apply for jobs and start earning!')}</strong>
-                      <br />
-                      <span className="text-xs text-pink-600">
-                        {t('kolab.browseWithoutAccount', 'You can browse jobs without an account, but you\'ll need to sign up to apply.')}
-                      </span>
-                    </span>
-                  </p>
-                </div>
+                <label className="flex items-start gap-3 cursor-pointer group mb-5">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="mt-0.5 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900 leading-snug">
+                    {t('community.agreeText', 'I agree to the Community Rules,')}{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowTermsModal(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-700 underline font-medium"
+                    >
+                      {t('community.termsLink', 'Terms of Service & Privacy Policy')}
+                    </button>
+                  </span>
+                </label>
               )}
 
-              {/* Checkboxes - Only show on first-time */}
-              {showCheckboxes && (
-                <div className="space-y-3 mb-6">
-                  {/* Checkbox 1: Understanding */}
-                  <label className="flex items-start gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                      className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-                    />
-                    <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                      {t('kolab.agreeToTerms', 'I understand how Kolab works and will treat other users with respect, complete jobs I commit to, and pay helpers fairly for completed work.')}
-                    </span>
-                  </label>
-
-                  {/* Checkbox 2: Terms & Privacy */}
-                  <label className="flex items-start gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={agreedToPrivacy}
-                      onChange={(e) => setAgreedToPrivacy(e.target.checked)}
-                      className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-                    />
-                    <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                      {t('kolab.agreeToPrivacy', 'I agree to the')}{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowTermsModal(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-700 underline font-medium"
-                      >
-                        {t('kolab.termsAndPrivacy', 'Terms of Service and Privacy Policy')}
-                      </button>
-                    </span>
-                  </label>
-                </div>
-              )}
-
-              {/* Continue/Got it Button */}
+              {/* Action button */}
               <button
                 onClick={handleContinue}
                 disabled={!canContinue}
-                className={`w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg text-white transition-all ${
+                className={`w-full py-3.5 rounded-xl font-bold text-base text-white transition-all ${
                   canContinue
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
               >
-                {showCheckboxes ? (
-                  canContinue
-                    ? t('common.continue', 'Continue')
-                    : t('kolab.checkBoxes', 'Please check the boxes above to continue')
-                ) : (
-                  t('kolab.gotIt', 'Got it!') + ' 👍'
-                )}
+                {showCheckboxes
+                  ? canContinue
+                    ? t('community.joinButton', 'Agree & Continue') + ' 🚀'
+                    : t('community.checkFirst', 'Please check the box above')
+                  : t('community.gotIt', 'Got it!') + ' 👍'
+                }
               </button>
 
-              {/* Footer note - Only show on first-time */}
+              {/* Footer hint — only on first time */}
               {showCheckboxes && (
-                <p className="text-center text-xs text-gray-500 mt-4">
-                  {t('kolab.alwaysAccess', 'You can always access this guide from the')}{' '}
+                <p className="text-center text-xs text-gray-400 mt-4">
+                  {t('community.accessLater', 'You can review these rules anytime from the')}{' '}
                   <span className="font-medium">❓ {t('kolab.howItWorksButton', 'How it works')}</span>{' '}
                   {t('kolab.button', 'button')}
                 </p>
@@ -291,7 +149,7 @@ const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroM
         </div>
       </div>
 
-      {/* Terms & Privacy Modal */}
+      {/* Terms & Privacy sub-modal */}
       {showTermsModal && (
         <div className="fixed inset-0 z-[10001] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
@@ -308,12 +166,12 @@ const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroM
               </button>
             </div>
 
-            {/* Content - scrollable */}
+            {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <div className="prose prose-sm max-w-none">
                 <h4 className="text-lg font-semibold text-gray-900 mb-3">Terms of Service</h4>
                 <p className="text-gray-700 mb-4">
-                  By using Kolab, you agree to use the platform responsibly and in good faith. 
+                  By using Kolab, you agree to use the platform responsibly and in good faith.
                   You agree to:
                 </p>
                 <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-6">
@@ -357,7 +215,7 @@ const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroM
               </button>
               <button
                 onClick={() => {
-                  setAgreedToPrivacy(true);
+                  setAgreed(true);
                   setShowTermsModal(false);
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-white"
@@ -372,4 +230,4 @@ const KolabIntroModal = ({ isOpen, onClose, showCheckboxes = true }: KolabIntroM
   );
 };
 
-export default KolabIntroModal;
+export default CommunityRulesModal;

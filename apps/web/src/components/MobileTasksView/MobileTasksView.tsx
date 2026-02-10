@@ -19,6 +19,7 @@ import {
   FilterSheet,
   FloatingSearchBar,
 } from './components';
+import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal';
 
 /**
  * Main Mobile Tasks View Component
@@ -31,6 +32,14 @@ const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+
+  // Community rules modal state
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem(COMMUNITY_RULES_KEY);
+    if (!hasAccepted) setShowRulesModal(true);
+  }, []);
 
   // Read persisted selectedTaskId from store
   const storedSelectedTaskId = useMobileMapStore((s) => s.selectedTaskId);
@@ -150,6 +159,13 @@ const MobileTasksView = () => {
   return (
     <>
       <style>{mobileTasksStyles}</style>
+
+      {/* Community rules modal — blocks until accepted */}
+      <CommunityRulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+        showCheckboxes={!localStorage.getItem(COMMUNITY_RULES_KEY)}
+      />
 
       <CreateChoiceModal
         isOpen={showCreateModal}
