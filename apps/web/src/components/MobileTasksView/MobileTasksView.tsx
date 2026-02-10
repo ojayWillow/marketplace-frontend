@@ -236,9 +236,9 @@ const MobileTasksView = () => {
                     task.displayLatitude || task.latitude,
                     task.displayLongitude || task.longitude,
                   ]}
-                  icon={getJobPriceIcon(budget, isSelected)}
+                  icon={getJobPriceIcon(budget, isSelected, task.is_urgent)}
                   eventHandlers={{ click: () => handleMarkerClick(task) }}
-                  zIndexOffset={isSelected ? 1000 : 0}
+                  zIndexOffset={isSelected ? 1000 : task.is_urgent ? 500 : 0}
                 />
               );
             })}

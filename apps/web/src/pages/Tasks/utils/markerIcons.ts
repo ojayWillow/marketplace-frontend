@@ -15,7 +15,7 @@ export const createUserLocationIcon = () => divIcon({
 
 // Job Price Label Icon - Shows actual price with color coding
 // Budget thresholds: ≤25€ (green), ≤75€ (blue), >75€ (purple/gold with glow)
-// Urgent jobs get a red border (no animation - simplified)
+// Urgent jobs get a red border + pulsing ring animation
 export const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) => {
   let bgColor = '#22c55e'; // green-500 for quick tasks
   let textColor = 'white';
@@ -33,14 +33,14 @@ export const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) =
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5), 0 0 12px rgba(217, 119, 6, 0.3)';
   }
   
-  // Urgent jobs get red border only (no pulse/blink animation)
+  // Urgent jobs get red border + pulsing ring
   if (isUrgent) {
     border = '3px solid #ef4444';
     shadow = '0 0 0 2px rgba(239, 68, 68, 0.3), ' + shadow;
     extraClass += ' job-price--urgent';
   }
   
-  // Format price display (no ⚡ emoji for urgent - simplified)
+  // Format price display
   const priceText = budget >= 1000 ? `€${(budget/1000).toFixed(1)}k` : `€${budget}`;
   const isLongPrice = priceText.length > 4;
   const fontSize = isLongPrice ? '11px' : '12px';
@@ -50,30 +50,58 @@ export const getJobPriceIcon = (budget: number = 0, isUrgent: boolean = false) =
     ? `background: ${bgColor};` 
     : `background-color: ${bgColor};`;
 
+  // Urgent pulsing ring behind the marker
+  const urgentRing = isUrgent
+    ? `<div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        animation: urgentPulseDesktop 1.5s ease-out infinite;
+        border: 2px solid #ef4444;
+        pointer-events: none;
+      "></div>`
+    : '';
+
   return divIcon({
     className: `job-price-icon${extraClass}`,
     html: `
-      <div class="job-price-marker" style="
-        ${bgStyle}
-        color: ${textColor};
-        font-size: ${fontSize};
-        font-weight: 700;
-        padding: ${padding};
-        border-radius: 12px;
-        white-space: nowrap;
-        box-shadow: ${shadow};
-        border: ${border};
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 36px;
-        height: 24px;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-      ">
-        ${priceText}
+      <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+        ${urgentRing}
+        <div class="job-price-marker" style="
+          ${bgStyle}
+          color: ${textColor};
+          font-size: ${fontSize};
+          font-weight: 700;
+          padding: ${padding};
+          border-radius: 12px;
+          white-space: nowrap;
+          box-shadow: ${shadow};
+          border: ${border};
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 36px;
+          height: 24px;
+          cursor: pointer;
+          transition: transform 0.15s ease;
+          position: relative;
+          z-index: 1;
+        ">
+          ${priceText}
+        </div>
       </div>
+      <style>
+        @keyframes urgentPulseDesktop {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+          70% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+          100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+        }
+      </style>
     `,
     iconSize: [50, 28],
     iconAnchor: [25, 14],

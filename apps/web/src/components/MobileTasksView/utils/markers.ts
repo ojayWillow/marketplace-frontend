@@ -81,10 +81,12 @@ export const createUserLocationIcon = () =>
  * Create job price marker icon
  * @param budget - Job budget amount
  * @param isSelected - Whether this marker is currently selected
+ * @param isUrgent - Whether this job is marked as urgent
  */
-export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false) => {
+export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false, isUrgent: boolean = false) => {
   let bgColor = '#22c55e';
   let shadow = '0 2px 6px rgba(0,0,0,0.3)';
+  let border = `${isSelected ? 3 : 2}px solid white`;
 
   if (budget <= 25) bgColor = '#22c55e';
   else if (budget <= 75) bgColor = '#3b82f6';
@@ -93,9 +95,14 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false)
     shadow = '0 2px 10px rgba(139, 92, 246, 0.6)';
   }
 
+  // Urgent: red border + red glow
+  if (isUrgent) {
+    border = `${isSelected ? 3 : 2}px solid #ef4444`;
+    shadow = '0 0 0 2px rgba(239, 68, 68, 0.3), ' + shadow;
+  }
+
   const fontSize = isSelected ? 14 : 12;
   const padding = isSelected ? '5px 11px' : '4px 10px';
-  const borderWidth = isSelected ? 3 : 2;
   const selectedShadow = isSelected ? '0 4px 16px rgba(0,0,0,0.4)' : shadow;
 
   const priceText =
@@ -104,24 +111,45 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false)
     ? `background: ${bgColor};`
     : `background-color: ${bgColor};`;
 
+  // Urgent markers get a pulsing ring behind them
+  const urgentRing = isUrgent
+    ? `<div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 14px;
+        animation: urgentPulse 1.5s ease-out infinite;
+        border: 2px solid #ef4444;
+        pointer-events: none;
+      "></div>`
+    : '';
+
   return divIcon({
-    className: `job-price-icon ${isSelected ? 'selected-marker' : ''}`,
-    html: `<div style="
-      ${bgStyle}
-      color: white;
-      font-size: ${fontSize}px;
-      font-weight: 700;
-      padding: ${padding};
-      border-radius: 14px;
-      white-space: nowrap;
-      box-shadow: ${selectedShadow};
-      border: ${borderWidth}px solid white;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 44px;
-    ">${priceText}</div>`,
+    className: `job-price-icon ${isSelected ? 'selected-marker' : ''} ${isUrgent ? 'urgent-marker' : ''}`,
+    html: `<div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+      ${urgentRing}
+      <div style="
+        ${bgStyle}
+        color: white;
+        font-size: ${fontSize}px;
+        font-weight: 700;
+        padding: ${padding};
+        border-radius: 14px;
+        white-space: nowrap;
+        box-shadow: ${selectedShadow};
+        border: ${border};
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        position: relative;
+        z-index: 1;
+      ">${priceText}</div>
+    </div>`,
     iconSize: isSelected ? [65, 36] : [55, 30],
     iconAnchor: isSelected ? [32, 18] : [27, 15],
   });
