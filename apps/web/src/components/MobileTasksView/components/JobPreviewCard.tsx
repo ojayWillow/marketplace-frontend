@@ -62,7 +62,7 @@ const JobPreviewCard = ({
       if (i < fullStars) {
         stars.push(<span key={i} className="text-yellow-400">★</span>);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">⯪</span>);
+        stars.push(<span key={i} className="text-yellow-400">⯨</span>);
       } else {
         stars.push(<span key={i} className="text-gray-300">★</span>);
       }
@@ -80,14 +80,16 @@ const JobPreviewCard = ({
       <div className="p-4">
         {/* Top row: Category on left, Distance in CENTER, X button on right */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+          {/* Category pill with urgent dot overlay */}
+          <div className="relative">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
               <span>{categoryIcon}</span>
               <span>{categoryLabel}</span>
             </span>
             {isUrgent && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                <span className="animate-pulse">⚡</span>
+              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
               </span>
             )}
           </div>

@@ -322,16 +322,12 @@ const MobileTasksView = () => {
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
 
               <div className="flex items-center justify-between w-full px-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-gray-800">
-                    💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
-                  </span>
+                <span className="text-base font-bold text-gray-800">
+                  💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                   {urgentCount > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                      <span className="animate-pulse">⚡</span> {urgentCount}
-                    </span>
+                    <span className="text-red-600"> · ⚡{urgentCount}</span>
                   )}
-                </div>
+                </span>
                 <button
                   type="button"
                   onClick={handleCreateClick}
