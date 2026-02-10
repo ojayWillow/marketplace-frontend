@@ -3,6 +3,18 @@ import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import FavoriteButton from '../../ui/FavoriteButton';
 
+/**
+ * Strip common "urgent" prefixes users may have manually typed in titles.
+ */
+const cleanTitle = (title: string): string => {
+  return title
+    .replace(/^\s*(⚡\s*)?urgent[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?steidzami[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?срочно[:\-!\s]*/i, '')
+    .replace(/^\s*⚡\s*/, '')
+    .trim() || title;
+};
+
 interface MobileJobCardProps {
   task: Task;
   userLocation: { lat: number; lng: number };
@@ -28,6 +40,7 @@ const MobileJobCard = ({
   const budget = task.budget || task.reward || 0;
   const hasRating = task.creator_rating != null;
   const isUrgent = task.is_urgent;
+  const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   // Render star rating
   const renderStars = (rating: number) => {
@@ -76,9 +89,9 @@ const MobileJobCard = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        {/* Line 1: Title */}
+        {/* Line 1: Title (cleaned) */}
         <h3 className="font-semibold text-gray-900 text-sm truncate">
-          {task.title}
+          {displayTitle}
         </h3>
         
         {/* Line 2: Distance and Time */}
@@ -88,7 +101,7 @@ const MobileJobCard = ({
           <span>{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</span>
         </div>
         
-        {/* Line 3: Creator with avatar, name, rating, and city - ALL ON ONE LINE */}
+        {/* Line 3: Creator with avatar, name, rating, and city */}
         <div className="flex items-center gap-1.5 mt-1 text-xs">
           {/* Avatar */}
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 overflow-hidden">

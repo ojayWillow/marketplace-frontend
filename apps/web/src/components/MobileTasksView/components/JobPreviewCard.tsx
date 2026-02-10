@@ -5,6 +5,18 @@ import { formatTimeAgo } from '../utils/formatting';
 import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
 import FavoriteButton from '../../ui/FavoriteButton';
 
+/**
+ * Strip common "urgent" prefixes users may have manually typed in titles.
+ */
+const cleanTitle = (title: string): string => {
+  return title
+    .replace(/^\s*(⚡\s*)?urgent[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?steidzami[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?срочно[:\-!\s]*/i, '')
+    .replace(/^\s*⚡\s*/, '')
+    .trim() || title;
+};
+
 interface JobPreviewCardProps {
   task: Task;
   userLocation: { lat: number; lng: number };
@@ -35,6 +47,7 @@ const JobPreviewCard = ({
   const categoryLabel = getCategoryLabel(task.category);
   const applicantsCount = task.pending_applications_count || 0;
   const isUrgent = task.is_urgent;
+  const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   // Check if rating exists (not null/undefined)
   const hasRating = task.creator_rating != null;
@@ -110,9 +123,9 @@ const JobPreviewCard = ({
           </span>
         </div>
 
-        {/* Title */}
+        {/* Title (cleaned) */}
         <h3 className="font-bold text-gray-900 text-lg text-center mb-3 line-clamp-2">
-          {task.title}
+          {displayTitle}
         </h3>
 
         {/* Stats row */}
@@ -184,7 +197,7 @@ const JobPreviewCard = ({
               <span className="text-gray-300 flex-shrink-0">|</span>
             )}
             
-            {/* Rating with stars - inline (check for not null/undefined) */}
+            {/* Rating with stars - inline */}
             {hasRating && (
               <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="flex text-xs">
@@ -196,7 +209,7 @@ const JobPreviewCard = ({
               </div>
             )}
             
-            {/* Separator before city - only if both rating and city exist */}
+            {/* Separator before city */}
             {hasRating && task.creator_city && (
               <span className="text-gray-300 flex-shrink-0">|</span>
             )}
