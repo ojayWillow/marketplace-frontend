@@ -21,6 +21,22 @@ import {
 } from './components';
 import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal';
 
+/** Skeleton placeholder for loading state */
+const SkeletonCard = () => (
+  <div className="flex items-center gap-3 p-3 border-b border-gray-100 animate-pulse">
+    <div className="w-11 h-11 rounded-xl bg-gray-200 flex-shrink-0" />
+    <div className="flex-1 min-w-0">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+      <div className="h-3 bg-gray-100 rounded w-1/2 mb-1.5" />
+      <div className="h-3 bg-gray-100 rounded w-2/3" />
+    </div>
+    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+      <div className="h-6 w-10 bg-gray-200 rounded" />
+      <div className="h-6 w-6 bg-gray-100 rounded-full" />
+    </div>
+  </div>
+);
+
 /**
  * Main Mobile Tasks View Component
  * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
@@ -311,14 +327,35 @@ const MobileTasksView = () => {
               zIndex: 100,
             }}
           >
-            {/* Drag handle */}
+            {/* Drag handle area — larger touch target */}
             <div
-              className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="flex flex-col items-center pt-2 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
+              {/* Animated up arrow — visible when not fully expanded */}
+              {sheetPosition !== 'full' && (
+                <div className="flex flex-col items-center mb-1">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#9ca3af"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="animate-bounce"
+                    style={{ animationDuration: '2s' }}
+                  >
+                    <path d="M18 15l-6-6-6 6" />
+                  </svg>
+                </div>
+              )}
+
+              {/* Drag handle bar */}
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-2" />
 
               <div className="flex items-center justify-between w-full px-4">
@@ -340,7 +377,7 @@ const MobileTasksView = () => {
 
               {sheetPosition === 'collapsed' && (
                 <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                  <span>↑</span> {t('tasks.swipeUpForJobs', 'Swipe up for jobs')}
+                  {t('tasks.swipeUpForJobs', 'Swipe up for jobs')}
                 </span>
               )}
             </div>
@@ -351,8 +388,11 @@ const MobileTasksView = () => {
               style={{ touchAction: 'pan-y' }}
             >
               {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+                <div>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
                 </div>
               ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-8 px-4">
