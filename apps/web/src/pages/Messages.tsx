@@ -71,27 +71,27 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  // Mobile: standard layout that works with bottom nav
+  // Mobile: flex layout that fills the space provided by Layout
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Header — no back button since Messages is a top-level tab */}
+      <div className="flex flex-col flex-1 bg-gray-50">
+        {/* Header */}
         <div className="bg-white border-b px-4 py-3 flex-shrink-0">
           <h1 className="text-xl font-bold text-gray-900">
             💬 {t('messages.title', 'Messages')}
           </h1>
         </div>
 
-        {/* Conversations list */}
+        {/* Conversations list — scrolls within remaining space */}
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center" style={{ minHeight: 'calc(100vh - 180px)' }}>
+            <div className="flex flex-col items-center justify-center p-8 text-center h-full">
               <div className="text-6xl mb-4">📭</div>
               <p className="text-gray-500 mb-4">{t('messages.noConversations', 'No conversations yet')}</p>
               <Link

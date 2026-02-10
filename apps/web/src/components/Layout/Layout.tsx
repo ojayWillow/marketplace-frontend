@@ -25,10 +25,21 @@ const Layout = () => {
   );
 
   // For fullscreen mobile pages, render without header/footer but with bottom nav
+  // Use dvh so the page fits exactly within the dynamic viewport (accounting for
+  // mobile browser chrome). The main area is flex-1 + overflow-hidden so child
+  // pages handle their own scrolling.
   if (isFullscreenMobilePage) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <main id="main-content" tabIndex={-1} className="pb-20">
+      <div
+        className="flex flex-col bg-gray-50"
+        style={{ height: '100dvh' }}
+      >
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 flex flex-col overflow-hidden"
+          style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
+        >
           <Outlet />
         </main>
         <MobileBottomNav />
