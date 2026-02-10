@@ -23,6 +23,7 @@ export default function Conversation() {
     isOtherTyping,
     sendMutation,
     handleSend,
+    handleImageSend,
   } = useConversationPage();
 
   if (loading) return <LoadingSpinner isMobile={isMobile} />;
@@ -43,6 +44,7 @@ export default function Conversation() {
           value={newMessage}
           onChange={setNewMessage}
           onSubmit={handleSend}
+          onImageSend={handleImageSend}
           isPending={sendMutation.isPending}
           isMobile
         />
@@ -68,6 +70,7 @@ export default function Conversation() {
           value={newMessage}
           onChange={setNewMessage}
           onSubmit={handleSend}
+          onImageSend={handleImageSend}
           isPending={sendMutation.isPending}
         />
       </div>
