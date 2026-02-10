@@ -71,13 +71,14 @@ const JobPreviewCard = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
+    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp flex flex-col" style={{ maxHeight: '65vh' }}>
       {/* Urgent top accent bar */}
       {isUrgent && (
-        <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse" />
+        <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse flex-shrink-0" />
       )}
 
-      <div className="p-4">
+      {/* Scrollable content area */}
+      <div className="p-4 pb-0 overflow-y-auto flex-1 min-h-0">
         {/* Top row: Category on left, Distance in CENTER, X button on right */}
         <div className="flex items-center justify-between mb-3">
           {/* Category pill with urgent dot overlay */}
@@ -172,7 +173,7 @@ const JobPreviewCard = ({
             e.stopPropagation();
             onCreatorClick();
           }}
-          className="flex items-center gap-2 text-sm mb-4 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
+          className="flex items-center gap-2 text-sm hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
         >
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
@@ -226,30 +227,30 @@ const JobPreviewCard = ({
           
           <span className="text-gray-400 text-xs flex-shrink-0">→</span>
         </button>
+      </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={onViewDetails}
-            className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
-              isUrgent
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-blue-500 hover:bg-blue-600'
-            }`}
-          >
-            {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
-          </button>
-          <FavoriteButton
-            itemType="task"
-            itemId={task.id}
-            size="md"
-            className="!rounded-xl !w-12 !h-12"
-          />
-        </div>
+      {/* Action buttons - PINNED at bottom, never scrolled away */}
+      <div className="flex gap-3 p-4 pt-3 bg-white flex-shrink-0 border-t border-gray-100">
+        <button
+          onClick={onViewDetails}
+          className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
+            isUrgent
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-blue-500 hover:bg-blue-600'
+          }`}
+        >
+          {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
+        </button>
+        <FavoriteButton
+          itemType="task"
+          itemId={task.id}
+          size="md"
+          className="!rounded-xl !w-12 !h-12"
+        />
       </div>
 
       {/* Safe area padding for phones with home indicator */}
-      <div className="h-6 bg-white" />
+      <div className="h-safe-area-bottom bg-white flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }} />
     </div>
   );
 };
