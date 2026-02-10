@@ -27,6 +27,7 @@ const MobileJobCard = ({
   );
   const budget = task.budget || task.reward || 0;
   const hasRating = task.creator_rating != null;
+  const isUrgent = task.is_urgent;
 
   // Render star rating
   const renderStars = (rating: number) => {
@@ -38,7 +39,7 @@ const MobileJobCard = ({
       if (i < fullStars) {
         stars.push(<span key={i} className="text-yellow-400">★</span>);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">⯨</span>);
+        stars.push(<span key={i} className="text-yellow-400">⯪</span>);
       } else {
         stars.push(<span key={i} className="text-gray-300">★</span>);
       }
@@ -50,15 +51,28 @@ const MobileJobCard = ({
     <div
       onClick={onClick}
       className={`flex items-center gap-3 p-3 border-b border-gray-100 active:bg-gray-50 cursor-pointer transition-colors ${
-        isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'bg-white'
+        isSelected
+          ? 'bg-blue-50 border-l-4 border-l-blue-500'
+          : isUrgent
+          ? 'bg-red-50/40 border-l-4 border-l-red-500'
+          : 'bg-white'
       }`}
     >
-      <div
-        className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-          isSelected ? 'bg-blue-100' : 'bg-blue-50'
-        }`}
-      >
-        {task.icon || '📋'}
+      {/* Icon with optional urgent pulse dot */}
+      <div className="relative">
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
+            isSelected ? 'bg-blue-100' : isUrgent ? 'bg-red-50' : 'bg-blue-50'
+          }`}
+        >
+          {task.icon || '📋'}
+        </div>
+        {isUrgent && (
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
+          </span>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -128,7 +142,9 @@ const MobileJobCard = ({
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <span
           className={`text-lg font-bold ${
-            budget <= 25
+            isUrgent
+              ? 'text-red-600'
+              : budget <= 25
               ? 'text-green-600'
               : budget <= 75
               ? 'text-blue-600'

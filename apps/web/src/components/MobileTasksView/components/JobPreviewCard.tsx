@@ -34,6 +34,7 @@ const JobPreviewCard = ({
   const categoryIcon = getCategoryIcon(task.category);
   const categoryLabel = getCategoryLabel(task.category);
   const applicantsCount = task.pending_applications_count || 0;
+  const isUrgent = task.is_urgent;
 
   // Check if rating exists (not null/undefined)
   const hasRating = task.creator_rating != null;
@@ -48,7 +49,7 @@ const JobPreviewCard = ({
       if (i < fullStars) {
         stars.push(<span key={i} className="text-yellow-400">★</span>);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">⯨</span>);
+        stars.push(<span key={i} className="text-yellow-400">⯪</span>);
       } else {
         stars.push(<span key={i} className="text-gray-300">★</span>);
       }
@@ -58,13 +59,25 @@ const JobPreviewCard = ({
 
   return (
     <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp">
+      {/* Urgent top accent bar */}
+      {isUrgent && (
+        <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse" />
+      )}
+
       <div className="p-4">
         {/* Top row: Category on left, Distance in CENTER, X button on right */}
         <div className="flex items-center justify-between mb-3">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-            <span>{categoryIcon}</span>
-            <span>{categoryLabel}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+              <span>{categoryIcon}</span>
+              <span>{categoryLabel}</span>
+            </span>
+            {isUrgent && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                <span className="animate-pulse">⚡</span>
+              </span>
+            )}
+          </div>
 
           {/* Distance - Centered */}
           <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
@@ -84,7 +97,9 @@ const JobPreviewCard = ({
         <div className="text-center mb-2">
           <span
             className={`text-3xl font-bold ${
-              budget <= 25
+              isUrgent
+                ? 'text-red-600'
+                : budget <= 25
                 ? 'text-green-600'
                 : budget <= 75
                 ? 'text-blue-600'
@@ -201,7 +216,11 @@ const JobPreviewCard = ({
         <div className="flex gap-3">
           <button
             onClick={onViewDetails}
-            className="flex-1 py-3 px-4 rounded-xl text-base font-bold text-white bg-blue-500 hover:bg-blue-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
+              isUrgent
+                ? 'bg-red-500 hover:bg-red-600'
+                : 'bg-blue-500 hover:bg-blue-600'
+            }`}
           >
             {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
           </button>
