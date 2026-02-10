@@ -88,7 +88,8 @@ export default defineConfig({
       workbox: {
         importScripts: ['/sw-push.js'],
         navigateFallbackDenylist: [/^\/api\/.*/],
-        globPatterns: ['**/*.{js,css,html,ico,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png}'],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
@@ -96,7 +97,7 @@ export default defineConfig({
             options: {
               cacheName: 'dicebear-avatars',
               expiration: {
-                maxEntries: 100,
+                maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
@@ -110,7 +111,7 @@ export default defineConfig({
             options: {
               cacheName: 'map-tiles',
               expiration: {
-                maxEntries: 200,
+                maxEntries: 80,
                 maxAgeSeconds: 60 * 60 * 24 * 7
               },
               cacheableResponse: {
@@ -124,7 +125,7 @@ export default defineConfig({
             options: {
               cacheName: 'uploaded-images',
               expiration: {
-                maxEntries: 100,
+                maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
