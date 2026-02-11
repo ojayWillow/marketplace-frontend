@@ -66,10 +66,10 @@ const FilterSheet = ({
             onChange={(e) => onRadiusChange(parseInt(e.target.value))}
             className="w-full bg-gray-100 rounded-lg px-4 py-3 text-base border-0 focus:ring-2 focus:ring-blue-500"
           >
-            <option value={5}>Within 5 km</option>
-            <option value={10}>Within 10 km</option>
-            <option value={25}>Within 25 km</option>
-            <option value={50}>Within 50 km</option>
+            <option value={5}>{t('filters.withinKm', { km: 5, defaultValue: 'Within 5 km' })}</option>
+            <option value={10}>{t('filters.withinKm', { km: 10, defaultValue: 'Within 10 km' })}</option>
+            <option value={25}>{t('filters.withinKm', { km: 25, defaultValue: 'Within 25 km' })}</option>
+            <option value={50}>{t('filters.withinKm', { km: 50, defaultValue: 'Within 50 km' })}</option>
             <option value={0}>
               🇱🇻 {t('tasks.allLatvia', 'All Latvia')}
             </option>
@@ -82,7 +82,7 @@ const FilterSheet = ({
             🏷️ {t('filters.categories', 'Categories')}
             {selectedCategories.length > 0 && (
               <span className="text-blue-600 ml-2">
-                ({selectedCategories.length}/{maxCategories} selected)
+                ({t('filters.selected', { count: selectedCategories.length, max: maxCategories, defaultValue: `${selectedCategories.length}/${maxCategories} selected` })})
               </span>
             )}
           </label>
@@ -106,7 +106,7 @@ const FilterSheet = ({
                   }`}
                 >
                   <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
+                  <span>{t(`tasks.categories.${cat.value}`, cat.label)}</span>
                   {isSelected && <span className="ml-1 text-xs">✓</span>}
                 </button>
               );
@@ -114,8 +114,7 @@ const FilterSheet = ({
           </div>
           {selectedCategories.length >= maxCategories && (
             <p className="text-xs text-gray-500 mt-2">
-              ℹ️ Maximum {maxCategories} categories selected. Deselect one to
-              choose another.
+              ℹ️ {t('filters.maxCategoriesHint', { max: maxCategories, defaultValue: `Maximum ${maxCategories} categories selected. Deselect one to choose another.` })}
             </p>
           )}
         </div>

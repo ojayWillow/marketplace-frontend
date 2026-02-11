@@ -1,5 +1,6 @@
 {
   "advancedFilters": "Advanced Filters",
+  "title": "Filters",
   "reset": "Reset",
   "budget": "Budget",
   "price": "Price",
@@ -7,6 +8,11 @@
   "minPrice": "Min",
   "maxPrice": "Max",
   "distance": "Distance",
+  "location": "Location",
+  "categories": "Categories",
+  "withinKm": "Within {{km}} km",
+  "selected": "{{count}}/{{max}} selected",
+  "maxCategoriesHint": "Maximum {{max}} categories selected. Deselect one to choose another.",
   "datePosted": "Date posted",
   "category": "Category",
   "anyTime": "Any time",

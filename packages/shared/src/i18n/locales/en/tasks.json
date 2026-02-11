@@ -114,6 +114,12 @@
   "swipeUpForJobs": "Swipe up to see jobs",
   "createJobOrService": "Create a job or service",
   "urgentOnMap": "{{count}} urgent",
+  "tabAll": "All",
+  "tabJobs": "Jobs",
+  "tabServices": "Services",
+  "result": "result",
+  "results": "results",
+  "sortedByDistance": "sorted by distance",
   "time": {
     "justNow": "Just now",
     "minutesAgo": "{{count}}m ago",
@@ -140,16 +146,35 @@
     "cancelled": "Cancelled"
   },
   "categories": {
-    "pet-care": "Pet Care",
-    "moving": "Moving",
-    "shopping": "Shopping",
     "cleaning": "Cleaning",
-    "delivery": "Delivery",
-    "outdoor": "Outdoor",
+    "moving": "Moving & Lifting",
+    "assembly": "Assembly",
     "handyman": "Handyman",
+    "plumbing": "Plumbing",
+    "electrical": "Electrical",
+    "painting": "Painting",
+    "outdoor": "Outdoor",
+    "delivery": "Delivery & Errands",
+    "care": "Care",
     "tutoring": "Tutoring",
-    "tech-help": "Tech Help",
-    "other": "Other"
+    "tech": "Tech Help",
+    "beauty": "Beauty",
+    "events": "Events",
+    "other": "Other",
+    "all": "All Categories",
+    "pet-care": "Pet Care",
+    "shopping": "Shopping",
+    "tech-help": "Tech Help"
+  },
+  "work": {
+    "failedToLoad": "Failed to load",
+    "checkConnection": "Make sure you have internet and try again.",
+    "retry": "Try again",
+    "noJobs": "No jobs found",
+    "noServices": "No services found",
+    "noItems": "No jobs or services found",
+    "tryClearingFilters": "Try clearing your category filters or check back later.",
+    "tryDifferentFilters": "Try different filters or check back later."
   },
   "steps": {
     "roles": {
