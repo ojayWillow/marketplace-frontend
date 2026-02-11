@@ -26,6 +26,7 @@ import enCreateTask from './locales/en/createTask.json'
 import enLegal from './locales/en/legal.json'
 import enLanding from './locales/en/landing.json'
 import enCommunity from './locales/en/community.json'
+import enSettings from './locales/en/settings.json'
 
 // Import Latvian translations
 import lvCommon from './locales/lv/common.json'
@@ -51,6 +52,7 @@ import lvCreateTask from './locales/lv/createTask.json'
 import lvLegal from './locales/lv/legal.json'
 import lvLanding from './locales/lv/landing.json'
 import lvCommunity from './locales/lv/community.json'
+import lvSettings from './locales/lv/settings.json'
 
 // Import Russian translations
 import ruCommon from './locales/ru/common.json'
@@ -76,6 +78,7 @@ import ruCreateTask from './locales/ru/createTask.json'
 import ruLegal from './locales/ru/legal.json'
 import ruLanding from './locales/ru/landing.json'
 import ruCommunity from './locales/ru/community.json'
+import ruSettings from './locales/ru/settings.json'
 
 // Combine all translations per language
 const en = {
@@ -102,6 +105,7 @@ const en = {
   legal: enLegal,
   landing: enLanding,
   community: enCommunity,
+  settings: enSettings,
 }
 
 const lv = {
@@ -128,6 +132,7 @@ const lv = {
   legal: lvLegal,
   landing: lvLanding,
   community: lvCommunity,
+  settings: lvSettings,
 }
 
 const ru = {
@@ -154,6 +159,7 @@ const ru = {
   legal: ruLegal,
   landing: ruLanding,
   community: ruCommunity,
+  settings: ruSettings,
 }
 
 const resources = {
