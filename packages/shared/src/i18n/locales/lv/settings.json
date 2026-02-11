@@ -3,6 +3,10 @@
     "title": "Valoda",
     "description": "Izvēlieties vēlamo valodu"
   },
+  "howItWorks": {
+    "title": "Kā tas darbojas",
+    "description": "Uzziniet, kā darbojas Kolab"
+  },
   "notifications": {
     "title": "Push paziņojumi",
     "description": "Saņemiet paziņojumus par jaunām ziņām, darba pieteikumiem un uzdevumu atjauninājumiem pat kad lietotne ir aizvērta.",

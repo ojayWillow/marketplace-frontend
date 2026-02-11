@@ -3,6 +3,10 @@
     "title": "Language",
     "description": "Choose your preferred language"
   },
+  "howItWorks": {
+    "title": "How it works",
+    "description": "Learn how Kolab works"
+  },
   "notifications": {
     "title": "Push Notifications",
     "description": "Get notified about new messages, job applications, and task updates even when the app is closed.",
@@ -12,7 +16,7 @@
     "iosStep2": "Scroll down and tap \"Add to Home Screen\"",
     "iosStep3": "Open Kolab from your home screen",
     "iosStep4": "Come back here to enable notifications",
-    "iosVersionRequired": "Push notifications require iOS 16.4 or later. Please update your iPhone to use this feature.",
+    "iosVersionRequired": "Push notifications require iOS 16.4 or later. Please update your iPhone.",
     "notSupported": "Push notifications are not supported by your browser. Try using Chrome, Firefox, or Safari 16.4+.",
     "blocked": "Notifications are blocked",
     "blockedHelp": "To re-enable, go to your browser or phone settings and allow notifications for this site.",
