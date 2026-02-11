@@ -51,7 +51,7 @@ export default function Login() {
   if (isAuthenticated && user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400">Redirecting...</div>
+        <div className="text-gray-400">{t('auth.redirecting', 'Redirecting...')}</div>
       </div>
     )
   }
@@ -68,11 +68,11 @@ export default function Login() {
             <Phone className="w-7 h-7 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'code' ? 'Enter Verification Code' : 'Sign in to Kolab'}
+            {step === 'code' ? t('auth.enterVerificationCode', 'Enter Verification Code') : t('auth.signInToKolab', 'Sign in to Kolab')}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {step === 'phone' && 'Enter your phone number to get started'}
-            {step === 'code' && `Enter the code sent to ${getFullPhone()}`}
+            {step === 'phone' && t('auth.enterPhoneToStart', 'Enter your phone number to get started')}
+            {step === 'code' && t('auth.enterCodeSentTo', 'Enter the code sent to {{phone}}', { phone: getFullPhone() })}
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export default function Login() {
               <form onSubmit={handleSendCode}>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <Phone className="w-4 h-4" />
-                  Phone Number
+                  {t('auth.phoneNumber', 'Phone Number')}
                 </label>
 
                 <div className="flex gap-2 mb-4">
@@ -118,9 +118,9 @@ export default function Login() {
                   className="w-full mt-1 py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {phoneLoading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Sending code...</>
+                    <><Loader2 className="w-5 h-5 animate-spin" /> {t('auth.sendingCode', 'Sending code...')}</>
                   ) : !recaptchaReady ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Loading...</>
+                    <><Loader2 className="w-5 h-5 animate-spin" /> {t('common.loading', 'Loading...')}</>
                   ) : (
                     <>{t('auth.sendCode', 'Send Verification Code')} <ArrowRight className="w-5 h-5" /></>
                   )}
@@ -135,7 +135,7 @@ export default function Login() {
                   className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <Mail className="w-4 h-4" />
-                  Have an email account? Sign in with email
+                  {t('auth.emailFallbackPrompt', 'Have an email account? Sign in with email')}
                   <ChevronDown className="w-3 h-3" />
                 </button>
               </div>
@@ -151,7 +151,7 @@ export default function Login() {
                 className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium mb-4"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to phone sign in
+                {t('auth.backToPhone', 'Back to phone sign in')}
               </button>
 
               {login.isError && (
@@ -163,7 +163,7 @@ export default function Login() {
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                    <Mail className="w-4 h-4" /> Email
+                    <Mail className="w-4 h-4" /> {t('auth.email', 'Email')}
                   </label>
                   <input
                     type="email"
@@ -177,8 +177,8 @@ export default function Login() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                    <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">Forgot?</Link>
+                    <label htmlFor="password" className="text-sm font-medium text-gray-700">{t('auth.password', 'Password')}</label>
+                    <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">{t('auth.forgot', 'Forgot?')}</Link>
                   </div>
                   <div className="relative">
                     <input
@@ -205,9 +205,9 @@ export default function Login() {
                   className="w-full py-3.5 px-6 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {login.isPending ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Signing in...</>
+                    <><Loader2 className="w-5 h-5 animate-spin" /> {t('auth.signingIn', 'Signing in...')}</>
                   ) : (
-                    <>Sign in with Email <ArrowRight className="w-5 h-5" /></>
+                    <>{t('auth.signInWithEmail', 'Sign in with Email')} <ArrowRight className="w-5 h-5" /></>
                   )}
                 </button>
               </form>
@@ -261,7 +261,7 @@ export default function Login() {
 
                 {otpValue.length === 6 && phoneLoading && (
                   <p className="text-center text-blue-600 text-sm mt-3 flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('auth.verifying', 'Verifying...')}
                   </p>
                 )}
               </div>
@@ -270,13 +270,13 @@ export default function Login() {
                 onClick={resetToPhoneStep}
                 className="w-full mt-3 py-2.5 text-gray-500 hover:text-gray-700 font-medium rounded-xl transition-colors flex items-center justify-center gap-1 text-sm"
               >
-                <ArrowLeft className="w-4 h-4" /> Change phone number
+                <ArrowLeft className="w-4 h-4" /> {t('auth.changeNumber', 'Change phone number')}
               </button>
 
               <p className="text-center text-xs text-gray-400 mt-3">
-                Didn't receive the code?{' '}
+                {t('auth.didntReceiveCode', "Didn't receive the code?")}{' '}
                 <button type="button" onClick={resetToPhoneStep} className="text-blue-600 hover:underline font-medium">
-                  Resend
+                  {t('auth.resend', 'Resend')}
                 </button>
               </p>
             </div>
@@ -286,9 +286,9 @@ export default function Login() {
         {/* Terms notice */}
         {step === 'phone' && (
           <p className="mt-5 text-[11px] text-gray-400 text-center">
-            By continuing, you agree to our{' '}
-            <Link to="/terms" className="underline hover:text-gray-600">Terms</Link>{' '}and{' '}
-            <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>
+            {t('auth.termsNotice', 'By continuing, you agree to our')}{' '}
+            <Link to="/terms" className="underline hover:text-gray-600">{t('auth.terms', 'Terms')}</Link>{' '}{t('common.and', 'and')}{' '}
+            <Link to="/privacy" className="underline hover:text-gray-600">{t('auth.privacyPolicy', 'Privacy Policy')}</Link>
           </p>
         )}
       </div>
