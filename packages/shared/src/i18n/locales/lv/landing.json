@@ -1,0 +1,83 @@
+{
+  "hero": {
+    "badge": "Pieejams Latvijā",
+    "title": "Saņem palīdzību ar",
+    "titleHighlight": "ikdienas uzdevumiem",
+    "subtitle": "Vajag kādu, kas izvedīs suni, palīdzēs pārcelties vai salabos kaut ko mājās? Sazinies ar uzticamiem vietējiem, kas var palīdzēt",
+    "subtitleExtended": " — parasti dažu stundu laikā",
+    "fast": "Ātri",
+    "fastDesc": "Saņem piedāvājumus minūtēs",
+    "verified": "Verificēti",
+    "verifiedDesc": "Telefona verificēti",
+    "verifiedDescFull": "Telefona verificēti lietotāji",
+    "rated": "Novērtēti",
+    "ratedDesc": "Uzticamas atsauksmes"
+  },
+  "howItWorks": {
+    "title": "Kā tas strādā",
+    "subtitle": "Vai tev vajag palīdzību vai vēlies nopelnīt — tas ir vienkārši",
+    "needHelp": "Vajag palīdzību?",
+    "wantToEarn": "Vēlies nopelnīt?",
+    "step1Title_help": "Publicē uzdevumu",
+    "step1Desc_help": "Apraksti, ar ko tev vajag palīdzību, un norādi budžetu",
+    "step2Title_help": "Saņem piedāvājumus",
+    "step2Desc_help": "Vietējie palīgi pieteiks — pārskati viņu profilus un vērtējumus",
+    "step3Title_help": "Izdarīts",
+    "step3Desc_help": "Izvēlies palīgu, viņš pabeidz uzdevumu, tu samaksā tieši",
+    "step1Title_earn": "Pārskati karti",
+    "step1Desc_earn": "Skaties uzdevumus tavā tuvumā reāllaikā kartē",
+    "step2Title_earn": "Piesakies uzdevumiem",
+    "step2Desc_earn": "Atradi kaut ko, ar ko vari palīdzēt? Nosūti piedāvājumu",
+    "step3Title_earn": "Pelni naudu",
+    "step3Desc_earn": "Izpildi uzdevumus, veido reputāciju un saņem samaksu"
+  },
+  "categories": {
+    "title": "Populāri uzdevumi",
+    "subtitle": "Cilvēki tavā apkārtnē saņem palīdzību ar...",
+    "petCare": "Mājdzīvnieki",
+    "petCareDesc": "Pastaigas, pieskatīšana",
+    "moving": "Pārvākšanās",
+    "movingDesc": "Mēbeles, kastes",
+    "cleaning": "Uzkopšana",
+    "cleaningDesc": "Māja, birojs",
+    "delivery": "Piegāde",
+    "deliveryDesc": "Saņemšana un nogāde",
+    "repairs": "Remonts",
+    "repairsDesc": "Saimnieka darbi",
+    "techHelp": "IT palīdzība",
+    "techHelpDesc": "Uzstādīšana, atbalsts"
+  },
+  "trust": {
+    "title": "Balstīts uz uzticību",
+    "subtitle": "Tava drošība ir pirmajā vietā",
+    "phoneVerified": "Telefona verifikācija",
+    "phoneVerifiedDesc": "Katrs lietotājs verificē savu telefona numuru — nav anonīmu kontu",
+    "ratingsReviews": "Vērtējumi un atsauksmes",
+    "ratingsReviewsDesc": "Skaties reālas atsauksmes no citiem lietotājiem pirms izlemj",
+    "inAppChat": "Čats lietotnē",
+    "inAppChatDesc": "Sazinies tieši un droši lietotnē"
+  },
+  "cta": {
+    "title": "Gatavs sākt?",
+    "subtitle": "Pievienojies savai vietējai kopienai un sāc darīt lietas jau šodien.",
+    "button": "Reģistrējies bez maksas"
+  },
+  "login": {
+    "title": "Sāc šeit",
+    "subtitle": "Piesakies ar savu telefona numuru",
+    "phoneLabel": "Telefona numurs",
+    "sendingCode": "Sūta kodu...",
+    "loading": "Ielādē...",
+    "continue": "Turpināt",
+    "browsing": "Tikai skaties? Izpēti karti",
+    "or": "vai",
+    "emailLogin": "Piesakies ar e-pastu",
+    "otpPrompt": "Ievadi 6 ciparu kodu, kas nosūtīts uz",
+    "verifying": "Verificē...",
+    "changePhone": "← Mainīt telefona numuru",
+    "legal": "Turpinot, tu piekrīti mūsu",
+    "terms": "Noteikumiem",
+    "and": "un",
+    "privacy": "Privātuma politikai"
+  }
+}
