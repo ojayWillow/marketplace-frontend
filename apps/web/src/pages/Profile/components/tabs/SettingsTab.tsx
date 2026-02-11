@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePushNotifications } from '../../../../hooks/usePushNotifications';
 import { getPushSubscriptions } from '@marketplace/shared';
+import { useLogout } from '../../../../hooks/useAuth';
 
 interface DeviceInfo {
   id: number;
   device_name: string;
   created_at: string;
 }
+
+const languages = [
+  { code: 'lv', label: 'LV', name: 'Latviešu', flag: '🇱🇻' },
+  { code: 'ru', label: 'RU', name: 'Русский', flag: '🇷🇺' },
+  { code: 'en', label: 'EN', name: 'English', flag: '🇬🇧' },
+];
 
 // Detect if we're on iOS Safari (not in standalone PWA mode)
 const isIOSSafari = () => {
@@ -26,7 +33,11 @@ const isIOSPWA = () => {
 };
 
 export const SettingsTab = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const logout = useLogout();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const currentLang = i18n.language;
+
   const {
     isSupported,
     permission,
@@ -93,6 +104,15 @@ export const SettingsTab = () => {
     }
   };
 
+  const handleLanguageChange = (langCode: string) => {
+    i18n.changeLanguage(langCode);
+  };
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(false);
+    logout();
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString(undefined, {
@@ -107,6 +127,67 @@ export const SettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Language Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t('settings.language.title', 'Language')}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {t('settings.language.description', 'Choose your preferred language')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4">
+          <div className="space-y-2">
+            {languages.map((lang) => {
+              const isActive = currentLang === lang.code || currentLang.startsWith(lang.code);
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 border border-blue-200'
+                      : 'bg-gray-50 border border-transparent hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{lang.flag}</span>
+                    <div className="text-left">
+                      <p className={`text-sm font-medium ${
+                        isActive ? 'text-blue-900' : 'text-gray-900'
+                      }`}>
+                        {lang.name}
+                      </p>
+                      <p className={`text-xs ${
+                        isActive ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
+                        {lang.label}
+                      </p>
+                    </div>
+                  </div>
+                  {isActive && (
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Push Notifications Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
@@ -298,19 +379,64 @@ export const SettingsTab = () => {
         </div>
       </div>
 
-      {/* Future Settings Placeholder */}
+      {/* Log Out Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {t('settings.general.title', 'General')}
-          </h3>
-        </div>
-        <div className="px-6 py-8 text-center">
-          <p className="text-sm text-gray-400">
-            {t('settings.general.comingSoon', 'More settings coming soon — language preferences, privacy, and account management.')}
-          </p>
+        <div className="px-6 py-4">
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-full flex items-center justify-between p-3 rounded-lg text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <span className="text-base font-medium">
+                {t('settings.logout.button', 'Log Out')}
+              </span>
+            </div>
+            <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {t('settings.logout.confirmTitle', 'Log out?')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {t('settings.logout.confirmMessage', 'Are you sure you want to log out of your account?')}
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors"
+                >
+                  {t('settings.logout.button', 'Log Out')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
