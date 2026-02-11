@@ -24,7 +24,7 @@ const TabBar = ({
   hasError,
   hasUserLocation,
 }: TabBarProps) => {
-  const { t } = useTranslation('tasks');
+  const { t } = useTranslation();
 
   return (
     <div className="sticky top-0 bg-white shadow-sm z-50">
@@ -39,7 +39,7 @@ const TabBar = ({
               }`}
             >
               {t(
-                `tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`
+                `tasks.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`
               )}
             </button>
           ))}
@@ -48,7 +48,7 @@ const TabBar = ({
         <button
           onClick={onFilterClick}
           className="absolute right-4 flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full"
-          aria-label={t('filters', 'Filter')}
+          aria-label={t('tasks.filters', 'Filter')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
             <line x1="4" y1="21" x2="4" y2="14" />
@@ -76,11 +76,11 @@ const TabBar = ({
             <span className="inline-block animate-spin text-blue-500 text-sm">↻</span>
           )}
           <p className="text-xs text-gray-500">
-            {itemCount} {itemCount === 1 ? t('result') : t('results')}
+            {itemCount} {itemCount === 1 ? t('tasks.result') : t('tasks.results')}
             {hasUserLocation && (
               <>
                 <span className="mx-1.5">·</span>
-                <span className="text-gray-400">{t('sortedByDistance')}</span>
+                <span className="text-gray-400">{t('tasks.sortedByDistance')}</span>
               </>
             )}
           </p>

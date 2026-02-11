@@ -7,23 +7,23 @@ interface ErrorStateProps {
 }
 
 export const ErrorState = ({ error, onRetry }: ErrorStateProps) => {
-  const { t } = useTranslation('tasks');
+  const { t } = useTranslation();
 
   return (
     <div className="text-center py-12">
       <div className="text-4xl mb-3">⚠️</div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-        {t('work.failedToLoad', 'Failed to load')}
+        {t('tasks.work.failedToLoad', 'Failed to load')}
       </h3>
       <p className="text-sm text-gray-500 mb-1 max-w-xs mx-auto">{error}</p>
       <p className="text-xs text-gray-400 mb-4">
-        {t('work.checkConnection', 'Make sure you have internet and try again.')}
+        {t('tasks.work.checkConnection', 'Make sure you have internet and try again.')}
       </p>
       <button
         onClick={onRetry}
         className="px-6 py-2.5 bg-blue-500 text-white rounded-full text-sm font-semibold hover:bg-blue-600 active:scale-95 transition-all shadow-sm"
       >
-        🔄 {t('work.retry', 'Try again')}
+        🔄 {t('tasks.work.retry', 'Try again')}
       </button>
     </div>
   );
@@ -35,17 +35,17 @@ interface EmptyStateProps {
 }
 
 export const EmptyState = ({ mainTab, hasFilters }: EmptyStateProps) => {
-  const { t } = useTranslation('tasks');
+  const { t } = useTranslation();
 
   const icon = mainTab === 'jobs' ? '💼' : mainTab === 'services' ? '🛠️' : '📭';
   const title = mainTab === 'jobs'
-    ? t('work.noJobs', 'No jobs found')
+    ? t('tasks.work.noJobs', 'No jobs found')
     : mainTab === 'services'
-      ? t('work.noServices', 'No services found')
-      : t('work.noItems', 'No jobs or services found');
+      ? t('tasks.work.noServices', 'No services found')
+      : t('tasks.work.noItems', 'No jobs or services found');
   const subtitle = hasFilters
-    ? t('work.tryClearingFilters', 'Try clearing your category filters or check back later.')
-    : t('work.tryDifferentFilters', 'Try different filters or check back later.');
+    ? t('tasks.work.tryClearingFilters', 'Try clearing your category filters or check back later.')
+    : t('tasks.work.tryDifferentFilters', 'Try different filters or check back later.');
 
   return (
     <div className="text-center py-12">
@@ -62,7 +62,7 @@ interface InlineErrorProps {
 }
 
 export const InlineError = ({ error, onRetry }: InlineErrorProps) => {
-  const { t } = useTranslation('tasks');
+  const { t } = useTranslation();
 
   return (
     <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
@@ -71,7 +71,7 @@ export const InlineError = ({ error, onRetry }: InlineErrorProps) => {
         onClick={onRetry}
         className="ml-2 text-xs font-semibold text-amber-700 underline"
       >
-        {t('work.retry', 'Retry')}
+        {t('tasks.work.retry', 'Retry')}
       </button>
     </div>
   );
