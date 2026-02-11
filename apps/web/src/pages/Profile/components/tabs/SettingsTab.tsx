@@ -10,6 +10,10 @@ interface DeviceInfo {
   created_at: string;
 }
 
+interface SettingsTabProps {
+  onHowItWorks?: () => void;
+}
+
 const languages = [
   { code: 'lv', label: 'LV', name: 'Latviešu', flag: '🇱🇻' },
   { code: 'ru', label: 'RU', name: 'Русский', flag: '🇷🇺' },
@@ -32,7 +36,7 @@ const isIOSPWA = () => {
   return isIOS && isStandalone;
 };
 
-export const SettingsTab = () => {
+export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
   const { t, i18n } = useTranslation();
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -127,6 +131,35 @@ export const SettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* How It Works Section — moved here from profile page */}
+      {onHowItWorks && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4">
+            <button
+              onClick={onHowItWorks}
+              className="w-full flex items-center justify-between p-3 rounded-lg text-gray-900 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                  <span className="text-lg">❓</span>
+                </div>
+                <div className="text-left">
+                  <span className="text-base font-medium">
+                    {t('settings.howItWorks.title', 'How it works')}
+                  </span>
+                  <p className="text-xs text-gray-500">
+                    {t('settings.howItWorks.description', 'Learn how Kolab works')}
+                  </p>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Language Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
