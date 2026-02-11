@@ -1,0 +1,34 @@
+{
+  "language": {
+    "title": "Language",
+    "description": "Choose your preferred language"
+  },
+  "notifications": {
+    "title": "Push Notifications",
+    "description": "Get notified about new messages, job applications, and task updates even when the app is closed.",
+    "iosInstallTitle": "Install the app for notifications",
+    "iosInstallHelp": "On iPhone, push notifications only work when Kolab is installed on your home screen:",
+    "iosStep1": "Tap the Share button (square with arrow) in Safari",
+    "iosStep2": "Scroll down and tap \"Add to Home Screen\"",
+    "iosStep3": "Open Kolab from your home screen",
+    "iosStep4": "Come back here to enable notifications",
+    "iosVersionRequired": "Push notifications require iOS 16.4 or later. Please update your iPhone to use this feature.",
+    "notSupported": "Push notifications are not supported by your browser. Try using Chrome, Firefox, or Safari 16.4+.",
+    "blocked": "Notifications are blocked",
+    "blockedHelp": "To re-enable, go to your browser or phone settings and allow notifications for this site.",
+    "enable": "Enable notifications",
+    "statusOn": "Notifications are enabled",
+    "statusOff": "Notifications are disabled",
+    "toggle": "Toggle push notifications",
+    "sendTest": "Send test notification",
+    "testSent": "Test notification sent! Check your device.",
+    "devices": "Registered devices",
+    "unknownDevice": "Unknown Device",
+    "registeredOn": "Registered"
+  },
+  "logout": {
+    "button": "Log Out",
+    "confirmTitle": "Log out?",
+    "confirmMessage": "Are you sure you want to log out of your account?"
+  }
+}
