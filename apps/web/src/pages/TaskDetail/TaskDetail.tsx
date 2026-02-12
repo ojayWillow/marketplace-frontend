@@ -35,6 +35,7 @@ import {
   TaskReviews,
   RecommendedHelpers,
   ApplicationSheet,
+  ReviewSheet,
 } from './components';
 import { useTaskActions } from './hooks';
 import { Review, CanReviewResponse } from './types';
@@ -67,6 +68,7 @@ const TaskDetail = () => {
   const [applications, setApplications] = useState<TaskApplication[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [showApplicationSheet, setShowApplicationSheet] = useState(false);
+  const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   // Recommended helpers state
@@ -90,7 +92,7 @@ const TaskDetail = () => {
     }
   };
 
-  // Task actions hook
+  // Task actions hook — with review callback
   const {
     actionLoading,
     acceptingId,
@@ -109,6 +111,10 @@ const TaskDetail = () => {
     refetchTask,
     fetchApplications,
     isAuthenticated,
+    onTaskCompleted: () => {
+      // Open the review sheet right after confirming completion
+      setShowReviewSheet(true);
+    },
   });
 
   // Fetch recommended helpers
@@ -198,6 +204,15 @@ const TaskDetail = () => {
       return;
     }
     navigate(`/messages?userId=${task?.creator_id}`);
+  };
+
+  // Figure out who to review
+  const getRevieweeName = (): string => {
+    if (!task) return '';
+    const isCreator = user?.id === task.creator_id;
+    // Creator reviews the worker, worker reviews the creator
+    if (isCreator) return task.assigned_to_name || 'the worker';
+    return task.creator_name || 'the job owner';
   };
 
   // Loading state
@@ -433,7 +448,7 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Desktop-only inline application form (web keeps the old pattern) */}
+          {/* Desktop-only inline application form */}
           {showApplicationSheet && canApply && (
             <div className="hidden md:block mx-6 mb-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
               <h3 className="font-semibold text-gray-900 text-base mb-3">Apply for this job</h3>
@@ -463,7 +478,7 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Status Messages — one clear message per state */}
+          {/* Status Messages */}
           {isCreator && task.status === 'assigned' && (
             <div className="mx-4 mb-4 md:mx-6 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2.5 rounded-lg text-center text-sm">
               ⏳ Waiting for worker to complete the task
@@ -500,6 +515,20 @@ const TaskDetail = () => {
             </div>
           )}
 
+          {/* Completed task: prompt to review if user hasn't yet (inline for mobile) */}
+          {task.status === 'completed' && canReview?.can_review && (isCreator || isAssigned) && (
+            <div className="mx-4 mb-4 md:mx-6">
+              <button
+                onClick={() => setShowReviewSheet(true)}
+                className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center hover:bg-yellow-100 transition-colors active:scale-[0.98]"
+              >
+                <span className="font-semibold text-yellow-700 text-sm">
+                  ⭐ Leave a review for {getRevieweeName()}
+                </span>
+              </button>
+            </div>
+          )}
+
           {/* Desktop inline action button */}
           <div className="hidden md:block px-6 pb-6">
             <TaskActionButtons
@@ -528,7 +557,7 @@ const TaskDetail = () => {
           />
         )}
 
-        {/* Reviews */}
+        {/* Reviews (scroll-down section for completed tasks) */}
         {task.status === 'completed' && (
           <TaskReviews
             taskId={Number(id)}
@@ -579,8 +608,27 @@ const TaskDetail = () => {
         />
       </div>
 
+      {/* Review bottom sheet (mobile + desktop) */}
+      <ReviewSheet
+        isOpen={showReviewSheet}
+        onClose={() => {
+          setShowReviewSheet(false);
+          // Navigate to profile after closing (whether they reviewed or skipped)
+          navigate('/profile');
+        }}
+        onSubmitted={() => {
+          setShowReviewSheet(false);
+          fetchReviews();
+          checkCanReview();
+          // Navigate to profile after submitting review
+          setTimeout(() => navigate('/profile'), 1000);
+        }}
+        taskId={Number(id)}
+        revieweeName={getRevieweeName()}
+      />
+
       {/* Sticky bottom action bar MOBILE ONLY */}
-      {!showApplicationSheet && (
+      {!showApplicationSheet && !showReviewSheet && (
         <div
           className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
           style={{ bottom: 'var(--nav-total-height, 64px)' }}

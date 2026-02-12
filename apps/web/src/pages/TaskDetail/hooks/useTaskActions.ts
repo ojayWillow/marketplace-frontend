@@ -14,6 +14,7 @@ interface UseTaskActionsProps {
   refetchTask: () => void;
   fetchApplications: () => void;
   isAuthenticated: boolean;
+  onTaskCompleted?: () => void;
 }
 
 export const useTaskActions = ({
@@ -22,6 +23,7 @@ export const useTaskActions = ({
   refetchTask,
   fetchApplications,
   isAuthenticated,
+  onTaskCompleted,
 }: UseTaskActionsProps) => {
   const navigate = useNavigate();
   const toast = useToastStore();
@@ -45,11 +47,10 @@ export const useTaskActions = ({
       await markTaskDone(taskId);
       toast.success('Task marked as done! Waiting for creator confirmation.');
       
-      // Invalidate and refetch
       await invalidateTaskCaches();
       await refetchTask();
       
-      // Navigate back to My Work after 1.5 seconds
+      // Navigate back to profile after a moment
       setTimeout(() => {
         navigate('/profile');
       }, 1500);
@@ -72,15 +73,15 @@ export const useTaskActions = ({
     try {
       setActionLoading(true);
       await confirmTaskCompletion(taskId);
-      toast.success('Task completed! You can now leave a review.');
+      toast.success('Task completed!');
       
       await invalidateTaskCaches();
       await refetchTask();
       
-      // Navigate to profile after 1.5 seconds
-      setTimeout(() => {
-        navigate('/profile');
-      }, 1500);
+      // Trigger the review flow instead of navigating away
+      if (onTaskCompleted) {
+        onTaskCompleted();
+      }
     } catch (error: any) {
       console.error('Error confirming task:', error);
       toast.error(error?.response?.data?.error || 'Failed to confirm task');
