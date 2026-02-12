@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
 import { useAuthStore, getTask as fetchTaskById } from '@marketplace/shared';
+import { FEATURES } from '../../constants/featureFlags';
 
 import { Task } from './types';
 import { mobileTasksStyles } from './styles';
@@ -42,7 +43,7 @@ const SkeletonCard = () => (
  * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
  *
  * Now restores selectedTask and map viewport from Zustand store on mount,
- * so navigating away and back preserves the user's context.
+ * so navigating away and back preserves the user’s context.
  *
  * Deep link support: reads ?task=<id> from URL, fetches the task,
  * and auto-selects it on the map (fly-to + JobPreviewCard).
@@ -108,7 +109,7 @@ const MobileTasksView = () => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // --- Deep link: track whether we've already handled the ?task= param ---
+  // --- Deep link: track whether we’ve already handled the ?task= param ---
   const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
   // --- Deep link: read ?task=ID from URL and select it on the map ---
@@ -170,11 +171,10 @@ const MobileTasksView = () => {
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
-  // Urgent job count
-  const urgentCount = useMemo(
-    () => filteredTasks.filter((t) => t.is_urgent).length,
-    [filteredTasks]
-  );
+  // Urgent job count (only when feature is enabled)
+  const urgentCount = FEATURES.URGENT
+    ? filteredTasks.filter((t) => t.is_urgent).length
+    : 0;
 
   // --- Event handlers ---
   const handleRecenter = () => {
@@ -300,9 +300,9 @@ const MobileTasksView = () => {
                     task.displayLatitude || task.latitude,
                     task.displayLongitude || task.longitude,
                   ]}
-                  icon={getJobPriceIcon(budget, isSelected, task.is_urgent)}
+                  icon={getJobPriceIcon(budget, isSelected, FEATURES.URGENT && task.is_urgent)}
                   eventHandlers={{ click: () => handleMarkerClick(task) }}
-                  zIndexOffset={isSelected ? 1000 : task.is_urgent ? 500 : 0}
+                  zIndexOffset={isSelected ? 1000 : (FEATURES.URGENT && task.is_urgent) ? 500 : 0}
                 />
               );
             })}
@@ -409,7 +409,7 @@ const MobileTasksView = () => {
               <div className="flex items-center justify-between w-full px-4 mt-1">
                 <span className="text-base font-bold text-gray-800">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
-                  {urgentCount > 0 && (
+                  {FEATURES.URGENT && urgentCount > 0 && (
                     <span className="text-red-600"> · ⚡{urgentCount}</span>
                   )}
                 </span>

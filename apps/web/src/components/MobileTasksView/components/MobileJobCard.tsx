@@ -2,6 +2,7 @@ import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import FavoriteButton from '../../ui/FavoriteButton';
+import { FEATURES } from '../../../constants/featureFlags';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -39,7 +40,7 @@ const MobileJobCard = ({
   );
   const budget = task.budget || task.reward || 0;
   const hasRating = task.creator_rating != null;
-  const isUrgent = task.is_urgent;
+  const isUrgent = FEATURES.URGENT && task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   // Render star rating

@@ -25,6 +25,7 @@ import { getCategoryLabel, getCategoryIcon } from '../../constants/categories';
 import { apiClient } from '@marketplace/shared';
 import SEOHead from '../../components/ui/SEOHead';
 import ShareButton from '../../components/ui/ShareButton';
+import { FEATURES } from '../../constants/featureFlags';
 
 // Local components
 import {
@@ -238,6 +239,7 @@ const TaskDetail = () => {
   const categoryIcon = getCategoryIcon(task.category);
   const applicantCount = task.pending_applications_count || 0;
   const budget = task.budget || task.reward || 0;
+  const isUrgent = FEATURES.URGENT && task.is_urgent;
   const seoDescription = `${categoryLabel} job${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
   const postedDate = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -290,7 +292,7 @@ const TaskDetail = () => {
                 <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
                   {categoryLabel}
                 </span>
-                {task.is_urgent && (
+                {isUrgent && (
                   <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
                 )}
               </div>
@@ -307,7 +309,7 @@ const TaskDetail = () => {
                 <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wide">
                   {categoryLabel}
                 </span>
-                {task.is_urgent && (
+                {isUrgent && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">Urgent</span>
                 )}
               </div>
@@ -552,10 +554,7 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* Sticky bottom action bar — MOBILE ONLY
-          Uses --nav-total-height CSS var (set by BottomNav) to sit exactly
-          above the nav bar. Falls back to 64px. Adds safe-area padding
-          for PWA standalone mode where the home indicator eats into space. */}
+      {/* Sticky bottom action bar — MOBILE ONLY */}
       <div
         className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
         style={{ bottom: 'var(--nav-total-height, 64px)' }}

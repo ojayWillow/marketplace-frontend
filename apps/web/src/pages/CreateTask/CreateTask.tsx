@@ -11,6 +11,7 @@ import {
   FormTips,
 } from './components';
 import ImagePicker from '../../components/ImagePicker';
+import { FEATURES } from '../../constants/featureFlags';
 
 const CreateTask = () => {
   const { t } = useTranslation();
@@ -117,11 +118,13 @@ const CreateTask = () => {
               onChange={(d) => updateField('difficulty', d)}
             />
 
-            {/* 9. Urgent */}
-            <UrgentToggle
-              value={formData.is_urgent}
-              onChange={(u) => updateField('is_urgent', u)}
-            />
+            {/* 9. Urgent — hidden until feature is launched */}
+            {FEATURES.URGENT && (
+              <UrgentToggle
+                value={formData.is_urgent}
+                onChange={(u) => updateField('is_urgent', u)}
+              />
+            )}
 
             {/* Tips */}
             <FormTips category={formData.category} />

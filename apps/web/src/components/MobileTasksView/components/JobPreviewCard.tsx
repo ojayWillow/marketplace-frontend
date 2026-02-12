@@ -6,6 +6,7 @@ import { formatTimeAgo } from '../utils/formatting';
 import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
 import FavoriteButton from '../../ui/FavoriteButton';
 import shareTask from '../../../utils/shareTask';
+import { FEATURES } from '../../../constants/featureFlags';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -50,7 +51,7 @@ const JobPreviewCard = ({
   const categoryIcon = getCategoryIcon(task.category);
   const categoryLabel = getCategoryLabel(task.category);
   const applicantsCount = task.pending_applications_count || 0;
-  const isUrgent = task.is_urgent;
+  const isUrgent = FEATURES.URGENT && task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   // Check if rating exists (not null/undefined)
@@ -92,7 +93,7 @@ const JobPreviewCard = ({
         maxHeight: '55vh',
       }}
     >
-      {/* Urgent top accent bar */}
+      {/* Urgent top accent bar — hidden when FEATURES.URGENT is off */}
       {isUrgent && (
         <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse flex-shrink-0" />
       )}
