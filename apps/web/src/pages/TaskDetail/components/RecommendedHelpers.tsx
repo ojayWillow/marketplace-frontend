@@ -18,9 +18,9 @@ export const RecommendedHelpers = ({
 }: RecommendedHelpersProps) => {
   if (loading) {
     return (
-      <div className="mt-6 bg-white rounded-xl shadow-md p-6 text-center">
+      <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md p-6 text-center">
         <div className="animate-spin h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-        <p className="text-gray-500 text-sm">Finding helpers nearby...</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Finding helpers nearby...</p>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export const RecommendedHelpers = ({
   if (helpers.length === 0) return null;
 
   return (
-    <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden">
+    <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden">
       <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4 text-white">
         <div className="flex items-center gap-3">
           <span className="text-2xl">✨</span>
@@ -44,13 +44,13 @@ export const RecommendedHelpers = ({
       <div className="p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {helpers.slice(0, 4).map(helper => (
-            <div key={helper.id} className="border border-gray-200 rounded-lg p-4 hover:border-amber-300 hover:shadow transition-all">
+            <div key={helper.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-amber-300 dark:hover:border-amber-600 hover:shadow transition-all">
               <div className="flex items-center gap-3 mb-3">
                 {helper.creator_avatar ? (
                   <img 
                     src={helper.creator_avatar} 
                     alt={helper.creator_name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-amber-200"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-amber-200 dark:border-amber-700"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold">
@@ -60,7 +60,7 @@ export const RecommendedHelpers = ({
                 <div className="flex-1 min-w-0">
                   <Link 
                     to={`/users/${helper.creator_id}`}
-                    className="font-medium text-gray-900 hover:text-amber-600 truncate block"
+                    className="font-medium text-gray-900 dark:text-gray-100 hover:text-amber-600 dark:hover:text-amber-400 truncate block"
                   >
                     {helper.creator_name}
                   </Link>
@@ -71,7 +71,7 @@ export const RecommendedHelpers = ({
                     </span>
                   </div>
                 </div>
-                <span className="text-green-600 font-bold">
+                <span className="text-green-600 dark:text-green-400 font-bold">
                   €{helper.price || 0}
                 </span>
               </div>
@@ -90,7 +90,7 @@ export const RecommendedHelpers = ({
           <div className="mt-4 text-center">
             <Link 
               to={`/tasks?tab=offerings&category=${task.category}`}
-              className="text-amber-600 hover:text-amber-700 font-medium"
+              className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium"
             >
               View all {helpers.length} helpers →
             </Link>
