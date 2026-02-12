@@ -49,7 +49,7 @@ const isToday = (dateStr: string): boolean => {
   return d.toDateString() === now.toDateString();
 };
 
-/** Navigate straight to the task — no extra params needed */
+/** Get the navigation path for a notification */
 const getNotificationPath = (notification: Notification): string | null => {
   if (notification.related_type === 'task' && notification.related_id) {
     return `/tasks/${notification.related_id}`;
@@ -57,50 +57,23 @@ const getNotificationPath = (notification: Notification): string | null => {
   return null;
 };
 
-/**
- * Clear, human-readable notification text.
- * Each type says exactly what happened — the task page handles "what to do next".
- */
+/** Get a short i18n-aware title based on type */
 const getNotificationTitle = (n: Notification, t: (key: string, fallback: string, opts?: any) => string): string => {
-  const task = n.data?.task_title || 'a task';
-  const applicant = n.data?.applicant_name || 'Someone';
-  const worker = n.data?.worker_name || 'The worker';
-
   switch (n.type) {
     case NotificationType.NEW_APPLICATION:
-      return t('notifications.newApplication', '{{applicant}} applied for "{{task}}"', { applicant, task });
+      return t('notifications.newApplication', 'New application for "{{task}}"', { task: n.data?.task_title || '' });
     case NotificationType.APPLICATION_ACCEPTED:
-      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task });
+      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task: n.data?.task_title || '' });
     case NotificationType.APPLICATION_REJECTED:
-      return t('notifications.applicationRejected', 'Your application for "{{task}}" was not selected', { task });
+      return t('notifications.applicationRejected', 'Update on "{{task}}"', { task: n.data?.task_title || '' });
     case NotificationType.TASK_MARKED_DONE:
-      return t('notifications.taskMarkedDone', '{{worker}} marked "{{task}}" as done', { worker, task });
+      return t('notifications.taskMarkedDone', '"{{task}}" marked as done', { task: n.data?.task_title || '' });
     case NotificationType.TASK_COMPLETED:
-      return t('notifications.taskCompleted', '"{{task}}" is confirmed complete', { task });
+      return t('notifications.taskCompleted', '"{{task}}" completed!', { task: n.data?.task_title || '' });
     case NotificationType.TASK_DISPUTED:
-      return t('notifications.taskDisputed', '"{{task}}" has been disputed', { task });
+      return t('notifications.taskDisputed', 'Dispute on "{{task}}"', { task: n.data?.task_title || '' });
     default:
       return n.title;
-  }
-};
-
-/** Short subtitle giving context on what the user should do */
-const getNotificationSubtitle = (n: Notification, t: (key: string, fallback: string, opts?: any) => string): string | null => {
-  switch (n.type) {
-    case NotificationType.NEW_APPLICATION:
-      return t('notifications.newApplicationSub', 'Tap to review their application');
-    case NotificationType.APPLICATION_ACCEPTED:
-      return t('notifications.applicationAcceptedSub', 'You can now start working');
-    case NotificationType.APPLICATION_REJECTED:
-      return t('notifications.applicationRejectedSub', 'Keep applying to other jobs');
-    case NotificationType.TASK_MARKED_DONE:
-      return t('notifications.taskMarkedDoneSub', 'Review and confirm completion');
-    case NotificationType.TASK_COMPLETED:
-      return t('notifications.taskCompletedSub', 'Leave a review for this job');
-    case NotificationType.TASK_DISPUTED:
-      return t('notifications.taskDisputedSub', 'Our team is looking into it');
-    default:
-      return null;
   }
 };
 
@@ -126,6 +99,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         onClose();
       }
     };
+    // Small delay to avoid the bell click itself closing immediately
     const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 50);
     return () => {
       clearTimeout(timer);
@@ -148,7 +122,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
     }
-    // Navigate straight to the task
+    // Navigate to action area
     const path = getNotificationPath(notification);
     if (path) {
       onClose();
@@ -166,20 +140,18 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
 
   return (
     <>
-      {/* Backdrop — invisible + no pointer events when closed */}
+      {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/30 z-[200] transition-opacity duration-200 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none invisible'
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       />
 
-      {/* Panel slides up from bottom on mobile.
-           When closed: translate-y-full hides it offscreen,
-           pointer-events-none + invisible prevent peeking/touch interception */}
+      {/* Panel — slides up from bottom on mobile */}
       <div
         ref={panelRef}
         className={`fixed left-0 right-0 bottom-0 z-[201] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none invisible'
+          isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{
           maxHeight: '75vh',
@@ -295,7 +267,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   );
 };
 
-/* -- Single notification row -- */
+/* ── Single notification row ── */
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;
@@ -305,7 +277,6 @@ interface NotificationItemProps {
 const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) => {
   const config = TYPE_CONFIG[notification.type] || DEFAULT_CONFIG;
   const hasAction = !!(notification.related_type && notification.related_id);
-  const subtitle = getNotificationSubtitle(notification, t);
 
   return (
     <button
@@ -326,11 +297,6 @@ const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) =
         }`}>
           {getNotificationTitle(notification, t)}
         </p>
-        {subtitle && (
-          <p className="text-xs text-gray-500 mt-0.5">
-            {subtitle}
-          </p>
-        )}
         <p className="text-xs text-gray-400 mt-0.5">
           {timeAgo(notification.created_at)}
         </p>
