@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getDisputeReasons, createDispute, DisputeReason } from '@marketplace/shared';
 import { uploadTaskImageFile } from '@marketplace/shared';
@@ -21,6 +21,7 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [loadingReasons, setLoadingReasons] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   // Fetch reasons when sheet opens
   useEffect(() => {
@@ -52,6 +53,42 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
       setDescription('');
       setImages([]);
       setError('');
+    }
+  }, [isOpen]);
+
+  // Prevent body scroll + handle keyboard resize
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+
+      // Use visualViewport to adjust sheet when keyboard opens
+      const vv = window.visualViewport;
+      const handleResize = () => {
+        if (sheetRef.current && vv) {
+          const offsetTop = vv.offsetTop;
+          const height = vv.height;
+          sheetRef.current.style.height = `${height}px`;
+          sheetRef.current.style.top = `${offsetTop}px`;
+          sheetRef.current.style.bottom = 'auto';
+        }
+      };
+
+      if (vv) {
+        vv.addEventListener('resize', handleResize);
+        vv.addEventListener('scroll', handleResize);
+        // Initial call
+        handleResize();
+      }
+
+      return () => {
+        document.body.style.overflow = '';
+        if (vv) {
+          vv.removeEventListener('resize', handleResize);
+          vv.removeEventListener('scroll', handleResize);
+        }
+      };
+    } else {
+      document.body.style.overflow = '';
     }
   }, [isOpen]);
 
@@ -97,19 +134,23 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+    <div
+      ref={sheetRef}
+      className="fixed inset-0 z-[200] flex items-end md:items-center justify-center"
+      style={{ height: '100dvh' }}
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+      <div className="relative w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-2xl overflow-hidden animate-slide-up" style={{ maxHeight: '85%' }}>
         {/* Handle bar (mobile) */}
         <div className="md:hidden flex justify-center pt-3">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
-        {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+        {/* Header — sticky */}
+        <div className="sticky top-0 bg-white px-5 pt-4 pb-3 border-b border-gray-100 z-10">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">⚠️ File a Dispute</h2>
             <button
@@ -124,91 +165,98 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
           </p>
         </div>
 
-        <div className="px-5 py-4 space-y-5">
-          {/* Reason selection */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              What's the issue?
-            </label>
-            {loadingReasons ? (
-              <div className="text-sm text-gray-400 py-2">Loading reasons...</div>
-            ) : (
-              <div className="space-y-2">
-                {reasons.map((reason) => (
-                  <label
-                    key={reason.value}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedReason === reason.value
-                        ? 'border-orange-400 bg-orange-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="dispute-reason"
-                      value={reason.value}
-                      checked={selectedReason === reason.value}
-                      onChange={(e) => setSelectedReason(e.target.value)}
-                      className="w-4 h-4 text-orange-500 focus:ring-orange-500"
-                    />
-                    <span className="text-sm font-medium text-gray-800">{reason.label}</span>
-                  </label>
-                ))}
+        {/* Scrollable content */}
+        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(85dvh - 90px)' }}>
+          <div className="px-5 py-4 space-y-5">
+            {/* Reason selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                What's the issue?
+              </label>
+              {loadingReasons ? (
+                <div className="text-sm text-gray-400 py-2">Loading reasons...</div>
+              ) : (
+                <div className="space-y-2">
+                  {reasons.map((reason) => (
+                    <label
+                      key={reason.value}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedReason === reason.value
+                          ? 'border-orange-400 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="dispute-reason"
+                        value={reason.value}
+                        checked={selectedReason === reason.value}
+                        onChange={(e) => setSelectedReason(e.target.value)}
+                        className="w-4 h-4 text-orange-500 focus:ring-orange-500"
+                      />
+                      <span className="text-sm font-medium text-gray-800">{reason.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Describe the issue
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Please explain what happened in detail (at least 20 characters)..."
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[100px] text-sm resize-none"
+                onFocus={(e) => {
+                  // Scroll textarea into view when keyboard opens
+                  setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                }}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                {description.trim().length}/20 characters minimum
+              </p>
+            </div>
+
+            {/* Photo evidence */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                📷 Evidence photos (optional)
+              </label>
+              <ImagePicker
+                images={images}
+                onChange={setImages}
+                maxImages={5}
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
               </div>
             )}
-          </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Describe the issue
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Please explain what happened in detail (at least 20 characters)..."
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[120px] text-sm resize-none"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              {description.trim().length}/20 characters minimum
-            </p>
-          </div>
-
-          {/* Photo evidence */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              📷 Evidence photos (optional)
-            </label>
-            <ImagePicker
-              images={images}
-              onChange={setImages}
-              maxImages={5}
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              {error}
+            {/* Actions */}
+            <div className="flex gap-3 pb-2">
+              <button
+                onClick={onClose}
+                disabled={submitting}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !selectedReason || description.trim().length < 20}
+                className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-lg active:scale-[0.98]"
+              >
+                {submitting ? 'Submitting...' : '⚠️ Submit Dispute'}
+              </button>
             </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pb-2">
-            <button
-              onClick={onClose}
-              disabled={submitting}
-              className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !selectedReason || description.trim().length < 20}
-              className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-lg active:scale-[0.98]"
-            >
-              {submitting ? 'Submitting...' : '⚠️ Submit Dispute'}
-            </button>
           </div>
         </div>
       </div>
