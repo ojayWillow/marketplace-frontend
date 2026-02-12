@@ -53,11 +53,13 @@ export const NotificationBell = () => {
         )}
       </button>
 
-      {/* Notifications panel */}
-      <NotificationsPanel
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-      />
+      {/* Notifications panel — only mounted when open so it doesn't peek through */}
+      {isOpen && (
+        <NotificationsPanel
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
     </>
   );
 };
