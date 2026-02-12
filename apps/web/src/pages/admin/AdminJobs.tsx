@@ -22,10 +22,12 @@ const AdminJobs = () => {
   const toast = useToastStore();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
@@ -35,23 +37,17 @@ const AdminJobs = () => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      try {
-        const response = await apiClient.get('/api/admin/jobs', {
-          params: { page, status: statusFilter, search: searchQuery }
-        });
-        setJobs(response.data.jobs);
-        setTotalPages(response.data.totalPages || 1);
-      } catch (err) {
-        // Mock data
-        setJobs([
-          { id: 1, title: 'Need help moving furniture', category: 'moving', status: 'open', budget: 50, location: 'Riga, Centrs', creator_name: 'janis_k', creator_id: 1, created_at: '2026-01-08', applications_count: 3, is_urgent: false },
-          { id: 2, title: 'Deep cleaning apartment', category: 'cleaning', status: 'assigned', budget: 80, location: 'Riga, Teika', creator_name: 'maria_s', creator_id: 2, created_at: '2026-01-07', applications_count: 5, is_urgent: true },
-          { id: 3, title: 'Fix leaking faucet', category: 'plumbing', status: 'completed', budget: 30, location: 'Jurmala', creator_name: 'peter_v', creator_id: 3, created_at: '2026-01-05', applications_count: 2, is_urgent: false },
-          { id: 4, title: 'IKEA furniture assembly', category: 'assembly', status: 'open', budget: 40, location: 'Riga, Imanta', creator_name: 'liga_m', creator_id: 6, created_at: '2026-01-09', applications_count: 1, is_urgent: false },
-          { id: 5, title: 'Dog walking needed', category: 'pet-care', status: 'cancelled', budget: 15, location: 'Riga, Mezciems', creator_name: 'andris_b', creator_id: 5, created_at: '2026-01-04', applications_count: 0, is_urgent: false },
-        ]);
-        setTotalPages(2);
-      }
+      setError(null);
+      const response = await apiClient.get('/api/admin/jobs', {
+        params: { page, status: statusFilter, search: searchQuery, per_page: 20 }
+      });
+      setJobs(response.data.jobs || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotal(response.data.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch jobs:', err);
+      setError(err.response?.data?.error || 'Failed to load jobs');
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -71,9 +67,9 @@ const AdminJobs = () => {
       await apiClient.delete(`/api/admin/jobs/${jobId}`);
       toast.success('Job deleted successfully');
       setJobs(jobs.filter(j => j.id !== jobId));
-    } catch (err) {
-      toast.success('Job deleted successfully');
-      setJobs(jobs.filter(j => j.id !== jobId));
+      setTotal(prev => prev - 1);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete job');
     } finally {
       setActionLoading(null);
     }
@@ -95,22 +91,13 @@ const AdminJobs = () => {
     );
   };
 
-  const filteredJobs = jobs.filter(job => {
-    if (statusFilter !== 'all' && job.status !== statusFilter) return false;
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return job.title.toLowerCase().includes(query) || 
-           job.creator_name.toLowerCase().includes(query) ||
-           job.location.toLowerCase().includes(query);
-  });
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Jobs Management</h1>
-          <p className="text-gray-500">View and moderate all jobs on the platform</p>
+          <p className="text-gray-500">{total} total jobs</p>
         </div>
       </div>
 
@@ -153,7 +140,18 @@ const AdminJobs = () => {
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-2">⚠️</div>
+            <p className="text-red-600 font-medium">{error}</p>
+            <button
+              onClick={() => fetchJobs()}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : jobs.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-2">💼</div>
             <p className="text-gray-500">No jobs found</p>
@@ -173,7 +171,7 @@ const AdminJobs = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredJobs.map((job) => (
+                {jobs.map((job) => (
                   <tr key={job.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div>
@@ -232,7 +230,9 @@ const AdminJobs = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-            <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages} ({total} jobs)
+            </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
