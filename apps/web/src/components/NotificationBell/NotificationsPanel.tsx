@@ -166,18 +166,20 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — invisible + no pointer events when closed */}
       <div
         className={`fixed inset-0 bg-black/30 z-[200] transition-opacity duration-200 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none invisible'
         }`}
       />
 
-      {/* Panel slides up from bottom on mobile */}
+      {/* Panel slides up from bottom on mobile.
+           When closed: translate-y-full hides it offscreen,
+           pointer-events-none + invisible prevent peeking/touch interception */}
       <div
         ref={panelRef}
         className={`fixed left-0 right-0 bottom-0 z-[201] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
+          isOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none invisible'
         }`}
         style={{
           maxHeight: '75vh',
