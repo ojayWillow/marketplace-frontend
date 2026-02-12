@@ -49,31 +49,58 @@ const isToday = (dateStr: string): boolean => {
   return d.toDateString() === now.toDateString();
 };
 
-/** Get the navigation path for a notification - now includes context params */
+/** Navigate straight to the task — no extra params needed */
 const getNotificationPath = (notification: Notification): string | null => {
   if (notification.related_type === 'task' && notification.related_id) {
-    return `/tasks/${notification.related_id}?from=notification&type=${notification.type}`;
+    return `/tasks/${notification.related_id}`;
   }
   return null;
 };
 
-/** Get a short i18n-aware title based on type */
+/**
+ * Clear, human-readable notification text.
+ * Each type says exactly what happened — the task page handles "what to do next".
+ */
 const getNotificationTitle = (n: Notification, t: (key: string, fallback: string, opts?: any) => string): string => {
+  const task = n.data?.task_title || 'a task';
+  const applicant = n.data?.applicant_name || 'Someone';
+  const worker = n.data?.worker_name || 'The worker';
+
   switch (n.type) {
     case NotificationType.NEW_APPLICATION:
-      return t('notifications.newApplication', 'New application for "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.newApplication', '{{applicant}} applied for "{{task}}"', { applicant, task });
     case NotificationType.APPLICATION_ACCEPTED:
-      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task });
     case NotificationType.APPLICATION_REJECTED:
-      return t('notifications.applicationRejected', 'Update on "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.applicationRejected', 'Your application for "{{task}}" was not selected', { task });
     case NotificationType.TASK_MARKED_DONE:
-      return t('notifications.taskMarkedDone', '"{{task}}" marked as done', { task: n.data?.task_title || '' });
+      return t('notifications.taskMarkedDone', '{{worker}} marked "{{task}}" as done', { worker, task });
     case NotificationType.TASK_COMPLETED:
-      return t('notifications.taskCompleted', '"{{task}}" completed!', { task: n.data?.task_title || '' });
+      return t('notifications.taskCompleted', '"{{task}}" is confirmed complete', { task });
     case NotificationType.TASK_DISPUTED:
-      return t('notifications.taskDisputed', 'Dispute on "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.taskDisputed', '"{{task}}" has been disputed', { task });
     default:
       return n.title;
+  }
+};
+
+/** Short subtitle giving context on what the user should do */
+const getNotificationSubtitle = (n: Notification, t: (key: string, fallback: string, opts?: any) => string): string | null => {
+  switch (n.type) {
+    case NotificationType.NEW_APPLICATION:
+      return t('notifications.newApplicationSub', 'Tap to review their application');
+    case NotificationType.APPLICATION_ACCEPTED:
+      return t('notifications.applicationAcceptedSub', 'You can now start working');
+    case NotificationType.APPLICATION_REJECTED:
+      return t('notifications.applicationRejectedSub', 'Keep applying to other jobs');
+    case NotificationType.TASK_MARKED_DONE:
+      return t('notifications.taskMarkedDoneSub', 'Review and confirm completion');
+    case NotificationType.TASK_COMPLETED:
+      return t('notifications.taskCompletedSub', 'Leave a review for this job');
+    case NotificationType.TASK_DISPUTED:
+      return t('notifications.taskDisputedSub', 'Our team is looking into it');
+    default:
+      return null;
   }
 };
 
@@ -99,7 +126,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         onClose();
       }
     };
-    // Small delay to avoid the bell click itself closing immediately
     const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 50);
     return () => {
       clearTimeout(timer);
@@ -122,7 +148,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
     }
-    // Navigate to action area with context
+    // Navigate straight to the task
     const path = getNotificationPath(notification);
     if (path) {
       onClose();
@@ -277,6 +303,7 @@ interface NotificationItemProps {
 const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) => {
   const config = TYPE_CONFIG[notification.type] || DEFAULT_CONFIG;
   const hasAction = !!(notification.related_type && notification.related_id);
+  const subtitle = getNotificationSubtitle(notification, t);
 
   return (
     <button
@@ -297,6 +324,11 @@ const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) =
         }`}>
           {getNotificationTitle(notification, t)}
         </p>
+        {subtitle && (
+          <p className="text-xs text-gray-500 mt-0.5">
+            {subtitle}
+          </p>
+        )}
         <p className="text-xs text-gray-400 mt-0.5">
           {timeAgo(notification.created_at)}
         </p>

@@ -34,7 +34,6 @@ import {
   TaskActionButtons,
   TaskReviews,
   RecommendedHelpers,
-  NotificationActionBanner,
 } from './components';
 import { useTaskActions } from './hooks';
 import { Review, CanReviewResponse } from './types';
@@ -281,15 +280,6 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* === NOTIFICATION CONTEXT BANNER === */}
-      <div className="md:max-w-2xl md:mx-auto">
-        <NotificationActionBanner
-          isCreator={isCreator}
-          isAssigned={isAssigned}
-          taskStatus={task.status}
-        />
-      </div>
-
       <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
         {/* Main card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -346,7 +336,6 @@ const TaskDetail = () => {
                   <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
                 </div>
               </div>
-              {/* Message button for non-creators */}
               {!isCreator && (
                 <button
                   onClick={handleMessageCreator}
@@ -432,7 +421,7 @@ const TaskDetail = () => {
 
           {/* Applications (Owner View) */}
           {showApplications && (
-            <div className="px-4 pb-4 md:px-6 md:pb-5" data-section="applications">
+            <div className="px-4 pb-4 md:px-6 md:pb-5">
               <TaskApplications
                 applications={applications}
                 applicationsLoading={applicationsLoading}
@@ -473,20 +462,35 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Status Messages */}
+          {/* Status Messages — one clear message per state */}
           {isCreator && task.status === 'assigned' && (
             <div className="mx-4 mb-4 md:mx-6 text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              Waiting for worker to complete the task
+              ⏳ Waiting for worker to complete the task
+            </div>
+          )}
+          {isAssigned && task.status === 'assigned' && (
+            <div className="mx-4 mb-4 md:mx-6 text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2.5 rounded-lg text-center text-sm">
+              💪 You're assigned — mark as done when finished
+            </div>
+          )}
+          {isCreator && task.status === 'pending_confirmation' && (
+            <div className="mx-4 mb-4 md:mx-6 text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-lg text-center text-sm">
+              📋 Worker marked this as done — please review and confirm
             </div>
           )}
           {isAssigned && task.status === 'pending_confirmation' && (
             <div className="mx-4 mb-4 md:mx-6 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              Waiting for task owner to confirm completion
+              ⏳ Waiting for task owner to confirm completion
             </div>
           )}
           {task.status === 'completed' && (
             <div className="mx-4 mb-4 md:mx-6 text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              This task has been completed
+              ✅ This task has been completed
+            </div>
+          )}
+          {task.status === 'disputed' && (
+            <div className="mx-4 mb-4 md:mx-6 text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg text-center text-sm">
+              ⚠️ This task is under dispute — our team is reviewing it
             </div>
           )}
           {task.status === 'cancelled' && (
@@ -496,7 +500,7 @@ const TaskDetail = () => {
           )}
 
           {/* Desktop inline action button */}
-          <div className="hidden md:block px-6 pb-6" data-section="actions">
+          <div className="hidden md:block px-6 pb-6">
             <TaskActionButtons
               task={task}
               isCreator={isCreator}
@@ -525,20 +529,18 @@ const TaskDetail = () => {
 
         {/* Reviews */}
         {task.status === 'completed' && (
-          <div data-section="reviews">
-            <TaskReviews
-              taskId={Number(id)}
-              reviews={reviews}
-              canReview={canReview}
-              onReviewSubmitted={() => {
-                fetchReviews();
-                checkCanReview();
-              }}
-            />
-          </div>
+          <TaskReviews
+            taskId={Number(id)}
+            reviews={reviews}
+            canReview={canReview}
+            onReviewSubmitted={() => {
+              fetchReviews();
+              checkCanReview();
+            }}
+          />
         )}
 
-        {/* How it works collapsible on mobile, always open on desktop */}
+        {/* How it works */}
         <div className="mt-3 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
           <button
             onClick={() => setHowItWorksOpen(!howItWorksOpen)}
@@ -554,7 +556,6 @@ const TaskDetail = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          {/* Mobile: collapsible. Desktop: always visible */}
           <div className={`px-4 pb-4 md:px-6 md:pb-5 ${howItWorksOpen ? 'block' : 'hidden md:block'}`}>
             <ol className="text-gray-600 space-y-1.5 list-decimal list-inside text-sm md:text-base">
               <li>Apply for the job with a brief introduction</li>
@@ -570,7 +571,6 @@ const TaskDetail = () => {
       <div
         className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
         style={{ bottom: 'var(--nav-total-height, 64px)' }}
-        data-section="actions"
       >
         <div className="max-w-3xl mx-auto">
           <TaskActionButtons
