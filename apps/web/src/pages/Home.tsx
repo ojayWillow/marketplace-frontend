@@ -5,8 +5,8 @@ import MapHomePage from './MapHomePage';
 
 /**
  * Home page routing logic:
- * - NOT authenticated → Redirect to /welcome (landing page, no nav)
- *   BUT if ?task=ID is present, preserve it so we can redirect back after login
+ * - NOT authenticated + no ?task= → Redirect to /welcome (landing page)
+ * - NOT authenticated + ?task=ID  → Show map as guest (shared link preview)
  * - Authenticated → Show map (may auto-select a shared task via ?task=ID)
  */
 export default function Home() {
@@ -14,19 +14,19 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    // Redirect unauthenticated users to landing page
-    if (!isAuthenticated) {
-      const taskParam = searchParams.get('task');
-      // Preserve ?task= so after login they land back here with the deep link
-      const redirect = taskParam ? `/welcome?task=${taskParam}` : '/welcome';
-      navigate(redirect, { replace: true });
-    }
-  }, [isAuthenticated, navigate, searchParams]);
+  // Check if this is a shared task deep link
+  const hasSharedTask = !!searchParams.get('task');
 
-  // Only authenticated users see the map
-  if (!isAuthenticated) {
-    return null; // Will redirect
+  useEffect(() => {
+    // Only redirect to welcome if NOT a shared link
+    if (!isAuthenticated && !hasSharedTask) {
+      navigate('/welcome', { replace: true });
+    }
+  }, [isAuthenticated, navigate, hasSharedTask]);
+
+  // Show map for authenticated users OR for shared task links (guest mode)
+  if (!isAuthenticated && !hasSharedTask) {
+    return null; // Will redirect to /welcome
   }
 
   return <MapHomePage />;
