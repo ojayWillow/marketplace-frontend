@@ -31,6 +31,7 @@ interface TasksTabProps {
   onTaskConfirmed?: () => void;
   userId?: number;
   viewOnly?: boolean;
+  compact?: boolean; // Mobile compact mode
 }
 
 export const TasksTab = ({
@@ -46,6 +47,7 @@ export const TasksTab = ({
   onCancelTask,
   onTaskConfirmed,
   viewOnly = false,
+  compact = false,
 }: TasksTabProps) => {
   const { t } = useTranslation();
   const [expandedMatchHint, setExpandedMatchHint] = useState<number | null>(null);
@@ -108,7 +110,6 @@ export const TasksTab = ({
 
   // Get tasks for current view mode
   const getDisplayTasks = () => {
-    // For public profiles, only show open/active posted tasks
     if (viewOnly) {
       return createdTasks.filter(task => task.status === 'open');
     }
@@ -124,20 +125,16 @@ export const TasksTab = ({
         return true;
       });
     } else {
-      // Jobs I'm doing - show all applications (pending + accepted)
       return myApplications.filter(app => {
         const task = app.task;
         if (!task) return false;
         
         if (taskStatusFilter === 'active') {
-          // Only accepted applications with active tasks
           return app.status === 'accepted' && ['assigned', 'in_progress', 'pending_confirmation'].includes(task.status);
         }
         if (taskStatusFilter === 'completed') {
-          // Only accepted + completed
           return app.status === 'accepted' && task.status === 'completed';
         }
-        // All: show pending + accepted (exclude rejected)
         return ['pending', 'accepted'].includes(app.status);
       });
     }
@@ -169,7 +166,6 @@ export const TasksTab = ({
   };
 
   const handleReviewSubmitted = () => {
-    // Update the status to mark as reviewed
     if (taskToReview) {
       setCanReviewStatuses(prev => {
         const newMap = new Map(prev);
@@ -183,7 +179,6 @@ export const TasksTab = ({
     handleReviewModalClose();
   };
 
-  // Helper to get application status badge
   const getApplicationStatusBadge = (application: TaskApplication) => {
     if (application.status === 'pending') {
       return {
@@ -209,7 +204,7 @@ export const TasksTab = ({
 
   return (
     <>
-      {/* Confirmation Modal (for job creators) */}
+      {/* Confirmation Modal */}
       {taskToConfirm && (
         <ConfirmTaskModal
           isOpen={confirmModalOpen}
@@ -223,7 +218,7 @@ export const TasksTab = ({
         />
       )}
 
-      {/* Review Modal (for workers reviewing job creators) */}
+      {/* Review Modal */}
       {taskToReview && (
         <ReviewModal
           isOpen={reviewModalOpen}
@@ -237,27 +232,30 @@ export const TasksTab = ({
         />
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-gray-900">
-            {viewOnly ? t('profile.jobsTab.titleViewOnly') : t('profile.jobsTab.title')}
-          </h2>
-          {!viewOnly && (
-            <Link
-              to="/tasks/create"
-              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              {t('profile.jobsTab.postJob')}
-            </Link>
-          )}
-        </div>
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${compact ? 'p-3' : 'p-4 md:p-6'}`}>
+        {/* Header */}
+        {!compact && (
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-semibold text-gray-900">
+              {viewOnly ? t('profile.jobsTab.titleViewOnly') : t('profile.jobsTab.title')}
+            </h2>
+            {!viewOnly && (
+              <Link
+                to="/tasks/create"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                {t('profile.jobsTab.postJob')}
+              </Link>
+            )}
+          </div>
+        )}
 
-        {/* View Toggle - Only for own profile */}
+        {/* View Toggle */}
         {!viewOnly && (
-          <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+          <div className={`flex gap-1 mb-3 bg-gray-100 p-1 rounded-lg ${compact ? 'w-full' : 'w-full md:w-fit'}`}>
             <button
               onClick={() => onViewModeChange('my-tasks')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
+              className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
                 taskViewMode === 'my-tasks' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
               }`}
             >
@@ -270,7 +268,7 @@ export const TasksTab = ({
             </button>
             <button
               onClick={() => onViewModeChange('my-jobs')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
+              className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
                 taskViewMode === 'my-jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
               }`}
             >
@@ -284,9 +282,9 @@ export const TasksTab = ({
           </div>
         )}
 
-        {/* Status Filter - Only for own profile */}
+        {/* Status Filter */}
         {!viewOnly && (
-          <div className="flex gap-1 mb-4">
+          <div className="flex gap-1 mb-3 overflow-x-auto no-scrollbar">
             {[
               { value: 'all', label: t('profile.jobsTab.filterAll') },
               { value: 'active', label: t('profile.jobsTab.filterActive') },
@@ -295,7 +293,7 @@ export const TasksTab = ({
               <button
                 key={filter.value}
                 onClick={() => onStatusFilterChange(filter.value as TaskStatusFilter)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                   taskStatusFilter === filter.value
                     ? 'bg-gray-900 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -307,12 +305,12 @@ export const TasksTab = ({
           </div>
         )}
 
-        {/* Matches Summary Banner - Only for own profile */}
+        {/* Matches Summary Banner */}
         {!viewOnly && taskViewMode === 'my-tasks' && tasksWithMatches > 0 && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-center gap-2 text-amber-800">
-              <span className="text-lg">✨</span>
-              <p className="text-sm">
+              <span className="text-base">✨</span>
+              <p className="text-xs md:text-sm">
                 <span className="font-medium">{t('profile.jobsTab.matchesBanner', { count: tasksWithMatches })}</span>
               </p>
             </div>
@@ -322,9 +320,9 @@ export const TasksTab = ({
         {tasksLoading || applicationsLoading ? (
           <TabLoadingSpinner color="blue" />
         ) : getDisplayTasks().length === 0 ? (
-          <div className="text-center py-10">
-            <div className="text-4xl mb-2">{taskViewMode === 'my-tasks' || viewOnly ? '📋' : '🛠️'}</div>
-            <p className="text-gray-500 mb-4">
+          <div className={`text-center ${compact ? 'py-6' : 'py-10'}`}>
+            <div className={`${compact ? 'text-3xl' : 'text-4xl'} mb-2`}>{taskViewMode === 'my-tasks' || viewOnly ? '📋' : '🛠️'}</div>
+            <p className="text-gray-500 mb-3 text-sm">
               {viewOnly 
                 ? t('profile.jobsTab.noActiveJobs')
                 : taskViewMode === 'my-tasks' 
@@ -342,7 +340,7 @@ export const TasksTab = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {(taskViewMode === 'my-tasks' || viewOnly) ? (
               getDisplayTasks().map(task => {
                 const hasApplications = !viewOnly && task.status === 'open' && (task.pending_applications_count || 0) > 0;
@@ -353,77 +351,86 @@ export const TasksTab = ({
                 return (
                   <div 
                     key={task.id} 
-                    className={`p-4 border rounded-lg transition-colors ${
+                    className={`${compact ? 'p-3' : 'p-3 md:p-4'} border rounded-lg transition-colors ${
                       hasApplications ? 'border-green-300 bg-green-50' : 
                       hasMatches ? 'border-amber-200 bg-amber-50/30' :
                       'border-gray-100 hover:bg-gray-50'
                     }`}
                   >
-                    {/* Application notification - only for own profile */}
+                    {/* Application notification */}
                     {!viewOnly && hasApplications && (
                       <Link 
                         to={`/tasks/${task.id}`}
-                        className="flex items-center justify-between bg-green-500 text-white p-2.5 rounded-lg mb-3 text-sm"
+                        className="flex items-center justify-between bg-green-500 text-white p-2 rounded-lg mb-2.5 text-xs md:text-sm"
                       >
                         <span>📩 {t('profile.jobsTab.applications', { count: task.pending_applications_count })}</span>
                         <span className="font-medium">{t('profile.jobsTab.reviewApplications')}</span>
                       </Link>
                     )}
                     
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span>{getCategoryIcon(task.category)}</span>
-                          <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
-                            {task.title}
-                          </Link>
-                          {!viewOnly && (
-                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                              {task.status.replace('_', ' ')}
-                            </span>
-                          )}
-                          {!viewOnly && hasMatches && !hasApplications && (
-                            <button
-                              onClick={() => setExpandedMatchHint(isExpanded ? null : task.id)}
-                              className="px-2 py-0.5 text-xs rounded-full font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center gap-1"
-                            >
-                              ✨ {matchCount}
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-gray-600 text-sm line-clamp-1">{task.description}</p>
-                        <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-                          <span>📍 {task.location}</span>
-                          {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
-                        </div>
-                        
-                        {!viewOnly && isExpanded && hasMatches && (
-                          <Link
-                            to={`/tasks/${task.id}`}
-                            className="mt-3 flex items-center justify-between p-2.5 bg-amber-100 rounded-lg text-sm text-amber-800 hover:bg-amber-200 transition-colors"
+                    {/* Task content */}
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                        <span className="text-sm">{getCategoryIcon(task.category)}</span>
+                        <Link to={`/tasks/${task.id}`} className="font-medium text-sm text-gray-900 hover:text-blue-600 line-clamp-1">
+                          {task.title}
+                        </Link>
+                        {!viewOnly && (
+                          <span className={`px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
+                            {task.status.replace('_', ' ')}
+                          </span>
+                        )}
+                        {!viewOnly && hasMatches && !hasApplications && (
+                          <button
+                            onClick={() => setExpandedMatchHint(isExpanded ? null : task.id)}
+                            className="px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center gap-0.5"
                           >
-                            <span>
-                              💡 {t('profile.jobsTab.helpersNearby', { count: matchCount, category: getCategoryLabel(task.category) })}
-                            </span>
-                            <span className="font-medium">{t('profile.jobsTab.viewMatches')}</span>
-                          </Link>
+                            ✨ {matchCount}
+                          </button>
                         )}
                       </div>
-                      <div className="flex flex-col gap-1">
+                      
+                      <p className="text-gray-600 text-xs line-clamp-1 mb-1.5">{task.description}</p>
+                      
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="truncate max-w-[140px] md:max-w-none">📍 {task.location}</span>
+                        {task.budget && <span className="text-green-600 font-semibold flex-shrink-0">€{task.budget}</span>}
+                      </div>
+                      
+                      {!viewOnly && isExpanded && hasMatches && (
+                        <Link
+                          to={`/tasks/${task.id}`}
+                          className="mt-2 flex items-center justify-between p-2 bg-amber-100 rounded-lg text-xs text-amber-800 hover:bg-amber-200 transition-colors"
+                        >
+                          <span>
+                            💡 {t('profile.jobsTab.helpersNearby', { count: matchCount, category: getCategoryLabel(task.category) })}
+                          </span>
+                          <span className="font-medium">{t('profile.jobsTab.viewMatches')}</span>
+                        </Link>
+                      )}
+
+                      {/* Action buttons row */}
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
                         {!viewOnly && task.status === 'pending_confirmation' && (
                           <button
                             onClick={() => handleConfirmClick(task)}
-                            className="px-2.5 py-1 text-xs bg-green-500 text-white rounded-md hover:bg-green-600"
+                            className="px-2.5 py-1 text-xs bg-green-500 text-white rounded-md hover:bg-green-600 font-medium"
                           >
                             {t('profile.jobsTab.confirm')}
                           </button>
                         )}
-                        <Link to={`/tasks/${task.id}`} className="text-xs text-blue-600 hover:underline text-center">{t('profile.jobsTab.view')}</Link>
+                        <Link to={`/tasks/${task.id}`} className="px-2.5 py-1 text-xs text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 font-medium">
+                          {t('profile.jobsTab.view')}
+                        </Link>
                         {!viewOnly && task.status === 'open' && !hasApplications && (
                           <>
-                            <Link to={`/tasks/${task.id}/edit`} className="text-xs text-gray-500 hover:underline text-center">{t('profile.jobsTab.edit')}</Link>
+                            <Link to={`/tasks/${task.id}/edit`} className="px-2.5 py-1 text-xs text-gray-500 bg-gray-50 rounded-md hover:bg-gray-100 font-medium">
+                              {t('profile.jobsTab.edit')}
+                            </Link>
                             {onCancelTask && (
-                              <button onClick={() => onCancelTask(task.id)} className="text-xs text-red-500 hover:underline">{t('profile.jobsTab.cancelJob')}</button>
+                              <button onClick={() => onCancelTask(task.id)} className="px-2.5 py-1 text-xs text-red-500 bg-red-50 rounded-md hover:bg-red-100 font-medium ml-auto">
+                                {t('profile.jobsTab.cancelJob')}
+                              </button>
                             )}
                           </>
                         )}
@@ -433,7 +440,7 @@ export const TasksTab = ({
                 );
               })
             ) : (
-              // My Jobs (applications) - only for own profile
+              // My Jobs (applications)
               getDisplayTasks().map((item) => {
                 const application = item as TaskApplication;
                 const task = application.task;
@@ -443,50 +450,49 @@ export const TasksTab = ({
                 const isPending = application.status === 'pending';
                 const isCompleted = application.status === 'accepted' && task.status === 'completed';
                 
-                // Check if this task needs a review
                 const reviewStatus = canReviewStatuses.get(task.id);
                 const needsReview = isCompleted && reviewStatus?.canReview;
                 
                 return (
                   <div 
                     key={application.id} 
-                    className={`p-4 border rounded-lg ${
+                    className={`${compact ? 'p-3' : 'p-3 md:p-4'} border rounded-lg ${
                       isPending ? 'border-yellow-200 bg-yellow-50/30' :
                       needsReview ? 'border-yellow-200 bg-white' : 
                       'border-green-200 bg-green-50/30'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span>{getCategoryIcon(task.category)}</span>
-                          <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-blue-600">
-                            {task.title}
-                          </Link>
-                          {statusBadge && (
-                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${statusBadge.className}`}>
-                              {statusBadge.text}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                          <span>📍 {task.location}</span>
-                          {task.budget && <span className="text-green-600 font-semibold">€{task.budget}</span>}
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1">{t('profile.jobsTab.postedBy')} {task.creator_name || 'Unknown'}</p>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                        <span className="text-sm">{getCategoryIcon(task.category)}</span>
+                        <Link to={`/tasks/${task.id}`} className="font-medium text-sm text-gray-900 hover:text-blue-600 line-clamp-1">
+                          {task.title}
+                        </Link>
+                        {statusBadge && (
+                          <span className={`px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${statusBadge.className}`}>
+                            {statusBadge.text}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="truncate max-w-[140px] md:max-w-none">📍 {task.location}</span>
+                        {task.budget && <span className="text-green-600 font-semibold flex-shrink-0">€{task.budget}</span>}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">{t('profile.jobsTab.postedBy')} {task.creator_name || 'Unknown'}</p>
+                      
+                      {/* Action buttons row */}
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
                         {needsReview && (
                           <button
                             onClick={() => handleReviewClick(task)}
-                            className="px-2.5 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                            className="px-2.5 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600 font-medium"
                           >
                             {t('profile.jobsTab.review')}
                           </button>
                         )}
                         <Link
                           to={`/tasks/${task.id}`}
-                          className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center"
+                          className="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 font-medium"
                         >
                           {t('profile.jobsTab.view')}
                         </Link>

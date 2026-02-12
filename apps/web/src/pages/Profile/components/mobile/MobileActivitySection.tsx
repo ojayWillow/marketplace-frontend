@@ -53,32 +53,58 @@ export const MobileActivitySection = ({
 
   return (
     <div>
-      {/* Toggle: Jobs / Services */}
-      <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => onModeChange('jobs')}
-          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all relative ${
-            activeMode === 'jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-          }`}
-        >
-          {t('profile.tabs.jobs', 'Jobs')}
-          {pendingNotifications > 0 && (
-            <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
-              {pendingNotifications}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => onModeChange('services')}
-          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-            activeMode === 'services' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-          }`}
-        >
-          {t('profile.tabs.services', 'Services')}
-          {offerings.length > 0 && (
-            <span className="text-gray-400 ml-1">({offerings.length})</span>
-          )}
-        </button>
+      {/* Section header with toggle + create button */}
+      <div className="flex items-center gap-2 mb-3">
+        {/* Toggle: Jobs / Services */}
+        <div className="flex gap-1 flex-1 bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => onModeChange('jobs')}
+            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all relative ${
+              activeMode === 'jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+            }`}
+          >
+            {t('profile.tabs.jobs', 'Jobs')}
+            {pendingNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] rounded-full bg-red-500 text-white font-bold min-w-[18px] text-center">
+                {pendingNotifications}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onModeChange('services')}
+            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+              activeMode === 'services' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+            }`}
+          >
+            {t('profile.tabs.services', 'Services')}
+            {offerings.length > 0 && (
+              <span className="text-gray-400 ml-1 text-xs">({offerings.length})</span>
+            )}
+          </button>
+        </div>
+
+        {/* Quick-create button */}
+        {activeMode === 'jobs' ? (
+          <Link
+            to="/tasks/create"
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            title={t('profile.jobsTab.postJob')}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+          </Link>
+        ) : (
+          <Link
+            to="/offerings/create"
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-sm"
+            title={t('profile.servicesTab.newService')}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+          </Link>
+        )}
       </div>
 
       {/* Content */}
@@ -96,12 +122,14 @@ export const MobileActivitySection = ({
           onCancelTask={onCancelTask}
           onTaskConfirmed={onTaskConfirmed}
           userId={userId}
+          compact
         />
       ) : (
         <OfferingsTab
           offerings={offerings}
           loading={offeringsLoading}
           onDelete={onDeleteOffering}
+          compact
         />
       )}
     </div>
