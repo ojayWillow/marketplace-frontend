@@ -19,7 +19,6 @@ const PageLoader = () => (
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
-const Login = lazy(() => import('./pages/auth/Login'))
 const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
@@ -68,14 +67,13 @@ function App() {
             {/* Home - Redirects guests to /welcome, shows map for authenticated */}
             <Route index element={<Home />} />
             
-            {/* Landing page - available to everyone with header/footer */}
+            {/* Landing page - the single entry point for unauthenticated users */}
             <Route path="welcome" element={<LandingPage />} />
             
-            {/* Auth routes - unified login handles phone + email */}
-            <Route path="login" element={<Login />} />
-            {/* Legacy routes - all redirect to unified login */}
-            <Route path="register" element={<Navigate to="/login" replace />} />
-            <Route path="phone-login" element={<Navigate to="/login" replace />} />
+            {/* All auth routes redirect to the landing page (single sign-in flow) */}
+            <Route path="login" element={<Navigate to="/welcome" replace />} />
+            <Route path="register" element={<Navigate to="/welcome" replace />} />
+            <Route path="phone-login" element={<Navigate to="/welcome" replace />} />
             {/* Verify phone - requires auth but skips phone check to avoid loop */}
             <Route
               path="verify-phone"

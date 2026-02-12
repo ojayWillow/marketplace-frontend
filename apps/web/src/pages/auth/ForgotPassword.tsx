@@ -51,10 +51,10 @@ export default function ForgotPassword() {
                 Try Different Email
               </button>
               <Link
-                to="/login"
+                to="/welcome"
                 className="block w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium text-center"
               >
-                Back to Login
+                Back to Sign In
               </Link>
             </div>
           </div>
@@ -122,10 +122,10 @@ export default function ForgotPassword() {
           <p className="mt-6 text-center text-sm text-gray-600">
             Remember your password?{' '}
             <Link
-              to="/login"
+              to="/welcome"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              Back to Login
+              Back to Sign In
             </Link>
           </p>
         </div>
