@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
@@ -138,7 +139,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   const todayNotifications = notifications.filter((n) => isToday(n.created_at));
   const earlierNotifications = notifications.filter((n) => !isToday(n.created_at));
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -263,7 +264,8 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 
