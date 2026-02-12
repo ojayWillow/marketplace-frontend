@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
-import { useAuthStore } from '@marketplace/shared';
+import { useAuthStore, getTask as fetchTaskById } from '@marketplace/shared';
 
 import { Task } from './types';
 import { mobileTasksStyles } from './styles';
@@ -43,10 +43,14 @@ const SkeletonCard = () => (
  *
  * Now restores selectedTask and map viewport from Zustand store on mount,
  * so navigating away and back preserves the user's context.
+ *
+ * Deep link support: reads ?task=<id> from URL, fetches the task,
+ * and auto-selects it on the map (fly-to + JobPreviewCard).
  */
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuthStore();
 
   // Community rules modal state
@@ -104,8 +108,52 @@ const MobileTasksView = () => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
+  // --- Deep link: track whether we've already handled the ?task= param ---
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+
+  // --- Deep link: read ?task=ID from URL and select it on the map ---
+  useEffect(() => {
+    if (deepLinkHandled) return;
+
+    const taskParam = searchParams.get('task');
+    if (!taskParam) return;
+
+    const taskId = parseInt(taskParam, 10);
+    if (isNaN(taskId)) return;
+
+    setDeepLinkHandled(true);
+
+    // Clean up the URL param (remove ?task=ID from address bar)
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('task');
+    setSearchParams(newParams, { replace: true });
+
+    // Check if the task is already in our loaded list
+    const existingTask = tasks.find((t) => t.id === taskId);
+    if (existingTask) {
+      setShowJobList(false);
+      setStoredSelectedTaskId(existingTask.id);
+      setTimeout(() => setSelectedTask(existingTask), 100);
+      return;
+    }
+
+    // Task not in list — fetch it from API
+    fetchTaskById(taskId)
+      .then((task) => {
+        if (task) {
+          setShowJobList(false);
+          setStoredSelectedTaskId(task.id);
+          setTimeout(() => setSelectedTask(task as Task), 100);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch shared task:', err);
+      });
+  }, [searchParams, setSearchParams, tasks, deepLinkHandled, setStoredSelectedTaskId]);
+
   // --- Restore selected task from store on mount ---
   useEffect(() => {
+    if (deepLinkHandled) return; // Deep link takes priority
     if (storedSelectedTaskId && tasks.length > 0 && !selectedTask) {
       const restored = tasks.find((t) => t.id === storedSelectedTaskId);
       if (restored) {
@@ -116,7 +164,7 @@ const MobileTasksView = () => {
         setStoredSelectedTaskId(null);
       }
     }
-  }, [storedSelectedTaskId, tasks, selectedTask, setStoredSelectedTaskId]);
+  }, [storedSelectedTaskId, tasks, selectedTask, setStoredSelectedTaskId, deepLinkHandled]);
 
   // --- Memoised map data ---
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
