@@ -68,6 +68,17 @@ button:focus-visible,
   border-radius: 4px;
 }
 
+/* Dark mode focus ring adjustment */
+.dark *:focus-visible {
+  outline-color: #60a5fa;
+}
+
+.dark a:focus-visible,
+.dark button:focus-visible,
+.dark [role="button"]:focus-visible {
+  outline-color: #60a5fa;
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   *:focus-visible {
@@ -94,9 +105,15 @@ button:focus-visible,
     /* Smooth scrolling with reduced motion fallback */
     scroll-behavior: smooth;
   }
+
+  /* Smooth theme transition */
+  html.dark {
+    color-scheme: dark;
+  }
   
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
+    @apply dark:bg-gray-950 dark:text-gray-100;
   }
   
   /* Improve text readability */
@@ -108,26 +125,32 @@ button:focus-visible,
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply dark:focus:ring-offset-gray-900;
   }
   
   .btn-primary {
     @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply dark:bg-primary-500 dark:hover:bg-primary-400 dark:focus:ring-primary-400;
   }
   
   .btn-secondary {
     @apply btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500;
+    @apply dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-primary-400;
   }
   
   .input {
     @apply block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+    @apply dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:ring-primary-400 dark:focus:border-primary-400;
   }
   
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply dark:text-gray-300;
   }
   
   .card {
     @apply bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden;
+    @apply dark:bg-gray-900 dark:border-gray-700 dark:shadow-none;
   }
 }
 
@@ -347,6 +370,18 @@ button:focus-visible,
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: 12px;
+}
+
+/* Dark mode for Leaflet popups */
+.dark .job-marker-popup .leaflet-popup-content-wrapper,
+.dark .offering-marker-popup .leaflet-popup-content-wrapper {
+  background: #111827;
+  color: #f3f4f6;
+}
+
+.dark .job-marker-popup .leaflet-popup-tip,
+.dark .offering-marker-popup .leaflet-popup-tip {
+  background: #111827;
 }
 
 /* On very small screens, allow the popup to be scrollable */
