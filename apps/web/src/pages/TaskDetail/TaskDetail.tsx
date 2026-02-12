@@ -237,11 +237,13 @@ const TaskDetail = () => {
   const categoryLabel = getCategoryLabel(task.category);
   const categoryIcon = getCategoryIcon(task.category);
   const applicantCount = task.pending_applications_count || 0;
+  const budget = task.budget || task.reward || 0;
   const seoDescription = `${categoryLabel} job${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
   const postedDate = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
   const applicantLabel = applicantCount > 0 ? `${applicantCount} applied` : 'New';
+  const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
 
   return (
     <div className="min-h-screen bg-gray-50 pb-36 md:pb-8">
@@ -264,9 +266,13 @@ const TaskDetail = () => {
             <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
-            url={`/tasks/${task.id}`}
+            url={`/?task=${task.id}`}
             title={task.title}
-            description={`${categoryLabel} job - ${task.budget || 0} EUR`}
+            description={`${categoryLabel} job - ${budget} EUR`}
+            categoryIcon={categoryIcon}
+            categoryEmoji={categoryIcon}
+            price={`€${budget}`}
+            location={shortLocation}
             size="sm"
           />
         </div>
@@ -288,7 +294,7 @@ const TaskDetail = () => {
                   <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
                 )}
               </div>
-              <div className="text-2xl font-black">€{task.budget || task.reward || 0}</div>
+              <div className="text-2xl font-black">€{budget}</div>
             </div>
             <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
           </div>
@@ -305,7 +311,7 @@ const TaskDetail = () => {
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">Urgent</span>
                 )}
               </div>
-              <span className="text-xl font-black text-green-600">€{task.budget || task.reward || 0}</span>
+              <span className="text-xl font-black text-green-600">€{budget}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 leading-snug">{task.title}</h1>
           </div>
