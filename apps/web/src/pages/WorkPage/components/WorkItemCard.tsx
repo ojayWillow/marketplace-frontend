@@ -1,5 +1,6 @@
 import { WorkItemWithDistance } from '../types';
 import { formatTimeAgo, getDifficultyColor, renderStars, formatItemDistance } from '../utils';
+import { FEATURES } from '../../../constants/featureFlags';
 
 interface WorkItemCardProps {
   item: WorkItemWithDistance;
@@ -34,7 +35,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-lg flex-shrink-0">{categoryInfo.icon}</span>
           <span className="text-xs font-semibold text-gray-700 truncate">{categoryInfo.label}</span>
-          {item.is_urgent && (
+          {FEATURES.URGENT && item.is_urgent && (
             <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-bold flex-shrink-0 whitespace-nowrap">
               🔥 Urgent
             </span>
