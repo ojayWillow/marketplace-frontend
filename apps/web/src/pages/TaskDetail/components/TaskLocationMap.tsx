@@ -22,7 +22,7 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
       {/* City name + Google Maps link in one row */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-sm">
-          <span>\uD83D\uDCCD</span>
+          <span>📍</span>
           <span className="font-medium text-gray-700">{task.location?.split(',')[0] || 'Location'}</span>
         </div>
         <a
@@ -31,7 +31,7 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
           rel="noopener noreferrer"
           className="text-blue-600 hover:text-blue-700 text-xs font-medium"
         >
-          Open in Maps \u2192
+          Open in Maps →
         </a>
       </div>
 

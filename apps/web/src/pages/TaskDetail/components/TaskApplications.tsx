@@ -23,7 +23,7 @@ export const TaskApplications = ({
   return (
     <div className="mt-4">
       <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-        \uD83D\uDCCB Applications
+        📋 Applications
         <span className="text-sm font-normal text-gray-500">({applications.length})</span>
       </h2>
 
@@ -31,7 +31,7 @@ export const TaskApplications = ({
         <div className="text-center py-6 text-gray-500 text-sm">Loading applications...</div>
       ) : applications.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-xl">
-          <span className="text-3xl mb-2 block">\uD83D\uDCCB</span>
+          <span className="text-3xl mb-2 block">📋</span>
           <p className="text-gray-600 font-medium text-sm">No applications yet</p>
           <p className="text-gray-400 text-xs mt-1">Share your job to get more applicants!</p>
         </div>
@@ -74,7 +74,7 @@ export const TaskApplications = ({
                 )}
                 {application.status === 'accepted' && (
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 flex-shrink-0">
-                    \u2713 Accepted
+                    ✓ Accepted
                   </span>
                 )}
               </div>
@@ -96,7 +96,7 @@ export const TaskApplications = ({
                     disabled={acceptingId === application.id}
                     className="flex-1 py-2.5 text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 disabled:text-gray-400 disabled:bg-gray-50 transition-colors border-r border-gray-200/60"
                   >
-                    {acceptingId === application.id ? '...' : '\u2713 Accept'}
+                    {acceptingId === application.id ? '...' : '✓ Accept'}
                   </button>
                   <button
                     onClick={() => onReject(application.id)}
@@ -109,7 +109,7 @@ export const TaskApplications = ({
                     onClick={() => onMessage(application.applicant_id)}
                     className="px-5 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
                   >
-                    \uD83D\uDCAC
+                    💬
                   </button>
                 </div>
               )}
