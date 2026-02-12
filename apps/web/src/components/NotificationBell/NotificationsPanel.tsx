@@ -58,24 +58,56 @@ const getNotificationPath = (notification: Notification): string | null => {
   return null;
 };
 
+/** Get icon config — resolved disputes get a different icon/color */
+const getNotificationConfig = (n: Notification) => {
+  if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
+    return { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' };
+  }
+  if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Response Received') {
+    return { icon: '💬', color: 'text-amber-600', bg: 'bg-amber-50' };
+  }
+  return TYPE_CONFIG[n.type] || DEFAULT_CONFIG;
+};
+
 /** Get a short i18n-aware title based on type */
 const getNotificationTitle = (n: Notification, t: (key: string, fallback: string, opts?: any) => string): string => {
+  const taskTitle = n.data?.task_title || '';
+
   switch (n.type) {
     case NotificationType.NEW_APPLICATION:
-      return t('notifications.newApplication', 'New application for "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.newApplication', 'New application for "{{task}}"', { task: taskTitle });
     case NotificationType.APPLICATION_ACCEPTED:
-      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task: taskTitle });
     case NotificationType.APPLICATION_REJECTED:
-      return t('notifications.applicationRejected', 'Update on "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.applicationRejected', 'Update on "{{task}}"', { task: taskTitle });
     case NotificationType.TASK_MARKED_DONE:
-      return t('notifications.taskMarkedDone', '"{{task}}" marked as done', { task: n.data?.task_title || '' });
+      return t('notifications.taskMarkedDone', '"{{task}}" marked as done', { task: taskTitle });
     case NotificationType.TASK_COMPLETED:
-      return t('notifications.taskCompleted', '"{{task}}" completed!', { task: n.data?.task_title || '' });
-    case NotificationType.TASK_DISPUTED:
-      return t('notifications.taskDisputed', 'Dispute on "{{task}}"', { task: n.data?.task_title || '' });
+      return t('notifications.taskCompleted', '"{{task}}" completed!', { task: taskTitle });
+    case NotificationType.TASK_DISPUTED: {
+      // Dispute notifications have sub-types differentiated by title from backend
+      if (n.title === 'Dispute Resolved') {
+        return t('notifications.disputeResolved', 'Dispute resolved for "{{task}}"', { task: taskTitle });
+      }
+      if (n.title === 'Dispute Response Received') {
+        return t('notifications.disputeResponse', 'Response received on dispute for "{{task}}"', { task: taskTitle });
+      }
+      // Default: dispute filed
+      return t('notifications.taskDisputed', 'Dispute on "{{task}}"', { task: taskTitle });
+    }
     default:
-      return n.title;
+      // Fallback: use backend-provided title, or message
+      return n.title || n.message;
   }
+};
+
+/** Get optional subtitle for richer context */
+const getNotificationSubtitle = (n: Notification): string | null => {
+  // For resolved disputes, show the resolution outcome
+  if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
+    return n.message || null;
+  }
+  return null;
 };
 
 export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps) => {
@@ -277,8 +309,9 @@ interface NotificationItemProps {
 }
 
 const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) => {
-  const config = TYPE_CONFIG[notification.type] || DEFAULT_CONFIG;
+  const config = getNotificationConfig(notification);
   const hasAction = !!(notification.related_type && notification.related_id);
+  const subtitle = getNotificationSubtitle(notification);
 
   return (
     <button
@@ -299,6 +332,11 @@ const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) =
         }`}>
           {getNotificationTitle(notification, t)}
         </p>
+        {subtitle && (
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+            {subtitle}
+          </p>
+        )}
         <p className="text-xs text-gray-400 mt-0.5">
           {timeAgo(notification.created_at)}
         </p>
