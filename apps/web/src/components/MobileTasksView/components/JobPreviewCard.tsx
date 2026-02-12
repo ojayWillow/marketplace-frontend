@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
 import FavoriteButton from '../../ui/FavoriteButton';
+import shareTask from '../../../utils/shareTask';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -37,6 +39,7 @@ const JobPreviewCard = ({
   onCreatorClick,
 }: JobPreviewCardProps) => {
   const { t } = useTranslation();
+  const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
   const distance = calculateDistance(
     userLocation.lat,
     userLocation.lng,
@@ -52,6 +55,16 @@ const JobPreviewCard = ({
 
   // Check if rating exists (not null/undefined)
   const hasRating = task.creator_rating != null;
+
+  // Handle share
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const result = await shareTask(task);
+    if (result === 'copied') {
+      setShareState('copied');
+      setTimeout(() => setShareState('idle'), 2000);
+    }
+  };
 
   // Render star rating
   const renderStars = (rating: number) => {
@@ -247,6 +260,22 @@ const JobPreviewCard = ({
           }`}
         >
           {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
+        </button>
+        {/* Share button */}
+        <button
+          onClick={handleShare}
+          className="flex items-center justify-center w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all"
+          title={shareState === 'copied' ? t('share.copied', 'Copied!') : t('share.share', 'Share')}
+        >
+          {shareState === 'copied' ? (
+            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          )}
         </button>
         <FavoriteButton
           itemType="task"
