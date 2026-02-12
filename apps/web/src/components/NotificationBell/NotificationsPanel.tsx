@@ -17,15 +17,15 @@ interface NotificationsPanelProps {
 
 // Icon + color per notification type
 const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  [NotificationType.NEW_APPLICATION]: { icon: '📩', color: 'text-blue-600', bg: 'bg-blue-50' },
-  [NotificationType.APPLICATION_ACCEPTED]: { icon: '🎉', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.APPLICATION_REJECTED]: { icon: '😔', color: 'text-gray-600', bg: 'bg-gray-50' },
-  [NotificationType.TASK_MARKED_DONE]: { icon: '📋', color: 'text-amber-600', bg: 'bg-amber-50' },
-  [NotificationType.TASK_COMPLETED]: { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.TASK_DISPUTED]: { icon: '⚠️', color: 'text-red-600', bg: 'bg-red-50' },
+  [NotificationType.NEW_APPLICATION]: { icon: '\u{1F4E9}', color: 'text-blue-600', bg: 'bg-blue-50' },
+  [NotificationType.APPLICATION_ACCEPTED]: { icon: '\u{1F389}', color: 'text-green-600', bg: 'bg-green-50' },
+  [NotificationType.APPLICATION_REJECTED]: { icon: '\u{1F614}', color: 'text-gray-600', bg: 'bg-gray-50' },
+  [NotificationType.TASK_MARKED_DONE]: { icon: '\u{1F4CB}', color: 'text-amber-600', bg: 'bg-amber-50' },
+  [NotificationType.TASK_COMPLETED]: { icon: '\u2705', color: 'text-green-600', bg: 'bg-green-50' },
+  [NotificationType.TASK_DISPUTED]: { icon: '\u26A0\uFE0F', color: 'text-red-600', bg: 'bg-red-50' },
 };
 
-const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50' };
+const DEFAULT_CONFIG = { icon: '\u{1F514}', color: 'text-gray-600', bg: 'bg-gray-50' };
 
 /** Relative time label */
 const timeAgo = (dateStr: string): string => {
@@ -49,10 +49,10 @@ const isToday = (dateStr: string): boolean => {
   return d.toDateString() === now.toDateString();
 };
 
-/** Get the navigation path for a notification */
+/** Get the navigation path for a notification — now includes context params */
 const getNotificationPath = (notification: Notification): string | null => {
   if (notification.related_type === 'task' && notification.related_id) {
-    return `/tasks/${notification.related_id}`;
+    return `/tasks/${notification.related_id}?from=notification&type=${notification.type}`;
   }
   return null;
 };
@@ -122,7 +122,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
     }
-    // Navigate to action area
+    // Navigate to action area with context
     const path = getNotificationPath(notification);
     if (path) {
       onClose();
@@ -162,7 +162,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-gray-900">
-              🔔 {t('notifications.title', 'Notifications')}
+              \u{1F514} {t('notifications.title', 'Notifications')}
             </h2>
             {unreadCount > 0 && (
               <span className="min-w-[22px] h-[22px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
@@ -212,7 +212,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <div className="text-4xl mb-3">🔔</div>
+              <div className="text-4xl mb-3">\u{1F514}</div>
               <h3 className="font-semibold text-gray-900 mb-1">
                 {t('notifications.empty', 'No notifications yet')}
               </h3>
@@ -267,7 +267,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   );
 };
 
-/* ── Single notification row ── */
+/* — Single notification row — */
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;

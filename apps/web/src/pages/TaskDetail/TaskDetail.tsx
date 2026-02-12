@@ -34,6 +34,7 @@ import {
   TaskActionButtons,
   TaskReviews,
   RecommendedHelpers,
+  NotificationActionBanner,
 } from './components';
 import { useTaskActions } from './hooks';
 import { Review, CanReviewResponse } from './types';
@@ -45,9 +46,9 @@ const StarRating = ({ rating }: { rating: number }) => {
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
   return (
     <span className="text-yellow-500 text-sm">
-      {'★'.repeat(fullStars)}
-      {hasHalfStar && '½'}
-      {'☆'.repeat(emptyStars)}
+      {'\u2605'.repeat(fullStars)}
+      {hasHalfStar && '\u00BD'}
+      {'\u2606'.repeat(emptyStars)}
     </span>
   );
 };
@@ -218,7 +219,7 @@ const TaskDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center px-4">
-          <div className="text-5xl mb-3">😕</div>
+          <div className="text-5xl mb-3">\u{1F615}</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Job Not Found</h2>
           <p className="text-gray-600 mb-4 text-sm">This job may have been removed or is no longer available.</p>
           <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold">
@@ -264,7 +265,7 @@ const TaskDetail = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden md:inline">← Back to Quick Help</span>
+            <span className="hidden md:inline">\u2190 Back to Quick Help</span>
             <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
@@ -273,11 +274,20 @@ const TaskDetail = () => {
             description={`${categoryLabel} job - ${budget} EUR`}
             categoryIcon={categoryIcon}
             categoryEmoji={categoryIcon}
-            price={`€${budget}`}
+            price={`\u20AC${budget}`}
             location={shortLocation}
             size="sm"
           />
         </div>
+      </div>
+
+      {/* === NOTIFICATION CONTEXT BANNER === */}
+      <div className="md:max-w-2xl md:mx-auto">
+        <NotificationActionBanner
+          isCreator={isCreator}
+          isAssigned={isAssigned}
+          taskStatus={task.status}
+        />
       </div>
 
       <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
@@ -293,10 +303,10 @@ const TaskDetail = () => {
                   {categoryLabel}
                 </span>
                 {isUrgent && (
-                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
+                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">\u26A1 Urgent</span>
                 )}
               </div>
-              <div className="text-2xl font-black">€{budget}</div>
+              <div className="text-2xl font-black">\u20AC{budget}</div>
             </div>
             <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
           </div>
@@ -313,7 +323,7 @@ const TaskDetail = () => {
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">Urgent</span>
                 )}
               </div>
-              <span className="text-xl font-black text-green-600">€{budget}</span>
+              <span className="text-xl font-black text-green-600">\u20AC{budget}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 leading-snug">{task.title}</h1>
           </div>
@@ -330,7 +340,7 @@ const TaskDetail = () => {
                 <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 truncate md:text-base">
                   {task.creator_name || 'Unknown'}
                 </Link>
-                <span className="text-gray-300 md:hidden">·</span>
+                <span className="text-gray-300 md:hidden">\u00B7</span>
                 <div className="flex items-center gap-1">
                   <StarRating rating={task.creator_rating || 0} />
                   <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
@@ -422,7 +432,7 @@ const TaskDetail = () => {
 
           {/* Applications (Owner View) */}
           {showApplications && (
-            <div className="px-4 pb-4 md:px-6 md:pb-5">
+            <div className="px-4 pb-4 md:px-6 md:pb-5" data-section="applications">
               <TaskApplications
                 applications={applications}
                 applicationsLoading={applicationsLoading}
@@ -486,7 +496,7 @@ const TaskDetail = () => {
           )}
 
           {/* Desktop inline action button */}
-          <div className="hidden md:block px-6 pb-6">
+          <div className="hidden md:block px-6 pb-6" data-section="actions">
             <TaskActionButtons
               task={task}
               isCreator={isCreator}
@@ -515,15 +525,17 @@ const TaskDetail = () => {
 
         {/* Reviews */}
         {task.status === 'completed' && (
-          <TaskReviews
-            taskId={Number(id)}
-            reviews={reviews}
-            canReview={canReview}
-            onReviewSubmitted={() => {
-              fetchReviews();
-              checkCanReview();
-            }}
-          />
+          <div data-section="reviews">
+            <TaskReviews
+              taskId={Number(id)}
+              reviews={reviews}
+              canReview={canReview}
+              onReviewSubmitted={() => {
+                fetchReviews();
+                checkCanReview();
+              }}
+            />
+          </div>
         )}
 
         {/* How it works — collapsible on mobile, always open on desktop */}
@@ -558,6 +570,7 @@ const TaskDetail = () => {
       <div
         className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
         style={{ bottom: 'var(--nav-total-height, 64px)' }}
+        data-section="actions"
       >
         <div className="max-w-3xl mx-auto">
           <TaskActionButtons
