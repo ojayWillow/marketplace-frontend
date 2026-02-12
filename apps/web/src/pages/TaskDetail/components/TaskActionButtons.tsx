@@ -15,6 +15,10 @@ interface TaskActionButtonsProps {
   onCancel: () => void;
 }
 
+// Match backend disputable statuses (app/routes/disputes.py)
+const WORKER_DISPUTABLE_STATUSES = ['assigned', 'in_progress', 'completed', 'pending_confirmation'];
+const CREATOR_DISPUTABLE_STATUSES = ['in_progress', 'completed', 'pending_confirmation'];
+
 export const TaskActionButtons = ({
   task,
   isCreator,
@@ -33,6 +37,11 @@ export const TaskActionButtons = ({
   const canMarkDone = isAssigned && (task.status === 'assigned' || task.status === 'in_progress');
   const canEdit = isCreator && task.status === 'open';
   const canApply = isAuthenticated && !isCreator && !isAssigned && task.status === 'open' && !hasApplied;
+
+  // Dispute visibility: match backend allowed statuses per role
+  const canDispute =
+    (isAssigned && WORKER_DISPUTABLE_STATUSES.includes(task.status)) ||
+    (isCreator && CREATOR_DISPUTABLE_STATUSES.includes(task.status));
 
   const getApplicationStatusLabel = (status: string) => {
     switch (status) {
@@ -76,22 +85,24 @@ export const TaskActionButtons = ({
 
         {/* Creator confirming */}
         {isCreator && task.status === 'pending_confirmation' && (
-          <>
-            <button
-              onClick={onConfirmDone}
-              disabled={actionLoading}
-              className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
-            >
-              {actionLoading ? 'Processing...' : '✓ Confirm'}
-            </button>
-            <button
-              onClick={onDispute}
-              disabled={actionLoading}
-              className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
-            >
-              ⚠️ Dispute
-            </button>
-          </>
+          <button
+            onClick={onConfirmDone}
+            disabled={actionLoading}
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+          >
+            {actionLoading ? 'Processing...' : '✓ Confirm'}
+          </button>
+        )}
+
+        {/* Dispute button — visible for both roles at their allowed statuses */}
+        {canDispute && (
+          <button
+            onClick={onDispute}
+            disabled={actionLoading}
+            className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+          >
+            ⚠️ Dispute
+          </button>
         )}
 
         {/* Owner Edit/Cancel */}
