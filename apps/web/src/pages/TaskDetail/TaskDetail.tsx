@@ -88,7 +88,6 @@ const TaskDetail = () => {
   const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [showDisputeSheet, setShowDisputeSheet] = useState(false);
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const [disputeKey, setDisputeKey] = useState(0); // Force re-fetch disputes
 
   // Recommended helpers state
@@ -200,7 +199,7 @@ const TaskDetail = () => {
   const handleApplyTask = (applicationMessage: string) => {
     if (!isAuthenticated || !user?.id) {
       toast.warning('Please login to apply');
-      navigate('/login');
+      navigate('/welcome');
       return;
     }
     applyMutation.mutate(
@@ -223,7 +222,7 @@ const TaskDetail = () => {
   const handleMessageCreator = () => {
     if (!isAuthenticated) {
       toast.warning('Please login to send a message');
-      navigate('/login');
+      navigate('/welcome');
       return;
     }
     navigate(`/messages?userId=${task?.creator_id}`);
@@ -553,19 +552,9 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Completed task: prompt to review if user hasn't yet (inline for mobile) */}
-          {task.status === 'completed' && canReview?.can_review && (isCreator || isAssigned) && (
-            <div className="mx-4 mb-4 md:mx-6">
-              <button
-                onClick={() => setShowReviewSheet(true)}
-                className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center hover:bg-yellow-100 transition-colors active:scale-[0.98]"
-              >
-                <span className="font-semibold text-yellow-700 text-sm">
-                  ⭐ Leave a review for {getRevieweeName()}
-                </span>
-              </button>
-            </div>
-          )}
+          {/* NOTE: Removed the duplicate inline "Leave a review" button that was here.
+               The review prompt now lives ONLY inside the TaskReviews component below,
+               so users see a single "Leave a review" button in the reviews section. */}
 
           {/* Desktop inline action button */}
           <div className="hidden md:block px-6 pb-6">
@@ -595,7 +584,7 @@ const TaskDetail = () => {
           />
         )}
 
-        {/* Reviews (scroll-down section for completed tasks) */}
+        {/* Reviews (the ONLY place with a "Leave a review" button now) */}
         {task.status === 'completed' && (
           <TaskReviews
             taskId={Number(id)}
@@ -608,31 +597,8 @@ const TaskDetail = () => {
           />
         )}
 
-        {/* How it works */}
-        <div className="mt-3 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-          <button
-            onClick={() => setHowItWorksOpen(!howItWorksOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 md:px-6 text-left"
-          >
-            <span className="font-semibold text-sm md:text-base text-gray-700 flex items-center gap-1.5">
-              How it works
-            </span>
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform md:hidden ${howItWorksOpen ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <div className={`px-4 pb-4 md:px-6 md:pb-5 ${howItWorksOpen ? 'block' : 'hidden md:block'}`}>
-            <ol className="text-gray-600 space-y-1.5 list-decimal list-inside text-sm md:text-base">
-              <li>Apply for the job with a brief introduction</li>
-              <li>Task owner reviews applications and accepts the best fit</li>
-              <li>Complete the task and mark it as done</li>
-              <li>Get paid after the task owner confirms completion</li>
-            </ol>
-          </div>
-        </div>
+        {/* "How it works" section REMOVED — it was cluttering completed/disputed views
+             and is unnecessary for users who are already engaged with the task flow */}
       </div>
 
       {/* Mobile bottom sheet for applying */}

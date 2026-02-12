@@ -15,9 +15,9 @@ interface TaskActionButtonsProps {
   onCancel: () => void;
 }
 
-// Match backend disputable statuses (app/routes/disputes.py)
-const WORKER_DISPUTABLE_STATUSES = ['assigned', 'in_progress', 'completed', 'pending_confirmation'];
-const CREATOR_DISPUTABLE_STATUSES = ['in_progress', 'completed', 'pending_confirmation'];
+// Dispute should NOT show on 'completed' tasks — only while work is active or pending
+const WORKER_DISPUTABLE_STATUSES = ['assigned', 'in_progress', 'pending_confirmation'];
+const CREATOR_DISPUTABLE_STATUSES = ['in_progress', 'pending_confirmation'];
 
 export const TaskActionButtons = ({
   task,
@@ -38,7 +38,7 @@ export const TaskActionButtons = ({
   const canEdit = isCreator && task.status === 'open';
   const canApply = isAuthenticated && !isCreator && !isAssigned && task.status === 'open' && !hasApplied;
 
-  // Dispute visibility: match backend allowed statuses per role
+  // Dispute visibility: only during active work, NOT after completed
   const canDispute =
     (isAssigned && WORKER_DISPUTABLE_STATUSES.includes(task.status)) ||
     (isCreator && CREATOR_DISPUTABLE_STATUSES.includes(task.status));
@@ -51,6 +51,11 @@ export const TaskActionButtons = ({
       default: return status;
     }
   };
+
+  // Don't render anything for completed/cancelled/disputed tasks
+  if (['completed', 'cancelled', 'disputed'].includes(task.status) && !canDispute) {
+    return null;
+  }
 
   return (
     <div className="px-4 py-3">
@@ -94,7 +99,7 @@ export const TaskActionButtons = ({
           </button>
         )}
 
-        {/* Dispute button — visible for both roles at their allowed statuses */}
+        {/* Dispute button — only during active work */}
         {canDispute && (
           <button
             onClick={onDispute}
@@ -137,7 +142,7 @@ export const TaskActionButtons = ({
         {/* Login prompt */}
         {!isAuthenticated && task.status === 'open' && (
           <Link
-            to="/login"
+            to="/welcome"
             className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 font-bold text-sm text-center shadow-lg active:scale-[0.98] transition-all"
           >
             Login to Apply
