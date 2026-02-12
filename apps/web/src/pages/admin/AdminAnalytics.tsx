@@ -74,6 +74,7 @@ const LineChart = ({ data, color = '#3b82f6', height = 200 }: { data: DataPoint[
 
 // Bar Chart Component
 const BarChart = ({ data, colors }: { data: DataPoint[]; colors?: string[] }) => {
+  if (data.length === 0) return <p className="text-gray-400 text-sm">No data available</p>;
   const maxValue = Math.max(...data.map(d => d.value));
   const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
   
@@ -89,7 +90,7 @@ const BarChart = ({ data, colors }: { data: DataPoint[]; colors?: string[] }) =>
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
-                width: `${(d.value / maxValue) * 100}%`,
+                width: `${maxValue > 0 ? (d.value / maxValue) * 100 : 0}%`,
                 backgroundColor: colors?.[i] || defaultColors[i % defaultColors.length]
               }}
             />
@@ -103,10 +104,11 @@ const BarChart = ({ data, colors }: { data: DataPoint[]; colors?: string[] }) =>
 // Donut Chart Component
 const DonutChart = ({ data, colors, size = 160 }: { data: DataPoint[]; colors?: string[]; size?: number }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (total === 0) return <p className="text-gray-400 text-sm">No data available</p>;
   const defaultColors = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6'];
   
   let currentAngle = -90;
-  const segments = data.map((d, i) => {
+  const segments = data.filter(d => d.value > 0).map((d, i) => {
     const angle = (d.value / total) * 360;
     const startAngle = currentAngle;
     currentAngle += angle;
@@ -166,6 +168,7 @@ const DonutChart = ({ data, colors, size = 160 }: { data: DataPoint[]; colors?: 
 const AdminAnalytics = () => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Analytics data state
   const [userGrowth, setUserGrowth] = useState<DataPoint[]>([]);
@@ -188,85 +191,35 @@ const AdminAnalytics = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      
-      try {
-        const response = await apiClient.get('/api/admin/analytics', {
-          params: { range: timeRange }
-        });
-        // Set real data from API
-        setUserGrowth(response.data.userGrowth);
-        setJobsByCategory(response.data.jobsByCategory);
-        setCompletionData(response.data.completionData);
-        setTopLocations(response.data.topLocations);
-        setMetrics(response.data.metrics);
-      } catch (err) {
-        // Generate mock data based on time range
-        const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
-        
-        // User growth data
-        const userGrowthData: DataPoint[] = [];
-        let baseUsers = 100;
-        for (let i = 0; i < Math.min(days, 30); i++) {
-          const date = new Date();
-          date.setDate(date.getDate() - (Math.min(days, 30) - i));
-          userGrowthData.push({
-            label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            value: baseUsers + Math.floor(Math.random() * 10) + i * 2
-          });
-          baseUsers = userGrowthData[userGrowthData.length - 1].value;
-        }
-        setUserGrowth(userGrowthData);
-
-        // Jobs by category
-        setJobsByCategory([
-          { label: '🧹 Cleaning', value: 89 },
-          { label: '📦 Moving', value: 67 },
-          { label: '🔧 Repairs', value: 54 },
-          { label: '🪴 Gardening', value: 43 },
-          { label: '🐕 Pet Care', value: 38 },
-          { label: '📚 Tutoring', value: 29 },
-          { label: '🛠️ Assembly', value: 24 },
-          { label: '🚗 Delivery', value: 18 },
-        ]);
-
-        // Completion data
-        setCompletionData([
-          { label: 'Completed', value: 312 },
-          { label: 'In Progress', value: 47 },
-          { label: 'Cancelled', value: 28 },
-        ]);
-
-        // Top locations
-        setTopLocations([
-          { label: 'Rīga, Centrs', value: 156 },
-          { label: 'Rīga, Teika', value: 89 },
-          { label: 'Rīga, Imanta', value: 67 },
-          { label: 'Jūrmala', value: 54 },
-          { label: 'Rīga, Āgenskalns', value: 43 },
-          { label: 'Rīga, Purvciems', value: 38 },
-        ]);
-
-        // Metrics
-        setMetrics({
-          totalUsers: 156,
-          newUsers: timeRange === '7d' ? 23 : timeRange === '30d' ? 67 : 189,
-          totalJobs: 423,
-          completionRate: 74,
-          avgJobBudget: 45,
-          totalVolume: 14040,
-        });
-      }
+      setError(null);
+      const response = await apiClient.get('/api/admin/analytics', {
+        params: { range: timeRange }
+      });
+      setUserGrowth(response.data.userGrowth || []);
+      setJobsByCategory(response.data.jobsByCategory || []);
+      setCompletionData(response.data.completionData || []);
+      setTopLocations(response.data.topLocations || []);
+      setMetrics(response.data.metrics || {
+        totalUsers: 0,
+        newUsers: 0,
+        totalJobs: 0,
+        completionRate: 0,
+        avgJobBudget: 0,
+        totalVolume: 0,
+      });
+    } catch (err: any) {
+      console.error('Failed to fetch analytics:', err);
+      setError(err.response?.data?.error || 'Failed to load analytics');
     } finally {
       setLoading(false);
     }
   };
 
-  const MetricCard = ({ title, value, subtitle, icon, trend }: {
+  const MetricCard = ({ title, value, subtitle, icon }: {
     title: string;
     value: string | number;
     subtitle?: string;
     icon: string;
-    trend?: { value: number; positive: boolean };
   }) => (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex items-start justify-between">
@@ -274,11 +227,6 @@ const AdminAnalytics = () => {
           <p className="text-sm text-gray-500 font-medium">{title}</p>
           <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
           {subtitle && <p className="text-sm text-gray-400 mt-1">{subtitle}</p>}
-          {trend && (
-            <p className={`text-sm mt-2 font-medium ${trend.positive ? 'text-green-600' : 'text-red-600'}`}>
-              {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}% vs last period
-            </p>
-          )}
         </div>
         <div className="text-3xl">{icon}</div>
       </div>
@@ -289,6 +237,21 @@ const AdminAnalytics = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-4xl mb-2">⚠️</div>
+        <p className="text-red-600 font-medium">{error}</p>
+        <button
+          onClick={() => fetchAnalytics()}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -332,26 +295,22 @@ const AdminAnalytics = () => {
           value={metrics.totalUsers.toLocaleString()}
           subtitle={`+${metrics.newUsers} new`}
           icon="👥"
-          trend={{ value: 12, positive: true }}
         />
         <MetricCard
           title="Total Jobs"
           value={metrics.totalJobs.toLocaleString()}
           icon="📋"
-          trend={{ value: 8, positive: true }}
         />
         <MetricCard
           title="Completion Rate"
           value={`${metrics.completionRate}%`}
           icon="✅"
-          trend={{ value: 3, positive: true }}
         />
         <MetricCard
           title="Total Volume"
           value={`€${metrics.totalVolume.toLocaleString()}`}
           subtitle={`Avg €${metrics.avgJobBudget}/job`}
           icon="💰"
-          trend={{ value: 15, positive: true }}
         />
       </div>
 
@@ -362,12 +321,16 @@ const AdminAnalytics = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="font-semibold text-gray-900">User Growth</h2>
-              <p className="text-sm text-gray-500">New users over time</p>
+              <p className="text-sm text-gray-500">Cumulative users over time</p>
             </div>
             <span className="text-2xl">📈</span>
           </div>
           <div className="pl-10">
-            <LineChart data={userGrowth} color="#3b82f6" height={220} />
+            {userGrowth.length > 0 ? (
+              <LineChart data={userGrowth} color="#3b82f6" height={220} />
+            ) : (
+              <p className="text-gray-400 text-sm text-center py-10">No growth data for this period</p>
+            )}
           </div>
         </div>
 
@@ -412,46 +375,31 @@ const AdminAnalytics = () => {
             </div>
             <span className="text-2xl">📍</span>
           </div>
-          <div className="space-y-4">
-            {topLocations.map((location, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
-                  {i + 1}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900">{location.label}</span>
-                    <span className="text-sm text-gray-500">{location.value} jobs</span>
+          {topLocations.length > 0 ? (
+            <div className="space-y-4">
+              {topLocations.map((location, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
+                    {i + 1}
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full"
-                      style={{ width: `${(location.value / topLocations[0].value) * 100}%` }}
-                    />
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-900">{location.label}</span>
+                      <span className="text-sm text-gray-500">{location.value} jobs</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{ width: `${(location.value / topLocations[0].value) * 100}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Insights */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-sm p-6 text-white">
-        <h2 className="font-semibold text-lg mb-4">💡 Insights</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white/10 rounded-lg p-4">
-            <p className="font-medium">🔥 Hot Category</p>
-            <p className="text-blue-100 text-sm mt-1">Cleaning services are up 23% this month</p>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <p className="font-medium">📍 Growing Area</p>
-            <p className="text-blue-100 text-sm mt-1">Jūrmala showing 45% more activity</p>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <p className="font-medium">⚠️ Attention</p>
-            <p className="text-blue-100 text-sm mt-1">Pet Care has low provider supply</p>
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm text-center py-10">No location data available</p>
+          )}
         </div>
       </div>
     </div>

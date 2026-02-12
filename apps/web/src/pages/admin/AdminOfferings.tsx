@@ -22,10 +22,12 @@ const AdminOfferings = () => {
   const toast = useToastStore();
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
@@ -35,23 +37,17 @@ const AdminOfferings = () => {
   const fetchOfferings = async () => {
     try {
       setLoading(true);
-      try {
-        const response = await apiClient.get('/api/admin/offerings', {
-          params: { page, status: statusFilter, search: searchQuery }
-        });
-        setOfferings(response.data.offerings);
-        setTotalPages(response.data.totalPages || 1);
-      } catch (err) {
-        // Mock data
-        setOfferings([
-          { id: 1, title: 'Professional cleaning service', category: 'cleaning', status: 'active', price: 25, price_type: 'hourly', location: 'Riga', creator_name: 'peter_v', creator_id: 3, created_at: '2026-01-05', rating: 4.9 },
-          { id: 2, title: 'Experienced plumber available', category: 'plumbing', status: 'active', price: 40, price_type: 'hourly', location: 'Riga, Jurmala', creator_name: 'andris_b', creator_id: 5, created_at: '2026-01-03', rating: 4.7 },
-          { id: 3, title: 'Dog walking & pet sitting', category: 'pet-care', status: 'active', price: 15, price_type: 'fixed', location: 'Riga', creator_name: 'liga_m', creator_id: 6, created_at: '2026-01-07', rating: 5.0 },
-          { id: 4, title: 'Furniture assembly expert', category: 'assembly', status: 'paused', price: 20, price_type: 'hourly', location: 'Riga', creator_name: 'janis_k', creator_id: 1, created_at: '2025-12-20', rating: 4.8 },
-          { id: 5, title: 'Math & Physics tutoring', category: 'tutoring', status: 'active', price: 30, price_type: 'hourly', location: 'Online', creator_name: 'maria_s', creator_id: 2, created_at: '2026-01-01', rating: 4.5 },
-        ]);
-        setTotalPages(2);
-      }
+      setError(null);
+      const response = await apiClient.get('/api/admin/offerings', {
+        params: { page, status: statusFilter, search: searchQuery, per_page: 20 }
+      });
+      setOfferings(response.data.offerings || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotal(response.data.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch offerings:', err);
+      setError(err.response?.data?.error || 'Failed to load offerings');
+      setOfferings([]);
     } finally {
       setLoading(false);
     }
@@ -71,9 +67,9 @@ const AdminOfferings = () => {
       await apiClient.delete(`/api/admin/offerings/${offeringId}`);
       toast.success('Offering deleted successfully');
       setOfferings(offerings.filter(o => o.id !== offeringId));
-    } catch (err) {
-      toast.success('Offering deleted successfully');
-      setOfferings(offerings.filter(o => o.id !== offeringId));
+      setTotal(prev => prev - 1);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete offering');
     } finally {
       setActionLoading(null);
     }
@@ -84,6 +80,7 @@ const AdminOfferings = () => {
       'active': 'bg-green-100 text-green-700',
       'paused': 'bg-yellow-100 text-yellow-700',
       'inactive': 'bg-gray-100 text-gray-700',
+      'closed': 'bg-red-100 text-red-700',
     };
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100'}`}>
@@ -92,22 +89,13 @@ const AdminOfferings = () => {
     );
   };
 
-  const filteredOfferings = offerings.filter(offering => {
-    if (statusFilter !== 'all' && offering.status !== statusFilter) return false;
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return offering.title.toLowerCase().includes(query) || 
-           offering.creator_name.toLowerCase().includes(query) ||
-           offering.location.toLowerCase().includes(query);
-  });
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Offerings Management</h1>
-          <p className="text-gray-500">View and moderate all service offerings</p>
+          <p className="text-gray-500">{total} total offerings</p>
         </div>
       </div>
 
@@ -137,7 +125,7 @@ const AdminOfferings = () => {
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
             <option value="paused">Paused</option>
-            <option value="inactive">Inactive</option>
+            <option value="closed">Closed</option>
           </select>
         </div>
       </div>
@@ -148,7 +136,18 @@ const AdminOfferings = () => {
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full"></div>
           </div>
-        ) : filteredOfferings.length === 0 ? (
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-2">⚠️</div>
+            <p className="text-red-600 font-medium">{error}</p>
+            <button
+              onClick={() => fetchOfferings()}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : offerings.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-2">🛠️</div>
             <p className="text-gray-500">No offerings found</p>
@@ -168,7 +167,7 @@ const AdminOfferings = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredOfferings.map((offering) => (
+                {offerings.map((offering) => (
                   <tr key={offering.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div>
@@ -232,7 +231,9 @@ const AdminOfferings = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-            <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages} ({total} offerings)
+            </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
