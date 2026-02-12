@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { NotificationType } from '@marketplace/shared/src/api/notifications';
 
 interface NotificationActionBannerProps {
   isCreator: boolean;
@@ -12,11 +11,21 @@ interface BannerConfig {
   icon: string;
   title: string;
   subtitle: string;
-  color: string;       // tailwind text color
-  bg: string;          // tailwind bg color
-  border: string;      // tailwind border color
-  scrollTo?: string;   // CSS selector to scroll to
+  color: string;
+  bg: string;
+  border: string;
+  scrollTo?: string;
 }
+
+// Notification type constants (matching backend values)
+const NOTIF_TYPES = {
+  NEW_APPLICATION: 'new_application',
+  APPLICATION_ACCEPTED: 'application_accepted',
+  APPLICATION_REJECTED: 'application_rejected',
+  TASK_MARKED_DONE: 'task_marked_done',
+  TASK_COMPLETED: 'task_completed',
+  TASK_DISPUTED: 'task_disputed',
+} as const;
 
 /**
  * Determines the right banner message based on notification type + user role + task status.
@@ -28,10 +37,10 @@ const getBannerConfig = (
   taskStatus: string
 ): BannerConfig | null => {
   switch (notificationType) {
-    case NotificationType.NEW_APPLICATION:
+    case NOTIF_TYPES.NEW_APPLICATION:
       if (isCreator && taskStatus === 'open') {
         return {
-          icon: '\u{1F4E9}',
+          icon: '📩',
           title: 'You have new applicants!',
           subtitle: 'Review applications below and accept the best fit for your job.',
           color: 'text-blue-800',
@@ -42,7 +51,7 @@ const getBannerConfig = (
       }
       if (isCreator && taskStatus !== 'open') {
         return {
-          icon: '\u{2705}',
+          icon: '✅',
           title: 'This job already has a worker assigned',
           subtitle: 'You previously accepted an applicant for this task.',
           color: 'text-green-800',
@@ -52,12 +61,12 @@ const getBannerConfig = (
       }
       return null;
 
-    case NotificationType.APPLICATION_ACCEPTED:
+    case NOTIF_TYPES.APPLICATION_ACCEPTED:
       if (isAssigned && (taskStatus === 'assigned' || taskStatus === 'in_progress')) {
         return {
-          icon: '\u{1F389}',
+          icon: '🎉',
           title: 'You got the job!',
-          subtitle: 'Start working on this task. When you\u2019re done, mark it as complete below.',
+          subtitle: 'Start working on this task. When you are done, mark it as complete below.',
           color: 'text-green-800',
           bg: 'bg-green-50',
           border: 'border-green-200',
@@ -66,7 +75,7 @@ const getBannerConfig = (
       }
       if (isAssigned && taskStatus === 'pending_confirmation') {
         return {
-          icon: '\u{1F4CB}',
+          icon: '📋',
           title: 'You marked this task as done',
           subtitle: 'Waiting for the task owner to confirm completion.',
           color: 'text-purple-800',
@@ -76,7 +85,7 @@ const getBannerConfig = (
       }
       if (isAssigned && taskStatus === 'completed') {
         return {
-          icon: '\u{2705}',
+          icon: '✅',
           title: 'This task is complete!',
           subtitle: 'Great job! You can leave a review below.',
           color: 'text-green-800',
@@ -87,22 +96,22 @@ const getBannerConfig = (
       }
       return null;
 
-    case NotificationType.APPLICATION_REJECTED:
+    case NOTIF_TYPES.APPLICATION_REJECTED:
       return {
-        icon: '\u{1F614}',
+        icon: '😔',
         title: 'Application not selected',
-        subtitle: 'The task owner chose another applicant. Keep looking \u2014 there are more jobs available!',
+        subtitle: 'The task owner chose another applicant. Keep looking - there are more jobs available!',
         color: 'text-gray-700',
         bg: 'bg-gray-50',
         border: 'border-gray-200',
       };
 
-    case NotificationType.TASK_MARKED_DONE:
+    case NOTIF_TYPES.TASK_MARKED_DONE:
       if (isCreator && taskStatus === 'pending_confirmation') {
         return {
-          icon: '\u{1F4CB}',
+          icon: '📋',
           title: 'Worker says the task is done!',
-          subtitle: 'Review the work and confirm completion, or open a dispute if something isn\u2019t right.',
+          subtitle: 'Review the work and confirm completion, or open a dispute if something is not right.',
           color: 'text-amber-800',
           bg: 'bg-amber-50',
           border: 'border-amber-200',
@@ -111,7 +120,7 @@ const getBannerConfig = (
       }
       if (isCreator && taskStatus === 'completed') {
         return {
-          icon: '\u{2705}',
+          icon: '✅',
           title: 'You already confirmed this task',
           subtitle: 'This task has been marked as complete. Leave a review below!',
           color: 'text-green-800',
@@ -122,9 +131,9 @@ const getBannerConfig = (
       }
       if (isCreator && taskStatus === 'disputed') {
         return {
-          icon: '\u26A0\uFE0F',
+          icon: '⚠️',
           title: 'This task is under dispute',
-          subtitle: 'Our team is reviewing the situation. We\u2019ll update you soon.',
+          subtitle: 'Our team is reviewing the situation. We will update you soon.',
           color: 'text-red-800',
           bg: 'bg-red-50',
           border: 'border-red-200',
@@ -132,9 +141,9 @@ const getBannerConfig = (
       }
       return null;
 
-    case NotificationType.TASK_COMPLETED:
+    case NOTIF_TYPES.TASK_COMPLETED:
       return {
-        icon: '\u{2705}',
+        icon: '✅',
         title: 'Task completed!',
         subtitle: 'This task has been confirmed as done. You can leave a review below.',
         color: 'text-green-800',
@@ -143,9 +152,9 @@ const getBannerConfig = (
         scrollTo: '[data-section="reviews"]',
       };
 
-    case NotificationType.TASK_DISPUTED:
+    case NOTIF_TYPES.TASK_DISPUTED:
       return {
-        icon: '\u26A0\uFE0F',
+        icon: '⚠️',
         title: 'This task is under dispute',
         subtitle: 'Our team is reviewing the situation and will resolve it shortly.',
         color: 'text-red-800',
@@ -198,7 +207,7 @@ export const NotificationActionBanner = ({ isCreator, isAssigned, taskStatus }: 
   if (!config || dismissed) return null;
 
   return (
-    <div className={`mx-4 mt-3 md:mx-0 ${config.bg} ${config.border} border rounded-xl p-4 relative animate-in fade-in slide-in-from-top-2 duration-300`}>
+    <div className={`mx-4 mt-3 md:mx-0 ${config.bg} ${config.border} border rounded-xl p-4 relative`}>
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}

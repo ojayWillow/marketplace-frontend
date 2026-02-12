@@ -46,9 +46,9 @@ const StarRating = ({ rating }: { rating: number }) => {
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
   return (
     <span className="text-yellow-500 text-sm">
-      {'\u2605'.repeat(fullStars)}
-      {hasHalfStar && '\u00BD'}
-      {'\u2606'.repeat(emptyStars)}
+      {'★'.repeat(fullStars)}
+      {hasHalfStar && '½'}
+      {'☆'.repeat(emptyStars)}
     </span>
   );
 };
@@ -219,7 +219,7 @@ const TaskDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center px-4">
-          <div className="text-5xl mb-3">\u{1F615}</div>
+          <div className="text-5xl mb-3">😕</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Job Not Found</h2>
           <p className="text-gray-600 mb-4 text-sm">This job may have been removed or is no longer available.</p>
           <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold">
@@ -258,14 +258,14 @@ const TaskDetail = () => {
         price={task.budget}
       />
 
-      {/* Top bar — slim on mobile, standard on desktop */}
+      {/* Top bar */}
       <div className="sticky top-0 bg-white border-b border-gray-100 z-50 md:static md:border-b-0">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden md:inline">\u2190 Back to Quick Help</span>
+            <span className="hidden md:inline">← Back to Quick Help</span>
             <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
@@ -274,7 +274,7 @@ const TaskDetail = () => {
             description={`${categoryLabel} job - ${budget} EUR`}
             categoryIcon={categoryIcon}
             categoryEmoji={categoryIcon}
-            price={`\u20AC${budget}`}
+            price={`€${budget}`}
             location={shortLocation}
             size="sm"
           />
@@ -303,10 +303,10 @@ const TaskDetail = () => {
                   {categoryLabel}
                 </span>
                 {isUrgent && (
-                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">\u26A1 Urgent</span>
+                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
                 )}
               </div>
-              <div className="text-2xl font-black">\u20AC{budget}</div>
+              <div className="text-2xl font-black">€{budget}</div>
             </div>
             <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
           </div>
@@ -323,12 +323,12 @@ const TaskDetail = () => {
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">Urgent</span>
                 )}
               </div>
-              <span className="text-xl font-black text-green-600">\u20AC{budget}</span>
+              <span className="text-xl font-black text-green-600">€{budget}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 leading-snug">{task.title}</h1>
           </div>
 
-          {/* Profile row — compact on mobile, richer on desktop */}
+          {/* Profile row */}
           <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200">
             <div className="flex items-center gap-2.5 md:gap-4">
               <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
@@ -340,7 +340,7 @@ const TaskDetail = () => {
                 <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 hover:text-blue-600 truncate md:text-base">
                   {task.creator_name || 'Unknown'}
                 </Link>
-                <span className="text-gray-300 md:hidden">\u00B7</span>
+                <span className="text-gray-300 md:hidden">·</span>
                 <div className="flex items-center gap-1">
                   <StarRating rating={task.creator_rating || 0} />
                   <span className="text-gray-400 text-xs">({task.creator_review_count || 0})</span>
@@ -377,7 +377,7 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Thin divider — mobile only (desktop has border on profile section) */}
+          {/* Thin divider mobile only */}
           <div className="border-t border-gray-100 mx-4 md:hidden" />
 
           {/* Description */}
@@ -388,7 +388,7 @@ const TaskDetail = () => {
             </p>
           </div>
 
-          {/* Info bar — 3 columns */}
+          {/* Info bar 3 columns */}
           <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 rounded-lg border border-gray-100">
             <div className="grid grid-cols-3 divide-x divide-gray-200">
               <div className="py-2.5 md:py-3.5 text-center">
@@ -538,7 +538,7 @@ const TaskDetail = () => {
           </div>
         )}
 
-        {/* How it works — collapsible on mobile, always open on desktop */}
+        {/* How it works collapsible on mobile, always open on desktop */}
         <div className="mt-3 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
           <button
             onClick={() => setHowItWorksOpen(!howItWorksOpen)}
@@ -566,7 +566,7 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* Sticky bottom action bar — MOBILE ONLY */}
+      {/* Sticky bottom action bar MOBILE ONLY */}
       <div
         className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
         style={{ bottom: 'var(--nav-total-height, 64px)' }}
