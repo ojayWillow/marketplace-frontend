@@ -46,8 +46,12 @@ const ShareButton = ({
   const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  // Build clean share message (Option C style)
-  const buildShareText = () => {
+  /**
+   * Build share message.
+   * @param includeUrl — set false for platforms that auto-append the URL
+   *                     (Telegram, Twitter) to avoid showing it twice.
+   */
+  const buildShareText = (includeUrl = true) => {
     const lines: string[] = [];
 
     // Line 1: emoji + title
@@ -62,18 +66,23 @@ const ShareButton = ({
       lines.push(details.join('  \u00B7  '));
     }
 
-    // Blank line + URL
-    lines.push('');
-    lines.push(`\u{1F449} ${fullUrl}`);
+    // URL line — only when the platform doesn't add it automatically
+    if (includeUrl) {
+      lines.push('');
+      lines.push(`\u{1F449} ${fullUrl}`);
+    }
 
-    // Blank line + tagline
+    // Tagline
     lines.push('');
     lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
 
     return lines.join('\n');
   };
 
-  const shareText = buildShareText();
+  // Full text (with URL) for WhatsApp, copy, etc.
+  const shareText = buildShareText(true);
+  // Text without URL for platforms that auto-append it
+  const shareTextNoUrl = buildShareText(false);
 
   // Open / close with animation
   const openSheet = () => {
@@ -117,8 +126,9 @@ const ShareButton = ({
     closeSheet();
   };
   const shareToTelegram = () => {
+    // Telegram auto-appends the url param as a link, so use text without URL
     window.open(
-      `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareText)}`,
+      `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
       '_blank',
     );
     closeSheet();
@@ -132,8 +142,9 @@ const ShareButton = ({
     closeSheet();
   };
   const shareToTwitter = () => {
+    // Twitter auto-appends the url param, so use text without URL
     window.open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
       '_blank',
       'width=600,height=400',
     );
