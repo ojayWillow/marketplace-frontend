@@ -56,7 +56,7 @@ function ConversationAvatar({
       )}
       {dotColor && (
         <span
-          className={`absolute bottom-0 right-0 w-3.5 h-3.5 ${dotColor} rounded-full border-2 border-white`}
+          className={`absolute bottom-0 right-0 w-3.5 h-3.5 ${dotColor} rounded-full border-2 border-white dark:border-gray-900`}
         />
       )}
     </div>
@@ -109,22 +109,22 @@ export default function Messages() {
   /* ── Loading ── */
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col bg-white animate-page-enter">
+      <div className="flex-1 flex flex-col bg-white dark:bg-gray-950 animate-page-enter">
         {/* Skeleton header */}
         <div className="px-5 pt-4 pb-3 flex-shrink-0">
-          <div className="h-7 w-32 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-7 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
         </div>
         {/* Skeleton rows */}
         <div className="flex-1 px-4 space-y-3 pt-2">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 animate-pulse"
+              className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 animate-pulse"
             >
-              <div className="w-14 h-14 rounded-full bg-gray-200" />
+              <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700" />
               <div className="flex-1">
-                <div className="h-4 w-28 bg-gray-200 rounded mb-2" />
-                <div className="h-3 w-40 bg-gray-100 rounded" />
+                <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                <div className="h-3 w-40 bg-gray-100 dark:bg-gray-800 rounded" />
               </div>
             </div>
           ))}
@@ -136,10 +136,10 @@ export default function Messages() {
   /* ── Mobile ── */
   if (isMobile) {
     return (
-      <div className="flex flex-col flex-1 bg-white animate-page-enter">
+      <div className="flex flex-col flex-1 bg-white dark:bg-gray-950 animate-page-enter">
         {/* Header */}
         <div className="px-5 pt-4 pb-3 flex-shrink-0">
-          <h1 className="text-2xl font-extrabold text-gray-900">
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
             {t('messages.title', 'Messages')}
           </h1>
         </div>
@@ -149,13 +149,13 @@ export default function Messages() {
           {conversations.length === 0 ? (
             /* ── Empty state ── */
             <div className="flex flex-col items-center justify-center h-full px-8 text-center">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mb-5">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center mb-5">
                 <span className="text-5xl">💬</span>
               </div>
-              <h2 className="text-lg font-bold text-gray-900 mb-1">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
                 {t('messages.noConversations', 'No conversations yet')}
               </h2>
-              <p className="text-sm text-gray-500 mb-6 max-w-[240px]">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-[240px]">
                 {t(
                   'messages.startConversation',
                   'Apply to a job or contact someone to start chatting'
@@ -163,7 +163,7 @@ export default function Messages() {
               </p>
               <Link
                 to="/"
-                className="bg-blue-600 text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-200"
+                className="bg-blue-600 text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-200 dark:shadow-blue-900/30"
               >
                 {t('messages.browseTasks', 'Browse Map')}
               </Link>
@@ -176,10 +176,10 @@ export default function Messages() {
                   <Link
                     key={conv.id}
                     to={`/messages/${conv.id}`}
-                    className={`flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] active:bg-gray-50 animate-fade-in-up ${
+                    className={`flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] animate-fade-in-up ${
                       hasUnread
-                        ? 'bg-blue-50/60 border border-blue-100'
-                        : 'bg-gray-50/80 hover:bg-gray-100/60'
+                        ? 'bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40'
+                        : 'bg-gray-50/80 dark:bg-gray-900/80 hover:bg-gray-100/60 dark:hover:bg-gray-800/60'
                     }`}
                     style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
                   >
@@ -195,8 +195,8 @@ export default function Messages() {
                         <span
                           className={`truncate ${
                             hasUnread
-                              ? 'font-bold text-gray-900'
-                              : 'font-semibold text-gray-900'
+                              ? 'font-bold text-gray-900 dark:text-gray-100'
+                              : 'font-semibold text-gray-900 dark:text-gray-100'
                           }`}
                         >
                           {conv.other_participant?.first_name &&
@@ -208,7 +208,7 @@ export default function Messages() {
                           <span
                             className={`text-xs flex-shrink-0 ${
                               hasUnread
-                                ? 'text-blue-600 font-semibold'
+                                ? 'text-blue-600 dark:text-blue-400 font-semibold'
                                 : 'text-gray-400'
                             }`}
                           >
@@ -218,7 +218,7 @@ export default function Messages() {
                       </div>
                       <p
                         className={`text-sm truncate mt-0.5 ${
-                          hasUnread ? 'text-gray-700 font-medium' : 'text-gray-500'
+                          hasUnread ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-500 dark:text-gray-400'
                         }`}
                       >
                         {conv.last_message?.content ||
@@ -234,7 +234,7 @@ export default function Messages() {
                         </span>
                       ) : (
                         <svg
-                          className="w-4 h-4 text-gray-300"
+                          className="w-4 h-4 text-gray-300 dark:text-gray-600"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -260,16 +260,16 @@ export default function Messages() {
 
   /* ── Desktop ── */
   return (
-    <div className="min-h-screen bg-gray-50 py-8 animate-page-enter">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8 animate-page-enter">
       <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           💬 {t('messages.title', 'Messages')}
         </h1>
 
         {conversations.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-gray-900/50 p-8 text-center">
             <div className="text-6xl mb-4">📭</div>
-            <p className="text-gray-500 mb-4">
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
               {t('messages.noConversations', 'No conversations yet')}
             </p>
             <Link
@@ -280,12 +280,12 @@ export default function Messages() {
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-gray-900/50 overflow-hidden">
             {conversations.map((conv) => (
               <Link
                 key={conv.id}
                 to={`/messages/${conv.id}`}
-                className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 p-4 border-b dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="flex-shrink-0">
                   <ConversationAvatar participant={conv.other_participant} />
@@ -310,19 +310,19 @@ export default function Messages() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-gray-900 truncate">
+                    <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
                       {conv.other_participant?.first_name &&
                       conv.other_participant?.last_name
                         ? `${conv.other_participant.first_name} ${conv.other_participant.last_name}`
                         : conv.other_participant?.username || 'Unknown'}
                     </span>
                     {conv.last_message && (
-                      <span className="text-xs text-gray-500 flex-shrink-0">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                         {formatTime(conv.last_message.created_at)}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 truncate">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {conv.last_message?.content ||
                       t('messages.noMessagesYet', 'No messages yet')}
                   </p>
