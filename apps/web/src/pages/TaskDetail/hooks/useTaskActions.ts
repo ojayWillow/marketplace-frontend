@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { markTaskDone, confirmTaskCompletion, cancelTask, disputeTask, acceptApplication, rejectApplication } from '@marketplace/shared';
+import { markTaskDone, confirmTaskCompletion, cancelTask, acceptApplication, rejectApplication } from '@marketplace/shared';
 import { startConversation } from '@marketplace/shared';
 import { taskKeys } from '../../../api/hooks';
 import { useToastStore } from '@marketplace/shared';
@@ -15,6 +15,7 @@ interface UseTaskActionsProps {
   fetchApplications: () => void;
   isAuthenticated: boolean;
   onTaskCompleted?: () => void;
+  onOpenDispute?: () => void;
 }
 
 export const useTaskActions = ({
@@ -24,6 +25,7 @@ export const useTaskActions = ({
   fetchApplications,
   isAuthenticated,
   onTaskCompleted,
+  onOpenDispute,
 }: UseTaskActionsProps) => {
   const navigate = useNavigate();
   const toast = useToastStore();
@@ -92,21 +94,10 @@ export const useTaskActions = ({
     }
   };
 
-  const handleDispute = async () => {
-    const reason = window.prompt('Please provide a reason for the dispute:');
-    if (!reason) return;
-
-    try {
-      setActionLoading(true);
-      await disputeTask(taskId, reason);
-      toast.warning('Task has been disputed. Please resolve with the worker.');
-      await invalidateTaskCaches();
-      refetchTask();
-    } catch (error: any) {
-      console.error('Error disputing task:', error);
-      toast.error(error?.response?.data?.error || 'Failed to dispute task');
-    } finally {
-      setActionLoading(false);
+  const handleDispute = () => {
+    // Open the dispute sheet instead of using window.prompt
+    if (onOpenDispute) {
+      onOpenDispute();
     }
   };
 

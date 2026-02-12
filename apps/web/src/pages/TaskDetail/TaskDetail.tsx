@@ -36,6 +36,8 @@ import {
   RecommendedHelpers,
   ApplicationSheet,
   ReviewSheet,
+  DisputeSheet,
+  DisputeSection,
 } from './components';
 import { useTaskActions } from './hooks';
 import { Review, CanReviewResponse } from './types';
@@ -69,7 +71,9 @@ const TaskDetail = () => {
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
+  const [showDisputeSheet, setShowDisputeSheet] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  const [disputeKey, setDisputeKey] = useState(0); // Force re-fetch disputes
 
   // Recommended helpers state
   const [recommendedHelpers, setRecommendedHelpers] = useState<Offering[]>([]);
@@ -92,7 +96,7 @@ const TaskDetail = () => {
     }
   };
 
-  // Task actions hook — with review callback
+  // Task actions hook — with review and dispute callbacks
   const {
     actionLoading,
     acceptingId,
@@ -114,6 +118,9 @@ const TaskDetail = () => {
     onTaskCompleted: () => {
       // Open the review sheet right after confirming completion
       setShowReviewSheet(true);
+    },
+    onOpenDispute: () => {
+      setShowDisputeSheet(true);
     },
   });
 
@@ -504,14 +511,29 @@ const TaskDetail = () => {
               ✅ This task has been completed
             </div>
           )}
-          {task.status === 'disputed' && (
-            <div className="mx-4 mb-4 md:mx-6 text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg text-center text-sm">
-              ⚠️ This task is under dispute — our team is reviewing it
-            </div>
-          )}
           {task.status === 'cancelled' && (
             <div className="mx-4 mb-4 md:mx-6 text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2.5 rounded-lg text-center text-sm">
               This task has been cancelled
+            </div>
+          )}
+
+          {/* Dispute details section (replaces the old simple banner) */}
+          {task.status === 'disputed' && (isCreator || isAssigned) && (
+            <DisputeSection
+              key={disputeKey}
+              taskId={Number(id)}
+              currentUserId={user?.id}
+              onDisputeUpdated={() => {
+                refetchTask();
+                setDisputeKey(prev => prev + 1);
+              }}
+            />
+          )}
+
+          {/* Disputed status banner for non-involved users */}
+          {task.status === 'disputed' && !isCreator && !isAssigned && (
+            <div className="mx-4 mb-4 md:mx-6 text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg text-center text-sm">
+              ⚠️ This task is under dispute
             </div>
           )}
 
@@ -627,8 +649,22 @@ const TaskDetail = () => {
         revieweeName={getRevieweeName()}
       />
 
+      {/* Dispute bottom sheet (mobile + desktop) */}
+      <DisputeSheet
+        isOpen={showDisputeSheet}
+        onClose={() => setShowDisputeSheet(false)}
+        onSubmitted={() => {
+          setShowDisputeSheet(false);
+          toast.warning('Dispute filed. The other party will be notified.');
+          refetchTask();
+          setDisputeKey(prev => prev + 1);
+        }}
+        taskId={Number(id)}
+        taskTitle={task.title}
+      />
+
       {/* Sticky bottom action bar MOBILE ONLY */}
-      {!showApplicationSheet && !showReviewSheet && (
+      {!showApplicationSheet && !showReviewSheet && !showDisputeSheet && (
         <div
           className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
           style={{ bottom: 'var(--nav-total-height, 64px)' }}
