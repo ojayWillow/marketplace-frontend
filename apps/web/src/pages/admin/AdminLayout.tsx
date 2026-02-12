@@ -7,16 +7,17 @@ interface NavItem {
   path: string;
   label: string;
   icon: string;
+  badge?: string;
 }
 
 const navItems: NavItem[] = [
   { path: '/admin', label: 'Overview', icon: '📊' },
-  { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
-  { path: '/admin/subscriptions', label: 'Subscriptions', icon: '🗺️' },
+  { path: '/admin/disputes', label: 'Disputes', icon: '⚖️' },
   { path: '/admin/users', label: 'Users', icon: '👥' },
   { path: '/admin/jobs', label: 'Jobs', icon: '💼' },
   { path: '/admin/offerings', label: 'Offerings', icon: '🛠️' },
   { path: '/admin/reports', label: 'Reports', icon: '🚨' },
+  { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
   { path: '/admin/announcements', label: 'Announcements', icon: '📢' },
   { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -36,7 +37,7 @@ const AdminLayout = () => {
   // Check if user is admin
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate('/welcome');
       return;
     }
     // Check for admin role
@@ -56,7 +57,7 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 flex flex-col`}>
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 flex flex-col min-h-screen sticky top-0`}>
         {/* Logo */}
         <div className="p-4 border-b border-gray-800">
           <div className="flex items-center gap-3">
@@ -73,8 +74,8 @@ const AdminLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.path}>
                 <Link
@@ -119,7 +120,7 @@ const AdminLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">

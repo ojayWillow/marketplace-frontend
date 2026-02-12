@@ -57,6 +57,7 @@ const AdminOfferings = lazy(() => import('./pages/admin/AdminOfferings'))
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'))
 const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminDisputes = lazy(() => import('./pages/admin/AdminDisputes'))
 
 function App() {
   return (
@@ -210,6 +211,7 @@ function App() {
             }
           >
             <Route index element={<AdminOverview />} />
+            <Route path="disputes" element={<AdminDisputes />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="users" element={<AdminUsers />} />
