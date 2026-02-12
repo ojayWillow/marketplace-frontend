@@ -7,6 +7,14 @@ interface WorkItemCardProps {
   onClick: () => void;
 }
 
+/**
+ * Strip redundant "URGENT:" prefix from titles since the is_urgent flag
+ * already shows a 🔥 badge. Old tasks may have it baked into the title.
+ */
+const cleanTitle = (title: string): string => {
+  return title.replace(/^URGENT:\s*/i, '').trim();
+};
+
 const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
   const price = item.type === 'job' ? item.budget : item.price;
   const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
@@ -40,7 +48,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-bold text-gray-900 truncate mb-2">{item.title}</h3>
+      <h3 className="text-sm font-bold text-gray-900 truncate mb-2">{cleanTitle(item.title)}</h3>
 
       {/* Creator info */}
       <div className="flex gap-2 mb-2">
