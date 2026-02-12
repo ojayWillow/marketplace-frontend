@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@marketplace/shared';
 import MapHomePage from './MapHomePage';
@@ -8,25 +8,32 @@ import MapHomePage from './MapHomePage';
  * - NOT authenticated + no ?task= → Redirect to /welcome (landing page)
  * - NOT authenticated + ?task=ID  → Show map as guest (shared link preview)
  * - Authenticated → Show map (may auto-select a shared task via ?task=ID)
+ *
+ * IMPORTANT: We store the shared-task check in a ref because
+ * MobileTasksView removes ?task= from the URL after reading it.
+ * Without the ref, the re-render would see hasSharedTask=false
+ * and redirect the guest to /welcome.
  */
 export default function Home() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Check if this is a shared task deep link
-  const hasSharedTask = !!searchParams.get('task');
+  // Capture once on mount — survives URL param removal by child components
+  const isGuestSharedTask = useRef(
+    !isAuthenticated && !!new URLSearchParams(window.location.search).get('task')
+  );
+
+  const allowGuest = isGuestSharedTask.current;
 
   useEffect(() => {
-    // Only redirect to welcome if NOT a shared link
-    if (!isAuthenticated && !hasSharedTask) {
+    if (!isAuthenticated && !allowGuest) {
       navigate('/welcome', { replace: true });
     }
-  }, [isAuthenticated, navigate, hasSharedTask]);
+  }, [isAuthenticated, navigate, allowGuest]);
 
-  // Show map for authenticated users OR for shared task links (guest mode)
-  if (!isAuthenticated && !hasSharedTask) {
-    return null; // Will redirect to /welcome
+  if (!isAuthenticated && !allowGuest) {
+    return null;
   }
 
   return <MapHomePage />;
