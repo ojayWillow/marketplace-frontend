@@ -34,6 +34,7 @@ import {
   TaskActionButtons,
   TaskReviews,
   RecommendedHelpers,
+  ApplicationSheet,
 } from './components';
 import { useTaskActions } from './hooks';
 import { Review, CanReviewResponse } from './types';
@@ -65,8 +66,7 @@ const TaskDetail = () => {
   // Local state
   const [applications, setApplications] = useState<TaskApplication[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
-  const [applicationMessage, setApplicationMessage] = useState('');
-  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   // Recommended helpers state
@@ -168,7 +168,7 @@ const TaskDetail = () => {
   }, [task, user, isAuthenticated]);
 
   // Handle apply to task
-  const handleApplyTask = async () => {
+  const handleApplyTask = (applicationMessage: string) => {
     if (!isAuthenticated || !user?.id) {
       toast.warning('Please login to apply');
       navigate('/login');
@@ -179,8 +179,7 @@ const TaskDetail = () => {
       {
         onSuccess: () => {
           toast.success('Application submitted! The task owner will review your application.');
-          setShowApplicationForm(false);
-          setApplicationMessage('');
+          setShowApplicationSheet(false);
           setTimeout(() => { navigate('/tasks'); }, 2000);
         },
         onError: (error: any) => {
@@ -434,26 +433,28 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Application Form */}
-          {showApplicationForm && canApply && (
-            <div className="mx-4 mb-4 md:mx-6 md:mb-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-3">Apply for this job</h3>
+          {/* Desktop-only inline application form (web keeps the old pattern) */}
+          {showApplicationSheet && canApply && (
+            <div className="hidden md:block mx-6 mb-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 text-base mb-3">Apply for this job</h3>
               <textarea
-                value={applicationMessage}
-                onChange={(e) => setApplicationMessage(e.target.value)}
+                id="desktop-apply-textarea"
                 placeholder="Introduce yourself and explain why you're a good fit..."
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3"
               />
               <div className="flex gap-2">
                 <button
-                  onClick={handleApplyTask}
+                  onClick={() => {
+                    const textarea = document.getElementById('desktop-apply-textarea') as HTMLTextAreaElement;
+                    handleApplyTask(textarea?.value || '');
+                  }}
                   disabled={applyMutation.isPending}
                   className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
                 >
                   {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
                 </button>
                 <button
-                  onClick={() => { setShowApplicationForm(false); setApplicationMessage(''); }}
+                  onClick={() => setShowApplicationSheet(false)}
                   className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm"
                 >
                   Cancel
@@ -507,8 +508,8 @@ const TaskDetail = () => {
               isAssigned={isAssigned}
               isAuthenticated={isAuthenticated}
               actionLoading={actionLoading}
-              showApplicationForm={showApplicationForm}
-              onShowApplicationForm={() => setShowApplicationForm(true)}
+              showApplicationForm={showApplicationSheet}
+              onShowApplicationForm={() => setShowApplicationSheet(true)}
               onMarkDone={handleMarkDone}
               onConfirmDone={handleConfirmDone}
               onDispute={handleDispute}
@@ -567,27 +568,40 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* Sticky bottom action bar MOBILE ONLY */}
-      <div
-        className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
-        style={{ bottom: 'var(--nav-total-height, 64px)' }}
-      >
-        <div className="max-w-3xl mx-auto">
-          <TaskActionButtons
-            task={task}
-            isCreator={isCreator}
-            isAssigned={isAssigned}
-            isAuthenticated={isAuthenticated}
-            actionLoading={actionLoading}
-            showApplicationForm={showApplicationForm}
-            onShowApplicationForm={() => setShowApplicationForm(true)}
-            onMarkDone={handleMarkDone}
-            onConfirmDone={handleConfirmDone}
-            onDispute={handleDispute}
-            onCancel={handleCancel}
-          />
-        </div>
+      {/* Mobile bottom sheet for applying */}
+      <div className="md:hidden">
+        <ApplicationSheet
+          isOpen={showApplicationSheet}
+          onClose={() => setShowApplicationSheet(false)}
+          onSubmit={handleApplyTask}
+          isSubmitting={applyMutation.isPending}
+          taskTitle={task.title}
+        />
       </div>
+
+      {/* Sticky bottom action bar MOBILE ONLY */}
+      {!showApplicationSheet && (
+        <div
+          className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
+          style={{ bottom: 'var(--nav-total-height, 64px)' }}
+        >
+          <div className="max-w-3xl mx-auto">
+            <TaskActionButtons
+              task={task}
+              isCreator={isCreator}
+              isAssigned={isAssigned}
+              isAuthenticated={isAuthenticated}
+              actionLoading={actionLoading}
+              showApplicationForm={showApplicationSheet}
+              onShowApplicationForm={() => setShowApplicationSheet(true)}
+              onMarkDone={handleMarkDone}
+              onConfirmDone={handleConfirmDone}
+              onDispute={handleDispute}
+              onCancel={handleCancel}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
