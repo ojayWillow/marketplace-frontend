@@ -20,7 +20,6 @@ const languages = [
   { code: 'en', label: 'EN', name: 'English', flag: '🇬🇧' },
 ];
 
-// Detect if we're on iOS Safari (not in standalone PWA mode)
 const isIOSSafari = () => {
   const ua = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -28,7 +27,6 @@ const isIOSSafari = () => {
   return isIOS && !isStandalone;
 };
 
-// Detect if we're on iOS PWA (home screen)
 const isIOSPWA = () => {
   const ua = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -59,12 +57,10 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
   const [testLoading, setTestLoading] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
 
-  // Check iOS state on mount
   useEffect(() => {
     setShowIOSHelp(isIOSSafari());
   }, []);
 
-  // Fetch registered devices
   useEffect(() => {
     if (isSubscribed) {
       fetchDevices();
@@ -131,28 +127,28 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
 
   return (
     <div className="space-y-6">
-      {/* How It Works Section — moved here from profile page */}
+      {/* How It Works */}
       {onHowItWorks && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="px-6 py-4">
             <button
               onClick={onHowItWorks}
-              className="w-full flex items-center justify-between p-3 rounded-lg text-gray-900 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <span className="text-lg">❓</span>
                 </div>
                 <div className="text-left">
                   <span className="text-base font-medium">
                     {t('settings.howItWorks.title', 'How it works')}
                   </span>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {t('settings.howItWorks.description', 'Learn how Kolab works')}
                   </p>
                 </div>
               </div>
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -160,20 +156,20 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
         </div>
       )}
 
-      {/* Language Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+      {/* Language */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {t('settings.language.title', 'Language')}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {t('settings.language.description', 'Choose your preferred language')}
               </p>
             </div>
@@ -190,27 +186,27 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
                   onClick={() => handleLanguageChange(lang.code)}
                   className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-blue-50 border border-blue-200'
-                      : 'bg-gray-50 border border-transparent hover:bg-gray-100'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40'
+                      : 'bg-gray-50 dark:bg-gray-800 border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{lang.flag}</span>
                     <div className="text-left">
                       <p className={`text-sm font-medium ${
-                        isActive ? 'text-blue-900' : 'text-gray-900'
+                        isActive ? 'text-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100'
                       }`}>
                         {lang.name}
                       </p>
                       <p className={`text-xs ${
-                        isActive ? 'text-blue-600' : 'text-gray-500'
+                        isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
                       }`}>
                         {lang.label}
                       </p>
                     </div>
                   </div>
                   {isActive && (
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -221,32 +217,32 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
         </div>
       </div>
 
-      {/* Push Notifications Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">
+      {/* Push Notifications */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {t('settings.notifications.title', 'Push Notifications')}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {t('settings.notifications.description', 'Get notified about new messages, job applications, and task updates even when the app is closed.')}
           </p>
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          {/* iOS Safari — needs to install as PWA first */}
+          {/* iOS Safari */}
           {showIOSHelp && !isSupported && (
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/40">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               <div>
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">
                   {t('settings.notifications.iosInstallTitle', 'Install the app for notifications')}
                 </p>
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
                   {t('settings.notifications.iosInstallHelp', 'On iPhone, push notifications only work when Kolab is installed on your home screen:')}
                 </p>
-                <ol className="text-sm text-blue-700 mt-2 space-y-1 list-decimal list-inside">
+                <ol className="text-sm text-blue-700 dark:text-blue-400 mt-2 space-y-1 list-decimal list-inside">
                   <li>{t('settings.notifications.iosStep1', 'Tap the Share button (square with arrow) in Safari')}</li>
                   <li>{t('settings.notifications.iosStep2', 'Scroll down and tap "Add to Home Screen"')}</li>
                   <li>{t('settings.notifications.iosStep3', 'Open Kolab from your home screen')}</li>
@@ -256,25 +252,25 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
             </div>
           )}
 
-          {/* iOS PWA — supported but might need iOS 16.4+ */}
+          {/* iOS PWA */}
           {isIOSPWA() && !isSupported && (
-            <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/40">
+              <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
-              <p className="text-sm text-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
                 {t('settings.notifications.iosVersionRequired', 'Push notifications require iOS 16.4 or later. Please update your iPhone to use this feature.')}
               </p>
             </div>
           )}
 
-          {/* Browser not supported (non-iOS) */}
+          {/* Browser not supported */}
           {!isSupported && !showIOSHelp && !isIOSPWA() && (
-            <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/40">
+              <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
-              <p className="text-sm text-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
                 {t('settings.notifications.notSupported', 'Push notifications are not supported by your browser. Try using Chrome, Firefox, or Safari 16.4+.')}
               </p>
             </div>
@@ -282,15 +278,15 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
 
           {/* Permission blocked */}
           {isSupported && permission === 'denied' && (
-            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
-              <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/40">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
               </svg>
               <div>
-                <p className="text-sm font-medium text-red-800">
+                <p className="text-sm font-medium text-red-800 dark:text-red-300">
                   {t('settings.notifications.blocked', 'Notifications are blocked')}
                 </p>
-                <p className="text-xs text-red-600 mt-1">
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                   {t('settings.notifications.blockedHelp', 'To re-enable, go to your browser or phone settings and allow notifications for this site.')}
                 </p>
               </div>
@@ -303,18 +299,18 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   isSubscribed 
-                    ? 'bg-green-100 text-green-600' 
-                    : 'bg-gray-100 text-gray-400'
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
                 }`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {t('settings.notifications.enable', 'Enable notifications')}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {isSubscribed 
                       ? t('settings.notifications.statusOn', 'Notifications are enabled') 
                       : t('settings.notifications.statusOff', 'Notifications are disabled')}
@@ -325,10 +321,10 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
               <button
                 onClick={handleToggle}
                 disabled={isLoading}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
                   isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 } ${
-                  isSubscribed ? 'bg-green-500' : 'bg-gray-300'
+                  isSubscribed ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
                 role="switch"
                 aria-checked={isSubscribed}
@@ -343,18 +339,17 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
             </div>
           )}
 
-          {/* Error message */}
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>
           )}
 
-          {/* Test notification button */}
+          {/* Test notification */}
           {isSubscribed && (
-            <div className="pt-2 border-t border-gray-100">
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
               <button
                 onClick={handleTestNotification}
                 disabled={testLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
               >
                 {testLoading ? (
                   <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -369,7 +364,7 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
                 {t('settings.notifications.sendTest', 'Send test notification')}
               </button>
               {testSent && (
-                <p className="text-sm text-green-600 mt-2">
+                <p className="text-sm text-green-600 dark:text-green-400 mt-2">
                   ✅ {t('settings.notifications.testSent', 'Test notification sent! Check your device.')}
                 </p>
               )}
@@ -378,26 +373,26 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
 
           {/* Device list */}
           {isSubscribed && devices.length > 0 && (
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-sm font-medium text-gray-700 mb-2">
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('settings.notifications.devices', 'Registered devices')}
               </p>
               <div className="space-y-2">
                 {devices.map((device) => (
                   <div
                     key={device.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                   >
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {device.device_name || t('settings.notifications.unknownDevice', 'Unknown Device')}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {t('settings.notifications.registeredOn', 'Registered')}: {formatDate(device.created_at)}
                       </p>
                     </div>
@@ -405,23 +400,23 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
                 ))}
               </div>
               {devicesLoading && (
-                <p className="text-xs text-gray-400 mt-1">{t('common.loading', 'Loading...')}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('common.loading', 'Loading...')}</p>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Log Out Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Log Out */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div className="px-6 py-4">
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center justify-between p-3 rounded-lg text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
+            className="w-full flex items-center justify-between p-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </div>
@@ -429,7 +424,7 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
                 {t('settings.logout.button', 'Log Out')}
               </span>
             </div>
-            <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-red-400 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -438,24 +433,24 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
             <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 {t('settings.logout.confirmTitle', 'Log out?')}
               </h3>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 {t('settings.logout.confirmMessage', 'Are you sure you want to log out of your account?')}
               </p>
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
                 >
                   {t('common.cancel', 'Cancel')}
                 </button>
