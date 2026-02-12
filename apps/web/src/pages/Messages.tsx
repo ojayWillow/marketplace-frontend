@@ -109,7 +109,7 @@ export default function Messages() {
   /* ── Loading ── */
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white animate-page-enter">
         {/* Skeleton header */}
         <div className="px-5 pt-4 pb-3 flex-shrink-0">
           <div className="h-7 w-32 bg-gray-200 rounded-lg animate-pulse" />
@@ -136,7 +136,7 @@ export default function Messages() {
   /* ── Mobile ── */
   if (isMobile) {
     return (
-      <div className="flex flex-col flex-1 bg-white">
+      <div className="flex flex-col flex-1 bg-white animate-page-enter">
         {/* Header */}
         <div className="px-5 pt-4 pb-3 flex-shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">
@@ -170,17 +170,18 @@ export default function Messages() {
             </div>
           ) : (
             <div className="px-3 pt-1 pb-4 space-y-1.5">
-              {conversations.map((conv) => {
+              {conversations.map((conv, index) => {
                 const hasUnread = conv.unread_count > 0;
                 return (
                   <Link
                     key={conv.id}
                     to={`/messages/${conv.id}`}
-                    className={`flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] active:bg-gray-50 ${
+                    className={`flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] active:bg-gray-50 animate-fade-in-up ${
                       hasUnread
                         ? 'bg-blue-50/60 border border-blue-100'
                         : 'bg-gray-50/80 hover:bg-gray-100/60'
                     }`}
+                    style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
                   >
                     {/* Avatar */}
                     <ConversationAvatar
@@ -259,7 +260,7 @@ export default function Messages() {
 
   /* ── Desktop ── */
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 animate-page-enter">
       <div className="max-w-2xl mx-auto px-4">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
           💬 {t('messages.title', 'Messages')}

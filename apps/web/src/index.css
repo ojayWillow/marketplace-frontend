@@ -176,6 +176,30 @@ button:focus-visible,
   }
 }
 
+/* Page entrance — subtle fade + lift */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered child animation — each card/row fades in one after another */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
@@ -187,6 +211,22 @@ button:focus-visible,
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+.animate-page-enter {
+  animation: page-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stagger delays for child items */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
 
 /* ===========================================
    CUSTOM MAP MARKER STYLES

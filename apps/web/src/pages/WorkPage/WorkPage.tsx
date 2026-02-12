@@ -36,7 +36,7 @@ const WorkPage = () => {
   // Mobile: flex layout that fills the space from fullscreen Layout
   if (isMobile) {
     return (
-      <div className="flex flex-col flex-1 bg-gray-50">
+      <div className="flex flex-col flex-1 bg-gray-50 animate-page-enter">
         <FilterSheet
           isOpen={showFilterSheet}
           onClose={() => setShowFilterSheet(false)}
@@ -74,13 +74,18 @@ const WorkPage = () => {
             <>
               {error && <InlineError error={error} onRetry={handleRetry} />}
               <div className="space-y-2">
-                {itemsWithDistance.map((item) => (
-                  <WorkItemCard
+                {itemsWithDistance.map((item, index) => (
+                  <div
                     key={`${item.type}-${item.id}`}
-                    item={item}
-                    categoryInfo={getCategoryInfo(item.category)}
-                    onClick={() => handleItemClick(item)}
-                  />
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+                  >
+                    <WorkItemCard
+                      item={item}
+                      categoryInfo={getCategoryInfo(item.category)}
+                      onClick={() => handleItemClick(item)}
+                    />
+                  </div>
                 ))}
               </div>
             </>
@@ -92,7 +97,7 @@ const WorkPage = () => {
 
   // Desktop: standard layout
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 animate-page-enter">
       <FilterSheet
         isOpen={showFilterSheet}
         onClose={() => setShowFilterSheet(false)}
@@ -130,13 +135,18 @@ const WorkPage = () => {
           <>
             {error && <InlineError error={error} onRetry={handleRetry} />}
             <div className="space-y-2">
-              {itemsWithDistance.map((item) => (
-                <WorkItemCard
+              {itemsWithDistance.map((item, index) => (
+                <div
                   key={`${item.type}-${item.id}`}
-                  item={item}
-                  categoryInfo={getCategoryInfo(item.category)}
-                  onClick={() => handleItemClick(item)}
-                />
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+                >
+                  <WorkItemCard
+                    item={item}
+                    categoryInfo={getCategoryInfo(item.category)}
+                    onClick={() => handleItemClick(item)}
+                  />
+                </div>
               ))}
             </div>
           </>

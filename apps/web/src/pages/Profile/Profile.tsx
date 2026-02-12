@@ -149,7 +149,7 @@ const Profile = () => {
   // Mobile: flex layout that fills the space from fullscreen Layout
   if (isMobile) {
     return (
-      <div className="flex flex-col flex-1 bg-gray-50">
+      <div className="flex flex-col flex-1 bg-gray-50 animate-page-enter">
         {/* Profile Header — with gear icon for settings */}
         <div className="flex-shrink-0">
           <ProfileHeader
@@ -267,7 +267,7 @@ const Profile = () => {
 
   // ========== DESKTOP LAYOUT (>= md) ==========
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
+    <div className="min-h-screen bg-gray-50 py-6 animate-page-enter">
       <div className="max-w-4xl mx-auto px-4">
         {/* Profile Header */}
         <ProfileHeader
