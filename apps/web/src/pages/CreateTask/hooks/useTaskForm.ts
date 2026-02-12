@@ -4,6 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { createTask, geocodeAddress, GeocodingResult, reverseGeocode, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
 import { TaskFormData, INITIAL_TASK_FORM } from '../types';
 
+/**
+ * Strip any "URGENT:" prefix the user may have typed.
+ * The is_urgent flag handles urgency — no need to bake it into the title.
+ */
+const stripUrgentPrefix = (title: string): string => {
+  return title.replace(/^URGENT:\s*/i, '').trim();
+};
+
 export const useTaskForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -175,7 +183,7 @@ export const useTaskForm = () => {
       }
 
       const taskData = {
-        title: formData.title,
+        title: stripUrgentPrefix(formData.title),
         description: formData.description,
         category: formData.category,
         location: formData.location,
