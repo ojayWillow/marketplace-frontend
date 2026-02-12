@@ -53,13 +53,12 @@ export const NotificationBell = () => {
         )}
       </button>
 
-      {/* Notifications panel — only mounted when open so it doesn't peek through */}
-      {isOpen && (
-        <NotificationsPanel
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-        />
-      )}
+      {/* Notifications panel — always mounted so CSS slide-up transition works.
+           pointer-events-none when closed prevents peeking through during scroll. */}
+      <NotificationsPanel
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
     </>
   );
 };
