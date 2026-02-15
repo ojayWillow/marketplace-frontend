@@ -144,8 +144,8 @@ export default function Messages() {
           </h1>
         </div>
 
-        {/* Conversation list */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Conversation list — bg ensures no white bleed below short lists */}
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">
           {conversations.length === 0 ? (
             /* ── Empty state ── */
             <div className="flex flex-col items-center justify-center h-full px-8 text-center">
