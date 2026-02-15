@@ -392,7 +392,7 @@ export default function AuthBottomSheet() {
 
           <div className="flex gap-2 mb-4">
             <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <span className="text-base sm:text-lg">\u{1F1F1}\u{1F1FB}</span>
+              <span className="text-base sm:text-lg">🇱🇻</span>
               <span className="text-gray-700 dark:text-gray-300 text-sm sm:text-base">+371</span>
               <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
             </div>
@@ -492,7 +492,7 @@ export default function AuthBottomSheet() {
                   id="sheet-password"
                   value={emailForm.password}
                   onChange={(e) => setEmailForm((prev) => ({ ...prev, password: e.target.value }))}
-                  placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                  placeholder="••••••••"
                   className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:outline-none placeholder-gray-400 dark:placeholder-gray-600 pr-12"
                   required
                 />
