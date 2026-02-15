@@ -23,13 +23,13 @@ const CreateChoiceModal = ({
   return (
     <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/40">
       <div
-        className="w-full max-w-sm mx-4 rounded-2xl bg-white p-5 shadow-lg animate-slideUp"
+        className="w-full max-w-sm mx-4 rounded-2xl bg-white dark:bg-gray-900 p-5 shadow-lg dark:shadow-gray-950/80 animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
           {t('createModal.title', 'What would you like to do?')}
         </h2>
-        <p className="mb-4 text-sm text-gray-600">
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
           {t(
             'createModal.description',
             'Choose if you need help or if you want to offer your services.'
@@ -82,7 +82,7 @@ const CreateChoiceModal = ({
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+          className="mt-4 w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 transition-colors"
         >
           {t('common.cancel', 'Cancel')}
         </button>

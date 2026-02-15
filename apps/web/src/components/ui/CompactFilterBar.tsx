@@ -132,7 +132,7 @@ const CompactFilterBar = ({
     : locationName;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3" ref={dropdownRef}>
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700 p-3" ref={dropdownRef}>
       <div className="flex items-center gap-3">
         {/* Search Input - expands to fill available space */}
         <div className="relative flex-1 min-w-[150px]">
@@ -141,21 +141,21 @@ const CompactFilterBar = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t('tasks.searchPlaceholder', 'Search jobs or offerings...')}
-            className="w-full px-4 py-2 pl-9 border border-gray-200 rounded-lg 
+            className="w-full px-4 py-2 pl-9 border border-gray-200 dark:border-gray-600 rounded-lg 
                        focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                       text-sm bg-gray-50 focus:bg-white transition-colors"
+                       text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">🔍</span>
         </div>
 
         {/* Right side: Location + Filters */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Location Context */}
-          <div className="flex items-center gap-1 text-sm text-gray-500 pr-2 border-r border-gray-200">
-            <span className="font-medium text-gray-700">{shortLocationName}</span>
+          <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 pr-2 border-r border-gray-200 dark:border-gray-700">
+            <span className="font-medium text-gray-700 dark:text-gray-300">{shortLocationName}</span>
             <button
               onClick={onLocationClick}
-              className="text-blue-600 hover:text-blue-700 hover:underline text-xs ml-1"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-xs ml-1"
             >
               {t('filters.change', 'change')}
             </button>
@@ -169,17 +169,17 @@ const CompactFilterBar = ({
                 px-3 py-1.5 rounded-md text-sm font-medium transition-all
                 flex items-center gap-1
                 ${isRadiusActive 
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
                 }
-                ${openDropdown === 'distance' ? 'ring-2 ring-blue-200' : ''}
+                ${openDropdown === 'distance' ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''}
               `}
             >
               <span>{getRadiusLabel()}</span>
-              <span className="text-xs text-gray-400">▼</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">▼</span>
             </button>
             {openDropdown === 'distance' && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px] py-1">
+              <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-gray-900/50 z-50 min-w-[140px] py-1">
                 {[
                   { value: 5, label: '5 km' },
                   { value: 10, label: '10 km' },
@@ -194,8 +194,8 @@ const CompactFilterBar = ({
                       updateFilter('distance', option.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50
-                      ${filters.distance === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700
+                      ${filters.distance === option.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}
                     `}
                   >
                     {option.label}
@@ -213,18 +213,18 @@ const CompactFilterBar = ({
                 px-3 py-1.5 rounded-md text-sm font-medium transition-all
                 flex items-center gap-1
                 ${isPriceActive 
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
                 }
-                ${openDropdown === 'price' ? 'ring-2 ring-blue-200' : ''}
+                ${openDropdown === 'price' ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''}
               `}
             >
               <span>{getPriceLabel()}</span>
-              <span className="text-xs text-gray-400">▼</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">▼</span>
             </button>
             {openDropdown === 'price' && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3 min-w-[220px]">
-                <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+              <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-gray-900/50 z-50 p-3 min-w-[220px]">
+                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
                   {t('filters.priceRange', 'Price Range')}
                 </div>
                 <div className="flex items-center gap-2 mb-3">
@@ -233,19 +233,19 @@ const CompactFilterBar = ({
                       type="number"
                       value={filters.minPrice}
                       onChange={(e) => updateFilter('minPrice', Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-center"
+                      className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-600 rounded text-sm text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       min={0}
                       max={filters.maxPrice}
                       placeholder="Min"
                     />
                   </div>
-                  <span className="text-gray-400 text-sm">to</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">to</span>
                   <div className="flex-1">
                     <input
                       type="number"
                       value={filters.maxPrice}
                       onChange={(e) => updateFilter('maxPrice', Math.min(maxPriceLimit, parseInt(e.target.value) || maxPriceLimit))}
-                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-center"
+                      className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-600 rounded text-sm text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       min={filters.minPrice}
                       max={maxPriceLimit}
                       placeholder="Max"
@@ -267,8 +267,8 @@ const CompactFilterBar = ({
                       }}
                       className={`px-2 py-1 rounded text-xs transition-colors
                         ${filters.minPrice === preset.min && filters.maxPrice === preset.max
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 font-medium'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }
                       `}
                     >
@@ -288,17 +288,17 @@ const CompactFilterBar = ({
                 px-3 py-1.5 rounded-md text-sm font-medium transition-all
                 flex items-center gap-1
                 ${isCategoryActive 
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
                 }
-                ${openDropdown === 'category' ? 'ring-2 ring-blue-200' : ''}
+                ${openDropdown === 'category' ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''}
               `}
             >
               <span>{getCategoryLabel()}</span>
-              <span className="text-xs text-gray-400">▼</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">▼</span>
             </button>
             {openDropdown === 'category' && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[280px] overflow-y-auto py-1">
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-gray-900/50 z-50 min-w-[200px] max-h-[280px] overflow-y-auto py-1">
                 {categoryOptions.map((cat) => (
                   <button
                     key={cat.value}
@@ -306,8 +306,8 @@ const CompactFilterBar = ({
                       updateFilter('category', cat.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 whitespace-nowrap
-                      ${filters.category === cat.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 whitespace-nowrap
+                      ${filters.category === cat.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}
                     `}
                   >
                     {cat.icon && <span className="mr-2">{cat.icon}</span>}
@@ -326,17 +326,17 @@ const CompactFilterBar = ({
                 px-3 py-1.5 rounded-md text-sm font-medium transition-all
                 flex items-center gap-1
                 ${isPostedActive 
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                  : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
                 }
-                ${openDropdown === 'posted' ? 'ring-2 ring-blue-200' : ''}
+                ${openDropdown === 'posted' ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''}
               `}
             >
               <span>{getPostedLabel()}</span>
-              <span className="text-xs text-gray-400">▼</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">▼</span>
             </button>
             {openDropdown === 'posted' && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] py-1">
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-gray-900/50 z-50 min-w-[160px] py-1">
                 {[
                   { value: 'all', label: t('filters.anyTime', 'Any time') },
                   { value: 'today', label: t('filters.today', 'Today') },
@@ -349,8 +349,8 @@ const CompactFilterBar = ({
                       updateFilter('datePosted', option.value);
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50
-                      ${filters.datePosted === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700
+                      ${filters.datePosted === option.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}
                     `}
                   >
                     {option.label}
@@ -364,8 +364,8 @@ const CompactFilterBar = ({
           {hasActiveFilters && (
             <button
               onClick={clearAllFilters}
-              className="px-2 py-1.5 rounded-md text-sm text-gray-400 hover:text-gray-600 
-                         hover:bg-gray-100 transition-colors"
+              className="px-2 py-1.5 rounded-md text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 
+                         hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               title={t('filters.clearAll', 'Clear all filters')}
             >
               ✕

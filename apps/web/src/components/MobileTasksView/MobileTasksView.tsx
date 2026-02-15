@@ -24,16 +24,16 @@ import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal
 
 /** Skeleton placeholder for loading state */
 const SkeletonCard = () => (
-  <div className="flex items-center gap-3 p-3 border-b border-gray-100 animate-pulse">
-    <div className="w-11 h-11 rounded-xl bg-gray-200 flex-shrink-0" />
+  <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-800 animate-pulse">
+    <div className="w-11 h-11 rounded-xl bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
     <div className="flex-1 min-w-0">
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-      <div className="h-3 bg-gray-100 rounded w-1/2 mb-1.5" />
-      <div className="h-3 bg-gray-100 rounded w-2/3" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2 mb-1.5" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
     </div>
     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-      <div className="h-6 w-10 bg-gray-200 rounded" />
-      <div className="h-6 w-6 bg-gray-100 rounded-full" />
+      <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="h-6 w-6 bg-gray-100 dark:bg-gray-800 rounded-full" />
     </div>
   </div>
 );
@@ -43,7 +43,7 @@ const SkeletonCard = () => (
  * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
  *
  * Now restores selectedTask and map viewport from Zustand store on mount,
- * so navigating away and back preserves the user’s context.
+ * so navigating away and back preserves the user's context.
  *
  * Deep link support: reads ?task=<id> from URL, fetches the task,
  * and auto-selects it on the map (fly-to + JobPreviewCard).
@@ -109,7 +109,7 @@ const MobileTasksView = () => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // --- Deep link: track whether we’ve already handled the ?task= param ---
+  // --- Deep link: track whether we've already handled the ?task= param ---
   const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
   // --- Deep link: read ?task=ID from URL and select it on the map ---
@@ -330,7 +330,7 @@ const MobileTasksView = () => {
           >
             <button
               onClick={handleRecenter}
-              className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+              className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg dark:shadow-gray-900/50 flex items-center justify-center active:bg-gray-100 dark:active:bg-gray-700"
               style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
             >
               <svg
@@ -366,7 +366,7 @@ const MobileTasksView = () => {
         {/* Bottom sheet */}
         {!selectedTask && showJobList && (
           <div
-            className="fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            className="fixed left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl dark:shadow-gray-950/80 flex flex-col"
             style={{
               bottom: `${navHeight}px`,
               height: `${sheetHeight - navHeight}px`,
@@ -384,7 +384,7 @@ const MobileTasksView = () => {
               style={{ touchAction: 'none' }}
             >
               {/* Drag handle bar */}
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
 
               {/* Small up chevron below the bar — only when not fully expanded */}
               {sheetPosition !== 'full' && (
@@ -393,11 +393,11 @@ const MobileTasksView = () => {
                   height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#d1d5db"
+                  stroke="currentColor"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="mt-0.5"
+                  className="mt-0.5 text-gray-300 dark:text-gray-600"
                 >
                   <path d="M18 15l-6-6-6 6" />
                 </svg>
@@ -407,10 +407,10 @@ const MobileTasksView = () => {
               {sheetPosition === 'full' && <div className="h-2" />}
 
               <div className="flex items-center justify-between w-full px-4 mt-1">
-                <span className="text-base font-bold text-gray-800">
+                <span className="text-base font-bold text-gray-800 dark:text-gray-200">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
                   {FEATURES.URGENT && urgentCount > 0 && (
-                    <span className="text-red-600"> · ⚡{urgentCount}</span>
+                    <span className="text-red-600 dark:text-red-400"> · ⚡{urgentCount}</span>
                   )}
                 </span>
                 <button
@@ -439,10 +439,10 @@ const MobileTasksView = () => {
               ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-8 px-4">
                   <div className="text-3xl mb-2">📋</div>
-                  <h3 className="font-semibold text-gray-900 mb-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                     {t('tasks.noJobsFound', 'No jobs found')}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {t('tasks.tryDifferentCategory', 'Try a different category or increase radius')}
                   </p>
                 </div>
