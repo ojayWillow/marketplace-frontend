@@ -10,14 +10,14 @@ const DifficultyPicker = ({ value, onChange }: DifficultyPickerProps) => {
   const { t } = useTranslation();
 
   const colorMap: Record<string, { selected: string; hover: string }> = {
-    green: { selected: 'border-green-500 bg-green-50 text-green-700 shadow-sm', hover: 'hover:border-green-300' },
-    amber: { selected: 'border-amber-500 bg-amber-50 text-amber-700 shadow-sm', hover: 'hover:border-amber-300' },
-    red: { selected: 'border-red-500 bg-red-50 text-red-700 shadow-sm', hover: 'hover:border-red-300' },
+    green: { selected: 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 shadow-sm', hover: 'hover:border-green-300 dark:hover:border-green-600' },
+    amber: { selected: 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-sm', hover: 'hover:border-amber-300 dark:hover:border-amber-600' },
+    red: { selected: 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 shadow-sm', hover: 'hover:border-red-300 dark:hover:border-red-600' },
   };
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
         {t('createTask.difficulty', 'How hard is this task?')}
       </label>
       <div className="flex gap-2">
@@ -32,7 +32,7 @@ const DifficultyPicker = ({ value, onChange }: DifficultyPickerProps) => {
               className={`flex-1 px-3 py-2 rounded-lg border transition-all text-xs font-medium text-center ${
                 isSelected
                   ? colors.selected
-                  : `border-gray-200 bg-white text-gray-600 ${colors.hover}`
+                  : `border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 ${colors.hover}`
               }`}
             >
               {diff.label}
@@ -40,7 +40,7 @@ const DifficultyPicker = ({ value, onChange }: DifficultyPickerProps) => {
           );
         })}
       </div>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
         {DIFFICULTIES.find(d => d.value === value)?.description}
       </p>
     </div>

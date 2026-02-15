@@ -31,10 +31,8 @@ const Profile = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
-  // How it works modal
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
-  // Data management
   const {
     profile,
     reviews,
@@ -63,7 +61,6 @@ const Profile = () => {
     fetchApplications,
   } = useProfileData();
 
-  // Tab state management
   const {
     activeTab,
     taskViewMode,
@@ -73,29 +70,21 @@ const Profile = () => {
     setTaskStatusFilter,
   } = useProfileTabs();
 
-  // Avatar picker
   const avatarPicker = useAvatarPicker({
     initialSeed: profile?.username || '',
     setFormData,
   });
 
-  // Mobile activity toggle
   const [mobileActivityMode, setMobileActivityMode] = useState<'jobs' | 'services'>('jobs');
-
-  // Mobile reviews expansion
   const [showAllReviews, setShowAllReviews] = useState(false);
-
-  // Mobile settings view — use local state for reliability
   const [showMobileSettings, setShowMobileSettings] = useState(false);
 
-  // Update avatar seed when profile loads
   useEffect(() => {
     if (profile?.username) {
       avatarPicker.setAvatarSeed(profile.username);
     }
   }, [profile?.username]);
 
-  // Actions
   const actions = useProfileActions({
     setMyListings,
     setMyOfferings,
@@ -104,7 +93,6 @@ const Profile = () => {
     fetchApplications,
   });
 
-  // Helper to update formData fields directly (for skills, country+city reset, etc.)
   const handleFormDataChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
@@ -117,17 +105,14 @@ const Profile = () => {
     setShowMobileSettings(false);
   };
 
-  // Loading state
   if (loading) {
     return <LoadingState />;
   }
 
-  // Error state
   if (!profile) {
     return <ErrorState />;
   }
 
-  // Calculate counts and stats
   const myTasksCount = createdTasks.length;
   const myJobsCount = myApplications.filter(app => app.status === 'accepted').length;
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
@@ -140,17 +125,15 @@ const Profile = () => {
   const tasksCompletedAsCreator = createdTasks.filter(t => t.status === 'completed').length;
   const totalTasksCompleted = tasksCompletedAsWorker + tasksCompletedAsCreator;
 
-  // Content checks
   const hasListings = myListings.length > 0;
   const hasOfferings = myOfferings.length > 0;
   const hasTasks = createdTasks.length > 0 || myApplications.length > 0;
   const hasReviews = reviews.length > 0;
 
-  // Mobile: flex layout that fills the space from fullscreen Layout
+  // Mobile layout
   if (isMobile) {
     return (
-      <div className="flex flex-col flex-1 bg-gray-50 animate-page-enter">
-        {/* Profile Header — with gear icon for settings */}
+      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-950 animate-page-enter">
         <div className="flex-shrink-0">
           <ProfileHeader
             profile={profile}
@@ -166,7 +149,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Avatar Picker Modal */}
         <AvatarPicker
           isOpen={avatarPicker.showAvatarPicker}
           onClose={() => avatarPicker.setShowAvatarPicker(false)}
@@ -182,17 +164,14 @@ const Profile = () => {
           fileInputRef={avatarPicker.fileInputRef}
         />
 
-        {/* How It Works Modal */}
         <CommunityRulesModal
           isOpen={showHowItWorks}
           onClose={() => setShowHowItWorks(false)}
           showCheckboxes={false}
         />
 
-        {/* Scrollable content area */}
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 py-4 space-y-4">
-            {/* About Tab edit form - show on mobile when editing */}
             {editing && (
               <AboutTab
                 profile={profile}
@@ -205,12 +184,11 @@ const Profile = () => {
 
             {!editing && (
               <>
-                {/* Show SettingsTab when active on mobile */}
                 {showMobileSettings ? (
                   <div>
                     <button
                       onClick={handleCloseMobileSettings}
-                      className="flex items-center gap-1 text-sm text-blue-600 mb-4 hover:text-blue-700"
+                      className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 mb-4 hover:text-blue-700 dark:hover:text-blue-300"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -221,7 +199,6 @@ const Profile = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Reviews Section — right after header */}
                     <MobileReviewsSection
                       reviews={reviews}
                       showAll={showAllReviews}
@@ -231,10 +208,8 @@ const Profile = () => {
                       setReviews={setReviews}
                     />
 
-                    {/* Listings Teaser */}
                     <MobileListingsTeaser />
 
-                    {/* Activity Section */}
                     <MobileActivitySection
                       activeMode={mobileActivityMode}
                       onModeChange={setMobileActivityMode}
@@ -265,11 +240,10 @@ const Profile = () => {
     );
   }
 
-  // ========== DESKTOP LAYOUT (>= md) ==========
+  // Desktop layout
   return (
-    <div className="min-h-screen bg-gray-50 py-6 animate-page-enter">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-6 animate-page-enter">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Profile Header */}
         <ProfileHeader
           profile={profile}
           formData={formData}
@@ -282,7 +256,6 @@ const Profile = () => {
           onChangeAvatar={() => avatarPicker.setShowAvatarPicker(true)}
         />
 
-        {/* Avatar Picker Modal */}
         <AvatarPicker
           isOpen={avatarPicker.showAvatarPicker}
           onClose={() => avatarPicker.setShowAvatarPicker(false)}
@@ -298,14 +271,12 @@ const Profile = () => {
           fileInputRef={avatarPicker.fileInputRef}
         />
 
-        {/* How It Works Modal */}
         <CommunityRulesModal
           isOpen={showHowItWorks}
           onClose={() => setShowHowItWorks(false)}
           showCheckboxes={false}
         />
 
-        {/* About Tab edit form */}
         {editing && (
           <div className="mb-4">
             <AboutTab
@@ -318,7 +289,6 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Tabs */}
         <ProfileTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -337,7 +307,6 @@ const Profile = () => {
           }}
         />
 
-        {/* Tab Content */}
         {activeTab === 'about' && (
           <AboutTab
             profile={profile}

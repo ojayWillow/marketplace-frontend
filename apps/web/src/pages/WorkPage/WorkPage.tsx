@@ -36,7 +36,7 @@ const WorkPage = () => {
   // Mobile: flex layout that fills the space from fullscreen Layout
   if (isMobile) {
     return (
-      <div className="flex flex-col flex-1 bg-gray-50 animate-page-enter">
+      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-950 animate-page-enter">
         <FilterSheet
           isOpen={showFilterSheet}
           onClose={() => setShowFilterSheet(false)}
@@ -97,7 +97,7 @@ const WorkPage = () => {
 
   // Desktop: standard layout
   return (
-    <div className="min-h-screen bg-gray-50 animate-page-enter">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-page-enter">
       <FilterSheet
         isOpen={showFilterSheet}
         onClose={() => setShowFilterSheet(false)}

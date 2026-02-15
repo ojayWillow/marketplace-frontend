@@ -143,24 +143,24 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-2xl overflow-hidden animate-slide-up" style={{ maxHeight: '85%' }}>
+      <div className="relative w-full md:max-w-lg bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl overflow-hidden animate-slide-up" style={{ maxHeight: '85%' }}>
         {/* Handle bar (mobile) */}
         <div className="md:hidden flex justify-center pt-3">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
 
         {/* Header — sticky */}
-        <div className="sticky top-0 bg-white px-5 pt-4 pb-3 border-b border-gray-100 z-10">
+        <div className="sticky top-0 bg-white dark:bg-gray-900 px-5 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700 z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">⚠️ File a Dispute</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">⚠️ File a Dispute</h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500"
             >
               ✕
             </button>
           </div>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Report an issue with "{taskTitle}"
           </p>
         </div>
@@ -170,11 +170,11 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
           <div className="px-5 py-4 space-y-5">
             {/* Reason selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 What's the issue?
               </label>
               {loadingReasons ? (
-                <div className="text-sm text-gray-400 py-2">Loading reasons...</div>
+                <div className="text-sm text-gray-400 dark:text-gray-500 py-2">Loading reasons...</div>
               ) : (
                 <div className="space-y-2">
                   {reasons.map((reason) => (
@@ -182,8 +182,8 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
                       key={reason.value}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                         selectedReason === reason.value
-                          ? 'border-orange-400 bg-orange-50'
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          ? 'border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
                     >
                       <input
@@ -194,7 +194,7 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
                         onChange={(e) => setSelectedReason(e.target.value)}
                         className="w-4 h-4 text-orange-500 focus:ring-orange-500"
                       />
-                      <span className="text-sm font-medium text-gray-800">{reason.label}</span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{reason.label}</span>
                     </label>
                   ))}
                 </div>
@@ -203,27 +203,27 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Describe the issue
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Please explain what happened in detail (at least 20 characters)..."
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[100px] text-sm resize-none"
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[100px] text-sm resize-none placeholder-gray-400 dark:placeholder-gray-500"
                 onFocus={(e) => {
                   // Scroll textarea into view when keyboard opens
                   setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                 }}
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {description.trim().length}/20 characters minimum
               </p>
             </div>
 
             {/* Photo evidence */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 📷 Evidence photos (optional)
               </label>
               <ImagePicker
@@ -235,7 +235,7 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
 
             {/* Error */}
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -245,14 +245,14 @@ export const DisputeSheet = ({ isOpen, onClose, onSubmitted, taskId, taskTitle }
               <button
                 onClick={onClose}
                 disabled={submitting}
-                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors"
+                className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !selectedReason || description.trim().length < 20}
-                className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-lg active:scale-[0.98]"
+                className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400 transition-colors shadow-lg active:scale-[0.98]"
               >
                 {submitting ? 'Submitting...' : '⚠️ Submit Dispute'}
               </button>

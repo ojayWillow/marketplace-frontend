@@ -24,9 +24,8 @@ const MessageInput = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Auto-resize textarea (desktop only)
   useEffect(() => {
-    if (isMobile) return; // mobile uses <input>, not textarea
+    if (isMobile) return;
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
@@ -40,7 +39,7 @@ const MessageInput = ({
     if (!file || !onImageSend) return;
 
     if (!file.type.startsWith('image/')) return;
-    if (file.size > 10 * 1024 * 1024) return; // 10 MB limit
+    if (file.size > 10 * 1024 * 1024) return;
 
     try {
       setUploading(true);
@@ -57,7 +56,6 @@ const MessageInput = ({
   const handleDesktopKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
-    // Enter sends; Shift+Enter inserts newline (desktop only)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (value.trim() && !isPending && !uploading) {
@@ -68,19 +66,18 @@ const MessageInput = ({
 
   const canSend = value.trim() && !isPending && !uploading;
 
-  /* ── Photo button (shared) ── */
   const photoButton = onImageSend && (
     <>
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading || isPending}
-        className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-blue-500 hover:bg-blue-50 active:bg-blue-100 disabled:opacity-40 transition-colors"
+        className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 active:bg-blue-100 dark:active:bg-blue-900/30 disabled:opacity-40 transition-colors"
         title={t('messages.attachImage', 'Attach image')}
       >
         {uploading ? (
           <svg
-            className="w-5 h-5 animate-spin text-blue-500"
+            className="w-5 h-5 animate-spin text-blue-500 dark:text-blue-400"
             fill="none"
             viewBox="0 0 24 24"
           >
@@ -130,15 +127,14 @@ const MessageInput = ({
     </>
   );
 
-  /* ── Send button (shared) ── */
   const sendButton = (
     <button
       type="submit"
       disabled={!canSend}
       className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
         canSend
-          ? 'bg-blue-500 text-white shadow-md shadow-blue-200 hover:bg-blue-600 active:scale-95'
-          : 'bg-gray-200 text-gray-400'
+          ? 'bg-blue-500 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/30 hover:bg-blue-600 active:scale-95'
+          : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
       }`}
     >
       {isPending ? (
@@ -181,7 +177,7 @@ const MessageInput = ({
 
   return (
     <div
-      className="flex-shrink-0 bg-white"
+      className="flex-shrink-0 bg-white dark:bg-gray-900"
       style={
         isMobile
           ? { paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }
@@ -189,19 +185,12 @@ const MessageInput = ({
       }
     >
       {/* Thin separator */}
-      <div className="h-px bg-gray-100" />
+      <div className="h-px bg-gray-100 dark:bg-gray-700" />
 
       <div className="px-3 py-2">
         <form onSubmit={onSubmit} className="flex items-center gap-2">
           {photoButton}
 
-          {/*
-            Mobile: plain <input type="text"> — avoids the iOS Safari form
-            navigation accessory bar (up/down/done) that appears for <textarea>.
-            enterKeyHint="send" shows "Send" on the iOS keyboard.
-
-            Desktop: auto-growing <textarea> for multi-line messages.
-          */}
           {isMobile ? (
             <input
               type="text"
@@ -211,7 +200,7 @@ const MessageInput = ({
               disabled={isPending || uploading}
               enterKeyHint="send"
               autoComplete="off"
-              className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-base focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-100 transition-colors placeholder:text-gray-400"
+              className="flex-1 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-base text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-1 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           ) : (
             <div className="flex-1">
@@ -224,7 +213,7 @@ const MessageInput = ({
                 rows={1}
                 disabled={isPending || uploading}
                 autoFocus
-                className="w-full resize-none rounded-3xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-100 transition-colors placeholder:text-gray-400"
+                className="w-full resize-none rounded-3xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-1 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 style={{
                   minHeight: '42px',
                   maxHeight: '120px',

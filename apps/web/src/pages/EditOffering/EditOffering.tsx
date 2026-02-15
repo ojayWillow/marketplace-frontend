@@ -32,30 +32,27 @@ const EditOffering = () => {
   const selectedCategory = getCategoryByValue(formData.category);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8">
       <div className="max-w-3xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {/* Header */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-gray-900/50 p-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-3xl">\u270F\uFE0F</span>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               {t('editOffering.title', 'Edit Service Offering')}
             </h1>
           </div>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             {t('editOffering.subtitle', 'Update your service details')}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Status */}
             <StatusPicker
               value={formData.status}
               onChange={(status) => updateField('status', status)}
             />
 
-            {/* Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('editOffering.offeringTitle', 'Service Title')} *
               </label>
               <input
@@ -66,13 +63,12 @@ const EditOffering = () => {
                 value={formData.title}
                 onChange={handleChange}
                 placeholder={t('editOffering.offeringTitlePlaceholder', 'e.g., Professional House Cleaning, Dog Walking Service, Handyman')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
 
-            {/* Description */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('editOffering.description', 'Description')} *
               </label>
               <textarea
@@ -83,13 +79,12 @@ const EditOffering = () => {
                 onChange={handleChange}
                 rows={4}
                 placeholder={t('editOffering.descriptionPlaceholder', 'Describe your service in detail. What do you offer? What makes you stand out?')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
 
-            {/* Category */}
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('editOffering.category', 'Category')} *
               </label>
               <select
@@ -98,7 +93,7 @@ const EditOffering = () => {
                 required
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
                 {CATEGORY_GROUPS.map(group => (
                   <optgroup key={group.name} label={group.name}>
@@ -115,20 +110,18 @@ const EditOffering = () => {
                 ))}
               </select>
               {selectedCategory && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {selectedCategory.icon} {selectedCategory.description}
                 </p>
               )}
             </div>
 
-            {/* Price */}
             <PriceEditor
               price={formData.price}
               priceType={formData.price_type}
               onChange={handleChange}
             />
 
-            {/* Location */}
             <LocationEditor
               location={formData.location}
               latitude={formData.latitude}
@@ -139,9 +132,8 @@ const EditOffering = () => {
               onSelect={selectAddress}
             />
 
-            {/* Service Radius */}
             <div>
-              <label htmlFor="service_radius" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="service_radius" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('editOffering.serviceRadius', 'How far will you travel?')} (km)
               </label>
               <select
@@ -149,7 +141,7 @@ const EditOffering = () => {
                 name="service_radius"
                 value={formData.service_radius}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
                 {RADIUS_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>
@@ -159,9 +151,8 @@ const EditOffering = () => {
               </select>
             </div>
 
-            {/* Availability */}
             <div>
-              <label htmlFor="availability" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="availability" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('editOffering.availability', 'Availability')} ({t('common.optional', 'Optional')})
               </label>
               <input
@@ -171,13 +162,12 @@ const EditOffering = () => {
                 value={formData.availability}
                 onChange={handleChange}
                 placeholder={t('editOffering.availabilityPlaceholder', 'e.g., Weekdays 9-17, Evenings and weekends, Flexible')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
 
-            {/* Experience */}
             <div>
-              <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="experience" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('editOffering.experience', 'Experience')} ({t('common.optional', 'Optional')})
               </label>
               <textarea
@@ -187,23 +177,22 @@ const EditOffering = () => {
                 onChange={handleChange}
                 rows={3}
                 placeholder={t('editOffering.experiencePlaceholder', 'Tell potential clients about your experience, qualifications, or any relevant background...')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
 
-            {/* Buttons */}
             <div className="flex gap-4">
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 bg-amber-500 text-white py-3 px-6 rounded-lg hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                className="flex-1 bg-amber-500 text-white py-3 px-6 rounded-lg hover:bg-amber-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
               >
                 {saving ? t('editOffering.saving', 'Saving...') : t('editOffering.saveButton', 'Save Changes')}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/profile?tab=offerings')}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
               >
                 {t('common.cancel', 'Cancel')}
               </button>

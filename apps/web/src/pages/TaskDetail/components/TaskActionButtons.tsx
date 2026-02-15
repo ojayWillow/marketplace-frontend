@@ -61,13 +61,13 @@ export const TaskActionButtons = ({
     <div className="px-4 py-3">
       {/* Already Applied Message */}
       {hasApplied && task.status === 'open' && (
-        <div className="mb-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mb-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-base">📝</span>
             <div>
-              <p className="font-semibold text-xs text-blue-800">Already applied</p>
+              <p className="font-semibold text-xs text-blue-800 dark:text-blue-300">Already applied</p>
               {userApplication && (
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
                   {getApplicationStatusLabel(userApplication.status)}
                 </p>
               )}
@@ -82,7 +82,7 @@ export const TaskActionButtons = ({
           <button
             onClick={onMarkDone}
             disabled={actionLoading}
-            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
             {actionLoading ? 'Processing...' : '✓ Mark as Done'}
           </button>
@@ -93,7 +93,7 @@ export const TaskActionButtons = ({
           <button
             onClick={onConfirmDone}
             disabled={actionLoading}
-            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
             {actionLoading ? 'Processing...' : '✓ Confirm'}
           </button>
@@ -104,7 +104,7 @@ export const TaskActionButtons = ({
           <button
             onClick={onDispute}
             disabled={actionLoading}
-            className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+            className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
             ⚠️ Dispute
           </button>
@@ -122,7 +122,7 @@ export const TaskActionButtons = ({
             <button
               onClick={onCancel}
               disabled={actionLoading}
-              className="px-5 py-3 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-sm active:scale-[0.98]"
+              className="px-5 py-3 border-2 border-red-500 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all font-bold text-sm active:scale-[0.98]"
             >
               🗑️
             </button>

@@ -12,11 +12,11 @@ export const ErrorState = ({ error, onRetry }: ErrorStateProps) => {
   return (
     <div className="text-center py-12">
       <div className="text-4xl mb-3">⚠️</div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
         {t('tasks.work.failedToLoad', 'Failed to load')}
       </h3>
-      <p className="text-sm text-gray-500 mb-1 max-w-xs mx-auto">{error}</p>
-      <p className="text-xs text-gray-400 mb-4">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 max-w-xs mx-auto">{error}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
         {t('tasks.work.checkConnection', 'Make sure you have internet and try again.')}
       </p>
       <button
@@ -50,8 +50,8 @@ export const EmptyState = ({ mainTab, hasFilters }: EmptyStateProps) => {
   return (
     <div className="text-center py-12">
       <div className="text-4xl mb-2">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-      <p className="text-sm text-gray-500">{subtitle}</p>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{title}</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
     </div>
   );
 };
@@ -65,11 +65,11 @@ export const InlineError = ({ error, onRetry }: InlineErrorProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
-      <p className="text-xs text-amber-700 flex-1">⚠️ {error}</p>
+    <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center justify-between">
+      <p className="text-xs text-amber-700 dark:text-amber-400 flex-1">⚠️ {error}</p>
       <button
         onClick={onRetry}
-        className="ml-2 text-xs font-semibold text-amber-700 underline"
+        className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-400 underline"
       >
         {t('tasks.work.retry', 'Retry')}
       </button>

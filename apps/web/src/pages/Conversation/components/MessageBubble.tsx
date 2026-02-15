@@ -10,10 +10,8 @@ interface MessageBubbleProps {
 
 const isImageUrl = (content: string): boolean => {
   if (!content) return false;
-  // Check if the content is a URL pointing to an image
   const trimmed = content.trim();
   if (!trimmed.startsWith('http')) return false;
-  // Check for common image extensions or Supabase storage URLs
   return (
     /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(trimmed) ||
     trimmed.includes('/storage/v1/object/') ||
@@ -24,7 +22,7 @@ const isImageUrl = (content: string): boolean => {
 const MessageBubble = ({ message, isOwn, showDate, maxWidthClass = 'max-w-[80%]' }: MessageBubbleProps) => (
   <div>
     {showDate && (
-      <div className="text-center text-xs text-gray-400 my-3">
+      <div className="text-center text-xs text-gray-400 dark:text-gray-500 my-3">
         {formatDate(message.created_at)}
       </div>
     )}
@@ -33,7 +31,7 @@ const MessageBubble = ({ message, isOwn, showDate, maxWidthClass = 'max-w-[80%]'
         className={`${maxWidthClass} px-4 py-2 rounded-2xl ${
           isOwn
             ? 'bg-blue-500 text-white rounded-br-md'
-            : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
+            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md shadow-sm dark:shadow-gray-900/30'
         }`}
       >
         {isImageUrl(message.content) ? (
@@ -48,7 +46,7 @@ const MessageBubble = ({ message, isOwn, showDate, maxWidthClass = 'max-w-[80%]'
         ) : (
           <p className="break-words">{message.content}</p>
         )}
-        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-400'}`}>
+        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-400 dark:text-gray-500'}`}>
           {formatTime(message.created_at)}
         </p>
       </div>

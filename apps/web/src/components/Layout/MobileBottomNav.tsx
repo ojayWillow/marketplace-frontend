@@ -60,7 +60,7 @@ const MobileBottomNav = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-50"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
@@ -88,7 +88,7 @@ const MobileBottomNav = () => {
               </span>
               <span
                 className={`text-[10px] font-medium transition-colors ${
-                  isActive(tab.path) ? 'text-sky-500' : 'text-gray-500'
+                  isActive(tab.path) ? 'text-sky-500' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
                 {t(tab.labelKey, tab.fallback)}

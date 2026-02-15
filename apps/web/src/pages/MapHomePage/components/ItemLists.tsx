@@ -25,14 +25,14 @@ const ItemLists = ({
       {(activeTab === 'all' || activeTab === 'jobs') && (
         <div className="mb-8">
           {activeTab === 'all' && (
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               💰 {t('tasks.availableJobs', 'Available Jobs')}
             </h2>
           )}
           {filteredTasks.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg">
-              <p className="text-gray-500 text-lg mb-2">{t('tasks.noJobsFound', 'No jobs found')}</p>
-              <p className="text-gray-400">
+            <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg">
+              <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('tasks.noJobsFound', 'No jobs found')}</p>
+              <p className="text-gray-400 dark:text-gray-500">
                 {hasActiveFilters
                   ? t('tasks.tryDifferentFilters', 'Try adjusting your filters')
                   : t('tasks.checkBackLater', 'Check back later')}
@@ -57,14 +57,14 @@ const ItemLists = ({
       {(activeTab === 'all' || activeTab === 'offerings') && (
         <div>
           {activeTab === 'all' && (
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               👋 {t('offerings.availableServices', 'Available Services')}
             </h2>
           )}
           {filteredOfferings.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg">
-              <p className="text-gray-500 text-lg mb-2">{t('offerings.noOfferingsFound', 'No services found')}</p>
-              <p className="text-gray-400">
+            <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg">
+              <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('offerings.noOfferingsFound', 'No services found')}</p>
+              <p className="text-gray-400 dark:text-gray-500">
                 {hasActiveFilters
                   ? t('tasks.tryDifferentFilters', 'Try adjusting your filters')
                   : t('offerings.checkBackLater', 'Check back later')}

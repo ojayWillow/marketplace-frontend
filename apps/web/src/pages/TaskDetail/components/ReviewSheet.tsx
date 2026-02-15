@@ -90,25 +90,25 @@ export const ReviewSheet = ({
 
       {/* Sheet */}
       <div
-        className={`fixed left-0 right-0 bottom-0 z-[101] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed left-0 right-0 bottom-0 z-[101] bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
 
         {/* Header */}
         <div className="px-5 pb-3">
           <div className="flex items-center gap-3 mb-1">
             <span className="text-2xl">⭐</span>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {t('reviews.howWas', 'How was your experience?')}
             </h3>
           </div>
-          <p className="text-sm text-gray-500 ml-[44px]">
+          <p className="text-sm text-gray-500 dark:text-gray-400 ml-[44px]">
             {t('reviews.ratePrompt', 'Leave a review for {{name}}', { name: revieweeName })}
           </p>
         </div>
@@ -125,7 +125,7 @@ export const ReviewSheet = ({
               >
                 <span
                   className={`text-4xl ${
-                    star <= rating ? 'text-yellow-400' : 'text-gray-200'
+                    star <= rating ? 'text-yellow-400' : 'text-gray-200 dark:text-gray-600'
                   } transition-colors`}
                 >
                   ★
@@ -133,7 +133,7 @@ export const ReviewSheet = ({
               </button>
             ))}
           </div>
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
             {rating === 1 && t('reviews.rating1', 'Poor')}
             {rating === 2 && t('reviews.rating2', 'Below average')}
             {rating === 3 && t('reviews.rating3', 'Average')}
@@ -150,29 +150,29 @@ export const ReviewSheet = ({
             onChange={(e) => setContent(e.target.value)}
             onBlur={() => setTouched(true)}
             placeholder={t('reviews.placeholder', 'How was working with them? What went well?')}
-            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm leading-relaxed resize-none bg-gray-50 placeholder:text-gray-400 ${
-              showError ? 'border-red-300 bg-red-50/50' : 'border-gray-200'
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm leading-relaxed resize-none bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
+              showError ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/20' : 'border-gray-200 dark:border-gray-700'
             }`}
             rows={3}
           />
           <div className="flex justify-between items-center mt-1 px-1">
             <div>
               {showError ? (
-                <p className="text-red-500 text-xs">
+                <p className="text-red-500 dark:text-red-400 text-xs">
                   {t('reviews.charsRemaining', '{{count}} more characters needed', { count: charsRemaining })}
                 </p>
               ) : contentLength === 0 && touched ? (
-                <p className="text-red-500 text-xs">
+                <p className="text-red-500 dark:text-red-400 text-xs">
                   {t('reviews.contentRequired', 'Please write a short review')}
                 </p>
               ) : (
-                <p className="text-gray-400 text-xs">
+                <p className="text-gray-400 dark:text-gray-500 text-xs">
                   {t('reviews.minChars', 'At least {{count}} characters', { count: MIN_REVIEW_LENGTH })}
                 </p>
               )}
             </div>
             <span className={`text-xs font-medium ${
-              isValid ? 'text-green-600' : contentLength > 0 ? 'text-yellow-600' : 'text-gray-400'
+              isValid ? 'text-green-600 dark:text-green-400' : contentLength > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'
             }`}>
               {contentLength}/{MIN_REVIEW_LENGTH}
               {isValid && ' ✓'}
@@ -185,7 +185,7 @@ export const ReviewSheet = ({
           <button
             onClick={handleSubmit}
             disabled={submitting || !isValid}
-            className="w-full bg-yellow-500 text-white py-3 rounded-xl hover:bg-yellow-600 disabled:bg-gray-200 disabled:text-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all mb-2"
+            className="w-full bg-yellow-500 text-white py-3 rounded-xl hover:bg-yellow-600 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 font-bold text-sm shadow-lg active:scale-[0.98] transition-all mb-2"
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">
@@ -202,7 +202,7 @@ export const ReviewSheet = ({
           <button
             onClick={handleSkip}
             disabled={submitting}
-            className="w-full py-2.5 text-gray-500 text-sm font-medium hover:text-gray-700 transition-colors"
+            className="w-full py-2.5 text-gray-500 dark:text-gray-400 text-sm font-medium hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
           >
             {t('reviews.skipForNow', 'Skip for now')}
           </button>

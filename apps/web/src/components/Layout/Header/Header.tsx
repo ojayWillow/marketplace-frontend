@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
 import { useLogout } from '../../../hooks/useAuth';
 import LanguageSwitcher from '../LanguageSwitcher';
+import ThemeToggle from '../../ui/ThemeToggle';
 
 // Extracted components
 import { Logo } from './Logo';
@@ -36,7 +37,7 @@ export default function Header() {
 
   return (
     <header 
-      className="bg-slate-900/95 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-[10001]"
+      className="bg-slate-900/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-slate-700/50 dark:border-gray-700/50 sticky top-0 z-[10001]"
       role="banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,6 +50,7 @@ export default function Header() {
 
           {/* Right side - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle className="text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50" />
             <LanguageSwitcher />
             
             {isAuthenticated ? (
@@ -56,7 +58,7 @@ export default function Header() {
                 {/* Favorites Link */}
                 <Link
                   to="/favorites"
-                  className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/50 rounded-full transition-colors"
+                  className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
                   aria-label="My Favorites"
                   title="My Favorites"
                 >
@@ -76,7 +78,7 @@ export default function Header() {
                 {/* Messages Link */}
                 <Link
                   to="/messages"
-                  className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-full transition-colors"
+                  className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
                   aria-label={`Messages${notifications.unreadMessages > 0 ? `, ${notifications.unreadMessages} unread` : ''}`}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -121,8 +123,10 @@ export default function Header() {
               />
             )}
             
+            <ThemeToggle className="text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50" />
+            
             <button
-              className="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50"
+              className="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}

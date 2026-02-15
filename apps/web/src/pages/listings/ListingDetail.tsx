@@ -45,7 +45,6 @@ export default function ListingDetail() {
 
     setIsStartingConversation(true)
     try {
-      // Create or get existing conversation with the seller
       const response = await apiClient.post('/api/messages/conversations', {
         user_id: listing.seller_info.id,
         message: `Hi! I'm interested in your listing: "${listing.title}"`
@@ -69,7 +68,7 @@ export default function ListingDetail() {
         {[1, 2, 3, 4, 5].map(star => (
           <span 
             key={star} 
-            className={`text-sm ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+            className={`text-sm ${star <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
           >
             ★
           </span>
@@ -106,7 +105,7 @@ export default function ListingDetail() {
       {/* Back link */}
       <Link
         to="/listings"
-        className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
+        className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6"
       >
         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -117,10 +116,10 @@ export default function ListingDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content - Left Side */}
         <div className="lg:col-span-2">
-          <div className="card">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 overflow-hidden border border-transparent dark:border-gray-700">
             {/* Image Gallery */}
             {images.length > 0 ? (
-              <div className="bg-gray-100">
+              <div className="bg-gray-100 dark:bg-gray-900">
                 {/* Main Image */}
                 <div className="aspect-video relative overflow-hidden">
                   <img
@@ -129,14 +128,12 @@ export default function ListingDetail() {
                     className="w-full h-full object-contain bg-gray-900"
                   />
                   
-                  {/* Image counter */}
                   {images.length > 1 && (
                     <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
                       {selectedImageIndex + 1} / {images.length}
                     </div>
                   )}
                   
-                  {/* Navigation arrows */}
                   {images.length > 1 && (
                     <>
                       <button
@@ -168,8 +165,8 @@ export default function ListingDetail() {
                         onClick={() => setSelectedImageIndex(index)}
                         className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                           index === selectedImageIndex
-                            ? 'border-blue-500 ring-2 ring-blue-200'
-                            : 'border-transparent hover:border-gray-300'
+                            ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+                            : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                       >
                         <img
@@ -183,10 +180,9 @@ export default function ListingDetail() {
                 )}
               </div>
             ) : (
-              /* Placeholder when no images */
-              <div className="aspect-video bg-gray-100 flex items-center justify-center">
+              <div className="aspect-video bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                 <svg
-                  className="w-24 h-24 text-gray-300"
+                  className="w-24 h-24 text-gray-300 dark:text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -205,21 +201,21 @@ export default function ListingDetail() {
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div>
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full mb-3">
+                  <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-full mb-3">
                     {t(`listings.categories.${listing.category}`, listing.category)}
                   </span>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {listing.title}
                   </h1>
                 </div>
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                   €{Number(listing.price).toLocaleString()}
                 </div>
               </div>
 
               {/* Location */}
               {listing.location && (
-                <div className="flex items-center text-gray-600 mb-6">
+                <div className="flex items-center text-gray-600 dark:text-gray-400 mb-6">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -240,36 +236,36 @@ export default function ListingDetail() {
 
               {/* Description */}
               <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                   {t('common.description', 'Description')}
                 </h2>
-                <p className="text-gray-700 whitespace-pre-line">
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
                   {listing.description}
                 </p>
               </div>
 
               {/* Contact info */}
               {listing.contact_info && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     {t('common.contact', 'Contact')}
                   </h2>
-                  <p className="text-gray-700">{listing.contact_info}</p>
+                  <p className="text-gray-700 dark:text-gray-300">{listing.contact_info}</p>
                 </div>
               )}
 
               {/* Posted date & views */}
-              <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 pt-4">
                 <span>Posted: {new Date(listing.created_at).toLocaleDateString()}</span>
                 <span>{listing.views_count} views</span>
               </div>
 
               {/* Owner actions */}
               {isOwner && (
-                <div className="flex gap-3 mt-6 pt-6 border-t">
+                <div className="flex gap-3 mt-6 pt-6 border-t dark:border-gray-700">
                   <Link
                     to={`/listings/${listing.id}/edit`}
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   >
                     {t('common.edit', 'Edit')}
                   </Link>
@@ -288,16 +284,15 @@ export default function ListingDetail() {
 
         {/* Seller Info - Right Side */}
         <div className="lg:col-span-1">
-          <div className="card p-6 sticky top-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-6 sticky top-4 border border-transparent dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Seller</h2>
             
             {/* Seller Profile */}
             <Link 
               to={sellerInfo ? `/users/${sellerInfo.id}` : '#'}
               className="flex items-center gap-4 group mb-4"
             >
-              {/* Avatar */}
-              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {sellerInfo?.avatar_url ? (
                   <img
                     src={getImageUrl(sellerInfo.avatar_url)}
@@ -305,20 +300,19 @@ export default function ListingDetail() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-2xl text-gray-500">
+                  <span className="text-2xl text-gray-500 dark:text-gray-400">
                     {sellerDisplayName?.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               
-              {/* Name & Badge */}
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <span className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {sellerDisplayName}
                   </span>
                   {sellerInfo?.is_verified && (
-                    <span className="bg-blue-100 text-blue-600 p-1 rounded-full">
+                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1 rounded-full">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -326,9 +320,8 @@ export default function ListingDetail() {
                   )}
                 </div>
                 
-                {/* Location */}
                 {(sellerInfo?.city || sellerInfo?.country) && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {[sellerInfo.city, sellerInfo.country].filter(Boolean).join(', ')}
                   </p>
                 )}
@@ -337,29 +330,28 @@ export default function ListingDetail() {
             
             {/* Rating & Stats */}
             {sellerInfo && (
-              <div className="border-t border-b py-4 mb-4">
+              <div className="border-t border-b dark:border-gray-700 py-4 mb-4">
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
                     <div className="flex items-center justify-center gap-1 mb-1">
                       {renderStars(sellerInfo.average_rating || 0)}
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {sellerInfo.average_rating?.toFixed(1) || '0.0'} ({sellerInfo.reviews_count || 0})
                     </p>
                   </div>
                   <div>
-                    <div className="text-xl font-bold text-green-600">
+                    <div className="text-xl font-bold text-green-600 dark:text-green-400">
                       {sellerInfo.completion_rate || 100}%
                     </div>
-                    <p className="text-sm text-gray-500">Completion</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Completion</p>
                   </div>
                 </div>
               </div>
             )}
             
-            {/* Member Since */}
             {memberSince && (
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Member since {memberSince}
               </p>
             )}
@@ -367,7 +359,6 @@ export default function ListingDetail() {
             {/* Contact Buttons */}
             {!isOwner && (
               <div className="space-y-3">
-                {/* Message Seller Button - Always show */}
                 <button
                   onClick={handleMessageSeller}
                   disabled={isStartingConversation}
@@ -391,7 +382,6 @@ export default function ListingDetail() {
                   )}
                 </button>
 
-                {/* Phone contact if available */}
                 {listing.contact_info && (
                   <a
                     href={`tel:${listing.contact_info}`}
@@ -406,7 +396,7 @@ export default function ListingDetail() {
                 
                 <Link
                   to={sellerInfo ? `/users/${sellerInfo.id}` : '#'}
-                  className="block w-full bg-gray-100 text-gray-700 text-center px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="block w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-center px-4 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   View Profile
                 </Link>
@@ -414,9 +404,9 @@ export default function ListingDetail() {
             )}
             
             {/* Safety Tips */}
-            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-              <h3 className="font-medium text-yellow-800 mb-2">🚨 Safety Tips</h3>
-              <ul className="text-sm text-yellow-700 space-y-1">
+            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800/30">
+              <h3 className="font-medium text-yellow-800 dark:text-yellow-300 mb-2">🚨 Safety Tips</h3>
+              <ul className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
                 <li>• Meet in public places</li>
                 <li>• Inspect items before paying</li>
                 <li>• Don't send money in advance</li>

@@ -57,16 +57,14 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
       : null;
 
   const statusColorClass = isOtherTyping
-    ? 'text-blue-500'
+    ? 'text-blue-500 dark:text-blue-400'
     : onlineStatus === 'online'
-      ? 'text-green-600'
+      ? 'text-green-600 dark:text-green-400'
       : onlineStatus === 'inactive'
-        ? 'text-amber-600'
-        : 'text-gray-500';
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-gray-500 dark:text-gray-400';
 
   const handleBack = () => {
-    // Use history back if we came from messages, otherwise navigate directly.
-    // This avoids pushing a new /messages entry that creates a back-button loop.
     if (window.history.length > 1) {
       navigate(-1);
     } else {
@@ -77,18 +75,18 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
   if (isMobile) {
     return (
       <div className="flex-shrink-0">
-        {/* Safe-area colored fill — ensures the iOS status bar area is white */}
+        {/* Safe-area colored fill */}
         <div
-          className="bg-white"
+          className="bg-white dark:bg-gray-900"
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         />
 
         {/* Header content */}
-        <div className="bg-white px-3 py-2.5 flex items-center gap-2 border-b border-gray-100">
+        <div className="bg-white dark:bg-gray-900 px-3 py-2.5 flex items-center gap-2 border-b border-gray-100 dark:border-gray-700">
           {/* Back button */}
           <button
             onClick={handleBack}
-            className="p-1.5 -ml-1 rounded-full text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            className="p-1.5 -ml-1 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -103,13 +101,13 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
             <div className="relative flex-shrink-0">
               <ChatAvatar user={otherUser} size="w-9 h-9" />
               {onlineStatus === 'online' && (
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
               )}
             </div>
 
             {/* Name and status */}
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-gray-900 truncate text-[15px] leading-tight">
+              <p className="font-semibold text-gray-900 dark:text-gray-100 truncate text-[15px] leading-tight">
                 {displayName}
               </p>
               {statusText && (
@@ -130,11 +128,11 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
 
   // Desktop header
   return (
-    <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+    <div className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-4 py-3 flex items-center gap-3 flex-shrink-0">
       {/* Back button */}
       <button
         onClick={handleBack}
-        className="text-gray-500 hover:text-gray-700"
+        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -145,15 +143,14 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
         {/* Avatar with fallback */}
         <div className="flex-shrink-0 relative">
           <ChatAvatar user={otherUser} />
-          {/* Online dot on avatar */}
           {onlineStatus === 'online' && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
           )}
         </div>
 
         {/* Name and status */}
         <div>
-          <p className="font-medium text-gray-900">{displayName}</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{displayName}</p>
           {statusText && (
             <p className={`text-xs ${statusColorClass} ${isOtherTyping ? 'italic' : ''}`}>
               {statusText}

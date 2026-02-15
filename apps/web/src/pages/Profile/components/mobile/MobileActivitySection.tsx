@@ -8,7 +8,6 @@ import type { Offering } from '@marketplace/shared';
 interface MobileActivitySectionProps {
   activeMode: 'jobs' | 'services';
   onModeChange: (mode: 'jobs' | 'services') => void;
-  // Jobs
   createdTasks: Task[];
   myApplications: TaskApplication[];
   taskMatchCounts: TaskMatchCounts;
@@ -21,11 +20,9 @@ interface MobileActivitySectionProps {
   onCancelTask?: (id: number) => void;
   onTaskConfirmed?: () => void;
   userId?: number;
-  // Services
   offerings: Offering[];
   offeringsLoading: boolean;
   onDeleteOffering?: (id: number) => void;
-  // Notifications
   pendingNotifications: number;
 }
 
@@ -56,11 +53,11 @@ export const MobileActivitySection = ({
       {/* Section header with toggle + create button */}
       <div className="flex items-center gap-2 mb-3">
         {/* Toggle: Jobs / Services */}
-        <div className="flex gap-1 flex-1 bg-gray-100 p-1 rounded-lg">
+        <div className="flex gap-1 flex-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
           <button
             onClick={() => onModeChange('jobs')}
             className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all relative ${
-              activeMode === 'jobs' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              activeMode === 'jobs' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400'
             }`}
           >
             {t('profile.tabs.jobs', 'Jobs')}
@@ -73,12 +70,12 @@ export const MobileActivitySection = ({
           <button
             onClick={() => onModeChange('services')}
             className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-              activeMode === 'services' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              activeMode === 'services' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400'
             }`}
           >
             {t('profile.tabs.services', 'Services')}
             {offerings.length > 0 && (
-              <span className="text-gray-400 ml-1 text-xs">({offerings.length})</span>
+              <span className="text-gray-400 dark:text-gray-500 ml-1 text-xs">({offerings.length})</span>
             )}
           </button>
         </div>

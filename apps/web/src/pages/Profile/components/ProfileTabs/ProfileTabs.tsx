@@ -32,12 +32,12 @@ export const ProfileTabs = ({
   const tabClass = (tab: ActiveTab) =>
     `px-4 py-2 rounded-md text-sm font-medium transition-all ${
       activeTab === tab
-        ? 'bg-white text-gray-900 shadow-sm'
-        : 'text-gray-600 hover:text-gray-900'
+        ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
     }`;
 
   return (
-    <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+    <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 dark:bg-gray-900 p-1 rounded-lg w-fit">
       <button onClick={() => onTabChange('about')} className={tabClass('about')}>
         {t('profile.tabs.about')}
       </button>
@@ -46,8 +46,7 @@ export const ProfileTabs = ({
         onClick={() => onTabChange('tasks')}
         className={`${tabClass('tasks')} relative`}
       >
-        {t('profile.tabs.jobs')} {hasContent.tasks && <span className="text-gray-400">({counts.tasks})</span>}
-        {/* Only show notifications badge for own profile */}
+        {t('profile.tabs.jobs')} {hasContent.tasks && <span className="text-gray-400 dark:text-gray-500">({counts.tasks})</span>}
         {!viewOnly && counts.pendingNotifications > 0 && (
           <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
             {counts.pendingNotifications}
@@ -56,21 +55,19 @@ export const ProfileTabs = ({
       </button>
       
       <button onClick={() => onTabChange('offerings')} className={tabClass('offerings')}>
-        {t('profile.tabs.services')} {hasContent.offerings && <span className="text-gray-400">({counts.offerings})</span>}
+        {t('profile.tabs.services')} {hasContent.offerings && <span className="text-gray-400 dark:text-gray-500">({counts.offerings})</span>}
       </button>
       
       <button onClick={() => onTabChange('listings')} className={tabClass('listings')}>
-        {t('profile.tabs.listings')} {hasContent.listings && <span className="text-gray-400">({counts.listings})</span>}
+        {t('profile.tabs.listings')} {hasContent.listings && <span className="text-gray-400 dark:text-gray-500">({counts.listings})</span>}
       </button>
       
-      {/* Always show reviews tab if there are reviews, or if viewing own profile */}
       {(hasContent.reviews || !viewOnly) && (
         <button onClick={() => onTabChange('reviews')} className={tabClass('reviews')}>
           {t('profile.tabs.reviews')} ({counts.reviews})
         </button>
       )}
 
-      {/* Settings tab - only for own profile */}
       {!viewOnly && (
         <button 
           onClick={() => onTabChange('settings')} 

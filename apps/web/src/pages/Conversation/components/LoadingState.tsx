@@ -8,8 +8,8 @@ interface ContainerProps {
 
 const Container = ({ isMobile, children }: ContainerProps) => (
   <div className={isMobile
-    ? 'fixed inset-0 z-[10000] flex items-center justify-center bg-gray-50'
-    : 'h-96 flex items-center justify-center bg-gray-50'
+    ? 'fixed inset-0 z-[10000] flex items-center justify-center bg-gray-50 dark:bg-gray-950'
+    : 'h-96 flex items-center justify-center bg-gray-50 dark:bg-gray-950'
   }>
     {children}
   </div>
@@ -26,8 +26,8 @@ export const NotFoundState = ({ isMobile }: { isMobile: boolean }) => {
   return (
     <Container isMobile={isMobile}>
       <div className="text-center">
-        <p className="text-gray-500 mb-4">{t('messages.notFound', 'Conversation not found')}</p>
-        <Link to="/messages" className="text-blue-500 hover:text-blue-600">
+        <p className="text-gray-500 dark:text-gray-400 mb-4">{t('messages.notFound', 'Conversation not found')}</p>
+        <Link to="/messages" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
           \u2190 {t('messages.backToMessages', 'Back to Messages')}
         </Link>
       </div>
