@@ -25,10 +25,10 @@ const OfferingDetail = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mx-auto mb-3"></div>
-          <p className="text-gray-500 text-sm">Loading offering...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading offering...</p>
         </div>
       </div>
     );
@@ -37,11 +37,11 @@ const OfferingDetail = () => {
   // Not found
   if (queryError || !offering) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center px-4">
           <div className="text-5xl mb-3">😕</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Offering Not Found</h2>
-          <p className="text-gray-600 mb-4 text-sm">This offering may have been removed or is no longer available.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Offering Not Found</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">This offering may have been removed or is no longer available.</p>
           <Link to="/tasks" className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 transition-colors text-sm font-semibold">
             Browse All Offerings
           </Link>
@@ -55,7 +55,7 @@ const OfferingDetail = () => {
   const boostTimeRemaining = getBoostTimeRemaining(offering.boost_expires_at);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-36 md:pb-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
       <SEOHead
         title={safe.safeTitle}
         description={safe.seoDescription}
@@ -65,9 +65,9 @@ const OfferingDetail = () => {
       />
 
       {/* Top bar */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-50 md:static md:border-b-0">
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-50 md:static md:border-b-0">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
-          <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium">
+          <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -85,7 +85,7 @@ const OfferingDetail = () => {
 
       <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
         {/* Main card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
           <OfferingHeader
             categoryIcon={safe.categoryIcon}
             categoryLabel={safe.categoryLabel}
@@ -103,13 +103,13 @@ const OfferingDetail = () => {
           />
 
           {/* Thin divider — mobile only */}
-          <div className="border-t border-gray-100 mx-4 md:hidden" />
+          <div className="border-t border-gray-100 dark:border-gray-800 mx-4 md:hidden" />
 
           {/* Description */}
           {safe.safeDescription && (
             <div className="px-4 py-3 md:px-6 md:py-5">
-              <h2 className="hidden md:block text-lg font-semibold text-gray-900 mb-3">About this service</h2>
-              <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
+              <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">About this service</h2>
+              <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {safe.safeDescription}
               </p>
             </div>
@@ -169,7 +169,7 @@ const OfferingDetail = () => {
       {/* Fixed bottom action bar — MOBILE ONLY */}
       {!isOwner && (
         <div 
-          className="fixed left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden"
+          className="fixed left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-40 shadow-lg dark:shadow-gray-950/50 md:hidden"
           style={{ bottom: 'var(--nav-total-height, 64px)' }}
         >
           <div className="max-w-3xl mx-auto px-4 py-3">
