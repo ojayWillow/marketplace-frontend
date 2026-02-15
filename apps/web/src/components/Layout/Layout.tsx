@@ -41,7 +41,7 @@ const Layout = () => {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 flex flex-col overflow-hidden"
+          className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-950"
           style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
         >
           <Outlet />
