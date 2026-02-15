@@ -110,12 +110,15 @@ export default function Messages() {
   if (loading) {
     return (
       <div className="flex-1 flex flex-col bg-white dark:bg-gray-950 animate-page-enter">
-        {/* Skeleton header */}
-        <div className="px-5 pt-4 pb-3 flex-shrink-0">
-          <div className="h-7 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+        {/* Header skeleton */}
+        <div
+          className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-5 pb-3 pt-4"
+          style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}
+        >
+          <div className="h-7 w-40 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
         </div>
         {/* Skeleton rows */}
-        <div className="flex-1 px-4 space-y-3 pt-2">
+        <div className="flex-1 px-4 space-y-3 pt-4">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -137,9 +140,13 @@ export default function Messages() {
   if (isMobile) {
     return (
       <div className="flex flex-col flex-1 bg-white dark:bg-gray-950 animate-page-enter">
-        {/* Header */}
-        <div className="px-5 pt-4 pb-3 flex-shrink-0">
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
+        {/* Sticky header with safe-area, border, and visual hierarchy */}
+        <div
+          className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-5 pb-3 pt-4"
+          style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}
+        >
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <span>💬</span>
             {t('messages.title', 'Messages')}
           </h1>
         </div>
@@ -169,7 +176,7 @@ export default function Messages() {
               </Link>
             </div>
           ) : (
-            <div className="px-3 pt-1 pb-4 space-y-1.5">
+            <div className="px-3 pt-3 pb-4 space-y-1.5">
               {conversations.map((conv, index) => {
                 const hasUnread = conv.unread_count > 0;
                 return (
