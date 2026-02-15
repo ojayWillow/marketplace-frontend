@@ -29,7 +29,7 @@ const FloatingSearchBar = ({
         <>
           <button
             onClick={() => onToggleSearch(true)}
-            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+            className="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg dark:shadow-gray-900/50 active:bg-gray-100 dark:active:bg-gray-700"
             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
           >
             <svg
@@ -37,8 +37,9 @@ const FloatingSearchBar = ({
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#374151"
+              stroke="currentColor"
               strokeWidth="2.5"
+              className="text-gray-700 dark:text-gray-300"
             >
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
@@ -53,7 +54,7 @@ const FloatingSearchBar = ({
               onToggleSearch(false);
               onSearchChange('');
             }}
-            className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100"
+            className="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg dark:shadow-gray-900/50 active:bg-gray-100 dark:active:bg-gray-700"
             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
           >
             <svg
@@ -61,8 +62,9 @@ const FloatingSearchBar = ({
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#374151"
+              stroke="currentColor"
               strokeWidth="2.5"
+              className="text-gray-700 dark:text-gray-300"
             >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -73,7 +75,7 @@ const FloatingSearchBar = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t('tasks.searchPlaceholder', 'Search jobs...')}
-            className="flex-1 bg-white rounded-full px-4 py-3 text-base shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-3 text-base shadow-lg dark:shadow-gray-900/50 focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
             autoFocus
           />
@@ -83,7 +85,7 @@ const FloatingSearchBar = ({
       {/* Filter Button — always visible with badge */}
       <button
         onClick={onOpenFilters}
-        className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-lg active:bg-gray-100 relative"
+        className="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg dark:shadow-gray-900/50 active:bg-gray-100 dark:active:bg-gray-700 relative"
         style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
       >
         <svg
@@ -91,8 +93,9 @@ const FloatingSearchBar = ({
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#374151"
+          stroke="currentColor"
           strokeWidth="2.5"
+          className="text-gray-700 dark:text-gray-300"
         >
           <line x1="4" y1="21" x2="4" y2="14" />
           <line x1="4" y1="10" x2="4" y2="3" />
