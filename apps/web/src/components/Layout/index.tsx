@@ -4,6 +4,7 @@ import Footer from './Footer'
 import MobileBottomNav from './MobileBottomNav'
 import ToastContainer from '../ui/ToastContainer'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import AuthBottomSheet from '../AuthBottomSheet'
 
 export default function Layout() {
   const location = useLocation()
@@ -39,6 +40,7 @@ export default function Layout() {
         </main>
         <MobileBottomNav />
         <ToastContainer />
+        <AuthBottomSheet />
       </div>
     )
   }
@@ -53,6 +55,7 @@ export default function Layout() {
         </main>
         <Footer />
         <ToastContainer />
+        <AuthBottomSheet />
       </div>
     )
   }
@@ -66,6 +69,7 @@ export default function Layout() {
       </main>
       <Footer />
       <ToastContainer />
+      <AuthBottomSheet />
     </div>
   )
 }
