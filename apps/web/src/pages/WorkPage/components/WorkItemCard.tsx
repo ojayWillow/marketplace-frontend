@@ -23,11 +23,13 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
   const difficultyColor = getDifficultyColor(item.difficulty);
   const distanceText = formatItemDistance(item.distance, item.location);
 
+  const isJob = item.type === 'job';
+
   return (
     <div
       onClick={onClick}
-      className={`bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 active:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
-        item.type === 'job' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-amber-500'
+      className={`bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm dark:shadow-gray-900/50 border-l-4 border border-t-gray-100 border-r-gray-100 border-b-gray-100 dark:border-t-gray-800 dark:border-r-gray-800 dark:border-b-gray-800 active:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
+        isJob ? 'border-l-blue-500' : 'border-l-amber-500'
       }`}
     >
       {/* Header: category + urgent on the left, price pinned right */}
@@ -42,7 +44,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
           )}
         </div>
         {price && (
-          <span className={`text-lg font-bold flex-shrink-0 ${item.type === 'job' ? 'text-blue-600 dark:text-blue-500' : 'text-amber-600 dark:text-amber-500'}`}>
+          <span className={`text-lg font-bold flex-shrink-0 ${isJob ? 'text-blue-600 dark:text-blue-500' : 'text-amber-600 dark:text-amber-500'}`}>
             €{price}
           </span>
         )}
@@ -81,7 +83,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
       )}
 
       {/* Footer: distance left, difficulty center, time right */}
-      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-50 dark:border-gray-800">
+      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-50 dark:border-t-gray-800">
         <span className="text-gray-500 dark:text-gray-400 font-medium flex-1 truncate">📏 {distanceText}</span>
         <span className={`font-semibold flex-shrink-0 ${difficultyColor}`}>
           ⚡ {item.difficulty || 'Medium'}
