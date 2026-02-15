@@ -41,21 +41,6 @@ const MobileBottomNav = () => {
     return location.pathname.startsWith(path);
   };
 
-  const handleTabClick = (e: React.MouseEvent, tab: typeof tabs[0]) => {
-    if (tab.path === '/' && location.pathname === '/') {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    // Show auth bottom sheet instead of redirecting to /welcome
-    if (tab.requiresAuth && !isAuthenticated) {
-      e.preventDefault();
-      showAuth(() => navigate(tab.path));
-      return;
-    }
-  };
-
   const getBadgeCount = (badgeKey?: 'messages' | 'notifications'): number => {
     if (!badgeKey || !unreadCounts || !isAuthenticated) return 0;
     return unreadCounts[badgeKey] || 0;
@@ -71,18 +56,45 @@ const MobileBottomNav = () => {
       <div className="flex justify-around items-center h-14">
         {tabs.map((tab) => {
           const badgeCount = getBadgeCount(tab.badgeKey);
+          const active = isActive(tab.path);
 
+          // For auth-required tabs when guest: render a plain button
+          // so React Router doesn't navigate to the protected route
+          if (tab.requiresAuth && !isAuthenticated) {
+            return (
+              <button
+                key={tab.path}
+                type="button"
+                onClick={() => showAuth(() => navigate(tab.path))}
+                className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative"
+              >
+                <span className="relative">
+                  <span className="text-lg opacity-60">{tab.icon}</span>
+                </span>
+                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                  {t(tab.labelKey, tab.fallback)}
+                </span>
+              </button>
+            );
+          }
+
+          // Normal NavLink for authenticated users and non-auth tabs
           return (
             <NavLink
               key={tab.path}
               to={tab.path}
-              onClick={(e) => handleTabClick(e, tab)}
+              onClick={(e) => {
+                if (tab.path === '/' && location.pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
               className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative"
             >
               <span className="relative">
-                <span className={`text-lg transition-opacity ${
-                  isActive(tab.path) ? 'opacity-100' : 'opacity-60'
-                }`}>{tab.icon}</span>
+                <span className={`text-lg transition-opacity ${active ? 'opacity-100' : 'opacity-60'}`}>
+                  {tab.icon}
+                </span>
                 {badgeCount > 0 && (
                   <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 leading-none shadow-sm">
                     {badgeCount > 99 ? '99+' : badgeCount}
@@ -91,7 +103,7 @@ const MobileBottomNav = () => {
               </span>
               <span
                 className={`text-[10px] font-medium transition-colors ${
-                  isActive(tab.path) ? 'text-sky-500' : 'text-gray-500 dark:text-gray-400'
+                  active ? 'text-sky-500' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
                 {t(tab.labelKey, tab.fallback)}

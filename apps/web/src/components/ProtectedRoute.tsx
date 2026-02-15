@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@marketplace/shared';
-import { useAuthPrompt } from '../stores/useAuthPrompt';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,40 +7,20 @@ interface ProtectedRouteProps {
   skipPhoneCheck?: boolean;
 }
 
+/**
+ * Fallback guard for protected routes.
+ * The primary auth gate is the AuthBottomSheet triggered at the action level
+ * (MobileBottomNav tabs, Apply buttons, Contact buttons).
+ * If someone somehow navigates directly to a protected URL while not
+ * authenticated, this redirects them to /welcome as a safety net.
+ */
 export default function ProtectedRoute({ children, skipPhoneCheck = false }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { show, isOpen } = useAuthPrompt();
 
-  // If not authenticated, show the auth bottom sheet
-  useEffect(() => {
-    if (!isAuthenticated && !isOpen) {
-      show(() => {
-        // On success, the component will re-render with isAuthenticated = true
-        // and show the children naturally. No navigation needed.
-      });
-    }
-  }, [isAuthenticated, isOpen, show]);
-
-  // Listen for the sheet being dismissed without login — go back to home
-  useEffect(() => {
-    // If not authenticated and sheet was just closed (not open), navigate away
-    const unsubscribe = useAuthPrompt.subscribe((state, prevState) => {
-      if (prevState.isOpen && !state.isOpen && !useAuthStore.getState().isAuthenticated) {
-        navigate('/', { replace: true });
-      }
-    });
-    return unsubscribe;
-  }, [navigate]);
-
-  // Not logged in — show a minimal placeholder while the sheet is up
+  // Not logged in → redirect to welcome page
   if (!isAuthenticated) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-950">
-        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-      </div>
-    );
+    return <Navigate to="/welcome" state={{ from: location }} replace />;
   }
 
   // TODO: Re-enable before production launch

@@ -57,7 +57,6 @@ export const TaskActionButtons = ({
   // Handle apply click for guests — show auth sheet, then open application form
   const handleGuestApply = () => {
     showAuth(() => {
-      // After successful login, open the application form
       onShowApplicationForm();
     });
   };
@@ -139,7 +138,7 @@ export const TaskActionButtons = ({
           </>
         )}
 
-        {/* Visitor — Apply (authenticated) */}
+        {/* Authenticated visitor — Apply */}
         {canApply && !showApplicationForm && (
           <button
             onClick={onShowApplicationForm}
