@@ -35,7 +35,7 @@ const Layout = () => {
   if (isFullscreenMobilePage) {
     return (
       <div
-        className="flex flex-col bg-gray-50 dark:bg-gray-950"
+        className="flex flex-col bg-white dark:bg-gray-950"
         style={{ height: '100dvh' }}
       >
         <main
