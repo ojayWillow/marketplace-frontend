@@ -15,11 +15,11 @@ const OfferingLocationMap = ({ latitude, longitude, safeTitle, safeLocation, ser
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center gap-1.5 text-sm">
         <span>📍</span>
-        <span className="font-medium text-gray-700">{safeLocation.split(',')[0] || 'Location'}</span>
+        <span className="font-medium text-gray-700 dark:text-gray-300">{safeLocation.split(',')[0] || 'Location'}</span>
         {serviceRadius && (
           <>
-            <span className="text-gray-300">·</span>
-            <span className="text-amber-600 text-xs">{serviceRadius}km radius</span>
+            <span className="text-gray-300 dark:text-gray-600">·</span>
+            <span className="text-amber-600 dark:text-amber-500 text-xs">{serviceRadius}km radius</span>
           </>
         )}
       </div>
@@ -27,12 +27,12 @@ const OfferingLocationMap = ({ latitude, longitude, safeTitle, safeLocation, ser
         href={`https://www.google.com/maps?q=${latitude},${longitude}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium"
       >
         Open in Maps →
       </a>
     </div>
-    <div className="h-32 md:h-48 rounded-lg overflow-hidden border border-gray-200">
+    <div className="h-32 md:h-48 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       <MapContainer
         center={[latitude, longitude]}
         zoom={13}
