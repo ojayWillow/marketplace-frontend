@@ -50,9 +50,7 @@ export default function Listings() {
   // Safely extract listings array - handle both array and object responses
   const listings = useMemo(() => {
     if (!listingsData) return []
-    // If it's already an array, use it directly
     if (Array.isArray(listingsData)) return listingsData
-    // If it's an object with a listings property, extract it
     if (listingsData && typeof listingsData === 'object' && 'listings' in listingsData) {
       return Array.isArray((listingsData as any).listings) ? (listingsData as any).listings : []
     }
@@ -65,7 +63,6 @@ export default function Listings() {
     
     let result = [...listings]
     
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       result = result.filter(listing =>
@@ -75,7 +72,6 @@ export default function Listings() {
       )
     }
     
-    // Apply sorting
     switch (sortBy) {
       case 'price-low':
         result.sort((a, b) => Number(a.price) - Number(b.price))
@@ -93,7 +89,6 @@ export default function Listings() {
     return result
   }, [listings, searchQuery, sortBy])
 
-  // Clear category filter
   const clearCategory = () => {
     setSearchParams({})
     setSearchQuery('')
@@ -105,8 +100,8 @@ export default function Listings() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">{t('listings.browseCategories', 'Browse Categories')}</h1>
-            <p className="text-gray-600 mt-2">{t('listings.selectCategory', 'Select a category to view listings')}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('listings.browseCategories', 'Browse Categories')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t('listings.selectCategory', 'Select a category to view listings')}</p>
           </div>
           {isAuthenticated && (
             <Link
@@ -123,12 +118,12 @@ export default function Listings() {
             <Link
               key={cat}
               to={`/listings?category=${cat}`}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200 flex flex-col items-center justify-center text-center group"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-6 hover:shadow-lg transition-shadow duration-200 flex flex-col items-center justify-center text-center group border border-transparent dark:border-gray-700"
             >
               <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-200">
                 {categoryIcons[cat] || '📦'}
               </div>
-              <h3 className="text-lg font-semibold capitalize text-gray-800 group-hover:text-blue-600">
+              <h3 className="text-lg font-semibold capitalize text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                 {t(`listings.categories.${cat}`, cat)}
               </h3>
             </Link>
@@ -145,7 +140,7 @@ export default function Listings() {
       <div className="mb-6">
         <button
           onClick={clearCategory}
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -156,7 +151,7 @@ export default function Listings() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="text-4xl">{categoryIcons[category] || '📦'}</span>
-            <h1 className="text-3xl font-bold capitalize">
+            <h1 className="text-3xl font-bold capitalize text-gray-900 dark:text-gray-100">
               {t(`listings.categories.${category}`, category)}
             </h1>
           </div>
@@ -172,7 +167,7 @@ export default function Listings() {
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-4 mb-6 border border-transparent dark:border-gray-700">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
@@ -194,7 +189,7 @@ export default function Listings() {
               placeholder={t('listings.searchPlaceholder', 'Search listings...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
           
@@ -203,7 +198,7 @@ export default function Listings() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="newest">{t('listings.sortNewest', 'Newest First')}</option>
               <option value="price-low">{t('listings.sortPriceLow', 'Price: Low to High')}</option>
@@ -225,18 +220,18 @@ export default function Listings() {
       {!isLoading && !isError && (
         <>
           {/* Results count */}
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filteredListings.length} {filteredListings.length === 1 ? 'listing' : 'listings'} found
             {searchQuery && ` for "${searchQuery}"`}
           </p>
 
           {filteredListings.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-12 text-center border border-transparent dark:border-gray-700">
               <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
                 {t('listings.noListings', 'No listings found')}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {searchQuery
                   ? t('listings.tryDifferentSearch', 'Try a different search term')
                   : t('listings.beFirstToPost', 'Be the first to post in this category!')}
@@ -253,16 +248,15 @@ export default function Listings() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredListings.map((listing) => {
-                // Get first image from comma-separated string
                 const images = listing.images ? listing.images.split(',').filter(Boolean) : []
                 const firstImage = images[0]
                 
                 return (
                   <div
                     key={listing.id}
-                    className="relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 group"
+                    className="relative bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 overflow-hidden hover:shadow-lg transition-shadow duration-200 group border border-transparent dark:border-gray-700"
                   >
-                    {/* Favorite Button - positioned top right */}
+                    {/* Favorite Button */}
                     <div className="absolute top-2 right-2 z-10">
                       <FavoriteButton
                         itemType="listing"
@@ -273,7 +267,7 @@ export default function Listings() {
                     
                     <Link to={`/listings/${listing.id}`}>
                       {/* Image */}
-                      <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
+                      <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
                         {firstImage ? (
                           <img
                             src={getImageUrl(firstImage)}
@@ -281,7 +275,7 @@ export default function Listings() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                          <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-500">
                             <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
@@ -294,19 +288,19 @@ export default function Listings() {
                         )}
                         
                         {/* Price Badge */}
-                        <div className="absolute bottom-2 left-2 bg-white/95 px-3 py-1 rounded-full font-bold text-blue-600">
+                        <div className="absolute bottom-2 left-2 bg-white/95 dark:bg-gray-900/95 px-3 py-1 rounded-full font-bold text-blue-600 dark:text-blue-400">
                           €{Number(listing.price).toLocaleString()}
                         </div>
                       </div>
                       
                       {/* Content */}
                       <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                           {listing.title}
                         </h3>
                         
                         {listing.location && (
-                          <div className="flex items-center text-gray-500 text-sm mb-2">
+                          <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-2">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
@@ -325,11 +319,11 @@ export default function Listings() {
                           </div>
                         )}
                         
-                        <p className="text-gray-600 text-sm line-clamp-2">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
                           {listing.description}
                         </p>
                         
-                        <div className="text-xs text-gray-400 mt-3">
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-3">
                           {new Date(listing.created_at).toLocaleDateString()}
                         </div>
                       </div>
