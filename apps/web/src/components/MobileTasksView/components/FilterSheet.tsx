@@ -33,15 +33,15 @@ const FilterSheet = ({
       onClick={onClose}
     >
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-[10001] overflow-y-auto"
+        className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl p-6 z-[10001] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '85vh' }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold">{t('filters.title', 'Filters')}</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('filters.title', 'Filters')}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <svg
               width="24"
@@ -58,13 +58,13 @@ const FilterSheet = ({
 
         {/* Location/Radius */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             📍 {t('filters.location', 'Location')}
           </label>
           <select
             value={searchRadius}
             onChange={(e) => onRadiusChange(parseInt(e.target.value))}
-            className="w-full bg-gray-100 rounded-lg px-4 py-3 text-base border-0 focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-3 text-base border-0 focus:ring-2 focus:ring-blue-500"
           >
             <option value={5}>{t('filters.withinKm', { km: 5, defaultValue: 'Within 5 km' })}</option>
             <option value={10}>{t('filters.withinKm', { km: 10, defaultValue: 'Within 10 km' })}</option>
@@ -78,10 +78,10 @@ const FilterSheet = ({
 
         {/* Categories — Multi-select */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             🏷️ {t('filters.categories', 'Categories')}
             {selectedCategories.length > 0 && (
-              <span className="text-blue-600 ml-2">
+              <span className="text-blue-600 dark:text-blue-400 ml-2">
                 ({t('filters.selected', { count: selectedCategories.length, max: maxCategories, defaultValue: `${selectedCategories.length}/${maxCategories} selected` })})
               </span>
             )}
@@ -101,8 +101,8 @@ const FilterSheet = ({
                     isSelected
                       ? 'bg-blue-500 text-white'
                       : isDisabled
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   <span>{cat.icon}</span>
@@ -113,7 +113,7 @@ const FilterSheet = ({
             })}
           </div>
           {selectedCategories.length >= maxCategories && (
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               ℹ️ {t('filters.maxCategoriesHint', { max: maxCategories, defaultValue: `Maximum ${maxCategories} categories selected. Deselect one to choose another.` })}
             </p>
           )}
