@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
 import { useConversations } from '../api/hooks';
@@ -65,7 +65,6 @@ function ConversationAvatar({
 
 export default function Messages() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const isMobile = useIsMobile();
 
@@ -73,12 +72,6 @@ export default function Messages() {
     enabled: isAuthenticated,
   });
   const conversations = data?.conversations || [];
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/welcome');
-    }
-  }, [isAuthenticated, navigate]);
 
   const formatTime = useCallback(
     (dateString: string) => {

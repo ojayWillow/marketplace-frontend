@@ -4,6 +4,7 @@ import Footer from './Footer';
 import MobileBottomNav from './MobileBottomNav';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useAutoPromptPush } from '../../hooks/useAutoPromptPush';
+import AuthBottomSheet from '../AuthBottomSheet';
 
 const Layout = () => {
   const location = useLocation();
@@ -47,6 +48,7 @@ const Layout = () => {
           <Outlet />
         </main>
         <MobileBottomNav />
+        <AuthBottomSheet />
       </div>
     );
   }
@@ -73,6 +75,7 @@ const Layout = () => {
         </main>
         
         <Footer />
+        <AuthBottomSheet />
       </div>
     );
   }
@@ -100,6 +103,7 @@ const Layout = () => {
         </main>
         
         <MobileBottomNav />
+        <AuthBottomSheet />
       </div>
     );
   }
@@ -125,6 +129,7 @@ const Layout = () => {
       </main>
       
       <Footer />
+      <AuthBottomSheet />
     </div>
   );
 };

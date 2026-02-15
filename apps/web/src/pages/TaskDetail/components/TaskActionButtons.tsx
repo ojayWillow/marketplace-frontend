@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Task } from '@marketplace/shared';
+import { useAuthPrompt } from '../../../stores/useAuthPrompt';
 
 interface TaskActionButtonsProps {
   task: Task;
@@ -32,6 +33,7 @@ export const TaskActionButtons = ({
   onDispute,
   onCancel,
 }: TaskActionButtonsProps) => {
+  const showAuth = useAuthPrompt((s) => s.show);
   const hasApplied = (task as any).has_applied;
   const userApplication = (task as any).user_application;
   const canMarkDone = isAssigned && (task.status === 'assigned' || task.status === 'in_progress');
@@ -50,6 +52,14 @@ export const TaskActionButtons = ({
       case 'rejected': return '❌ Rejected';
       default: return status;
     }
+  };
+
+  // Handle apply click for guests — show auth sheet, then open application form
+  const handleGuestApply = () => {
+    showAuth(() => {
+      // After successful login, open the application form
+      onShowApplicationForm();
+    });
   };
 
   // Don't render anything for completed/cancelled/disputed tasks
@@ -129,7 +139,7 @@ export const TaskActionButtons = ({
           </>
         )}
 
-        {/* Visitor — Apply */}
+        {/* Visitor — Apply (authenticated) */}
         {canApply && !showApplicationForm && (
           <button
             onClick={onShowApplicationForm}
@@ -139,14 +149,14 @@ export const TaskActionButtons = ({
           </button>
         )}
 
-        {/* Login prompt */}
+        {/* Guest — Apply (opens auth sheet first) */}
         {!isAuthenticated && task.status === 'open' && (
-          <Link
-            to="/welcome"
-            className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 font-bold text-sm text-center shadow-lg active:scale-[0.98] transition-all"
+          <button
+            onClick={handleGuestApply}
+            className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
-            Login to Apply
-          </Link>
+            ✓ Apply for This Job
+          </button>
         )}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
 import { useUnreadCounts } from '../../api/hooks/useNotifications';
 import { useEffect } from 'react';
+import { useAuthPrompt } from '../../stores/useAuthPrompt';
 
 const tabs = [
   { path: '/', icon: '🏠', labelKey: 'nav.home', fallback: 'Home' },
@@ -16,6 +17,7 @@ const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const showAuth = useAuthPrompt((s) => s.show);
 
   // Fetch unread counts for badges (only when logged in)
   const { data: unreadCounts } = useUnreadCounts({ enabled: isAuthenticated });
@@ -46,9 +48,10 @@ const MobileBottomNav = () => {
       return;
     }
 
+    // Show auth bottom sheet instead of redirecting to /welcome
     if (tab.requiresAuth && !isAuthenticated) {
       e.preventDefault();
-      navigate('/welcome');
+      showAuth(() => navigate(tab.path));
       return;
     }
   };
