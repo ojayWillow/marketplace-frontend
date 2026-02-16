@@ -172,10 +172,14 @@ export const TasksTab = ({
     handleReviewModalClose();
   };
 
+  const getTranslatedStatus = (status: string): string => {
+    return t(`work.status.${status}`, status.replace('_', ' '));
+  };
+
   const getApplicationStatusBadge = (application: TaskApplication) => {
     if (application.status === 'pending') {
       return {
-        text: '⏳ Gaida apstiprinājumu',
+        text: `\u23f3 ${t('work.status.pending', 'Awaiting Approval')}`,
         className: 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/40',
       };
     }
@@ -183,12 +187,12 @@ export const TasksTab = ({
       const task = application.task;
       if (task?.status === 'completed') {
         return {
-          text: '✓ Pabeigts',
+          text: `\u2713 ${t('work.status.completed', 'Completed')}`,
           className: 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/40',
         };
       }
       return {
-        text: '✓ Aktīvs',
+        text: `\u2713 ${t('work.status.active', 'Active')}`,
         className: 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40',
       };
     }
@@ -300,7 +304,7 @@ export const TasksTab = ({
         {!viewOnly && taskViewMode === 'my-tasks' && tasksWithMatches > 0 && (
           <div className="mb-3 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg">
             <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-              <span className="text-base">✨</span>
+              <span className="text-base">\u2728</span>
               <p className="text-xs md:text-sm">
                 <span className="font-medium">{t('profile.jobsTab.matchesBanner', { count: tasksWithMatches })}</span>
               </p>
@@ -312,7 +316,7 @@ export const TasksTab = ({
           <TabLoadingSpinner color="blue" />
         ) : getDisplayTasks().length === 0 ? (
           <div className={`text-center ${compact ? 'py-6' : 'py-10'}`}>
-            <div className={`${compact ? 'text-3xl' : 'text-4xl'} mb-2`}>{taskViewMode === 'my-tasks' || viewOnly ? '📋' : '🛠️'}</div>
+            <div className={`${compact ? 'text-3xl' : 'text-4xl'} mb-2`}>{taskViewMode === 'my-tasks' || viewOnly ? '\ud83d\udccb' : '\ud83d\udee0\ufe0f'}</div>
             <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">
               {viewOnly 
                 ? t('profile.jobsTab.noActiveJobs')
@@ -353,7 +357,7 @@ export const TasksTab = ({
                         to={`/tasks/${task.id}`}
                         className="flex items-center justify-between bg-green-500 text-white p-2 rounded-lg mb-2.5 text-xs md:text-sm"
                       >
-                        <span>📩 {t('profile.jobsTab.applications', { count: task.pending_applications_count })}</span>
+                        <span>\ud83d\udce9 {t('profile.jobsTab.applications', { count: task.pending_applications_count })}</span>
                         <span className="font-medium">{t('profile.jobsTab.reviewApplications')}</span>
                       </Link>
                     )}
@@ -366,7 +370,7 @@ export const TasksTab = ({
                         </Link>
                         {!viewOnly && (
                           <span className={`px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                            {task.status.replace('_', ' ')}
+                            {getTranslatedStatus(task.status)}
                           </span>
                         )}
                         {!viewOnly && hasMatches && !hasApplications && (
@@ -374,7 +378,7 @@ export const TasksTab = ({
                             onClick={() => setExpandedMatchHint(isExpanded ? null : task.id)}
                             className="px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-0.5"
                           >
-                            ✨ {matchCount}
+                            \u2728 {matchCount}
                           </button>
                         )}
                       </div>
@@ -382,8 +386,8 @@ export const TasksTab = ({
                       <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-1 mb-1.5">{task.description}</p>
                       
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <span className="truncate max-w-[140px] md:max-w-none">📍 {task.location}</span>
-                        {task.budget && <span className="text-green-600 dark:text-green-400 font-semibold flex-shrink-0">€{task.budget}</span>}
+                        <span className="truncate max-w-[140px] md:max-w-none">\ud83d\udccd {task.location}</span>
+                        {task.budget && <span className="text-green-600 dark:text-green-400 font-semibold flex-shrink-0">\u20ac{task.budget}</span>}
                       </div>
                       
                       {!viewOnly && isExpanded && hasMatches && (
@@ -392,7 +396,7 @@ export const TasksTab = ({
                           className="mt-2 flex items-center justify-between p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-xs text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
                         >
                           <span>
-                            💡 {t('profile.jobsTab.helpersNearby', { count: matchCount, category: getCategoryLabel(task.category) })}
+                            \ud83d\udca1 {t('profile.jobsTab.helpersNearby', { count: matchCount, category: getCategoryLabel(task.category) })}
                           </span>
                           <span className="font-medium">{t('profile.jobsTab.viewMatches')}</span>
                         </Link>
@@ -462,8 +466,8 @@ export const TasksTab = ({
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <span className="truncate max-w-[140px] md:max-w-none">📍 {task.location}</span>
-                        {task.budget && <span className="text-green-600 dark:text-green-400 font-semibold flex-shrink-0">€{task.budget}</span>}
+                        <span className="truncate max-w-[140px] md:max-w-none">\ud83d\udccd {task.location}</span>
+                        {task.budget && <span className="text-green-600 dark:text-green-400 font-semibold flex-shrink-0">\u20ac{task.budget}</span>}
                       </div>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('profile.jobsTab.postedBy')} {task.creator_name || 'Unknown'}</p>
                       
