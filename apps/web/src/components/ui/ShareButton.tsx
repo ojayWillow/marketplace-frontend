@@ -50,6 +50,7 @@ const ShareButton = ({
 
   /**
    * Build share message.
+   * Each detail (price, location, posted date) gets its own line.
    * @param includeUrl — set false for platforms that auto-append the URL
    *                     (Telegram, Twitter) to avoid showing it twice.
    */
@@ -60,14 +61,13 @@ const ShareButton = ({
     const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
     lines.push(titleLine);
 
-    // Line 2: price · location · time ago (compact)
-    const details: string[] = [];
-    if (price) details.push(`\u{1F4B0} ${price}`);
-    if (location) details.push(`\u{1F4CD} ${location}`);
-    if (postedDate) details.push(`\u{1F552} ${postedDate}`);
-    if (details.length > 0) {
-      lines.push(details.join('  \u00B7  '));
-    }
+    // Blank line after title
+    lines.push('');
+
+    // Each detail on its own line
+    if (price) lines.push(`\u{1F4B0} ${price}`);
+    if (location) lines.push(`\u{1F4CD} ${location}`);
+    if (postedDate) lines.push(`\u{1F552} ${postedDate}`);
 
     // URL line — only when the platform doesn't add it automatically
     if (includeUrl) {
@@ -238,19 +238,14 @@ const ShareButton = ({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{title}</p>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              {price && (
-                <span className="text-sm font-bold text-green-600">{price}</span>
-              )}
-              {price && postedDate && (
-                <span className="text-gray-300">·</span>
-              )}
-              {postedDate && (
-                <span className="text-xs text-gray-400">🕐 {postedDate}</span>
-              )}
-            </div>
+            {price && (
+              <p className="text-sm font-bold text-green-600 mt-1">{price}</p>
+            )}
             {location && (
-              <p className="text-xs text-gray-400 mt-1 truncate">📍 {location}</p>
+              <p className="text-xs text-gray-400 mt-0.5 truncate">\uD83D\uDCCD {location}</p>
+            )}
+            {postedDate && (
+              <p className="text-xs text-gray-400 mt-0.5">\uD83D\uDD50 {postedDate}</p>
             )}
             <p className="text-xs text-gray-300 mt-0.5 truncate">kolab.lv</p>
           </div>
@@ -311,7 +306,7 @@ const ShareButton = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">More options…</span>
+            <span className="text-sm font-medium text-gray-700">More options\u2026</span>
           </button>
         )}
       </div>
