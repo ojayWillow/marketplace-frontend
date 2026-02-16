@@ -40,46 +40,44 @@ const formatPostedTime = (dateString: string): string => {
 /**
  * Share a task via the Web Share API (mobile) or copy to clipboard (desktop).
  *
- * The shared message includes:
- * - Title
- * - Price (€)
- * - Location (short)
- * - Posted time (relative)
- * - Deep link URL → opens map with bubble selected
+ * The URL is included inline in the text body (with a blank line before it)
+ * instead of as a separate `url` param. This ensures WhatsApp and other
+ * apps display it on its own line rather than appending it to the last
+ * text line.
  */
 export const shareTask = async (task: Task): Promise<'shared' | 'copied' | 'dismissed'> => {
   const budget = task.budget || task.reward || 0;
   const address = shortAddress(task.location);
   const url = buildShareUrl(task.id);
 
-  // Build text lines WITHOUT the URL (native share adds url separately)
   const textLines: string[] = [];
   textLines.push(task.title);
   if (budget > 0) textLines.push(`💰 €${budget}`);
   if (address) textLines.push(`📍 ${address}`);
   if (task.created_at) textLines.push(`🕐 Posted ${formatPostedTime(task.created_at)}`);
 
-  const text = textLines.join('\n');
+  // Always append URL on its own line with a blank line separator
+  const fullText = textLines.join('\n') + '\n\n' + url;
 
-  // Try native share (works on mobile browsers)
-  // Pass url separately — the Share API appends it automatically
+  // Try native share — pass URL in the text body only, not as separate `url`.
+  // When `url` is passed separately, WhatsApp concatenates it awkwardly
+  // right after the last text line.
   if (navigator.share) {
     try {
-      await navigator.share({ title: task.title, text, url });
+      await navigator.share({ title: task.title, text: fullText });
       return 'shared';
     } catch (err: any) {
       if (err?.name === 'AbortError') return 'dismissed';
     }
   }
 
-  // Fallback: copy to clipboard (include URL inline since there's no separate url field)
-  const clipboardText = text + '\n\n' + url;
+  // Fallback: copy to clipboard
   try {
-    await navigator.clipboard.writeText(clipboardText);
+    await navigator.clipboard.writeText(fullText);
     return 'copied';
   } catch {
     const textarea = document.createElement('textarea');
-    textarea.value = clipboardText;
+    textarea.value = fullText;
     textarea.style.position = 'fixed';
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
