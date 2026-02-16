@@ -192,7 +192,7 @@ export const useTaskForm = () => {
         creator_id: user.id,
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
         deadline,
-        priority: formData.difficulty,
+        difficulty: formData.difficulty,
         is_urgent: formData.is_urgent,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       };
