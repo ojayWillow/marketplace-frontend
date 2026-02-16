@@ -7,6 +7,21 @@
     "title": "How it works",
     "description": "Learn how Kolab works"
   },
+  "theme": {
+    "title": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "listings": {
+    "teaserTitle": "Market",
+    "teaserSubtitle": "Buy, sell, bid",
+    "teaserDescription": "Soon you'll be able to sell your items, auction goods, and find the best deals in your area.",
+    "featureSell": "Sell",
+    "featureBid": "Bid",
+    "featureItems": "Items",
+    "featureLocal": "In your area"
+  },
   "notifications": {
     "title": "Push Notifications",
     "description": "Get notified about new messages, job applications, and task updates even when the app is closed.",

@@ -7,6 +7,21 @@
     "title": "Kā tas darbojas",
     "description": "Uzziniet, kā darbojas Kolab"
   },
+  "theme": {
+    "title": "Izskats",
+    "light": "Gaišs",
+    "dark": "Tumšs",
+    "system": "Sistēmas"
+  },
+  "listings": {
+    "teaserTitle": "Tirgus",
+    "teaserSubtitle": "Pērc, pārdod, solī",
+    "teaserDescription": "Drīz varēsi pārdot savas lietas, izsolīt preces un atrast labākos piedāvājumus savā apkārtnē.",
+    "featureSell": "Pārdod",
+    "featureBid": "Solī",
+    "featureItems": "Preces",
+    "featureLocal": "Tavā apkārtnē"
+  },
   "notifications": {
     "title": "Push paziņojumi",
     "description": "Saņemiet paziņojumus par jaunām ziņām, darba pieteikumiem un uzdevumu atjauninājumiem pat kad lietotne ir aizvērta.",
