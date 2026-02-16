@@ -165,9 +165,6 @@ const Profile = () => {
           isOpen={showMobileSettings}
           onClose={() => setShowMobileSettings(false)}
           onHowItWorks={() => setShowHowItWorks(true)}
-          listings={myListings}
-          listingsLoading={listingsLoading}
-          onDeleteListing={actions.handleDeleteListing}
         />
 
         <div className="flex-1 overflow-y-auto">
