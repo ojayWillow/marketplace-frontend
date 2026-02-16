@@ -39,16 +39,6 @@ const SkeletonCard = () => (
   </div>
 );
 
-/**
- * Main Mobile Tasks View Component
- * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
- *
- * Now restores selectedTask and map viewport from Zustand store on mount,
- * so navigating away and back preserves the user’s context.
- *
- * Deep link support: reads ?task=<id> from URL, fetches the task,
- * and auto-selects it on the map (fly-to + JobPreviewCard).
- */
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -71,6 +61,7 @@ const MobileTasksView = () => {
   // --- Hooks ---
   const {
     userLocation,
+    hasRealLocation,
     recenterTrigger,
     handleRecenter: recenterMap,
   } = useUserLocation({
@@ -104,17 +95,17 @@ const MobileTasksView = () => {
     resetToCollapsed,
   } = useBottomSheet();
 
-  // --- Local UI state (orchestration only) ---
+  // --- Local UI state ---
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [isFromDeepLink, setIsFromDeepLink] = useState(false);
 
-  // --- Deep link: track whether we've already handled the ?task= param ---
+  // --- Deep link handling ---
   const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
-  // --- Deep link: read ?task=ID from URL and select it on the map ---
   useEffect(() => {
     if (deepLinkHandled) return;
 
@@ -125,13 +116,12 @@ const MobileTasksView = () => {
     if (isNaN(taskId)) return;
 
     setDeepLinkHandled(true);
+    setIsFromDeepLink(true);
 
-    // Clean up the URL param (remove ?task=ID from address bar)
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('task');
     setSearchParams(newParams, { replace: true });
 
-    // Check if the task is already in our loaded list
     const existingTask = tasks.find((t) => t.id === taskId);
     if (existingTask) {
       setShowJobList(false);
@@ -140,7 +130,6 @@ const MobileTasksView = () => {
       return;
     }
 
-    // Task not in list — fetch it from API
     fetchTaskById(taskId)
       .then((task) => {
         if (task) {
@@ -156,14 +145,13 @@ const MobileTasksView = () => {
 
   // --- Restore selected task from store on mount ---
   useEffect(() => {
-    if (deepLinkHandled) return; // Deep link takes priority
+    if (deepLinkHandled) return;
     if (storedSelectedTaskId && tasks.length > 0 && !selectedTask) {
       const restored = tasks.find((t) => t.id === storedSelectedTaskId);
       if (restored) {
         setSelectedTask(restored);
         setShowJobList(false);
       } else {
-        // Task no longer in results — clear stored ID
         setStoredSelectedTaskId(null);
       }
     }
@@ -173,27 +161,40 @@ const MobileTasksView = () => {
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
-  // Urgent job count (only when feature is enabled)
   const urgentCount = FEATURES.URGENT
     ? filteredTasks.filter((t) => t.is_urgent).length
     : 0;
+
+  // --- Compute fitBothPoints for shared link + real GPS ---
+  const fitBothPoints = useMemo(() => {
+    if (!isFromDeepLink || !hasRealLocation || !selectedTask) return null;
+    return {
+      userLat: userLocation.lat,
+      userLng: userLocation.lng,
+      taskLat: selectedTask.displayLatitude || selectedTask.latitude,
+      taskLng: selectedTask.displayLongitude || selectedTask.longitude,
+    };
+  }, [isFromDeepLink, hasRealLocation, selectedTask, userLocation]);
 
   // --- Event handlers ---
   const handleRecenter = () => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
     setShowJobList(true);
+    setIsFromDeepLink(false);
     recenterMap();
   };
 
   const handleJobSelect = (task: Task) => {
     setShowJobList(false);
+    setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
     setTimeout(() => setSelectedTask(task), 50);
   };
 
   const handleMarkerClick = (task: Task) => {
     setShowJobList(false);
+    setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
     setTimeout(() => setSelectedTask(task), 50);
   };
@@ -201,6 +202,7 @@ const MobileTasksView = () => {
   const handleClosePreview = () => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
+    setIsFromDeepLink(false);
     setTimeout(() => {
       setShowJobList(true);
       resetToCollapsed();
@@ -237,7 +239,6 @@ const MobileTasksView = () => {
     <>
       <style>{mobileTasksStyles}</style>
 
-      {/* Community rules modal — blocks until accepted */}
       <CommunityRulesModal
         isOpen={showRulesModal}
         onClose={() => setShowRulesModal(false)}
@@ -285,6 +286,7 @@ const MobileTasksView = () => {
               selectedTask={selectedTask}
               isMenuOpen={false}
               sheetPosition={sheetPosition}
+              fitBothPoints={fitBothPoints}
             />
 
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
@@ -363,6 +365,7 @@ const MobileTasksView = () => {
             <JobPreviewCard
               task={selectedTask}
               userLocation={userLocation}
+              hasRealLocation={hasRealLocation}
               onViewDetails={handleViewDetails}
               onClose={handleClosePreview}
               onCreatorClick={handleCreatorClick}
@@ -390,10 +393,8 @@ const MobileTasksView = () => {
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
-              {/* Drag handle bar */}
               <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
 
-              {/* Small up chevron below the bar — only when not fully expanded */}
               {sheetPosition !== 'full' && (
                 <svg
                   width="16"
@@ -410,7 +411,6 @@ const MobileTasksView = () => {
                 </svg>
               )}
 
-              {/* Spacer when arrow is hidden (full state) to keep layout consistent */}
               {sheetPosition === 'full' && <div className="h-2" />}
 
               <div className="flex items-center justify-between w-full px-4 mt-1">

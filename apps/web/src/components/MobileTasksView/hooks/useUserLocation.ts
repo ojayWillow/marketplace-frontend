@@ -58,33 +58,30 @@ interface UseUserLocationOptions {
 /**
  * Hook managing user geolocation and map recentering.
  *
- * Now uses localStorage-cached location as initial value so returning
- * users start from their real location, not always Riga.
- * Background GPS still fires and updates the cache.
+ * Exposes `hasRealLocation` so consumers know whether the coordinates
+ * come from actual GPS/cache or the hardcoded Riga default.
  */
 export const useUserLocation = ({
   onLocationReady,
   onInitialFetch,
 }: UseUserLocationOptions = {}) => {
-  // Start from cached location (if available), otherwise Riga default
   const cachedLoc = useRef(getCachedLocation());
   const initialLocation = cachedLoc.current || DEFAULT_LOCATION;
 
   const [userLocation, setUserLocation] = useState(initialLocation);
+  const [hasRealLocation, setHasRealLocation] = useState(!!cachedLoc.current);
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
   const hasAttemptedGeolocation = useRef(false);
 
   useEffect(() => {
-    // Trigger initial fetch with best-known location (cached or default)
     onInitialFetch?.(initialLocation.lat, initialLocation.lng);
 
-    // Try to get user's actual location in background
     if (navigator.geolocation && !hasAttemptedGeolocation.current) {
       hasAttemptedGeolocation.current = true;
 
       const timeoutId = setTimeout(() => {
-        // Timeout — stay with initial location, data already loaded
+        // Timeout — stay with initial location
       }, LOCATION_TIMEOUT_MS);
 
       navigator.geolocation.getCurrentPosition(
@@ -94,22 +91,20 @@ export const useUserLocation = ({
           const newLocation = { lat: latitude, lng: longitude };
 
           setUserLocation(newLocation);
+          setHasRealLocation(true);
           setCachedLocation(latitude, longitude);
 
-          // Only trigger refetch if user moved significantly from
-          // the initial location (>500m). Avoids redundant API call
-          // when cached location is still accurate.
           const cached = cachedLoc.current;
           if (cached) {
             const moved = Math.abs(latitude - cached.lat) + Math.abs(longitude - cached.lng);
-            if (moved < 0.005) return; // ~500m — not worth refetching
+            if (moved < 0.005) return;
           }
 
           onLocationReady?.(latitude, longitude);
         },
         () => {
           clearTimeout(timeoutId);
-          // Permission denied — keep initial location
+          // Permission denied — keep initial location, hasRealLocation stays false if no cache
         },
         { timeout: LOCATION_TIMEOUT_MS, enableHighAccuracy: false }
       );
@@ -122,6 +117,7 @@ export const useUserLocation = ({
 
   return {
     userLocation,
+    hasRealLocation,
     recenterTrigger,
     handleRecenter,
   };

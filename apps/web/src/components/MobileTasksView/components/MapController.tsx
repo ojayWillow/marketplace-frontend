@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { Task } from '@marketplace/shared';
 import { useMobileMapStore } from '../stores';
+import L from 'leaflet';
 
 interface MapControllerProps {
   lat: number;
@@ -11,14 +12,20 @@ interface MapControllerProps {
   selectedTask: Task | null;
   isMenuOpen?: boolean;
   sheetPosition?: string;
+  fitBothPoints?: {
+    userLat: number;
+    userLng: number;
+    taskLat: number;
+    taskLng: number;
+  } | null;
 }
 
 /**
  * Map controller component for handling zoom/center changes.
  *
- * Now persists viewport (center + zoom) to Zustand store on every
- * moveend/zoomend so the map restores position after tab switches
- * or back-navigation from task detail.
+ * `fitBothPoints` — when provided (shared link + real GPS), the map
+ * fits bounds to show both the user's location and the job so the
+ * visitor can visually gauge the distance.
  */
 const MapController = ({
   lat,
@@ -28,16 +35,18 @@ const MapController = ({
   selectedTask,
   isMenuOpen,
   sheetPosition,
+  fitBothPoints,
 }: MapControllerProps) => {
   const map = useMap();
   const store = useMobileMapStore();
   const hasRestoredViewport = useRef(false);
   const isSettingView = useRef(false);
+  const hasFitBothPoints = useRef(false);
 
   // --- Persist viewport on every map move/zoom ---
   useEffect(() => {
     const saveViewport = () => {
-      if (isSettingView.current) return; // Don't save during programmatic setView
+      if (isSettingView.current) return;
       const center = map.getCenter();
       const zoom = map.getZoom();
       store.setMapViewport([center.lat, center.lng], zoom);
@@ -59,12 +68,29 @@ const MapController = ({
     if (store.mapCenter && store.mapZoom) {
       isSettingView.current = true;
       map.setView(store.mapCenter, store.mapZoom, { animate: false });
-      // Allow saves again after a short delay
       setTimeout(() => { isSettingView.current = false; }, 200);
-      return; // Skip the default radius-based view
+      return;
     }
-    // No persisted viewport — fall through to radius-based view below
   }, [map, store]);
+
+  // --- Fit map to show both user + job (shared link flow) ---
+  useEffect(() => {
+    if (!fitBothPoints || hasFitBothPoints.current) return;
+    hasFitBothPoints.current = true;
+
+    isSettingView.current = true;
+    const bounds = L.latLngBounds(
+      [fitBothPoints.userLat, fitBothPoints.userLng],
+      [fitBothPoints.taskLat, fitBothPoints.taskLng]
+    );
+    map.fitBounds(bounds, {
+      padding: [60, 40],
+      maxZoom: 14,
+      animate: true,
+      duration: 0.6,
+    });
+    setTimeout(() => { isSettingView.current = false; }, 700);
+  }, [fitBothPoints, map]);
 
   // Invalidate map size when menu closes or sheet position changes
   useEffect(() => {
@@ -76,7 +102,6 @@ const MapController = ({
 
   // Handle radius changes and recenter
   useEffect(() => {
-    // Skip if we just restored a persisted viewport
     if (store.mapCenter && store.mapZoom && !recenterTrigger) return;
 
     isSettingView.current = true;
@@ -94,9 +119,12 @@ const MapController = ({
     setTimeout(() => { isSettingView.current = false; }, 200);
   }, [lat, lng, radius, map, recenterTrigger]);
 
-  // Pan to selected task
+  // Pan to selected task (skip if fitBothPoints handled it)
   useEffect(() => {
     if (selectedTask) {
+      // If we already fit both points for this task, don't override
+      if (hasFitBothPoints.current) return;
+
       const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
       const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
 
