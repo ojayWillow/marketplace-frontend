@@ -13,15 +13,15 @@ export const mobileTasksStyles = `
     100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
   }
   @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
   }
   @keyframes slideDown {
-    from { transform: translateY(0); opacity: 1; }
-    to { transform: translateY(100%); opacity: 0; }
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
   }
   .animate-slideUp {
-    animation: slideUp 0.3s ease-out forwards;
+    animation: slideUp 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   .animate-slideDown {
     animation: slideDown 0.2s ease-in forwards;

@@ -22,26 +22,55 @@ const getNavTotalHeight = (): number => {
 };
 
 // Collapsed peek height: drag handle + arrow + title row.
-// Must be tall enough to show all elements above the bottom nav.
 const COLLAPSED_PEEK_HEIGHT = 88;
+
+// Snap threshold in pixels — how far you need to drag before it snaps
+const SNAP_THRESHOLD = 50;
+
+/**
+ * Compute the Y offset (from the "full" position) for each sheet position.
+ * The sheet is rendered at full height and shifted down via translateY.
+ */
+const getTranslateY = (
+  position: SheetPosition,
+  navHeight: number
+): number => {
+  if (typeof window === 'undefined') return 0;
+  const vh = window.innerHeight;
+  const fullH = Math.round(vh * 0.85);
+  const halfH = Math.round(vh * 0.5);
+  const collapsedH = COLLAPSED_PEEK_HEIGHT + navHeight;
+
+  switch (position) {
+    case 'full':
+      return 0;
+    case 'half':
+      return fullH - halfH;
+    case 'collapsed':
+      return fullH - collapsedH;
+    default:
+      return fullH - halfH;
+  }
+};
 
 /**
  * Hook managing bottom sheet drag interaction and position state.
- * 
- * Reads/writes sheetPosition from Zustand store so the position
- * survives tab switches (Home → Work → Home).
+ *
+ * Uses transform: translateY() instead of height for GPU-accelerated
+ * 60 fps animations. The sheet follows your finger in real-time.
  */
 export const useBottomSheet = () => {
-  // Read persisted position from Zustand store
   const storePosition = useMobileMapStore((s) => s.sheetPosition);
   const setStorePosition = useMobileMapStore((s) => s.setSheetPosition);
 
   const [sheetPosition, setSheetPosition] = useState<SheetPosition>(storePosition);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0); // live pixel offset while dragging
   const [navHeight, setNavHeight] = useState(56);
   const startYRef = useRef(0);
+  const baseTranslateRef = useRef(0); // translateY at drag start
 
-  // Sync local state → store whenever it changes
+  // Sync local state → store
   useEffect(() => {
     setStorePosition(sheetPosition);
   }, [sheetPosition, setStorePosition]);
@@ -58,45 +87,62 @@ export const useBottomSheet = () => {
     };
   }, []);
 
-  const getSheetHeight = useCallback(() => {
-    const vh = window.innerHeight;
-    switch (sheetPosition) {
-      case 'collapsed':
-        return COLLAPSED_PEEK_HEIGHT + navHeight;
-      case 'half':
-        return Math.round(vh * 0.5);
-      case 'full':
-        return Math.round(vh * 0.85);
-      default:
-        return Math.round(vh * 0.5);
-    }
-  }, [sheetPosition, navHeight]);
-
-  const sheetHeight = getSheetHeight();
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    setIsDragging(true);
-    startYRef.current = e.touches[0].clientY;
+  // The full sheet height (maximum)
+  const getFullHeight = useCallback(() => {
+    return Math.round(window.innerHeight * 0.85);
   }, []);
 
-  const handleTouchMove = useCallback(() => {}, []);
+  // The resting translateY for the current position
+  const restingTranslateY = getTranslateY(sheetPosition, navHeight);
+
+  // The actual translateY (resting + live drag offset)
+  const currentTranslateY = isDragging
+    ? Math.max(0, baseTranslateRef.current + dragOffset)
+    : restingTranslateY;
+
+  // Visible sheet height for external consumers (e.g. recenter button positioning)
+  const sheetHeight = getFullHeight() - currentTranslateY + navHeight;
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      setIsDragging(true);
+      startYRef.current = e.touches[0].clientY;
+      baseTranslateRef.current = getTranslateY(sheetPosition, navHeight);
+      setDragOffset(0);
+    },
+    [sheetPosition, navHeight]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+      const currentY = e.touches[0].clientY;
+      // Positive delta = finger moved down = sheet goes down
+      const delta = currentY - startYRef.current;
+      setDragOffset(delta);
+    },
+    [isDragging]
+  );
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
       if (!isDragging) return;
       setIsDragging(false);
+      setDragOffset(0);
 
       const endY = e.changedTouches[0].clientY;
-      const deltaY = startYRef.current - endY;
-      const threshold = 50;
+      const deltaY = startYRef.current - endY; // positive = swiped up
 
-      if (deltaY > threshold) {
+      if (deltaY > SNAP_THRESHOLD) {
+        // Swiped up → expand
         if (sheetPosition === 'collapsed') setSheetPosition('half');
         else if (sheetPosition === 'half') setSheetPosition('full');
-      } else if (deltaY < -threshold) {
+      } else if (deltaY < -SNAP_THRESHOLD) {
+        // Swiped down → collapse
         if (sheetPosition === 'full') setSheetPosition('half');
         else if (sheetPosition === 'half') setSheetPosition('collapsed');
       }
+      // else: didn't pass threshold, snaps back to current position
     },
     [isDragging, sheetPosition]
   );
@@ -110,6 +156,8 @@ export const useBottomSheet = () => {
     sheetHeight,
     navHeight,
     isDragging,
+    currentTranslateY,
+    getFullHeight,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,

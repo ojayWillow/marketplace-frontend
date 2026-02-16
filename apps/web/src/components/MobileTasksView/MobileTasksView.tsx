@@ -89,6 +89,8 @@ const MobileTasksView = () => {
     sheetHeight,
     navHeight,
     isDragging,
+    currentTranslateY,
+    getFullHeight,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
@@ -126,7 +128,7 @@ const MobileTasksView = () => {
     if (existingTask) {
       setShowJobList(false);
       setStoredSelectedTaskId(existingTask.id);
-      setTimeout(() => setSelectedTask(existingTask), 100);
+      setSelectedTask(existingTask);
       return;
     }
 
@@ -135,7 +137,7 @@ const MobileTasksView = () => {
         if (task) {
           setShowJobList(false);
           setStoredSelectedTaskId(task.id);
-          setTimeout(() => setSelectedTask(task as Task), 100);
+          setSelectedTask(task as Task);
         }
       })
       .catch((err) => {
@@ -189,24 +191,22 @@ const MobileTasksView = () => {
     setShowJobList(false);
     setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
-    setTimeout(() => setSelectedTask(task), 50);
+    setSelectedTask(task);
   };
 
   const handleMarkerClick = (task: Task) => {
     setShowJobList(false);
     setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
-    setTimeout(() => setSelectedTask(task), 50);
+    setSelectedTask(task);
   };
 
   const handleClosePreview = () => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
     setIsFromDeepLink(false);
-    setTimeout(() => {
-      setShowJobList(true);
-      resetToCollapsed();
-    }, 100);
+    setShowJobList(true);
+    resetToCollapsed();
   };
 
   const handleViewDetails = () => {
@@ -335,7 +335,7 @@ const MobileTasksView = () => {
             className="absolute right-4 z-[1000]"
             style={{
               bottom: `${sheetHeight + 20}px`,
-              transition: 'bottom 0.3s ease-out',
+              transition: isDragging ? 'none' : 'bottom 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
             }}
           >
             <button
@@ -374,14 +374,18 @@ const MobileTasksView = () => {
           </div>
         )}
 
-        {/* Bottom sheet */}
+        {/* Bottom sheet — GPU-accelerated via transform */}
         {!selectedTask && showJobList && (
           <div
             className="fixed left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl dark:shadow-gray-950/80 flex flex-col"
             style={{
               bottom: `${navHeight}px`,
-              height: `${sheetHeight - navHeight}px`,
-              transition: isDragging ? 'none' : 'height 0.3s ease-out, bottom 0.3s ease-out',
+              height: `${getFullHeight() - navHeight}px`,
+              transform: `translateY(${currentTranslateY}px)`,
+              transition: isDragging
+                ? 'none'
+                : 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+              willChange: 'transform',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
             }}
