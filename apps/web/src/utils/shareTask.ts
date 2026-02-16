@@ -19,12 +19,32 @@ const shortAddress = (location?: string): string => {
 };
 
 /**
+ * Format a date string as relative time for share messages.
+ * e.g. "Just now", "5m ago", "2h ago", "3d ago", or "15 Feb"
+ */
+const formatPostedTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+};
+
+/**
  * Share a task via the Web Share API (mobile) or copy to clipboard (desktop).
  *
  * The shared message includes:
  * - Title
  * - Price (€)
  * - Location (short)
+ * - Posted time (relative)
  * - Deep link URL → opens map with bubble selected
  */
 export const shareTask = async (task: Task): Promise<'shared' | 'copied' | 'dismissed'> => {
@@ -36,6 +56,7 @@ export const shareTask = async (task: Task): Promise<'shared' | 'copied' | 'dism
   lines.push(task.title);
   if (budget > 0) lines.push(`💰 €${budget}`);
   if (address) lines.push(`📍 ${address}`);
+  if (task.created_at) lines.push(`🕐 Posted ${formatPostedTime(task.created_at)}`);
   lines.push('');
   lines.push(url);
 
