@@ -19,6 +19,10 @@ const Layout = () => {
   // All primary mobile screens get the fullscreen treatment.
   // This ensures they fit exactly within the dynamic viewport (100dvh)
   // with proper safe-area handling and no Header/gray background leaking through.
+  //
+  // Detail pages (/tasks/:id, /quick-help/:id) are also fullscreen because
+  // they have their own Back/Share header bar and the Layout Header would
+  // overlap it (both sticky top-0, different z-indexes).
   const isFullscreenMobilePage = isMobile && (
     location.pathname === '/' ||
     location.pathname === '/tasks' || 
@@ -26,7 +30,9 @@ const Layout = () => {
     location.pathname === '/messages' ||
     location.pathname.startsWith('/messages/') ||
     location.pathname === '/work' ||
-    location.pathname === '/profile'
+    location.pathname === '/profile' ||
+    /^\/tasks\/\d+$/.test(location.pathname) ||
+    /^\/quick-help\/\d+$/.test(location.pathname)
   );
 
   // For fullscreen mobile pages, render without header/footer but with bottom nav.
@@ -80,7 +86,7 @@ const Layout = () => {
     );
   }
 
-  // Mobile app pages (secondary pages like /tasks/:id, /users/:id, etc.)
+  // Mobile app pages (secondary pages like /users/:id, etc.)
   // These still get Header + bottom nav + scroll padding
   if (isMobile) {
     return (
