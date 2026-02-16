@@ -28,12 +28,12 @@ export const NotificationBell = () => {
       <button
         ref={bellRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         {/* Bell SVG icon */}
         <svg
-          className="w-5 h-5 text-gray-600"
+          className="w-5 h-5 text-gray-600 dark:text-gray-300"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
