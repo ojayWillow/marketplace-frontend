@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Offering } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
-import FavoriteButton from '../../../../components/ui/FavoriteButton';
 import StarRating from '../StarRating';
 import { calculateDistance, formatDistance } from '../../utils';
 import type { UserLocation } from '@marketplace/shared';
@@ -64,24 +63,16 @@ const OfferingMapPopup = ({ offering, userLocation }: OfferingMapPopupProps) => 
       <h3 className="font-semibold text-gray-900 text-xs mb-3 line-clamp-2">{offering.title}</h3>
       
       {/* Action Button - Orange */}
-      <div className="flex gap-2">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigate(`/offerings/${offering.id}`);
-          }}
-          className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
-        >
-          {t('offerings.viewProfile', 'View Profile')} →
-        </button>
-        <FavoriteButton
-          itemType="offering"
-          itemId={offering.id}
-          size="sm"
-          className="!rounded-lg"
-        />
-      </div>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(`/offerings/${offering.id}`);
+        }}
+        className="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-all"
+      >
+        {t('offerings.viewProfile', 'View Profile')} →
+      </button>
     </div>
   );
 };

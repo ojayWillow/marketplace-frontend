@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getCategoryIcon, getCategoryLabel } from '../../../../constants/categories';
-import FavoriteButton from '../../../../components/ui/FavoriteButton';
 import { calculateDistance, formatDistance, formatTimeAgo } from '../../utils';
 import type { Task, UserLocation } from '@marketplace/shared';
 
@@ -80,25 +79,17 @@ const JobMapPopup = ({ task, userLocation }: JobMapPopupProps) => {
         <span>{task.creator_name || t('tasks.anonymous', 'Anonymous')}</span>
       </div>
       
-      {/* Dual CTAs - Blue for jobs */}
-      <div className="flex gap-2">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigate(`/tasks/${task.id}`);
-          }}
-          className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-all"
-        >
-          {t('tasks.viewAndApply', 'View & Apply')} →
-        </button>
-        <FavoriteButton
-          itemType="task"
-          itemId={task.id}
-          size="sm"
-          className="!rounded-lg"
-        />
-      </div>
+      {/* CTA Button */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(`/tasks/${task.id}`);
+        }}
+        className="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-all"
+      >
+        {t('tasks.viewAndApply', 'View & Apply')} →
+      </button>
     </div>
   );
 };
