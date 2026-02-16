@@ -26,6 +26,7 @@ import { apiClient } from '@marketplace/shared';
 import SEOHead from '../../components/ui/SEOHead';
 import ShareButton from '../../components/ui/ShareButton';
 import { FEATURES } from '../../constants/featureFlags';
+import { formatTimeAgoLong } from '../Tasks/utils/taskHelpers';
 
 // Local components
 import {
@@ -277,7 +278,10 @@ const TaskDetail = () => {
   const budget = task.budget || task.reward || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
   const seoDescription = `${categoryLabel} job${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
-  const postedDate = task.created_at
+  // Relative time for share messages ("3 days ago")
+  const postedDateRelative = task.created_at ? formatTimeAgoLong(task.created_at) : '';
+  // Absolute date for the info bar on the detail page ("Feb 4")
+  const postedDateAbsolute = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
   const applicantLabel = applicantCount > 0 ? `${applicantCount} applied` : 'New';
@@ -305,14 +309,14 @@ const TaskDetail = () => {
             <span className="md:hidden">Back</span>
           </Link>
           <ShareButton
-            url={`/?task=${task.id}`}
+            url={`/tasks/${task.id}`}
             title={task.title}
             description={`${categoryLabel} job - ${budget} EUR`}
             categoryIcon={categoryIcon}
             categoryEmoji={categoryIcon}
             price={`€${budget}`}
             location={shortLocation}
-            postedDate={postedDate}
+            postedDate={postedDateRelative}
             size="sm"
           />
         </div>
@@ -430,7 +434,7 @@ const TaskDetail = () => {
               </div>
               <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Posted</div>
-                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{postedDate || 'N/A'}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || 'N/A'}</div>
               </div>
             </div>
           </div>
@@ -472,7 +476,7 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Desktop-only inline application form */}
+          {/* Desktop inline application form */}
           {showApplicationSheet && canApply && (
             <div className="hidden md:block mx-6 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
               <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">Apply for this job</h3>
@@ -554,10 +558,6 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* NOTE: Removed the duplicate inline "Leave a review" button that was here.
-               The review prompt now lives ONLY inside the TaskReviews component below,
-               so users see a single "Leave a review" button in the reviews section. */}
-
           {/* Desktop inline action button */}
           <div className="hidden md:block px-6 pb-6">
             <TaskActionButtons
@@ -598,9 +598,6 @@ const TaskDetail = () => {
             }}
           />
         )}
-
-        {/* "How it works" section REMOVED — it was cluttering completed/disputed views
-             and is unnecessary for users who are already engaged with the task flow */}
       </div>
 
       {/* Mobile bottom sheet for applying */}
@@ -619,14 +616,12 @@ const TaskDetail = () => {
         isOpen={showReviewSheet}
         onClose={() => {
           setShowReviewSheet(false);
-          // Navigate to profile after closing (whether they reviewed or skipped)
           navigate('/profile');
         }}
         onSubmitted={() => {
           setShowReviewSheet(false);
           fetchReviews();
           checkCanReview();
-          // Navigate to profile after submitting review
           setTimeout(() => navigate('/profile'), 1000);
         }}
         taskId={Number(id)}

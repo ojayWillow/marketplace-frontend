@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getCategoryLabel } from '../../../../constants/categories';
 import FavoriteButton from '../../../../components/ui/FavoriteButton';
-import { calculateDistance } from '../../utils/taskHelpers';
+import { calculateDistance, formatTimeAgo } from '../../utils/taskHelpers';
 import type { TaskCardProps } from './TaskCard.types';
 
 /**
@@ -25,6 +25,7 @@ export const TaskCard = ({ task, userLocation, isMatching }: TaskCardProps) => {
   const isHighValue = budget > 75;
   const isUrgent = task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
+  const postedAgo = task.created_at ? formatTimeAgo(task.created_at, t) : '';
 
   return (
     <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
@@ -78,6 +79,9 @@ export const TaskCard = ({ task, userLocation, isMatching }: TaskCardProps) => {
             <p className="text-gray-600 text-sm mb-3 line-clamp-2">{task.description}</p>
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
+              {postedAgo && (
+                <span className="text-gray-400">· 🕐 {postedAgo}</span>
+              )}
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{getCategoryLabel(task.category)}</span>
             </div>
             {task.creator_name && (
