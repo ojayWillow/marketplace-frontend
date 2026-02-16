@@ -52,35 +52,34 @@ export const shareTask = async (task: Task): Promise<'shared' | 'copied' | 'dism
   const address = shortAddress(task.location);
   const url = buildShareUrl(task.id);
 
-  const lines: string[] = [];
-  lines.push(task.title);
-  if (budget > 0) lines.push(`💰 €${budget}`);
-  if (address) lines.push(`📍 ${address}`);
-  if (task.created_at) lines.push(`🕐 Posted ${formatPostedTime(task.created_at)}`);
-  lines.push('');
-  lines.push(url);
+  // Build text lines WITHOUT the URL (native share adds url separately)
+  const textLines: string[] = [];
+  textLines.push(task.title);
+  if (budget > 0) textLines.push(`💰 €${budget}`);
+  if (address) textLines.push(`📍 ${address}`);
+  if (task.created_at) textLines.push(`🕐 Posted ${formatPostedTime(task.created_at)}`);
 
-  const text = lines.join('\n');
+  const text = textLines.join('\n');
 
   // Try native share (works on mobile browsers)
+  // Pass url separately — the Share API appends it automatically
   if (navigator.share) {
     try {
       await navigator.share({ title: task.title, text, url });
       return 'shared';
     } catch (err: any) {
-      // User cancelled the share dialog
       if (err?.name === 'AbortError') return 'dismissed';
     }
   }
 
-  // Fallback: copy to clipboard
+  // Fallback: copy to clipboard (include URL inline since there's no separate url field)
+  const clipboardText = text + '\n\n' + url;
   try {
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(clipboardText);
     return 'copied';
   } catch {
-    // Last resort: textarea hack
     const textarea = document.createElement('textarea');
-    textarea.value = text;
+    textarea.value = clipboardText;
     textarea.style.position = 'fixed';
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
