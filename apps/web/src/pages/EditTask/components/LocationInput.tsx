@@ -46,9 +46,12 @@ const LocationInput = ({
       </div>
     )}
 
-    {location && (
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        \uD83D\uDCCD Coordinates: {latitude.toFixed(4)}, {longitude.toFixed(4)}
+    {location && latitude !== 56.9496 && longitude !== 24.1052 && (
+      <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+        </svg>
+        Location confirmed
       </p>
     )}
   </div>
