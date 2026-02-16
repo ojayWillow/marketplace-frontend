@@ -1,10 +1,13 @@
 {
   "hero": {
     "badge": "Pieejams Latvijā",
-    "title": "Saņem palīdzību ar",
-    "titleHighlight": "ikdienas uzdevumiem",
-    "subtitle": "Vajag kādu, kas izvedīs suni, palīdzēs pārcelties vai salabos kaut ko mājās? Sazinies ar uzticamiem vietējiem, kas var palīdzēt",
-    "subtitleExtended": " — parasti dažu stundu laikā",
+    "title": "Atver karti jo darbs ir",
+    "titleHighlight": "tuvāk nekā domā",
+    "subtitleLine1": "Darbi 24/7 tavā apkaimē.",
+    "subtitleLine2": "Atrodi savējo tepat blakus.",
+    "subtitleLine3": "Ņem darbu vai piedāvā savu.",
+    "examples": ["Mēbeļu salikšana", "Dzīvokļu tīrīšana", "Jebkas, ko šodien vajag"],
+    "closingLine": "Sāc jau šodien.",
     "fast": "Ātri",
     "fastDesc": "Saņem piedāvājumus minūtēs",
     "verified": "Verificēti",

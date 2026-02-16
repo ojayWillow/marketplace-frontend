@@ -1,10 +1,13 @@
 {
   "hero": {
     "badge": "Available in Latvia",
-    "title": "Get help with",
-    "titleHighlight": "everyday tasks",
-    "subtitle": "Need someone to walk your dog, help you move, or fix something at home? Connect with trusted locals who can help",
-    "subtitleExtended": " — usually within hours",
+    "title": "Open the map — work is",
+    "titleHighlight": "closer than you think",
+    "subtitleLine1": "Jobs 24/7 in your neighborhood.",
+    "subtitleLine2": "Find yours right next door.",
+    "subtitleLine3": "Take a job or offer your own.",
+    "examples": ["Furniture assembly", "Apartment cleaning", "Anything you need today"],
+    "closingLine": "Start today.",
     "fast": "Fast",
     "fastDesc": "Get offers in minutes",
     "verified": "Verified",
