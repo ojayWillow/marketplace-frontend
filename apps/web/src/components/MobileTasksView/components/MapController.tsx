@@ -73,8 +73,13 @@ const MapController = ({
   }, [map, store]);
 
   // --- Fit map to show both user + job (shared link + real GPS) ---
+  // This can fire initially OR late (GPS arrives after deep link already
+  // zoomed to job-only view). Either way we refit to show both points.
   useEffect(() => {
-    if (!fitBothPoints || hasFitBothPoints.current) return;
+    if (!fitBothPoints) return;
+    // Allow re-fitting even if we previously handled the no-location case
+    // (GPS arrived late — we now have real coords, show both points)
+    if (hasFitBothPoints.current) return;
     hasFitBothPoints.current = true;
 
     isSettingView.current = true;
@@ -84,12 +89,9 @@ const MapController = ({
       [fitBothPoints.taskLat, fitBothPoints.taskLng]
     );
 
-    // Account for the JobPreviewCard covering the bottom ~55% of screen.
-    // Use asymmetric padding: more on bottom so both points are visible
-    // in the top portion of the map.
     const mapContainer = map.getContainer();
     const mapHeight = mapContainer.offsetHeight;
-    const bottomPadding = Math.round(mapHeight * 0.50); // card height
+    const bottomPadding = Math.round(mapHeight * 0.50);
 
     map.fitBounds(bounds, {
       paddingTopLeft: [40, 60],
@@ -104,7 +106,7 @@ const MapController = ({
   // --- Deep link without GPS: zoom in on the job, centered in visible area ---
   useEffect(() => {
     if (!isDeepLinkNoLocation || !selectedTask || hasHandledDeepLinkNoLoc.current) return;
-    if (hasFitBothPoints.current) return; // GPS arrived, fitBothPoints takes over
+    if (hasFitBothPoints.current) return; // GPS already arrived
     hasHandledDeepLinkNoLoc.current = true;
 
     const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
@@ -112,12 +114,8 @@ const MapController = ({
 
     isSettingView.current = true;
     map.invalidateSize();
-
-    // Zoom in closer (15) to emphasise the job since there’s no user dot to show
     map.setView([taskLat, taskLng], 15, { animate: false });
 
-    // Pan marker into the visible top portion (above the preview card).
-    // Card covers ~55% from bottom, so we want the marker at ~20% from top.
     setTimeout(() => {
       const mapContainer = map.getContainer();
       const mapHeight = mapContainer.offsetHeight;
