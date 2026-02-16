@@ -176,6 +176,9 @@ const MobileTasksView = () => {
     };
   }, [isFromDeepLink, hasRealLocation, selectedTask, userLocation]);
 
+  // Deep link without GPS — tell MapController to zoom in on the job
+  const isDeepLinkNoLocation = isFromDeepLink && !hasRealLocation;
+
   // --- Event handlers ---
   const handleRecenter = () => {
     setSelectedTask(null);
@@ -287,6 +290,7 @@ const MobileTasksView = () => {
               isMenuOpen={false}
               sheetPosition={sheetPosition}
               fitBothPoints={fitBothPoints}
+              isDeepLinkNoLocation={isDeepLinkNoLocation}
             />
 
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
