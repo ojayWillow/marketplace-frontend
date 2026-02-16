@@ -16,13 +16,14 @@
     
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Kolab" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     
-    <!-- Android/Chrome PWA -->
+    <!-- Android/Chrome PWA — adaptive theme color for light & dark mode -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#3B82F6" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
     <!-- manifest link injected by vite-plugin-pwa -->
     
     <!-- Favicon -->
