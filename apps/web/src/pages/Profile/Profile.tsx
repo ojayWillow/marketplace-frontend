@@ -23,8 +23,6 @@ import {
   useProfileActions,
 } from './hooks';
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
-import { MobileActivitySection } from './components/mobile/MobileActivitySection';
-import { MobileListingsTeaser } from './components/mobile/MobileListingsTeaser';
 import CommunityRulesModal from '../../components/QuickHelpIntroModal';
 
 const Profile = () => {
@@ -75,7 +73,6 @@ const Profile = () => {
     setFormData,
   });
 
-  const [mobileActivityMode, setMobileActivityMode] = useState<'jobs' | 'services'>('jobs');
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showMobileSettings, setShowMobileSettings] = useState(false);
 
@@ -130,7 +127,7 @@ const Profile = () => {
   const hasTasks = createdTasks.length > 0 || myApplications.length > 0;
   const hasReviews = reviews.length > 0;
 
-  // Mobile layout
+  // Mobile layout — clean identity card + reviews only
   if (isMobile) {
     return (
       <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-950 animate-page-enter">
@@ -207,29 +204,6 @@ const Profile = () => {
                       onDeleteReview={actions.handleDeleteReview}
                       setReviews={setReviews}
                     />
-
-                    <MobileListingsTeaser />
-
-                    <MobileActivitySection
-                      activeMode={mobileActivityMode}
-                      onModeChange={setMobileActivityMode}
-                      createdTasks={createdTasks}
-                      myApplications={myApplications}
-                      taskMatchCounts={taskMatchCounts}
-                      tasksLoading={tasksLoading}
-                      applicationsLoading={applicationsLoading}
-                      taskViewMode={taskViewMode}
-                      taskStatusFilter={taskStatusFilter}
-                      onViewModeChange={setTaskViewMode}
-                      onStatusFilterChange={setTaskStatusFilter}
-                      onCancelTask={actions.handleCancelTask}
-                      onTaskConfirmed={fetchTasks}
-                      userId={user?.id}
-                      offerings={myOfferings}
-                      offeringsLoading={offeringsLoading}
-                      onDeleteOffering={actions.handleDeleteOffering}
-                      pendingNotifications={totalPendingApplicationsOnMyTasks}
-                    />
                   </>
                 )}
               </>
@@ -240,7 +214,7 @@ const Profile = () => {
     );
   }
 
-  // Desktop layout
+  // Desktop layout — unchanged
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-6 animate-page-enter">
       <div className="max-w-4xl mx-auto px-4">
