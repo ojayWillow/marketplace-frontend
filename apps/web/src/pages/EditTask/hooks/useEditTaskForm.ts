@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { geocodeAddress, GeocodingResult, useAuthStore, useToastStore, apiClient } from '@marketplace/shared';
@@ -19,6 +19,12 @@ export const useEditTaskForm = () => {
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<GeocodingResult[]>([]);
   const [formInitialized, setFormInitialized] = useState(false);
+
+  // Track whether the user has manually edited the location field.
+  // This prevents geocoding from firing when the form first loads
+  // with the existing task location, which would show the suggestions
+  // dropdown immediately and make it look like two location boxes.
+  const locationTouched = useRef(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -67,8 +73,10 @@ export const useEditTaskForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
-  // Debounced geocoding
+  // Debounced geocoding — only when user has manually typed in the field
   useEffect(() => {
+    if (!locationTouched.current) return;
+
     const timer = setTimeout(async () => {
       if (formData.location.length > 3) {
         try {
@@ -90,6 +98,9 @@ export const useEditTaskForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    if (name === 'location') {
+      locationTouched.current = true;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
@@ -97,6 +108,7 @@ export const useEditTaskForm = () => {
   };
 
   const selectAddress = (result: GeocodingResult) => {
+    locationTouched.current = false;
     setFormData(prev => ({
       ...prev,
       location: result.display_name,
