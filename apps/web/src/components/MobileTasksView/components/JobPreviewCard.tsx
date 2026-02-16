@@ -4,7 +4,6 @@ import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
-import FavoriteButton from '../../ui/FavoriteButton';
 import shareTask from '../../../utils/shareTask';
 import { FEATURES } from '../../../constants/featureFlags';
 
@@ -277,12 +276,6 @@ const JobPreviewCard = ({
             </svg>
           )}
         </button>
-        <FavoriteButton
-          itemType="task"
-          itemId={task.id}
-          size="md"
-          className="!rounded-xl !w-12 !h-12"
-        />
       </div>
     </div>
   );

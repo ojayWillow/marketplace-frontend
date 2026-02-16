@@ -1,7 +1,6 @@
 import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
-import FavoriteButton from '../../ui/FavoriteButton';
 import { FEATURES } from '../../../constants/featureFlags';
 
 /**
@@ -167,7 +166,6 @@ const MobileJobCard = ({
         >
           €{budget}
         </span>
-        <FavoriteButton itemType="task" itemId={task.id} size="sm" />
       </div>
     </div>
   );
