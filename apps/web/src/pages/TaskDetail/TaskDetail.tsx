@@ -291,6 +291,7 @@ const TaskDetail = () => {
         url={`/tasks/${task.id}`}
         type="article"
         price={task.budget}
+        publishedDate={task.created_at || undefined}
       />
 
       {/* Top bar */}
@@ -311,6 +312,7 @@ const TaskDetail = () => {
             categoryEmoji={categoryIcon}
             price={`€${budget}`}
             location={shortLocation}
+            postedDate={postedDate}
             size="sm"
           />
         </div>

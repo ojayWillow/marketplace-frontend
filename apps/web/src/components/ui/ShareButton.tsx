@@ -11,6 +11,7 @@ interface ShareButtonProps {
   categoryEmoji?: string;
   price?: string;
   location?: string;
+  postedDate?: string;
   variant?: 'button' | 'icon';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -30,6 +31,7 @@ const ShareButton = ({
   categoryEmoji,
   price,
   location,
+  postedDate,
   variant = 'button',
   size = 'md',
   className = '',
@@ -58,10 +60,11 @@ const ShareButton = ({
     const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
     lines.push(titleLine);
 
-    // Line 2: price · location (compact)
+    // Line 2: price · location · posted date (compact)
     const details: string[] = [];
     if (price) details.push(`\u{1F4B0} ${price}`);
     if (location) details.push(`\u{1F4CD} ${location}`);
+    if (postedDate) details.push(`\u{1F4C5} ${postedDate}`);
     if (details.length > 0) {
       lines.push(details.join('  \u00B7  '));
     }
@@ -235,9 +238,17 @@ const ShareButton = ({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{title}</p>
-            {price && (
-              <p className="text-sm font-bold text-green-600 mt-0.5">{price}</p>
-            )}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {price && (
+                <span className="text-sm font-bold text-green-600">{price}</span>
+              )}
+              {price && postedDate && (
+                <span className="text-gray-300">·</span>
+              )}
+              {postedDate && (
+                <span className="text-xs text-gray-400">📅 {postedDate}</span>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-1 truncate">kolab.lv</p>
           </div>
         </div>

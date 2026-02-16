@@ -9,6 +9,7 @@ interface SEOHeadProps {
   price?: number;
   currency?: string;
   siteName?: string;
+  publishedDate?: string;
 }
 
 /**
@@ -24,7 +25,8 @@ const SEOHead = ({
   type = 'website',
   price,
   currency = 'EUR',
-  siteName = 'Tirgus'
+  siteName = 'Tirgus',
+  publishedDate,
 }: SEOHeadProps) => {
   useEffect(() => {
     // Update page title — guard against null
@@ -63,6 +65,11 @@ const SEOHead = ({
       setMetaTag('og:image:height', '630');
     }
 
+    // Article published time (for shared jobs/tasks)
+    if (type === 'article' && publishedDate) {
+      setMetaTag('article:published_time', publishedDate);
+    }
+
     // Twitter Card tags
     setMetaTag('twitter:card', image ? 'summary_large_image' : 'summary', true);
     setMetaTag('twitter:title', fullTitle, true);
@@ -88,7 +95,7 @@ const SEOHead = ({
       document.title = 'Tirgus - Latvijas Tirgus';
       // We could remove tags here, but it's usually fine to leave them
     };
-  }, [title, description, image, url, type, price, currency, siteName]);
+  }, [title, description, image, url, type, price, currency, siteName, publishedDate]);
 
   // This component doesn't render anything
   return null;
