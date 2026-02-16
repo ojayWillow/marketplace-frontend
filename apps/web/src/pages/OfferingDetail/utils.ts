@@ -1,5 +1,6 @@
 import { Offering } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../../constants/categories';
+import { formatTimeAgoLong } from '../Tasks/utils/taskHelpers';
 import { SafeOfferingValues } from './types';
 
 export const getBoostTimeRemaining = (boostExpiresAt?: string): string | null => {
@@ -23,7 +24,7 @@ export const getSafeValues = (offering: Offering): SafeOfferingValues => {
   const categoryLabel = getCategoryLabel(offering.category);
   const priceDisplay = `\u20ac${offering.price || 0}${safePriceType === 'hourly' ? '/hr' : ''}`;
   const postedDate = offering.created_at
-    ? new Date(offering.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? formatTimeAgoLong(offering.created_at)
     : '';
   const seoDescription = `${categoryLabel} service by ${safeCreatorName} - ${priceDisplay}${safeLocation ? ` in ${safeLocation}` : ''}. ${safeDescription.substring(0, 100)}${safeDescription.length > 100 ? '...' : ''}`;
 

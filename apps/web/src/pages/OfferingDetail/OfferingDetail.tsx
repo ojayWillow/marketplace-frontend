@@ -3,6 +3,7 @@ import { useOffering } from '../../api/hooks';
 import { useAuthStore } from '@marketplace/shared';
 import ShareButton from '../../components/ui/ShareButton';
 import SEOHead from '../../components/ui/SEOHead';
+import { getCategoryEmoji } from '../../constants/categories';
 import {
   OfferingHeader,
   OfferingProfileRow,
@@ -53,6 +54,8 @@ const OfferingDetail = () => {
   const safe = getSafeValues(offering);
   const isOwner = user?.id === offering.creator_id;
   const boostTimeRemaining = getBoostTimeRemaining(offering.boost_expires_at);
+  const categoryEmoji = getCategoryEmoji?.(offering.category) || '';
+  const shortLocation = offering.location?.split(',').slice(0, 2).join(', ') || '';
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
@@ -78,6 +81,11 @@ const OfferingDetail = () => {
             url={`/offerings/${offering.id}`}
             title={safe.safeTitle}
             description={`${safe.categoryLabel} service - ${safe.priceDisplay}`}
+            categoryIcon={safe.categoryIcon}
+            categoryEmoji={categoryEmoji}
+            price={safe.priceDisplay}
+            location={shortLocation}
+            postedDate={safe.postedDate}
             size="sm"
           />
         </div>

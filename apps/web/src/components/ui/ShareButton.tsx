@@ -60,11 +60,11 @@ const ShareButton = ({
     const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
     lines.push(titleLine);
 
-    // Line 2: price · location · posted date (compact)
+    // Line 2: price · location · time ago (compact)
     const details: string[] = [];
     if (price) details.push(`\u{1F4B0} ${price}`);
     if (location) details.push(`\u{1F4CD} ${location}`);
-    if (postedDate) details.push(`\u{1F4C5} ${postedDate}`);
+    if (postedDate) details.push(`\u{1F552} ${postedDate}`);
     if (details.length > 0) {
       lines.push(details.join('  \u00B7  '));
     }
@@ -246,10 +246,13 @@ const ShareButton = ({
                 <span className="text-gray-300">·</span>
               )}
               {postedDate && (
-                <span className="text-xs text-gray-400">📅 {postedDate}</span>
+                <span className="text-xs text-gray-400">🕐 {postedDate}</span>
               )}
             </div>
-            <p className="text-xs text-gray-400 mt-1 truncate">kolab.lv</p>
+            {location && (
+              <p className="text-xs text-gray-400 mt-1 truncate">📍 {location}</p>
+            )}
+            <p className="text-xs text-gray-300 mt-0.5 truncate">kolab.lv</p>
           </div>
         </div>
       </div>
