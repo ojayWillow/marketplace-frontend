@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Prevent white flash / bleed-through in dark mode on mobile web */
+html, body, #root {
+  background-color: #0f172a;
+  min-height: 100%;
+}
