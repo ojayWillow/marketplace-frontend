@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { useAuthStore, getTask as fetchTaskById } from '@marketplace/shared';
 import { FEATURES } from '../../constants/featureFlags';
+import { useAuthPrompt } from '../../stores/useAuthPrompt';
 
 import { Task } from './types';
 import { mobileTasksStyles } from './styles';
@@ -43,7 +44,7 @@ const SkeletonCard = () => (
  * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
  *
  * Now restores selectedTask and map viewport from Zustand store on mount,
- * so navigating away and back preserves the user's context.
+ * so navigating away and back preserves the user’s context.
  *
  * Deep link support: reads ?task=<id> from URL, fetches the task,
  * and auto-selects it on the map (fly-to + JobPreviewCard).
@@ -53,6 +54,7 @@ const MobileTasksView = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuthStore();
+  const showAuth = useAuthPrompt((s) => s.show);
 
   // Community rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -206,7 +208,12 @@ const MobileTasksView = () => {
   };
 
   const handleViewDetails = () => {
-    if (selectedTask) navigate(`/tasks/${selectedTask.id}`);
+    if (!selectedTask) return;
+    if (!isAuthenticated) {
+      showAuth(() => navigate(`/tasks/${selectedTask.id}`));
+      return;
+    }
+    navigate(`/tasks/${selectedTask.id}`);
   };
 
   const handleCreatorClick = () => {
