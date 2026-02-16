@@ -7,7 +7,6 @@ import { getImageUrl } from '@marketplace/shared'
 import { CATEGORIES } from './constants'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import ErrorMessage from '../../components/ui/ErrorMessage'
-import FavoriteButton from '../../components/ui/FavoriteButton'
 
 // Category icons mapping
 const categoryIcons: Record<string, string> = {
@@ -256,15 +255,6 @@ export default function Listings() {
                     key={listing.id}
                     className="relative bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 overflow-hidden hover:shadow-lg transition-shadow duration-200 group border border-transparent dark:border-gray-700"
                   >
-                    {/* Favorite Button */}
-                    <div className="absolute top-2 right-2 z-10">
-                      <FavoriteButton
-                        itemType="listing"
-                        itemId={listing.id}
-                        size="sm"
-                      />
-                    </div>
-                    
                     <Link to={`/listings/${listing.id}`}>
                       {/* Image */}
                       <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
