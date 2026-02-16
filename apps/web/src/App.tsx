@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import SocketProvider from './components/SocketProvider'
+import ScrollToTop from './components/ScrollToTop'
 
 // Loading spinner component
 const PageLoader = () => (
@@ -62,6 +63,9 @@ const AdminDisputes = lazy(() => import('./pages/admin/AdminDisputes'))
 function App() {
   return (
     <SocketProvider>
+      {/* Reset scroll position to top on every route change */}
+      <ScrollToTop />
+
       <Suspense fallback={<Layout><PageLoader /></Layout>}>
         <Routes>
           <Route path="/" element={<Layout />}>
