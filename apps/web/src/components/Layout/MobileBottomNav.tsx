@@ -7,7 +7,7 @@ import { useAuthPrompt } from '../../stores/useAuthPrompt';
 
 const tabs = [
   { path: '/', icon: '🏠', labelKey: 'nav.home', fallback: 'Home' },
-  { path: '/work', icon: '💼', labelKey: 'nav.work', fallback: 'Work' },
+  { path: '/work', icon: '💼', labelKey: 'nav.work', fallback: 'Work', requiresAuth: true },
   { path: '/messages', icon: '💬', labelKey: 'nav.messages', fallback: 'Messages', requiresAuth: true, badgeKey: 'messages' as const },
   { path: '/profile', icon: '👤', labelKey: 'nav.profile', fallback: 'Profile', requiresAuth: true, badgeKey: 'notifications' as const },
 ];
