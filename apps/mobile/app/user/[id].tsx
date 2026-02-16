@@ -4,12 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Surface, Avatar, Chip, ActivityIndicator, Card } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile, getUserReviewStats, reviewsApi, useAuthStore } from '@marketplace/shared';
+import { useMemo } from 'react';
+import StarRating from '../../components/StarRating';
+import { useThemeStore } from '../../src/stores/themeStore';
+import { colors } from '../../src/theme';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = parseInt(id || '0', 10);
   const { user: currentUser } = useAuthStore();
   const isOwnProfile = currentUser?.id === userId;
+  
+  const { getActiveTheme } = useThemeStore();
+  const activeTheme = getActiveTheme();
+  const themeColors = colors[activeTheme];
 
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['user', userId],
@@ -30,6 +38,175 @@ export default function UserProfileScreen() {
   });
 
   const reviews = reviewsData?.reviews || [];
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: themeColors.backgroundSecondary,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    errorIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    errorText: {
+      color: themeColors.textSecondary,
+      marginBottom: 16,
+    },
+    backButton: {
+      minWidth: 120,
+    },
+    header: {
+      backgroundColor: themeColors.card,
+      paddingVertical: 32,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+    },
+    avatar: {
+      backgroundColor: '#0ea5e9',
+      marginBottom: 16,
+    },
+    name: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+    },
+    username: {
+      color: themeColors.textSecondary,
+      marginTop: 4,
+    },
+    helperBadge: {
+      backgroundColor: activeTheme === 'dark' ? '#064e3b' : '#dcfce7',
+      marginTop: 12,
+    },
+    helperBadgeText: {
+      color: activeTheme === 'dark' ? '#6ee7b7' : '#166534',
+    },
+    bio: {
+      color: themeColors.textSecondary,
+      marginTop: 16,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    location: {
+      color: themeColors.textSecondary,
+      marginTop: 8,
+    },
+    statsSection: {
+      backgroundColor: themeColors.card,
+      marginTop: 12,
+      paddingVertical: 20,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    stat: {
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    statDivider: {
+      width: 1,
+      height: 40,
+      backgroundColor: themeColors.border,
+    },
+    statValue: {
+      fontWeight: 'bold',
+      color: themeColors.text,
+    },
+    statLabel: {
+      color: themeColors.textSecondary,
+      fontSize: 13,
+      marginTop: 4,
+    },
+    section: {
+      backgroundColor: themeColors.card,
+      padding: 20,
+      marginTop: 12,
+    },
+    sectionTitle: {
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 16,
+    },
+    skillsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    skillChip: {
+      marginRight: 8,
+      marginBottom: 8,
+      backgroundColor: themeColors.inputBackground,
+    },
+    hourlyRate: {
+      marginTop: 12,
+      color: '#0ea5e9',
+      fontWeight: '600',
+    },
+    noReviews: {
+      color: themeColors.textMuted,
+      fontStyle: 'italic',
+    },
+    reviewCard: {
+      marginBottom: 12,
+      backgroundColor: themeColors.inputBackground,
+    },
+    reviewHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    reviewerInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    reviewerAvatar: {
+      backgroundColor: themeColors.textSecondary,
+      marginRight: 12,
+    },
+    reviewerName: {
+      fontWeight: '500',
+      color: themeColors.text,
+    },
+    reviewDate: {
+      color: themeColors.textMuted,
+      fontSize: 12,
+    },
+    reviewContent: {
+      color: themeColors.textSecondary,
+      lineHeight: 20,
+    },
+    actionsSection: {
+      backgroundColor: themeColors.card,
+      padding: 20,
+      marginTop: 12,
+    },
+    messageButton: {
+      borderRadius: 12,
+    },
+    footer: {
+      paddingVertical: 24,
+      alignItems: 'center',
+    },
+    memberSince: {
+      color: themeColors.textMuted,
+      fontSize: 13,
+    },
+  }), [activeTheme, themeColors]);
 
   if (isLoading) {
     return (
@@ -69,9 +246,11 @@ export default function UserProfileScreen() {
   };
 
   const handleMessage = () => {
-    // Navigate to conversation with userId and username for display
     router.push(`/conversation/new?userId=${userId}&username=${encodeURIComponent(user.username)}`);
   };
+
+  const avgRating = reviewStats?.average_rating || 0;
+  const totalReviews = reviewStats?.total_reviews || 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -80,6 +259,9 @@ export default function UserProfileScreen() {
           headerShown: true, 
           title: displayName,
           headerBackTitle: 'Back',
+          headerStyle: { backgroundColor: themeColors.card },
+          headerTintColor: '#0ea5e9',
+          headerTitleStyle: { color: themeColors.text },
         }} 
       />
       
@@ -114,15 +296,22 @@ export default function UserProfileScreen() {
         <Surface style={styles.statsSection} elevation={0}>
           <View style={styles.statsContainer}>
             <View style={styles.stat}>
-              <Text variant="headlineMedium" style={styles.statValue}>
-                {reviewStats?.average_rating?.toFixed(1) || '-'}
-              </Text>
-              <Text style={styles.statLabel}>⭐ Rating</Text>
+              {avgRating > 0 ? (
+                <StarRating 
+                  rating={avgRating} 
+                  reviewCount={totalReviews}
+                  size={16} 
+                  showCount={false}
+                />
+              ) : (
+                <Text variant="headlineMedium" style={styles.statValue}>-</Text>
+              )}
+              <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text variant="headlineMedium" style={styles.statValue}>
-                {reviewStats?.total_reviews || 0}
+                {totalReviews}
               </Text>
               <Text style={styles.statLabel}>Reviews</Text>
             </View>
@@ -158,7 +347,7 @@ export default function UserProfileScreen() {
         {/* Reviews */}
         <Surface style={styles.section} elevation={0}>
           <Text variant="titleMedium" style={styles.sectionTitle}>
-            Reviews ({reviewStats?.total_reviews || 0})
+            Reviews ({totalReviews})
           </Text>
           
           {reviews.length === 0 ? (
@@ -183,9 +372,11 @@ export default function UserProfileScreen() {
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.ratingBadge}>
-                      <Text style={styles.ratingText}>⭐ {review.rating}</Text>
-                    </View>
+                    <StarRating 
+                      rating={review.rating} 
+                      size={12} 
+                      showCount={false}
+                    />
                   </View>
                   {review.content ? (
                     <Text style={styles.reviewContent}>{review.content}</Text>
@@ -220,183 +411,3 @@ export default function UserProfileScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  errorIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-  backButton: {
-    minWidth: 120,
-  },
-  header: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  avatar: {
-    backgroundColor: '#0ea5e9',
-    marginBottom: 16,
-  },
-  name: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  username: {
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  helperBadge: {
-    backgroundColor: '#dcfce7',
-    marginTop: 12,
-  },
-  helperBadgeText: {
-    color: '#166534',
-  },
-  bio: {
-    color: '#4b5563',
-    marginTop: 16,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  location: {
-    color: '#6b7280',
-    marginTop: 8,
-  },
-  statsSection: {
-    backgroundColor: '#ffffff',
-    marginTop: 12,
-    paddingVertical: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stat: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#e5e7eb',
-  },
-  statValue: {
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  statLabel: {
-    color: '#6b7280',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  skillsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  skillChip: {
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  hourlyRate: {
-    marginTop: 12,
-    color: '#0ea5e9',
-    fontWeight: '600',
-  },
-  noReviews: {
-    color: '#9ca3af',
-    fontStyle: 'italic',
-  },
-  reviewCard: {
-    marginBottom: 12,
-    backgroundColor: '#f9fafb',
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  reviewerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reviewerAvatar: {
-    backgroundColor: '#6b7280',
-    marginRight: 12,
-  },
-  reviewerName: {
-    fontWeight: '500',
-    color: '#1f2937',
-  },
-  reviewDate: {
-    color: '#9ca3af',
-    fontSize: 12,
-  },
-  ratingBadge: {
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  ratingText: {
-    color: '#92400e',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  reviewContent: {
-    color: '#4b5563',
-    lineHeight: 20,
-  },
-  actionsSection: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginTop: 12,
-  },
-  messageButton: {
-    borderRadius: 12,
-  },
-  footer: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  memberSince: {
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-});
