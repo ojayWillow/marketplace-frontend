@@ -39,9 +39,6 @@ const SkeletonCard = () => (
   </div>
 );
 
-/** Collapsed peek height — must match the constant in useBottomSheet */
-const COLLAPSED_PEEK_HEIGHT = 88;
-
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -182,12 +179,17 @@ const MobileTasksView = () => {
   }, [isFromDeepLink, hasRealLocation, selectedTask, userLocation]);
 
   // --- Recenter button position ---
-  // Position just above the visible portion of the bottom sheet.
-  // When collapsed, the visible area is COLLAPSED_PEEK_HEIGHT above the nav.
-  // We add a small gap (12px) so it doesn't touch the sheet.
+  // The sheet is rendered with:
+  //   bottom: navHeight
+  //   height: (getFullHeight() - navHeight)   <-- the actual rendered height
+  //   transform: translateY(currentTranslateY) <-- pushes it down
+  // So visible pixels of the sheet = renderedHeight - translateY
+  // And the top edge of the sheet from screen bottom = navHeight + visiblePixels
+  // We add 8px gap so the button floats just above the sheet.
   const recenterBottom = useMemo(() => {
-    const visibleSheetPortion = getFullHeight() - currentTranslateY;
-    return navHeight + visibleSheetPortion + 12;
+    const renderedHeight = getFullHeight() - navHeight;
+    const visiblePixels = renderedHeight - currentTranslateY;
+    return navHeight + visiblePixels + 8;
   }, [navHeight, currentTranslateY, getFullHeight]);
 
   // --- Event handlers ---
