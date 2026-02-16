@@ -241,7 +241,7 @@ const TaskDetail = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-3"></div>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Loading job...</p>
@@ -253,7 +253,7 @@ const TaskDetail = () => {
   // Not found state
   if (!task) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center px-4">
           <div className="text-5xl mb-3">😕</div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Job Not Found</h2>
@@ -288,282 +288,320 @@ const TaskDetail = () => {
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
 
   return (
-    <>
-      {/* ====== MOBILE: flex column layout (no sticky, no fixed) ====== */}
-      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-950 md:hidden">
-        <SEOHead
-          title={task.title}
-          description={seoDescription}
-          url={`/tasks/${task.id}`}
-          type="article"
-          price={task.budget}
-          publishedDate={task.created_at || undefined}
-        />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
+      <SEOHead
+        title={task.title}
+        description={seoDescription}
+        url={`/tasks/${task.id}`}
+        type="article"
+        price={task.budget}
+        publishedDate={task.created_at || undefined}
+      />
 
-        {/* Back/Share bar — flex-shrink-0: always visible, never scrolls */}
-        <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-10">
-          <div className="flex items-center justify-between px-4 py-2.5">
-            <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </Link>
-            <ShareButton
-              url={`/tasks/${task.id}`}
-              title={task.title}
-              description={`${categoryLabel} job - ${budget} EUR`}
-              categoryIcon={categoryIcon}
-              categoryEmoji={categoryIcon}
-              price={`€${budget}`}
-              location={shortLocation}
-              postedDate={postedDateRelative}
-              size="sm"
+      {/* Top bar */}
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-50 md:static md:border-b-0">
+        <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
+          <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden md:inline">← Back to Quick Help</span>
+            <span className="md:hidden">Back</span>
+          </Link>
+          <ShareButton
+            url={`/tasks/${task.id}`}
+            title={task.title}
+            description={`${categoryLabel} job - ${budget} EUR`}
+            categoryIcon={categoryIcon}
+            categoryEmoji={categoryIcon}
+            price={`€${budget}`}
+            location={shortLocation}
+            postedDate={postedDateRelative}
+            size="sm"
+          />
+        </div>
+      </div>
+
+      <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
+        {/* Main card */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
+
+          {/* ===== DESKTOP HEADER: gradient banner ===== */}
+          <div className="hidden md:block bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 text-white">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{categoryIcon}</span>
+                <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
+                  {categoryLabel}
+                </span>
+                {isUrgent && (
+                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
+                )}
+              </div>
+              <div className="text-2xl font-black">€{budget}</div>
+            </div>
+            <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
+          </div>
+
+          {/* ===== MOBILE HEADER: compact inline ===== */}
+          <div className="md:hidden p-4 pb-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{categoryIcon}</span>
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wide">
+                  {categoryLabel}
+                </span>
+                {isUrgent && (
+                  <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">Urgent</span>
+                )}
+              </div>
+              <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
+            </div>
+            <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">{task.title}</h1>
+          </div>
+
+          {/* Profile row */}
+          <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200 md:dark:border-gray-700">
+            <div className="flex items-center gap-2.5 md:gap-4">
+              <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
+                <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm md:text-lg font-bold">
+                  {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+              </Link>
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm md:flex-col md:items-start md:gap-0.5">
+                <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate md:text-base">
+                  {task.creator_name || 'Unknown'}
+                </Link>
+                <span className="text-gray-300 dark:text-gray-600 md:hidden">·</span>
+                <div className="flex items-center gap-1">
+                  <StarRating rating={task.creator_rating || 0} />
+                  <span className="text-gray-400 dark:text-gray-500 text-xs">({task.creator_review_count || 0})</span>
+                </div>
+              </div>
+              {!isCreator && (
+                <button
+                  onClick={handleMessageCreator}
+                  className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                  title="Send message"
+                >
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </button>
+              )}
+              {!isCreator && (
+                <Link
+                  to={`/users/${task.creator_id}`}
+                  className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
+                >
+                  Profile
+                </Link>
+              )}
+              {isCreator && canEdit && (
+                <Link
+                  to={`/tasks/${task.id}/edit`}
+                  className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
+                >
+                  Edit
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Thin divider mobile only */}
+          <div className="border-t border-gray-100 dark:border-gray-800 mx-4 md:hidden" />
+
+          {/* Description */}
+          <div className="px-4 py-3 md:px-6 md:py-5">
+            <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">About this job</h2>
+            <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              {task.description}
+            </p>
+          </div>
+
+          {/* Info bar 3 columns */}
+          <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+            <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
+              <div className="py-2.5 md:py-3.5 text-center">
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Applicants</div>
+                <div className={`text-sm md:text-base font-bold ${applicantCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-green-600 dark:text-green-400'}`}>
+                  {applicantLabel}
+                </div>
+              </div>
+              <div className="py-2.5 md:py-3.5 text-center">
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Difficulty</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{task.difficulty || 'Normal'}</div>
+              </div>
+              <div className="py-2.5 md:py-3.5 text-center">
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Posted</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || 'N/A'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Location map */}
+          <div className="px-4 pb-4 md:px-6 md:pb-6">
+            <TaskLocationMap task={task} />
+          </div>
+
+          {/* Assigned Worker Info */}
+          {task.assigned_to_name && (
+            <div className="mx-4 mb-4 md:mx-6 md:mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 text-sm font-bold">
+                  {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Assigned to</p>
+                  <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm md:text-base text-blue-800 dark:text-blue-300 hover:underline">
+                    {task.assigned_to_name}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Applications (Owner View) */}
+          {showApplications && (
+            <div className="px-4 pb-4 md:px-6 md:pb-5">
+              <TaskApplications
+                applications={applications}
+                applicationsLoading={applicationsLoading}
+                acceptingId={acceptingId}
+                rejectingId={rejectingId}
+                onAccept={handleAcceptApplication}
+                onReject={handleRejectApplication}
+                onMessage={handleMessageApplicant}
+              />
+            </div>
+          )}
+
+          {/* Desktop inline application form */}
+          {showApplicationSheet && canApply && (
+            <div className="hidden md:block mx-6 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">Apply for this job</h3>
+              <textarea
+                id="desktop-apply-textarea"
+                placeholder="Introduce yourself and explain why you're a good fit..."
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const textarea = document.getElementById('desktop-apply-textarea') as HTMLTextAreaElement;
+                    handleApplyTask(textarea?.value || '');
+                  }}
+                  disabled={applyMutation.isPending}
+                  className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
+                >
+                  {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
+                </button>
+                <button
+                  onClick={() => setShowApplicationSheet(false)}
+                  className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Status Messages */}
+          {isCreator && task.status === 'assigned' && (
+            <div className="mx-4 mb-4 md:mx-6 text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              ⏳ Waiting for worker to complete the task
+            </div>
+          )}
+          {isAssigned && task.status === 'assigned' && (
+            <div className="mx-4 mb-4 md:mx-6 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              💪 You're assigned — mark as done when finished
+            </div>
+          )}
+          {isCreator && task.status === 'pending_confirmation' && (
+            <div className="mx-4 mb-4 md:mx-6 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              📋 Worker marked this as done — please review and confirm
+            </div>
+          )}
+          {isAssigned && task.status === 'pending_confirmation' && (
+            <div className="mx-4 mb-4 md:mx-6 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              ⏳ Waiting for task owner to confirm completion
+            </div>
+          )}
+          {task.status === 'completed' && (
+            <div className="mx-4 mb-4 md:mx-6 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              ✅ This task has been completed
+            </div>
+          )}
+          {task.status === 'cancelled' && (
+            <div className="mx-4 mb-4 md:mx-6 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
+              This task has been cancelled
+            </div>
+          )}
+
+          {/* Dispute details section (replaces the old simple banner) */}
+          {task.status === 'disputed' && (isCreator || isAssigned) && (
+            <DisputeSection
+              key={disputeKey}
+              taskId={Number(id)}
+              currentUserId={user?.id}
+              onDisputeUpdated={() => {
+                refetchTask();
+                setDisputeKey(prev => prev + 1);
+              }}
+            />
+          )}
+
+          {/* Disputed status banner for non-involved users */}
+          {task.status === 'disputed' && !isCreator && !isAssigned && (
+            <div className="mx-4 mb-4 md:mx-6 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              ⚠️ This task is under dispute
+            </div>
+          )}
+
+          {/* Desktop inline action button */}
+          <div className="hidden md:block px-6 pb-6">
+            <TaskActionButtons
+              task={task}
+              isCreator={isCreator}
+              isAssigned={isAssigned}
+              isAuthenticated={isAuthenticated}
+              actionLoading={actionLoading}
+              showApplicationForm={showApplicationSheet}
+              onShowApplicationForm={() => setShowApplicationSheet(true)}
+              onMarkDone={handleMarkDone}
+              onConfirmDone={handleConfirmDone}
+              onDispute={handleDispute}
+              onCancel={handleCancel}
             />
           </div>
         </div>
 
-        {/* Scrollable content area — flex-1 overflow-y-auto */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 pt-3">
-            {/* Main card */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
-
-              {/* Mobile header: compact inline */}
-              <div className="p-4 pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{categoryIcon}</span>
-                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wide">
-                      {categoryLabel}
-                    </span>
-                    {isUrgent && (
-                      <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">Urgent</span>
-                    )}
-                  </div>
-                  <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
-                </div>
-                <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">{task.title}</h1>
-              </div>
-
-              {/* Profile row */}
-              <div className="px-4 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
-                      {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
-                  </Link>
-                  <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm">
-                    <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
-                      {task.creator_name || 'Unknown'}
-                    </Link>
-                    <span className="text-gray-300 dark:text-gray-600">·</span>
-                    <div className="flex items-center gap-1">
-                      <StarRating rating={task.creator_rating || 0} />
-                      <span className="text-gray-400 dark:text-gray-500 text-xs">({task.creator_review_count || 0})</span>
-                    </div>
-                  </div>
-                  {!isCreator && (
-                    <button
-                      onClick={handleMessageCreator}
-                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                      title="Send message"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </button>
-                  )}
-                  {!isCreator && (
-                    <Link
-                      to={`/users/${task.creator_id}`}
-                      className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
-                    >
-                      Profile
-                    </Link>
-                  )}
-                  {isCreator && canEdit && (
-                    <Link
-                      to={`/tasks/${task.id}/edit`}
-                      className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
-                    >
-                      Edit
-                    </Link>
-                  )}
-                </div>
-              </div>
-
-              {/* Thin divider */}
-              <div className="border-t border-gray-100 dark:border-gray-800 mx-4" />
-
-              {/* Description */}
-              <div className="px-4 py-3">
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                  {task.description}
-                </p>
-              </div>
-
-              {/* Info bar 3 columns */}
-              <div className="mx-4 mb-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
-                  <div className="py-2.5 text-center">
-                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Applicants</div>
-                    <div className={`text-sm font-bold ${applicantCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-green-600 dark:text-green-400'}`}>
-                      {applicantLabel}
-                    </div>
-                  </div>
-                  <div className="py-2.5 text-center">
-                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Difficulty</div>
-                    <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{task.difficulty || 'Normal'}</div>
-                  </div>
-                  <div className="py-2.5 text-center">
-                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Posted</div>
-                    <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || 'N/A'}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Location map */}
-              <div className="px-4 pb-4">
-                <TaskLocationMap task={task} />
-              </div>
-
-              {/* Assigned Worker Info */}
-              {task.assigned_to_name && (
-                <div className="mx-4 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 text-sm font-bold">
-                      {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
-                    <div>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">Assigned to</p>
-                      <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm text-blue-800 dark:text-blue-300 hover:underline">
-                        {task.assigned_to_name}
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Applications (Owner View) */}
-              {showApplications && (
-                <div className="px-4 pb-4">
-                  <TaskApplications
-                    applications={applications}
-                    applicationsLoading={applicationsLoading}
-                    acceptingId={acceptingId}
-                    rejectingId={rejectingId}
-                    onAccept={handleAcceptApplication}
-                    onReject={handleRejectApplication}
-                    onMessage={handleMessageApplicant}
-                  />
-                </div>
-              )}
-
-              {/* Status Messages */}
-              {isCreator && task.status === 'assigned' && (
-                <div className="mx-4 mb-4 text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                  ⏳ Waiting for worker to complete the task
-                </div>
-              )}
-              {isAssigned && task.status === 'assigned' && (
-                <div className="mx-4 mb-4 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                  💪 You're assigned — mark as done when finished
-                </div>
-              )}
-              {isCreator && task.status === 'pending_confirmation' && (
-                <div className="mx-4 mb-4 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                  📋 Worker marked this as done — please review and confirm
-                </div>
-              )}
-              {isAssigned && task.status === 'pending_confirmation' && (
-                <div className="mx-4 mb-4 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                  ⏳ Waiting for task owner to confirm completion
-                </div>
-              )}
-              {task.status === 'completed' && (
-                <div className="mx-4 mb-4 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                  ✅ This task has been completed
-                </div>
-              )}
-              {task.status === 'cancelled' && (
-                <div className="mx-4 mb-4 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
-                  This task has been cancelled
-                </div>
-              )}
-
-              {/* Dispute details section */}
-              {task.status === 'disputed' && (isCreator || isAssigned) && (
-                <DisputeSection
-                  key={disputeKey}
-                  taskId={Number(id)}
-                  currentUserId={user?.id}
-                  onDisputeUpdated={() => {
-                    refetchTask();
-                    setDisputeKey(prev => prev + 1);
-                  }}
-                />
-              )}
-
-              {/* Disputed status banner for non-involved users */}
-              {task.status === 'disputed' && !isCreator && !isAssigned && (
-                <div className="mx-4 mb-4 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                  ⚠️ This task is under dispute
-                </div>
-              )}
-            </div>
-
-            {/* Recommended Helpers */}
-            {task.status === 'open' && user?.id === task.creator_id && (
-              <RecommendedHelpers
-                task={task}
-                helpers={recommendedHelpers}
-                loading={helpersLoading}
-                onContactHelper={handleContactHelper}
-              />
-            )}
-
-            {/* Reviews */}
-            {task.status === 'completed' && (
-              <TaskReviews
-                taskId={Number(id)}
-                reviews={reviews}
-                canReview={canReview}
-                onReviewSubmitted={() => {
-                  fetchReviews();
-                  checkCanReview();
-                }}
-              />
-            )}
-
-            {/* Bottom spacing for action bar */}
-            <div className="h-20" />
-          </div>
-        </div>
-
-        {/* Mobile action bar — flex-shrink-0: always visible at bottom, no fixed positioning */}
-        {!showApplicationSheet && !showReviewSheet && !showDisputeSheet && (
-          <div className="flex-shrink-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-900 z-10">
-            <div className="max-w-3xl mx-auto">
-              <TaskActionButtons
-                task={task}
-                isCreator={isCreator}
-                isAssigned={isAssigned}
-                isAuthenticated={isAuthenticated}
-                actionLoading={actionLoading}
-                showApplicationForm={showApplicationSheet}
-                onShowApplicationForm={() => setShowApplicationSheet(true)}
-                onMarkDone={handleMarkDone}
-                onConfirmDone={handleConfirmDone}
-                onDispute={handleDispute}
-                onCancel={handleCancel}
-              />
-            </div>
-          </div>
+        {/* Recommended Helpers */}
+        {task.status === 'open' && user?.id === task.creator_id && (
+          <RecommendedHelpers
+            task={task}
+            helpers={recommendedHelpers}
+            loading={helpersLoading}
+            onContactHelper={handleContactHelper}
+          />
         )}
 
-        {/* Mobile bottom sheet for applying */}
+        {/* Reviews (the ONLY place with a "Leave a review" button now) */}
+        {task.status === 'completed' && (
+          <TaskReviews
+            taskId={Number(id)}
+            reviews={reviews}
+            canReview={canReview}
+            onReviewSubmitted={() => {
+              fetchReviews();
+              checkCanReview();
+            }}
+          />
+        )}
+      </div>
+
+      {/* Mobile bottom sheet for applying */}
+      <div className="md:hidden">
         <ApplicationSheet
           isOpen={showApplicationSheet}
           onClose={() => setShowApplicationSheet(false)}
@@ -571,361 +609,63 @@ const TaskDetail = () => {
           isSubmitting={applyMutation.isPending}
           taskTitle={task.title}
         />
-
-        {/* Review bottom sheet */}
-        <ReviewSheet
-          isOpen={showReviewSheet}
-          onClose={() => {
-            setShowReviewSheet(false);
-            navigate('/profile');
-          }}
-          onSubmitted={() => {
-            setShowReviewSheet(false);
-            fetchReviews();
-            checkCanReview();
-            setTimeout(() => navigate('/profile'), 1000);
-          }}
-          taskId={Number(id)}
-          revieweeName={getRevieweeName()}
-        />
-
-        {/* Dispute bottom sheet */}
-        <DisputeSheet
-          isOpen={showDisputeSheet}
-          onClose={() => setShowDisputeSheet(false)}
-          onSubmitted={() => {
-            setShowDisputeSheet(false);
-            toast.warning('Dispute filed. The other party will be notified.');
-            refetchTask();
-            setDisputeKey(prev => prev + 1);
-          }}
-          taskId={Number(id)}
-          taskTitle={task.title}
-        />
       </div>
 
-      {/* ====== DESKTOP: original layout (unchanged) ====== */}
-      <div className="hidden md:block min-h-screen bg-gray-50 dark:bg-gray-950 pb-8">
-        <SEOHead
-          title={task.title}
-          description={seoDescription}
-          url={`/tasks/${task.id}`}
-          type="article"
-          price={task.budget}
-          publishedDate={task.created_at || undefined}
-        />
+      {/* Review bottom sheet (mobile + desktop) */}
+      <ReviewSheet
+        isOpen={showReviewSheet}
+        onClose={() => {
+          setShowReviewSheet(false);
+          navigate('/profile');
+        }}
+        onSubmitted={() => {
+          setShowReviewSheet(false);
+          fetchReviews();
+          checkCanReview();
+          setTimeout(() => navigate('/profile'), 1000);
+        }}
+        taskId={Number(id)}
+        revieweeName={getRevieweeName()}
+      />
 
-        {/* Top bar — static on desktop */}
-        <div className="border-b-0">
-          <div className="flex items-center justify-between px-4 py-4 max-w-2xl mx-auto">
-            <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              ← Back to Quick Help
-            </Link>
-            <ShareButton
-              url={`/tasks/${task.id}`}
-              title={task.title}
-              description={`${categoryLabel} job - ${budget} EUR`}
-              categoryIcon={categoryIcon}
-              categoryEmoji={categoryIcon}
-              price={`€${budget}`}
-              location={shortLocation}
-              postedDate={postedDateRelative}
-              size="sm"
-            />
-          </div>
-        </div>
+      {/* Dispute bottom sheet (mobile + desktop) */}
+      <DisputeSheet
+        isOpen={showDisputeSheet}
+        onClose={() => setShowDisputeSheet(false)}
+        onSubmitted={() => {
+          setShowDisputeSheet(false);
+          toast.warning('Dispute filed. The other party will be notified.');
+          refetchTask();
+          setDisputeKey(prev => prev + 1);
+        }}
+        taskId={Number(id)}
+        taskTitle={task.title}
+      />
 
-        <div className="px-4 max-w-2xl mx-auto">
-          {/* Main card */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
-
-            {/* Desktop header: gradient banner */}
-            <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 text-white">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{categoryIcon}</span>
-                  <span className="px-2.5 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide">
-                    {categoryLabel}
-                  </span>
-                  {isUrgent && (
-                    <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
-                  )}
-                </div>
-                <div className="text-2xl font-black">€{budget}</div>
-              </div>
-              <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
-            </div>
-
-            {/* Profile row */}
-            <div className="px-6 pt-5 pb-5 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4">
-                <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
-                    {task.creator_name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                </Link>
-                <div className="flex flex-col items-start gap-0.5">
-                  <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 text-base">
-                    {task.creator_name || 'Unknown'}
-                  </Link>
-                  <div className="flex items-center gap-1">
-                    <StarRating rating={task.creator_rating || 0} />
-                    <span className="text-gray-400 dark:text-gray-500 text-xs">({task.creator_review_count || 0})</span>
-                  </div>
-                </div>
-                {!isCreator && (
-                  <button
-                    onClick={handleMessageCreator}
-                    className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors ml-auto"
-                    title="Send message"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </button>
-                )}
-                {!isCreator && (
-                  <Link
-                    to={`/users/${task.creator_id}`}
-                    className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
-                  >
-                    Profile
-                  </Link>
-                )}
-                {isCreator && canEdit && (
-                  <Link
-                    to={`/tasks/${task.id}/edit`}
-                    className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0 ml-auto"
-                  >
-                    Edit
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="px-6 py-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">About this job</h2>
-              <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {task.description}
-              </p>
-            </div>
-
-            {/* Info bar 3 columns */}
-            <div className="mx-6 mb-5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-              <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
-                <div className="py-3.5 text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Applicants</div>
-                  <div className={`text-base font-bold ${applicantCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-green-600 dark:text-green-400'}`}>
-                    {applicantLabel}
-                  </div>
-                </div>
-                <div className="py-3.5 text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Difficulty</div>
-                  <div className="text-base font-bold text-gray-800 dark:text-gray-200">{task.difficulty || 'Normal'}</div>
-                </div>
-                <div className="py-3.5 text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Posted</div>
-                  <div className="text-base font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || 'N/A'}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Location map */}
-            <div className="px-6 pb-6">
-              <TaskLocationMap task={task} />
-            </div>
-
-            {/* Assigned Worker Info */}
-            {task.assigned_to_name && (
-              <div className="mx-6 mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 text-sm font-bold">
-                    {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600 dark:text-blue-400">Assigned to</p>
-                    <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-base text-blue-800 dark:text-blue-300 hover:underline">
-                      {task.assigned_to_name}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Applications (Owner View) */}
-            {showApplications && (
-              <div className="px-6 pb-5">
-                <TaskApplications
-                  applications={applications}
-                  applicationsLoading={applicationsLoading}
-                  acceptingId={acceptingId}
-                  rejectingId={rejectingId}
-                  onAccept={handleAcceptApplication}
-                  onReject={handleRejectApplication}
-                  onMessage={handleMessageApplicant}
-                />
-              </div>
-            )}
-
-            {/* Desktop inline application form */}
-            {showApplicationSheet && canApply && (
-              <div className="mx-6 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">Apply for this job</h3>
-                <textarea
-                  id="desktop-apply-textarea"
-                  placeholder="Introduce yourself and explain why you're a good fit..."
-                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const textarea = document.getElementById('desktop-apply-textarea') as HTMLTextAreaElement;
-                      handleApplyTask(textarea?.value || '');
-                    }}
-                    disabled={applyMutation.isPending}
-                    className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
-                  >
-                    {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                  <button
-                    onClick={() => setShowApplicationSheet(false)}
-                    className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Status Messages */}
-            {isCreator && task.status === 'assigned' && (
-              <div className="mx-6 mb-4 text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                ⏳ Waiting for worker to complete the task
-              </div>
-            )}
-            {isAssigned && task.status === 'assigned' && (
-              <div className="mx-6 mb-4 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                💪 You're assigned — mark as done when finished
-              </div>
-            )}
-            {isCreator && task.status === 'pending_confirmation' && (
-              <div className="mx-6 mb-4 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                📋 Worker marked this as done — please review and confirm
-              </div>
-            )}
-            {isAssigned && task.status === 'pending_confirmation' && (
-              <div className="mx-6 mb-4 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                ⏳ Waiting for task owner to confirm completion
-              </div>
-            )}
-            {task.status === 'completed' && (
-              <div className="mx-6 mb-4 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                ✅ This task has been completed
-              </div>
-            )}
-            {task.status === 'cancelled' && (
-              <div className="mx-6 mb-4 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
-                This task has been cancelled
-              </div>
-            )}
-
-            {/* Dispute details section */}
-            {task.status === 'disputed' && (isCreator || isAssigned) && (
-              <DisputeSection
-                key={disputeKey}
-                taskId={Number(id)}
-                currentUserId={user?.id}
-                onDisputeUpdated={() => {
-                  refetchTask();
-                  setDisputeKey(prev => prev + 1);
-                }}
-              />
-            )}
-
-            {/* Disputed status banner for non-involved users */}
-            {task.status === 'disputed' && !isCreator && !isAssigned && (
-              <div className="mx-6 mb-4 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-                ⚠️ This task is under dispute
-              </div>
-            )}
-
-            {/* Desktop inline action button */}
-            <div className="px-6 pb-6">
-              <TaskActionButtons
-                task={task}
-                isCreator={isCreator}
-                isAssigned={isAssigned}
-                isAuthenticated={isAuthenticated}
-                actionLoading={actionLoading}
-                showApplicationForm={showApplicationSheet}
-                onShowApplicationForm={() => setShowApplicationSheet(true)}
-                onMarkDone={handleMarkDone}
-                onConfirmDone={handleConfirmDone}
-                onDispute={handleDispute}
-                onCancel={handleCancel}
-              />
-            </div>
-          </div>
-
-          {/* Recommended Helpers */}
-          {task.status === 'open' && user?.id === task.creator_id && (
-            <RecommendedHelpers
+      {/* Sticky bottom action bar MOBILE ONLY */}
+      {!showApplicationSheet && !showReviewSheet && !showDisputeSheet && (
+        <div
+          className="fixed left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-40 shadow-lg dark:shadow-gray-950/50 md:hidden"
+          style={{ bottom: 'var(--nav-total-height, 64px)' }}
+        >
+          <div className="max-w-3xl mx-auto">
+            <TaskActionButtons
               task={task}
-              helpers={recommendedHelpers}
-              loading={helpersLoading}
-              onContactHelper={handleContactHelper}
+              isCreator={isCreator}
+              isAssigned={isAssigned}
+              isAuthenticated={isAuthenticated}
+              actionLoading={actionLoading}
+              showApplicationForm={showApplicationSheet}
+              onShowApplicationForm={() => setShowApplicationSheet(true)}
+              onMarkDone={handleMarkDone}
+              onConfirmDone={handleConfirmDone}
+              onDispute={handleDispute}
+              onCancel={handleCancel}
             />
-          )}
-
-          {/* Reviews */}
-          {task.status === 'completed' && (
-            <TaskReviews
-              taskId={Number(id)}
-              reviews={reviews}
-              canReview={canReview}
-              onReviewSubmitted={() => {
-                fetchReviews();
-                checkCanReview();
-              }}
-            />
-          )}
+          </div>
         </div>
-
-        {/* Desktop sheets */}
-        <ReviewSheet
-          isOpen={showReviewSheet}
-          onClose={() => {
-            setShowReviewSheet(false);
-            navigate('/profile');
-          }}
-          onSubmitted={() => {
-            setShowReviewSheet(false);
-            fetchReviews();
-            checkCanReview();
-            setTimeout(() => navigate('/profile'), 1000);
-          }}
-          taskId={Number(id)}
-          revieweeName={getRevieweeName()}
-        />
-
-        <DisputeSheet
-          isOpen={showDisputeSheet}
-          onClose={() => setShowDisputeSheet(false)}
-          onSubmitted={() => {
-            setShowDisputeSheet(false);
-            toast.warning('Dispute filed. The other party will be notified.');
-            refetchTask();
-            setDisputeKey(prev => prev + 1);
-          }}
-          taskId={Number(id)}
-          taskTitle={task.title}
-        />
-      </div>
-    </>
+      )}
+    </div>
   );
 };
 
