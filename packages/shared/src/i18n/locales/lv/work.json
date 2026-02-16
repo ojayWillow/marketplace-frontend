@@ -1,0 +1,18 @@
+{
+  "tabMine": "Mans",
+  "status": {
+    "open": "Atvērts",
+    "assigned": "Piešķirts",
+    "in_progress": "Procesā",
+    "pending_confirmation": "Gaida apstiprinājumu",
+    "completed": "Pabeigts",
+    "disputed": "Apstrīdēts",
+    "cancelled": "Atcelts",
+    "active": "Aktīvs",
+    "pending": "Gaida apstiprinājumu",
+    "expired": "Beidzies",
+    "rejected": "Noraidīts",
+    "paused": "Apturēts",
+    "accepted": "Apstiprināts"
+  }
+}

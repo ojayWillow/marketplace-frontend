@@ -1,0 +1,18 @@
+{
+  "tabMine": "Моё",
+  "status": {
+    "open": "Открыто",
+    "assigned": "Назначено",
+    "in_progress": "В процессе",
+    "pending_confirmation": "Ожидает подтверждения",
+    "completed": "Завершено",
+    "disputed": "Оспорено",
+    "cancelled": "Отменено",
+    "active": "Активно",
+    "pending": "Ожидает одобрения",
+    "expired": "Истекло",
+    "rejected": "Отклонено",
+    "paused": "Приостановлено",
+    "accepted": "Принято"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "tabMine": "Mine",
+  "status": {
+    "open": "Open",
+    "assigned": "Assigned",
+    "in_progress": "In Progress",
+    "pending_confirmation": "Pending Confirmation",
+    "completed": "Completed",
+    "disputed": "Disputed",
+    "cancelled": "Cancelled",
+    "active": "Active",
+    "pending": "Awaiting Approval",
+    "expired": "Expired",
+    "rejected": "Rejected",
+    "paused": "Paused",
+    "accepted": "Accepted"
+  }
+}
