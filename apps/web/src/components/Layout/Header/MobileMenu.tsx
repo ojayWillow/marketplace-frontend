@@ -49,9 +49,6 @@ export const MobileMenu = ({
         </NavLink>
         {isAuthenticated && (
           <>
-            <NavLink to="/favorites" className={navLinkClass} onClick={onClose}>
-              <span className="text-red-500" aria-hidden="true">❤️</span> My Favorites
-            </NavLink>
             <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
               <span aria-hidden="true">💬</span> Messages
               {notifications.unreadMessages > 0 && (

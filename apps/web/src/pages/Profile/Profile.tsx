@@ -25,7 +25,6 @@ import {
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
 import { MobileActivitySection } from './components/mobile/MobileActivitySection';
 import { MobileListingsTeaser } from './components/mobile/MobileListingsTeaser';
-import { MobileFavoritesSection } from './components/mobile/MobileFavoritesSection';
 import CommunityRulesModal from '../../components/QuickHelpIntroModal';
 
 const Profile = () => {
@@ -200,8 +199,6 @@ const Profile = () => {
                   </div>
                 ) : (
                   <>
-                    <MobileFavoritesSection />
-
                     <MobileReviewsSection
                       reviews={reviews}
                       showAll={showAllReviews}
