@@ -4,9 +4,6 @@ import { useTranslation } from 'react-i18next';
 const HeroSection = () => {
   const { t } = useTranslation();
 
-  // Parse examples from translation (comma-separated)
-  const examples = (t('landing.hero.examples', { returnObjects: true }) as string[]) || [];
-
   return (
     <div className="mb-8 lg:mb-0">
       <div className="inline-flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs lg:text-sm font-medium mb-4 lg:mb-6">
@@ -19,28 +16,9 @@ const HeroSection = () => {
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"> {t('landing.hero.titleHighlight')}</span>
       </h1>
 
-      <div className="text-base lg:text-xl text-gray-400 mb-5 lg:mb-6 leading-relaxed space-y-1">
-        <p>{t('landing.hero.subtitleLine1')}</p>
-        <p>{t('landing.hero.subtitleLine2')}</p>
-        <p>{t('landing.hero.subtitleLine3')}</p>
-      </div>
-
-      {Array.isArray(examples) && examples.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-5 lg:mb-6">
-          {examples.map((example, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-              {example}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <p className="text-base lg:text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400 mb-6 lg:mb-8">
-        {t('landing.hero.closingLine')}
+      <p className="text-base lg:text-xl text-gray-400 mb-6 lg:mb-8 leading-relaxed">
+        {t('landing.hero.subtitle')}
+        <span className="hidden lg:inline">{t('landing.hero.subtitleExtended')}</span>
       </p>
 
       <div className="grid grid-cols-3 gap-3 lg:flex lg:flex-wrap lg:gap-6 mb-8">
