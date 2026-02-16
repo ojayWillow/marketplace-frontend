@@ -24,7 +24,10 @@ const FloatingSearchBar = ({
   const { t } = useTranslation();
 
   return (
-    <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-2">
+    <div
+      className="absolute left-4 right-4 z-[1000] flex items-center gap-2"
+      style={{ top: 'calc(16px + env(safe-area-inset-top, 0px))' }}
+    >
       {!searchExpanded ? (
         <>
           <button
