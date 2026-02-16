@@ -156,8 +156,15 @@ function App() {
               }
             />
             
-            {/* Work page */}
-            <Route path="work" element={<WorkPage />} />
+            {/* Work page - requires auth */}
+            <Route
+              path="work"
+              element={
+                <ProtectedRoute>
+                  <WorkPage />
+                </ProtectedRoute>
+              }
+            />
             
             {/* User Profile & Settings */}
             <Route
