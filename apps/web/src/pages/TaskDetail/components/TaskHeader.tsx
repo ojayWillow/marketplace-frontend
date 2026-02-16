@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Task } from '@marketplace/shared';
-import { getCategoryIcon, getCategoryLabel, getCategoryEmoji } from '../../../constants/categories';
+import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
 import ShareButton from '../../../components/ui/ShareButton';
 import { formatTimeAgoLong } from '../../Tasks/utils/taskHelpers';
 
@@ -13,7 +13,6 @@ export const TaskHeader = ({ task }: TaskHeaderProps) => {
   const { t } = useTranslation();
   const categoryIcon = getCategoryIcon(task.category);
   const categoryLabel = getCategoryLabel(task.category);
-  const categoryEmoji = getCategoryEmoji?.(task.category) || '';
   const budget = task.budget || task.reward || 0;
   const postedAgo = task.created_at ? formatTimeAgoLong(task.created_at, t) : '';
   const shortLocation = task.location?.split(',').slice(0, 2).join(', ') || '';
@@ -43,7 +42,7 @@ export const TaskHeader = ({ task }: TaskHeaderProps) => {
             title={task.title}
             description={`${categoryLabel} job - €${budget}`}
             categoryIcon={categoryIcon}
-            categoryEmoji={categoryEmoji}
+            categoryEmoji={categoryIcon}
             price={`€${budget}`}
             location={shortLocation}
             postedDate={postedAgo}
