@@ -298,8 +298,8 @@ const TaskDetail = () => {
         publishedDate={task.created_at || undefined}
       />
 
-      {/* Top bar — on mobile sits below the Layout Header (h-16 = top-16) */}
-      <div className="sticky top-16 md:top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-40 md:static md:border-b-0">
+      {/* Top bar — static on mobile (Layout Header handles sticky nav), sticky on desktop */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 md:sticky md:top-0 md:z-40">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
