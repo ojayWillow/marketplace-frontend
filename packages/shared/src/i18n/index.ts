@@ -27,6 +27,7 @@ import enLegal from './locales/en/legal.json'
 import enLanding from './locales/en/landing.json'
 import enCommunity from './locales/en/community.json'
 import enSettings from './locales/en/settings.json'
+import enWork from './locales/en/work.json'
 
 // Import Latvian translations
 import lvCommon from './locales/lv/common.json'
@@ -53,6 +54,7 @@ import lvLegal from './locales/lv/legal.json'
 import lvLanding from './locales/lv/landing.json'
 import lvCommunity from './locales/lv/community.json'
 import lvSettings from './locales/lv/settings.json'
+import lvWork from './locales/lv/work.json'
 
 // Import Russian translations
 import ruCommon from './locales/ru/common.json'
@@ -79,6 +81,7 @@ import ruLegal from './locales/ru/legal.json'
 import ruLanding from './locales/ru/landing.json'
 import ruCommunity from './locales/ru/community.json'
 import ruSettings from './locales/ru/settings.json'
+import ruWork from './locales/ru/work.json'
 
 // Combine all translations per language
 const en = {
@@ -106,6 +109,7 @@ const en = {
   landing: enLanding,
   community: enCommunity,
   settings: enSettings,
+  work: enWork,
 }
 
 const lv = {
@@ -133,6 +137,7 @@ const lv = {
   landing: lvLanding,
   community: lvCommunity,
   settings: lvSettings,
+  work: lvWork,
 }
 
 const ru = {
@@ -160,6 +165,7 @@ const ru = {
   landing: ruLanding,
   community: ruCommunity,
   settings: ruSettings,
+  work: ruWork,
 }
 
 const resources = {
