@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePushNotifications } from '../../../../hooks/usePushNotifications';
-import { getPushSubscriptions } from '@marketplace/shared';
 import { useLogout } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
-import { type Listing, getImageUrl } from '@marketplace/shared';
 
 interface MobileSettingsSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onHowItWorks?: () => void;
-  listings: Listing[];
-  listingsLoading: boolean;
-  onDeleteListing?: (id: number) => void;
 }
 
 const languages = [
@@ -39,9 +33,6 @@ export const MobileSettingsSheet = ({
   isOpen,
   onClose,
   onHowItWorks,
-  listings,
-  listingsLoading,
-  onDeleteListing,
 }: MobileSettingsSheetProps) => {
   const { t, i18n } = useTranslation();
   const logout = useLogout();
@@ -116,82 +107,54 @@ export const MobileSettingsSheet = ({
       {/* Content */}
       <div className="overflow-y-auto h-[calc(100vh-52px)] px-4 py-4 space-y-4 pb-24">
 
-        {/* My Listings */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2.5">
-              <span className="text-base">🏷️</span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t('profile.listingsTab.title', 'Mani sludinājumi')}
-              </span>
-              {listings.length > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-bold">
-                  {listings.length}
-                </span>
-              )}
-            </div>
-            <Link
-              to="/listings/create"
-              className="px-2.5 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
-            >
-              + {t('profile.listingsTab.newListing', 'Jauns')}
-            </Link>
+        {/* Listings — Coming Soon Teaser */}
+        <div className="relative overflow-hidden rounded-xl border border-purple-200 dark:border-purple-800/40 bg-gradient-to-br from-purple-50 via-white to-amber-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-amber-950/30">
+          {/* Decorative badge */}
+          <div className="absolute top-3 right-3">
+            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950 rounded-full">
+              {t('common.comingSoon', 'Drīzumā')}
+            </span>
           </div>
-          <div className="px-4 py-3">
-            {listingsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-500 rounded-full animate-spin" />
+
+          <div className="px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+                <span className="text-lg">🏪</span>
               </div>
-            ) : listings.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-gray-400 dark:text-gray-500 text-xs">
-                  {t('profile.listingsTab.noListings', 'Nav sludinājumu')}
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                  {t('settings.listings.teaserTitle', 'Tirgus')}
+                </h3>
+                <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+                  {t('settings.listings.teaserSubtitle', 'Pirk, pārdod, solī')}
                 </p>
-                <Link
-                  to="/listings/create"
-                  className="text-purple-600 dark:text-purple-400 text-xs font-medium mt-1 inline-block"
-                >
-                  {t('profile.listingsTab.createFirst', 'Izveidot pirmo')}
-                </Link>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {listings.slice(0, 3).map(listing => {
-                  const images = listing.images ? listing.images.split(',').filter(Boolean) : [];
-                  const firstImage = images[0];
-                  return (
-                    <Link
-                      key={listing.id}
-                      to={`/listings/${listing.id}`}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    >
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex-shrink-0 overflow-hidden">
-                        {firstImage ? (
-                          <img src={getImageUrl(firstImage)} alt={listing.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600 text-xs">🖼</div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{listing.title}</p>
-                        <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold">€{Number(listing.price).toLocaleString()}</p>
-                      </div>
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
-                  );
-                })}
-                {listings.length > 3 && (
-                  <Link
-                    to="/listings"
-                    className="block text-center text-xs text-purple-600 dark:text-purple-400 font-medium py-1"
-                  >
-                    {t('common.viewAll', 'Skatīt visus')} ({listings.length})
-                  </Link>
-                )}
-              </div>
-            )}
+            </div>
+
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+              {t('settings.listings.teaserDescription', 'Drīz varēsi pārdot savas lietas, izsolīt preces un atrast labākos piedāvājumus savā apkārtnē.')}
+            </p>
+
+            {/* Feature preview chips */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+                🏷️ {t('settings.listings.featureSell', 'Pārdod')}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+                🔨 {t('settings.listings.featureBid', 'Solī')}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+                📦 {t('settings.listings.featureItems', 'Preces')}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+                📍 {t('settings.listings.featureLocal', 'Tavā apkārtnē')}
+              </span>
+            </div>
+
+            {/* Subtle progress / anticipation bar */}
+            <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-full w-2/3 bg-gradient-to-r from-purple-400 to-amber-400 rounded-full" />
+            </div>
           </div>
         </div>
 
