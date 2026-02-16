@@ -39,6 +39,9 @@ const SkeletonCard = () => (
   </div>
 );
 
+/** Collapsed peek height — must match the constant in useBottomSheet */
+const COLLAPSED_PEEK_HEIGHT = 88;
+
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -177,6 +180,15 @@ const MobileTasksView = () => {
       taskLng: selectedTask.displayLongitude || selectedTask.longitude,
     };
   }, [isFromDeepLink, hasRealLocation, selectedTask, userLocation]);
+
+  // --- Recenter button position ---
+  // Position just above the visible portion of the bottom sheet.
+  // When collapsed, the visible area is COLLAPSED_PEEK_HEIGHT above the nav.
+  // We add a small gap (12px) so it doesn't touch the sheet.
+  const recenterBottom = useMemo(() => {
+    const visibleSheetPortion = getFullHeight() - currentTranslateY;
+    return navHeight + visibleSheetPortion + 12;
+  }, [navHeight, currentTranslateY, getFullHeight]);
 
   // --- Event handlers ---
   const handleRecenter = () => {
@@ -329,12 +341,12 @@ const MobileTasksView = () => {
           activeFilterCount={selectedCategories.length}
         />
 
-        {/* Recenter button */}
+        {/* Recenter button — positioned just above the bottom sheet */}
         {!selectedTask && showJobList && (
           <div
             className="absolute right-4 z-[1000]"
             style={{
-              bottom: `${sheetHeight + 20}px`,
+              bottom: `${recenterBottom}px`,
               transition: isDragging ? 'none' : 'bottom 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
             }}
           >
