@@ -89,7 +89,7 @@ const TaskDetail = () => {
   const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [showDisputeSheet, setShowDisputeSheet] = useState(false);
-  const [disputeKey, setDisputeKey] = useState(0); // Force re-fetch disputes
+  const [disputeKey, setDisputeKey] = useState(0);
 
   // Recommended helpers state
   const [recommendedHelpers, setRecommendedHelpers] = useState<Offering[]>([]);
@@ -112,7 +112,6 @@ const TaskDetail = () => {
     }
   };
 
-  // Task actions hook — with review and dispute callbacks
   const {
     actionLoading,
     acceptingId,
@@ -139,7 +138,6 @@ const TaskDetail = () => {
     },
   });
 
-  // Fetch recommended helpers
   const fetchRecommendedHelpers = async () => {
     if (!task || !task.latitude || !task.longitude) return;
     try {
@@ -161,7 +159,6 @@ const TaskDetail = () => {
     }
   };
 
-  // Fetch reviews
   const fetchReviews = async () => {
     try {
       const response = await apiClient.get(`/api/reviews/task/${id}`);
@@ -171,7 +168,6 @@ const TaskDetail = () => {
     }
   };
 
-  // Check if user can review
   const checkCanReview = async () => {
     try {
       const response = await apiClient.get(`/api/reviews/task/${id}/can-review`);
@@ -181,7 +177,6 @@ const TaskDetail = () => {
     }
   };
 
-  // Effects
   useEffect(() => {
     if (task && user?.id === task.creator_id && task.status === 'open') {
       fetchApplications();
@@ -195,7 +190,6 @@ const TaskDetail = () => {
     }
   }, [task, user, isAuthenticated]);
 
-  // Handle apply to task
   const handleApplyTask = (applicationMessage: string) => {
     if (!isAuthenticated || !user?.id) {
       toast.warning('Please login to apply');
@@ -218,7 +212,6 @@ const TaskDetail = () => {
     );
   };
 
-  // Handle message creator
   const handleMessageCreator = () => {
     if (!isAuthenticated) {
       toast.warning('Please login to send a message');
@@ -228,7 +221,6 @@ const TaskDetail = () => {
     navigate(`/messages?userId=${task?.creator_id}`);
   };
 
-  // Figure out who to review
   const getRevieweeName = (): string => {
     if (!task) return '';
     const isCreator = user?.id === task.creator_id;
@@ -239,10 +231,10 @@ const TaskDetail = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="flex-1 flex items-center justify-center bg-gray-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-3"></div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading job...</p>
+          <p className="text-gray-400 text-sm">Loading job...</p>
         </div>
       </div>
     );
@@ -251,12 +243,12 @@ const TaskDetail = () => {
   // Not found state
   if (!task) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="flex-1 flex items-center justify-center bg-gray-950">
         <div className="text-center px-4">
           <div className="text-5xl mb-3">😕</div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Job Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">This job may have been removed or is no longer available.</p>
-          <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold">
+          <h2 className="text-xl font-bold text-gray-100 mb-2">Job Not Found</h2>
+          <p className="text-gray-400 mb-4 text-sm">This job may have been removed or is no longer available.</p>
+          <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 text-sm font-semibold">
             Browse All Jobs
           </Link>
         </div>
@@ -283,6 +275,25 @@ const TaskDetail = () => {
   const applicantLabel = applicantCount > 0 ? `${applicantCount} applied` : 'New';
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
 
+  /*
+   * LAYOUT STRUCTURE (mobile):
+   * The Layout renders this inside a flex-col + overflow-hidden container.
+   * CSS `sticky` does NOT work inside overflow-hidden parents.
+   * So we use a pure flex layout instead:
+   *
+   *   ┌─────────────────────────┐
+   *   │  HEADER (flex-shrink-0)   │  ← never scrolls
+   *   ├─────────────────────────┤
+   *   │                           │
+   *   │  CONTENT (flex-1          │  ← scrolls independently
+   *   │    overflow-y-auto)       │
+   *   │                           │
+   *   ├─────────────────────────┤
+   *   │  ACTION BAR (flex-shrink-0)│  ← never scrolls
+   *   └─────────────────────────┘
+   *   (MobileBottomNav is outside, rendered by Layout)
+   */
+
   return (
     <>
       <SEOHead
@@ -295,13 +306,13 @@ const TaskDetail = () => {
       />
 
       {/* ============================================================
-          HEADER — Back + Share. Sticky top-0. Non-negotiable.
-          On mobile this is THE header (Layout Header is not rendered).
-          On desktop it’s also the top bar.
+          HEADER — Back + Share.
+          flex-shrink-0 = it NEVER moves, NEVER scrolls.
+          No sticky, no fixed — just a flex child that stays put.
           ============================================================ */}
-      <div className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex-shrink-0 bg-gray-900 border-b border-gray-800 z-50">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
-          <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
+          <Link to="/tasks" className="flex items-center gap-1.5 text-gray-300 hover:text-gray-100 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -323,13 +334,13 @@ const TaskDetail = () => {
       </div>
 
       {/* ============================================================
-          SCROLLABLE CONTENT — everything about the job lives here.
-          Bottom padding accounts for the fixed action bar + bottom nav.
+          SCROLLABLE CONTENT — everything about the job.
+          flex-1 + overflow-y-auto = only this area scrolls.
           ============================================================ */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950" style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0 md:pb-8">
+      <div className="flex-1 overflow-y-auto bg-gray-950">
+        <div className="px-4 pt-3 pb-4 md:max-w-2xl md:mx-auto md:pt-0 md:pb-8">
           {/* Main card */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-gray-900 rounded-xl shadow-sm shadow-gray-950/50 border border-gray-800 overflow-hidden">
 
             {/* ===== DESKTOP HEADER: gradient banner ===== */}
             <div className="hidden md:block bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 text-white">
@@ -353,20 +364,20 @@ const TaskDetail = () => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{categoryIcon}</span>
-                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wide">
+                  <span className="px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded-full text-xs font-bold uppercase tracking-wide">
                     {categoryLabel}
                   </span>
                   {isUrgent && (
-                    <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">Urgent</span>
+                    <span className="px-2 py-0.5 bg-red-900/40 text-red-300 rounded-full text-xs font-bold">Urgent</span>
                   )}
                 </div>
-                <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
+                <span className="text-xl font-black text-green-400">€{budget}</span>
               </div>
-              <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">{task.title}</h1>
+              <h1 className="text-base font-bold text-gray-100 leading-snug">{task.title}</h1>
             </div>
 
             {/* Profile row */}
-            <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200 md:dark:border-gray-700">
+            <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-700">
               <div className="flex items-center gap-2.5 md:gap-4">
                 <Link to={`/users/${task.creator_id}`} className="flex-shrink-0">
                   <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm md:text-lg font-bold">
@@ -374,19 +385,19 @@ const TaskDetail = () => {
                   </div>
                 </Link>
                 <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm md:flex-col md:items-start md:gap-0.5">
-                  <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate md:text-base">
+                  <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-100 hover:text-blue-400 truncate md:text-base">
                     {task.creator_name || 'Unknown'}
                   </Link>
-                  <span className="text-gray-300 dark:text-gray-600 md:hidden">·</span>
+                  <span className="text-gray-600 md:hidden">·</span>
                   <div className="flex items-center gap-1">
                     <StarRating rating={task.creator_rating || 0} />
-                    <span className="text-gray-400 dark:text-gray-500 text-xs">({task.creator_review_count || 0})</span>
+                    <span className="text-gray-500 text-xs">({task.creator_review_count || 0})</span>
                   </div>
                 </div>
                 {!isCreator && (
                   <button
                     onClick={handleMessageCreator}
-                    className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                    className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-900/30 text-blue-400 hover:bg-blue-900/50"
                     title="Send message"
                   >
                     <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -397,7 +408,7 @@ const TaskDetail = () => {
                 {!isCreator && (
                   <Link
                     to={`/users/${task.creator_id}`}
-                    className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
+                    className="text-xs md:text-sm text-blue-400 font-medium hover:text-blue-300 flex-shrink-0"
                   >
                     Profile
                   </Link>
@@ -405,7 +416,7 @@ const TaskDetail = () => {
                 {isCreator && canEdit && (
                   <Link
                     to={`/tasks/${task.id}/edit`}
-                    className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
+                    className="text-xs md:text-sm text-blue-400 font-medium hover:text-blue-300 flex-shrink-0"
                   >
                     Edit
                   </Link>
@@ -414,32 +425,32 @@ const TaskDetail = () => {
             </div>
 
             {/* Thin divider mobile only */}
-            <div className="border-t border-gray-100 dark:border-gray-800 mx-4 md:hidden" />
+            <div className="border-t border-gray-800 mx-4 md:hidden" />
 
             {/* Description */}
             <div className="px-4 py-3 md:px-6 md:py-5">
-              <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">About this job</h2>
-              <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              <h2 className="hidden md:block text-lg font-semibold text-gray-100 mb-3">About this job</h2>
+              <p className="text-sm md:text-base text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {task.description}
               </p>
             </div>
 
             {/* Info bar 3 columns */}
-            <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-              <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
+            <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-800 rounded-lg border border-gray-700">
+              <div className="grid grid-cols-3 divide-x divide-gray-700">
                 <div className="py-2.5 md:py-3.5 text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Applicants</div>
-                  <div className={`text-sm md:text-base font-bold ${applicantCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-green-600 dark:text-green-400'}`}>
+                  <div className="text-xs text-gray-500 font-medium mb-0.5">Applicants</div>
+                  <div className={`text-sm md:text-base font-bold ${applicantCount > 0 ? 'text-purple-400' : 'text-green-400'}`}>
                     {applicantLabel}
                   </div>
                 </div>
                 <div className="py-2.5 md:py-3.5 text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Difficulty</div>
-                  <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{task.difficulty || 'Normal'}</div>
+                  <div className="text-xs text-gray-500 font-medium mb-0.5">Difficulty</div>
+                  <div className="text-sm md:text-base font-bold text-gray-200">{task.difficulty || 'Normal'}</div>
                 </div>
                 <div className="py-2.5 md:py-3.5 text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Posted</div>
-                  <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || 'N/A'}</div>
+                  <div className="text-xs text-gray-500 font-medium mb-0.5">Posted</div>
+                  <div className="text-sm md:text-base font-bold text-gray-200">{postedDateAbsolute || 'N/A'}</div>
                 </div>
               </div>
             </div>
@@ -451,14 +462,14 @@ const TaskDetail = () => {
 
             {/* Assigned Worker Info */}
             {task.assigned_to_name && (
-              <div className="mx-4 mb-4 md:mx-6 md:mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
+              <div className="mx-4 mb-4 md:mx-6 md:mb-5 p-3 bg-blue-900/20 border border-blue-800/40 rounded-lg">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 text-sm font-bold">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-800 flex items-center justify-center text-blue-300 text-sm font-bold">
                     {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
                   </div>
                   <div>
-                    <p className="text-xs text-blue-600 dark:text-blue-400">Assigned to</p>
-                    <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm md:text-base text-blue-800 dark:text-blue-300 hover:underline">
+                    <p className="text-xs text-blue-400">Assigned to</p>
+                    <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm md:text-base text-blue-300 hover:underline">
                       {task.assigned_to_name}
                     </Link>
                   </div>
@@ -483,12 +494,12 @@ const TaskDetail = () => {
 
             {/* Desktop inline application form */}
             {showApplicationSheet && canApply && (
-              <div className="hidden md:block mx-6 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">Apply for this job</h3>
+              <div className="hidden md:block mx-6 mb-5 bg-blue-900/20 border border-blue-800/40 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-100 text-base mb-3">Apply for this job</h3>
                 <textarea
                   id="desktop-apply-textarea"
                   placeholder="Introduce yourself and explain why you're a good fit..."
-                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  className="w-full px-3 py-2.5 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3 bg-gray-800 text-gray-100 placeholder-gray-500"
                 />
                 <div className="flex gap-2">
                   <button
@@ -503,7 +514,7 @@ const TaskDetail = () => {
                   </button>
                   <button
                     onClick={() => setShowApplicationSheet(false)}
-                    className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium text-sm"
+                    className="px-4 py-2.5 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 font-medium text-sm"
                   >
                     Cancel
                   </button>
@@ -513,32 +524,32 @@ const TaskDetail = () => {
 
             {/* Status Messages */}
             {isCreator && task.status === 'assigned' && (
-              <div className="mx-4 mb-4 md:mx-6 text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-yellow-300 bg-yellow-900/20 border border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
                 ⏳ Waiting for worker to complete the task
               </div>
             )}
             {isAssigned && task.status === 'assigned' && (
-              <div className="mx-4 mb-4 md:mx-6 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-blue-300 bg-blue-900/20 border border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
                 💪 You're assigned — mark as done when finished
               </div>
             )}
             {isCreator && task.status === 'pending_confirmation' && (
-              <div className="mx-4 mb-4 md:mx-6 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-amber-300 bg-amber-900/20 border border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
                 📋 Worker marked this as done — please review and confirm
               </div>
             )}
             {isAssigned && task.status === 'pending_confirmation' && (
-              <div className="mx-4 mb-4 md:mx-6 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-purple-300 bg-purple-900/20 border border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
                 ⏳ Waiting for task owner to confirm completion
               </div>
             )}
             {task.status === 'completed' && (
-              <div className="mx-4 mb-4 md:mx-6 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-green-300 bg-green-900/20 border border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
                 ✅ This task has been completed
               </div>
             )}
             {task.status === 'cancelled' && (
-              <div className="mx-4 mb-4 md:mx-6 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-gray-400 bg-gray-800 border border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
                 This task has been cancelled
               </div>
             )}
@@ -558,7 +569,7 @@ const TaskDetail = () => {
 
             {/* Disputed status banner for non-involved users */}
             {task.status === 'disputed' && !isCreator && !isAssigned && (
-              <div className="mx-4 mb-4 md:mx-6 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
+              <div className="mx-4 mb-4 md:mx-6 text-red-300 bg-red-900/20 border border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
                 ⚠️ This task is under dispute
               </div>
             )}
@@ -649,14 +660,11 @@ const TaskDetail = () => {
       />
 
       {/* ============================================================
-          MOBILE ACTION BAR — fixed above the MobileBottomNav.
-          bottom = 56px nav + safe-area-inset so it never hides.
+          MOBILE ACTION BAR — flex-shrink-0, sits at the bottom.
+          Part of the flex column, never scrolls, always visible.
           ============================================================ */}
       {!showApplicationSheet && !showReviewSheet && !showDisputeSheet && (
-        <div
-          className="fixed left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg dark:shadow-gray-950/50 md:hidden"
-          style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
-        >
+        <div className="flex-shrink-0 bg-gray-950 border-t border-gray-800 md:hidden">
           <div className="max-w-3xl mx-auto">
             <TaskActionButtons
               task={task}
