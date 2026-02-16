@@ -39,7 +39,6 @@ const Profile = lazy(() => import('./pages/Profile'))
 const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Conversation = lazy(() => import('./pages/Conversation'))
-const Favorites = lazy(() => import('./pages/Favorites'))
 const WorkPage = lazy(() => import('./pages/WorkPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
@@ -179,9 +178,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
-            {/* Favorites */}
-            <Route path="favorites" element={<Favorites />} />
             
             {/* Messaging */}
             <Route
