@@ -23,6 +23,7 @@ import {
   useProfileActions,
 } from './hooks';
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
+import { MobileSettingsSheet } from './components/mobile/MobileSettingsSheet';
 import CommunityRulesModal from '../../components/QuickHelpIntroModal';
 
 const Profile = () => {
@@ -94,14 +95,6 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  const handleOpenMobileSettings = () => {
-    setShowMobileSettings(true);
-  };
-
-  const handleCloseMobileSettings = () => {
-    setShowMobileSettings(false);
-  };
-
   if (loading) {
     return <LoadingState />;
   }
@@ -142,7 +135,7 @@ const Profile = () => {
             onCancel={() => setEditing(false)}
             onSave={handleSave}
             onChangeAvatar={() => avatarPicker.setShowAvatarPicker(true)}
-            onOpenSettings={handleOpenMobileSettings}
+            onOpenSettings={() => setShowMobileSettings(true)}
           />
         </div>
 
@@ -167,6 +160,16 @@ const Profile = () => {
           showCheckboxes={false}
         />
 
+        {/* Full-screen settings sheet */}
+        <MobileSettingsSheet
+          isOpen={showMobileSettings}
+          onClose={() => setShowMobileSettings(false)}
+          onHowItWorks={() => setShowHowItWorks(true)}
+          listings={myListings}
+          listingsLoading={listingsLoading}
+          onDeleteListing={actions.handleDeleteListing}
+        />
+
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 py-4 space-y-4">
             {editing && (
@@ -180,33 +183,14 @@ const Profile = () => {
             )}
 
             {!editing && (
-              <>
-                {showMobileSettings ? (
-                  <div>
-                    <button
-                      onClick={handleCloseMobileSettings}
-                      className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 mb-4 hover:text-blue-700 dark:hover:text-blue-300"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      {t('profile.backToProfile', 'Back to profile')}
-                    </button>
-                    <SettingsTab onHowItWorks={() => setShowHowItWorks(true)} />
-                  </div>
-                ) : (
-                  <>
-                    <MobileReviewsSection
-                      reviews={reviews}
-                      showAll={showAllReviews}
-                      onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
-                      currentUserId={user?.id}
-                      onDeleteReview={actions.handleDeleteReview}
-                      setReviews={setReviews}
-                    />
-                  </>
-                )}
-              </>
+              <MobileReviewsSection
+                reviews={reviews}
+                showAll={showAllReviews}
+                onToggleShowAll={() => setShowAllReviews(!showAllReviews)}
+                currentUserId={user?.id}
+                onDeleteReview={actions.handleDeleteReview}
+                setReviews={setReviews}
+              />
             )}
           </div>
         </div>
