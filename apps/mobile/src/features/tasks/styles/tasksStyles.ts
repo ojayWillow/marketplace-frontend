@@ -132,7 +132,9 @@ export const createStyles = (theme: 'light' | 'dark') => {
     },
     
     listContent: { 
-      padding: 16 
+      padding: 16,
+      flexGrow: 1,
+      backgroundColor: themeColors.backgroundSecondary,
     },
     centerContainer: { 
       alignItems: 'center', 
