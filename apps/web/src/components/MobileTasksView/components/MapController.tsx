@@ -19,9 +19,8 @@ interface MapControllerProps {
     taskLat: number;
     taskLng: number;
   } | null;
-  /** When true AND fitBothPoints is null, we’re on a deep link without GPS —
-   *  zoom in tighter on the job bubble so it’s the clear focal point. */
-  isDeepLinkNoLocation?: boolean;
+  /** Deep link is active (suppress radius/recenter override) */
+  isFromDeepLink?: boolean;
 }
 
 const MapController = ({
@@ -33,14 +32,14 @@ const MapController = ({
   isMenuOpen,
   sheetPosition,
   fitBothPoints,
-  isDeepLinkNoLocation,
+  isFromDeepLink,
 }: MapControllerProps) => {
   const map = useMap();
   const store = useMobileMapStore();
   const hasRestoredViewport = useRef(false);
   const isSettingView = useRef(false);
   const hasFitBothPoints = useRef(false);
-  const hasHandledDeepLinkNoLoc = useRef(false);
+  const hasHandledSelectedTask = useRef(false);
 
   // --- Persist viewport on every map move/zoom ---
   useEffect(() => {
@@ -73,12 +72,10 @@ const MapController = ({
   }, [map, store]);
 
   // --- Fit map to show both user + job (shared link + real GPS) ---
-  // This can fire initially OR late (GPS arrives after deep link already
-  // zoomed to job-only view). Either way we refit to show both points.
+  // Fires when fitBothPoints becomes available (may be immediate or late
+  // if GPS arrives after the initial render).
   useEffect(() => {
     if (!fitBothPoints) return;
-    // Allow re-fitting even if we previously handled the no-location case
-    // (GPS arrived late — we now have real coords, show both points)
     if (hasFitBothPoints.current) return;
     hasFitBothPoints.current = true;
 
@@ -89,9 +86,11 @@ const MapController = ({
       [fitBothPoints.taskLat, fitBothPoints.taskLng]
     );
 
+    // JobPreviewCard: maxHeight 55vh, sits above nav (56px + safe area).
+    // Total obscured area ≈ 60% of screen height from bottom.
     const mapContainer = map.getContainer();
     const mapHeight = mapContainer.offsetHeight;
-    const bottomPadding = Math.round(mapHeight * 0.50);
+    const bottomPadding = Math.round(mapHeight * 0.62);
 
     map.fitBounds(bounds, {
       paddingTopLeft: [40, 60],
@@ -103,31 +102,6 @@ const MapController = ({
     setTimeout(() => { isSettingView.current = false; }, 700);
   }, [fitBothPoints, map]);
 
-  // --- Deep link without GPS: zoom in on the job, centered in visible area ---
-  useEffect(() => {
-    if (!isDeepLinkNoLocation || !selectedTask || hasHandledDeepLinkNoLoc.current) return;
-    if (hasFitBothPoints.current) return; // GPS already arrived
-    hasHandledDeepLinkNoLoc.current = true;
-
-    const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
-    const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
-
-    isSettingView.current = true;
-    map.invalidateSize();
-    map.setView([taskLat, taskLng], 15, { animate: false });
-
-    setTimeout(() => {
-      const mapContainer = map.getContainer();
-      const mapHeight = mapContainer.offsetHeight;
-      const desiredPosition = mapHeight * 0.20;
-      const currentPosition = mapHeight * 0.5;
-      const panAmount = currentPosition - desiredPosition;
-
-      map.panBy([0, panAmount], { animate: true, duration: 0.4 });
-      setTimeout(() => { isSettingView.current = false; }, 500);
-    }, 150);
-  }, [isDeepLinkNoLocation, selectedTask, map]);
-
   // Invalidate map size when menu closes or sheet position changes
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,8 +110,13 @@ const MapController = ({
     return () => clearTimeout(timer);
   }, [isMenuOpen, sheetPosition, map]);
 
-  // Handle radius changes and recenter
+  // Handle radius changes and recenter.
+  // SKIP when deep link is active — the fitBothPoints or selectedTask
+  // effect handles positioning. Without this guard, GPS arriving late
+  // changes lat/lng props and this effect would recenter on the user,
+  // overriding the deep link view.
   useEffect(() => {
+    if (isFromDeepLink) return;
     if (store.mapCenter && store.mapZoom && !recenterTrigger) return;
 
     isSettingView.current = true;
@@ -153,33 +132,39 @@ const MapController = ({
       map.setView([lat, lng], zoom);
     }
     setTimeout(() => { isSettingView.current = false; }, 200);
-  }, [lat, lng, radius, map, recenterTrigger]);
+  }, [lat, lng, radius, map, recenterTrigger, isFromDeepLink]);
 
-  // Pan to selected task (normal flow — skip if deep link already handled)
+  // Pan to selected task (normal marker tap or deep link without GPS).
+  // When fitBothPoints handled positioning, skip this.
   useEffect(() => {
-    if (selectedTask) {
-      if (hasFitBothPoints.current) return;
-      if (hasHandledDeepLinkNoLoc.current) return;
+    if (!selectedTask) return;
+    if (hasFitBothPoints.current) return;
+    if (hasHandledSelectedTask.current && isFromDeepLink) return;
+    hasHandledSelectedTask.current = true;
 
-      const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
-      const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
+    const taskLat = selectedTask.displayLatitude || selectedTask.latitude;
+    const taskLng = selectedTask.displayLongitude || selectedTask.longitude;
 
-      isSettingView.current = true;
-      map.invalidateSize();
-      map.setView([taskLat, taskLng], 14, { animate: false });
+    isSettingView.current = true;
+    map.invalidateSize();
 
-      setTimeout(() => {
-        const mapContainer = map.getContainer();
-        const mapHeight = mapContainer.offsetHeight;
-        const desiredMarkerPosition = mapHeight * 0.25;
-        const currentMarkerPosition = mapHeight * 0.5;
-        const panAmount = currentMarkerPosition - desiredMarkerPosition;
+    // Deep link without GPS: zoom tighter to emphasise the job
+    const zoom = isFromDeepLink ? 15 : 14;
+    map.setView([taskLat, taskLng], zoom, { animate: false });
 
-        map.panBy([0, panAmount], { animate: true, duration: 0.4 });
-        setTimeout(() => { isSettingView.current = false; }, 500);
-      }, 150);
-    }
-  }, [selectedTask, map]);
+    // Pan marker into the visible area above the preview card.
+    // Card covers ~60% from bottom, so place marker at ~18% from top.
+    setTimeout(() => {
+      const mapContainer = map.getContainer();
+      const mapHeight = mapContainer.offsetHeight;
+      const desiredPosition = isFromDeepLink ? mapHeight * 0.18 : mapHeight * 0.25;
+      const currentPosition = mapHeight * 0.5;
+      const panAmount = currentPosition - desiredPosition;
+
+      map.panBy([0, panAmount], { animate: true, duration: 0.4 });
+      setTimeout(() => { isSettingView.current = false; }, 500);
+    }, 150);
+  }, [selectedTask, map, isFromDeepLink]);
 
   // Invalidate size on mount
   useEffect(() => {
