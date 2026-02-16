@@ -30,42 +30,46 @@ const TabBar = ({
 
   const isMineTab = mainTab === 'mine';
 
+  const tabs: { key: MainTab; label: string }[] = [
+    { key: 'all', label: t('tasks.tabAll', 'All') },
+    { key: 'jobs', label: t('tasks.tabJobs', 'Jobs') },
+    { key: 'services', label: t('tasks.tabServices', 'Services') },
+    { key: 'mine', label: t('work.tabMine', 'Mans') },
+  ];
+
   return (
     <div className="sticky top-0 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/50 z-50">
-      <div className="relative flex items-center justify-center px-4 py-3">
-        <div className="flex gap-2">
-          {(['all', 'jobs', 'services', 'mine'] as MainTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                mainTab === tab
-                  ? tab === 'mine'
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-blue-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-              }`}
-            >
-              {tab === 'mine'
-                ? t('work.tabMine', 'Mans')
-                : t(`tasks.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
-              {tab === 'mine' && pendingNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] rounded-full bg-red-500 text-white font-bold min-w-[18px] text-center">
-                  {pendingNotifications}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center gap-1.5 px-3 py-2.5">
+        {/* Tab buttons — fill available space evenly */}
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => onTabChange(tab.key)}
+            className={`relative flex-1 py-2 rounded-full text-[13px] font-semibold transition-all text-center ${
+              mainTab === tab.key
+                ? tab.key === 'mine'
+                  ? 'bg-amber-500 text-white shadow-sm'
+                  : 'bg-blue-500 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+            }`}
+          >
+            {tab.label}
+            {tab.key === 'mine' && pendingNotifications > 0 && (
+              <span className="absolute -top-1 -right-0.5 px-1 py-0.5 text-[9px] rounded-full bg-red-500 text-white font-bold min-w-[16px] text-center leading-none">
+                {pendingNotifications}
+              </span>
+            )}
+          </button>
+        ))}
 
-        {/* Filter button — hidden when in Mine tab (Mine has its own sub-filters) */}
+        {/* Filter button — inline, same height as tabs, hidden on Mine tab */}
         {!isMineTab && (
           <button
             onClick={onFilterClick}
-            className="absolute right-4 flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full"
+            className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full transition-colors active:bg-gray-200 dark:active:bg-gray-700"
             aria-label={t('tasks.filters', 'Filter')}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-700 dark:text-gray-300">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-600 dark:text-gray-300">
               <line x1="4" y1="21" x2="4" y2="14" />
               <line x1="4" y1="10" x2="4" y2="3" />
               <line x1="12" y1="21" x2="12" y2="12" />
@@ -77,7 +81,7 @@ const TabBar = ({
               <line x1="17" y1="16" x2="23" y2="16" />
             </svg>
             {selectedCategoryCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
                 {selectedCategoryCount}
               </span>
             )}
@@ -89,14 +93,14 @@ const TabBar = ({
       {!isMineTab && !initialLoading && !hasError && itemCount > 0 && (
         <div className="px-4 pb-2 flex items-center justify-center gap-1">
           {refreshing && (
-            <span className="inline-block animate-spin text-blue-500 text-sm">↻</span>
+            <span className="inline-block animate-spin text-blue-500 text-xs">↻</span>
           )}
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">
             {itemCount} {itemCount === 1 ? t('tasks.result') : t('tasks.results')}
             {hasUserLocation && (
               <>
-                <span className="mx-1.5">·</span>
-                <span className="text-gray-400 dark:text-gray-500">{t('tasks.sortedByDistance')}</span>
+                <span className="mx-1">·</span>
+                <span>{t('tasks.sortedByDistance')}</span>
               </>
             )}
           </p>
