@@ -105,21 +105,21 @@ export const MobileSettingsSheet = ({
       </div>
 
       {/* Content */}
-      <div className="overflow-y-auto h-[calc(100vh-52px)] px-4 py-4 space-y-4 pb-24">
+      <div className="overflow-y-auto h-[calc(100vh-52px)] px-4 py-3 space-y-3 pb-16">
 
         {/* Listings — Coming Soon Teaser */}
         <div className="relative overflow-hidden rounded-xl border border-purple-200 dark:border-purple-800/40 bg-gradient-to-br from-purple-50 via-white to-amber-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-amber-950/30">
           {/* Decorative badge */}
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-2.5 right-2.5">
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950 rounded-full">
               {t('common.comingSoon', 'Drīzumā')}
             </span>
           </div>
 
-          <div className="px-4 pt-4 pb-3">
-            <div className="flex items-center gap-2.5 mb-2">
-              <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-                <span className="text-lg">🏪</span>
+          <div className="px-4 pt-3 pb-3">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+                <span className="text-base">🏪</span>
               </div>
               <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
@@ -131,29 +131,24 @@ export const MobileSettingsSheet = ({
               </div>
             </div>
 
-            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
               {t('settings.listings.teaserDescription', 'Drīz varēsi pārdot savas lietas, izsolīt preces un atrast labākos piedāvājumus savā apkārtnē.')}
             </p>
 
             {/* Feature preview chips */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
                 🏷️ {t('settings.listings.featureSell', 'Pārdod')}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
                 🔨 {t('settings.listings.featureBid', 'Solī')}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
                 📦 {t('settings.listings.featureItems', 'Preces')}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
                 📍 {t('settings.listings.featureLocal', 'Tavā apkārtnē')}
               </span>
-            </div>
-
-            {/* Subtle progress / anticipation bar */}
-            <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div className="h-full w-2/3 bg-gradient-to-r from-purple-400 to-amber-400 rounded-full" />
             </div>
           </div>
         </div>
@@ -162,9 +157,9 @@ export const MobileSettingsSheet = ({
         {onHowItWorks && (
           <button
             onClick={onHowItWorks}
-            className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
-            <span className="text-base">❓</span>
+            <span className="text-sm">❓</span>
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1 text-left">
               {t('settings.howItWorks.title', 'How it works')}
             </span>
@@ -174,29 +169,29 @@ export const MobileSettingsSheet = ({
           </button>
         )}
 
-        {/* Appearance */}
+        {/* Appearance + Language combined row */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-base">🎨</span>
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-sm">🎨</span>
+            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {t('settings.theme.title', 'Appearance')}
             </span>
           </div>
-          <div className="px-4 py-3">
-            <div className="flex gap-2">
+          <div className="px-3 py-2">
+            <div className="flex gap-1.5">
               {themeOptions.map((option) => {
                 const isActive = theme === option.value;
                 return (
                   <button
                     key={option.value}
                     onClick={() => setTheme(option.value)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium transition-colors ${
                       isActive
                         ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-1 ring-purple-300 dark:ring-purple-700'
                         : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                     }`}
                   >
-                    <span className="text-lg">{option.icon}</span>
+                    <span className="text-sm">{option.icon}</span>
                     {t(option.labelKey, option.labelDefault)}
                   </button>
                 );
@@ -207,27 +202,27 @@ export const MobileSettingsSheet = ({
 
         {/* Language */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-base">🌐</span>
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-sm">🌐</span>
+            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {t('settings.language.title', 'Language')}
             </span>
           </div>
-          <div className="px-4 py-3">
-            <div className="flex gap-2">
+          <div className="px-3 py-2">
+            <div className="flex gap-1.5">
               {languages.map((lang) => {
                 const isActive = currentLang === lang.code || currentLang.startsWith(lang.code);
                 return (
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium transition-colors ${
                       isActive
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-300 dark:ring-blue-700'
                         : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                     }`}
                   >
-                    <span className="text-lg">{lang.flag}</span>
+                    <span className="text-sm">{lang.flag}</span>
                     {lang.label}
                   </button>
                 );
@@ -238,11 +233,11 @@ export const MobileSettingsSheet = ({
 
         {/* Notifications */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2.5">
-              <span className="text-base">🔔</span>
+          <div className="flex items-center justify-between px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🔔</span>
               <div>
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                   {t('settings.notifications.title', 'Notifications')}
                 </span>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500">
@@ -276,7 +271,7 @@ export const MobileSettingsSheet = ({
 
           {/* iOS help */}
           {showIOSHelp && !isSupported && (
-            <div className="mx-4 mb-3 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="mx-4 mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-xs text-blue-700 dark:text-blue-400">
                 {t('settings.notifications.iosInstallTitle', 'Install the app for notifications')}
               </p>
@@ -284,7 +279,7 @@ export const MobileSettingsSheet = ({
           )}
 
           {isSupported && permission === 'denied' && (
-            <div className="mx-4 mb-3 p-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <div className="mx-4 mb-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <p className="text-xs text-red-600 dark:text-red-400">
                 {t('settings.notifications.blocked', 'Blocked — enable in browser settings')}
               </p>
@@ -292,7 +287,7 @@ export const MobileSettingsSheet = ({
           )}
 
           {error && (
-            <div className="mx-4 mb-3">
+            <div className="mx-4 mb-2">
               <p className="text-xs text-red-500">{error}</p>
             </div>
           )}
@@ -301,9 +296,9 @@ export const MobileSettingsSheet = ({
         {/* Log Out */}
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
-          <span className="text-base">🚪</span>
+          <span className="text-sm">🚪</span>
           <span className="text-sm font-medium">
             {t('settings.logout.button', 'Log Out')}
           </span>
