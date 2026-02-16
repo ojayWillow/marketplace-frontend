@@ -1,5 +1,5 @@
 import { useEditTaskForm } from './hooks';
-import { TASK_CATEGORIES, PRIORITY_OPTIONS } from './types';
+import { TASK_CATEGORIES, DIFFICULTY_OPTIONS } from './types';
 import { LocationInput, LoadingSpinner, NotFoundState } from './components';
 
 const EditTask = () => {
@@ -126,37 +126,22 @@ const EditTask = () => {
               />
             </div>
 
-            {/* Priority */}
+            {/* Difficulty */}
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Priority
+              <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Difficulty
               </label>
               <select
-                id="priority"
-                name="priority"
-                value={formData.priority}
+                id="difficulty"
+                name="difficulty"
+                value={formData.difficulty}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {PRIORITY_OPTIONS.map(opt => (
+                {DIFFICULTY_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Urgent Checkbox */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_urgent"
-                name="is_urgent"
-                checked={formData.is_urgent}
-                onChange={handleChange}
-                className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:bg-gray-800"
-              />
-              <label htmlFor="is_urgent" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                This is an urgent task
-              </label>
             </div>
 
             {/* Buttons */}

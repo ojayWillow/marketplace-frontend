@@ -51,8 +51,7 @@ export const useEditTaskForm = () => {
         latitude: task.latitude || 56.9496,
         longitude: task.longitude || 24.1052,
         deadline: task.deadline ? task.deadline.slice(0, 16) : '',
-        priority: task.priority || 'normal',
-        is_urgent: task.is_urgent || false,
+        difficulty: task.difficulty || 'medium',
       });
       setFormInitialized(true);
     }
@@ -138,8 +137,7 @@ export const useEditTaskForm = () => {
         longitude: formData.longitude,
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
         deadline: formData.deadline || undefined,
-        priority: formData.priority,
-        is_urgent: formData.is_urgent,
+        difficulty: formData.difficulty,
       };
 
       await apiClient.put(`/api/tasks/${id}`, updateData);
