@@ -132,7 +132,6 @@ const TaskDetail = () => {
     fetchApplications,
     isAuthenticated,
     onTaskCompleted: () => {
-      // Open the review sheet right after confirming completion
       setShowReviewSheet(true);
     },
     onOpenDispute: () => {
@@ -233,7 +232,6 @@ const TaskDetail = () => {
   const getRevieweeName = (): string => {
     if (!task) return '';
     const isCreator = user?.id === task.creator_id;
-    // Creator reviews the worker, worker reviews the creator
     if (isCreator) return task.assigned_to_name || 'the worker';
     return task.creator_name || 'the job owner';
   };
@@ -278,9 +276,7 @@ const TaskDetail = () => {
   const budget = task.budget || task.reward || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
   const seoDescription = `${categoryLabel} job${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
-  // Relative time for share messages ("3 days ago")
   const postedDateRelative = task.created_at ? formatTimeAgoLong(task.created_at) : '';
-  // Absolute date for the info bar on the detail page ("Feb 4")
   const postedDateAbsolute = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
@@ -288,7 +284,7 @@ const TaskDetail = () => {
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
 
   return (
-    <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-950">
+    <>
       <SEOHead
         title={task.title}
         description={seoDescription}
@@ -298,8 +294,12 @@ const TaskDetail = () => {
         publishedDate={task.created_at || undefined}
       />
 
-      {/* Sticky header — Back + Share. Always on top, non-negotiable. */}
-      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-50">
+      {/* ============================================================
+          HEADER — Back + Share. Sticky top-0. Non-negotiable.
+          On mobile this is THE header (Layout Header is not rendered).
+          On desktop it’s also the top bar.
+          ============================================================ */}
+      <div className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,9 +322,12 @@ const TaskDetail = () => {
         </div>
       </div>
 
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto pb-36 md:pb-8">
-        <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
+      {/* ============================================================
+          SCROLLABLE CONTENT — everything about the job lives here.
+          Bottom padding accounts for the fixed action bar + bottom nav.
+          ============================================================ */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950" style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0 md:pb-8">
           {/* Main card */}
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
 
@@ -540,7 +543,7 @@ const TaskDetail = () => {
               </div>
             )}
 
-            {/* Dispute details section (replaces the old simple banner) */}
+            {/* Dispute details section */}
             {task.status === 'disputed' && (isCreator || isAssigned) && (
               <DisputeSection
                 key={disputeKey}
@@ -588,7 +591,7 @@ const TaskDetail = () => {
             />
           )}
 
-          {/* Reviews (the ONLY place with a "Leave a review" button now) */}
+          {/* Reviews */}
           {task.status === 'completed' && (
             <TaskReviews
               taskId={Number(id)}
@@ -614,7 +617,7 @@ const TaskDetail = () => {
         />
       </div>
 
-      {/* Review bottom sheet (mobile + desktop) */}
+      {/* Review bottom sheet */}
       <ReviewSheet
         isOpen={showReviewSheet}
         onClose={() => {
@@ -631,7 +634,7 @@ const TaskDetail = () => {
         revieweeName={getRevieweeName()}
       />
 
-      {/* Dispute bottom sheet (mobile + desktop) */}
+      {/* Dispute bottom sheet */}
       <DisputeSheet
         isOpen={showDisputeSheet}
         onClose={() => setShowDisputeSheet(false)}
@@ -645,10 +648,14 @@ const TaskDetail = () => {
         taskTitle={task.title}
       />
 
-      {/* Sticky bottom action bar MOBILE ONLY */}
+      {/* ============================================================
+          MOBILE ACTION BAR — fixed above the MobileBottomNav.
+          bottom = 56px nav + safe-area-inset so it never hides.
+          ============================================================ */}
       {!showApplicationSheet && !showReviewSheet && !showDisputeSheet && (
         <div
-          className="flex-shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg dark:shadow-gray-950/50 md:hidden"
+          className="fixed left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg dark:shadow-gray-950/50 md:hidden"
+          style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
         >
           <div className="max-w-3xl mx-auto">
             <TaskActionButtons
@@ -667,7 +674,7 @@ const TaskDetail = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
