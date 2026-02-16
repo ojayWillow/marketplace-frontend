@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { CATEGORIES } from '../../../constants/categories';
 
@@ -14,7 +15,8 @@ interface FilterSheetProps {
 
 /**
  * Full-screen filter overlay for radius and category selection.
- * Appears as a centered sheet that’s immediately visible.
+ * Uses a React portal to render at document.body so it always appears
+ * on top of everything, regardless of parent stacking contexts.
  */
 const FilterSheet = ({
   isOpen,
@@ -39,10 +41,11 @@ const FilterSheet = ({
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-end sm:items-center justify-center"
       onClick={onClose}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
       <div
         className="w-full sm:max-w-md bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl p-5 overflow-y-auto animate-slide-up"
@@ -146,6 +149,9 @@ const FilterSheet = ({
       </div>
     </div>
   );
+
+  // Portal to document.body so it escapes any parent stacking contexts
+  return createPortal(content, document.body);
 };
 
 export default FilterSheet;
