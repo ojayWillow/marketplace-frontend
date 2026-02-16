@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getCategoryLabel } from '../../../../constants/categories';
-import FavoriteButton from '../../../../components/ui/FavoriteButton';
 import { calculateDistance, formatTimeAgo } from '../../utils/taskHelpers';
 import type { TaskCardProps } from './TaskCard.types';
 
@@ -37,15 +36,6 @@ export const TaskCard = ({ task, userLocation, isMatching }: TaskCardProps) => {
             ? 'border-blue-300 bg-blue-50 hover:border-blue-400'
             : 'border-gray-200 hover:border-blue-300'
     }`}>
-      {/* Favorite Button - positioned top right */}
-      <div className="absolute top-2 right-2 z-10">
-        <FavoriteButton
-          itemType="task"
-          itemId={task.id}
-          size="sm"
-        />
-      </div>
-
       <Link to={`/tasks/${task.id}`} className="block">
         {/* High value badge */}
         {isHighValue && !isUrgent && (
@@ -61,7 +51,7 @@ export const TaskCard = ({ task, userLocation, isMatching }: TaskCardProps) => {
           </div>
         )}
 
-        <div className="flex items-start justify-between gap-3 pr-8">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               {/* Icon with urgent pulse dot */}
