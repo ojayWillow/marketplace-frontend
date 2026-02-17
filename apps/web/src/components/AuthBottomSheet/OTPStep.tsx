@@ -90,14 +90,12 @@ export default function OTPStep({
         {t('landing.login.otpPrompt', 'Enter the code sent to')}{' '}
         <span className="text-gray-900 dark:text-white font-medium">{fullPhone}</span>
       </p>
-      <OTPStep
+      <OTPDisplay
         otpValue={otpValue}
         loading={loading}
-        fullPhone={fullPhone}
         otpInputRef={otpInputRef}
         onOtpChange={onOtpChange}
         onFocusInput={onFocusInput}
-        onChangePhone={onChangePhone}
       />
       <button
         onClick={onChangePhone}
