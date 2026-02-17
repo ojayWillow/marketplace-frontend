@@ -1,0 +1,24 @@
+{
+  "install": {
+    "title": "Instalējiet Kolab",
+    "subtitle": "Ātra piekļuve bez pārlūka",
+    "subtitleIOS": "Pievienojiet mājas ekrānam",
+    "button": "Instalēt",
+    "buttonIOS": "Kā instalēt?",
+    "understood": "Sapratu"
+  },
+  "iosInstructions": {
+    "title": "Instalējiet Kolab",
+    "subtitle": "Pievienojiet mājas ekrānam ātrai piekļuvei",
+    "step1": "Nospiediet",
+    "step1action": "(Share)",
+    "step2": "Izvēlieties \"Add to Home Screen\"",
+    "step3": "Nospiediet \"Add\""
+  },
+  "update": {
+    "title": "Jauna versija pieejama!",
+    "subtitle": "Atjaunojiet, lai iegūtu jaunākās funkcijas.",
+    "button": "Atjaunot",
+    "later": "Vēlāk"
+  }
+}
