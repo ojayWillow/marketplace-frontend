@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore, useToastStore, listingsApi, type Listing } from '@marketplace/shared'
-import { uploadImage, getImageUrl } from '@marketplace/shared/src/api/uploads'
+import { useAuthStore, useToastStore, listingsApi, uploadImage, getImageUrl, type Listing } from '@marketplace/shared'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const CATEGORIES = [

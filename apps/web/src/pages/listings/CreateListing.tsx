@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCreateListing } from '../../hooks/useListings'
-import { uploadImage, getImageUrl } from '@marketplace/shared/src/api/uploads'
+import { uploadImage, getImageUrl } from '@marketplace/shared'
 import ErrorMessage from '../../components/ui/ErrorMessage'
 import { CATEGORIES, LOCATIONS } from './constants'
 
