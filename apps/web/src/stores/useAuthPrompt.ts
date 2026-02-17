@@ -10,6 +10,6 @@ interface AuthPromptState {
 export const useAuthPrompt = create<AuthPromptState>((set) => ({
   isOpen: false,
   onSuccess: null,
-  show: (onSuccess) => set({ isOpen: true, onSuccess: onSuccess || null }),
+  show: (onSuccess) => set({ isOpen: true, onSuccess: onSuccess ?? null }),
   hide: () => set({ isOpen: false, onSuccess: null }),
 }));

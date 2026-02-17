@@ -152,8 +152,7 @@ const MobileBottomNav = () => {
             ? 'text-sky-500'
             : 'text-gray-500 dark:text-gray-400';
 
-          // For auth-required tabs when guest: render a plain button
-          // so React Router doesn't navigate to the protected route
+          // For auth-required tabs when guest: show auth prompt
           if (tab.requiresAuth && !isAuthenticated) {
             return (
               <button
