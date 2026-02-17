@@ -50,6 +50,3 @@ export {
   useStartConversation,
   userKeys
 } from './useUsers';
-
-// Re-export existing hooks
-export * from './useAuth';
