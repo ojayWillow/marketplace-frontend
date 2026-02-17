@@ -50,7 +50,7 @@ const DeadlinePicker = ({ deadlineDate, deadlineTime, onChange, onTimeChange }: 
         value={deadlineDate}
         onChange={onChange}
         min={today}
-        className="max-w-[220px] sm:max-w-none w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm mb-2"
+        className="max-w-[220px] sm:max-w-none w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-sm mb-2"
       />
 
       {deadlineDate && (
@@ -83,7 +83,7 @@ const DeadlinePicker = ({ deadlineDate, deadlineTime, onChange, onTimeChange }: 
               name="deadlineTime"
               value={deadlineTime}
               onChange={onChange}
-              className="max-w-[220px] sm:max-w-none w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm mt-2"
+              className="max-w-[220px] sm:max-w-none w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-sm mt-2"
             >
               <option value="">{t('createTask.anyTime', 'Select time')}</option>
               {TIME_OPTIONS.map(opt => (
