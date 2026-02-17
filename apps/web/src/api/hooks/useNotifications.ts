@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getNotifications,
-  getUnreadCount,
-  markAsRead,
-  markAllAsRead,
+  getUnreadNotificationCount as getUnreadCount,
+  markNotificationAsRead as markAsRead,
+  markAllNotificationsAsRead as markAllAsRead,
   markReadByType,
-} from '@marketplace/shared/src/api/notifications';
-import { getUnreadCount as getMessagesUnreadCount } from '@marketplace/shared/src/api/messages';
+  getUnreadCount as getMessagesUnreadCount,
+} from '@marketplace/shared';
 
 // Query keys for cache management
 export const notificationKeys = {
