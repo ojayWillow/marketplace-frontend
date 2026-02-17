@@ -24,10 +24,6 @@ const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'))
-const Listings = lazy(() => import('./pages/listings/Listings'))
-const ListingDetail = lazy(() => import('./pages/listings/ListingDetail'))
-const CreateListing = lazy(() => import('./pages/listings/CreateListing'))
-const EditListing = lazy(() => import('./pages/listings/EditListing'))
 const Tasks = lazy(() => import('./pages/Tasks'))
 const TaskDetail = lazy(() => import('./pages/TaskDetail'))
 const CreateTask = lazy(() => import('./pages/CreateTask'))
@@ -98,26 +94,6 @@ function App() {
             />
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password" element={<ResetPassword />} />
-            
-            {/* Listings */}
-            <Route path="listings" element={<Listings />} />
-            <Route path="listings/:id" element={<ListingDetail />} />
-            <Route
-              path="listings/create"
-              element={
-                <ProtectedRoute>
-                  <CreateListing />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="listings/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditListing />
-                </ProtectedRoute>
-              }
-            />
             
             {/* Tasks/Quick Help */}
             <Route path="tasks" element={<Tasks />} />
