@@ -91,6 +91,21 @@ button:focus-visible,
   }
 }
 
+/* ===========================================
+   MOBILE: Prevent auto-zoom on input focus
+   iOS/Android browsers zoom in when a form
+   element has font-size < 16px.  Force 16px
+   on small viewports so the viewport stays
+   stable when the user taps an input.
+   =========================================== */
+@media screen and (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 @layer base {
   :root {
     /* Safe area insets - used by bottom sheet, nav, and other fixed elements */
