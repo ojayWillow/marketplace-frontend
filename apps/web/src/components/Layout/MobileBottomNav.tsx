@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
 import { useUnreadCounts } from '../../api/hooks/useNotifications';
 import { useEffect } from 'react';
+import { useAuthPrompt } from '../../stores/useAuthPrompt';
 
 /* ------------------------------------------------------------------ */
 /*  SVG Nav Icons (Lucide-style, 24x24 viewBox)                       */
@@ -101,6 +102,7 @@ const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const showAuth = useAuthPrompt((s) => s.show);
 
   // Fetch unread counts for badges (only when logged in)
   const { data: unreadCounts } = useUnreadCounts({ enabled: isAuthenticated });
@@ -150,13 +152,13 @@ const MobileBottomNav = () => {
             ? 'text-sky-500'
             : 'text-gray-500 dark:text-gray-400';
 
-          // For auth-required tabs when guest: redirect to /welcome
+          // For auth-required tabs when guest: show auth prompt
           if (tab.requiresAuth && !isAuthenticated) {
             return (
               <button
                 key={tab.path}
                 type="button"
-                onClick={() => navigate('/welcome')}
+                onClick={() => showAuth(() => navigate(tab.path))}
                 className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative"
               >
                 <span className="relative text-gray-400 dark:text-gray-500">
