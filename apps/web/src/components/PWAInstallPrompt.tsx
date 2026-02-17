@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -7,6 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export const PWAInstallPrompt = () => {
+  const { t } = useTranslation();
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -98,8 +100,8 @@ export const PWAInstallPrompt = () => {
         <div className="flex items-start gap-3">
           <div className="text-2xl">🔄</div>
           <div className="flex-1">
-            <p className="font-medium">Jauna versija pieejama!</p>
-            <p className="text-sm text-blue-100 mt-1">Atjaunojiet, lai iegūtu jaunākās funkcijas.</p>
+            <p className="font-medium">{t('pwa.update.title')}</p>
+            <p className="text-sm text-blue-100 mt-1">{t('pwa.update.subtitle')}</p>
           </div>
         </div>
         <div className="flex gap-2 mt-3">
@@ -107,13 +109,13 @@ export const PWAInstallPrompt = () => {
             onClick={() => updateServiceWorker(true)}
             className="flex-1 bg-white text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
           >
-            Atjaunot
+            {t('pwa.update.button')}
           </button>
           <button
             onClick={() => setNeedRefresh(false)}
             className="px-4 py-2 text-blue-100 hover:text-white transition-colors"
           >
-            Vēlāk
+            {t('pwa.update.later')}
           </button>
         </div>
       </div>
@@ -130,27 +132,35 @@ export const PWAInstallPrompt = () => {
         >
           <div className="text-center mb-4">
             <div className="text-4xl mb-2">📲</div>
-            <h3 className="text-lg font-bold text-gray-900">Instalējiet Kolab</h3>
-            <p className="text-gray-600 text-sm mt-1">Pievienojiet mājas ekrānam ātrai piekļuvei</p>
+            <h3 className="text-lg font-bold text-gray-900">{t('pwa.iosInstructions.title')}</h3>
+            <p className="text-gray-600 text-sm mt-1">{t('pwa.iosInstructions.subtitle')}</p>
           </div>
           
           <div className="space-y-4 text-sm">
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="text-2xl">1️⃣</div>
               <div>
-                <p className="text-gray-900">Nospiediet <span className="inline-flex items-center"><svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3 3h-2v6h-2V5H9l3-3zm6 9v9H6v-9H4v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9h-2z"/></svg></span> (Share)</p>
+                <p className="text-gray-900">
+                  {t('pwa.iosInstructions.step1')}{' '}
+                  <span className="inline-flex items-center">
+                    <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3 3h-2v6h-2V5H9l3-3zm6 9v9H6v-9H4v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9h-2z"/>
+                    </svg>
+                  </span>{' '}
+                  {t('pwa.iosInstructions.step1action')}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="text-2xl">2️⃣</div>
               <div>
-                <p className="text-gray-900">Izvēlieties "Add to Home Screen"</p>
+                <p className="text-gray-900">{t('pwa.iosInstructions.step2')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="text-2xl">3️⃣</div>
               <div>
-                <p className="text-gray-900">Nospiediet "Add"</p>
+                <p className="text-gray-900">{t('pwa.iosInstructions.step3')}</p>
               </div>
             </div>
           </div>
@@ -159,7 +169,7 @@ export const PWAInstallPrompt = () => {
             onClick={handleDismiss}
             className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            Sapratu
+            {t('pwa.install.understood')}
           </button>
         </div>
       </div>
@@ -183,11 +193,11 @@ export const PWAInstallPrompt = () => {
           <span className="text-2xl">🤝</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900">Instalējiet Kolab</p>
+          <p className="font-semibold text-gray-900">{t('pwa.install.title')}</p>
           <p className="text-sm text-gray-600 mt-0.5">
             {isIOS 
-              ? 'Pievienojiet mājas ekrānam' 
-              : 'Ātra piekļuve bez pārlūka'
+              ? t('pwa.install.subtitleIOS')
+              : t('pwa.install.subtitle')
             }
           </p>
         </div>
@@ -197,7 +207,7 @@ export const PWAInstallPrompt = () => {
         onClick={handleInstallClick}
         className="w-full mt-3 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
       >
-        {isIOS ? 'Kā instalēt?' : 'Instalēt'}
+        {isIOS ? t('pwa.install.buttonIOS') : t('pwa.install.button')}
       </button>
     </div>
   );

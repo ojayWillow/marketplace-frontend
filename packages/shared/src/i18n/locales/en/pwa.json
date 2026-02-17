@@ -1,0 +1,24 @@
+{
+  "install": {
+    "title": "Install Kolab",
+    "subtitle": "Quick access without the browser",
+    "subtitleIOS": "Add to home screen",
+    "button": "Install",
+    "buttonIOS": "How to install?",
+    "understood": "Got it"
+  },
+  "iosInstructions": {
+    "title": "Install Kolab",
+    "subtitle": "Add to home screen for quick access",
+    "step1": "Tap",
+    "step1action": "(Share)",
+    "step2": "Select \"Add to Home Screen\"",
+    "step3": "Tap \"Add\""
+  },
+  "update": {
+    "title": "New version available!",
+    "subtitle": "Update to get the latest features.",
+    "button": "Update",
+    "later": "Later"
+  }
+}
