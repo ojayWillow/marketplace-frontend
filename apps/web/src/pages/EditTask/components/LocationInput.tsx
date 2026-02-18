@@ -1,4 +1,5 @@
 import { GeocodingResult } from '@marketplace/shared';
+import { DEFAULT_LOCATION } from '../../../constants/locations';
 
 interface LocationInputProps {
   location: string;
@@ -46,7 +47,7 @@ const LocationInput = ({
       </div>
     )}
 
-    {location && latitude !== 56.9496 && longitude !== 24.1052 && (
+    {location && latitude !== DEFAULT_LOCATION.lat && longitude !== DEFAULT_LOCATION.lng && (
       <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />

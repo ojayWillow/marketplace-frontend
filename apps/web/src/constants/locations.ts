@@ -3,6 +3,30 @@
 
 import { CATEGORIES } from './categories';
 
+// ── Geo constants ─────────────────────────────────────────────────────
+
+/** Default map center: Riga, Latvia */
+export const DEFAULT_LOCATION = { lat: 56.9496, lng: 24.1052 } as const;
+
+/** Geographic center of Latvia (for "All Latvia" view) */
+export const LATVIA_CENTER = { lat: 56.8796, lng: 24.6032 } as const;
+
+/** Zoom level for full-country view */
+export const LATVIA_ZOOM = 7;
+
+/** Earth's radius in kilometers (for Haversine formula) */
+export const EARTH_RADIUS_KM = 6371;
+
+// ── Phone constants ───────────────────────────────────────────────────
+
+/** Default country dial code */
+export const DEFAULT_DIAL_CODE = '+371';
+
+/** Default country code */
+export const DEFAULT_COUNTRY_CODE = 'LV';
+
+// ── Country / city data ───────────────────────────────────────────────
+
 export const COUNTRIES = [
   { value: 'Latvia', label: { en: 'Latvia', lv: 'Latvija', ru: 'Латвия' } },
   { value: 'Lithuania', label: { en: 'Lithuania', lv: 'Lietuva', ru: 'Литва' } },

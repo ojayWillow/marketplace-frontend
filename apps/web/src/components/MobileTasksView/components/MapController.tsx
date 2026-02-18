@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { Task } from '@marketplace/shared';
 import { useMobileMapStore } from '../stores';
+import { LATVIA_CENTER, LATVIA_ZOOM } from '../../../constants/locations';
 import L from 'leaflet';
 
 interface MapControllerProps {
@@ -121,7 +122,7 @@ const MapController = ({
 
     isSettingView.current = true;
     if (radius === 0) {
-      map.setView([56.8796, 24.6032], 7);
+      map.setView([LATVIA_CENTER.lat, LATVIA_CENTER.lng], LATVIA_ZOOM);
     } else {
       let zoom = 13;
       if (radius <= 5) zoom = 13;

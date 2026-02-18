@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { DEFAULT_LOCATION } from '../../../constants/locations';
 
 const LOCATION_TIMEOUT_MS = 10000; // 10s — generous for shared link visitors
-const DEFAULT_LOCATION = { lat: 56.9496, lng: 24.1052 }; // Riga, Latvia
 const LOCATION_CACHE_KEY = 'user_last_location';
 const LOCATION_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -54,7 +54,7 @@ interface UseUserLocationOptions {
  * come from actual GPS/cache or the hardcoded Riga default.
  *
  * Uses a 10s timeout to give the user time to handle the community
- * rules modal before the browser’s location prompt.
+ * rules modal before the browser's location prompt.
  */
 export const useUserLocation = ({
   onLocationReady,
