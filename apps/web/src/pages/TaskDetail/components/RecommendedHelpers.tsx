@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Task } from '@marketplace/shared';
 import { Offering } from '@marketplace/shared';
 import { getCategoryLabel } from '../../../constants/categories';
@@ -17,16 +18,20 @@ export const RecommendedHelpers = ({
   loading,
   onContactHelper,
 }: RecommendedHelpersProps) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md p-6 text-center">
         <div className="animate-spin h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Finding helpers nearby...</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('taskDetail.helpers.finding', 'Finding helpers nearby...')}</p>
       </div>
     );
   }
   
   if (helpers.length === 0) return null;
+
+  const categoryLabel = t(`tasks.categories.${task.category}`, getCategoryLabel(task.category));
 
   return (
     <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden">
@@ -34,9 +39,9 @@ export const RecommendedHelpers = ({
         <div className="flex items-center gap-3">
           <span className="text-2xl">✨</span>
           <div>
-            <h2 className="font-bold text-lg">Recommended Helpers</h2>
+            <h2 className="font-bold text-lg">{t('taskDetail.helpers.title', 'Recommended Helpers')}</h2>
             <p className="text-amber-100 text-sm">
-              {helpers.length} offering {getCategoryLabel(task.category)} nearby
+              {t('taskDetail.helpers.offeringNearby', '{{count}} offering {{category}} nearby', { count: helpers.length, category: categoryLabel })}
             </p>
           </div>
         </div>
@@ -83,7 +88,7 @@ export const RecommendedHelpers = ({
                 onClick={() => onContactHelper(helper)}
                 className="w-full bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 transition-colors font-medium"
               >
-                💬 Contact
+                {t('taskDetail.helpers.contact', '💬 Contact')}
               </button>
             </div>
           ))}
@@ -95,7 +100,7 @@ export const RecommendedHelpers = ({
               to={`/tasks?tab=offerings&category=${task.category}`}
               className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium"
             >
-              View all {helpers.length} helpers →
+              {t('taskDetail.helpers.viewAll', 'View all {{count}} helpers →', { count: helpers.length })}
             </Link>
           </div>
         )}

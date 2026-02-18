@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { TaskApplication } from '@marketplace/shared';
 
 interface TaskApplicationsProps {
@@ -20,20 +21,22 @@ export const TaskApplications = ({
   onReject,
   onMessage,
 }: TaskApplicationsProps) => {
+  const { t } = useTranslation();
+
   return (
     <div className="mt-4">
       <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-        📋 Applications
+        📋 {t('taskDetail.applications.title', 'Applications')}
         <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({applications.length})</span>
       </h2>
 
       {applicationsLoading ? (
-        <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">Loading applications...</div>
+        <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">{t('taskDetail.applications.loading', 'Loading applications...')}</div>
       ) : applications.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl">
           <span className="text-3xl mb-2 block">📋</span>
-          <p className="text-gray-600 dark:text-gray-300 font-medium text-sm">No applications yet</p>
-          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Share your job to get more applicants!</p>
+          <p className="text-gray-600 dark:text-gray-300 font-medium text-sm">{t('taskDetail.applications.none', 'No applications yet')}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">{t('taskDetail.applications.shareHint', 'Share your job to get more applicants!')}</p>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -69,12 +72,12 @@ export const TaskApplications = ({
                 </div>
                 {application.status === 'pending' && (
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 flex-shrink-0">
-                    Pending
+                    {t('taskDetail.applications.pending', 'Pending')}
                   </span>
                 )}
                 {application.status === 'accepted' && (
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex-shrink-0">
-                    ✓ Accepted
+                    {t('taskDetail.applications.accepted', '✓ Accepted')}
                   </span>
                 )}
               </div>
@@ -96,14 +99,14 @@ export const TaskApplications = ({
                     disabled={acceptingId === application.id}
                     className="flex-1 py-2.5 text-sm font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 disabled:text-gray-400 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-colors border-r border-gray-200/60 dark:border-gray-700/60"
                   >
-                    {acceptingId === application.id ? '...' : '✓ Accept'}
+                    {acceptingId === application.id ? '...' : t('taskDetail.applications.accept', '✓ Accept')}
                   </button>
                   <button
                     onClick={() => onReject(application.id)}
                     disabled={rejectingId === application.id}
                     className="flex-1 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:text-gray-300 dark:disabled:text-gray-600 transition-colors border-r border-gray-200/60 dark:border-gray-700/60"
                   >
-                    Reject
+                    {t('taskDetail.applications.reject', 'Reject')}
                   </button>
                   <button
                     onClick={() => onMessage(application.applicant_id)}
