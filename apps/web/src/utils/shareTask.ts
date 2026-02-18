@@ -52,9 +52,9 @@ export const shareTask = async (task: Task): Promise<'shared' | 'copied' | 'dism
 
   const textLines: string[] = [];
   textLines.push(task.title);
-  if (budget > 0) textLines.push(`💰 €${budget}`);
-  if (address) textLines.push(`📍 ${address}`);
-  if (task.created_at) textLines.push(`🕐 Posted ${formatPostedTime(task.created_at)}`);
+  if (budget > 0) textLines.push(`\u{1F4B0} \u20AC${budget}`);
+  if (address) textLines.push(`\u{1F4CD} ${address}`);
+  if (task.created_at) textLines.push(`\u{23F3} Posted ${formatPostedTime(task.created_at)}`);
 
   // Always append URL on its own line with a blank line separator
   const fullText = textLines.join('\n') + '\n\n' + url;

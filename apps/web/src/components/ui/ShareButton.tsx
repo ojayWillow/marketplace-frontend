@@ -67,7 +67,7 @@ const ShareButton = ({
     // Each detail on its own line
     if (price) lines.push(`\u{1F4B0} ${price}`);
     if (location) lines.push(`\u{1F4CD} ${location}`);
-    if (postedDate) lines.push(`\u{1F552} ${postedDate}`);
+    if (postedDate) lines.push(`\u{23F3} ${postedDate}`);
 
     // URL line — only when the platform doesn't add it automatically
     if (includeUrl) {
@@ -245,7 +245,7 @@ const ShareButton = ({
               <p className="text-xs text-gray-400 mt-0.5 truncate">{`\u{1F4CD}`} {location}</p>
             )}
             {postedDate && (
-              <p className="text-xs text-gray-400 mt-0.5">{`\u{1F550}`} {postedDate}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{`\u{23F3}`} {postedDate}</p>
             )}
             <p className="text-xs text-gray-300 mt-0.5 truncate">kolab.lv</p>
           </div>
