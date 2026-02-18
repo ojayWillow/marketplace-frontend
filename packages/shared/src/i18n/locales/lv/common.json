@@ -74,6 +74,26 @@
     "disputed": "Apstrīdēts",
     "accepted": "Pieņemts"
   },
+  "categories": {
+    "cleaning": "Uzkopšana",
+    "handyman": "Meistars",
+    "delivery": "Piegāde",
+    "moving": "Pārvākšanās",
+    "outdoor": "Āra darbi",
+    "pet-care": "Mājdzīvnieki",
+    "tutoring": "Apmācība",
+    "tech-help": "IT palīdzība",
+    "shopping": "Iepirkšanās",
+    "assembly": "Montāža",
+    "plumbing": "Santehnika",
+    "electrical": "Elektriķis",
+    "painting": "Krāsošana",
+    "care": "Aprūpe",
+    "tech": "Tehnika",
+    "beauty": "Skaistumkopšana",
+    "events": "Pasākumi",
+    "other": "Cits"
+  },
   "favorites": {
     "typeJob": "Darbs",
     "typeService": "Pakalpojums",

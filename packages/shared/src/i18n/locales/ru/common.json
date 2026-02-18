@@ -74,6 +74,26 @@
     "disputed": "Оспорено",
     "accepted": "Принято"
   },
+  "categories": {
+    "cleaning": "Уборка",
+    "handyman": "Мастер",
+    "delivery": "Доставка",
+    "moving": "Переезд",
+    "outdoor": "Улица",
+    "pet-care": "Питомцы",
+    "tutoring": "Обучение",
+    "tech-help": "IT помощь",
+    "shopping": "Покупки",
+    "assembly": "Сборка",
+    "plumbing": "Сантехника",
+    "electrical": "Электрика",
+    "painting": "Покраска",
+    "care": "Уход",
+    "tech": "Техника",
+    "beauty": "Красота",
+    "events": "Мероприятия",
+    "other": "Другое"
+  },
   "favorites": {
     "typeJob": "Работа",
     "typeService": "Услуга",
