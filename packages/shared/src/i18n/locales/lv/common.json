@@ -54,6 +54,7 @@
   "gotIt": "Sapratu!",
   "and": "un",
   "comingSoon": "Drīzumā",
+  "signIn": "Ieiet",
   "notifications": {
     "title": "Paziņojumi",
     "unread": "nelasīti",
@@ -69,5 +70,11 @@
     "awaitingConfirmation": "{{count}} uzdevums(-i) gaida apstiprinājumu",
     "workersMarkedDone": "Izpildītāji atzīmēja šos kā pabeigtus",
     "viewAllActivity": "Skatīt visu aktivitāti"
+  },
+  "header": {
+    "closeMenu": "Aizvērt izvēlni",
+    "openMenu": "Atvērt izvēlni",
+    "userMenu": "Lietotāja izvēlne",
+    "youHaveNotifications": "Jums ir {{count}} paziņojums(-i)"
   }
 }

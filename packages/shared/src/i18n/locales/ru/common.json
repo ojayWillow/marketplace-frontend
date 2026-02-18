@@ -54,6 +54,7 @@
   "gotIt": "Понятно!",
   "and": "и",
   "comingSoon": "Скоро",
+  "signIn": "Войти",
   "notifications": {
     "title": "Уведомления",
     "unread": "непрочитанных",
@@ -69,5 +70,11 @@
     "awaitingConfirmation": "{{count}} задание(-ий) ожидает подтверждения",
     "workersMarkedDone": "Исполнители отметили их как выполненные",
     "viewAllActivity": "Смотреть всю активность"
+  },
+  "header": {
+    "closeMenu": "Закрыть меню",
+    "openMenu": "Открыть меню",
+    "userMenu": "Меню пользователя",
+    "youHaveNotifications": "У вас {{count}} уведомление(-ий)"
   }
 }
