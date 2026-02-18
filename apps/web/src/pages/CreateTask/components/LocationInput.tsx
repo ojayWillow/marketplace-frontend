@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { divIcon, type LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTranslation } from 'react-i18next';
 import { useAddressSearch } from '../hooks';
 import { GeocodingResult } from '@marketplace/shared';
 import { DEFAULT_LOCATION } from '../../../constants/locations';
@@ -59,6 +60,7 @@ const LocationInput = ({
   onCoordsChange,
   locationConfirmed = false,
 }: LocationInputProps) => {
+  const { t } = useTranslation();
   const { searching, suggestions, clearSuggestions } = useAddressSearch(location);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [reverseLoading, setReverseLoading] = useState(false);
@@ -111,10 +113,10 @@ const LocationInput = ({
   return (
     <div>
       <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Location *
+        {t('createTask.location', 'Location')} *
         {(searching || reverseLoading) && (
           <span className="text-blue-500 dark:text-blue-400 text-xs ml-2 animate-pulse">
-            {reverseLoading ? '(locating...)' : '(searching...)'}
+            {reverseLoading ? t('createTask.locating', '(locating...)') : t('createTask.searching', '(searching...)')}
           </span>
         )}
       </label>
@@ -130,7 +132,7 @@ const LocationInput = ({
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder="Search address or tap the map"
+          placeholder={t('createTask.searchLocation', 'Search address or tap the map')}
           className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
           autoComplete="off"
         />
@@ -176,13 +178,13 @@ const LocationInput = ({
 
         {!location && !reverseLoading && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none z-[1000]">
-            Tap to set location
+            {t('createTask.tapToSetLocation', 'Tap to set location')}
           </div>
         )}
 
         {reverseLoading && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-blue-500/90 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none z-[1000] animate-pulse">
-            Finding address...
+            {t('createTask.findingAddress', 'Finding address...')}
           </div>
         )}
       </div>
