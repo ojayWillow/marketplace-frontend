@@ -1,4 +1,5 @@
 import { Task } from '@marketplace/shared';
+import { getCategoryIcon } from '@marketplace/shared';
 
 /**
  * Build the deep-link URL that opens the map with a specific job selected.
@@ -38,6 +39,44 @@ const formatPostedTime = (dateString: string): string => {
 };
 
 /**
+ * Build the share text in the same format as ShareButton.buildShareText().
+ * This ensures the shared message looks identical regardless of where the
+ * user triggers the share (map card, task detail, etc.).
+ */
+const buildShareText = (task: Task, includeUrl = true): string => {
+  const budget = task.budget || task.reward || 0;
+  const address = shortAddress(task.location);
+  const categoryEmoji = getCategoryIcon(task.category);
+  const url = buildShareUrl(task.id);
+
+  const lines: string[] = [];
+
+  // Line 1: emoji + title
+  const titleLine = categoryEmoji ? `${categoryEmoji} ${task.title}` : task.title;
+  lines.push(titleLine);
+
+  // Blank line after title
+  lines.push('');
+
+  // Each detail on its own line
+  if (budget > 0) lines.push(`\u{1F4B0} \u20AC${budget}`);
+  if (address) lines.push(`\u{1F4CD} ${address}`);
+  if (task.created_at) lines.push(`\u{23F3} ${formatPostedTime(task.created_at)}`);
+
+  // URL line — only when the platform doesn't add it automatically
+  if (includeUrl) {
+    lines.push('');
+    lines.push(`\u{1F449} ${url}`);
+  }
+
+  // Tagline
+  lines.push('');
+  lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
+
+  return lines.join('\n');
+};
+
+/**
  * Share a task via the Web Share API (mobile) or copy to clipboard (desktop).
  *
  * The URL is included inline in the text body (with a blank line before it)
@@ -46,18 +85,7 @@ const formatPostedTime = (dateString: string): string => {
  * text line.
  */
 export const shareTask = async (task: Task): Promise<'shared' | 'copied' | 'dismissed'> => {
-  const budget = task.budget || task.reward || 0;
-  const address = shortAddress(task.location);
-  const url = buildShareUrl(task.id);
-
-  const textLines: string[] = [];
-  textLines.push(task.title);
-  if (budget > 0) textLines.push(`\u{1F4B0} \u20AC${budget}`);
-  if (address) textLines.push(`\u{1F4CD} ${address}`);
-  if (task.created_at) textLines.push(`\u{23F3} Posted ${formatPostedTime(task.created_at)}`);
-
-  // Always append URL on its own line with a blank line separator
-  const fullText = textLines.join('\n') + '\n\n' + url;
+  const fullText = buildShareText(task, true);
 
   // Try native share — pass URL in the text body only, not as separate `url`.
   // When `url` is passed separately, WhatsApp concatenates it awkwardly
