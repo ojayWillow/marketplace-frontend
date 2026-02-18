@@ -168,6 +168,23 @@
     "shopping": "Iepirkšanās",
     "tech-help": "Tehniskā palīdzība"
   },
+  "categoryDescriptions": {
+    "cleaning": "Mājas uzkopšana, ģenerāltīrīšana, kārtošana",
+    "moving": "Pārvākšanās, smagu priekšmetu pārnēsāšana, transportēšana",
+    "assembly": "Mēbeļu montāža, IKEA, stiprināšana",
+    "handyman": "Remonti, labojumi, nelieli būvdarbi",
+    "plumbing": "Caurules, krāni, kanalizācija",
+    "electrical": "Elektroinstalācija, apgaismojums, kontaktligzdas",
+    "painting": "Sienu krāsošana, kosmētiskie labojumi, dekorēšana",
+    "outdoor": "Dārzkopība, pagalma darbi, sniega tīrīšana",
+    "delivery": "Piegāde, iepirkšanās, darīšanas, braukšana",
+    "care": "Mājdzīvnieku aprūpe, bērnu pieskatīšana, vecāku aprūpe",
+    "tutoring": "Mācīšana, nodarbības, palīdzība ar mājasdarbiem",
+    "tech": "Dators, telefons, tehniskais atbalsts",
+    "beauty": "Mati, grims, stilizēšana",
+    "events": "Ballīšu organizēšana, ēdināšana, gatavošana, izklaide",
+    "other": "Viss pārējais"
+  },
   "categoryGroups": {
     "homeProperty": "Māja un īpašums",
     "outdoorTransport": "Āra darbi un transports",

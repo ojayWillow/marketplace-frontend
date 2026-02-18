@@ -9,6 +9,9 @@
   "descriptionPlaceholder": "What do you offer? What makes you stand out?",
   "category": "What service do you offer?",
   "selectCategory": "Select a category",
+  "selectCategoryFirst": "First select a category above",
+  "describeService": "Describe your service",
+  "egPrefix": "e.g.",
   "price": "Price (EUR)",
   "pricePlaceholder": "e.g., 15",
   "priceType": "Pricing",
@@ -41,11 +44,26 @@
   "timeAfternoon": "Afternoon",
   "timeEvening": "Evening",
   "timeFlexible": "Flexible",
+  "timeAny": "Any",
   "everyDay": "Every day",
   "weekdays": "Weekdays",
   "weekends": "Weekends",
   "flexibleHours": "Flexible hours",
   "wk": "Wk",
+  "dayMon": "M",
+  "dayTue": "T",
+  "dayWed": "W",
+  "dayThu": "T",
+  "dayFri": "F",
+  "daySat": "S",
+  "daySun": "S",
+  "dayMonFull": "Mon",
+  "dayTueFull": "Tue",
+  "dayWedFull": "Wed",
+  "dayThuFull": "Thu",
+  "dayFriFull": "Fri",
+  "daySatFull": "Sat",
+  "daySunFull": "Sun",
   "experience": "Experience",
   "experiencePlaceholder": "Your qualifications, relevant background...",
   "clickMap": "Or click on the map to set location",
@@ -67,5 +85,83 @@
   "tip1": "Use a clear, specific title that describes your service",
   "tip2": "Be detailed in the description - what's included?",
   "tip3": "Set a competitive price based on your experience",
-  "tip4": "Respond quickly when people contact you"
+  "tip4": "Respond quickly when people contact you",
+  "suggestions": {
+    "cleaning": {
+      "0": "Professional House Cleaning",
+      "1": "Deep Cleaning Service",
+      "2": "Office Cleaning",
+      "3": "Move-out Cleaning"
+    },
+    "moving": {
+      "0": "Moving & Heavy Lifting Help",
+      "1": "Furniture Moving Service",
+      "2": "Apartment Moving Help"
+    },
+    "assembly": {
+      "0": "Furniture Assembly (IKEA & more)",
+      "1": "Shelf & Cabinet Mounting",
+      "2": "Flat-pack Assembly Service"
+    },
+    "handyman": {
+      "0": "Handyman \u2013 All Repairs",
+      "1": "Home Repair Service",
+      "2": "Fix-It Handyman"
+    },
+    "plumbing": {
+      "0": "Plumbing Repairs & Installation",
+      "1": "Emergency Plumber",
+      "2": "Faucet & Drain Service"
+    },
+    "electrical": {
+      "0": "Electrical Repairs & Wiring",
+      "1": "Light Fixture Installation",
+      "2": "Outlet & Switch Service"
+    },
+    "painting": {
+      "0": "Interior Wall Painting",
+      "1": "Room Painting Service",
+      "2": "Touch-up & Decorating"
+    },
+    "outdoor": {
+      "0": "Garden & Yard Maintenance",
+      "1": "Lawn Mowing & Trimming",
+      "2": "Snow Removal Service"
+    },
+    "delivery": {
+      "0": "Delivery & Errands Runner",
+      "1": "Grocery Shopping & Delivery",
+      "2": "Package Pickup & Drop-off"
+    },
+    "care": {
+      "0": "Pet Walking & Sitting",
+      "1": "Babysitting / Childcare",
+      "2": "Elderly Companion Care"
+    },
+    "tutoring": {
+      "0": "Math & Science Tutoring",
+      "1": "Language Lessons",
+      "2": "Homework Help & Tutoring"
+    },
+    "tech": {
+      "0": "Computer & Phone Repair",
+      "1": "WiFi & Smart Home Setup",
+      "2": "Tech Support & Troubleshooting"
+    },
+    "beauty": {
+      "0": "Hairstyling & Cuts",
+      "1": "Makeup Artist",
+      "2": "At-Home Beauty Services"
+    },
+    "events": {
+      "0": "Event Setup & Decorations",
+      "1": "Party Planning Help",
+      "2": "Catering Assistant"
+    },
+    "other": {
+      "0": "General Helper",
+      "1": "Personal Assistant",
+      "2": "Custom Service"
+    }
+  }
 }
