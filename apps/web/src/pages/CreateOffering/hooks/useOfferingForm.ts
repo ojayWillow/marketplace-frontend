@@ -128,6 +128,15 @@ export const useOfferingForm = () => {
       return;
     }
 
+    // Price range validation (skip for negotiable)
+    if (formData.price_type !== 'negotiable') {
+      const priceNum = formData.price ? parseFloat(formData.price) : 0;
+      if (!formData.price || isNaN(priceNum) || priceNum < 10 || priceNum > 10000) {
+        toast.error(t('createOffering.priceRange', 'Price must be between €10 and €10,000'));
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {

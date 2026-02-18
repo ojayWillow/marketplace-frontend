@@ -137,6 +137,13 @@ export const useEditTaskForm = () => {
       return;
     }
 
+    // Budget range validation
+    const budgetNum = formData.budget ? parseFloat(formData.budget) : 0;
+    if (!formData.budget || isNaN(budgetNum) || budgetNum < 10 || budgetNum > 10000) {
+      toast.error(t('editTask.budgetRange', 'Budget must be between €10 and €10,000'));
+      return;
+    }
+
     setSaving(true);
     try {
       const updateData = {
