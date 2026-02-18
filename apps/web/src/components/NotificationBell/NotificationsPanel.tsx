@@ -18,15 +18,15 @@ interface NotificationsPanelProps {
 
 // Icon + color per notification type
 const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  [NotificationType.NEW_APPLICATION]: { icon: '\ud83d\udce9', color: 'text-blue-600', bg: 'bg-blue-50' },
-  [NotificationType.APPLICATION_ACCEPTED]: { icon: '\ud83c\udf89', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.APPLICATION_REJECTED]: { icon: '\ud83d\ude14', color: 'text-gray-600', bg: 'bg-gray-50' },
-  [NotificationType.TASK_MARKED_DONE]: { icon: '\ud83d\udccb', color: 'text-amber-600', bg: 'bg-amber-50' },
-  [NotificationType.TASK_COMPLETED]: { icon: '\u2705', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.TASK_DISPUTED]: { icon: '\u26a0\ufe0f', color: 'text-red-600', bg: 'bg-red-50' },
+  [NotificationType.NEW_APPLICATION]: { icon: '📩', color: 'text-blue-600', bg: 'bg-blue-50' },
+  [NotificationType.APPLICATION_ACCEPTED]: { icon: '🎉', color: 'text-green-600', bg: 'bg-green-50' },
+  [NotificationType.APPLICATION_REJECTED]: { icon: '😔', color: 'text-gray-600', bg: 'bg-gray-50' },
+  [NotificationType.TASK_MARKED_DONE]: { icon: '📋', color: 'text-amber-600', bg: 'bg-amber-50' },
+  [NotificationType.TASK_COMPLETED]: { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' },
+  [NotificationType.TASK_DISPUTED]: { icon: '⚠️', color: 'text-red-600', bg: 'bg-red-50' },
 };
 
-const DEFAULT_CONFIG = { icon: '\ud83d\udd14', color: 'text-gray-600', bg: 'bg-gray-50' };
+const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50' };
 
 /** Relative time label — uses i18n translations from tasks.time.* */
 const timeAgo = (dateStr: string, t: (key: string, fallback: string, opts?: any) => string, language?: string): string => {
@@ -59,13 +59,13 @@ const getNotificationPath = (notification: Notification): string | null => {
   return null;
 };
 
-/** Get icon config \u2014 resolved disputes get a different icon/color */
+/** Get icon config — resolved disputes get a different icon/color */
 const getNotificationConfig = (n: Notification) => {
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
-    return { icon: '\u2705', color: 'text-green-600', bg: 'bg-green-50' };
+    return { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' };
   }
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Response Received') {
-    return { icon: '\ud83d\udcac', color: 'text-amber-600', bg: 'bg-amber-50' };
+    return { icon: '💬', color: 'text-amber-600', bg: 'bg-amber-50' };
   }
   return TYPE_CONFIG[n.type] || DEFAULT_CONFIG;
 };
@@ -174,7 +174,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         }`}
       />
 
-      {/* Panel \u2014 slides up from bottom on mobile */}
+      {/* Panel — slides up from bottom on mobile */}
       <div
         ref={panelRef}
         className={`fixed left-0 right-0 bottom-0 z-[201] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
@@ -189,7 +189,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-gray-900">
-              \ud83d\udd14 {t('notifications.title', 'Notifications')}
+              🔔 {t('notifications.title', 'Notifications')}
             </h2>
             {unreadCount > 0 && (
               <span className="min-w-[22px] h-[22px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
@@ -239,7 +239,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <div className="text-4xl mb-3">\ud83d\udd14</div>
+              <div className="text-4xl mb-3">🔔</div>
               <h3 className="font-semibold text-gray-900 mb-1">
                 {t('notifications.empty', 'No notifications yet')}
               </h3>
@@ -297,7 +297,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   );
 };
 
-/* \u2500\u2500 Single notification row \u2500\u2500 */
+/* ── Single notification row ── */
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;
