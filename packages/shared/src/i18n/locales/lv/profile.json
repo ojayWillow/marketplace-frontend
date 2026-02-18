@@ -46,6 +46,7 @@
   "verified": "Verificēts",
   "memberSince": "Dalībnieks kopš {{date}}",
   "backToProfile": "Atpakaļ uz profilu",
+  "logout": "Iziet",
   "tabs": {
     "about": "Par mani",
     "jobs": "Darbi",
@@ -91,7 +92,18 @@
     "cancelJob": "Atcelt",
     "assigned": "Jūs esat norīkots",
     "completed": "Pabeigts!",
-    "postedBy": "Publicēja"
+    "postedBy": "Publicēja",
+    "theHelper": "palīgs",
+    "jobCreator": "Darba devējs",
+    "statusPending": "⏳ Gaida apstiprinājumu",
+    "statusActive": "✓ Aktīvs",
+    "statusDone": "✓ Pabeigts",
+    "statusOpen": "Atvērts",
+    "statusAssigned": "Norīkots",
+    "statusInProgress": "Procesā",
+    "statusPendingConfirmation": "Gaida apstiprinājumu",
+    "statusCompleted": "Pabeigts",
+    "statusCancelled": "Atcelts"
   },
   "listingsTab": {
     "title": "Mani sludinājumi",
