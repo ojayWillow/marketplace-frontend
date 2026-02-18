@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTasks, getOfferings } from '@marketplace/shared';
 import { CATEGORIES } from '../../../constants/categories';
-import { calculateDistance } from '../../../components/MobileTasksView/utils/distance';
+import { calculateDistance } from '../../../utils/distance';
 import { MainTab, WorkItem, WorkItemWithDistance, MAX_CATEGORIES, LOCATION_TIMEOUT_MS } from '../types';
 import { mapTask, mapOffering, getErrorMessage } from '../utils';
 import { useMyWork } from '../../../hooks/useMyWork';
