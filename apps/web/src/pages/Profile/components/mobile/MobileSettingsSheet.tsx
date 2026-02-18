@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePushNotifications } from '../../../../hooks/usePushNotifications';
+import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/shared';
+import type { JobAlertPreferences } from '@marketplace/shared';
 import { useLogout } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
 
@@ -21,6 +23,32 @@ const themeOptions = [
   { value: 'dark' as const, icon: '🌙', labelKey: 'settings.theme.dark', labelDefault: 'Dark' },
   { value: 'system' as const, icon: '🖥️', labelKey: 'settings.theme.system', labelDefault: 'System' },
 ];
+
+const TASK_CATEGORIES = [
+  'pet-care',
+  'moving',
+  'shopping',
+  'cleaning',
+  'delivery',
+  'outdoor',
+  'handyman',
+  'tutoring',
+  'tech-help',
+  'other',
+] as const;
+
+const CATEGORY_ICONS: Record<string, string> = {
+  'pet-care': '🐕',
+  'moving': '📦',
+  'shopping': '🛒',
+  'cleaning': '🧹',
+  'delivery': '🚗',
+  'outdoor': '🌿',
+  'handyman': '🔧',
+  'tutoring': '📚',
+  'tech-help': '💻',
+  'other': '📋',
+};
 
 const isIOSSafari = () => {
   const ua = navigator.userAgent;
@@ -52,9 +80,83 @@ export const MobileSettingsSheet = ({
 
   const [showIOSHelp, setShowIOSHelp] = useState(false);
 
+  // ---- Job Alert state ----
+  const [jobAlertPrefs, setJobAlertPrefs] = useState<JobAlertPreferences>({
+    enabled: false,
+    radius_km: 10,
+    categories: [],
+  });
+  const [jobAlertLoading, setJobAlertLoading] = useState(true);
+  const [jobAlertSaving, setJobAlertSaving] = useState(false);
+  const [jobAlertSaved, setJobAlertSaved] = useState(false);
+  const [jobAlertError, setJobAlertError] = useState<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     setShowIOSHelp(isIOSSafari());
   }, []);
+
+  // Load job alert preferences
+  useEffect(() => {
+    if (!isOpen) return;
+    const load = async () => {
+      try {
+        const data = await getJobAlertPreferences();
+        setJobAlertPrefs(data.preferences);
+      } catch (err) {
+        console.error('Failed to load job alert prefs:', err);
+      } finally {
+        setJobAlertLoading(false);
+      }
+    };
+    load();
+  }, [isOpen]);
+
+  const saveJobAlertPrefs = useCallback(async (newPrefs: Partial<JobAlertPreferences>) => {
+    setJobAlertSaving(true);
+    setJobAlertError(null);
+    setJobAlertSaved(false);
+    try {
+      const data = await updateJobAlertPreferences(newPrefs);
+      setJobAlertPrefs(data.preferences);
+      setJobAlertSaved(true);
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => setJobAlertSaved(false), 2500);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Failed to save';
+      setJobAlertError(msg);
+    } finally {
+      setJobAlertSaving(false);
+    }
+  }, []);
+
+  const handleJobAlertToggle = () => {
+    const next = !jobAlertPrefs.enabled;
+    setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
+    saveJobAlertPrefs({ enabled: next });
+  };
+
+  const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setJobAlertPrefs(prev => ({ ...prev, radius_km: val }));
+  };
+
+  const handleRadiusCommit = () => {
+    saveJobAlertPrefs({ radius_km: jobAlertPrefs.radius_km });
+  };
+
+  const handleCategoryToggle = (cat: string) => {
+    const current = jobAlertPrefs.categories;
+    let next: string[];
+    if (current.includes(cat)) {
+      next = current.filter(c => c !== cat);
+    } else {
+      if (current.length >= 10) return;
+      next = [...current, cat];
+    }
+    setJobAlertPrefs(prev => ({ ...prev, categories: next }));
+    saveJobAlertPrefs({ categories: next });
+  };
 
   const handleToggle = async () => {
     if (isSubscribed) {
@@ -289,6 +391,135 @@ export const MobileSettingsSheet = ({
           {error && (
             <div className="mx-4 mb-2">
               <p className="text-xs text-red-500">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ============ JOB ALERTS ============ */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
+          {/* Header row with toggle */}
+          <div className="flex items-center justify-between px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">📍</span>
+              <div>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                  {t('common.notifications.jobAlerts', 'Job Alerts')}
+                </span>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  {jobAlertLoading
+                    ? t('common.loading', 'Loading...')
+                    : jobAlertPrefs.enabled
+                      ? t('settings.notifications.statusOn', 'Enabled')
+                      : t('settings.notifications.statusOff', 'Disabled')}
+                </p>
+              </div>
+            </div>
+
+            {!jobAlertLoading && (
+              <button
+                onClick={handleJobAlertToggle}
+                disabled={jobAlertSaving}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  jobAlertSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                } ${
+                  jobAlertPrefs.enabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+                role="switch"
+                aria-checked={jobAlertPrefs.enabled}
+                aria-label="Toggle job alerts"
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                    jobAlertPrefs.enabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            )}
+          </div>
+
+          {/* Error */}
+          {jobAlertError && (
+            <div className="mx-4 mb-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <p className="text-xs text-red-600 dark:text-red-400">{jobAlertError}</p>
+            </div>
+          )}
+
+          {/* Saved feedback */}
+          {jobAlertSaved && (
+            <div className="mx-4 mb-2">
+              <p className="text-xs text-green-600 dark:text-green-400">
+                ✅ {t('common.notifications.jobAlertsSaved', 'Saved!')}
+              </p>
+            </div>
+          )}
+
+          {/* Expanded settings when enabled */}
+          {!jobAlertLoading && jobAlertPrefs.enabled && (
+            <div className="px-4 pb-3 space-y-3">
+              {/* Radius slider */}
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {t('common.notifications.radius', 'Radius')}
+                  </span>
+                  <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                    {jobAlertPrefs.radius_km} {t('common.notifications.radiusKm', 'km')}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={jobAlertPrefs.radius_km}
+                  onChange={handleRadiusChange}
+                  onMouseUp={handleRadiusCommit}
+                  onTouchEnd={handleRadiusCommit}
+                  className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  <span>1</span>
+                  <span>25</span>
+                  <span>50 km</span>
+                </div>
+              </div>
+
+              {/* Category chips */}
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {t('common.notifications.categories', 'Categories')}
+                  </span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    {jobAlertPrefs.categories.length === 0
+                      ? t('common.notifications.allCategories', 'All')
+                      : `${jobAlertPrefs.categories.length}/10`}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {TASK_CATEGORIES.map((cat) => {
+                    const isSelected = jobAlertPrefs.categories.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => handleCategoryToggle(cat)}
+                        disabled={jobAlertSaving}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 ring-1 ring-orange-300 dark:ring-orange-700'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                        } disabled:opacity-50`}
+                      >
+                        <span className="text-xs">{CATEGORY_ICONS[cat] || '📋'}</span>
+                        <span>{t(`createTask.categoryDescriptions.${cat}`, cat).split(',')[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
+                  {t('common.notifications.maxCategories', 'Empty = all categories')}
+                </p>
+              </div>
             </div>
           )}
         </div>

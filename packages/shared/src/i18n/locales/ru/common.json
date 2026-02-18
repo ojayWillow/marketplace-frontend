@@ -113,7 +113,18 @@
     "taskCancelled": "\"{{task}}\" отменено",
     "newReview": "Новый отзыв на {{rating}} звёзд за \"{{task}}\"",
     "bellLabel": "Уведомления",
-    "bellLabelUnread": "Уведомления ({{count}} непрочитанных)"
+    "bellLabelUnread": "Уведомления ({{count}} непрочитанных)",
+    "newTaskNearby": "Новое задание {{category}} в {{distance}}",
+    "newTaskNearbyBudget": "{{budget}} · {{location}}",
+    "jobAlerts": "Уведомления о работе",
+    "jobAlertsDesc": "Получайте уведомления о новых заданиях рядом",
+    "radius": "Радиус",
+    "radiusKm": "{{value}} км",
+    "categories": "Категории",
+    "allCategories": "Все категории",
+    "maxCategories": "Макс. {{max}} категорий",
+    "jobAlertsSaved": "Уведомления обновлены",
+    "locationRequired": "Укажите местоположение для получения уведомлений"
   },
   "header": {
     "closeMenu": "Закрыть меню",

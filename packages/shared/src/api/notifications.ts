@@ -13,6 +13,7 @@ export enum NotificationType {
   REVIEW_REMINDER = 'review_reminder',
   TASK_CANCELLED = 'task_cancelled',
   NEW_REVIEW = 'new_review',
+  NEW_TASK_NEARBY = 'new_task_nearby',
 }
 
 // Data fields that can be included in notifications for i18n interpolation
@@ -24,6 +25,13 @@ export interface NotificationData {
   other_party_name?: string;
   is_creator?: boolean;
   rating?: number;
+
+  // Job alerts (new_task_nearby)
+  task_id?: number;
+  category_key?: string;
+  distance_km?: number;
+  budget?: string;
+  location?: string;
 }
 
 export interface Notification {
@@ -111,4 +119,30 @@ export const markReadByType = async (
  */
 export const deleteNotification = async (notificationId: number): Promise<void> => {
   await apiClient.delete(`/api/notifications/${notificationId}`);
+};
+
+// ============ JOB ALERT PREFERENCES ============
+
+export interface JobAlertPreferences {
+  enabled: boolean;
+  radius_km: number;
+  categories: string[];
+}
+
+/**
+ * Get job alert preferences for current user
+ */
+export const getJobAlertPreferences = async (): Promise<{ preferences: JobAlertPreferences }> => {
+  const response = await apiClient.get('/api/notifications/job-alerts');
+  return response.data;
+};
+
+/**
+ * Update job alert preferences
+ */
+export const updateJobAlertPreferences = async (
+  prefs: Partial<JobAlertPreferences>
+): Promise<{ message: string; preferences: JobAlertPreferences }> => {
+  const response = await apiClient.put('/api/notifications/job-alerts', prefs);
+  return response.data;
 };
