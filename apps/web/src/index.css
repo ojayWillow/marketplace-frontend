@@ -92,6 +92,42 @@ button:focus-visible,
 }
 
 /* ===========================================
+   SMOOTH THEME TRANSITION
+   Premium feel when toggling light ↔ dark.
+   Applied globally but respects reduced-motion.
+   =========================================== */
+
+html:not([data-no-transition]) body,
+html:not([data-no-transition]) body *,
+html:not([data-no-transition]) body *::before,
+html:not([data-no-transition]) body *::after {
+  transition-property: background-color, color, border-color, box-shadow, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* Keep micro-interactions snappy — override the global transition for hover/active */
+a:hover,
+button:hover,
+a:active,
+button:active,
+[role="button"]:hover,
+[role="button"]:active {
+  transition-duration: 0.15s;
+}
+
+/* Animations (transforms, slide-ins, spins) should NOT be slowed by the theme transition */
+.animate-spin,
+.animate-pulse,
+.animate-slide-in,
+.animate-slide-out,
+.animate-slide-up,
+.animate-page-enter,
+.animate-fade-in-up {
+  transition-property: none;
+}
+
+/* ===========================================
    MOBILE: Prevent auto-zoom on input focus
    iOS/Android browsers zoom in when a form
    element has font-size < 16px.  Force 16px
