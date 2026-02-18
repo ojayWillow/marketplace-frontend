@@ -95,7 +95,7 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false, c
                   </Link>
                   {!viewOnly && (
                     <span className={`px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${getStatusBadgeClass(offering.status)}`}>
-                      {offering.status}
+                      {t(`common.statuses.${offering.status}`, offering.status)}
                     </span>
                   )}
                 </div>
@@ -107,7 +107,7 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false, c
                     €{offering.price || 0}{offering.price_type === 'hourly' && '/hr'}
                   </span>
                   <span className="text-gray-300 dark:text-gray-600">•</span>
-                  <span className="text-gray-500 dark:text-gray-400">{getCategoryLabel(offering.category)}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t(`tasks.categories.${offering.category}`, getCategoryLabel(offering.category))}</span>
                 </div>
 
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">

@@ -16,15 +16,6 @@ const getItemLink = (item: Favorite['item']) => {
   }
 };
 
-const getTypeLabel = (type: FavoriteItemType) => {
-  switch (type) {
-    case 'task': return 'Job';
-    case 'offering': return 'Service';
-    case 'listing': return 'Listing';
-    default: return type;
-  }
-};
-
 const getTypeBadgeColor = (type: FavoriteItemType) => {
   switch (type) {
     case 'task': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
@@ -33,13 +24,6 @@ const getTypeBadgeColor = (type: FavoriteItemType) => {
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   }
 };
-
-const filterTabs: { value: FilterType; label: string; icon: string }[] = [
-  { value: 'all', label: 'All', icon: '❤️' },
-  { value: 'task', label: 'Jobs', icon: '💼' },
-  { value: 'offering', label: 'Services', icon: '🛠️' },
-  { value: 'listing', label: 'Listings', icon: '🏪' },
-];
 
 const MAX_VISIBLE = 10;
 
@@ -53,6 +37,22 @@ export const MobileFavoritesSection = () => {
     filter === 'all' ? undefined : filter
   );
   const removeFavorite = useRemoveFavorite();
+
+  const getTypeLabel = (type: FavoriteItemType) => {
+    switch (type) {
+      case 'task': return t('favorites.typeJob', 'Job');
+      case 'offering': return t('favorites.typeService', 'Service');
+      case 'listing': return t('favorites.typeListing', 'Listing');
+      default: return type;
+    }
+  };
+
+  const filterTabs: { value: FilterType; label: string; icon: string }[] = [
+    { value: 'all', label: t('favorites.filterAll', 'All'), icon: '❤️' },
+    { value: 'task', label: t('favorites.filterJobs', 'Jobs'), icon: '💼' },
+    { value: 'offering', label: t('favorites.filterServices', 'Services'), icon: '🛠️' },
+    { value: 'listing', label: t('favorites.filterListings', 'Listings'), icon: '🏪' },
+  ];
 
   const handleRemove = async (e: React.MouseEvent, favoriteId: number) => {
     e.preventDefault();
@@ -170,7 +170,7 @@ export const MobileFavoritesSection = () => {
                       </span>
                       {fav.item.category && (
                         <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
-                          {getCategoryIcon(fav.item.category)} {getCategoryLabel(fav.item.category)}
+                          {getCategoryIcon(fav.item.category)} {t(`tasks.categories.${fav.item.category}`, getCategoryLabel(fav.item.category))}
                         </span>
                       )}
                     </div>
