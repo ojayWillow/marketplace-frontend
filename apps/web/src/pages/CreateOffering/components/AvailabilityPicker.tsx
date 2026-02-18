@@ -10,8 +10,24 @@ interface AvailabilityPickerProps {
 const AvailabilityPicker = ({ value, onChange }: AvailabilityPickerProps) => {
   const { t } = useTranslation();
 
+  const DAY_LABELS: Record<string, string> = {
+    mon: t('createOffering.dayMon', 'M'),
+    tue: t('createOffering.dayTue', 'T'),
+    wed: t('createOffering.dayWed', 'W'),
+    thu: t('createOffering.dayThu', 'T'),
+    fri: t('createOffering.dayFri', 'F'),
+    sat: t('createOffering.daySat', 'S'),
+    sun: t('createOffering.daySun', 'S'),
+  };
+
   const DAY_FULL_NAMES: Record<string, string> = {
-    mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+    mon: t('createOffering.dayMonFull', 'Mon'),
+    tue: t('createOffering.dayTueFull', 'Tue'),
+    wed: t('createOffering.dayWedFull', 'Wed'),
+    thu: t('createOffering.dayThuFull', 'Thu'),
+    fri: t('createOffering.dayFriFull', 'Fri'),
+    sat: t('createOffering.daySatFull', 'Sat'),
+    sun: t('createOffering.daySunFull', 'Sun'),
   };
 
   const timeSlotLabels: Record<string, string> = {
@@ -19,6 +35,13 @@ const AvailabilityPicker = ({ value, onChange }: AvailabilityPickerProps) => {
     afternoon: t('createOffering.timeAfternoon', 'Afternoon'),
     evening: t('createOffering.timeEvening', 'Evening'),
     flexible: t('createOffering.timeFlexible', 'Flexible'),
+  };
+
+  const timeSlotDescs: Record<string, string> = {
+    morning: '8\u201312',
+    afternoon: '12\u201317',
+    evening: '17\u201321',
+    flexible: t('createOffering.timeAny', 'Any'),
   };
 
   const [selectedDays, setSelectedDays] = useState<string[]>(() => {
@@ -115,7 +138,7 @@ const AvailabilityPicker = ({ value, onChange }: AvailabilityPickerProps) => {
                     : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
               }`}
             >
-              {day.label}
+              {DAY_LABELS[day.key]}
             </button>
           );
         })}
@@ -146,7 +169,7 @@ const AvailabilityPicker = ({ value, onChange }: AvailabilityPickerProps) => {
                 {timeSlotLabels[slot.key]}
               </div>
               <div className={`text-[9px] leading-tight ${isSelected ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                {slot.desc}
+                {timeSlotDescs[slot.key]}
               </div>
             </button>
           );
@@ -163,7 +186,7 @@ const AvailabilityPicker = ({ value, onChange }: AvailabilityPickerProps) => {
 
       {value && (
         <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5 font-medium">
-          📅 {value}
+          \uD83D\uDCC5 {value}
         </p>
       )}
     </div>

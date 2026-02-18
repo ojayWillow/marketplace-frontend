@@ -9,6 +9,9 @@
   "descriptionPlaceholder": "Ko jūs piedāvājat? Kas jūs izceļ?",
   "category": "Kādu pakalpojumu jūs piedāvājat?",
   "selectCategory": "Izvēlieties kategoriju",
+  "selectCategoryFirst": "Vispirms izvēlieties kategoriju augstāk",
+  "describeService": "Aprakstiet savu pakalpojumu",
+  "egPrefix": "piem.",
   "price": "Cena (EUR)",
   "pricePlaceholder": "piem., 15",
   "priceType": "Cena",
@@ -41,11 +44,26 @@
   "timeAfternoon": "Diena",
   "timeEvening": "Vakars",
   "timeFlexible": "Elastīgs",
+  "timeAny": "Jebkurā",
   "everyDay": "Katru dienu",
   "weekdays": "Darba dienas",
   "weekends": "Nedēļas nogales",
   "flexibleHours": "Elastīgs grafiks",
   "wk": "Dd",
+  "dayMon": "P",
+  "dayTue": "O",
+  "dayWed": "T",
+  "dayThu": "C",
+  "dayFri": "Pk",
+  "daySat": "S",
+  "daySun": "Sv",
+  "dayMonFull": "Pirmd.",
+  "dayTueFull": "Otrd.",
+  "dayWedFull": "Trešd.",
+  "dayThuFull": "Ceturtd.",
+  "dayFriFull": "Piektd.",
+  "daySatFull": "Sestd.",
+  "daySunFull": "Svētd.",
   "experience": "Pieredze",
   "experiencePlaceholder": "Jūsu kvalifikācijas, atbilstošā pieredze...",
   "clickMap": "Vai noklikšķiniet uz kartes, lai iestatītu atrašanās vietu",
@@ -67,5 +85,83 @@
   "tip1": "Izmantojiet skaidru, konkrētu nosaukumu, kas apraksta jūsu pakalpojumu",
   "tip2": "Esiet detalizēts aprakstā — kas ir iekļauts?",
   "tip3": "Nosakiet konkurētspējīgu cenu, balstoties uz jūsu pieredzi",
-  "tip4": "Atbildiet ātri, kad cilvēki sazinās ar jums"
+  "tip4": "Atbildiet ātri, kad cilvēki sazinās ar jums",
+  "suggestions": {
+    "cleaning": {
+      "0": "Profesionāla mājas uzkopšana",
+      "1": "Ģenerāltīrīšanas pakalpojums",
+      "2": "Biroja uzkopšana",
+      "3": "Izbraukšanas uzkopšana"
+    },
+    "moving": {
+      "0": "Pārvākšanās un smagu priekšmetu celšana",
+      "1": "Mēbeļu pārvietošanas pakalpojums",
+      "2": "Palīdzība dzīvokļa pārvākšanā"
+    },
+    "assembly": {
+      "0": "Mēbeļu montāža (IKEA u.c.)",
+      "1": "Plauktu un skapju montāža",
+      "2": "Salikšanas pakalpojums"
+    },
+    "handyman": {
+      "0": "Saimnieks — visi remontdarbi",
+      "1": "Mājas remontu pakalpojums",
+      "2": "Remontu meistars"
+    },
+    "plumbing": {
+      "0": "Santehnisko iekārtu remonts un uzstādīšana",
+      "1": "Avārijas santehniķis",
+      "2": "Krānu un kanalizācijas apkope"
+    },
+    "electrical": {
+      "0": "Elektroinstalācijas remonts un vadu vilkšana",
+      "1": "Apgaismes ķermeņu uzstādīšana",
+      "2": "Kontaktligzdu un slēdžu pakalpojums"
+    },
+    "painting": {
+      "0": "Iekštelpu sienu krāsošana",
+      "1": "Istabu krāsošanas pakalpojums",
+      "2": "Kosmētiskie labojumi un dekorēšana"
+    },
+    "outdoor": {
+      "0": "Dārza un pagalma kopšana",
+      "1": "Zāliena pļaušana un apgriešana",
+      "2": "Sniega tīrīšanas pakalpojums"
+    },
+    "delivery": {
+      "0": "Piegāde un darīšanu kārtošana",
+      "1": "Pārtikas iepirkšana un piegāde",
+      "2": "Sūtījumu saņemšana un nogādāšana"
+    },
+    "care": {
+      "0": "Mājdzīvnieku pastaigāšana un pieskatīšana",
+      "1": "Bērnu pieskatīšana",
+      "2": "Vecāku cilvēku aprūpe"
+    },
+    "tutoring": {
+      "0": "Matemātikas un dabaszinātņu privātstundas",
+      "1": "Valodu nodarbības",
+      "2": "Palīdzība ar mājasdarbiem"
+    },
+    "tech": {
+      "0": "Datoru un telefonu remonts",
+      "1": "WiFi un viedās mājas iestatīšana",
+      "2": "Tehniskais atbalsts un problēmu risināšana"
+    },
+    "beauty": {
+      "0": "Frizūru veidošana un griešana",
+      "1": "Vizāžiste",
+      "2": "Skaistumkopšanas pakalpojumi mājās"
+    },
+    "events": {
+      "0": "Pasākumu iekārtošana un dekorēšana",
+      "1": "Ballīšu plānošanas palīdzība",
+      "2": "Ēdināšanas asistents"
+    },
+    "other": {
+      "0": "Vispārīgs palīgs",
+      "1": "Personīgais asistents",
+      "2": "Individuāls pakalpojums"
+    }
+  }
 }
