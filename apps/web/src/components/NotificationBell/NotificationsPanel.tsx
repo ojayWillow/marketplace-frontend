@@ -18,29 +18,30 @@ interface NotificationsPanelProps {
 
 // Icon + color per notification type
 const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  [NotificationType.NEW_APPLICATION]: { icon: '📩', color: 'text-blue-600', bg: 'bg-blue-50' },
-  [NotificationType.APPLICATION_ACCEPTED]: { icon: '🎉', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.APPLICATION_REJECTED]: { icon: '😔', color: 'text-gray-600', bg: 'bg-gray-50' },
-  [NotificationType.TASK_MARKED_DONE]: { icon: '📋', color: 'text-amber-600', bg: 'bg-amber-50' },
-  [NotificationType.TASK_COMPLETED]: { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.TASK_DISPUTED]: { icon: '⚠️', color: 'text-red-600', bg: 'bg-red-50' },
+  [NotificationType.NEW_APPLICATION]: { icon: '\ud83d\udce9', color: 'text-blue-600', bg: 'bg-blue-50' },
+  [NotificationType.APPLICATION_ACCEPTED]: { icon: '\ud83c\udf89', color: 'text-green-600', bg: 'bg-green-50' },
+  [NotificationType.APPLICATION_REJECTED]: { icon: '\ud83d\ude14', color: 'text-gray-600', bg: 'bg-gray-50' },
+  [NotificationType.TASK_MARKED_DONE]: { icon: '\ud83d\udccb', color: 'text-amber-600', bg: 'bg-amber-50' },
+  [NotificationType.TASK_COMPLETED]: { icon: '\u2705', color: 'text-green-600', bg: 'bg-green-50' },
+  [NotificationType.TASK_DISPUTED]: { icon: '\u26a0\ufe0f', color: 'text-red-600', bg: 'bg-red-50' },
 };
 
-const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50' };
+const DEFAULT_CONFIG = { icon: '\ud83d\udd14', color: 'text-gray-600', bg: 'bg-gray-50' };
 
-/** Relative time label */
-const timeAgo = (dateStr: string): string => {
+/** Relative time label — uses i18n translations from tasks.time.* */
+const timeAgo = (dateStr: string, t: (key: string, fallback: string, opts?: any) => string, language?: string): string => {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffMs = now - then;
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1) return t('tasks.time.justNow', 'Just now');
+  if (diffMin < 60) return t('tasks.time.minutesAgo', '{{count}}m ago', { count: diffMin });
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 24) return t('tasks.time.hoursAgo', '{{count}}h ago', { count: diffH });
   const diffD = Math.floor(diffH / 24);
-  if (diffD < 7) return `${diffD}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+  if (diffD < 7) return t('tasks.time.daysAgo', '{{count}}d ago', { count: diffD });
+  const locale = language === 'lv' ? 'lv-LV' : language === 'ru' ? 'ru-RU' : 'en-US';
+  return new Date(dateStr).toLocaleDateString(locale);
 };
 
 /** Check if a date is today */
@@ -58,13 +59,13 @@ const getNotificationPath = (notification: Notification): string | null => {
   return null;
 };
 
-/** Get icon config — resolved disputes get a different icon/color */
+/** Get icon config \u2014 resolved disputes get a different icon/color */
 const getNotificationConfig = (n: Notification) => {
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
-    return { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' };
+    return { icon: '\u2705', color: 'text-green-600', bg: 'bg-green-50' };
   }
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Response Received') {
-    return { icon: '💬', color: 'text-amber-600', bg: 'bg-amber-50' };
+    return { icon: '\ud83d\udcac', color: 'text-amber-600', bg: 'bg-amber-50' };
   }
   return TYPE_CONFIG[n.type] || DEFAULT_CONFIG;
 };
@@ -85,25 +86,21 @@ const getNotificationTitle = (n: Notification, t: (key: string, fallback: string
     case NotificationType.TASK_COMPLETED:
       return t('notifications.taskCompleted', '"{{task}}" completed!', { task: taskTitle });
     case NotificationType.TASK_DISPUTED: {
-      // Dispute notifications have sub-types differentiated by title from backend
       if (n.title === 'Dispute Resolved') {
         return t('notifications.disputeResolved', 'Dispute resolved for "{{task}}"', { task: taskTitle });
       }
       if (n.title === 'Dispute Response Received') {
         return t('notifications.disputeResponse', 'Response received on dispute for "{{task}}"', { task: taskTitle });
       }
-      // Default: dispute filed
       return t('notifications.taskDisputed', 'Dispute on "{{task}}"', { task: taskTitle });
     }
     default:
-      // Fallback: use backend-provided title, or message
       return n.title || n.message;
   }
 };
 
 /** Get optional subtitle for richer context */
 const getNotificationSubtitle = (n: Notification): string | null => {
-  // For resolved disputes, show the resolution outcome
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
     return n.message || null;
   }
@@ -111,7 +108,7 @@ const getNotificationSubtitle = (n: Notification): string | null => {
 };
 
 export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -132,7 +129,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         onClose();
       }
     };
-    // Small delay to avoid the bell click itself closing immediately
     const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 50);
     return () => {
       clearTimeout(timer);
@@ -151,11 +147,9 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   }, [isOpen]);
 
   const handleNotificationClick = (notification: Notification) => {
-    // Mark as read
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
     }
-    // Navigate to action area
     const path = getNotificationPath(notification);
     if (path) {
       onClose();
@@ -180,7 +174,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         }`}
       />
 
-      {/* Panel — slides up from bottom on mobile */}
+      {/* Panel \u2014 slides up from bottom on mobile */}
       <div
         ref={panelRef}
         className={`fixed left-0 right-0 bottom-0 z-[201] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
@@ -195,7 +189,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-gray-900">
-              🔔 {t('notifications.title', 'Notifications')}
+              \ud83d\udd14 {t('notifications.title', 'Notifications')}
             </h2>
             {unreadCount > 0 && (
               <span className="min-w-[22px] h-[22px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
@@ -215,7 +209,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             <button
               onClick={onClose}
               className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Close"
+              aria-label={t('close', 'Close')}
             >
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -245,7 +239,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <div className="text-4xl mb-3">🔔</div>
+              <div className="text-4xl mb-3">\ud83d\udd14</div>
               <h3 className="font-semibold text-gray-900 mb-1">
                 {t('notifications.empty', 'No notifications yet')}
               </h3>
@@ -269,6 +263,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
                       notification={n}
                       onClick={() => handleNotificationClick(n)}
                       t={t}
+                      language={i18n.language}
                     />
                   ))}
                 </>
@@ -288,6 +283,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
                       notification={n}
                       onClick={() => handleNotificationClick(n)}
                       t={t}
+                      language={i18n.language}
                     />
                   ))}
                 </>
@@ -301,14 +297,15 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   );
 };
 
-/* ── Single notification row ── */
+/* \u2500\u2500 Single notification row \u2500\u2500 */
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;
   t: (key: string, fallback: string, opts?: any) => string;
+  language?: string;
 }
 
-const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) => {
+const NotificationItem = ({ notification, onClick, t, language }: NotificationItemProps) => {
   const config = getNotificationConfig(notification);
   const hasAction = !!(notification.related_type && notification.related_id);
   const subtitle = getNotificationSubtitle(notification);
@@ -338,7 +335,7 @@ const NotificationItem = ({ notification, onClick, t }: NotificationItemProps) =
           </p>
         )}
         <p className="text-xs text-gray-400 mt-0.5">
-          {timeAgo(notification.created_at)}
+          {timeAgo(notification.created_at, t, language)}
         </p>
       </div>
 
