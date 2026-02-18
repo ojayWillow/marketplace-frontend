@@ -54,7 +54,8 @@ const JobPreviewCard = ({
   );
   const budget = task.budget || task.reward || 0;
   const categoryIcon = getCategoryIcon(task.category);
-  const categoryLabel = getCategoryLabel(task.category);
+  const categoryLabelRaw = getCategoryLabel(task.category);
+  const categoryLabel = t(`tasks.categories.${task.category}`, categoryLabelRaw);
   const applicantsCount = task.pending_applications_count || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
