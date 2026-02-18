@@ -42,6 +42,12 @@ import {
 } from './components';
 import { useTaskActions, useTaskDetailData } from './hooks';
 
+const localeMap: Record<string, string> = {
+  en: 'en-US',
+  lv: 'lv-LV',
+  ru: 'ru-RU',
+};
+
 // StarRating: only shows filled stars (+ optional half), no empty stars
 const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
@@ -73,11 +79,13 @@ const StarRating = ({ rating }: { rating: number }) => {
 };
 
 const TaskDetail = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
   const toast = useToastStore();
+
+  const dateLocale = localeMap[i18n.language] || i18n.language;
 
   // React Query for task data
   const { data: task, isLoading: loading, refetch: refetchTask } = useTask(Number(id));
@@ -214,7 +222,7 @@ const TaskDetail = () => {
   const seoDescription = `${categoryLabel} ${t('taskDetail.jobSuffix')}${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` ${t('taskDetail.seoIn', { location: task.location })}` : ''}. ${task.description?.substring(0, 100)}...`;
   const postedDateRelative = task.created_at ? formatTimeAgoLong(task.created_at) : '';
   const postedDateAbsolute = task.created_at
-    ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? new Date(task.created_at).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })
     : '';
   const applicantLabel = applicantCount > 0 ? t('taskDetail.applied', { count: applicantCount }) : t('taskDetail.new');
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';

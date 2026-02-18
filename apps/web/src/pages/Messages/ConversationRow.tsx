@@ -10,15 +10,16 @@ interface ConversationRowProps {
   index?: number;
 }
 
-function getDisplayName(participant: any): string {
-  if (participant?.first_name && participant?.last_name) {
-    return `${participant.first_name} ${participant.last_name}`;
-  }
-  return participant?.username || 'Unknown';
-}
-
 export default function ConversationRow({ conv, variant, formatTime, index = 0 }: ConversationRowProps) {
   const { t } = useTranslation();
+
+  const getDisplayName = (participant: any): string => {
+    if (participant?.first_name && participant?.last_name) {
+      return `${participant.first_name} ${participant.last_name}`;
+    }
+    return participant?.username || t('common.unknown', 'Unknown');
+  };
+
   const hasUnread = conv.unread_count > 0;
   const displayName = getDisplayName(conv.other_participant);
   const lastMessageText = conv.last_message?.content || t('messages.noMessagesYet', 'No messages yet');
