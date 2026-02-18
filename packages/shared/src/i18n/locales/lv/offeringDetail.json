@@ -1,0 +1,11 @@
+{
+  "loading": "Ielādē piedāvājumu...",
+  "notFound": "Piedāvājums nav atrasts",
+  "notFoundDescription": "Šis piedāvājums, iespējams, ir noņemts vai vairs nav pieejams.",
+  "browseAll": "Skatīt visus piedāvājumus",
+  "backToQuickHelp": "Atpakaļ uz Quick Help",
+  "back": "Atpakaļ",
+  "aboutThisService": "Par šo pakalpojumu",
+  "starting": "Sākas...",
+  "contactName": "Sazināties ar {{name}}"
+}

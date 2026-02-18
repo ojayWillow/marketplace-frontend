@@ -1,0 +1,11 @@
+{
+  "loading": "Loading offering...",
+  "notFound": "Offering Not Found",
+  "notFoundDescription": "This offering may have been removed or is no longer available.",
+  "browseAll": "Browse All Offerings",
+  "backToQuickHelp": "Back to Quick Help",
+  "back": "Back",
+  "aboutThisService": "About this service",
+  "starting": "Starting...",
+  "contactName": "Contact {{name}}"
+}

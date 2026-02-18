@@ -30,7 +30,7 @@ const OfferingDetail = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mx-auto mb-3"></div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading offering...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('offeringDetail.loading', 'Loading offering...')}</p>
         </div>
       </div>
     );
@@ -42,10 +42,10 @@ const OfferingDetail = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center px-4">
           <div className="text-5xl mb-3">😕</div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Offering Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">This offering may have been removed or is no longer available.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('offeringDetail.notFound', 'Offering Not Found')}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">{t('offeringDetail.notFoundDescription', 'This offering may have been removed or is no longer available.')}</p>
           <Link to="/tasks" className="bg-amber-500 text-white px-5 py-2.5 rounded-lg hover:bg-amber-600 transition-colors text-sm font-semibold">
-            Browse All Offerings
+            {t('offeringDetail.browseAll', 'Browse All Offerings')}
           </Link>
         </div>
       </div>
@@ -74,8 +74,8 @@ const OfferingDetail = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden md:inline">← Back to Quick Help</span>
-            <span className="md:hidden">Back</span>
+            <span className="hidden md:inline">← {t('offeringDetail.backToQuickHelp', 'Back to Quick Help')}</span>
+            <span className="md:hidden">{t('offeringDetail.back', 'Back')}</span>
           </Link>
           <ShareButton
             url={`/offerings/${offering.id}`}
@@ -116,7 +116,7 @@ const OfferingDetail = () => {
           {/* Description */}
           {safe.safeDescription && (
             <div className="px-4 py-3 md:px-6 md:py-5">
-              <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">About this service</h2>
+              <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('offeringDetail.aboutThisService', 'About this service')}</h2>
               <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {safe.safeDescription}
               </p>
@@ -161,7 +161,7 @@ const OfferingDetail = () => {
                 disabled={contacting}
                 className="w-full bg-amber-500 text-white py-3.5 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-base shadow-md"
               >
-                {contacting ? 'Starting...' : `💬 Contact ${safe.safeCreatorName.split(' ')[0]}`}
+                {contacting ? t('offeringDetail.starting', 'Starting...') : `💬 ${t('offeringDetail.contactName', { name: safe.safeCreatorName.split(' ')[0], defaultValue: 'Contact {{name}}' })}`}
               </button>
             </div>
           )}
@@ -186,7 +186,7 @@ const OfferingDetail = () => {
               disabled={contacting}
               className="w-full bg-amber-500 text-white py-3 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 font-bold text-sm shadow-md active:scale-[0.98]"
             >
-              {contacting ? 'Starting...' : `💬 Contact ${safe.safeCreatorName.split(' ')[0]}`}
+              {contacting ? t('offeringDetail.starting', 'Starting...') : `💬 ${t('offeringDetail.contactName', { name: safe.safeCreatorName.split(' ')[0], defaultValue: 'Contact {{name}}' })}`}
             </button>
           </div>
         </div>
