@@ -24,6 +24,7 @@ import enOfferings from './locales/en/offerings.json'
 import enCreateOffering from './locales/en/createOffering.json'
 import enCreateTask from './locales/en/createTask.json'
 import enEditTask from './locales/en/editTask.json'
+import enEditOffering from './locales/en/editOffering.json'
 import enLegal from './locales/en/legal.json'
 import enLanding from './locales/en/landing.json'
 import enCommunity from './locales/en/community.json'
@@ -52,6 +53,7 @@ import lvOfferings from './locales/lv/offerings.json'
 import lvCreateOffering from './locales/lv/createOffering.json'
 import lvCreateTask from './locales/lv/createTask.json'
 import lvEditTask from './locales/lv/editTask.json'
+import lvEditOffering from './locales/lv/editOffering.json'
 import lvLegal from './locales/lv/legal.json'
 import lvLanding from './locales/lv/landing.json'
 import lvCommunity from './locales/lv/community.json'
@@ -80,6 +82,7 @@ import ruOfferings from './locales/ru/offerings.json'
 import ruCreateOffering from './locales/ru/createOffering.json'
 import ruCreateTask from './locales/ru/createTask.json'
 import ruEditTask from './locales/ru/editTask.json'
+import ruEditOffering from './locales/ru/editOffering.json'
 import ruLegal from './locales/ru/legal.json'
 import ruLanding from './locales/ru/landing.json'
 import ruCommunity from './locales/ru/community.json'
@@ -109,6 +112,7 @@ const en = {
   createOffering: enCreateOffering,
   createTask: enCreateTask,
   editTask: enEditTask,
+  editOffering: enEditOffering,
   legal: enLegal,
   landing: enLanding,
   community: enCommunity,
@@ -138,6 +142,7 @@ const lv = {
   createOffering: lvCreateOffering,
   createTask: lvCreateTask,
   editTask: lvEditTask,
+  editOffering: lvEditOffering,
   legal: lvLegal,
   landing: lvLanding,
   community: lvCommunity,
@@ -167,6 +172,7 @@ const ru = {
   createOffering: ruCreateOffering,
   createTask: ruCreateTask,
   editTask: ruEditTask,
+  editOffering: ruEditOffering,
   legal: ruLegal,
   landing: ruLanding,
   community: ruCommunity,
