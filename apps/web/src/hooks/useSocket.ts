@@ -110,12 +110,12 @@ function setupSocket(token: string, socketUrl: string) {
 
   // ─── Connection events ──────────────────────────────────
   socket.on('connect', () => {
-    console.log('[Socket] ✅ Connected:', socket.id);
+    console.debug('[Socket] Connected:', socket.id);
     useSocketStore.getState().setConnected(true);
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('[Socket] ❌ Disconnected:', reason);
+    console.warn('[Socket] Disconnected:', reason);
     useSocketStore.getState().setConnected(false);
   });
 
