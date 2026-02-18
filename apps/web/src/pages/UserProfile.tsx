@@ -223,7 +223,7 @@ export default function UserProfile() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm"
                   >
                     <span>{getCategoryIcon(skill)}</span>
-                    <span>{getCategoryLabel(skill)}</span>
+                    <span>{t(`tasks.categories.${skill}`, getCategoryLabel(skill))}</span>
                   </span>
                 ))}
               </div>
