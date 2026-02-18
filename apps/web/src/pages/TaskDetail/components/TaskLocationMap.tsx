@@ -23,20 +23,20 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-sm">
           <span>📍</span>
-          <span className="font-medium text-gray-700">{task.location?.split(',')[0] || 'Location'}</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{task.location?.split(',')[0] || 'Location'}</span>
         </div>
         <a
           href={`https://www.google.com/maps?q=${task.latitude},${task.longitude}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium"
         >
           Open in Maps →
         </a>
       </div>
 
-      {/* Compact map */}
-      <div className="h-32 rounded-lg overflow-hidden border border-gray-200">
+      {/* Compact map — isolate z-index so Leaflet tiles don't bleed over modals */}
+      <div className="h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 relative" style={{ zIndex: 0, isolation: 'isolate' }}>
         <MapContainer
           center={[task.latitude, task.longitude]}
           zoom={13}

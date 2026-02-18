@@ -4,6 +4,7 @@ import Footer from './Footer'
 import MobileBottomNav from './MobileBottomNav'
 import ToastContainer from '../ui/ToastContainer'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import AuthBottomSheet from '../AuthBottomSheet'
 
 export default function Layout() {
   const location = useLocation()
@@ -33,12 +34,13 @@ export default function Layout() {
   // safe-area-top handles iOS notch/Dynamic Island since there's no header to absorb it.
   if (showMobileBottomNav) {
     return (
-      <div className="min-h-screen bg-gray-50 safe-area-top">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 safe-area-top">
         <main className="pb-20">
           <Outlet />
         </main>
         <MobileBottomNav />
         <ToastContainer />
+        <AuthBottomSheet />
       </div>
     )
   }
@@ -46,26 +48,28 @@ export default function Layout() {
   // Mobile layout WITHOUT bottom nav (auth pages, landing, etc)
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
         <Header />
         <main className="flex-1">
           <Outlet />
         </main>
         <Footer />
         <ToastContainer />
+        <AuthBottomSheet />
       </div>
     )
   }
 
   // Desktop layout: header + content + footer
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       <Header />
       <main className="flex-1">
         <Outlet />
       </main>
       <Footer />
       <ToastContainer />
+      <AuthBottomSheet />
     </div>
   )
 }

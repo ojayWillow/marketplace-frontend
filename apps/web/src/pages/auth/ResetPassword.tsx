@@ -73,16 +73,16 @@ export default function ResetPassword() {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full">
-          <div className="card p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="card dark:bg-gray-900 dark:border-gray-800 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Invalid Reset Link
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               This password reset link is invalid or has expired.
             </p>
             <Link
@@ -102,19 +102,19 @@ export default function ResetPassword() {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full">
-          <div className="card p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="card dark:bg-gray-900 dark:border-gray-800 p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Password Reset Successfully!
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Your password has been changed. You can now login with your new password.
             </p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
               Redirecting to login...
             </p>
             <Link
@@ -132,23 +132,23 @@ export default function ResetPassword() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
-        <div className="card p-8">
+        <div className="card dark:bg-gray-900 dark:border-gray-800 p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               Set New Password
             </h1>
-            <p className="text-gray-500 mt-2">
+            <p className="text-gray-500 dark:text-gray-400 mt-2">
               Choose a strong password for your account.
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
@@ -156,7 +156,7 @@ export default function ResetPassword() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* New Password */}
             <div>
-              <label htmlFor="password" className="label">
+              <label htmlFor="password" className="label dark:text-gray-300">
                 New Password
               </label>
               <div className="relative">
@@ -165,7 +165,7 @@ export default function ResetPassword() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input pr-12"
+                  className="input dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 pr-12"
                   placeholder="Min. 6 characters"
                   required
                   minLength={6}
@@ -173,7 +173,7 @@ export default function ResetPassword() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
@@ -184,7 +184,7 @@ export default function ResetPassword() {
               {password.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div 
                         className={`h-full transition-all duration-300 ${passwordStrength.color}`}
                         style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
@@ -192,7 +192,7 @@ export default function ResetPassword() {
                     </div>
                     <span className={`text-xs font-medium ${
                       passwordStrength.label === 'Weak' ? 'text-red-500' :
-                      passwordStrength.label === 'Medium' ? 'text-yellow-600' : 'text-green-500'
+                      passwordStrength.label === 'Medium' ? 'text-yellow-600 dark:text-yellow-500' : 'text-green-500'
                     }`}>
                       {passwordStrength.label}
                     </span>
@@ -203,7 +203,7 @@ export default function ResetPassword() {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="label">
+              <label htmlFor="confirmPassword" className="label dark:text-gray-300">
                 Confirm New Password
               </label>
               <div className="relative">
@@ -212,7 +212,7 @@ export default function ResetPassword() {
                   id="confirmPassword"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`input pr-12 ${
+                  className={`input dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 pr-12 ${
                     confirmPassword.length > 0
                       ? passwordsMatch
                         ? 'border-green-400'
@@ -225,7 +225,7 @@ export default function ResetPassword() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
                   {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
@@ -244,7 +244,7 @@ export default function ResetPassword() {
               className={`w-full py-3 rounded-lg font-medium transition-all ${
                 isValid
                   ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               }`}
             >
               {loading ? (
@@ -258,11 +258,11 @@ export default function ResetPassword() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Remember your password?{' '}
             <Link
               to="/login"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
             >
               Back to Login
             </Link>

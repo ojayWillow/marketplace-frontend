@@ -21,7 +21,7 @@ export default function NotFound() {
         <div className="mb-8 relative">
           {/* Background decoration */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-64 h-64 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full opacity-50 animate-pulse" />
+            <div className="w-64 h-64 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50 animate-pulse" />
           </div>
           
           {/* 404 Number */}
@@ -44,12 +44,12 @@ export default function NotFound() {
         </div>
         
         {/* Title */}
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
           {t('notFound.title')}
         </h1>
         
         {/* Description */}
-        <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg max-w-md mx-auto">
           {t('notFound.message')}
         </p>
 
@@ -61,7 +61,7 @@ export default function NotFound() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('listings.searchPlaceholder')}
-              className="w-full px-5 py-3 pr-12 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+              className="w-full px-5 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <button
               type="submit"
@@ -87,7 +87,7 @@ export default function NotFound() {
           </Link>
           <Link
             to="/listings"
-            className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 px-6 py-3 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all"
+            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -96,7 +96,7 @@ export default function NotFound() {
           </Link>
           <Link
             to="/tasks"
-            className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 px-6 py-3 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all"
+            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -107,32 +107,32 @@ export default function NotFound() {
         </div>
 
         {/* Quick category links */}
-        <div className="border-t border-gray-200 pt-8">
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             {t('notFound.lookingFor')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Link
               to="/listings?category=electronics"
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               📱 {t('listings.categories.electronics')}
             </Link>
             <Link
               to="/listings?category=vehicles"
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               🚗 {t('listings.categories.vehicles')}
             </Link>
             <Link
               to="/listings?category=property"
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               🏠 {t('listings.categories.property')}
             </Link>
             <Link
               to="/tasks"
-              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+              className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors"
             >
               🛠️ {t('common.quickHelp')}
             </Link>
@@ -140,7 +140,7 @@ export default function NotFound() {
         </div>
 
         {/* Help text */}
-        <p className="mt-8 text-sm text-gray-400">
+        <p className="mt-8 text-sm text-gray-400 dark:text-gray-500">
           {t('notFound.tryNavigation')}
         </p>
       </div>

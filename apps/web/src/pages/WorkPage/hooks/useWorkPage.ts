@@ -5,6 +5,7 @@ import { CATEGORIES } from '../../../constants/categories';
 import { calculateDistance } from '../../../components/MobileTasksView/utils/distance';
 import { MainTab, WorkItem, WorkItemWithDistance, MAX_CATEGORIES, LOCATION_TIMEOUT_MS } from '../types';
 import { mapTask, mapOffering, getErrorMessage } from '../utils';
+import { useMyWork } from '../../../hooks/useMyWork';
 
 export const useWorkPage = () => {
   const navigate = useNavigate();
@@ -21,6 +22,18 @@ export const useWorkPage = () => {
   const fetchVersionRef = useRef(0);
   const hasLoadedOnce = useRef(false);
 
+  // My Work data (only fetched when needed)
+  const myWork = useMyWork();
+  const myWorkLoadedRef = useRef(false);
+
+  // Load my-work data when user switches to mine tab
+  useEffect(() => {
+    if (mainTab === 'mine' && !myWorkLoadedRef.current) {
+      myWork.fetchAll();
+      myWorkLoadedRef.current = true;
+    }
+  }, [mainTab]);
+
   // Geolocation: resolve in background
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -33,8 +46,10 @@ export const useWorkPage = () => {
     );
   }, []);
 
-  // Fetch logic
+  // Fetch logic — skip when in mine tab
   const fetchItems = useCallback(async (tab: MainTab, categories: string[]) => {
+    if (tab === 'mine') return; // Mine tab uses its own data source
+
     const version = ++fetchVersionRef.current;
     const isFirstLoad = !hasLoadedOnce.current;
 
@@ -89,9 +104,11 @@ export const useWorkPage = () => {
     }
   }, []);
 
-  // Fetch on mount and when tab/filters change
+  // Fetch on mount and when tab/filters change (but not for mine tab)
   useEffect(() => {
-    fetchItems(mainTab, selectedCategories);
+    if (mainTab !== 'mine') {
+      fetchItems(mainTab, selectedCategories);
+    }
   }, [mainTab, selectedCategories, fetchItems]);
 
   // Distance computation + sorting
@@ -150,5 +167,7 @@ export const useWorkPage = () => {
     handleItemClick,
     handleRetry,
     getCategoryInfo,
+    // My Work data
+    myWork,
   };
 };

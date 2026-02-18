@@ -1,6 +1,8 @@
 // Hardcoded locations for profile edit form
 // Focused on Latvia and Baltic region
 
+import { CATEGORIES } from './categories';
+
 export const COUNTRIES = [
   { value: 'Latvia', label: { en: 'Latvia', lv: 'Latvija', ru: 'Латвия' } },
   { value: 'Lithuania', label: { en: 'Lithuania', lv: 'Lietuva', ru: 'Литва' } },
@@ -50,25 +52,13 @@ export const CITIES: Record<string, Array<{ value: string; label: { en: string; 
   ],
 };
 
-// Skills = same as marketplace categories
-// Each skill maps 1:1 to a category key from packages/shared/src/constants/categories.ts
-export const AVAILABLE_SKILLS = [
-  { key: 'cleaning', label: 'Cleaning', icon: '🧹' },
-  { key: 'moving', label: 'Moving & Lifting', icon: '📦' },
-  { key: 'assembly', label: 'Assembly', icon: '🔧' },
-  { key: 'handyman', label: 'Handyman', icon: '🛠️' },
-  { key: 'plumbing', label: 'Plumbing', icon: '🚿' },
-  { key: 'electrical', label: 'Electrical', icon: '⚡' },
-  { key: 'painting', label: 'Painting', icon: '🎨' },
-  { key: 'outdoor', label: 'Outdoor', icon: '🌿' },
-  { key: 'delivery', label: 'Delivery & Errands', icon: '🚚' },
-  { key: 'care', label: 'Care', icon: '🤝' },
-  { key: 'tutoring', label: 'Tutoring', icon: '📚' },
-  { key: 'tech', label: 'Tech Help', icon: '💻' },
-  { key: 'beauty', label: 'Beauty', icon: '💇' },
-  { key: 'events', label: 'Events', icon: '🎉' },
-  { key: 'other', label: 'Other', icon: '📋' },
-] as const;
+// Derived from CATEGORIES — single source of truth
+// Consumers use `.key` so we map `.value` → `.key`
+export const AVAILABLE_SKILLS = CATEGORIES.map(c => ({
+  key: c.value,
+  label: c.label,
+  icon: c.icon,
+}));
 
 // Helper to get localized label
 export const getLocalizedLabel = (labels: { en: string; lv: string; ru: string }, lang: string): string => {

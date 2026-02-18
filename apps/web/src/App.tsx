@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import SocketProvider from './components/SocketProvider'
+import ScrollToTop from './components/ScrollToTop'
 
 // Loading spinner component
 const PageLoader = () => (
@@ -19,15 +20,10 @@ const PageLoader = () => (
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
-const Login = lazy(() => import('./pages/auth/Login'))
 const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'))
-const Listings = lazy(() => import('./pages/listings/Listings'))
-const ListingDetail = lazy(() => import('./pages/listings/ListingDetail'))
-const CreateListing = lazy(() => import('./pages/listings/CreateListing'))
-const EditListing = lazy(() => import('./pages/listings/EditListing'))
 const Tasks = lazy(() => import('./pages/Tasks'))
 const TaskDetail = lazy(() => import('./pages/TaskDetail'))
 const CreateTask = lazy(() => import('./pages/CreateTask'))
@@ -39,7 +35,6 @@ const Profile = lazy(() => import('./pages/Profile'))
 const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Conversation = lazy(() => import('./pages/Conversation'))
-const Favorites = lazy(() => import('./pages/Favorites'))
 const WorkPage = lazy(() => import('./pages/WorkPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
@@ -58,24 +53,27 @@ const AdminOfferings = lazy(() => import('./pages/admin/AdminOfferings'))
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'))
 const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminDisputes = lazy(() => import('./pages/admin/AdminDisputes'))
 
 function App() {
   return (
     <SocketProvider>
+      {/* Reset scroll position to top on every route change */}
+      <ScrollToTop />
+
       <Suspense fallback={<Layout><PageLoader /></Layout>}>
         <Routes>
           <Route path="/" element={<Layout />}>
             {/* Home - Redirects guests to /welcome, shows map for authenticated */}
             <Route index element={<Home />} />
             
-            {/* Landing page - available to everyone with header/footer */}
+            {/* Landing page - the single entry point for unauthenticated users */}
             <Route path="welcome" element={<LandingPage />} />
             
-            {/* Auth routes - unified login handles phone + email */}
-            <Route path="login" element={<Login />} />
-            {/* Legacy routes - all redirect to unified login */}
-            <Route path="register" element={<Navigate to="/login" replace />} />
-            <Route path="phone-login" element={<Navigate to="/login" replace />} />
+            {/* All auth routes redirect to the landing page (single sign-in flow) */}
+            <Route path="login" element={<Navigate to="/welcome" replace />} />
+            <Route path="register" element={<Navigate to="/welcome" replace />} />
+            <Route path="phone-login" element={<Navigate to="/welcome" replace />} />
             {/* Verify phone - requires auth but skips phone check to avoid loop */}
             <Route
               path="verify-phone"
@@ -96,26 +94,6 @@ function App() {
             />
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password" element={<ResetPassword />} />
-            
-            {/* Listings */}
-            <Route path="listings" element={<Listings />} />
-            <Route path="listings/:id" element={<ListingDetail />} />
-            <Route
-              path="listings/create"
-              element={
-                <ProtectedRoute>
-                  <CreateListing />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="listings/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditListing />
-                </ProtectedRoute>
-              }
-            />
             
             {/* Tasks/Quick Help */}
             <Route path="tasks" element={<Tasks />} />
@@ -157,8 +135,15 @@ function App() {
               }
             />
             
-            {/* Work page */}
-            <Route path="work" element={<WorkPage />} />
+            {/* Work page - requires auth */}
+            <Route
+              path="work"
+              element={
+                <ProtectedRoute>
+                  <WorkPage />
+                </ProtectedRoute>
+              }
+            />
             
             {/* User Profile & Settings */}
             <Route
@@ -169,9 +154,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
-            {/* Favorites */}
-            <Route path="favorites" element={<Favorites />} />
             
             {/* Messaging */}
             <Route
@@ -212,6 +194,7 @@ function App() {
             }
           >
             <Route index element={<AdminOverview />} />
+            <Route path="disputes" element={<AdminDisputes />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="users" element={<AdminUsers />} />

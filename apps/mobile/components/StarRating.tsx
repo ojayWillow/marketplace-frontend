@@ -16,15 +16,15 @@ const StarRating: React.FC<StarRatingProps> = ({
   color = '#f59e0b',
   showCount = true 
 }) => {
-  // Calculate full stars, half stars, and empty stars
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.3 && rating % 1 < 0.8;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  // Round to nearest 0.5 for display
+  const fraction = rating % 1;
+  const fullStars = fraction >= 0.8 ? Math.ceil(rating) : Math.floor(rating);
+  const hasHalfStar = fraction >= 0.3 && fraction < 0.8;
 
   const renderStars = () => {
     const stars = [];
 
-    // Full stars
+    // Full stars only
     for (let i = 0; i < fullStars; i++) {
       stars.push(
         <Text key={`full-${i}`} style={[styles.star, { fontSize: size, color, lineHeight: size + 2 }]}>
@@ -33,23 +33,16 @@ const StarRating: React.FC<StarRatingProps> = ({
       );
     }
 
-    // Half star
+    // Half star (shown as a slightly dimmer full star to keep it clean)
     if (hasHalfStar) {
       stars.push(
-        <Text key="half" style={[styles.star, { fontSize: size, color, lineHeight: size + 2 }]}>
-          ⯨
+        <Text key="half" style={[styles.star, { fontSize: size, color, opacity: 0.5, lineHeight: size + 2 }]}>
+          ★
         </Text>
       );
     }
 
-    // Empty stars
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(
-        <Text key={`empty-${i}`} style={[styles.star, { fontSize: size, color: '#d1d5db', lineHeight: size + 2 }]}>
-          ☆
-        </Text>
-      );
-    }
+    // No empty stars — that's it, clean and done
 
     return stars;
   };
@@ -59,6 +52,10 @@ const StarRating: React.FC<StarRatingProps> = ({
       <View style={styles.starsContainer}>
         {renderStars()}
       </View>
+      {/* Show numeric rating for precision */}
+      <Text style={[styles.ratingNumber, { fontSize: size * 0.85, color, lineHeight: size + 2 }]}>
+        {rating.toFixed(1)}
+      </Text>
       {showCount && reviewCount !== undefined && reviewCount > 0 && (
         <Text style={[styles.count, { fontSize: size * 0.85, lineHeight: size + 2 }]}>
           ({reviewCount})
@@ -76,14 +73,17 @@ const styles = StyleSheet.create({
   starsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 4,
+    marginRight: 3,
   },
   star: {
     marginRight: 1,
   },
+  ratingNumber: {
+    fontWeight: '600',
+    marginRight: 3,
+  },
   count: {
     color: '#6b7280',
-    marginLeft: 2,
   },
 });
 

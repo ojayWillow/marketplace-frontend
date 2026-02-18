@@ -1,4 +1,4 @@
-export type MainTab = 'all' | 'jobs' | 'services';
+export type MainTab = 'all' | 'jobs' | 'services' | 'mine';
 
 export interface WorkItem {
   id: string;

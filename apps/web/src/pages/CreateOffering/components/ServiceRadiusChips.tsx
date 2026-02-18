@@ -7,7 +7,7 @@ interface ServiceRadiusChipsProps {
 
 const ServiceRadiusChips = ({ value, onChange }: ServiceRadiusChipsProps) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
       How far will you travel?
     </label>
     <div className="flex flex-wrap gap-1.5">
@@ -20,8 +20,8 @@ const ServiceRadiusChips = ({ value, onChange }: ServiceRadiusChipsProps) => (
             onClick={() => onChange(opt.value)}
             className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
               isSelected
-                ? 'border-amber-500 bg-amber-50 text-amber-700'
-                : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
             }`}
           >
             {opt.label}

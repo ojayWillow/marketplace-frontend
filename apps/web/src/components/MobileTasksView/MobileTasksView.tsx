@@ -1,10 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
-import { useAuthStore } from '@marketplace/shared';
+import { useAuthStore, getTask as fetchTaskById } from '@marketplace/shared';
+import { FEATURES } from '../../constants/featureFlags';
+import { useAuthPrompt } from '../../stores/useAuthPrompt';
 
 import { Task } from './types';
 import { mobileTasksStyles } from './styles';
@@ -23,31 +25,26 @@ import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal
 
 /** Skeleton placeholder for loading state */
 const SkeletonCard = () => (
-  <div className="flex items-center gap-3 p-3 border-b border-gray-100 animate-pulse">
-    <div className="w-11 h-11 rounded-xl bg-gray-200 flex-shrink-0" />
+  <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-800 animate-pulse">
+    <div className="w-11 h-11 rounded-xl bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
     <div className="flex-1 min-w-0">
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-      <div className="h-3 bg-gray-100 rounded w-1/2 mb-1.5" />
-      <div className="h-3 bg-gray-100 rounded w-2/3" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2 mb-1.5" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
     </div>
     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-      <div className="h-6 w-10 bg-gray-200 rounded" />
-      <div className="h-6 w-6 bg-gray-100 rounded-full" />
+      <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="h-6 w-6 bg-gray-100 dark:bg-gray-800 rounded-full" />
     </div>
   </div>
 );
 
-/**
- * Main Mobile Tasks View Component
- * Thin orchestrator — data, location, and sheet logic live in dedicated hooks.
- *
- * Now restores selectedTask and map viewport from Zustand store on mount,
- * so navigating away and back preserves the user's context.
- */
 const MobileTasksView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuthStore();
+  const showAuth = useAuthPrompt((s) => s.show);
 
   // Community rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -64,6 +61,7 @@ const MobileTasksView = () => {
   // --- Hooks ---
   const {
     userLocation,
+    hasRealLocation,
     recenterTrigger,
     handleRecenter: recenterMap,
   } = useUserLocation({
@@ -91,74 +89,147 @@ const MobileTasksView = () => {
     sheetHeight,
     navHeight,
     isDragging,
+    currentTranslateY,
+    getFullHeight,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
     resetToCollapsed,
   } = useBottomSheet();
 
-  // --- Local UI state (orchestration only) ---
+  // --- Local UI state ---
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showJobList, setShowJobList] = useState(true);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [isFromDeepLink, setIsFromDeepLink] = useState(false);
+
+  // --- Deep link handling ---
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+
+  useEffect(() => {
+    if (deepLinkHandled) return;
+
+    const taskParam = searchParams.get('task');
+    if (!taskParam) return;
+
+    const taskId = parseInt(taskParam, 10);
+    if (isNaN(taskId)) return;
+
+    setDeepLinkHandled(true);
+    setIsFromDeepLink(true);
+
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('task');
+    setSearchParams(newParams, { replace: true });
+
+    const existingTask = tasks.find((t) => t.id === taskId);
+    if (existingTask) {
+      setShowJobList(false);
+      setStoredSelectedTaskId(existingTask.id);
+      setSelectedTask(existingTask);
+      return;
+    }
+
+    fetchTaskById(taskId)
+      .then((task) => {
+        if (task) {
+          setShowJobList(false);
+          setStoredSelectedTaskId(task.id);
+          setSelectedTask(task as Task);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch shared task:', err);
+      });
+  }, [searchParams, setSearchParams, tasks, deepLinkHandled, setStoredSelectedTaskId]);
 
   // --- Restore selected task from store on mount ---
   useEffect(() => {
+    if (deepLinkHandled) return;
     if (storedSelectedTaskId && tasks.length > 0 && !selectedTask) {
       const restored = tasks.find((t) => t.id === storedSelectedTaskId);
       if (restored) {
         setSelectedTask(restored);
         setShowJobList(false);
       } else {
-        // Task no longer in results — clear stored ID
         setStoredSelectedTaskId(null);
       }
     }
-  }, [storedSelectedTaskId, tasks, selectedTask, setStoredSelectedTaskId]);
+  }, [storedSelectedTaskId, tasks, selectedTask, setStoredSelectedTaskId, deepLinkHandled]);
 
   // --- Memoised map data ---
   const tasksWithOffsets = useMemo(() => addMarkerOffsets(tasks), [tasks]);
   const userLocationIcon = useMemo(() => createUserLocationIcon(), []);
 
-  // Urgent job count
-  const urgentCount = useMemo(
-    () => filteredTasks.filter((t) => t.is_urgent).length,
-    [filteredTasks]
-  );
+  const urgentCount = FEATURES.URGENT
+    ? filteredTasks.filter((t) => t.is_urgent).length
+    : 0;
+
+  // --- Compute fitBothPoints for shared link + real GPS ---
+  const fitBothPoints = useMemo(() => {
+    if (!isFromDeepLink || !hasRealLocation || !selectedTask) return null;
+    return {
+      userLat: userLocation.lat,
+      userLng: userLocation.lng,
+      taskLat: selectedTask.displayLatitude || selectedTask.latitude,
+      taskLng: selectedTask.displayLongitude || selectedTask.longitude,
+    };
+  }, [isFromDeepLink, hasRealLocation, selectedTask, userLocation]);
+
+  // --- Recenter button position ---
+  // The sheet is rendered with:
+  //   bottom: navHeight
+  //   height: (getFullHeight() - navHeight)   <-- the actual rendered height
+  //   transform: translateY(currentTranslateY) <-- pushes it down
+  // So visible pixels of the sheet = renderedHeight - translateY
+  // And the top edge of the sheet from screen bottom = navHeight + visiblePixels
+  // We add 8px gap so the button floats just above the sheet.
+  const recenterBottom = useMemo(() => {
+    const renderedHeight = getFullHeight() - navHeight;
+    const visiblePixels = renderedHeight - currentTranslateY;
+    return navHeight + visiblePixels + 8;
+  }, [navHeight, currentTranslateY, getFullHeight]);
 
   // --- Event handlers ---
   const handleRecenter = () => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
     setShowJobList(true);
+    setIsFromDeepLink(false);
     recenterMap();
   };
 
   const handleJobSelect = (task: Task) => {
     setShowJobList(false);
+    setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
-    setTimeout(() => setSelectedTask(task), 50);
+    setSelectedTask(task);
   };
 
   const handleMarkerClick = (task: Task) => {
     setShowJobList(false);
+    setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
-    setTimeout(() => setSelectedTask(task), 50);
+    setSelectedTask(task);
   };
 
   const handleClosePreview = () => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
-    setTimeout(() => {
-      setShowJobList(true);
-      resetToCollapsed();
-    }, 100);
+    setIsFromDeepLink(false);
+    setShowJobList(true);
+    resetToCollapsed();
   };
 
   const handleViewDetails = () => {
-    if (selectedTask) navigate(`/tasks/${selectedTask.id}`);
+    if (!selectedTask) return;
+    if (!isAuthenticated) {
+      showAuth(() => navigate(`/tasks/${selectedTask.id}`));
+      return;
+    }
+    navigate(`/tasks/${selectedTask.id}`);
   };
 
   const handleCreatorClick = () => {
@@ -182,7 +253,6 @@ const MobileTasksView = () => {
     <>
       <style>{mobileTasksStyles}</style>
 
-      {/* Community rules modal — blocks until accepted */}
       <CommunityRulesModal
         isOpen={showRulesModal}
         onClose={() => setShowRulesModal(false)}
@@ -230,6 +300,8 @@ const MobileTasksView = () => {
               selectedTask={selectedTask}
               isMenuOpen={false}
               sheetPosition={sheetPosition}
+              fitBothPoints={fitBothPoints}
+              isFromDeepLink={isFromDeepLink}
             />
 
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
@@ -252,9 +324,9 @@ const MobileTasksView = () => {
                     task.displayLatitude || task.latitude,
                     task.displayLongitude || task.longitude,
                   ]}
-                  icon={getJobPriceIcon(budget, isSelected, task.is_urgent)}
+                  icon={getJobPriceIcon(budget, isSelected, FEATURES.URGENT && task.is_urgent)}
                   eventHandlers={{ click: () => handleMarkerClick(task) }}
-                  zIndexOffset={isSelected ? 1000 : task.is_urgent ? 500 : 0}
+                  zIndexOffset={isSelected ? 1000 : (FEATURES.URGENT && task.is_urgent) ? 500 : 0}
                 />
               );
             })}
@@ -271,18 +343,18 @@ const MobileTasksView = () => {
           activeFilterCount={selectedCategories.length}
         />
 
-        {/* Recenter button */}
+        {/* Recenter button — positioned just above the bottom sheet */}
         {!selectedTask && showJobList && (
           <div
             className="absolute right-4 z-[1000]"
             style={{
-              bottom: `${sheetHeight + 20}px`,
-              transition: 'bottom 0.3s ease-out',
+              bottom: `${recenterBottom}px`,
+              transition: isDragging ? 'none' : 'bottom 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
             }}
           >
             <button
               onClick={handleRecenter}
-              className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100"
+              className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg dark:shadow-gray-900/50 flex items-center justify-center active:bg-gray-100 dark:active:bg-gray-700"
               style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}
             >
               <svg
@@ -308,6 +380,7 @@ const MobileTasksView = () => {
             <JobPreviewCard
               task={selectedTask}
               userLocation={userLocation}
+              hasRealLocation={hasRealLocation}
               onViewDetails={handleViewDetails}
               onClose={handleClosePreview}
               onCreatorClick={handleCreatorClick}
@@ -315,14 +388,18 @@ const MobileTasksView = () => {
           </div>
         )}
 
-        {/* Bottom sheet */}
+        {/* Bottom sheet — GPU-accelerated via transform */}
         {!selectedTask && showJobList && (
           <div
-            className="fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            className="fixed left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl dark:shadow-gray-950/80 flex flex-col"
             style={{
               bottom: `${navHeight}px`,
-              height: `${sheetHeight - navHeight}px`,
-              transition: isDragging ? 'none' : 'height 0.3s ease-out, bottom 0.3s ease-out',
+              height: `${getFullHeight() - navHeight}px`,
+              transform: `translateY(${currentTranslateY}px)`,
+              transition: isDragging
+                ? 'none'
+                : 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+              willChange: 'transform',
               boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
               zIndex: 100,
             }}
@@ -335,34 +412,31 @@ const MobileTasksView = () => {
               onTouchEnd={handleTouchEnd}
               style={{ touchAction: 'none' }}
             >
-              {/* Drag handle bar */}
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
 
-              {/* Small up chevron below the bar — only when not fully expanded */}
               {sheetPosition !== 'full' && (
                 <svg
                   width="16"
                   height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#d1d5db"
+                  stroke="currentColor"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="mt-0.5"
+                  className="mt-0.5 text-gray-300 dark:text-gray-600"
                 >
                   <path d="M18 15l-6-6-6 6" />
                 </svg>
               )}
 
-              {/* Spacer when arrow is hidden (full state) to keep layout consistent */}
               {sheetPosition === 'full' && <div className="h-2" />}
 
               <div className="flex items-center justify-between w-full px-4 mt-1">
-                <span className="text-base font-bold text-gray-800">
+                <span className="text-base font-bold text-gray-800 dark:text-gray-200">
                   💰 {filteredTasks.length} {t('tasks.jobsNearby', 'jobs nearby')}
-                  {urgentCount > 0 && (
-                    <span className="text-red-600"> · ⚡{urgentCount}</span>
+                  {FEATURES.URGENT && urgentCount > 0 && (
+                    <span className="text-red-600 dark:text-red-400"> · ⚡{urgentCount}</span>
                   )}
                 </span>
                 <button
@@ -391,10 +465,10 @@ const MobileTasksView = () => {
               ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-8 px-4">
                   <div className="text-3xl mb-2">📋</div>
-                  <h3 className="font-semibold text-gray-900 mb-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                     {t('tasks.noJobsFound', 'No jobs found')}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {t('tasks.tryDifferentCategory', 'Try a different category or increase radius')}
                   </p>
                 </div>

@@ -7,8 +7,7 @@ export interface EditTaskFormData {
   latitude: number;
   longitude: number;
   deadline: string;
-  priority: string;
-  is_urgent: boolean;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 export const INITIAL_EDIT_TASK_FORM: EditTaskFormData = {
@@ -20,8 +19,7 @@ export const INITIAL_EDIT_TASK_FORM: EditTaskFormData = {
   latitude: 56.9496,
   longitude: 24.1052,
   deadline: '',
-  priority: 'normal',
-  is_urgent: false,
+  difficulty: 'medium',
 };
 
 export const TASK_CATEGORIES = [
@@ -33,8 +31,8 @@ export const TASK_CATEGORIES = [
   { value: 'outdoor', label: '\uD83C\uDF3F Outdoor', icon: '\uD83C\uDF3F' },
 ] as const;
 
-export const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'high', label: 'High' },
+export const DIFFICULTY_OPTIONS = [
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
 ] as const;

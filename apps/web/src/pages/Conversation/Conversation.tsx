@@ -23,6 +23,7 @@ export default function Conversation() {
     isOtherTyping,
     sendMutation,
     handleSend,
+    handleImageSend,
   } = useConversationPage();
 
   if (loading) return <LoadingSpinner isMobile={isMobile} />;
@@ -31,7 +32,7 @@ export default function Conversation() {
   // Mobile: fullscreen fixed chat (overlays bottom nav — intentional for chat UX)
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-[200] flex flex-col bg-white">
+      <div className="fixed inset-0 z-[200] flex flex-col bg-white dark:bg-gray-950">
         <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} isOtherTyping={isOtherTyping} isMobile />
         <MessageList
           messages={sortedMessages}
@@ -43,6 +44,7 @@ export default function Conversation() {
           value={newMessage}
           onChange={setNewMessage}
           onSubmit={handleSend}
+          onImageSend={handleImageSend}
           isPending={sendMutation.isPending}
           isMobile
         />
@@ -54,7 +56,7 @@ export default function Conversation() {
   return (
     <div className="max-w-2xl mx-auto">
       <div
-        className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col"
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-gray-900/50 overflow-hidden flex flex-col"
         style={{ height: 'calc(100vh - 200px)', minHeight: '500px', maxHeight: '700px' }}
       >
         <ChatHeader otherUser={otherUser} onlineStatus={onlineStatus} isOtherTyping={isOtherTyping} />
@@ -68,6 +70,7 @@ export default function Conversation() {
           value={newMessage}
           onChange={setNewMessage}
           onSubmit={handleSend}
+          onImageSend={handleImageSend}
           isPending={sendMutation.isPending}
         />
       </div>

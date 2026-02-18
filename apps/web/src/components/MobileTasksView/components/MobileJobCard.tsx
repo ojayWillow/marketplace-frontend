@@ -1,7 +1,7 @@
 import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
-import FavoriteButton from '../../ui/FavoriteButton';
+import { FEATURES } from '../../../constants/featureFlags';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -39,7 +39,7 @@ const MobileJobCard = ({
   );
   const budget = task.budget || task.reward || 0;
   const hasRating = task.creator_rating != null;
-  const isUrgent = task.is_urgent;
+  const isUrgent = FEATURES.URGENT && task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   // Render star rating
@@ -54,7 +54,7 @@ const MobileJobCard = ({
       } else if (i === fullStars && hasHalfStar) {
         stars.push(<span key={i} className="text-yellow-400">⯪</span>);
       } else {
-        stars.push(<span key={i} className="text-gray-300">★</span>);
+        stars.push(<span key={i} className="text-gray-300 dark:text-gray-600">★</span>);
       }
     }
     return stars;
@@ -63,19 +63,19 @@ const MobileJobCard = ({
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 p-3 border-b border-gray-100 active:bg-gray-50 cursor-pointer transition-colors ${
+      className={`flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 cursor-pointer transition-colors ${
         isSelected
-          ? 'bg-blue-50 border-l-4 border-l-blue-500'
+          ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500'
           : isUrgent
-          ? 'bg-red-50/40 border-l-4 border-l-red-500'
-          : 'bg-white'
+          ? 'bg-red-50/40 dark:bg-red-900/10 border-l-4 border-l-red-500'
+          : 'bg-white dark:bg-gray-900'
       }`}
     >
       {/* Icon with optional urgent pulse dot */}
       <div className="relative">
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-            isSelected ? 'bg-blue-100' : isUrgent ? 'bg-red-50' : 'bg-blue-50'
+            isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : isUrgent ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'
           }`}
         >
           {task.icon || '📋'}
@@ -90,12 +90,12 @@ const MobileJobCard = ({
 
       <div className="flex-1 min-w-0">
         {/* Line 1: Title (cleaned) */}
-        <h3 className="font-semibold text-gray-900 text-sm truncate">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
           {displayTitle}
         </h3>
         
         {/* Line 2: Distance and Time */}
-        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
           <span>📍 {formatDistance(distance)}</span>
           <span>•</span>
           <span>{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</span>
@@ -117,13 +117,13 @@ const MobileJobCard = ({
           </div>
           
           {/* Name */}
-          <span className="font-medium text-gray-700 truncate">
+          <span className="font-medium text-gray-700 dark:text-gray-300 truncate">
             {task.creator_name || 'Anonymous'}
           </span>
           
           {/* Separator if rating or city exists */}
           {(hasRating || task.creator_city) && (
-            <span className="text-gray-300 flex-shrink-0">|</span>
+            <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
           )}
           
           {/* Rating with stars */}
@@ -132,7 +132,7 @@ const MobileJobCard = ({
               <div className="flex text-[10px]">
                 {renderStars(task.creator_rating!)}
               </div>
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
                 ({task.creator_review_count || 0})
               </span>
             </div>
@@ -140,12 +140,12 @@ const MobileJobCard = ({
           
           {/* Separator before city */}
           {hasRating && task.creator_city && (
-            <span className="text-gray-300 flex-shrink-0">|</span>
+            <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
           )}
           
           {/* City */}
           {task.creator_city && (
-            <span className="text-gray-500 truncate">
+            <span className="text-gray-500 dark:text-gray-400 truncate">
               {task.creator_city}
             </span>
           )}
@@ -156,17 +156,16 @@ const MobileJobCard = ({
         <span
           className={`text-lg font-bold ${
             isUrgent
-              ? 'text-red-600'
+              ? 'text-red-600 dark:text-red-400'
               : budget <= 25
-              ? 'text-green-600'
+              ? 'text-green-600 dark:text-green-400'
               : budget <= 75
-              ? 'text-blue-600'
-              : 'text-purple-600'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-purple-600 dark:text-purple-400'
           }`}
         >
           €{budget}
         </span>
-        <FavoriteButton itemType="task" itemId={task.id} size="sm" />
       </div>
     </div>
   );

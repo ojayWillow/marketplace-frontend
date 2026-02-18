@@ -69,7 +69,7 @@ Code shared between web and mobile:
 ### Prerequisites
 
 - **Node.js** 18+
-- **pnpm** 8+
+- **pnpm** 9+ (see `packageManager` in root `package.json`)
 - Backend running (see [marketplace-backend](https://github.com/ojayWillow/marketplace-backend))
 
 ### Install & Run
@@ -122,6 +122,8 @@ VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=...
 ```
 
+See `apps/web/.env.example` for the full list.
+
 ### Mobile (`apps/mobile/.env`)
 
 ```bash
@@ -150,7 +152,14 @@ Located at `apps/web/src/components/MobileTasksView/` with its own components, h
 
 ## Migration Status
 
-**Phase 1 (In Progress):** Migrating web app imports to use `@marketplace/shared` instead of local paths. The mobile app already uses the shared package. When editing web app files, prefer `@marketplace/shared` imports over local ones.
+The web app is migrating from local API hooks to the `@marketplace/shared` package:
+
+- ✅ Shared barrel exports consolidated and working
+- ✅ Web app deep `@marketplace/shared/src/...` imports flattened to barrel imports
+- ✅ Dead code pruned (unused hooks, constants, utils)
+- 🔧 Remaining: migrate `hooks/useAuth.ts`, `hooks/useListings.ts`, and `api/hooks/` layer to fully use shared package
+
+When editing web app files, prefer `@marketplace/shared` imports over local ones.
 
 ---
 
@@ -159,5 +168,6 @@ Located at `apps/web/src/components/MobileTasksView/` with its own components, h
 - ✅ Web app, mobile app, and backend all functional
 - ✅ Backend migrated to Railway
 - ✅ Supabase for file/image storage
+- ✅ Monorepo config cleaned up (stale lockfiles, build artifacts, .gitignore)
 - 🔧 **Next: Tweaking mobile view** — polishing the web app's mobile-responsive experience
-- 🔧 Phase 1 shared package migration ongoing
+- 🔧 Shared package migration ongoing

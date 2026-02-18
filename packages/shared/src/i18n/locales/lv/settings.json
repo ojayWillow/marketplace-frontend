@@ -1,0 +1,53 @@
+{
+  "language": {
+    "title": "Valoda",
+    "description": "Izvēlieties vēlamo valodu"
+  },
+  "howItWorks": {
+    "title": "Kā tas darbojas",
+    "description": "Uzziniet, kā darbojas Kolab"
+  },
+  "theme": {
+    "title": "Izskats",
+    "light": "Gaišs",
+    "dark": "Tumšs",
+    "system": "Sistēmas"
+  },
+  "listings": {
+    "teaserTitle": "Tirgus",
+    "teaserSubtitle": "Pērc, pārdod, solī",
+    "teaserDescription": "Drīz varēsi pārdot savas lietas, izsolīt preces un atrast labākos piedāvājumus savā apkārtnē.",
+    "featureSell": "Pārdod",
+    "featureBid": "Solī",
+    "featureItems": "Preces",
+    "featureLocal": "Tavā apkārtnē"
+  },
+  "notifications": {
+    "title": "Push paziņojumi",
+    "description": "Saņemiet paziņojumus par jaunām ziņām, darba pieteikumiem un uzdevumu atjauninājumiem pat kad lietotne ir aizvērta.",
+    "iosInstallTitle": "Instalējiet lietotni paziņojumiem",
+    "iosInstallHelp": "iPhone ierīcē push paziņojumi darbojas tikai tad, kad Kolab ir instalēts sākuma ekrānā:",
+    "iosStep1": "Nospiediet Kopīgošanas pogu (kvadrāts ar bultiņu) Safari",
+    "iosStep2": "Ritiniet uz leju un nospiediet \"Pievienot sākuma ekrānam\"",
+    "iosStep3": "Atveriet Kolab no sākuma ekrāna",
+    "iosStep4": "Atgriezieties šeit, lai iespējotu paziņojumus",
+    "iosVersionRequired": "Push paziņojumiem nepieciešama iOS 16.4 vai jaunāka versija. Lūdzu, atjauniniet savu iPhone.",
+    "notSupported": "Jūsu pārlūkprogramma neatbalsta push paziņojumus. Izmēģiniet Chrome, Firefox vai Safari 16.4+.",
+    "blocked": "Paziņojumi ir bloķēti",
+    "blockedHelp": "Lai atkārtoti iespējotu, dodieties uz pārlūkprogrammas vai tālruņa iestatījumiem un atļaujiet paziņojumus šai vietnei.",
+    "enable": "Iespējot paziņojumus",
+    "statusOn": "Paziņojumi ir iespējoti",
+    "statusOff": "Paziņojumi ir atspējoti",
+    "toggle": "Pārslēgt push paziņojumus",
+    "sendTest": "Sūtīt testa paziņojumu",
+    "testSent": "Testa paziņojums nosūtīts! Pārbaudiet savu ierīci.",
+    "devices": "Reģistrētās ierīces",
+    "unknownDevice": "Nezināma ierīce",
+    "registeredOn": "Reģistrēts"
+  },
+  "logout": {
+    "button": "Iziet",
+    "confirmTitle": "Iziet?",
+    "confirmMessage": "Vai tiešām vēlaties iziet no sava konta?"
+  }
+}

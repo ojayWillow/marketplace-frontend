@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
-import FavoriteButton from '../../ui/FavoriteButton';
+import shareTask from '../../../utils/shareTask';
+import { FEATURES } from '../../../constants/featureFlags';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -20,23 +22,29 @@ const cleanTitle = (title: string): string => {
 interface JobPreviewCardProps {
   task: Task;
   userLocation: { lat: number; lng: number };
+  hasRealLocation: boolean;
   onViewDetails: () => void;
   onClose: () => void;
   onCreatorClick: () => void;
 }
 
 /**
- * Job preview card - Shows when a job marker is selected on the map.
+ * Job preview card — Shows when a job marker is selected on the map.
  * Positioned above the MobileBottomNav (h-14 = 56px + safe-area-inset-bottom).
+ *
+ * When `hasRealLocation` is false (guest via shared link, no GPS),
+ * the distance field shows the job's city instead of a misleading number.
  */
 const JobPreviewCard = ({
   task,
   userLocation,
+  hasRealLocation,
   onViewDetails,
   onClose,
   onCreatorClick,
 }: JobPreviewCardProps) => {
   const { t } = useTranslation();
+  const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
   const distance = calculateDistance(
     userLocation.lat,
     userLocation.lng,
@@ -47,13 +55,23 @@ const JobPreviewCard = ({
   const categoryIcon = getCategoryIcon(task.category);
   const categoryLabel = getCategoryLabel(task.category);
   const applicantsCount = task.pending_applications_count || 0;
-  const isUrgent = task.is_urgent;
+  const isUrgent = FEATURES.URGENT && task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
-  // Check if rating exists (not null/undefined)
   const hasRating = task.creator_rating != null;
 
-  // Render star rating
+  // Short city from location string (first part)
+  const jobCity = task.location?.split(',')[0]?.trim() || '';
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const result = await shareTask(task);
+    if (result === 'copied') {
+      setShareState('copied');
+      setTimeout(() => setShareState('idle'), 2000);
+    }
+  };
+
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -65,7 +83,7 @@ const JobPreviewCard = ({
       } else if (i === fullStars && hasHalfStar) {
         stars.push(<span key={i} className="text-yellow-400">⯨</span>);
       } else {
-        stars.push(<span key={i} className="text-gray-300">★</span>);
+        stars.push(<span key={i} className="text-gray-300 dark:text-gray-600">★</span>);
       }
     }
     return stars;
@@ -73,24 +91,21 @@ const JobPreviewCard = ({
 
   return (
     <div
-      className="absolute left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-[1001] overflow-hidden animate-slideUp flex flex-col"
+      className="absolute left-0 right-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl dark:shadow-gray-950/80 z-[1001] overflow-hidden animate-slideUp flex flex-col"
       style={{
         bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
         maxHeight: '55vh',
       }}
     >
-      {/* Urgent top accent bar */}
       {isUrgent && (
         <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse flex-shrink-0" />
       )}
 
-      {/* Scrollable content area */}
       <div className="px-4 pt-4 pb-2 overflow-y-auto flex-1 min-h-0">
-        {/* Top row: Category on left, Distance in CENTER, X button on right */}
+        {/* Top row: Category | Distance or City | Close */}
         <div className="flex items-center justify-between mb-2">
-          {/* Category pill with urgent dot overlay */}
           <div className="relative">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
               <span>{categoryIcon}</span>
               <span>{categoryLabel}</span>
             </span>
@@ -102,87 +117,91 @@ const JobPreviewCard = ({
             )}
           </div>
 
-          {/* Distance - Centered */}
-          <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-            📍 {formatDistance(distance)}
+          {/* Distance (real GPS) or city name (no GPS) */}
+          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
+            {hasRealLocation ? (
+              <>📍 {formatDistance(distance)}</>
+            ) : (
+              <>📍 {jobCity || t('tasks.locationUnknown', 'Location')}</>
+            )}
           </span>
 
-          {/* Close button */}
           <button
             onClick={onClose}
-            className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"
+            className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             ✕
           </button>
         </div>
 
-        {/* Price - BIG and prominent */}
+        {/* Price */}
         <div className="text-center mb-1">
           <span
             className={`text-3xl font-bold ${
               isUrgent
-                ? 'text-red-600'
+                ? 'text-red-600 dark:text-red-400'
                 : budget <= 25
-                ? 'text-green-600'
+                ? 'text-green-600 dark:text-green-400'
                 : budget <= 75
-                ? 'text-blue-600'
-                : 'text-purple-600'
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-purple-600 dark:text-purple-400'
             }`}
           >
             €{budget}
           </span>
         </div>
 
-        {/* Title (cleaned) */}
-        <h3 className="font-bold text-gray-900 text-lg text-center mb-2 line-clamp-2">
+        {/* Title */}
+        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg text-center mb-2 line-clamp-2">
           {displayTitle}
         </h3>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 mb-3 py-2 bg-gray-50 rounded-xl text-center">
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
-              {t('tasks.distance', 'ATTĀLUMS')}
+        <div className={`grid ${hasRealLocation ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-center`}>
+          {hasRealLocation && (
+            <div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                {t('tasks.distance', 'ATTĀLUMS')}
+              </div>
+              <div className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                {formatDistance(distance)}
+              </div>
             </div>
-            <div className="text-sm font-bold text-gray-700">
-              {formatDistance(distance)}
-            </div>
-          </div>
-          <div className="border-x border-gray-200">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+          )}
+          <div className={hasRealLocation ? 'border-x border-gray-200 dark:border-gray-700' : ''}>
+            <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">
               {t('tasks.posted', 'PUBLICĒTS')}
             </div>
-            <div className="text-sm font-bold text-gray-700">
+            <div className="text-sm font-bold text-gray-700 dark:text-gray-300">
               {task.created_at ? formatTimeAgo(task.created_at) : 'New'}
             </div>
           </div>
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+          <div className={!hasRealLocation ? 'border-l border-gray-200 dark:border-gray-700' : ''}>
+            <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">
               {t('tasks.applicants', 'PIETEIKUMI')}
             </div>
-            <div className="text-sm font-bold text-gray-700">
+            <div className="text-sm font-bold text-gray-700 dark:text-gray-300">
               {applicantsCount}
             </div>
           </div>
         </div>
 
         {/* Location */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>📍</span>
           <span className="truncate">
             {task.location?.split(',').slice(0, 2).join(', ') || 'Nearby'}
           </span>
         </div>
 
-        {/* Creator - CLICKABLE with avatar and all info on ONE line */}
+        {/* Creator */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCreatorClick();
           }}
-          className="flex items-center gap-2 text-sm hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
+          className="flex items-center gap-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg transition-colors w-full"
         >
-          {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
             {task.creator_avatar ? (
               <img 
@@ -195,49 +214,43 @@ const JobPreviewCard = ({
             )}
           </div>
           
-          {/* All info on ONE line: Name | Stars (count) | City */}
           <div className="flex items-center gap-2 flex-1 min-w-0 text-sm">
-            {/* Name */}
-            <span className="font-medium text-gray-900 truncate">
+            <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
               {task.creator_name || t('common.anonymous', 'Anonymous')}
             </span>
             
-            {/* Separator - only show if there's rating or city */}
             {(hasRating || task.creator_city) && (
-              <span className="text-gray-300 flex-shrink-0">|</span>
+              <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
             )}
             
-            {/* Rating with stars - inline */}
             {hasRating && (
               <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="flex text-xs">
                   {renderStars(task.creator_rating!)}
                 </div>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   ({task.creator_review_count || 0})
                 </span>
               </div>
             )}
             
-            {/* Separator before city */}
             {hasRating && task.creator_city && (
-              <span className="text-gray-300 flex-shrink-0">|</span>
+              <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
             )}
             
-            {/* City */}
             {task.creator_city && (
-              <span className="text-xs text-gray-500 truncate">
+              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {task.creator_city}
               </span>
             )}
           </div>
           
-          <span className="text-gray-400 text-xs flex-shrink-0">→</span>
+          <span className="text-gray-400 dark:text-gray-500 text-xs flex-shrink-0">→</span>
         </button>
       </div>
 
-      {/* Action buttons - PINNED at bottom, always visible */}
-      <div className="flex gap-3 px-4 py-3 bg-white flex-shrink-0 border-t border-gray-100">
+      {/* Action buttons */}
+      <div className="flex gap-3 px-4 py-3 bg-white dark:bg-gray-900 flex-shrink-0 border-t border-gray-100 dark:border-gray-800">
         <button
           onClick={onViewDetails}
           className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
@@ -248,12 +261,21 @@ const JobPreviewCard = ({
         >
           {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
         </button>
-        <FavoriteButton
-          itemType="task"
-          itemId={task.id}
-          size="md"
-          className="!rounded-xl !w-12 !h-12"
-        />
+        <button
+          onClick={handleShare}
+          className="flex items-center justify-center w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 transition-all"
+          title={shareState === 'copied' ? t('share.copied', 'Copied!') : t('share.share', 'Share')}
+        >
+          {shareState === 'copied' ? (
+            <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          )}
+        </button>
       </div>
     </div>
   );

@@ -166,7 +166,7 @@ export const useConversationPage = () => {
     [id, conversationId, emitTyping]
   );
 
-  // ── Send message ─────────────────────────────────────────────────────
+  // ── Send text message ────────────────────────────────────────────────
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || sendMutation.isPending || !id || !user) return;
@@ -224,6 +224,72 @@ export const useConversationPage = () => {
     );
   };
 
+  // ── Send image message ───────────────────────────────────────────────
+  const handleImageSend = useCallback(
+    (imageUrl: string) => {
+      if (!id || !user) return;
+
+      const optimisticMessage: Message = {
+        id: Date.now(),
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: imageUrl,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(
+        ['messages', 'conversation', conversationId],
+        (old: any) => {
+          if (!old)
+            return {
+              messages: [optimisticMessage],
+              total: 1,
+              page: 1,
+              pages: 1,
+              has_more: false,
+            };
+          return {
+            ...old,
+            messages: [...old.messages, optimisticMessage],
+            total: old.total + 1,
+          };
+        }
+      );
+
+      setTimeout(scrollToBottom, 50);
+
+      sendMutation.mutate(
+        { recipientId: conversationId, content: imageUrl },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({
+              queryKey: ['messages', 'conversation', conversationId],
+            });
+          },
+          onError: (error) => {
+            console.error('Error sending image:', error);
+            toast.error(t('messages.errorSending', 'Failed to send image'));
+            queryClient.setQueryData(
+              ['messages', 'conversation', conversationId],
+              (old: any) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  messages: old.messages.filter(
+                    (m: Message) => m.id !== optimisticMessage.id
+                  ),
+                  total: old.total - 1,
+                };
+              }
+            );
+          },
+        }
+      );
+    },
+    [id, user, conversationId, queryClient, sendMutation, toast, t]
+  );
+
   // Sort messages oldest first
   const sortedMessages = [...messages].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -244,5 +310,6 @@ export const useConversationPage = () => {
     isOtherTyping,
     sendMutation,
     handleSend,
+    handleImageSend,
   };
 };

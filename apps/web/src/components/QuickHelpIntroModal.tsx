@@ -140,8 +140,8 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
               {showCheckboxes && (
                 <p className="text-center text-xs text-gray-400 mt-4">
                   {t('community.accessLater', 'You can review these rules anytime from the')}{' '}
-                  <span className="font-medium">❓ {t('kolab.howItWorksButton', 'How it works')}</span>{' '}
-                  {t('kolab.button', 'button')}
+                  <span className="font-medium">❓ {t('quickHelp.howItWorks', 'How it works')}</span>{' '}
+                  {t('common.button', 'button')}
                 </p>
               )}
             </div>
@@ -156,7 +156,7 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">
-                {t('footer.terms', 'Terms of Service')} & {t('footer.privacy', 'Privacy Policy')}
+                {t('community.termsModalTitle', 'Terms of Service & Privacy Policy')}
               </h3>
               <button
                 onClick={() => setShowTermsModal(false)}
@@ -169,38 +169,37 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <div className="prose prose-sm max-w-none">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">Terms of Service</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">{t('community.tosHeading', 'Terms of Service')}</h4>
                 <p className="text-gray-700 mb-4">
-                  By using Kolab, you agree to use the platform responsibly and in good faith.
-                  You agree to:
+                  {t('community.tosIntro', 'By using Kolab, you agree to use the platform responsibly and in good faith. You agree to:')}
                 </p>
                 <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-6">
-                  <li>Provide accurate information in your job postings or service offerings</li>
-                  <li>Complete jobs you commit to as a helper</li>
-                  <li>Pay helpers fairly and promptly for completed work</li>
-                  <li>Treat all users with respect and professionalism</li>
-                  <li>Not post illegal, harmful, or fraudulent content</li>
-                  <li>Report any issues or disputes through proper channels</li>
+                  <li>{t('community.tosAccurateInfo', 'Provide accurate information in your job postings or service offerings')}</li>
+                  <li>{t('community.tosCompleteJobs', 'Complete jobs you commit to as a helper')}</li>
+                  <li>{t('community.tosPayFairly', 'Pay helpers fairly and promptly for completed work')}</li>
+                  <li>{t('community.tosRespect', 'Treat all users with respect and professionalism')}</li>
+                  <li>{t('community.tosNoIllegal', 'Not post illegal, harmful, or fraudulent content')}</li>
+                  <li>{t('community.tosReportIssues', 'Report any issues or disputes through proper channels')}</li>
                 </ul>
 
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">Privacy Policy</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">{t('community.privacyHeading', 'Privacy Policy')}</h4>
                 <p className="text-gray-700 mb-4">
-                  We respect your privacy and are committed to protecting your personal data.
+                  {t('community.privacyIntro', 'We respect your privacy and are committed to protecting your personal data.')}
                 </p>
                 <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-6">
-                  <li><strong>Information we collect:</strong> Profile information, location data (for showing nearby jobs), job/offering details, messages between users</li>
-                  <li><strong>How we use it:</strong> To connect job posters with helpers, show relevant opportunities, facilitate communication, and improve the service</li>
-                  <li><strong>Data sharing:</strong> We do not sell your personal data. Location and profile info is shared with other users only as needed for the service (e.g., showing your job on the map)</li>
-                  <li><strong>Your rights:</strong> You can view, edit, or delete your data at any time through your profile settings</li>
-                  <li><strong>Security:</strong> We use industry-standard security measures to protect your data</li>
+                  <li><strong>{t('community.privacyCollect', 'Information we collect:')}</strong> {t('community.privacyCollectDesc', 'Profile information, location data (for showing nearby jobs), job/offering details, messages between users')}</li>
+                  <li><strong>{t('community.privacyUse', 'How we use it:')}</strong> {t('community.privacyUseDesc', 'To connect job posters with helpers, show relevant opportunities, facilitate communication, and improve the service')}</li>
+                  <li><strong>{t('community.privacyShare', 'Data sharing:')}</strong> {t('community.privacyShareDesc', 'We do not sell your personal data. Location and profile info is shared with other users only as needed for the service (e.g., showing your job on the map)')}</li>
+                  <li><strong>{t('community.privacyRights', 'Your rights:')}</strong> {t('community.privacyRightsDesc', 'You can view, edit, or delete your data at any time through your profile settings')}</li>
+                  <li><strong>{t('community.privacySecurity', 'Security:')}</strong> {t('community.privacySecurityDesc', 'We use industry-standard security measures to protect your data')}</li>
                 </ul>
 
                 <p className="text-sm text-gray-600">
-                  For full details, visit our{' '}
-                  <Link to="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
-                  {' '}pages.
+                  {t('community.fullDetailsText', 'For full details, visit our')}{' '}
+                  <Link to="/terms" className="text-blue-600 hover:underline">{t('community.termsOfServiceLink', 'Terms of Service')}</Link>
+                  {' '}{t('common.and', 'and')}{' '}
+                  <Link to="/privacy" className="text-blue-600 hover:underline">{t('community.privacyPolicyLink', 'Privacy Policy')}</Link>
+                  {' '}{t('community.pagesText', 'pages.')}
                 </p>
               </div>
             </div>
@@ -220,7 +219,7 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-white"
               >
-                {t('kolab.acceptAndClose', 'Accept & Close')}
+                {t('community.acceptAndClose', 'Accept & Close')}
               </button>
             </div>
           </div>

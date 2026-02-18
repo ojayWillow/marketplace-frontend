@@ -1,5 +1,6 @@
 {
   "advancedFilters": "Расширенные фильтры",
+  "title": "Фильтры",
   "reset": "Сбросить",
   "budget": "Бюджет",
   "price": "Цена",
@@ -7,6 +8,11 @@
   "minPrice": "Мин",
   "maxPrice": "Макс",
   "distance": "Расстояние",
+  "location": "Местоположение",
+  "categories": "Категории",
+  "withinKm": "В радиусе {{km}} км",
+  "selected": "{{count}}/{{max}} выбрано",
+  "maxCategoriesHint": "Максимум {{max}} категорий выбрано. Снимите одну, чтобы выбрать другую.",
   "datePosted": "Дата публикации",
   "category": "Категория",
   "anyTime": "Любое время",

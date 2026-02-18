@@ -77,8 +77,8 @@ export default function MessagesScreen() {
       </LinearGradient>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.scrollView, { backgroundColor: themeColors.backgroundSecondary }]}
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: themeColors.backgroundSecondary }]}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }

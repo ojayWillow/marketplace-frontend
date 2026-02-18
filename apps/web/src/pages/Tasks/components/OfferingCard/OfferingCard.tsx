@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getCategoryLabel } from '../../../../constants/categories';
-import FavoriteButton from '../../../../components/ui/FavoriteButton';
 import { calculateDistance } from '../../utils/taskHelpers';
 import type { OfferingCardProps } from './OfferingCard.types';
 
@@ -31,15 +30,6 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
         ? 'border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 hover:border-amber-400 ring-1 ring-amber-200'
         : 'border-gray-200 hover:border-amber-300'
     }`}>
-      {/* Favorite Button - positioned top right */}
-      <div className="absolute top-2 right-2 z-10">
-        <FavoriteButton
-          itemType="offering"
-          itemId={offering.id}
-          size="sm"
-        />
-      </div>
-
       <Link to={`/offerings/${offering.id}`} className="block">
         {/* Boosted badge */}
         {isBoosted && (
@@ -48,7 +38,7 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
           </div>
         )}
 
-        <div className="flex items-start gap-3 pr-8">
+        <div className="flex items-start gap-3">
           {/* Avatar */}
           <div className="flex-shrink-0">
             {offering.creator_avatar ? (

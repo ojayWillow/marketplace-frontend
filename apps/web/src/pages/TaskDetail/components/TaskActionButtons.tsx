@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Task } from '@marketplace/shared';
+import { useAuthPrompt } from '../../../stores/useAuthPrompt';
 
 interface TaskActionButtonsProps {
   task: Task;
@@ -15,6 +16,10 @@ interface TaskActionButtonsProps {
   onCancel: () => void;
 }
 
+// Dispute should NOT show on 'completed' tasks — only while work is active or pending
+const WORKER_DISPUTABLE_STATUSES = ['assigned', 'in_progress', 'pending_confirmation'];
+const CREATOR_DISPUTABLE_STATUSES = ['in_progress', 'pending_confirmation'];
+
 export const TaskActionButtons = ({
   task,
   isCreator,
@@ -28,11 +33,17 @@ export const TaskActionButtons = ({
   onDispute,
   onCancel,
 }: TaskActionButtonsProps) => {
+  const showAuth = useAuthPrompt((s) => s.show);
   const hasApplied = (task as any).has_applied;
   const userApplication = (task as any).user_application;
   const canMarkDone = isAssigned && (task.status === 'assigned' || task.status === 'in_progress');
   const canEdit = isCreator && task.status === 'open';
   const canApply = isAuthenticated && !isCreator && !isAssigned && task.status === 'open' && !hasApplied;
+
+  // Dispute visibility: only during active work, NOT after completed
+  const canDispute =
+    (isAssigned && WORKER_DISPUTABLE_STATUSES.includes(task.status)) ||
+    (isCreator && CREATOR_DISPUTABLE_STATUSES.includes(task.status));
 
   const getApplicationStatusLabel = (status: string) => {
     switch (status) {
@@ -43,17 +54,29 @@ export const TaskActionButtons = ({
     }
   };
 
+  // Handle apply click for guests — show auth sheet, then open application form
+  const handleGuestApply = () => {
+    showAuth(() => {
+      onShowApplicationForm();
+    });
+  };
+
+  // Don't render anything for completed/cancelled/disputed tasks
+  if (['completed', 'cancelled', 'disputed'].includes(task.status) && !canDispute) {
+    return null;
+  }
+
   return (
     <div className="px-4 py-3">
       {/* Already Applied Message */}
       {hasApplied && task.status === 'open' && (
-        <div className="mb-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mb-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-base">📝</span>
             <div>
-              <p className="font-semibold text-xs text-blue-800">Already applied</p>
+              <p className="font-semibold text-xs text-blue-800 dark:text-blue-300">Already applied</p>
               {userApplication && (
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
                   {getApplicationStatusLabel(userApplication.status)}
                 </p>
               )}
@@ -68,7 +91,7 @@ export const TaskActionButtons = ({
           <button
             onClick={onMarkDone}
             disabled={actionLoading}
-            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
             {actionLoading ? 'Processing...' : '✓ Mark as Done'}
           </button>
@@ -76,22 +99,24 @@ export const TaskActionButtons = ({
 
         {/* Creator confirming */}
         {isCreator && task.status === 'pending_confirmation' && (
-          <>
-            <button
-              onClick={onConfirmDone}
-              disabled={actionLoading}
-              className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
-            >
-              {actionLoading ? 'Processing...' : '✓ Confirm'}
-            </button>
-            <button
-              onClick={onDispute}
-              disabled={actionLoading}
-              className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
-            >
-              ⚠️ Dispute
-            </button>
-          </>
+          <button
+            onClick={onConfirmDone}
+            disabled={actionLoading}
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+          >
+            {actionLoading ? 'Processing...' : '✓ Confirm'}
+          </button>
+        )}
+
+        {/* Dispute button — only during active work */}
+        {canDispute && (
+          <button
+            onClick={onDispute}
+            disabled={actionLoading}
+            className="px-5 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
+          >
+            ⚠️ Dispute
+          </button>
         )}
 
         {/* Owner Edit/Cancel */}
@@ -106,14 +131,14 @@ export const TaskActionButtons = ({
             <button
               onClick={onCancel}
               disabled={actionLoading}
-              className="px-5 py-3 border-2 border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-sm active:scale-[0.98]"
+              className="px-5 py-3 border-2 border-red-500 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all font-bold text-sm active:scale-[0.98]"
             >
               🗑️
             </button>
           </>
         )}
 
-        {/* Visitor — Apply */}
+        {/* Authenticated visitor — Apply */}
         {canApply && !showApplicationForm && (
           <button
             onClick={onShowApplicationForm}
@@ -123,14 +148,14 @@ export const TaskActionButtons = ({
           </button>
         )}
 
-        {/* Login prompt */}
+        {/* Guest — Apply (opens auth sheet first) */}
         {!isAuthenticated && task.status === 'open' && (
-          <Link
-            to="/login"
-            className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 font-bold text-sm text-center shadow-lg active:scale-[0.98] transition-all"
+          <button
+            onClick={handleGuestApply}
+            className="flex-1 bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 font-bold text-sm shadow-lg active:scale-[0.98] transition-all"
           >
-            Login to Apply
-          </Link>
+            ✓ Apply for This Job
+          </button>
         )}
       </div>
     </div>

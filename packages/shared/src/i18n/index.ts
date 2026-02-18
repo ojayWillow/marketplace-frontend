@@ -24,6 +24,10 @@ import enOfferings from './locales/en/offerings.json'
 import enCreateOffering from './locales/en/createOffering.json'
 import enCreateTask from './locales/en/createTask.json'
 import enLegal from './locales/en/legal.json'
+import enLanding from './locales/en/landing.json'
+import enCommunity from './locales/en/community.json'
+import enSettings from './locales/en/settings.json'
+import enPwa from './locales/en/pwa.json'
 
 // Import Latvian translations
 import lvCommon from './locales/lv/common.json'
@@ -47,6 +51,10 @@ import lvOfferings from './locales/lv/offerings.json'
 import lvCreateOffering from './locales/lv/createOffering.json'
 import lvCreateTask from './locales/lv/createTask.json'
 import lvLegal from './locales/lv/legal.json'
+import lvLanding from './locales/lv/landing.json'
+import lvCommunity from './locales/lv/community.json'
+import lvSettings from './locales/lv/settings.json'
+import lvPwa from './locales/lv/pwa.json'
 
 // Import Russian translations
 import ruCommon from './locales/ru/common.json'
@@ -70,6 +78,10 @@ import ruOfferings from './locales/ru/offerings.json'
 import ruCreateOffering from './locales/ru/createOffering.json'
 import ruCreateTask from './locales/ru/createTask.json'
 import ruLegal from './locales/ru/legal.json'
+import ruLanding from './locales/ru/landing.json'
+import ruCommunity from './locales/ru/community.json'
+import ruSettings from './locales/ru/settings.json'
+import ruPwa from './locales/ru/pwa.json'
 
 // Combine all translations per language
 const en = {
@@ -94,6 +106,10 @@ const en = {
   createOffering: enCreateOffering,
   createTask: enCreateTask,
   legal: enLegal,
+  landing: enLanding,
+  community: enCommunity,
+  settings: enSettings,
+  pwa: enPwa,
 }
 
 const lv = {
@@ -118,6 +134,10 @@ const lv = {
   createOffering: lvCreateOffering,
   createTask: lvCreateTask,
   legal: lvLegal,
+  landing: lvLanding,
+  community: lvCommunity,
+  settings: lvSettings,
+  pwa: lvPwa,
 }
 
 const ru = {
@@ -142,6 +162,10 @@ const ru = {
   createOffering: ruCreateOffering,
   createTask: ruCreateTask,
   legal: ruLegal,
+  landing: ruLanding,
+  community: ruCommunity,
+  settings: ruSettings,
+  pwa: ruPwa,
 }
 
 const resources = {

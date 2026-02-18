@@ -25,7 +25,7 @@ export const StarRating = ({
             key={star}
             type="button"
             onClick={() => onChange(star)}
-            className={`${sizeClasses[size]} ${star <= rating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400 transition-colors`}
+            className={`${sizeClasses[size]} ${star <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'} hover:text-yellow-400 transition-colors`}
           >
             ★
           </button>
@@ -39,7 +39,7 @@ export const StarRating = ({
       {[1, 2, 3, 4, 5].map(star => (
         <span 
           key={star} 
-          className={`${sizeClasses[size]} ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+          className={`${sizeClasses[size]} ${star <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
         >
           ★
         </span>

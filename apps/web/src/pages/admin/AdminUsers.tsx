@@ -7,13 +7,21 @@ interface User {
   id: number;
   username: string;
   email: string;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  profile_picture_url: string | null;
   created_at: string;
+  last_seen: string | null;
   is_banned: boolean;
+  is_active: boolean;
   is_verified: boolean;
   jobs_count: number;
   offerings_count: number;
+  completed_tasks: number;
   rating: number;
-  profile_picture_url?: string;
+  review_count: number;
 }
 
 const AdminUsers = () => {
@@ -24,7 +32,7 @@ const AdminUsers = () => {
   const [filter, setFilter] = useState<'all' | 'active' | 'banned'>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [total, setTotal] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
@@ -34,25 +42,16 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      try {
-        const response = await apiClient.get('/api/admin/users', {
-          params: { page, filter, search: searchQuery }
-        });
-        setUsers(response.data.users);
-        setTotalPages(response.data.totalPages || 1);
-      } catch (err) {
-        // Mock data for development
-        setUsers([
-          { id: 1, username: 'janis_k', email: 'janis@example.com', created_at: '2025-12-01', is_banned: false, is_verified: true, jobs_count: 12, offerings_count: 3, rating: 4.8 },
-          { id: 2, username: 'maria_s', email: 'maria@example.com', created_at: '2025-12-05', is_banned: false, is_verified: true, jobs_count: 8, offerings_count: 0, rating: 4.5 },
-          { id: 3, username: 'peter_v', email: 'peter@example.com', created_at: '2025-12-10', is_banned: false, is_verified: false, jobs_count: 2, offerings_count: 5, rating: 4.9 },
-          { id: 4, username: 'spam_user', email: 'spam@test.com', created_at: '2025-12-15', is_banned: true, is_verified: false, jobs_count: 0, offerings_count: 0, rating: 0 },
-          { id: 5, username: 'andris_b', email: 'andris@example.com', created_at: '2025-12-20', is_banned: false, is_verified: true, jobs_count: 5, offerings_count: 2, rating: 4.7 },
-          { id: 6, username: 'liga_m', email: 'liga@example.com', created_at: '2026-01-02', is_banned: false, is_verified: true, jobs_count: 3, offerings_count: 1, rating: 5.0 },
-          { id: 7, username: 'karlis_z', email: 'karlis@example.com', created_at: '2026-01-05', is_banned: false, is_verified: false, jobs_count: 1, offerings_count: 0, rating: 0 },
-        ]);
-        setTotalPages(3);
-      }
+      const response = await apiClient.get('/api/admin/users', {
+        params: { page, filter, search: searchQuery, per_page: 20 }
+      });
+      setUsers(response.data.users || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotal(response.data.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+      toast.error(err.response?.data?.error || 'Failed to load users');
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -69,11 +68,9 @@ const AdminUsers = () => {
       setActionLoading(userId);
       await apiClient.post(`/api/admin/users/${userId}/${isBanned ? 'unban' : 'ban'}`);
       toast.success(`User ${isBanned ? 'unbanned' : 'banned'} successfully`);
-      setUsers(users.map(u => u.id === userId ? { ...u, is_banned: !isBanned } : u));
-    } catch (err) {
-      // Mock success for development
-      toast.success(`User ${isBanned ? 'unbanned' : 'banned'} successfully`);
-      setUsers(users.map(u => u.id === userId ? { ...u, is_banned: !isBanned } : u));
+      setUsers(users.map(u => u.id === userId ? { ...u, is_banned: !isBanned, is_active: isBanned } : u));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Action failed');
     } finally {
       setActionLoading(null);
     }
@@ -85,25 +82,24 @@ const AdminUsers = () => {
       await apiClient.post(`/api/admin/users/${userId}/verify`);
       toast.success('User verified successfully');
       setUsers(users.map(u => u.id === userId ? { ...u, is_verified: true } : u));
-    } catch (err) {
-      // Mock success
-      toast.success('User verified successfully');
-      setUsers(users.map(u => u.id === userId ? { ...u, is_verified: true } : u));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Verification failed');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    if (filter === 'banned') return user.is_banned;
-    if (filter === 'active') return !user.is_banned;
-    return true;
-  }).filter(user => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return user.username.toLowerCase().includes(query) || 
-           user.email.toLowerCase().includes(query);
-  });
+  const getAvatar = (user: User) => {
+    const url = user.profile_picture_url || user.avatar_url;
+    if (url) {
+      return <img src={url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />;
+    }
+    return (
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+        {user.username.charAt(0).toUpperCase()}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -111,7 +107,7 @@ const AdminUsers = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500">Manage platform users</p>
+          <p className="text-gray-500">{total} total users</p>
         </div>
       </div>
 
@@ -123,7 +119,7 @@ const AdminUsers = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search users by name or email..."
+                placeholder="Search users by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -157,7 +153,7 @@ const AdminUsers = () => {
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
           </div>
-        ) : filteredUsers.length === 0 ? (
+        ) : users.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-2">👤</div>
             <p className="text-gray-500">No users found</p>
@@ -176,16 +172,15 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                          {user.username.charAt(0).toUpperCase()}
-                        </div>
+                        {getAvatar(user)}
                         <div>
                           <p className="font-medium text-gray-900">{user.username}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
+                          {user.phone && <p className="text-xs text-gray-400">{user.phone}</p>}
                         </div>
                       </div>
                     </td>
@@ -211,6 +206,7 @@ const AdminUsers = () => {
                       <div className="text-sm">
                         <p><span className="text-gray-500">Jobs:</span> {user.jobs_count}</p>
                         <p><span className="text-gray-500">Offerings:</span> {user.offerings_count}</p>
+                        <p><span className="text-gray-500">Completed:</span> {user.completed_tasks}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -218,6 +214,7 @@ const AdminUsers = () => {
                         <div className="flex items-center gap-1">
                           <span className="text-yellow-500">★</span>
                           <span className="font-medium">{user.rating.toFixed(1)}</span>
+                          <span className="text-xs text-gray-400">({user.review_count})</span>
                         </div>
                       ) : (
                         <span className="text-gray-400">No rating</span>
@@ -267,7 +264,7 @@ const AdminUsers = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
             <p className="text-sm text-gray-500">
-              Page {page} of {totalPages}
+              Page {page} of {totalPages} ({total} users)
             </p>
             <div className="flex gap-2">
               <button

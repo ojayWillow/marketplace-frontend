@@ -5,20 +5,17 @@ import { useAuthStore } from '@marketplace/shared';
 import { useToastStore } from '@marketplace/shared';
 import { apiClient } from '@marketplace/shared';
 import { useBoostOffering } from '../../../api/hooks';
+import { useAuthPrompt } from '../../../stores/useAuthPrompt';
 
 export const useOfferingActions = (offering: Offering | undefined) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const toast = useToastStore();
+  const showAuth = useAuthPrompt((s) => s.show);
   const boostMutation = useBoostOffering();
   const [contacting, setContacting] = useState(false);
 
-  const handleContact = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please login to contact this person');
-      navigate('/login');
-      return;
-    }
+  const startConversation = async () => {
     if (!offering) return;
     try {
       setContacting(true);
@@ -33,6 +30,17 @@ export const useOfferingActions = (offering: Offering | undefined) => {
     } finally {
       setContacting(false);
     }
+  };
+
+  const handleContact = async () => {
+    if (!isAuthenticated) {
+      // Show auth bottom sheet, then start conversation on success
+      showAuth(() => {
+        startConversation();
+      });
+      return;
+    }
+    startConversation();
   };
 
   const handleBoost = async () => {

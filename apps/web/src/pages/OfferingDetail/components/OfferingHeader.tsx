@@ -29,18 +29,18 @@ const OfferingHeader = ({ categoryIcon, categoryLabel, priceDisplay, safePriceTy
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-lg">{categoryIcon}</span>
-          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
+          <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-bold uppercase tracking-wide">
             {categoryLabel}
           </span>
         </div>
         <div className="text-right">
-          <span className="text-xl font-black text-amber-600">{priceDisplay}</span>
+          <span className="text-xl font-black text-amber-600 dark:text-amber-500">{priceDisplay}</span>
           {safePriceType !== 'hourly' && safePriceType !== 'fixed' && (
-            <div className="text-xs text-gray-400 capitalize">{safePriceType}</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 capitalize">{safePriceType}</div>
           )}
         </div>
       </div>
-      <h1 className="text-base font-bold text-gray-900 leading-snug">{safeTitle}</h1>
+      <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">{safeTitle}</h1>
     </div>
   </>
 );

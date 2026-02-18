@@ -45,6 +45,7 @@
   "messageLoading": "Ielādē...",
   "verified": "Verificēts",
   "memberSince": "Dalībnieks kopš {{date}}",
+  "backToProfile": "Atpakaļ uz profilu",
   "tabs": {
     "about": "Par mani",
     "jobs": "Darbi",
@@ -58,6 +59,12 @@
     "sellItem": "Pārdot preci",
     "favorites": "Izlase"
   },
+  "listings": {
+    "comingSoonTitle": "Sludinājumi",
+    "comingSoonBadge": "Drīz",
+    "comingSoonTagline": "Pērc un pārdod tuvumā",
+    "comingSoonDescription": "Drīzumā varēsi ievietot preces pārdošanai tieši no sava profila. Rokdarbi, lietotas lietas un daudz kas cits."
+  },
   "jobsTab": {
     "title": "Mani darbi",
     "titleViewOnly": "Publicētie darbi",
@@ -70,15 +77,15 @@
     "noActiveJobs": "Nav aktīvu publicētu darbu",
     "noJobsPosted": "Vēl nav publicētu darbu",
     "noJobs": "Vēl nav darbu",
-    "postFirstJob": "Publicēt pirmo darbu →",
-    "browseJobs": "Pārlūkot pieejamos darbus →",
+    "postFirstJob": "Publicēt pirmo darbu \u2192",
+    "browseJobs": "Pārlūkot pieejamos darbus \u2192",
     "matchesBanner": "{{count}} no jūsu darbiem ir potenciālie palīdzi tuvumā",
     "applications": "{{count}} pieteikums(-i)!",
-    "reviewApplications": "Pārskatīt →",
+    "reviewApplications": "Pārskatīt \u2192",
     "helpersNearby": "{{count}} palīgs(-i) piedāvā {{category}} tuvumā",
-    "viewMatches": "Skatīt atbilstības →",
-    "confirm": "✓ Apstiprināt",
-    "review": "⭐ Atsauksme",
+    "viewMatches": "Skatīt atbilstības \u2192",
+    "confirm": "\u2713 Apstiprināt",
+    "review": "\u2b50 Atsauksme",
     "view": "Skatīt",
     "edit": "Rediģēt",
     "cancelJob": "Atcelt",
@@ -92,7 +99,7 @@
     "newListing": "+ Jauns sludinājums",
     "noListings": "Vēl nav sludinājumu",
     "noListingsViewOnly": "Nav pieejamu sludinājumu",
-    "createFirst": "Izveidot pirmo sludinājumu →",
+    "createFirst": "Izveidot pirmo sludinājumu \u2192",
     "view": "Skatīt",
     "edit": "Rediģēt",
     "delete": "Dzēst"
@@ -103,9 +110,9 @@
     "newService": "+ Jauns pakalpojums",
     "noServices": "Vēl nav pakalpojumu",
     "noServicesViewOnly": "Nav pieejamu pakalpojumu",
-    "createFirst": "Izveidot pirmo pakalpojumu →",
+    "createFirst": "Izveidot pirmo pakalpojumu \u2192",
     "proTip": "Padoms:",
-    "proTipText": "Jūsu pakalpojumi var parādīties kartē cilvēkiem, kas meklē tuvumā. Kartes redzamība ir premium funkcija, kas drīz būs pieejama!",
+    "proTipText": "Jūsu pakalpojumi var parādīties kartē cilvēkiem, kas meklē tuvumā. Kartes redzāmība ir premium funkcija, kas drīz būs pieejama!",
     "view": "Skatīt",
     "edit": "Rediģēt",
     "delete": "Dzēst"

@@ -1,0 +1,83 @@
+{
+  "hero": {
+    "badge": "Available in Latvia",
+    "title": "Open the map — work is",
+    "titleHighlight": "closer than you think",
+    "subtitle": "Jobs 24/7 in your neighborhood. Find yours right next door. Take a job or offer your own.",
+    "subtitleExtended": " Furniture assembly, apartment cleaning, anything you need today. Start today.",
+    "fast": "Fast",
+    "fastDesc": "Get offers in minutes",
+    "verified": "Verified",
+    "verifiedDesc": "Phone-verified",
+    "verifiedDescFull": "Phone-verified users",
+    "rated": "Rated",
+    "ratedDesc": "Trusted reviews"
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "subtitle": "Whether you need help or want to earn money — it's simple",
+    "needHelp": "Need help?",
+    "wantToEarn": "Want to earn?",
+    "step1Title_help": "Post your task",
+    "step1Desc_help": "Describe what you need help with and set your budget",
+    "step2Title_help": "Get offers",
+    "step2Desc_help": "Local helpers will apply — review their profiles and ratings",
+    "step3Title_help": "Get it done",
+    "step3Desc_help": "Pick your helper, they complete the task, you pay them directly",
+    "step1Title_earn": "Browse the map",
+    "step1Desc_earn": "See tasks posted near you in real-time on the map",
+    "step2Title_earn": "Apply to tasks",
+    "step2Desc_earn": "Found something you can help with? Send your offer",
+    "step3Title_earn": "Earn money",
+    "step3Desc_earn": "Complete tasks, build your reputation, and get paid"
+  },
+  "categories": {
+    "title": "Popular tasks",
+    "subtitle": "People in your area are getting help with...",
+    "petCare": "Pet Care",
+    "petCareDesc": "Walking, sitting",
+    "moving": "Moving",
+    "movingDesc": "Furniture, boxes",
+    "cleaning": "Cleaning",
+    "cleaningDesc": "Home, office",
+    "delivery": "Delivery",
+    "deliveryDesc": "Pick up & drop",
+    "repairs": "Repairs",
+    "repairsDesc": "Handyman tasks",
+    "techHelp": "Tech Help",
+    "techHelpDesc": "Setup, support"
+  },
+  "trust": {
+    "title": "Built on trust",
+    "subtitle": "Your safety and security come first",
+    "phoneVerified": "Phone Verified",
+    "phoneVerifiedDesc": "Every user verifies their phone number — no anonymous accounts",
+    "ratingsReviews": "Ratings & Reviews",
+    "ratingsReviewsDesc": "See real feedback from other users before you decide",
+    "inAppChat": "In-App Chat",
+    "inAppChatDesc": "Communicate directly and securely within the app"
+  },
+  "cta": {
+    "title": "Ready to get started?",
+    "subtitle": "Join your local community and start getting things done today.",
+    "button": "Sign up free"
+  },
+  "login": {
+    "title": "Get Started",
+    "subtitle": "Sign in with your phone number",
+    "phoneLabel": "Phone Number",
+    "sendingCode": "Sending code...",
+    "loading": "Loading...",
+    "continue": "Continue",
+    "browsing": "Just browsing? Explore the map",
+    "or": "or",
+    "emailLogin": "Sign in with email",
+    "otpPrompt": "Enter the 6-digit code sent to",
+    "verifying": "Verifying...",
+    "changePhone": "← Change phone number",
+    "legal": "By continuing, you agree to our",
+    "terms": "Terms",
+    "and": "and",
+    "privacy": "Privacy Policy"
+  }
+}

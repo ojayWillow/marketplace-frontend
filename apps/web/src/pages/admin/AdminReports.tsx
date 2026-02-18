@@ -21,8 +21,8 @@ const AdminReports = () => {
   const toast = useToastStore();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('pending');
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
@@ -32,21 +32,15 @@ const AdminReports = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      try {
-        const response = await apiClient.get('/api/admin/reports', {
-          params: { status: statusFilter }
-        });
-        setReports(response.data.reports);
-      } catch (err) {
-        // Mock data
-        setReports([
-          { id: 1, type: 'user', reason: 'Spam', description: 'User is sending spam messages to multiple people', status: 'pending', reporter_name: 'janis_k', reporter_id: 1, reported_name: 'spam_user', reported_id: 4, target_id: 4, created_at: '2026-01-09T08:30:00' },
-          { id: 2, type: 'job', reason: 'Inappropriate content', description: 'Job posting contains inappropriate language', status: 'pending', reporter_name: 'maria_s', reporter_id: 2, reported_name: 'suspicious_user', reported_id: 8, target_id: 15, created_at: '2026-01-08T14:20:00' },
-          { id: 3, type: 'offering', reason: 'Scam', description: 'This offering looks like a scam - asking for payment upfront', status: 'pending', reporter_name: 'peter_v', reporter_id: 3, reported_name: 'fake_service', reported_id: 9, target_id: 22, created_at: '2026-01-08T10:15:00' },
-          { id: 4, type: 'user', reason: 'Harassment', description: 'User sent threatening messages after I declined their offer', status: 'reviewed', reporter_name: 'liga_m', reporter_id: 6, reported_name: 'rude_user', reported_id: 10, target_id: 10, created_at: '2026-01-07T16:45:00' },
-          { id: 5, type: 'job', reason: 'Duplicate', description: 'Same job posted multiple times', status: 'resolved', reporter_name: 'andris_b', reporter_id: 5, reported_name: 'janis_k', reported_id: 1, target_id: 8, created_at: '2026-01-06T09:00:00' },
-        ]);
-      }
+      setError(null);
+      const response = await apiClient.get('/api/admin/reports', {
+        params: { status: statusFilter }
+      });
+      setReports(response.data.reports || []);
+    } catch (err: any) {
+      console.error('Failed to fetch reports:', err);
+      setError(err.response?.data?.error || 'Failed to load reports. The reports feature may not be set up yet.');
+      setReports([]);
     } finally {
       setLoading(false);
     }
@@ -66,17 +60,8 @@ const AdminReports = () => {
       
       toast.success(actionMessages[action]);
       setReports(reports.map(r => r.id === reportId ? { ...r, status: action === 'dismiss' ? 'dismissed' : 'resolved' } : r));
-      setSelectedReport(null);
-    } catch (err) {
-      const actionMessages = {
-        warn: 'User warned successfully',
-        ban: 'User banned successfully',
-        delete_content: 'Content deleted successfully',
-        dismiss: 'Report dismissed'
-      };
-      toast.success(actionMessages[action]);
-      setReports(reports.map(r => r.id === reportId ? { ...r, status: action === 'dismiss' ? 'dismissed' : 'resolved' } : r));
-      setSelectedReport(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to resolve report');
     } finally {
       setActionLoading(null);
     }
@@ -89,7 +74,7 @@ const AdminReports = () => {
       'offering': { bg: 'bg-amber-100 text-amber-700', icon: '🛠️' },
       'message': { bg: 'bg-purple-100 text-purple-700', icon: '💬' },
     };
-    const style = styles[type];
+    const style = styles[type] || { bg: 'bg-gray-100 text-gray-700', icon: '📋' };
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${style.bg}`}>
         {style.icon} {type}
@@ -105,15 +90,11 @@ const AdminReports = () => {
       'dismissed': 'bg-gray-100 text-gray-700',
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100'}`}>
         {status}
       </span>
     );
   };
-
-  const filteredReports = statusFilter === 'all' 
-    ? reports 
-    : reports.filter(r => r.status === statusFilter);
 
   const pendingCount = reports.filter(r => r.status === 'pending').length;
 
@@ -146,9 +127,6 @@ const AdminReports = () => {
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
-              {status === 'pending' && pendingCount > 0 && (
-                <span className="ml-2 px-1.5 py-0.5 bg-white/20 rounded text-xs">{pendingCount}</span>
-              )}
             </button>
           ))}
         </div>
@@ -160,13 +138,24 @@ const AdminReports = () => {
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
           </div>
-        ) : filteredReports.length === 0 ? (
+        ) : error ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <div className="text-4xl mb-2">⚠️</div>
+            <p className="text-red-600 font-medium">{error}</p>
+            <button
+              onClick={() => fetchReports()}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : reports.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <div className="text-4xl mb-2">✅</div>
             <p className="text-gray-500">No reports to show</p>
           </div>
         ) : (
-          filteredReports.map((report) => (
+          reports.map((report) => (
             <div key={report.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4">

@@ -36,7 +36,7 @@ export const MobileMenu = ({
   return (
     <div 
       id="mobile-menu"
-      className="md:hidden py-4 border-t border-gray-200"
+      className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700"
       role="navigation"
       aria-label="Mobile navigation"
     >
@@ -49,9 +49,6 @@ export const MobileMenu = ({
         </NavLink>
         {isAuthenticated && (
           <>
-            <NavLink to="/favorites" className={navLinkClass} onClick={onClose}>
-              <span className="text-red-500" aria-hidden="true">❤️</span> My Favorites
-            </NavLink>
             <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
               <span aria-hidden="true">💬</span> Messages
               {notifications.unreadMessages > 0 && (
@@ -64,18 +61,18 @@ export const MobileMenu = ({
         )}
       </nav>
       
-      <div className="mt-4 pt-4 border-t border-gray-200">
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <LanguageSwitcher />
         
         <div className="mt-4 flex flex-col space-y-2">
           {isAuthenticated ? (
             <>
               {totalNotifications > 0 && (
-                <div className="px-3 py-2 mb-2 bg-blue-50 rounded-lg" role="status" aria-live="polite">
-                  <p className="text-sm font-medium text-blue-700">
+                <div className="px-3 py-2 mb-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg" role="status" aria-live="polite">
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                     <span aria-hidden="true">🔔</span> You have {totalNotifications} notification{totalNotifications !== 1 ? 's' : ''}
                   </p>
-                  <div className="mt-1 text-xs text-blue-600 space-y-1">
+                  <div className="mt-1 text-xs text-blue-600 dark:text-blue-400 space-y-1">
                     {notifications.acceptedApplications > 0 && (
                       <p>• 🎉 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
                     )}
@@ -94,7 +91,7 @@ export const MobileMenu = ({
               
               <Link
                 to="/profile"
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                 onClick={onClose}
               >
                 {user?.avatar_url || user?.profile_picture_url ? (
@@ -104,8 +101,8 @@ export const MobileMenu = ({
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center" aria-hidden="true">
-                    <span className="text-gray-500 text-sm">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center" aria-hidden="true">
+                    <span className="text-gray-500 dark:text-gray-300 text-sm">
                       {user?.username?.charAt(0).toUpperCase()}
                     </span>
                   </div>

@@ -4,6 +4,7 @@ import Footer from './Footer';
 import MobileBottomNav from './MobileBottomNav';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useAutoPromptPush } from '../../hooks/useAutoPromptPush';
+import AuthBottomSheet from '../AuthBottomSheet';
 
 const Layout = () => {
   const location = useLocation();
@@ -35,18 +36,19 @@ const Layout = () => {
   if (isFullscreenMobilePage) {
     return (
       <div
-        className="flex flex-col bg-gray-50"
+        className="flex flex-col bg-white dark:bg-gray-950"
         style={{ height: '100dvh' }}
       >
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 flex flex-col overflow-hidden"
+          className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-950"
           style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
         >
           <Outlet />
         </main>
         <MobileBottomNav />
+        <AuthBottomSheet />
       </div>
     );
   }
@@ -54,7 +56,7 @@ const Layout = () => {
   // Mobile landing page - has footer (no bottom nav)
   if (isMobile && isLandingPage) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col dark:bg-gray-950">
         <a 
           href="#main-content" 
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -73,6 +75,7 @@ const Layout = () => {
         </main>
         
         <Footer />
+        <AuthBottomSheet />
       </div>
     );
   }
@@ -81,7 +84,7 @@ const Layout = () => {
   // These still get Header + bottom nav + scroll padding
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col dark:bg-gray-950">
         <a 
           href="#main-content" 
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -100,13 +103,14 @@ const Layout = () => {
         </main>
         
         <MobileBottomNav />
+        <AuthBottomSheet />
       </div>
     );
   }
 
   // Desktop layout with footer (no bottom nav)
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col dark:bg-gray-950">
       <a 
         href="#main-content" 
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -125,6 +129,7 @@ const Layout = () => {
       </main>
       
       <Footer />
+      <AuthBottomSheet />
     </div>
   );
 };

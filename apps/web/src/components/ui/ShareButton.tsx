@@ -11,6 +11,7 @@ interface ShareButtonProps {
   categoryEmoji?: string;
   price?: string;
   location?: string;
+  postedDate?: string;
   variant?: 'button' | 'icon';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -30,6 +31,7 @@ const ShareButton = ({
   categoryEmoji,
   price,
   location,
+  postedDate,
   variant = 'button',
   size = 'md',
   className = '',
@@ -46,34 +48,44 @@ const ShareButton = ({
   const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  // Build clean share message (Option C style)
-  const buildShareText = () => {
+  /**
+   * Build share message.
+   * Each detail (price, location, posted date) gets its own line.
+   * @param includeUrl — set false for platforms that auto-append the URL
+   *                     (Telegram, Twitter) to avoid showing it twice.
+   */
+  const buildShareText = (includeUrl = true) => {
     const lines: string[] = [];
 
     // Line 1: emoji + title
     const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
     lines.push(titleLine);
 
-    // Line 2: price · location (compact)
-    const details: string[] = [];
-    if (price) details.push(`\u{1F4B0} ${price}`);
-    if (location) details.push(`\u{1F4CD} ${location}`);
-    if (details.length > 0) {
-      lines.push(details.join('  \u00B7  '));
+    // Blank line after title
+    lines.push('');
+
+    // Each detail on its own line
+    if (price) lines.push(`\u{1F4B0} ${price}`);
+    if (location) lines.push(`\u{1F4CD} ${location}`);
+    if (postedDate) lines.push(`\u{1F552} ${postedDate}`);
+
+    // URL line — only when the platform doesn't add it automatically
+    if (includeUrl) {
+      lines.push('');
+      lines.push(`\u{1F449} ${fullUrl}`);
     }
 
-    // Blank line + URL
-    lines.push('');
-    lines.push(`\u{1F449} ${fullUrl}`);
-
-    // Blank line + tagline
+    // Tagline
     lines.push('');
     lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
 
     return lines.join('\n');
   };
 
-  const shareText = buildShareText();
+  // Full text (with URL) for WhatsApp, copy, etc.
+  const shareText = buildShareText(true);
+  // Text without URL for platforms that auto-append it
+  const shareTextNoUrl = buildShareText(false);
 
   // Open / close with animation
   const openSheet = () => {
@@ -117,8 +129,9 @@ const ShareButton = ({
     closeSheet();
   };
   const shareToTelegram = () => {
+    // Telegram auto-appends the url param as a link, so use text without URL
     window.open(
-      `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareText)}`,
+      `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
       '_blank',
     );
     closeSheet();
@@ -132,8 +145,9 @@ const ShareButton = ({
     closeSheet();
   };
   const shareToTwitter = () => {
+    // Twitter auto-appends the url param, so use text without URL
     window.open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
       '_blank',
       'width=600,height=400',
     );
@@ -225,9 +239,15 @@ const ShareButton = ({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{title}</p>
             {price && (
-              <p className="text-sm font-bold text-green-600 mt-0.5">{price}</p>
+              <p className="text-sm font-bold text-green-600 mt-1">{price}</p>
             )}
-            <p className="text-xs text-gray-400 mt-1 truncate">kolab.lv</p>
+            {location && (
+              <p className="text-xs text-gray-400 mt-0.5 truncate">{`\u{1F4CD}`} {location}</p>
+            )}
+            {postedDate && (
+              <p className="text-xs text-gray-400 mt-0.5">{`\u{1F550}`} {postedDate}</p>
+            )}
+            <p className="text-xs text-gray-300 mt-0.5 truncate">kolab.lv</p>
           </div>
         </div>
       </div>
@@ -286,7 +306,7 @@ const ShareButton = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">More options…</span>
+            <span className="text-sm font-medium text-gray-700">{`More options\u2026`}</span>
           </button>
         )}
       </div>
