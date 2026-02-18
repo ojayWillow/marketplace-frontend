@@ -16,6 +16,8 @@
   "noJobsFound": "No jobs found",
   "noJobsNearby": "No jobs posted nearby yet",
   "noJobsInLatvia": "No jobs posted in Latvia yet",
+  "noJobsAtRadius": "No jobs within {{radius}}km",
+  "tryExpandRadius": "Try increasing your search radius to find more jobs",
   "tryDifferentCategory": "Try a different category or increase the radius",
   "tryDifferentFilters": "Try adjusting your filters",
   "checkBackLater": "Check back later",
@@ -173,6 +175,8 @@
     "noJobs": "No jobs found",
     "noServices": "No services found",
     "noItems": "No jobs or services found",
+    "noJobsAtRadius": "No results within {{radius}}km",
+    "tryExpandRadius": "Try increasing your search radius to find more results",
     "tryClearingFilters": "Try clearing your category filters or check back later.",
     "tryDifferentFilters": "Try different filters or check back later."
   },

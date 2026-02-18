@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import FilterSheet from '../../components/MobileTasksView/components/FilterSheet';
 import { useWorkPage } from './hooks';
 import { MAX_CATEGORIES } from './types';
@@ -16,6 +17,7 @@ import {
 
 const WorkPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const {
     mainTab,
@@ -29,14 +31,35 @@ const WorkPage = () => {
     setShowFilterSheet,
     selectedCategories,
     userLocation,
+    searchRadius,
+    handleRadiusChange,
     handleCategoryToggle,
     handleItemClick,
     handleRetry,
     getCategoryInfo,
+    userChangedRadius,
     myWork,
   } = useWorkPage();
 
   const isMineTab = mainTab === 'mine';
+
+  // Radius-aware empty state
+  const renderRadiusEmptyState = () => {
+    if (userChangedRadius && itemsWithDistance.length === 0 && !initialLoading) {
+      return (
+        <div className="text-center py-8 px-4">
+          <div className="text-3xl mb-2">📍</div>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+            {t('tasks.work.noJobsAtRadius', 'No results within {{radius}}km', { radius: searchRadius })}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('tasks.work.tryExpandRadius', 'Try increasing your search radius to find more results')}
+          </p>
+        </div>
+      );
+    }
+    return <EmptyState mainTab={mainTab} hasFilters={selectedCategories.length > 0} />;
+  };
 
   // Marketplace feed content (shared between mobile and desktop)
   const renderMarketplaceFeed = () => (
@@ -50,7 +73,7 @@ const WorkPage = () => {
       ) : error && items.length === 0 ? (
         <ErrorState error={error} onRetry={handleRetry} />
       ) : itemsWithDistance.length === 0 ? (
-        <EmptyState mainTab={mainTab} hasFilters={selectedCategories.length > 0} />
+        renderRadiusEmptyState()
       ) : (
         <>
           {error && <InlineError error={error} onRetry={handleRetry} />}
@@ -106,8 +129,8 @@ const WorkPage = () => {
         <FilterSheet
           isOpen={showFilterSheet}
           onClose={() => setShowFilterSheet(false)}
-          searchRadius={0}
-          onRadiusChange={() => {}}
+          searchRadius={searchRadius}
+          onRadiusChange={handleRadiusChange}
           selectedCategories={selectedCategories}
           onCategoryToggle={handleCategoryToggle}
           maxCategories={MAX_CATEGORIES}
@@ -141,8 +164,8 @@ const WorkPage = () => {
       <FilterSheet
         isOpen={showFilterSheet}
         onClose={() => setShowFilterSheet(false)}
-        searchRadius={0}
-        onRadiusChange={() => {}}
+        searchRadius={searchRadius}
+        onRadiusChange={handleRadiusChange}
         selectedCategories={selectedCategories}
         onCategoryToggle={handleCategoryToggle}
         maxCategories={MAX_CATEGORIES}

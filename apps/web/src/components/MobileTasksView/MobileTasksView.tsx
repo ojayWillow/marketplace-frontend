@@ -81,6 +81,7 @@ const MobileTasksView = () => {
     handleCategoryToggle,
     initializeFetch,
     refetchAtLocation,
+    userChangedRadius,
     MAX_CATEGORIES,
   } = useTasksData({ userLocation });
 
@@ -179,13 +180,6 @@ const MobileTasksView = () => {
   }, [isFromDeepLink, hasRealLocation, selectedTask, userLocation]);
 
   // --- Recenter button position ---
-  // The sheet is rendered with:
-  //   bottom: navHeight
-  //   height: (getFullHeight() - navHeight)   <-- the actual rendered height
-  //   transform: translateY(currentTranslateY) <-- pushes it down
-  // So visible pixels of the sheet = renderedHeight - translateY
-  // And the top edge of the sheet from screen bottom = navHeight + visiblePixels
-  // We add 8px gap so the button floats just above the sheet.
   const recenterBottom = useMemo(() => {
     const renderedHeight = getFullHeight() - navHeight;
     const visiblePixels = renderedHeight - currentTranslateY;
@@ -246,6 +240,35 @@ const MobileTasksView = () => {
       return;
     }
     setShowCreateModal(true);
+  };
+
+  // --- Empty state for radius filter ---
+  const renderEmptyState = () => {
+    if (userChangedRadius && filteredTasks.length === 0 && !loading) {
+      return (
+        <div className="text-center py-8 px-4">
+          <div className="text-3xl mb-2">📍</div>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+            {t('tasks.noJobsAtRadius', 'No jobs within {{radius}}km', { radius: searchRadius })}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('tasks.tryExpandRadius', 'Try increasing your search radius to find more jobs')}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center py-8 px-4">
+        <div className="text-3xl mb-2">📋</div>
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+          {t('tasks.noJobsFound', 'No jobs found')}
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {t('tasks.tryDifferentCategory', 'Try a different category or increase radius')}
+        </p>
+      </div>
+    );
   };
 
   // --- Render ---
@@ -463,15 +486,7 @@ const MobileTasksView = () => {
                   <SkeletonCard />
                 </div>
               ) : filteredTasks.length === 0 ? (
-                <div className="text-center py-8 px-4">
-                  <div className="text-3xl mb-2">📋</div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                    {t('tasks.noJobsFound', 'No jobs found')}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('tasks.tryDifferentCategory', 'Try a different category or increase radius')}
-                  </p>
-                </div>
+                renderEmptyState()
               ) : (
                 <div>
                   {filteredTasks.map((task) => (
