@@ -120,5 +120,35 @@
     "errorResponseFailed": "Failed to submit response.",
     "underReviewMessage": "🔍 Both sides have been heard. Our team is reviewing this dispute.",
     "waitingResponse": "⏳ Waiting for the other party to respond."
+  },
+  "infoGrid": {
+    "budget": "Budget",
+    "location": "Location",
+    "difficulty": "Difficulty",
+    "posted": "Posted"
+  },
+  "notification": {
+    "dismiss": "Dismiss",
+    "newApplicantsTitle": "You have new applicants!",
+    "newApplicantsSubtitle": "Review applications below and accept the best fit for your job.",
+    "alreadyAssignedTitle": "This job already has a worker assigned",
+    "alreadyAssignedSubtitle": "You previously accepted an applicant for this task.",
+    "gotJobTitle": "You got the job!",
+    "gotJobSubtitle": "Start working on this task. When you are done, mark it as complete below.",
+    "markedDoneTitle": "You marked this task as done",
+    "markedDoneSubtitle": "Waiting for the task owner to confirm completion.",
+    "taskCompleteTitle": "This task is complete!",
+    "taskCompleteLeaveReview": "Great job! You can leave a review below.",
+    "rejectedTitle": "Application not selected",
+    "rejectedSubtitle": "The task owner chose another applicant. Keep looking - there are more jobs available!",
+    "workerDoneTitle": "Worker says the task is done!",
+    "workerDoneSubtitle": "Review the work and confirm completion, or open a dispute if something is not right.",
+    "alreadyConfirmedTitle": "You already confirmed this task",
+    "alreadyConfirmedSubtitle": "This task has been marked as complete. Leave a review below!",
+    "disputedTitle": "This task is under dispute",
+    "disputedSubtitle": "Our team is reviewing the situation. We will update you soon.",
+    "completedTitle": "Task completed!",
+    "completedSubtitle": "This task has been confirmed as done. You can leave a review below.",
+    "disputedReviewSubtitle": "Our team is reviewing the situation and will resolve it shortly."
   }
 }
