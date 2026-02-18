@@ -23,7 +23,8 @@ interface UseTasksDataOptions {
  * - Cached data survives tab switches (staleTime=60s, gcTime=5min)
  * - No spinner for cached data — shows stale content with background refresh
  * - Single API call with comma-separated categories
- * - Backend auto-expands radius via min_results param
+ * - First load: min_results=5 so users always see some jobs
+ * - After user changes radius: min_results=0 → strict filtering, no expansion
  */
 export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   const queryClient = useQueryClient();
@@ -36,6 +37,9 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [effectiveRadius, setEffectiveRadius] = useState<number | null>(null);
   const [radiusExpanded, setRadiusExpanded] = useState(false);
+
+  // Track if user has explicitly changed the radius filter
+  const userChangedRadius = useRef(false);
 
   // Track if initial fetch has been triggered (for location callbacks)
   const hasFetchedInitial = useRef(false);
@@ -57,14 +61,17 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   const tasksQuery = useQuery({
     queryKey,
     queryFn: async () => {
-      const response = await getTasks({
+      const params: Record<string, unknown> = {
         latitude: userLocation.lat,
         longitude: userLocation.lng,
         radius: effectiveRequestRadius,
         status: 'open',
-        min_results: DEFAULT_MIN_RESULTS,
+        // min_results: 0 disables backend auto-expansion (backend defaults to 5 if omitted)
+        min_results: userChangedRadius.current ? 0 : DEFAULT_MIN_RESULTS,
         ...(categoryParam && { category: categoryParam }),
-      });
+      };
+
+      const response = await getTasks(params as Parameters<typeof getTasks>[0]);
 
       // Track backend's effective radius
       if (response.effective_radius != null) {
@@ -134,6 +141,7 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
 
   // Handlers
   const handleRadiusChange = useCallback((newRadius: number) => {
+    userChangedRadius.current = true;
     setSearchRadius(newRadius);
     localStorage.setItem('taskSearchRadius', newRadius.toString());
   }, []);
@@ -164,6 +172,7 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
     refetchAtLocation,
     effectiveRadius,
     radiusExpanded,
+    userChangedRadius: userChangedRadius.current,
     MAX_CATEGORIES,
   };
 };

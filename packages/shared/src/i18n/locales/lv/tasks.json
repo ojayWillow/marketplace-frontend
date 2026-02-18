@@ -16,6 +16,8 @@
   "noJobsFound": "Darbi nav atrasti",
   "noJobsNearby": "Tuvumā vēl nav publicētu darbu",
   "noJobsInLatvia": "Latvijā vēl nav publicētu darbu",
+  "noJobsAtRadius": "Nav darbu {{radius}}km rādiusā",
+  "tryExpandRadius": "Mēģiniet palielināt meklēšanas rādiusu, lai atrastu vairāk darbu",
   "tryDifferentCategory": "Izmēģiniet citu kategoriju vai palielināt rādiusu",
   "tryDifferentFilters": "Mēģiniet pielāgot filtrus",
   "checkBackLater": "Pārbaudiet vēlāk",
@@ -173,6 +175,8 @@
     "noJobs": "Darbi nav atrasti",
     "noServices": "Pakalpojumi nav atrasti",
     "noItems": "Darbi vai pakalpojumi nav atrasti",
+    "noJobsAtRadius": "Nav rezultātu {{radius}}km rādiusā",
+    "tryExpandRadius": "Mēģiniet palielināt meklēšanas rādiusu, lai atrastu vairāk rezultātu",
     "tryClearingFilters": "Mēģiniet noņemt kategoriju filtrus vai atgriezieties vēlāk.",
     "tryDifferentFilters": "Mēģiniet citus filtrus vai atgriezieties vēlāk."
   },

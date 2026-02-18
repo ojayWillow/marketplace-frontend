@@ -7,6 +7,8 @@ import { MainTab, WorkItem, WorkItemWithDistance, MAX_CATEGORIES, LOCATION_TIMEO
 import { mapTask, mapOffering, getErrorMessage } from '../utils';
 import { useMyWork } from '../../../hooks/useMyWork';
 
+const DEFAULT_MIN_RESULTS = 5;
+
 export const useWorkPage = () => {
   const navigate = useNavigate();
 
@@ -18,9 +20,14 @@ export const useWorkPage = () => {
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchRadius, setSearchRadius] = useState(() => {
+    const saved = localStorage.getItem('workSearchRadius');
+    return saved ? parseInt(saved, 10) : 25;
+  });
 
   const fetchVersionRef = useRef(0);
   const hasLoadedOnce = useRef(false);
+  const userChangedRadius = useRef(false);
 
   // My Work data (only fetched when needed)
   const myWork = useMyWork();
@@ -47,7 +54,7 @@ export const useWorkPage = () => {
   }, []);
 
   // Fetch logic — skip when in mine tab
-  const fetchItems = useCallback(async (tab: MainTab, categories: string[]) => {
+  const fetchItems = useCallback(async (tab: MainTab, categories: string[], loc: { lat: number; lng: number } | null, radius: number) => {
     if (tab === 'mine') return; // Mine tab uses its own data source
 
     const version = ++fetchVersionRef.current;
@@ -58,22 +65,43 @@ export const useWorkPage = () => {
     setError(null);
 
     try {
+      const effectiveRadius = radius === 0 ? 500 : radius;
+      // min_results: 0 disables backend auto-expansion (backend defaults to 5 if omitted)
+      const minResults = userChangedRadius.current ? 0 : DEFAULT_MIN_RESULTS;
+
       const fetchJobs = async (): Promise<WorkItem[]> => {
         if (tab === 'services') return [];
-        const baseParams = { status: 'open' as const };
+        const baseParams: Record<string, unknown> = { status: 'open' as const };
+
+        if (loc) {
+          baseParams.latitude = loc.lat;
+          baseParams.longitude = loc.lng;
+          baseParams.radius = effectiveRadius;
+          baseParams.min_results = minResults;
+        }
+
         const response = categories.length === 0
-          ? await getTasks(baseParams)
-          : await Promise.all(categories.map((cat) => getTasks({ ...baseParams, category: cat })))
+          ? await getTasks(baseParams as Parameters<typeof getTasks>[0])
+          : await Promise.all(categories.map((cat) => getTasks({ ...baseParams, category: cat } as Parameters<typeof getTasks>[0])))
               .then((res) => ({ tasks: res.flatMap((r) => r.tasks) }));
         return response.tasks.map(mapTask);
       };
 
       const fetchServices = async (): Promise<WorkItem[]> => {
         if (tab === 'jobs') return [];
-        const baseParams = { status: 'active' as const };
+        const baseParams: Record<string, unknown> = { status: 'active' as const };
+
+        if (loc) {
+          baseParams.latitude = loc.lat;
+          baseParams.longitude = loc.lng;
+          baseParams.radius = effectiveRadius;
+          // Note: offerings backend doesn't support min_results,
+          // but extra query params are harmlessly ignored
+        }
+
         const response = categories.length === 0
-          ? await getOfferings(baseParams)
-          : await Promise.all(categories.map((cat) => getOfferings({ ...baseParams, category: cat })))
+          ? await getOfferings(baseParams as Parameters<typeof getOfferings>[0])
+          : await Promise.all(categories.map((cat) => getOfferings({ ...baseParams, category: cat } as Parameters<typeof getOfferings>[0])))
               .then((res) => ({ offerings: res.flatMap((r) => r.offerings) }));
         return response.offerings.map(mapOffering);
       };
@@ -104,12 +132,12 @@ export const useWorkPage = () => {
     }
   }, []);
 
-  // Fetch on mount and when tab/filters change (but not for mine tab)
+  // Fetch on mount and when tab/filters/radius/location change (but not for mine tab)
   useEffect(() => {
     if (mainTab !== 'mine') {
-      fetchItems(mainTab, selectedCategories);
+      fetchItems(mainTab, selectedCategories, userLocation, searchRadius);
     }
-  }, [mainTab, selectedCategories, fetchItems]);
+  }, [mainTab, selectedCategories, fetchItems, userLocation, searchRadius]);
 
   // Distance computation + sorting
   const itemsWithDistance: WorkItemWithDistance[] = useMemo(() => {
@@ -139,13 +167,19 @@ export const useWorkPage = () => {
     });
   }, []);
 
+  const handleRadiusChange = useCallback((newRadius: number) => {
+    userChangedRadius.current = true;
+    setSearchRadius(newRadius);
+    localStorage.setItem('workSearchRadius', newRadius.toString());
+  }, []);
+
   const handleItemClick = useCallback((item: WorkItem) => {
     navigate(item.type === 'job' ? `/tasks/${item.id}` : `/offerings/${item.id}`);
   }, [navigate]);
 
   const handleRetry = useCallback(() => {
-    fetchItems(mainTab, selectedCategories);
-  }, [fetchItems, mainTab, selectedCategories]);
+    fetchItems(mainTab, selectedCategories, userLocation, searchRadius);
+  }, [fetchItems, mainTab, selectedCategories, userLocation, searchRadius]);
 
   const getCategoryInfo = useCallback((categoryKey: string) => {
     return CATEGORIES.find((c) => c.value === categoryKey) || { icon: '\uD83D\uDCCB', label: categoryKey };
@@ -163,10 +197,13 @@ export const useWorkPage = () => {
     setShowFilterSheet,
     selectedCategories,
     userLocation,
+    searchRadius,
+    handleRadiusChange,
     handleCategoryToggle,
     handleItemClick,
     handleRetry,
     getCategoryInfo,
+    userChangedRadius: userChangedRadius.current,
     // My Work data
     myWork,
   };

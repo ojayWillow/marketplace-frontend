@@ -4,6 +4,7 @@ import { divIcon, type LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAddressSearch } from '../hooks';
 import { GeocodingResult } from '@marketplace/shared';
+import { DEFAULT_LOCATION } from '../../../constants/locations';
 
 interface LocationInputProps {
   location: string;
@@ -104,6 +105,9 @@ const LocationInput = ({
     ? location.split(',').slice(0, 2).join(',').trim()
     : '';
 
+  const effectiveLat = latitude || DEFAULT_LOCATION.lat;
+  const effectiveLng = longitude || DEFAULT_LOCATION.lng;
+
   return (
     <div>
       <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -115,7 +119,7 @@ const LocationInput = ({
         )}
       </label>
 
-      <div className="relative mb-2">
+      <div className="relative mb-2 z-[1000]">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📍</span>
         <input
           type="text"
@@ -132,7 +136,7 @@ const LocationInput = ({
         />
 
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-48 overflow-y-auto">
+          <div className="absolute w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-48 overflow-y-auto">
             {suggestions.map((result, index) => (
               <button
                 key={index}
@@ -150,7 +154,7 @@ const LocationInput = ({
 
       <div className="h-36 sm:h-44 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 relative">
         <MapContainer
-          center={[latitude || 56.9496, longitude || 24.1052]}
+          center={[effectiveLat, effectiveLng]}
           zoom={12}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
@@ -160,9 +164,9 @@ const LocationInput = ({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MapController lat={latitude || 56.9496} lng={longitude || 24.1052} />
+          <MapController lat={effectiveLat} lng={effectiveLng} />
           <Marker
-            position={[latitude || 56.9496, longitude || 24.1052]}
+            position={[effectiveLat, effectiveLng]}
             icon={pinIcon}
             draggable={true}
             eventHandlers={{ dragend: handleMarkerDragEnd }}
