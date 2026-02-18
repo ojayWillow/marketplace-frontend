@@ -1,8 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { useEditTaskForm } from './hooks';
-import { TASK_CATEGORIES, DIFFICULTY_OPTIONS } from './types';
 import { LocationInput, LoadingSpinner, NotFoundState } from './components';
+import { getCategoryByValue } from '../../constants/categories';
+
+const TASK_CATEGORY_VALUES = ['pet-care', 'moving', 'shopping', 'cleaning', 'delivery', 'outdoor', 'handyman', 'tutoring', 'tech-help', 'other'];
+const DIFFICULTY_VALUES = ['easy', 'medium', 'hard'] as const;
 
 const EditTask = () => {
+  const { t } = useTranslation();
   const {
     formData,
     task,
@@ -23,14 +28,14 @@ const EditTask = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8">
       <div className="max-w-3xl mx-auto px-4">
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-gray-900/50 p-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Edit Task</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Update your task details</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('editTask.title', 'Edit Task')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{t('editTask.subtitle', 'Update your task details')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Task Title *
+                {t('editTask.taskTitle', 'Task Title')} *
               </label>
               <input
                 type="text"
@@ -39,7 +44,7 @@ const EditTask = () => {
                 required
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="e.g., Need help moving furniture"
+                placeholder={t('editTask.taskTitlePlaceholder', 'e.g., Need help moving furniture')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
@@ -47,7 +52,7 @@ const EditTask = () => {
             {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description *
+                {t('common.description', 'Description')} *
               </label>
               <textarea
                 id="description"
@@ -56,7 +61,7 @@ const EditTask = () => {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Provide details about what help you need..."
+                placeholder={t('editTask.descriptionPlaceholder', 'Provide details about what help you need...')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
@@ -64,7 +69,7 @@ const EditTask = () => {
             {/* Category */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category *
+                {t('common.category', 'Category')} *
               </label>
               <select
                 id="category"
@@ -74,9 +79,14 @@ const EditTask = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {TASK_CATEGORIES.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
+                {TASK_CATEGORY_VALUES.map(val => {
+                  const cat = getCategoryByValue(val);
+                  return (
+                    <option key={val} value={val}>
+                      {cat?.icon} {t(`tasks.categories.${val}`, cat?.label || val)}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -94,7 +104,7 @@ const EditTask = () => {
             {/* Budget */}
             <div>
               <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Budget (EUR) *
+                {t('editTask.budget', 'Budget (EUR)')} *
               </label>
               <input
                 type="number"
@@ -105,16 +115,16 @@ const EditTask = () => {
                 required
                 value={formData.budget}
                 onChange={handleChange}
-                placeholder="e.g., 25.00"
+                placeholder={t('editTask.budgetPlaceholder', 'e.g., 25.00')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">How much are you willing to pay for this task?</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('editTask.budgetHint', 'How much are you willing to pay for this task?')}</p>
             </div>
 
             {/* Deadline */}
             <div>
               <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Deadline (Optional)
+                {t('editTask.deadline', 'Deadline')} <span className="text-gray-400 dark:text-gray-500 font-normal text-xs">({t('common.optional', 'Optional')})</span>
               </label>
               <input
                 type="datetime-local"
@@ -129,7 +139,7 @@ const EditTask = () => {
             {/* Difficulty */}
             <div>
               <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Difficulty
+                {t('editTask.difficulty', 'Difficulty')}
               </label>
               <select
                 id="difficulty"
@@ -138,8 +148,8 @@ const EditTask = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {DIFFICULTY_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {DIFFICULTY_VALUES.map(val => (
+                  <option key={val} value={val}>{t(`createTask.difficulty${val.charAt(0).toUpperCase() + val.slice(1)}`, val)}</option>
                 ))}
               </select>
             </div>
@@ -151,14 +161,14 @@ const EditTask = () => {
                 disabled={saving}
                 className="flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? t('editTask.saving', 'Saving...') : t('editTask.saveChanges', 'Save Changes')}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/tasks')}
                 className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
             </div>
           </form>
