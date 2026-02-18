@@ -1,7 +1,10 @@
 {
   "rights": "Visas tiesības aizsargātas",
+  "allRightsReserved": "Visas tiesības aizsargātas.",
   "about": "Par mums",
   "terms": "Lietošanas noteikumi",
   "privacy": "Privātuma politika",
-  "contact": "Sazināties ar mums"
+  "contact": "Sazināties ar mums",
+  "location": "Rīga, Latvija",
+  "emailAriaLabel": "Sūtīt e-pastu uz info@kolab.lv"
 }

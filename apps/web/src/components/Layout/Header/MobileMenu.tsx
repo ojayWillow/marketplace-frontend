@@ -50,7 +50,7 @@ export const MobileMenu = ({
         {isAuthenticated && (
           <>
             <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
-              <span aria-hidden="true">💬</span> Messages
+              <span aria-hidden="true">💬</span> {t('menu.messages')}
               {notifications.unreadMessages > 0 && (
                 <span className="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">
                   {notifications.unreadMessages}
@@ -70,20 +70,20 @@ export const MobileMenu = ({
               {totalNotifications > 0 && (
                 <div className="px-3 py-2 mb-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg" role="status" aria-live="polite">
                   <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                    <span aria-hidden="true">🔔</span> You have {totalNotifications} notification{totalNotifications !== 1 ? 's' : ''}
+                    <span aria-hidden="true">🔔</span> {t('header.youHaveNotifications', 'You have {{count}} notification(s)', { count: totalNotifications })}
                   </p>
                   <div className="mt-1 text-xs text-blue-600 dark:text-blue-400 space-y-1">
                     {notifications.acceptedApplications > 0 && (
-                      <p>• 🎉 Assigned to {notifications.acceptedApplications} job{notifications.acceptedApplications !== 1 ? 's' : ''}!</p>
+                      <p>• {t('common.notifications.assignedToJobs', 'You got assigned to {{count}} job(s)!', { count: notifications.acceptedApplications })}</p>
                     )}
                     {notifications.unreadMessages > 0 && (
-                      <p>• {notifications.unreadMessages} unread message{notifications.unreadMessages !== 1 ? 's' : ''}</p>
+                      <p>• {t('common.notifications.newMessages', '{{count}} new message(s)', { count: notifications.unreadMessages })}</p>
                     )}
                     {notifications.pendingApplications > 0 && (
-                      <p>• {notifications.pendingApplications} new application{notifications.pendingApplications !== 1 ? 's' : ''}</p>
+                      <p>• {t('common.notifications.newApplications', '{{count}} new application(s)', { count: notifications.pendingApplications })}</p>
                     )}
                     {notifications.pendingConfirmation > 0 && (
-                      <p>• {notifications.pendingConfirmation} task{notifications.pendingConfirmation !== 1 ? 's' : ''} pending confirmation</p>
+                      <p>• {t('common.notifications.awaitingConfirmation', '{{count}} task(s) awaiting confirmation', { count: notifications.pendingConfirmation })}</p>
                     )}
                   </div>
                 </div>
@@ -107,7 +107,7 @@ export const MobileMenu = ({
                     </span>
                   </div>
                 )}
-                <span>{user?.username} - My Profile</span>
+                <span>{user?.username} - {t('menu.myProfile')}</span>
               </Link>
               <button
                 onClick={() => { onLogout(); onClose(); }}

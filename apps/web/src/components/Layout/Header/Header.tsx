@@ -55,18 +55,6 @@ export default function Header() {
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
-                {/* Favorites Link */}
-                <Link
-                  to="/favorites"
-                  className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
-                  aria-label="My Favorites"
-                  title="My Favorites"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </Link>
-
                 {/* Notification Bell */}
                 <NotificationBell
                   notifications={notifications}
@@ -79,7 +67,7 @@ export default function Header() {
                 <Link
                   to="/messages"
                   className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
-                  aria-label={`Messages${notifications.unreadMessages > 0 ? `, ${notifications.unreadMessages} unread` : ''}`}
+                  aria-label={`${t('menu.messages')}${notifications.unreadMessages > 0 ? `, ${notifications.unreadMessages} ${t('common.notifications.unread', 'unread')}` : ''}`}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -128,7 +116,7 @@ export default function Header() {
             <button
               className="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileMenuOpen ? t('header.closeMenu', 'Close menu') : t('header.openMenu', 'Open menu')}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
             >
