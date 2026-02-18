@@ -119,7 +119,7 @@ const LocationInput = ({
         )}
       </label>
 
-      <div className="relative mb-2">
+      <div className="relative mb-2 z-[1000]">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📍</span>
         <input
           type="text"
@@ -136,7 +136,7 @@ const LocationInput = ({
         />
 
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-48 overflow-y-auto">
+          <div className="absolute w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-48 overflow-y-auto">
             {suggestions.map((result, index) => (
               <button
                 key={index}
