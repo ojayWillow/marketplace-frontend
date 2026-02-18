@@ -7,21 +7,31 @@ interface StarRatingProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   /** Additional CSS classes */
   className?: string;
-  /** Whether to show the numeric rating value */
+  /** Whether to show the numeric rating value next to stars (e.g. "4.2") */
   showValue?: boolean;
-  /** Number of reviews (optional, displayed in parentheses) */
+  /** Number of reviews (optional) */
   reviewCount?: number;
-  /** Whether to show the review count */
+  /** Whether to show the review count — shown as "(3 reviews)" when showValue is true, or "(3)" in compact mode */
   showCount?: boolean;
+  /** Use compact count format "(3)" instead of "(3 reviews)" */
+  compact?: boolean;
 }
 
 /**
- * Renders a star rating display with precise fractional fill using CSS clip-path.
- * For example, a 3.7 rating shows 3 full stars + 1 star filled 70% + 1 empty star.
+ * Unified star rating display with precise fractional fill using CSS clip-path.
+ *
+ * Standard format:  ★★★★☆ 4.2 (3 reviews)
+ * Compact format:   ★★★★☆ 4.2 (3)
  *
  * @example
- * <StarRating rating={3.7} />
- * <StarRating rating={4.5} size="lg" showValue reviewCount={42} />
+ * // Full display
+ * <StarRating rating={4.2} showValue reviewCount={3} showCount />
+ *
+ * // Compact (cards)
+ * <StarRating rating={4.2} size="xs" showValue reviewCount={3} showCount compact />
+ *
+ * // Stars only
+ * <StarRating rating={4.2} />
  */
 const StarRating: React.FC<StarRatingProps> = ({
   rating,
@@ -30,6 +40,7 @@ const StarRating: React.FC<StarRatingProps> = ({
   showValue = false,
   reviewCount,
   showCount = false,
+  compact = false,
 }) => {
   const clampedRating = Math.max(0, Math.min(5, rating));
 
@@ -40,36 +51,40 @@ const StarRating: React.FC<StarRatingProps> = ({
     lg: 'text-2xl',
   };
 
+  const valueSizeClasses: Record<string, string> = {
+    xs: 'text-[10px]',
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+  };
+
   const stars = [];
   for (let i = 0; i < 5; i++) {
     const fill = Math.max(0, Math.min(1, clampedRating - i));
 
     if (fill >= 1) {
-      // Full star
       stars.push(
         <span key={i} className="text-yellow-400">
-          ★
+          \u2605
         </span>
       );
     } else if (fill > 0) {
-      // Fractional star — overlay a clipped filled star on top of an empty star
       const percentage = Math.round(fill * 100);
       stars.push(
         <span key={i} className="relative inline-block">
-          <span className="text-gray-300 dark:text-gray-600">★</span>
+          <span className="text-gray-300 dark:text-gray-600">\u2605</span>
           <span
             className="absolute inset-0 text-yellow-400 overflow-hidden"
             style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
           >
-            ★
+            \u2605
           </span>
         </span>
       );
     } else {
-      // Empty star
       stars.push(
         <span key={i} className="text-gray-300 dark:text-gray-600">
-          ★
+          \u2605
         </span>
       );
     }
@@ -79,14 +94,13 @@ const StarRating: React.FC<StarRatingProps> = ({
     <span className={`inline-flex items-center gap-1 ${className}`}>
       <span className={`inline-flex ${sizeClasses[size]}`}>{stars}</span>
       {showValue && (
-        <span className="text-gray-500 text-sm">
+        <span className={`font-medium text-gray-700 dark:text-gray-300 ${valueSizeClasses[size]}`}>
           {clampedRating.toFixed(1)}
-          {reviewCount !== undefined && ` (${reviewCount} reviews)`}
         </span>
       )}
-      {showCount && !showValue && reviewCount !== undefined && (
-        <span className="text-gray-500 dark:text-gray-400" style={{ fontSize: 'inherit' }}>
-          ({reviewCount})
+      {showCount && reviewCount !== undefined && (
+        <span className={`text-gray-400 dark:text-gray-500 ${valueSizeClasses[size]}`}>
+          {compact ? `(${reviewCount})` : `(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})`}
         </span>
       )}
     </span>

@@ -1,3 +1,5 @@
+import StarRating from '../../components/ui/StarRating';
+
 interface ProfileHeaderProps {
   displayName: string;
   avatarUrl?: string;
@@ -56,27 +58,14 @@ export default function ProfileHeader({
       </div>
 
       {(averageRating != null && reviewsCount != null && reviewsCount > 0) && (
-        <div className="flex items-center gap-1.5 mt-3">
-          <div className="flex items-center">
-            {[1, 2, 3, 4, 5].map(star => (
-              <span
-                key={star}
-                className={`text-lg ${
-                  star <= Math.round(averageRating || 0)
-                    ? 'text-yellow-400'
-                    : 'text-gray-200 dark:text-gray-600'
-                }`}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            {averageRating?.toFixed(1)}
-          </span>
-          <span className="text-sm text-gray-400 dark:text-gray-500">
-            ({reviewsCount} {reviewsCount === 1 ? 'review' : 'reviews'})
-          </span>
+        <div className="mt-3">
+          <StarRating
+            rating={averageRating || 0}
+            size="md"
+            showValue
+            reviewCount={reviewsCount}
+            showCount
+          />
         </div>
       )}
     </div>

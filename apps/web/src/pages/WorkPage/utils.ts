@@ -22,13 +22,6 @@ export const getDifficultyColor = (difficulty?: string): string => {
   return 'text-yellow-600';
 };
 
-export const renderStars = (rating: number): string => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  return '⭐'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
-};
-
 export const mapTask = (task: any): WorkItem => ({
   id: task.id,
   type: 'job',

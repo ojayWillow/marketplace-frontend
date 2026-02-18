@@ -1,6 +1,7 @@
 import { WorkItemWithDistance } from '../types';
-import { formatTimeAgo, getDifficultyColor, renderStars, formatItemDistance } from '../utils';
+import { formatTimeAgo, getDifficultyColor, formatItemDistance } from '../utils';
 import { FEATURES } from '../../../constants/featureFlags';
+import StarRating from '../../../components/ui/StarRating';
 
 interface WorkItemCardProps {
   item: WorkItemWithDistance;
@@ -10,7 +11,7 @@ interface WorkItemCardProps {
 
 /**
  * Strip redundant "URGENT:" prefix from titles since the is_urgent flag
- * already shows a 🔥 badge. Old tasks may have it baked into the title.
+ * already shows a \ud83d\udd25 badge. Old tasks may have it baked into the title.
  */
 const cleanTitle = (title: string): string => {
   return title.replace(/^URGENT:\s*/i, '').trim();
@@ -39,13 +40,13 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{categoryInfo.label}</span>
           {FEATURES.URGENT && item.is_urgent && (
             <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-[10px] font-bold flex-shrink-0 whitespace-nowrap">
-              🔥 Urgent
+              \ud83d\udd25 Urgent
             </span>
           )}
         </div>
         {price && (
           <span className={`text-lg font-bold flex-shrink-0 ${isJob ? 'text-blue-600 dark:text-blue-500' : 'text-amber-600 dark:text-amber-500'}`}>
-            €{price}
+            \u20ac{price}
           </span>
         )}
       </div>
@@ -64,12 +65,14 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
           </span>
           <div className="flex items-center gap-1 text-[11px]">
             {hasReviews ? (
-              <>
-                <span className="text-yellow-500 leading-none flex-shrink-0">
-                  {renderStars(item.creator_rating || 0)}
-                </span>
-                <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">({item.creator_review_count})</span>
-              </>
+              <StarRating
+                rating={item.creator_rating || 0}
+                size="xs"
+                showValue
+                reviewCount={item.creator_review_count}
+                showCount
+                compact
+              />
             ) : (
               <span className="text-gray-400 dark:text-gray-500">New user</span>
             )}
@@ -84,9 +87,9 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
 
       {/* Footer: distance left, difficulty center, time right */}
       <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-50 dark:border-t-gray-800">
-        <span className="text-gray-500 dark:text-gray-400 font-medium flex-1 truncate">📏 {distanceText}</span>
+        <span className="text-gray-500 dark:text-gray-400 font-medium flex-1 truncate">\ud83d\udccf {distanceText}</span>
         <span className={`font-semibold flex-shrink-0 ${difficultyColor}`}>
-          ⚡ {item.difficulty || 'Medium'}
+          \u26a1 {item.difficulty || 'Medium'}
         </span>
         <span className="text-gray-400 dark:text-gray-500 flex-1 text-right flex-shrink-0">{timeAgo}</span>
       </div>

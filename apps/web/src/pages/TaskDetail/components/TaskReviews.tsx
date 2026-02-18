@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '@marketplace/shared';
 import { useToastStore } from '@marketplace/shared';
 import { Review, CanReviewResponse } from '@marketplace/shared';
+import StarRating from '../../../components/ui/StarRating';
 
 const MIN_REVIEW_LENGTH = 10;
 
@@ -64,27 +65,25 @@ export const TaskReviews = ({
     }
   };
 
-  const renderStars = (rating: number, interactive = false) => {
-    const displayRating = interactive ? (hoverRating || reviewRating) : rating;
-    
+  /** Interactive star picker for submitting a review (whole stars only) */
+  const renderInteractiveStars = () => {
+    const displayRating = hoverRating || reviewRating;
     return (
       <div className="flex items-center">
         {[1, 2, 3, 4, 5].map(star => (
           <button
             key={star}
             type="button"
-            disabled={!interactive}
-            onClick={() => interactive && setReviewRating(star)}
-            onMouseEnter={() => interactive && setHoverRating(star)}
-            onMouseLeave={() => interactive && setHoverRating(0)}
-            className={`text-xl ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'} ${
+            onClick={() => setReviewRating(star)}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={() => setHoverRating(0)}
+            className={`text-xl cursor-pointer hover:scale-110 transition-transform ${
               star <= displayRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
             }`}
           >
-            ★
+            \u2605
           </button>
         ))}
-        {!interactive && rating && <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({rating.toFixed(1)})</span>}
       </div>
     );
   };
@@ -92,7 +91,7 @@ export const TaskReviews = ({
   return (
     <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md p-6">
       <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-4 flex items-center gap-2">
-        ⭐ {t('reviews.title')}
+        \u2b50 {t('reviews.title')}
         {reviews.length > 0 && (
           <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({reviews.length})</span>
         )}
@@ -106,7 +105,7 @@ export const TaskReviews = ({
               className="w-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 rounded-lg p-4 text-center hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
             >
               <span className="font-medium text-yellow-700 dark:text-yellow-400">
-                ⭐ {t('reviews.leaveReviewFor', { name: canReview.reviewee?.username })}
+                \u2b50 {t('reviews.leaveReviewFor', { name: canReview.reviewee?.username })}
               </span>
             </button>
           ) : (
@@ -117,7 +116,7 @@ export const TaskReviews = ({
               
               <div className="mb-3">
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">{t('reviews.rating')}</label>
-                {renderStars(reviewRating, true)}
+                {renderInteractiveStars()}
               </div>
 
               <div className="mb-3">
@@ -157,7 +156,7 @@ export const TaskReviews = ({
                         : 'text-gray-400 dark:text-gray-500'
                   }`}>
                     {contentLength}/{MIN_REVIEW_LENGTH}
-                    {isContentValid && ' ✓'}
+                    {isContentValid && ' \u2713'}
                   </span>
                 </div>
               </div>
@@ -190,14 +189,14 @@ export const TaskReviews = ({
       {canReview && !canReview.can_review && canReview.existing_review && (
         <div className="mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 rounded-lg p-3">
           <p className="text-green-700 dark:text-green-400 flex items-center gap-2 text-sm">
-            <span>✅</span> {t('reviews.alreadyReviewed')}
+            <span>\u2705</span> {t('reviews.alreadyReviewed')}
           </p>
         </div>
       )}
 
       {reviews.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <span className="text-4xl mb-2 block">💬</span>
+          <span className="text-4xl mb-2 block">\ud83d\udcac</span>
           <p className="text-gray-500 dark:text-gray-400">{t('reviews.noReviews')}</p>
         </div>
       ) : (
@@ -227,16 +226,7 @@ export const TaskReviews = ({
                     >
                       {review.reviewer?.username || 'Unknown'}
                     </Link>
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <span
-                          key={star}
-                          className={`text-sm ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
+                    <StarRating rating={review.rating} size="sm" />
                   </div>
 
                   {review.content && (
