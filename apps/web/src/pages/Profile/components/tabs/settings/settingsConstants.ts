@@ -31,29 +31,50 @@ export const themeOptions = [
   },
 ];
 
+// All categories used across both tasks and offerings.
+// Task-creation categories: pet-care, moving, shopping, cleaning, delivery,
+//   outdoor, handyman, tutoring, tech-help, other
+// Offering-specific categories: assembly, plumbing, electrical, painting,
+//   care, tech, beauty, events
 export const TASK_CATEGORIES = [
-  'pet-care',
-  'moving',
-  'shopping',
   'cleaning',
-  'delivery',
-  'outdoor',
   'handyman',
+  'delivery',
+  'moving',
+  'outdoor',
+  'pet-care',
   'tutoring',
   'tech-help',
+  'shopping',
+  'assembly',
+  'plumbing',
+  'electrical',
+  'painting',
+  'care',
+  'tech',
+  'beauty',
+  'events',
   'other',
 ] as const;
 
 export const CATEGORY_ICONS: Record<string, string> = {
-  'pet-care': '🐕',
-  'moving': '📦',
-  'shopping': '🛒',
   'cleaning': '🧹',
-  'delivery': '🚗',
-  'outdoor': '🌿',
   'handyman': '🔧',
+  'delivery': '🚗',
+  'moving': '📦',
+  'outdoor': '🌿',
+  'pet-care': '🐕',
   'tutoring': '📚',
   'tech-help': '💻',
+  'shopping': '🛒',
+  'assembly': '🪑',
+  'plumbing': '🔩',
+  'electrical': '⚡',
+  'painting': '🎨',
+  'care': '❤️',
+  'tech': '🖥️',
+  'beauty': '💇',
+  'events': '🎉',
   'other': '📋',
 };
 
