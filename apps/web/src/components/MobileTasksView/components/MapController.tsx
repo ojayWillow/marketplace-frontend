@@ -41,6 +41,7 @@ const MapController = ({
   const isSettingView = useRef(false);
   const hasFitBothPoints = useRef(false);
   const hasHandledSelectedTask = useRef(false);
+  const prevRadius = useRef(radius);
 
   // --- Persist viewport on every map move/zoom ---
   useEffect(() => {
@@ -73,8 +74,6 @@ const MapController = ({
   }, [map, store]);
 
   // --- Fit map to show both user + job (shared link + real GPS) ---
-  // Fires when fitBothPoints becomes available (may be immediate or late
-  // if GPS arrives after the initial render).
   useEffect(() => {
     if (!fitBothPoints) return;
     if (hasFitBothPoints.current) return;
@@ -87,8 +86,6 @@ const MapController = ({
       [fitBothPoints.taskLat, fitBothPoints.taskLng]
     );
 
-    // JobPreviewCard: maxHeight 55vh, sits above nav (56px + safe area).
-    // Total obscured area ≈ 60% of screen height from bottom.
     const mapContainer = map.getContainer();
     const mapHeight = mapContainer.offsetHeight;
     const bottomPadding = Math.round(mapHeight * 0.62);
@@ -112,13 +109,15 @@ const MapController = ({
   }, [isMenuOpen, sheetPosition, map]);
 
   // Handle radius changes and recenter.
-  // SKIP when deep link is active — the fitBothPoints or selectedTask
-  // effect handles positioning. Without this guard, GPS arriving late
-  // changes lat/lng props and this effect would recenter on the user,
-  // overriding the deep link view.
   useEffect(() => {
     if (isFromDeepLink) return;
-    if (store.mapCenter && store.mapZoom && !recenterTrigger) return;
+
+    const radiusChanged = prevRadius.current !== radius;
+    prevRadius.current = radius;
+
+    // Only respect the persisted viewport guard when radius hasn't changed.
+    // If radius changed, the user explicitly asked to see a different area.
+    if (!radiusChanged && store.mapCenter && store.mapZoom && !recenterTrigger) return;
 
     isSettingView.current = true;
     if (radius === 0) {
@@ -135,8 +134,7 @@ const MapController = ({
     setTimeout(() => { isSettingView.current = false; }, 200);
   }, [lat, lng, radius, map, recenterTrigger, isFromDeepLink]);
 
-  // Pan to selected task (normal marker tap or deep link without GPS).
-  // When fitBothPoints handled positioning, skip this.
+  // Pan to selected task
   useEffect(() => {
     if (!selectedTask) return;
     if (hasFitBothPoints.current) return;
@@ -149,12 +147,9 @@ const MapController = ({
     isSettingView.current = true;
     map.invalidateSize();
 
-    // Deep link without GPS: zoom tighter to emphasise the job
     const zoom = isFromDeepLink ? 15 : 14;
     map.setView([taskLat, taskLng], zoom, { animate: false });
 
-    // Pan marker into the visible area above the preview card.
-    // Card covers ~60% from bottom, so place marker at ~18% from top.
     setTimeout(() => {
       const mapContainer = map.getContainer();
       const mapHeight = mapContainer.offsetHeight;
