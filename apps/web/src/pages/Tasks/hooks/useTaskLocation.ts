@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserLocation, LocationType } from '@marketplace/shared';
+import { DEFAULT_LOCATION } from '../../../constants/locations';
 
-// Default location: Riga, Latvia
-const DEFAULT_LOCATION: UserLocation = { lat: 56.9496, lng: 24.1052 };
 // Reduced timeout from 5s to 3s for faster page load
 const LOCATION_TIMEOUT_MS = 3000;
 // localStorage key for cached location
