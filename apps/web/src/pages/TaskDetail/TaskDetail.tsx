@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -17,13 +17,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
-import { TaskApplication, getTaskApplications } from '@marketplace/shared';
-import { getOfferings, Offering } from '@marketplace/shared';
 import { useTask, useApplyToTask } from '../../api/hooks';
 import { useAuthStore } from '@marketplace/shared';
 import { useToastStore } from '@marketplace/shared';
 import { getCategoryLabel, getCategoryIcon } from '../../constants/categories';
-import { apiClient } from '@marketplace/shared';
 import SEOHead from '../../components/ui/SEOHead';
 import ShareButton from '../../components/ui/ShareButton';
 import { FEATURES } from '../../constants/featureFlags';
@@ -40,9 +37,10 @@ import {
   ReviewSheet,
   DisputeSheet,
   DisputeSection,
+  TaskStatusBanner,
+  DesktopApplicationForm,
 } from './components';
-import { useTaskActions } from './hooks';
-import { Review, CanReviewResponse } from './types';
+import { useTaskActions, useTaskDetailData } from './hooks';
 
 // StarRating: only shows filled stars (+ optional half), no empty stars
 const StarRating = ({ rating }: { rating: number }) => {
@@ -85,36 +83,31 @@ const TaskDetail = () => {
   const { data: task, isLoading: loading, refetch: refetchTask } = useTask(Number(id));
   const applyMutation = useApplyToTask();
 
-  // Local state
-  const [applications, setApplications] = useState<TaskApplication[]>([]);
-  const [applicationsLoading, setApplicationsLoading] = useState(false);
+  // Extracted data hook
+  const {
+    applications,
+    applicationsLoading,
+    fetchApplications,
+    recommendedHelpers,
+    helpersLoading,
+    reviews,
+    canReview,
+    fetchReviews,
+    checkCanReview,
+  } = useTaskDetailData({
+    taskId: Number(id),
+    task,
+    userId: user?.id,
+    isAuthenticated,
+  });
+
+  // Local UI state
   const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [showDisputeSheet, setShowDisputeSheet] = useState(false);
-  const [disputeKey, setDisputeKey] = useState(0); // Force re-fetch disputes
+  const [disputeKey, setDisputeKey] = useState(0);
 
-  // Recommended helpers state
-  const [recommendedHelpers, setRecommendedHelpers] = useState<Offering[]>([]);
-  const [helpersLoading, setHelpersLoading] = useState(false);
-
-  // Review state
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
-
-  // Fetch applications
-  const fetchApplications = async () => {
-    try {
-      setApplicationsLoading(true);
-      const response = await getTaskApplications(Number(id));
-      setApplications(response.applications || []);
-    } catch (error) {
-      console.error('Error fetching applications:', error);
-    } finally {
-      setApplicationsLoading(false);
-    }
-  };
-
-  // Task actions hook — with review and dispute callbacks
+  // Task actions hook
   const {
     actionLoading,
     acceptingId,
@@ -133,70 +126,9 @@ const TaskDetail = () => {
     refetchTask,
     fetchApplications,
     isAuthenticated,
-    onTaskCompleted: () => {
-      // Open the review sheet right after confirming completion
-      setShowReviewSheet(true);
-    },
-    onOpenDispute: () => {
-      setShowDisputeSheet(true);
-    },
+    onTaskCompleted: () => setShowReviewSheet(true),
+    onOpenDispute: () => setShowDisputeSheet(true),
   });
-
-  // Fetch recommended helpers
-  const fetchRecommendedHelpers = async () => {
-    if (!task || !task.latitude || !task.longitude) return;
-    try {
-      setHelpersLoading(true);
-      const response = await getOfferings({
-        category: task.category,
-        latitude: task.latitude,
-        longitude: task.longitude,
-        radius: 50,
-        status: 'active',
-        per_page: 6
-      });
-      const filtered = (response.offerings || []).filter(o => o.creator_id !== task.creator_id);
-      setRecommendedHelpers(filtered);
-    } catch (error) {
-      console.error('Error fetching recommended helpers:', error);
-    } finally {
-      setHelpersLoading(false);
-    }
-  };
-
-  // Fetch reviews
-  const fetchReviews = async () => {
-    try {
-      const response = await apiClient.get(`/api/reviews/task/${id}`);
-      setReviews(response.data.reviews || []);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-    }
-  };
-
-  // Check if user can review
-  const checkCanReview = async () => {
-    try {
-      const response = await apiClient.get(`/api/reviews/task/${id}/can-review`);
-      setCanReview(response.data);
-    } catch (error) {
-      console.error('Error checking review status:', error);
-    }
-  };
-
-  // Effects
-  useEffect(() => {
-    if (task && user?.id === task.creator_id && task.status === 'open') {
-      fetchApplications();
-      fetchRecommendedHelpers();
-    }
-    if (task && task.status === 'completed') {
-      fetchReviews();
-      if (isAuthenticated) {
-        checkCanReview();
-      }
-    }
-  }, [task, user, isAuthenticated]);
 
   // Handle apply to task
   const handleApplyTask = (applicationMessage: string) => {
@@ -235,7 +167,6 @@ const TaskDetail = () => {
   const getRevieweeName = (): string => {
     if (!task) return '';
     const isCreator = user?.id === task.creator_id;
-    // Creator reviews the worker, worker reviews the creator
     if (isCreator) return task.assigned_to_name || t('taskDetail.theWorker');
     return task.creator_name || t('taskDetail.theJobOwner');
   };
@@ -281,9 +212,7 @@ const TaskDetail = () => {
   const budget = task.budget || task.reward || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
   const seoDescription = `${categoryLabel} ${t('taskDetail.jobSuffix')}${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` ${t('taskDetail.seoIn', { location: task.location })}` : ''}. ${task.description?.substring(0, 100)}...`;
-  // Relative time for share messages ("3 days ago")
   const postedDateRelative = task.created_at ? formatTimeAgoLong(task.created_at) : '';
-  // Absolute date for the info bar on the detail page ("Feb 4")
   const postedDateAbsolute = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
@@ -329,7 +258,7 @@ const TaskDetail = () => {
         {/* Main card */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
 
-          {/* ===== DESKTOP HEADER: gradient banner ===== */}
+          {/* ===== DESKTOP HEADER ===== */}
           <div className="hidden md:block bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 text-white">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -346,7 +275,7 @@ const TaskDetail = () => {
             <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
           </div>
 
-          {/* ===== MOBILE HEADER: compact inline ===== */}
+          {/* ===== MOBILE HEADER ===== */}
           <div className="md:hidden p-4 pb-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -481,67 +410,21 @@ const TaskDetail = () => {
 
           {/* Desktop inline application form */}
           {showApplicationSheet && canApply && (
-            <div className="hidden md:block mx-6 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">{t('taskDetail.applyForJob')}</h3>
-              <textarea
-                id="desktop-apply-textarea"
-                placeholder={t('taskDetail.applyPlaceholder')}
-                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    const textarea = document.getElementById('desktop-apply-textarea') as HTMLTextAreaElement;
-                    handleApplyTask(textarea?.value || '');
-                  }}
-                  disabled={applyMutation.isPending}
-                  className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
-                >
-                  {applyMutation.isPending ? t('taskDetail.submitting') : t('taskDetail.submitApplication')}
-                </button>
-                <button
-                  onClick={() => setShowApplicationSheet(false)}
-                  className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium text-sm"
-                >
-                  {t('taskDetail.cancel')}
-                </button>
-              </div>
-            </div>
+            <DesktopApplicationForm
+              onSubmit={handleApplyTask}
+              onCancel={() => setShowApplicationSheet(false)}
+              isSubmitting={applyMutation.isPending}
+            />
           )}
 
-          {/* Status Messages */}
-          {isCreator && task.status === 'assigned' && (
-            <div className="mx-4 mb-4 md:mx-6 text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusWaitingWorker')}
-            </div>
-          )}
-          {isAssigned && task.status === 'assigned' && (
-            <div className="mx-4 mb-4 md:mx-6 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusAssignedToYou')}
-            </div>
-          )}
-          {isCreator && task.status === 'pending_confirmation' && (
-            <div className="mx-4 mb-4 md:mx-6 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusWorkerDone')}
-            </div>
-          )}
-          {isAssigned && task.status === 'pending_confirmation' && (
-            <div className="mx-4 mb-4 md:mx-6 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusWaitingConfirmation')}
-            </div>
-          )}
-          {task.status === 'completed' && (
-            <div className="mx-4 mb-4 md:mx-6 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusCompleted')}
-            </div>
-          )}
-          {task.status === 'cancelled' && (
-            <div className="mx-4 mb-4 md:mx-6 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusCancelled')}
-            </div>
-          )}
+          {/* Status banners */}
+          <TaskStatusBanner
+            status={task.status}
+            isCreator={isCreator}
+            isAssigned={isAssigned}
+          />
 
-          {/* Dispute details section (replaces the old simple banner) */}
+          {/* Dispute details section */}
           {task.status === 'disputed' && (isCreator || isAssigned) && (
             <DisputeSection
               key={disputeKey}
@@ -552,13 +435,6 @@ const TaskDetail = () => {
                 setDisputeKey(prev => prev + 1);
               }}
             />
-          )}
-
-          {/* Disputed status banner for non-involved users */}
-          {task.status === 'disputed' && !isCreator && !isAssigned && (
-            <div className="mx-4 mb-4 md:mx-6 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              {t('taskDetail.statusDisputed')}
-            </div>
           )}
 
           {/* Desktop inline action button */}
@@ -589,7 +465,7 @@ const TaskDetail = () => {
           />
         )}
 
-        {/* Reviews (the ONLY place with a "Leave a review" button now) */}
+        {/* Reviews */}
         {task.status === 'completed' && (
           <TaskReviews
             taskId={Number(id)}
@@ -614,7 +490,7 @@ const TaskDetail = () => {
         />
       </div>
 
-      {/* Review bottom sheet (mobile + desktop) */}
+      {/* Review bottom sheet */}
       <ReviewSheet
         isOpen={showReviewSheet}
         onClose={() => {
@@ -631,7 +507,7 @@ const TaskDetail = () => {
         revieweeName={getRevieweeName()}
       />
 
-      {/* Dispute bottom sheet (mobile + desktop) */}
+      {/* Dispute bottom sheet */}
       <DisputeSheet
         isOpen={showDisputeSheet}
         onClose={() => setShowDisputeSheet(false)}
