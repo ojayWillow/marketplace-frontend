@@ -24,6 +24,9 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> =
   [NotificationType.TASK_MARKED_DONE]: { icon: '📋', color: 'text-amber-600', bg: 'bg-amber-50' },
   [NotificationType.TASK_COMPLETED]: { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' },
   [NotificationType.TASK_DISPUTED]: { icon: '⚠️', color: 'text-red-600', bg: 'bg-red-50' },
+  [NotificationType.REVIEW_REMINDER]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  [NotificationType.TASK_CANCELLED]: { icon: '❌', color: 'text-red-600', bg: 'bg-red-50' },
+  [NotificationType.NEW_REVIEW]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50' },
 };
 
 const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50' };
@@ -76,23 +79,31 @@ const getNotificationTitle = (n: Notification, t: (key: string, fallback: string
 
   switch (n.type) {
     case NotificationType.NEW_APPLICATION:
-      return t('notifications.newApplication', 'New application for "{{task}}"', { task: taskTitle });
+      return t('common.notifications.newApplication', 'New application for "{{task}}"', { task: taskTitle });
     case NotificationType.APPLICATION_ACCEPTED:
-      return t('notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task: taskTitle });
+      return t('common.notifications.applicationAccepted', 'You were accepted for "{{task}}"', { task: taskTitle });
     case NotificationType.APPLICATION_REJECTED:
-      return t('notifications.applicationRejected', 'Update on "{{task}}"', { task: taskTitle });
+      return t('common.notifications.applicationRejected', 'Update on "{{task}}"', { task: taskTitle });
     case NotificationType.TASK_MARKED_DONE:
-      return t('notifications.taskMarkedDone', '"{{task}}" marked as done', { task: taskTitle });
+      return t('common.notifications.taskMarkedDone', '"{{task}}" marked as done', { task: taskTitle });
     case NotificationType.TASK_COMPLETED:
-      return t('notifications.taskCompleted', '"{{task}}" completed!', { task: taskTitle });
+      return t('common.notifications.taskCompleted', '"{{task}}" completed!', { task: taskTitle });
     case NotificationType.TASK_DISPUTED: {
       if (n.title === 'Dispute Resolved') {
-        return t('notifications.disputeResolved', 'Dispute resolved for "{{task}}"', { task: taskTitle });
+        return t('common.notifications.disputeResolved', 'Dispute resolved for "{{task}}"', { task: taskTitle });
       }
       if (n.title === 'Dispute Response Received') {
-        return t('notifications.disputeResponse', 'Response received on dispute for "{{task}}"', { task: taskTitle });
+        return t('common.notifications.disputeResponse', 'Response received on dispute for "{{task}}"', { task: taskTitle });
       }
-      return t('notifications.taskDisputed', 'Dispute on "{{task}}"', { task: taskTitle });
+      return t('common.notifications.taskDisputed', 'Dispute on "{{task}}"', { task: taskTitle });
+    }
+    case NotificationType.REVIEW_REMINDER:
+      return t('common.notifications.reviewReminder', 'Leave a review for "{{task}}"', { task: taskTitle });
+    case NotificationType.TASK_CANCELLED:
+      return t('common.notifications.taskCancelled', '"{{task}}" was cancelled', { task: taskTitle });
+    case NotificationType.NEW_REVIEW: {
+      const rating = n.data?.rating || 5;
+      return t('common.notifications.newReview', 'New {{rating}}-star review for "{{task}}"', { task: taskTitle, rating });
     }
     default:
       return n.title || n.message;
@@ -189,7 +200,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-gray-900">
-              🔔 {t('notifications.title', 'Notifications')}
+              🔔 {t('common.notifications.title', 'Notifications')}
             </h2>
             {unreadCount > 0 && (
               <span className="min-w-[22px] h-[22px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
@@ -203,13 +214,13 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
                 onClick={handleMarkAllRead}
                 className="text-xs text-blue-600 font-medium hover:text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
               >
-                {t('notifications.markAllRead', 'Mark all read')}
+                {t('common.notifications.markAllRead', 'Mark all read')}
               </button>
             )}
             <button
               onClick={onClose}
               className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label={t('close', 'Close')}
+              aria-label={t('common.close', 'Close')}
             >
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -241,10 +252,10 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             <div className="text-center py-12 px-4">
               <div className="text-4xl mb-3">🔔</div>
               <h3 className="font-semibold text-gray-900 mb-1">
-                {t('notifications.empty', 'No notifications yet')}
+                {t('common.notifications.empty', 'No notifications yet')}
               </h3>
               <p className="text-sm text-gray-500">
-                {t('notifications.emptyDesc', "You'll see updates about your tasks and applications here")}
+                {t('common.notifications.emptyDesc', "You'll see updates about your tasks and applications here")}
               </p>
             </div>
           ) : (
@@ -254,7 +265,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
                 <>
                   <div className="px-4 pt-3 pb-1">
                     <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                      {t('notifications.today', 'Today')}
+                      {t('common.notifications.today', 'Today')}
                     </span>
                   </div>
                   {todayNotifications.map((n) => (
@@ -274,7 +285,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
                 <>
                   <div className="px-4 pt-3 pb-1">
                     <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                      {t('notifications.earlier', 'Earlier')}
+                      {t('common.notifications.earlier', 'Earlier')}
                     </span>
                   </div>
                   {earlierNotifications.map((n) => (

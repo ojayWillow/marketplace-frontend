@@ -10,6 +10,9 @@ export enum NotificationType {
   TASK_MARKED_DONE = 'task_marked_done',
   TASK_COMPLETED = 'task_completed',
   TASK_DISPUTED = 'task_disputed',
+  REVIEW_REMINDER = 'review_reminder',
+  TASK_CANCELLED = 'task_cancelled',
+  NEW_REVIEW = 'new_review',
 }
 
 // Data fields that can be included in notifications for i18n interpolation
@@ -17,7 +20,10 @@ export interface NotificationData {
   task_title?: string;
   applicant_name?: string;
   worker_name?: string;
+  reviewer_name?: string;
+  other_party_name?: string;
   is_creator?: boolean;
+  rating?: number;
 }
 
 export interface Notification {
@@ -91,10 +97,10 @@ export const markAllAsRead = async (): Promise<void> => {
 
 /**
  * Mark notifications by type as read
- * @param type - 'accepted_applications' | 'new_applications' | 'task_marked_done' | 'task_completed' | 'all'
+ * @param type - 'accepted_applications' | 'new_applications' | 'task_marked_done' | 'task_completed' | 'review_reminder' | 'task_cancelled' | 'new_review' | 'all'
  */
 export const markReadByType = async (
-  type: 'accepted_applications' | 'new_applications' | 'task_marked_done' | 'task_completed' | 'all'
+  type: 'accepted_applications' | 'new_applications' | 'task_marked_done' | 'task_completed' | 'review_reminder' | 'task_cancelled' | 'new_review' | 'all'
 ): Promise<{ updated_count: number }> => {
   const response = await apiClient.post('/api/notifications/mark-read', { type });
   return response.data;

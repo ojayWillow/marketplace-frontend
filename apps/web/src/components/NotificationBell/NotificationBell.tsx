@@ -25,8 +25,8 @@ export const NotificationBell = () => {
   }, [isOpen]);
 
   const bellAriaLabel = unreadCount > 0
-    ? t('notifications.bellLabelUnread', 'Notifications ({{count}} unread)', { count: unreadCount })
-    : t('notifications.bellLabel', 'Notifications');
+    ? t('common.notifications.bellLabelUnread', 'Notifications ({{count}} unread)', { count: unreadCount })
+    : t('common.notifications.bellLabel', 'Notifications');
 
   return (
     <>

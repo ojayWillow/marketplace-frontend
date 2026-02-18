@@ -63,7 +63,7 @@
     "newWillAppear": "Новые уведомления появятся здесь",
     "browseTasks": "Просмотрите задания, чтобы помочь другим",
     "assignedToJobs": "Вас назначили на {{count}} задание(-ий)!",
-    "applicationAccepted": "Ваша заявка принята",
+    "applicationAccepted": "Вас приняли на \"{{task}}\"",
     "newMessages": "{{count}} новое(-ых) сообщение(-ий)",
     "clickToView": "Нажмите, чтобы просмотреть сообщения",
     "newApplications": "{{count}} новая(-ых) заявка(-ок)",
@@ -83,6 +83,9 @@
     "taskDisputed": "Спор по \"{{task}}\"",
     "disputeResolved": "Спор разрешён для \"{{task}}\"",
     "disputeResponse": "Получен ответ на спор по \"{{task}}\"",
+    "reviewReminder": "Оставьте отзыв о \"{{task}}\"",
+    "taskCancelled": "\"{{task}}\" отменено",
+    "newReview": "Новый отзыв на {{rating}} звёзд за \"{{task}}\"",
     "bellLabel": "Уведомления",
     "bellLabelUnread": "Уведомления ({{count}} непрочитанных)"
   },

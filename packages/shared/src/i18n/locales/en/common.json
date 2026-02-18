@@ -63,7 +63,7 @@
     "newWillAppear": "New notifications will appear here",
     "browseTasks": "Browse tasks to help others",
     "assignedToJobs": "You got assigned to {{count}} job(s)!",
-    "applicationAccepted": "Your application was accepted",
+    "applicationAccepted": "You were accepted for \"{{task}}\"",
     "newMessages": "{{count}} new message(s)",
     "clickToView": "Click to view your messages",
     "newApplications": "{{count}} new application(s)",
@@ -83,6 +83,9 @@
     "taskDisputed": "Dispute on \"{{task}}\"",
     "disputeResolved": "Dispute resolved for \"{{task}}\"",
     "disputeResponse": "Response received on dispute for \"{{task}}\"",
+    "reviewReminder": "Leave a review for \"{{task}}\"",
+    "taskCancelled": "\"{{task}}\" was cancelled",
+    "newReview": "New {{rating}}-star review for \"{{task}}\"",
     "bellLabel": "Notifications",
     "bellLabelUnread": "Notifications ({{count}} unread)"
   },

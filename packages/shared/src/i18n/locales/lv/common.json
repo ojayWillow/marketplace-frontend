@@ -63,7 +63,7 @@
     "newWillAppear": "Jauni paziņojumi parādīsies šeit",
     "browseTasks": "Pārlūko uzdevumus, lai palīdzētu citiem",
     "assignedToJobs": "Tev piešķīra {{count}} darbu(-s)!",
-    "applicationAccepted": "Tavs pieteikums tika pieņemts",
+    "applicationAccepted": "Tevi pieņēma darbam \"{{task}}\"",
     "newMessages": "{{count}} jauna(-s) ziņa(-s)",
     "clickToView": "Noklikšķini, lai skatītu ziņas",
     "newApplications": "{{count}} jauns(-i) pieteikums(-i)",
@@ -83,6 +83,9 @@
     "taskDisputed": "Strīds par \"{{task}}\"",
     "disputeResolved": "Strīds atrisināts darbam \"{{task}}\"",
     "disputeResponse": "Saņemta atbilde uz strīdu par \"{{task}}\"",
+    "reviewReminder": "Atstāj atsauksmi par \"{{task}}\"",
+    "taskCancelled": "\"{{task}}\" tika atcelts",
+    "newReview": "Jauna {{rating}} zvaigzņu atsauksme par \"{{task}}\"",
     "bellLabel": "Paziņojumi",
     "bellLabelUnread": "Paziņojumi ({{count}} nelasīti)"
   },
