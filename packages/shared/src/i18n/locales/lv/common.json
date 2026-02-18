@@ -143,9 +143,12 @@
     "radiusKm": "{{value}} km",
     "categories": "Kategorijas",
     "allCategories": "Visas kategorijas",
-    "maxCategories": "Maks. {{max}} kategorijas",
+    "maxCategories": "Izvēlies kategorijas, lai filtrētu paziņojumus. Atstāj tukšu, lai saņemtu paziņojumus par visām kategorijām.",
     "jobAlertsSaved": "Darbu paziņojumi atjaunināti",
-    "locationRequired": "Iestati savu atrašanās vietu, lai saņemtu darbu paziņojumus"
+    "locationRequired": "Nepieciešama piekļuve atrašanās vietai, lai saņemtu darbu paziņojumus. Lūdzu, atļauj piekļuvi un mēģini vēlreiz.",
+    "locationDenied": "Piekļuve atrašanās vietai tika liegta. Lūdzu, atļauj atrašanās vietu pārlūka iestatījumos, lai ieslēgtu darbu paziņojumus.",
+    "locationUnavailable": "Tavs pārlūks neatbalsta ģeolokāciju.",
+    "locationError": "Nevarēja noteikt tavu atrašanās vietu. Lūdzu, mēģini vēlreiz."
   },
   "header": {
     "closeMenu": "Aizvērt izvēlni",

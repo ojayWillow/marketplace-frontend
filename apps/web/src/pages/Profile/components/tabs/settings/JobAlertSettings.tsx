@@ -32,28 +32,96 @@ export const JobAlertSettings = () => {
     load();
   }, []);
 
-  const saveJobAlertPrefs = useCallback(async (newPrefs: Partial<JobAlertPreferences>) => {
+  const saveJobAlertPrefs = useCallback(async (
+    newPrefs: Partial<JobAlertPreferences & { latitude?: number; longitude?: number }>,
+    rollback?: JobAlertPreferences
+  ) => {
     setJobAlertSaving(true);
     setJobAlertError(null);
     setJobAlertSaved(false);
     try {
-      const data = await updateJobAlertPreferences(newPrefs);
+      const data = await updateJobAlertPreferences(newPrefs as any);
       setJobAlertPrefs(data.preferences);
       setJobAlertSaved(true);
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => setJobAlertSaved(false), 2500);
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Failed to save';
-      setJobAlertError(msg);
+      if (msg === 'location_required') {
+        setJobAlertError(
+          t('common.notifications.locationRequired', 'Location access is required to receive job alerts. Please allow location access and try again.')
+        );
+      } else {
+        setJobAlertError(msg);
+      }
+      // Revert optimistic update on failure
+      if (rollback) {
+        setJobAlertPrefs(rollback);
+      }
     } finally {
       setJobAlertSaving(false);
     }
-  }, []);
+  }, [t]);
 
-  const handleJobAlertToggle = () => {
-    const next = !jobAlertPrefs.enabled;
+  const handleJobAlertToggle = async () => {
+    const wasEnabled = jobAlertPrefs.enabled;
+    const next = !wasEnabled;
+    const previousPrefs = { ...jobAlertPrefs };
+
+    // Optimistic update
     setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
-    saveJobAlertPrefs({ enabled: next });
+
+    if (next) {
+      // Enabling: get geolocation first, then send with the enable request
+      setJobAlertSaving(true);
+      setJobAlertError(null);
+
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('no_geolocation'));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 300000, // 5 min cache is fine
+          });
+        });
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setJobAlertSaving(false);
+        // Send enabled + location together
+        await saveJobAlertPrefs(
+          { enabled: true, latitude: lat, longitude: lng },
+          previousPrefs
+        );
+      } catch (geoErr: any) {
+        setJobAlertSaving(false);
+        // Revert toggle
+        setJobAlertPrefs(previousPrefs);
+
+        if (geoErr?.code === 1) {
+          // PERMISSION_DENIED
+          setJobAlertError(
+            t('common.notifications.locationDenied', 'Location access was denied. Please allow location in your browser settings to enable job alerts.')
+          );
+        } else if (geoErr?.message === 'no_geolocation') {
+          setJobAlertError(
+            t('common.notifications.locationUnavailable', 'Your browser does not support geolocation.')
+          );
+        } else {
+          setJobAlertError(
+            t('common.notifications.locationError', 'Could not determine your location. Please try again.')
+          );
+        }
+      }
+    } else {
+      // Disabling: no location needed
+      saveJobAlertPrefs({ enabled: false }, previousPrefs);
+    }
   };
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +139,7 @@ export const JobAlertSettings = () => {
     if (current.includes(cat)) {
       next = current.filter(c => c !== cat);
     } else {
-      if (current.length >= 10) return;
+      if (current.length >= 18) return;
       next = [...current, cat];
     }
     setJobAlertPrefs(prev => ({ ...prev, categories: next }));
@@ -157,8 +225,8 @@ export const JobAlertSettings = () => {
 
             {/* Error */}
             {jobAlertError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/40">
-                <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/40">
+                <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-sm text-red-700 dark:text-red-400">{jobAlertError}</p>
@@ -215,7 +283,7 @@ export const JobAlertSettings = () => {
                     <span className="text-xs text-gray-400 dark:text-gray-500">
                       {jobAlertPrefs.categories.length === 0
                         ? t('common.notifications.allCategories', 'All categories')
-                        : `${jobAlertPrefs.categories.length}/10`}
+                        : `${jobAlertPrefs.categories.length}/${TASK_CATEGORIES.length}`}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -246,7 +314,7 @@ export const JobAlertSettings = () => {
                     })}
                   </div>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    {t('common.notifications.maxCategories', 'Select up to 10 categories. Leave empty to get alerts for all categories.')}
+                    {t('common.notifications.maxCategories', 'Select categories to filter alerts. Leave empty to get alerts for all categories.')}
                   </p>
                 </div>
               </>

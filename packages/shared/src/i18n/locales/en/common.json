@@ -136,16 +136,19 @@
     "bellLabel": "Notifications",
     "bellLabelUnread": "Notifications ({{count}} unread)",
     "newTaskNearby": "New {{category}} task {{distance}} away",
-    "newTaskNearbyBudget": "{{budget}} \u00b7 {{location}}",
+    "newTaskNearbyBudget": "{{budget}} · {{location}}",
     "jobAlerts": "Job Alerts",
     "jobAlertsDesc": "Get notified about new tasks near you",
     "radius": "Radius",
     "radiusKm": "{{value}} km",
     "categories": "Categories",
     "allCategories": "All categories",
-    "maxCategories": "Max {{max}} categories",
+    "maxCategories": "Select categories to filter alerts. Leave empty to get alerts for all categories.",
     "jobAlertsSaved": "Job alerts updated",
-    "locationRequired": "Set your location to receive job alerts"
+    "locationRequired": "Location access is required to receive job alerts. Please allow location access and try again.",
+    "locationDenied": "Location access was denied. Please allow location in your browser settings to enable job alerts.",
+    "locationUnavailable": "Your browser does not support geolocation.",
+    "locationError": "Could not determine your location. Please try again."
   },
   "header": {
     "closeMenu": "Close menu",
