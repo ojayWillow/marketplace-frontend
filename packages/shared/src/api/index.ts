@@ -13,14 +13,18 @@ export * from './messages';
 export {
   NotificationType,
   type Notification,
+  type NotificationData,
   type GetNotificationsResponse,
   type UnreadCountResponse,
+  type JobAlertPreferences,
   getNotifications,
   getUnreadCount as getUnreadNotificationCount,
   markAsRead as markNotificationAsRead,
   markAllAsRead as markAllNotificationsAsRead,
   markReadByType,
   deleteNotification,
+  getJobAlertPreferences,
+  updateJobAlertPreferences,
 } from './notifications';
 
 export * from './offerings';
