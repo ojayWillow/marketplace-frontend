@@ -168,6 +168,12 @@
     "shopping": "Iepirkšanās",
     "tech-help": "Tehniskā palīdzība"
   },
+  "categoryGroups": {
+    "homeProperty": "Māja un īpašums",
+    "outdoorTransport": "Āra darbi un transports",
+    "peopleServices": "Cilvēki un pakalpojumi",
+    "other": "Cits"
+  },
   "work": {
     "failedToLoad": "Neizdevās ielādēt",
     "checkConnection": "Pārliecinieties, ka ir internets, un mēģiniet vēlreiz.",
