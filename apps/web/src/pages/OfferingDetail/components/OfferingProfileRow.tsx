@@ -24,10 +24,14 @@ const OfferingProfileRow = ({ offering, safeCreatorName, isOwner, contacting, on
         </Link>
         <span className="text-gray-300 dark:text-gray-600 md:hidden">·</span>
         {offering.creator_rating !== undefined && offering.creator_rating !== null && (
-          <div className="flex items-center gap-1">
-            <StarRating rating={offering.creator_rating} />
-            <span className="text-gray-400 dark:text-gray-500 text-xs">({offering.creator_review_count || 0})</span>
-          </div>
+          <StarRating
+            rating={offering.creator_rating}
+            size="xs"
+            showValue
+            reviewCount={offering.creator_review_count || 0}
+            showCount
+            compact
+          />
         )}
       </div>
       {!isOwner && (

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '@marketplace/shared';
 import { useToastStore } from '@marketplace/shared';
 import { Review, CanReviewResponse } from '@marketplace/shared';
+import StarRating from '../../../components/ui/StarRating';
 
 const MIN_REVIEW_LENGTH = 10;
 
@@ -64,27 +65,25 @@ export const TaskReviews = ({
     }
   };
 
-  const renderStars = (rating: number, interactive = false) => {
-    const displayRating = interactive ? (hoverRating || reviewRating) : rating;
-    
+  /** Interactive star picker for submitting a review (whole stars only) */
+  const renderInteractiveStars = () => {
+    const displayRating = hoverRating || reviewRating;
     return (
       <div className="flex items-center">
         {[1, 2, 3, 4, 5].map(star => (
           <button
             key={star}
             type="button"
-            disabled={!interactive}
-            onClick={() => interactive && setReviewRating(star)}
-            onMouseEnter={() => interactive && setHoverRating(star)}
-            onMouseLeave={() => interactive && setHoverRating(0)}
-            className={`text-xl ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'} ${
+            onClick={() => setReviewRating(star)}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={() => setHoverRating(0)}
+            className={`text-xl cursor-pointer hover:scale-110 transition-transform ${
               star <= displayRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
             }`}
           >
             ★
           </button>
         ))}
-        {!interactive && rating && <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({rating.toFixed(1)})</span>}
       </div>
     );
   };
@@ -117,7 +116,7 @@ export const TaskReviews = ({
               
               <div className="mb-3">
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">{t('reviews.rating')}</label>
-                {renderStars(reviewRating, true)}
+                {renderInteractiveStars()}
               </div>
 
               <div className="mb-3">
@@ -227,16 +226,7 @@ export const TaskReviews = ({
                     >
                       {review.reviewer?.username || 'Unknown'}
                     </Link>
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <span
-                          key={star}
-                          className={`text-sm ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
+                    <StarRating rating={review.rating} size="sm" />
                   </div>
 
                   {review.content && (

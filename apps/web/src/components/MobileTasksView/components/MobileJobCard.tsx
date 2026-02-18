@@ -109,13 +109,15 @@ const MobileJobCard = ({
             <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
           )}
           
-          {/* Rating with proper fractional stars */}
+          {/* Rating with proper fractional stars + numeric value + count */}
           {hasRating && (
             <StarRating
               rating={task.creator_rating!}
               size="xs"
+              showValue
               reviewCount={task.creator_review_count || 0}
               showCount
+              compact
             />
           )}
           
