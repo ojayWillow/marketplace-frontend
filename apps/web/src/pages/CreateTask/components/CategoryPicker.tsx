@@ -44,7 +44,7 @@ const CategoryPicker = ({ value, onChange }: CategoryPickerProps) => {
       ))}
       {value && (
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {getCategoryByValue(value)?.icon} {getCategoryByValue(value)?.description}
+          {getCategoryByValue(value)?.icon} {t(`createTask.categoryDescriptions.${value}`, getCategoryByValue(value)?.description || '')}
         </p>
       )}
     </div>
