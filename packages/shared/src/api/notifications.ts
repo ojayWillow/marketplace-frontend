@@ -120,3 +120,29 @@ export const markReadByType = async (
 export const deleteNotification = async (notificationId: number): Promise<void> => {
   await apiClient.delete(`/api/notifications/${notificationId}`);
 };
+
+// ============ JOB ALERT PREFERENCES ============
+
+export interface JobAlertPreferences {
+  enabled: boolean;
+  radius_km: number;
+  categories: string[];
+}
+
+/**
+ * Get job alert preferences for current user
+ */
+export const getJobAlertPreferences = async (): Promise<{ preferences: JobAlertPreferences }> => {
+  const response = await apiClient.get('/api/notifications/job-alerts');
+  return response.data;
+};
+
+/**
+ * Update job alert preferences
+ */
+export const updateJobAlertPreferences = async (
+  prefs: Partial<JobAlertPreferences>
+): Promise<{ message: string; preferences: JobAlertPreferences }> => {
+  const response = await apiClient.put('/api/notifications/job-alerts', prefs);
+  return response.data;
+};
