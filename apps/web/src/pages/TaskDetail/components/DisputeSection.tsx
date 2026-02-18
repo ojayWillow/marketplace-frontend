@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dispute, getTaskDisputes, respondToDispute } from '@marketplace/shared';
 import { uploadTaskImageFile } from '@marketplace/shared';
 import ImagePicker from '../../../components/ImagePicker';
@@ -10,6 +11,7 @@ interface DisputeSectionProps {
 }
 
 export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: DisputeSectionProps) => {
+  const { t } = useTranslation();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [responding, setResponding] = useState(false);
@@ -37,7 +39,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
   const handleRespond = async (disputeId: number) => {
     setResponseError('');
     if (responseText.trim().length < 20) {
-      setResponseError('Response must be at least 20 characters.');
+      setResponseError(t('taskDetail.dispute.errorResponseTooShort', 'Response must be at least 20 characters.'));
       return;
     }
 
@@ -63,9 +65,28 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
       onDisputeUpdated();
     } catch (err: any) {
       console.error('Error responding to dispute:', err);
-      setResponseError(err?.response?.data?.error || 'Failed to submit response.');
+      setResponseError(err?.response?.data?.error || t('taskDetail.dispute.errorResponseFailed', 'Failed to submit response.'));
     } finally {
       setResponding(false);
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open': return t('taskDetail.dispute.statusOpen', 'Open');
+      case 'under_review': return t('taskDetail.dispute.statusUnderReview', 'Under Review');
+      case 'resolved': return t('taskDetail.dispute.statusResolved', 'Resolved');
+      default: return status;
+    }
+  };
+
+  const getResolutionText = (resolution: string) => {
+    switch (resolution) {
+      case 'refund': return t('taskDetail.dispute.resolutionRefund', 'Full refund issued to the task creator.');
+      case 'pay_worker': return t('taskDetail.dispute.resolutionPayWorker', 'Resolved in favor of the worker.');
+      case 'partial': return t('taskDetail.dispute.resolutionPartial', 'Resolved with a partial agreement.');
+      case 'cancelled': return t('taskDetail.dispute.resolutionCancelled', 'Task has been cancelled.');
+      default: return resolution;
     }
   };
 
@@ -97,14 +118,13 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base">⚠️</span>
-                  <span className="font-semibold text-sm text-orange-800 dark:text-orange-300">Dispute</span>
+                  <span className="font-semibold text-sm text-orange-800 dark:text-orange-300">{t('taskDetail.dispute.title', 'Dispute')}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                     dispute.status === 'open' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
                     dispute.status === 'under_review' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
                     'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                   }`}>
-                    {dispute.status === 'open' ? 'Open' :
-                     dispute.status === 'under_review' ? 'Under Review' : 'Resolved'}
+                    {getStatusLabel(dispute.status)}
                   </span>
                 </div>
                 <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -112,7 +132,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
                 </span>
               </div>
               <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                Filed by {isFiler ? 'you' : dispute.filed_by_name} · {dispute.reason_label}
+                {t('taskDetail.dispute.filedBy', 'Filed by {{name}} · {{reason}}', { name: isFiler ? t('taskDetail.dispute.you', 'you') : dispute.filed_by_name, reason: dispute.reason_label })}
               </p>
             </div>
 
@@ -121,7 +141,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               {/* Original complaint */}
               <div className="mb-3">
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                  {isFiler ? 'Your complaint' : 'Their complaint'}
+                  {isFiler ? t('taskDetail.dispute.yourComplaint', 'Your complaint') : t('taskDetail.dispute.theirComplaint', 'Their complaint')}
                 </p>
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{dispute.description}</p>
 
@@ -132,7 +152,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
                       <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                         <img
                           src={url}
-                          alt={`Evidence ${i + 1}`}
+                          alt={t('taskDetail.dispute.evidenceAlt', 'Evidence {{num}}', { num: i + 1 })}
                           className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-80 transition-opacity"
                         />
                       </a>
@@ -145,7 +165,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               {dispute.response_description && (
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    {isTarget ? 'Your response' : 'Their response'}
+                    {isTarget ? t('taskDetail.dispute.yourResponse', 'Your response') : t('taskDetail.dispute.theirResponse', 'Their response')}
                   </p>
                   <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{dispute.response_description}</p>
 
@@ -155,7 +175,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                           <img
                             src={url}
-                            alt={`Response ${i + 1}`}
+                            alt={t('taskDetail.dispute.responseAlt', 'Response {{num}}', { num: i + 1 })}
                             className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-80 transition-opacity"
                           />
                         </a>
@@ -164,7 +184,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
                   )}
 
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Responded {dispute.responded_at && new Date(dispute.responded_at).toLocaleDateString()}
+                    {t('taskDetail.dispute.respondedOn', 'Responded {{date}}', { date: dispute.responded_at ? new Date(dispute.responded_at).toLocaleDateString() : '' })}
                   </p>
                 </div>
               )}
@@ -173,13 +193,10 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               {dispute.status === 'resolved' && dispute.resolution && (
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
                   <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">
-                    ✅ Resolution
+                    {t('taskDetail.dispute.resolution', '✅ Resolution')}
                   </p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    {dispute.resolution === 'refund' && 'Full refund issued to the task creator.'}
-                    {dispute.resolution === 'pay_worker' && 'Resolved in favor of the worker.'}
-                    {dispute.resolution === 'partial' && 'Resolved with a partial agreement.'}
-                    {dispute.resolution === 'cancelled' && 'Task has been cancelled.'}
+                    {getResolutionText(dispute.resolution)}
                   </p>
                   {dispute.resolution_notes && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{dispute.resolution_notes}</p>
@@ -194,7 +211,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
                     onClick={() => setShowResponseForm(true)}
                     className="w-full py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 text-blue-700 dark:text-blue-400 rounded-lg font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors active:scale-[0.98]"
                   >
-                    📝 Respond to this dispute
+                    {t('taskDetail.dispute.respondButton', '📝 Respond to this dispute')}
                   </button>
                 </div>
               )}
@@ -202,22 +219,22 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               {/* Response form */}
               {canRespond && showResponseForm && (
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 space-y-3">
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your response</p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('taskDetail.dispute.yourResponse', 'Your response')}</p>
                   <textarea
                     value={responseText}
                     onChange={(e) => setResponseText(e.target.value)}
-                    placeholder="Explain your side of the story (at least 20 characters)..."
+                    placeholder={t('taskDetail.dispute.responsePlaceholder', 'Explain your side of the story (at least 20 characters)...')}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm resize-none placeholder-gray-400 dark:placeholder-gray-500"
                   />
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {responseText.trim().length}/20 characters minimum
+                    {t('taskDetail.dispute.charsMinimum', '{{count}}/20 characters minimum', { count: responseText.trim().length })}
                   </p>
 
                   <ImagePicker
                     images={responseImages}
                     onChange={setResponseImages}
                     maxImages={5}
-                    label="📷 Evidence photos (optional)"
+                    label={t('taskDetail.dispute.evidencePhotos', '📷 Evidence photos (optional)')}
                   />
 
                   {responseError && (
@@ -235,14 +252,14 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
                       disabled={responding}
                       className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
-                      Cancel
+                      {t('taskDetail.cancel', 'Cancel')}
                     </button>
                     <button
                       onClick={() => handleRespond(dispute.id)}
                       disabled={responding || responseText.trim().length < 20}
                       className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg font-bold text-sm hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400 shadow-lg active:scale-[0.98]"
                     >
-                      {responding ? 'Submitting...' : 'Submit Response'}
+                      {responding ? t('taskDetail.submitting', 'Submitting...') : t('taskDetail.dispute.submitResponse', 'Submit Response')}
                     </button>
                   </div>
                 </div>
@@ -252,7 +269,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               {dispute.status === 'under_review' && (
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
                   <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
-                    🔍 Both sides have been heard. Our team is reviewing this dispute.
+                    {t('taskDetail.dispute.underReviewMessage', '🔍 Both sides have been heard. Our team is reviewing this dispute.')}
                   </p>
                 </div>
               )}
@@ -260,7 +277,7 @@ export const DisputeSection = ({ taskId, currentUserId, onDisputeUpdated }: Disp
               {dispute.status === 'open' && !canRespond && isFiler && !dispute.response_description && (
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
                   <p className="text-sm text-orange-600 dark:text-orange-400 text-center">
-                    ⏳ Waiting for the other party to respond.
+                    {t('taskDetail.dispute.waitingResponse', '⏳ Waiting for the other party to respond.')}
                   </p>
                 </div>
               )}
