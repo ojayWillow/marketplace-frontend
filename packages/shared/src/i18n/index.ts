@@ -23,6 +23,7 @@ import enTasks from './locales/en/tasks.json'
 import enOfferings from './locales/en/offerings.json'
 import enCreateOffering from './locales/en/createOffering.json'
 import enCreateTask from './locales/en/createTask.json'
+import enEditTask from './locales/en/editTask.json'
 import enLegal from './locales/en/legal.json'
 import enLanding from './locales/en/landing.json'
 import enCommunity from './locales/en/community.json'
@@ -50,6 +51,7 @@ import lvTasks from './locales/lv/tasks.json'
 import lvOfferings from './locales/lv/offerings.json'
 import lvCreateOffering from './locales/lv/createOffering.json'
 import lvCreateTask from './locales/lv/createTask.json'
+import lvEditTask from './locales/lv/editTask.json'
 import lvLegal from './locales/lv/legal.json'
 import lvLanding from './locales/lv/landing.json'
 import lvCommunity from './locales/lv/community.json'
@@ -77,6 +79,7 @@ import ruTasks from './locales/ru/tasks.json'
 import ruOfferings from './locales/ru/offerings.json'
 import ruCreateOffering from './locales/ru/createOffering.json'
 import ruCreateTask from './locales/ru/createTask.json'
+import ruEditTask from './locales/ru/editTask.json'
 import ruLegal from './locales/ru/legal.json'
 import ruLanding from './locales/ru/landing.json'
 import ruCommunity from './locales/ru/community.json'
@@ -105,6 +108,7 @@ const en = {
   offerings: enOfferings,
   createOffering: enCreateOffering,
   createTask: enCreateTask,
+  editTask: enEditTask,
   legal: enLegal,
   landing: enLanding,
   community: enCommunity,
@@ -133,6 +137,7 @@ const lv = {
   offerings: lvOfferings,
   createOffering: lvCreateOffering,
   createTask: lvCreateTask,
+  editTask: lvEditTask,
   legal: lvLegal,
   landing: lvLanding,
   community: lvCommunity,
@@ -161,6 +166,7 @@ const ru = {
   offerings: ruOfferings,
   createOffering: ruCreateOffering,
   createTask: ruCreateTask,
+  editTask: ruEditTask,
   legal: ruLegal,
   landing: ruLanding,
   community: ruCommunity,
