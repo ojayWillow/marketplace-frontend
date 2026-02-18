@@ -1,5 +1,20 @@
 {
-  "title": "Lietotāja profils",
-  "userNotFound": "Lietotājs nav atrasts",
-  "failedLoad": "Neizdevās ielādēt lietotāja profilu"
+  "title": "Lietot\u0101ja profils",
+  "userNotFound": "Lietot\u0101js nav atrasts",
+  "failedLoad": "Neizdev\u0101s iel\u0101d\u0113t lietot\u0101ja profilu",
+  "loadingProfile": "Iel\u0101d\u0113 profilu\u2026",
+  "notFound": "Lietot\u0101js nav atrasts",
+  "notFoundMessage": "\u0160is profils neeksist\u0113 vai ir no\u0146emts.",
+  "failedToStartConversation": "Neizdev\u0101s s\u0101kt sarunu",
+  "pleaseWriteReview": "L\u016bdzu, uzrakstiet atsauksmes koment\u0101ru",
+  "pleaseSelectTransaction": "L\u016bdzu, izv\u0113lieties dar\u012bjumu atsauksmei",
+  "reviewSubmitted": "Atsauksme veiksm\u012bgi iesniegta!",
+  "opening": "Atver\u2026",
+  "message": "Rakst\u012bt zi\u0146u",
+  "viewWork": "Skat\u012bt darbus",
+  "leaveReview": "Atst\u0101t atsauksmi",
+  "skills": "Prasmes",
+  "work": "Darbi",
+  "reviewsCount": "Atsauksmes ({{count}})",
+  "newToKolab": "{{name}} ir jauns Kolab lietot\u0101js. Sekojiet l\u012bdzi!"
 }
