@@ -74,6 +74,26 @@
     "disputed": "Disputed",
     "accepted": "Accepted"
   },
+  "categories": {
+    "cleaning": "Cleaning",
+    "handyman": "Handyman",
+    "delivery": "Delivery",
+    "moving": "Moving",
+    "outdoor": "Outdoor",
+    "pet-care": "Pet Care",
+    "tutoring": "Tutoring",
+    "tech-help": "Tech Help",
+    "shopping": "Shopping",
+    "assembly": "Assembly",
+    "plumbing": "Plumbing",
+    "electrical": "Electrical",
+    "painting": "Painting",
+    "care": "Care",
+    "tech": "Tech",
+    "beauty": "Beauty",
+    "events": "Events",
+    "other": "Other"
+  },
   "favorites": {
     "typeJob": "Job",
     "typeService": "Service",
