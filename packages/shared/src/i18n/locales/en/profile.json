@@ -46,6 +46,7 @@
   "verified": "Verified",
   "memberSince": "Member since {{date}}",
   "backToProfile": "Back to profile",
+  "logout": "Logout",
   "tabs": {
     "about": "About",
     "jobs": "Jobs",
@@ -91,7 +92,18 @@
     "cancelJob": "Cancel",
     "assigned": "You're assigned",
     "completed": "Completed!",
-    "postedBy": "Posted by"
+    "postedBy": "Posted by",
+    "theHelper": "the helper",
+    "jobCreator": "Job Creator",
+    "statusPending": "⏳ Awaiting approval",
+    "statusActive": "✓ Active",
+    "statusDone": "✓ Completed",
+    "statusOpen": "Open",
+    "statusAssigned": "Assigned",
+    "statusInProgress": "In progress",
+    "statusPendingConfirmation": "Pending confirmation",
+    "statusCompleted": "Completed",
+    "statusCancelled": "Cancelled"
   },
   "listingsTab": {
     "title": "My Listings",

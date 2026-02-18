@@ -46,6 +46,7 @@
   "verified": "Подтверждён",
   "memberSince": "Участник с {{date}}",
   "backToProfile": "Назад к профилю",
+  "logout": "Выйти",
   "tabs": {
     "about": "Обо мне",
     "jobs": "Работы",
@@ -91,7 +92,18 @@
     "cancelJob": "Отменить",
     "assigned": "Вы назначены",
     "completed": "Завершено!",
-    "postedBy": "Разместил"
+    "postedBy": "Разместил",
+    "theHelper": "помощник",
+    "jobCreator": "Заказчик",
+    "statusPending": "⏳ Ожидает подтверждения",
+    "statusActive": "✓ Активно",
+    "statusDone": "✓ Завершено",
+    "statusOpen": "Открыто",
+    "statusAssigned": "Назначено",
+    "statusInProgress": "В процессе",
+    "statusPendingConfirmation": "Ожидает подтверждения",
+    "statusCompleted": "Завершено",
+    "statusCancelled": "Отменено"
   },
   "listingsTab": {
     "title": "Мои объявления",

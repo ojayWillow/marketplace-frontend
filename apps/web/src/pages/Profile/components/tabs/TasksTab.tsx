@@ -172,10 +172,22 @@ export const TasksTab = ({
     handleReviewModalClose();
   };
 
+  const getTranslatedStatus = (status: string) => {
+    const statusMap: Record<string, string> = {
+      open: t('profile.jobsTab.statusOpen'),
+      assigned: t('profile.jobsTab.statusAssigned'),
+      in_progress: t('profile.jobsTab.statusInProgress'),
+      pending_confirmation: t('profile.jobsTab.statusPendingConfirmation'),
+      completed: t('profile.jobsTab.statusCompleted'),
+      cancelled: t('profile.jobsTab.statusCancelled'),
+    };
+    return statusMap[status] || status;
+  };
+
   const getApplicationStatusBadge = (application: TaskApplication) => {
     if (application.status === 'pending') {
       return {
-        text: '⏳ Gaida apstiprinājumu',
+        text: t('profile.jobsTab.statusPending'),
         className: 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/40',
       };
     }
@@ -183,12 +195,12 @@ export const TasksTab = ({
       const task = application.task;
       if (task?.status === 'completed') {
         return {
-          text: '✓ Pabeigts',
+          text: t('profile.jobsTab.statusDone'),
           className: 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/40',
         };
       }
       return {
-        text: '✓ Aktīvs',
+        text: t('profile.jobsTab.statusActive'),
         className: 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40',
       };
     }
@@ -204,7 +216,7 @@ export const TasksTab = ({
           onConfirmed={handleTaskConfirmed}
           taskId={taskToConfirm.id}
           taskTitle={taskToConfirm.title}
-          workerName={taskToConfirm.assigned_to_name || 'the helper'}
+          workerName={taskToConfirm.assigned_to_name || t('profile.jobsTab.theHelper')}
           workerId={taskToConfirm.assigned_to_id || 0}
           budget={taskToConfirm.budget}
         />
@@ -217,7 +229,7 @@ export const TasksTab = ({
           onReviewSubmitted={handleReviewSubmitted}
           taskId={taskToReview.id}
           taskTitle={taskToReview.title}
-          revieweeName={canReviewStatuses.get(taskToReview.id)?.revieweeName || taskToReview.creator_name || 'Job Creator'}
+          revieweeName={canReviewStatuses.get(taskToReview.id)?.revieweeName || taskToReview.creator_name || t('profile.jobsTab.jobCreator')}
           revieweeId={canReviewStatuses.get(taskToReview.id)?.revieweeId || taskToReview.creator_id}
           reviewType="creator"
         />
@@ -366,7 +378,7 @@ export const TasksTab = ({
                         </Link>
                         {!viewOnly && (
                           <span className={`px-1.5 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${getStatusBadgeClass(task.status)}`}>
-                            {task.status.replace('_', ' ')}
+                            {getTranslatedStatus(task.status)}
                           </span>
                         )}
                         {!viewOnly && hasMatches && !hasApplications && (
@@ -465,7 +477,7 @@ export const TasksTab = ({
                         <span className="truncate max-w-[140px] md:max-w-none">📍 {task.location}</span>
                         {task.budget && <span className="text-green-600 dark:text-green-400 font-semibold flex-shrink-0">€{task.budget}</span>}
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('profile.jobsTab.postedBy')} {task.creator_name || 'Unknown'}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('profile.jobsTab.postedBy')} {task.creator_name || t('common.unknown')}</p>
                       
                       <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                         {needsReview && (
