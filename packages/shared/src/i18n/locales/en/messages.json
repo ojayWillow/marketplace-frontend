@@ -1,19 +1,17 @@
 {
   "title": "Messages",
-  "noConversations": "No conversations yet",
-  "browseTasks": "Browse Tasks",
   "yesterday": "Yesterday",
-  "online": "online",
+  "typing": "typing...",
   "onlineNow": "Online",
   "lastSeen": "Last seen {{time}}",
   "recentlyActive": "Recently active",
   "inactive": "Inactive",
-  "noMessagesYet": "No messages yet",
+  "sendFirst": "No messages yet. Send the first message!",
   "notFound": "Conversation not found",
   "backToMessages": "Back to Messages",
-  "sendFirst": "No messages yet. Send the first message!",
   "typeMessage": "Type a message...",
-  "send": "Send",
-  "errorLoading": "Failed to load conversation",
-  "errorSending": "Failed to send message"
+  "attachImage": "Attach image",
+  "sharedImage": "Shared image",
+  "noConversations": "No conversations yet",
+  "startConversation": "Start a conversation"
 }

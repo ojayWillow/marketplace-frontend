@@ -47,7 +47,7 @@ const ChatHeader = ({ otherUser, onlineStatus, isOtherTyping, isMobile }: ChatHe
 
   const displayName = otherUser?.first_name && otherUser?.last_name
     ? `${otherUser.first_name} ${otherUser.last_name}`
-    : otherUser?.username || 'Unknown';
+    : otherUser?.username || t('common.unknown', 'Unknown');
 
   // Determine status line: typing beats regular status
   const statusText = isOtherTyping
