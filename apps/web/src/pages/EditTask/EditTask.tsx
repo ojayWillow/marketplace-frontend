@@ -111,14 +111,15 @@ const EditTask = () => {
                 id="budget"
                 name="budget"
                 step="0.01"
-                min="0"
+                min="10"
+                max="10000"
                 required
                 value={formData.budget}
                 onChange={handleChange}
                 placeholder={t('editTask.budgetPlaceholder', 'e.g., 25.00')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('editTask.budgetHint', 'How much are you willing to pay for this task?')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('editTask.budgetHint', 'Min €10, max €10,000')}</p>
             </div>
 
             {/* Deadline */}
