@@ -1,14 +1,25 @@
 import { TFunction } from 'i18next';
 
-export const formatTime = (dateString: string): string => {
-  return new Date(dateString).toLocaleTimeString('en-US', {
+const localeMap: Record<string, string> = {
+  en: 'en-US',
+  lv: 'lv-LV',
+  ru: 'ru-RU',
+};
+
+export const resolveLocale = (lang?: string): string | undefined => {
+  if (!lang) return undefined;
+  return localeMap[lang] || lang;
+};
+
+export const formatTime = (dateString: string, locale?: string): string => {
+  return new Date(dateString).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
 };
 
-export const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+export const formatDate = (dateString: string, locale?: string): string => {
+  return new Date(dateString).toLocaleDateString(locale, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',

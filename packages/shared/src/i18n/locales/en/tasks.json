@@ -168,6 +168,12 @@
     "shopping": "Shopping",
     "tech-help": "Tech Help"
   },
+  "categoryGroups": {
+    "homeProperty": "Home & Property",
+    "outdoorTransport": "Outdoor & Transport",
+    "peopleServices": "People & Services",
+    "other": "Other"
+  },
   "work": {
     "failedToLoad": "Failed to load",
     "checkConnection": "Make sure you have internet and try again.",

@@ -29,7 +29,7 @@ const StatusPicker = ({ value, onChange }: StatusPickerProps) => {
             }`}
           >
             <div className="font-medium">{t(option.labelKey, option.labelDefault)}</div>
-            <div className="text-xs opacity-75">{option.description}</div>
+            <div className="text-xs opacity-75">{t(option.descKey, option.descDefault)}</div>
           </button>
         ))}
       </div>

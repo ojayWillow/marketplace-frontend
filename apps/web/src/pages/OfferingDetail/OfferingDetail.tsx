@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useOffering } from '../../api/hooks';
 import { useAuthStore } from '@marketplace/shared';
 import ShareButton from '../../components/ui/ShareButton';
@@ -17,6 +18,7 @@ import { useOfferingActions } from './hooks';
 import { getSafeValues, getBoostTimeRemaining } from './utils';
 
 const OfferingDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
   const { data: offering, isLoading: loading, error: queryError } = useOffering(Number(id));
@@ -50,7 +52,7 @@ const OfferingDetail = () => {
     );
   }
 
-  const safe = getSafeValues(offering);
+  const safe = getSafeValues(offering, t);
   const isOwner = user?.id === offering.creator_id;
   const boostTimeRemaining = getBoostTimeRemaining(offering.boost_expires_at);
   const shortLocation = offering.location?.split(',').slice(0, 2).join(', ') || '';

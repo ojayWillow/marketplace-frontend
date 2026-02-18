@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { geocodeAddress, GeocodingResult, useAuthStore, useToastStore, apiClient } from '@marketplace/shared';
 import { useTask } from '../../../api/hooks';
 import { EditTaskFormData, INITIAL_EDIT_TASK_FORM } from '../types';
 
 export const useEditTaskForm = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
@@ -21,15 +23,12 @@ export const useEditTaskForm = () => {
   const [formInitialized, setFormInitialized] = useState(false);
 
   // Track whether the user has manually edited the location field.
-  // This prevents geocoding from firing when the form first loads
-  // with the existing task location, which would show the suggestions
-  // dropdown immediately and make it look like two location boxes.
   const locationTouched = useRef(false);
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.warning('Please login to edit tasks');
+      toast.warning(t('editTask.pleaseLogin', 'Please login to edit tasks'));
       navigate('/login');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,12 +38,12 @@ export const useEditTaskForm = () => {
   useEffect(() => {
     if (task && !formInitialized) {
       if (task.creator_id !== user?.id) {
-        toast.error('You can only edit your own tasks');
+        toast.error(t('editTask.onlyOwnTasks', 'You can only edit your own tasks'));
         navigate('/tasks');
         return;
       }
       if (task.status !== 'open') {
-        toast.error('Only open tasks can be edited');
+        toast.error(t('editTask.onlyOpenTasks', 'Only open tasks can be edited'));
         navigate('/tasks');
         return;
       }
@@ -67,7 +66,7 @@ export const useEditTaskForm = () => {
   // Handle load error
   useEffect(() => {
     if (error) {
-      toast.error('Failed to load task');
+      toast.error(t('editTask.loadError', 'Failed to load task'));
       navigate('/tasks');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,19 +121,19 @@ export const useEditTaskForm = () => {
     e.preventDefault();
 
     if (!user?.id || !task) {
-      toast.error('Unable to update task');
+      toast.error(t('editTask.unableToUpdate', 'Unable to update task'));
       return;
     }
     if (!formData.title.trim()) {
-      toast.error('Please enter a task title');
+      toast.error(t('editTask.titleRequired', 'Please enter a task title'));
       return;
     }
     if (!formData.description.trim()) {
-      toast.error('Please enter a task description');
+      toast.error(t('editTask.descriptionRequired', 'Please enter a task description'));
       return;
     }
     if (!formData.location.trim()) {
-      toast.error('Please enter a location');
+      toast.error(t('editTask.locationRequired', 'Please enter a location'));
       return;
     }
 
@@ -154,11 +153,11 @@ export const useEditTaskForm = () => {
 
       await apiClient.put(`/api/tasks/${id}`, updateData);
       queryClient.invalidateQueries({ queryKey: ['task', Number(id)] });
-      toast.success('Task updated successfully!');
+      toast.success(t('editTask.success', 'Task updated successfully!'));
       navigate('/tasks');
     } catch (err: any) {
       console.error('Error updating task:', err);
-      toast.error(err?.response?.data?.error || 'Failed to update task. Please try again.');
+      toast.error(err?.response?.data?.error || t('editTask.error', 'Failed to update task. Please try again.'));
     } finally {
       setSaving(false);
     }

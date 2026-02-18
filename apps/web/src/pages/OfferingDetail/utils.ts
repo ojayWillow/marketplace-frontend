@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { Offering } from '@marketplace/shared';
 import { getCategoryIcon, getCategoryLabel } from '../../constants/categories';
 import { formatTimeAgoLong } from '../Tasks/utils/taskHelpers';
@@ -14,14 +15,15 @@ export const getBoostTimeRemaining = (boostExpiresAt?: string): string | null =>
   return `${hours}h ${minutes}m`;
 };
 
-export const getSafeValues = (offering: Offering): SafeOfferingValues => {
+export const getSafeValues = (offering: Offering, t?: TFunction): SafeOfferingValues => {
   const safeTitle = offering.title || 'Untitled Offering';
   const safeDescription = offering.description || '';
   const safeCreatorName = offering.creator_name || 'Unknown';
   const safeLocation = offering.location || '';
   const safePriceType = offering.price_type || 'fixed';
   const categoryIcon = getCategoryIcon(offering.category);
-  const categoryLabel = getCategoryLabel(offering.category);
+  const categoryLabelRaw = getCategoryLabel(offering.category);
+  const categoryLabel = t ? t(`tasks.categories.${offering.category}`, categoryLabelRaw) : categoryLabelRaw;
   const priceDisplay = `\u20ac${offering.price || 0}${safePriceType === 'hourly' ? '/hr' : ''}`;
   const postedDate = offering.created_at
     ? formatTimeAgoLong(offering.created_at)

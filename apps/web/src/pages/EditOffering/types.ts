@@ -35,8 +35,8 @@ export const PRICE_TYPES = [
 ] as const;
 
 export const STATUS_OPTIONS = [
-  { value: 'active', labelKey: 'offerings.status.active', labelDefault: 'Active', description: 'Visible to everyone' },
-  { value: 'paused', labelKey: 'offerings.status.paused', labelDefault: 'Paused', description: 'Temporarily hidden' },
+  { value: 'active', labelKey: 'offerings.status.active', labelDefault: 'Active', descKey: 'editOffering.statusActiveDesc', descDefault: 'Visible to everyone' },
+  { value: 'paused', labelKey: 'offerings.status.paused', labelDefault: 'Paused', descKey: 'editOffering.statusPausedDesc', descDefault: 'Temporarily hidden' },
 ] as const;
 
 export const RADIUS_OPTIONS = [

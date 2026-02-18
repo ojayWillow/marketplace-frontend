@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { WorkItemWithDistance } from '../types';
 import { formatTimeAgo, getDifficultyColor, formatItemDistance } from '../utils';
 import { FEATURES } from '../../../constants/featureFlags';
@@ -18,6 +19,7 @@ const cleanTitle = (title: string): string => {
 };
 
 const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
+  const { t } = useTranslation();
   const price = item.type === 'job' ? item.budget : item.price;
   const timeAgo = item.created_at ? formatTimeAgo(item.created_at) : '';
   const hasReviews = item.creator_review_count && item.creator_review_count > 0;
@@ -25,6 +27,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
   const distanceText = formatItemDistance(item.distance, item.location);
 
   const isJob = item.type === 'job';
+  const categoryLabel = t(`tasks.categories.${item.category}`, categoryInfo.label);
 
   return (
     <div
@@ -37,7 +40,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-lg flex-shrink-0">{categoryInfo.icon}</span>
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{categoryInfo.label}</span>
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{categoryLabel}</span>
           {FEATURES.URGENT && item.is_urgent && (
             <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-[10px] font-bold flex-shrink-0 whitespace-nowrap">
               🔥 Urgent

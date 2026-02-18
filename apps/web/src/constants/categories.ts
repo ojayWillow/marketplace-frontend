@@ -2,6 +2,7 @@
 // This adapter maps shared's `.key` field to `.value` so existing
 // web consumers don't need any changes.
 
+import type { TFunction } from 'i18next';
 import {
   CATEGORIES as SHARED_CATEGORIES,
   FORM_CATEGORIES,
@@ -29,10 +30,21 @@ export const CATEGORIES: Category[] = FORM_CATEGORIES.map(c => ({
   description: c.description,
 }));
 
-// For dropdown menus — includes "All" option
+// For dropdown menus — includes "All" option.
+// Static version (English fallback) kept for backward compatibility.
 export const CATEGORY_OPTIONS = [
   { value: 'all', label: 'All Categories', icon: '🔍' },
   ...CATEGORIES.map(c => ({ value: c.value, label: c.label, icon: c.icon }))
+];
+
+// Translated version — call from components that have access to t()
+export const getCategoryOptions = (t: TFunction) => [
+  { value: 'all', label: t('tasks.categories.all', 'All Categories'), icon: '🔍' },
+  ...CATEGORIES.map(c => ({
+    value: c.value,
+    label: t(`tasks.categories.${c.value}`, c.label),
+    icon: c.icon,
+  }))
 ];
 
 // Quick lookup by value (delegates to shared's getCategoryByKey)
@@ -47,6 +59,7 @@ export { getCategoryIcon, getCategoryLabel, getCategoryDescription };
 export { LEGACY_CATEGORY_MAP, normalizeCategory };
 
 // Group categories for organized display (web-specific grouping)
+// Static version (English fallback) kept for backward compatibility.
 export const CATEGORY_GROUPS = [
   {
     name: 'Home & Property',
@@ -62,6 +75,26 @@ export const CATEGORY_GROUPS = [
   },
   {
     name: 'Other',
+    categories: ['other']
+  }
+];
+
+// Translated version — call from components that have access to t()
+export const getCategoryGroups = (t: TFunction) => [
+  {
+    name: t('tasks.categoryGroups.homeProperty', 'Home & Property'),
+    categories: ['cleaning', 'moving', 'assembly', 'handyman', 'plumbing', 'electrical', 'painting']
+  },
+  {
+    name: t('tasks.categoryGroups.outdoorTransport', 'Outdoor & Transport'),
+    categories: ['outdoor', 'delivery']
+  },
+  {
+    name: t('tasks.categoryGroups.peopleServices', 'People & Services'),
+    categories: ['care', 'tutoring', 'tech', 'beauty', 'events']
+  },
+  {
+    name: t('tasks.categoryGroups.other', 'Other'),
     categories: ['other']
   }
 ];

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Message } from '@marketplace/shared';
 import MessageBubble from './MessageBubble';
-import { formatDate } from '../utils';
+import { formatDate, resolveLocale } from '../utils';
 
 interface MessageListProps {
   messages: Message[];
@@ -11,7 +11,8 @@ interface MessageListProps {
 }
 
 const MessageList = ({ messages, currentUserId, messagesEndRef, maxBubbleWidth = 'max-w-[80%]' }: MessageListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = resolveLocale(i18n.language);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-950">
@@ -24,7 +25,7 @@ const MessageList = ({ messages, currentUserId, messagesEndRef, maxBubbleWidth =
           {messages.map((msg, index) => {
             const isOwn = msg.sender_id === currentUserId;
             const showDate = index === 0 ||
-              formatDate(messages[index - 1].created_at) !== formatDate(msg.created_at);
+              formatDate(messages[index - 1].created_at, locale) !== formatDate(msg.created_at, locale);
 
             return (
               <MessageBubble

@@ -39,6 +39,11 @@
   "premiumOpportunity": "Premium opportunity!",
   "boostedOnMap": "{{count}} boosted service(s)",
   "checkBackLater": "Check back later",
+  "categoryGroups": {
+    "everydayHelp": "Everyday Help",
+    "skilledWork": "Skilled Work",
+    "knowledge": "Knowledge"
+  },
   "priceTypes": {
     "hourly": "Hourly rate",
     "fixed": "Fixed price",

@@ -10,6 +10,12 @@ import {
   NotFoundState,
 } from './components';
 
+const CATEGORY_GROUP_KEYS: Record<string, string> = {
+  'Everyday Help': 'offerings.categoryGroups.everydayHelp',
+  'Skilled Work': 'offerings.categoryGroups.skilledWork',
+  'Knowledge': 'offerings.categoryGroups.knowledge',
+};
+
 const EditOffering = () => {
   const { t } = useTranslation();
   const {
@@ -96,13 +102,13 @@ const EditOffering = () => {
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
                 {CATEGORY_GROUPS.map(group => (
-                  <optgroup key={group.name} label={group.name}>
+                  <optgroup key={group.name} label={t(CATEGORY_GROUP_KEYS[group.name] || group.name, group.name)}>
                     {group.categories.map(catValue => {
                       const cat = getCategoryByValue(catValue);
                       if (!cat) return null;
                       return (
                         <option key={cat.value} value={cat.value}>
-                          {cat.icon} {cat.label}
+                          {cat.icon} {t(`tasks.categories.${cat.value}`, cat.label)}
                         </option>
                       );
                     })}
@@ -111,7 +117,7 @@ const EditOffering = () => {
               </select>
               {selectedCategory && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {selectedCategory.icon} {selectedCategory.description}
+                  {selectedCategory.icon} {t(`createTask.categoryDescriptions.${selectedCategory.value}`, selectedCategory.description)}
                 </p>
               )}
             </div>

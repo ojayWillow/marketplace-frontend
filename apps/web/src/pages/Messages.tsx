@@ -8,13 +8,21 @@ import MessagesSkeleton from './Messages/MessagesSkeleton';
 import EmptyMessages from './Messages/EmptyMessages';
 import ConversationRow from './Messages/ConversationRow';
 
+const localeMap: Record<string, string> = {
+  en: 'en-US',
+  lv: 'lv-LV',
+  ru: 'ru-RU',
+};
+
 export default function Messages() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const isMobile = useIsMobile();
 
   const { data, isLoading: loading } = useConversations({ enabled: isAuthenticated });
   const conversations = data?.conversations || [];
+
+  const dateLocale = localeMap[i18n.language] || i18n.language;
 
   const formatTime = useCallback(
     (dateString: string) => {
@@ -23,15 +31,15 @@ export default function Messages() {
       const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) {
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
       } else if (diffDays === 1) {
         return t('messages.yesterday', 'Yesterday');
       } else if (diffDays < 7) {
-        return date.toLocaleDateString('en-US', { weekday: 'short' });
+        return date.toLocaleDateString(dateLocale, { weekday: 'short' });
       }
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
     },
-    [t]
+    [t, dateLocale]
   );
 
   if (loading) return <MessagesSkeleton />;
