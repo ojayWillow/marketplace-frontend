@@ -16,18 +16,18 @@ const HowItWorksSection = () => {
   ];
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 border-t border-gray-200 dark:border-[#1a1a24]">
+    <section className="py-12 sm:py-16 md:py-24 border-t border-gray-200 dark:border-gray-700/50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">{t('landing.howItWorks.title')}</h2>
-          <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg max-w-2xl mx-auto">
             {t('landing.howItWorks.subtitle')}
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 lg:gap-16">
           {/* Need help? */}
-          <div className="bg-gray-50 dark:bg-[#1a1a24]/50 rounded-2xl p-5 sm:p-6 md:p-8 border border-gray-200 dark:border-[#2a2a3a]">
+          <div className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-5 sm:p-6 md:p-8 border border-gray-200 dark:border-gray-700/60">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-600 dark:text-blue-400 text-sm font-medium mb-5 sm:mb-6">
               {t('landing.howItWorks.needHelp')}
             </div>
@@ -47,7 +47,7 @@ const HowItWorksSection = () => {
           </div>
 
           {/* Want to earn? */}
-          <div className="bg-gray-50 dark:bg-[#1a1a24]/50 rounded-2xl p-5 sm:p-6 md:p-8 border border-gray-200 dark:border-[#2a2a3a]">
+          <div className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-5 sm:p-6 md:p-8 border border-gray-200 dark:border-gray-700/60">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-600 dark:text-green-400 text-sm font-medium mb-5 sm:mb-6">
               {t('landing.howItWorks.wantToEarn')}
             </div>

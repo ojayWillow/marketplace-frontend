@@ -16,7 +16,7 @@ const HeroSection = () => {
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-green-500 dark:from-blue-400 dark:to-green-400"> {t('landing.hero.titleHighlight')}</span>
       </h1>
 
-      <p className="text-base lg:text-xl text-gray-600 dark:text-gray-400 mb-6 lg:mb-8 leading-relaxed">
+      <p className="text-base lg:text-xl text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 leading-relaxed">
         {t('landing.hero.subtitle')}
         <span className="hidden lg:inline">{t('landing.hero.subtitleExtended')}</span>
       </p>
@@ -28,7 +28,7 @@ const HeroSection = () => {
           </div>
           <div>
             <div className="text-gray-900 dark:text-white font-medium lg:font-semibold text-sm">{t('landing.hero.fast')}</div>
-            <div className="text-gray-500 text-xs lg:text-sm">{t('landing.hero.fastDesc')}</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">{t('landing.hero.fastDesc')}</div>
           </div>
         </div>
         <div className="text-center lg:text-left lg:flex lg:items-center lg:gap-2">
@@ -37,7 +37,7 @@ const HeroSection = () => {
           </div>
           <div>
             <div className="text-gray-900 dark:text-white font-medium lg:font-semibold text-sm">{t('landing.hero.verified')}</div>
-            <div className="text-gray-500 text-xs lg:text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">
               <span className="lg:hidden">{t('landing.hero.verifiedDesc')}</span>
               <span className="hidden lg:inline">{t('landing.hero.verifiedDescFull')}</span>
             </div>
@@ -49,7 +49,7 @@ const HeroSection = () => {
           </div>
           <div>
             <div className="text-gray-900 dark:text-white font-medium lg:font-semibold text-sm">{t('landing.hero.rated')}</div>
-            <div className="text-gray-500 text-xs lg:text-sm">{t('landing.hero.ratedDesc')}</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">{t('landing.hero.ratedDesc')}</div>
           </div>
         </div>
       </div>
