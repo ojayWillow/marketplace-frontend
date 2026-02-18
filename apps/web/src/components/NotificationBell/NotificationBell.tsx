@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotifications, useMarkAllNotificationsAsRead, useNotificationUnreadCount } from '../../api/hooks/useNotifications';
 import { useAuthStore } from '@marketplace/shared';
 import { NotificationsPanel } from './NotificationsPanel';
@@ -7,6 +8,7 @@ export const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const bellRef = useRef<HTMLButtonElement>(null);
   const { isAuthenticated } = useAuthStore();
+  const { t } = useTranslation();
 
   // Unread count for badge
   const { data: unreadData } = useNotificationUnreadCount({ enabled: isAuthenticated });
@@ -22,6 +24,10 @@ export const NotificationBell = () => {
     return () => document.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
 
+  const bellAriaLabel = unreadCount > 0
+    ? t('notifications.bellLabelUnread', 'Notifications ({{count}} unread)', { count: unreadCount })
+    : t('notifications.bellLabel', 'Notifications');
+
   return (
     <>
       {/* Bell button */}
@@ -29,7 +35,7 @@ export const NotificationBell = () => {
         ref={bellRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        aria-label={bellAriaLabel}
       >
         {/* Bell SVG icon */}
         <svg

@@ -70,7 +70,21 @@
     "peopleWantToHelp": "People want to help with your tasks",
     "awaitingConfirmation": "{{count}} task(s) awaiting confirmation",
     "workersMarkedDone": "Workers marked these as done",
-    "viewAllActivity": "View all activity"
+    "viewAllActivity": "View all activity",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet",
+    "emptyDesc": "You'll see updates about your tasks and applications here",
+    "today": "Today",
+    "earlier": "Earlier",
+    "newApplication": "New application for \"{{task}}\"",
+    "applicationRejected": "Update on \"{{task}}\"",
+    "taskMarkedDone": "\"{{task}}\" marked as done",
+    "taskCompleted": "\"{{task}}\" completed!",
+    "taskDisputed": "Dispute on \"{{task}}\"",
+    "disputeResolved": "Dispute resolved for \"{{task}}\"",
+    "disputeResponse": "Response received on dispute for \"{{task}}\"",
+    "bellLabel": "Notifications",
+    "bellLabelUnread": "Notifications ({{count}} unread)"
   },
   "header": {
     "closeMenu": "Close menu",
