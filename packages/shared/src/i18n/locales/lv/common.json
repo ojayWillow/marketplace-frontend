@@ -56,6 +56,32 @@
   "comingSoon": "Drīz būs",
   "signIn": "Ieiet",
   "unknown": "Nezināms",
+  "showLess": "Rādīt mazāk",
+  "statuses": {
+    "active": "Aktīvs",
+    "paused": "Apturēts",
+    "sold": "Pārdots",
+    "open": "Atvērts",
+    "completed": "Pabeigts",
+    "assigned": "Norīkots",
+    "in_progress": "Procesā",
+    "pending": "Gaida",
+    "pending_confirmation": "Gaida apstiprinājumu",
+    "cancelled": "Atcelts",
+    "expired": "Beidzies",
+    "rejected": "Noraidīts",
+    "disputed": "Apstrīdēts",
+    "accepted": "Pieņemts"
+  },
+  "favorites": {
+    "typeJob": "Darbs",
+    "typeService": "Pakalpojums",
+    "typeListing": "Sludinājums",
+    "filterAll": "Visi",
+    "filterJobs": "Darbi",
+    "filterServices": "Pakalpojumi",
+    "filterListings": "Sludinājumi"
+  },
   "notifications": {
     "title": "Paziņojumi",
     "unread": "nelasīti",

@@ -56,6 +56,32 @@
   "comingSoon": "Coming soon",
   "signIn": "Sign in",
   "unknown": "Unknown",
+  "showLess": "Show less",
+  "statuses": {
+    "active": "Active",
+    "paused": "Paused",
+    "sold": "Sold",
+    "open": "Open",
+    "completed": "Completed",
+    "assigned": "Assigned",
+    "in_progress": "In progress",
+    "pending": "Pending",
+    "pending_confirmation": "Pending confirmation",
+    "cancelled": "Cancelled",
+    "expired": "Expired",
+    "rejected": "Rejected",
+    "disputed": "Disputed",
+    "accepted": "Accepted"
+  },
+  "favorites": {
+    "typeJob": "Job",
+    "typeService": "Service",
+    "typeListing": "Listing",
+    "filterAll": "All",
+    "filterJobs": "Jobs",
+    "filterServices": "Services",
+    "filterListings": "Listings"
+  },
   "notifications": {
     "title": "Notifications",
     "unread": "unread",

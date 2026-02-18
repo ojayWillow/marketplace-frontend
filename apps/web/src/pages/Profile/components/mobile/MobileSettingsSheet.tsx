@@ -112,7 +112,7 @@ export const MobileSettingsSheet = ({
           {/* Decorative badge */}
           <div className="absolute top-2.5 right-2.5">
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950 rounded-full">
-              {t('common.comingSoon', 'Drīzumā')}
+              {t('common.comingSoon', 'Coming soon')}
             </span>
           </div>
 
@@ -123,31 +123,31 @@ export const MobileSettingsSheet = ({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {t('settings.listings.teaserTitle', 'Tirgus')}
+                  {t('settings.listings.teaserTitle', 'Market')}
                 </h3>
                 <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
-                  {t('settings.listings.teaserSubtitle', 'Pirk, pārdod, solī')}
+                  {t('settings.listings.teaserSubtitle', 'Buy, sell, bid')}
                 </p>
               </div>
             </div>
 
             <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
-              {t('settings.listings.teaserDescription', 'Drīz varēsi pārdot savas lietas, izsolīt preces un atrast labākos piedāvājumus savā apkārtnē.')}
+              {t('settings.listings.teaserDescription', 'Soon you\'ll be able to sell your items, auction goods, and find the best deals in your area.')}
             </p>
 
             {/* Feature preview chips */}
             <div className="flex flex-wrap gap-1.5">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                🏷️ {t('settings.listings.featureSell', 'Pārdod')}
+                🏷️ {t('settings.listings.featureSell', 'Sell')}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                🔨 {t('settings.listings.featureBid', 'Solī')}
+                🔨 {t('settings.listings.featureBid', 'Bid')}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                📦 {t('settings.listings.featureItems', 'Preces')}
+                📦 {t('settings.listings.featureItems', 'Items')}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                📍 {t('settings.listings.featureLocal', 'Tavā apkārtnē')}
+                📍 {t('settings.listings.featureLocal', 'In your area')}
               </span>
             </div>
           </div>

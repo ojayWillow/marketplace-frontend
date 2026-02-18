@@ -56,6 +56,32 @@
   "comingSoon": "Скоро",
   "signIn": "Войти",
   "unknown": "Неизвестный",
+  "showLess": "Показать меньше",
+  "statuses": {
+    "active": "Активно",
+    "paused": "Приостановлено",
+    "sold": "Продано",
+    "open": "Открыто",
+    "completed": "Завершено",
+    "assigned": "Назначено",
+    "in_progress": "В процессе",
+    "pending": "Ожидание",
+    "pending_confirmation": "Ожидает подтверждения",
+    "cancelled": "Отменено",
+    "expired": "Истёк",
+    "rejected": "Отклонено",
+    "disputed": "Оспорено",
+    "accepted": "Принято"
+  },
+  "favorites": {
+    "typeJob": "Работа",
+    "typeService": "Услуга",
+    "typeListing": "Объявление",
+    "filterAll": "Все",
+    "filterJobs": "Работы",
+    "filterServices": "Услуги",
+    "filterListings": "Объявления"
+  },
   "notifications": {
     "title": "Уведомления",
     "unread": "непрочитанные",

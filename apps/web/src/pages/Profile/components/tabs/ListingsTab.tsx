@@ -74,7 +74,7 @@ export const ListingsTab = ({ listings, loading, onDelete, viewOnly = false }: L
                     </Link>
                     {!viewOnly && (
                       <span className={`px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${getStatusBadgeClass(listing.status)}`}>
-                        {listing.status}
+                        {t(`common.statuses.${listing.status}`, listing.status)}
                       </span>
                     )}
                   </div>
