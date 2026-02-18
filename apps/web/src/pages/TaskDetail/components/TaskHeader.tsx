@@ -28,7 +28,7 @@ export const TaskHeader = ({ task }: TaskHeaderProps) => {
             </span>
             {task.is_urgent && (
               <span className="ml-2 px-2 py-0.5 bg-red-500 rounded-full text-xs font-bold">
-                🔥 Urgent
+                🔥 {t('taskDetail.urgent', 'Urgent')}
               </span>
             )}
           </div>

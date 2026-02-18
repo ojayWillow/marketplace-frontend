@@ -120,5 +120,35 @@
     "errorResponseFailed": "Neizdevās iesniegt atbildi.",
     "underReviewMessage": "🔍 Abas puses ir uzklausītas. Mūsu komanda izskata šo strīdu.",
     "waitingResponse": "⏳ Gaida otras puses atbildi."
+  },
+  "infoGrid": {
+    "budget": "Budžets",
+    "location": "Atrašanās vieta",
+    "difficulty": "Sarežģītība",
+    "posted": "Publicēts"
+  },
+  "notification": {
+    "dismiss": "Aizvērt",
+    "newApplicantsTitle": "Jums ir jauni pretendenti!",
+    "newApplicantsSubtitle": "Pārskatiet pieteikumus zemāk un pieņemiet piemērotāko.",
+    "alreadyAssignedTitle": "Šim darbam jau ir piešķirts izpildītājs",
+    "alreadyAssignedSubtitle": "Jūs iepriekš pieņēmāt pretendentu šim uzdevumam.",
+    "gotJobTitle": "Jūs saņēmāt darbu!",
+    "gotJobSubtitle": "Sāciet strādāt pie šī uzdevuma. Kad esat pabeidzis, atzīmējiet kā pabeigtu zemāk.",
+    "markedDoneTitle": "Jūs atzīmējāt šo uzdevumu kā pabeigtu",
+    "markedDoneSubtitle": "Gaida darba devēja apstiprinājumu.",
+    "taskCompleteTitle": "Šis uzdevums ir pabeigts!",
+    "taskCompleteLeaveReview": "Lieliski! Jūs varat atstāt atsauksmi zemāk.",
+    "rejectedTitle": "Pieteikums netika izvēlēts",
+    "rejectedSubtitle": "Darba devējs izvēlējās citu pretendentu. Turpiniet meklēt — ir pieejami vairāk darbi!",
+    "workerDoneTitle": "Izpildītājs ziņo, ka uzdevums ir pabeigts!",
+    "workerDoneSubtitle": "Pārskatiet darbu un apstipriniet pabeigšanu, vai atveriet strīdu, ja kaut kas nav kārtībā.",
+    "alreadyConfirmedTitle": "Jūs jau apstiprinājāt šo uzdevumu",
+    "alreadyConfirmedSubtitle": "Šis uzdevums ir atzīmēts kā pabeigts. Atstājiet atsauksmi zemāk!",
+    "disputedTitle": "Šis uzdevums tiek apstrīdēts",
+    "disputedSubtitle": "Mūsu komanda izskata situāciju. Mēs jums paziņosim.",
+    "completedTitle": "Uzdevums pabeigts!",
+    "completedSubtitle": "Šis uzdevums ir apstiprināts kā pabeigts. Jūs varat atstāt atsauksmi zemāk.",
+    "disputedReviewSubtitle": "Mūsu komanda izskata situāciju un drīz to atrisinās."
   }
 }
