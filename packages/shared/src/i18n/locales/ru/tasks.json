@@ -168,6 +168,12 @@
     "shopping": "Покупки",
     "tech-help": "Техническая помощь"
   },
+  "categoryGroups": {
+    "homeProperty": "Дом и недвижимость",
+    "outdoorTransport": "Улица и транспорт",
+    "peopleServices": "Люди и услуги",
+    "other": "Другое"
+  },
   "work": {
     "failedToLoad": "Не удалось загрузить",
     "checkConnection": "Убедитесь, что есть интернет, и попробуйте снова.",
