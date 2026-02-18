@@ -16,5 +16,16 @@
   "skills": "Prasmes",
   "work": "Darbi",
   "reviewsCount": "Atsauksmes ({{count}})",
-  "newToKolab": "{{name}} ir jauns Kolab lietot\u0101js. Sekojiet l\u012bdzi!"
+  "newToKolab": "{{name}} ir jauns Kolab lietot\u0101js. Sekojiet l\u012bdzi!",
+  "reviewTitle": "Atsauksme par {{name}}",
+  "transaction": "Dar\u012bjums",
+  "forTransaction": "Par:",
+  "rating": "V\u0113rt\u0113jums",
+  "yourReview": "J\u016bsu atsauksme",
+  "reviewPlaceholder": "Dal\u012bties ar savu pieredzi\u2026",
+  "submitting": "Iesniedz\u2026",
+  "submit": "Iesniegt",
+  "badgeOffering": "Pied\u0101v\u0101jums",
+  "badgeTask": "Darbs",
+  "badgeListing": "Sludin\u0101jums"
 }

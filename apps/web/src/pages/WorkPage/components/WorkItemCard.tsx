@@ -43,7 +43,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{categoryLabel}</span>
           {FEATURES.URGENT && item.is_urgent && (
             <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-[10px] font-bold flex-shrink-0 whitespace-nowrap">
-              🔥 Urgent
+              🔥 {t('tasks.urgent', 'Urgent')}
             </span>
           )}
         </div>
@@ -64,7 +64,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
         </div>
         <div className="flex flex-col justify-center gap-0.5 min-w-0">
           <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
-            {item.creator_name || 'Anonymous'}
+            {item.creator_name || t('tasks.anonymous', 'Anonymous')}
           </span>
           <div className="flex items-center gap-1 text-[11px]">
             {hasReviews ? (
@@ -77,7 +77,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
                 compact
               />
             ) : (
-              <span className="text-gray-400 dark:text-gray-500">New user</span>
+              <span className="text-gray-400 dark:text-gray-500">{t('tasks.newUser', 'New user')}</span>
             )}
           </div>
         </div>
@@ -92,7 +92,7 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
       <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-50 dark:border-t-gray-800">
         <span className="text-gray-500 dark:text-gray-400 font-medium flex-1 truncate">📏 {distanceText}</span>
         <span className={`font-semibold flex-shrink-0 ${difficultyColor}`}>
-          ⚡ {item.difficulty || 'Medium'}
+          ⚡ {t(`tasks.difficulty.${(item.difficulty || 'medium').toLowerCase()}`, item.difficulty || 'Medium')}
         </span>
         <span className="text-gray-400 dark:text-gray-500 flex-1 text-right flex-shrink-0">{timeAgo}</span>
       </div>

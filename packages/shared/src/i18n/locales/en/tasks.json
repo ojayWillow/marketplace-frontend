@@ -116,6 +116,8 @@
   "swipeUpForJobs": "Swipe up to see jobs",
   "createJobOrService": "Create a job or service",
   "urgentOnMap": "{{count}} urgent",
+  "urgent": "Urgent",
+  "newUser": "New user",
   "tabAll": "All",
   "tabJobs": "Jobs",
   "tabServices": "Services",

@@ -16,5 +16,16 @@
   "skills": "Skills",
   "work": "Work",
   "reviewsCount": "Reviews ({{count}})",
-  "newToKolab": "{{name}} is new to Kolab. Stay tuned!"
+  "newToKolab": "{{name}} is new to Kolab. Stay tuned!",
+  "reviewTitle": "Review {{name}}",
+  "transaction": "Transaction",
+  "forTransaction": "For:",
+  "rating": "Rating",
+  "yourReview": "Your review",
+  "reviewPlaceholder": "Share your experience\u2026",
+  "submitting": "Submitting\u2026",
+  "submit": "Submit",
+  "badgeOffering": "Offering",
+  "badgeTask": "Task",
+  "badgeListing": "Listing"
 }

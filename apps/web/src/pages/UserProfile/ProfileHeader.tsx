@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import StarRating from '../../components/ui/StarRating';
 
 interface ProfileHeaderProps {
@@ -21,6 +22,8 @@ export default function ProfileHeader({
   averageRating,
   reviewsCount,
 }: ProfileHeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col items-center text-center mb-6">
       <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 mb-4 ring-4 ring-white dark:ring-gray-800 shadow-lg">
@@ -47,12 +50,12 @@ export default function ProfileHeader({
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
             </svg>
-            Verified
+            {t('common.verified', 'Verified')}
           </span>
         )}
         {memberSince && (
           <span className="text-gray-400 dark:text-gray-500">
-            Member since {memberSince}
+            {t('common.memberSince', 'Member since')} {memberSince}
           </span>
         )}
       </div>
