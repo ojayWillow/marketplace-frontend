@@ -5,12 +5,12 @@ const CTASection = () => {
   const { t } = useTranslation();
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 border-t border-[#1a1a24]">
+    <section className="py-12 sm:py-16 md:py-24 border-t border-gray-200 dark:border-[#1a1a24]">
       <div className="max-w-2xl mx-auto px-4 text-center">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
           {t('landing.cta.title')}
         </h2>
-        <p className="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8">
+        <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg mb-6 sm:mb-8">
           {t('landing.cta.subtitle')}
         </p>
         <a
