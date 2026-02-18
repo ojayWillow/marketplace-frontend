@@ -32,11 +32,11 @@ const TrustSection = () => {
   ];
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 border-t border-gray-200 dark:border-[#1a1a24]">
+    <section className="py-12 sm:py-16 md:py-24 border-t border-gray-200 dark:border-gray-700/50">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">{t('landing.trust.title')}</h2>
-          <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">{t('landing.trust.subtitle')}</p>
+          <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg">{t('landing.trust.subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -44,7 +44,7 @@ const TrustSection = () => {
             const colors = colorMap[item.color];
             const Icon = item.icon;
             return (
-              <div key={item.title} className="text-center p-4 sm:p-6">
+              <div key={item.title} className="text-center p-4 sm:p-6 rounded-2xl dark:bg-gray-800/30 dark:border dark:border-gray-700/40">
                 <div className={`w-12 h-12 sm:w-14 sm:h-14 ${colors.bg} rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4`}>
                   <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${colors.text}`} />
                 </div>

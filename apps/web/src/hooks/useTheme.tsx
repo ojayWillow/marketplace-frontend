@@ -20,10 +20,12 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-  return 'system';
+  // Default to 'light' for new visitors — light theme is the stronger
+  // first impression for a trust-critical marketplace landing page
+  return 'light';
 }
 
 function applyTheme(resolved: ResolvedTheme) {
