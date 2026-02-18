@@ -77,14 +77,14 @@ export default function UserProfile() {
     if (!id) return;
     startConversationMutation.mutate(Number(id), {
       onSuccess: (data) => navigate(`/messages/${data.conversation.id}`),
-      onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to start conversation'),
+      onError: (err: any) => toast.error(err?.response?.data?.error || t('userProfile.failedToStartConversation', 'Failed to start conversation')),
     });
   };
 
   const handleSubmitReview = async (data: { rating: number; content: string; taskId: number }) => {
-    if (!currentUser) { toast.error('Please login to leave a review'); return; }
-    if (!data.content.trim()) { toast.error('Please write a review comment'); return; }
-    if (!data.taskId) { toast.error('Please select a transaction to review'); return; }
+    if (!currentUser) { toast.error(t('common.loginRequired', 'Please login to leave a review')); return; }
+    if (!data.content.trim()) { toast.error(t('userProfile.pleaseWriteReview', 'Please write a review comment')); return; }
+    if (!data.taskId) { toast.error(t('userProfile.pleaseSelectTransaction', 'Please select a transaction to review')); return; }
 
     await apiClient.post(`/api/reviews/task/${data.taskId}`, {
       rating: data.rating,
@@ -95,7 +95,7 @@ export default function UserProfile() {
     setReviewableTransactions(prev => prev.filter(t => t.id !== data.taskId));
     if (reviewableTransactions.length <= 1) setCanReview(false);
     setShowReviewModal(false);
-    toast.success('Review submitted successfully!');
+    toast.success(t('userProfile.reviewSubmitted', 'Review submitted successfully!'));
   };
 
   /* ── Derived data ── */
@@ -121,7 +121,7 @@ export default function UserProfile() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 border-4 border-gray-200 dark:border-gray-700 border-t-gray-800 dark:border-t-gray-200 rounded-full animate-spin" />
-          <p className="text-sm text-gray-400 dark:text-gray-500">Loading profile…</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">{t('userProfile.loadingProfile', 'Loading profile…')}</p>
         </div>
       </div>
     );
@@ -133,13 +133,13 @@ export default function UserProfile() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="text-5xl mb-4">😕</div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">User not found</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">{error || "This profile doesn't exist or has been removed."}</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('userProfile.notFound', 'User not found')}</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">{error || t('userProfile.notFoundMessage', "This profile doesn't exist or has been removed.")}</p>
           <button
             onClick={() => navigate(-1)}
             className="px-6 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
           >
-            Go back
+            {t('common.goBack', 'Go back')}
           </button>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function UserProfile() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="text-sm font-medium">Back</span>
+            <span className="text-sm font-medium">{t('common.goBack', 'Go back')}</span>
           </button>
 
           <ProfileHeader
@@ -183,7 +183,7 @@ export default function UserProfile() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              {startConversationMutation.isPending ? 'Opening…' : 'Message'}
+              {startConversationMutation.isPending ? t('userProfile.opening', 'Opening…') : t('userProfile.message', 'Message')}
             </button>
 
             {workCount > 0 && (
@@ -197,7 +197,7 @@ export default function UserProfile() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                View Work
+                {t('userProfile.viewWork', 'View Work')}
               </button>
             )}
           </div>
@@ -208,14 +208,14 @@ export default function UserProfile() {
               onClick={() => setShowReviewModal(true)}
               className="w-full flex items-center justify-center gap-2 py-3 mb-8 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/40 rounded-xl font-medium hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
             >
-              ✍️ Leave a Review
+              ✍️ {t('userProfile.leaveReview', 'Leave a Review')}
             </button>
           )}
 
           {/* Skills */}
           {skills.length > 0 && (
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Skills</h2>
+              <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">{t('userProfile.skills', 'Skills')}</h2>
               <div className="flex flex-wrap gap-2">
                 {skills.map(skill => (
                   <span
@@ -233,7 +233,7 @@ export default function UserProfile() {
           {/* Work */}
           {workCount > 0 && (
             <div className="mb-8" id="user-work">
-              <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Work</h2>
+              <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">{t('userProfile.work', 'Work')}</h2>
               <div className="space-y-3">
                 {offerings.map(offering => (
                   <WorkCard
@@ -275,7 +275,7 @@ export default function UserProfile() {
           {reviews.length > 0 && (
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-                Reviews ({reviews.length})
+                {t('userProfile.reviewsCount', 'Reviews ({{count}})', { count: reviews.length })}
               </h2>
               <div className="space-y-3">
                 {reviews.map(review => (
@@ -290,7 +290,7 @@ export default function UserProfile() {
             <div className="text-center py-12">
               <div className="text-4xl mb-3">👋</div>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {displayName} is new to Kolab. Stay tuned!
+                {t('userProfile.newToKolab', '{{name}} is new to Kolab. Stay tuned!', { name: displayName })}
               </p>
             </div>
           )}

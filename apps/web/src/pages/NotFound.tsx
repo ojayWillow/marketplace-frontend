@@ -10,7 +10,7 @@ export default function NotFound() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      navigate(`/listings?search=${encodeURIComponent(searchQuery.trim())}`)
+      navigate(`/tasks?search=${encodeURIComponent(searchQuery.trim())}`)
     }
   }
 
@@ -39,7 +39,7 @@ export default function NotFound() {
             🔍
           </div>
           <div className="absolute bottom-4 left-1/3 text-3xl animate-bounce" style={{ animationDelay: '0.4s' }}>
-            📦
+            🛠️
           </div>
         </div>
         
@@ -60,7 +60,7 @@ export default function NotFound() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('listings.searchPlaceholder')}
+              placeholder={t('tasks.searchPlaceholder', 'Search tasks...')}
               className="w-full px-5 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <button
@@ -86,15 +86,6 @@ export default function NotFound() {
             {t('notFound.goHome')}
           </Link>
           <Link
-            to="/listings"
-            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            {t('notFound.browseListings')}
-          </Link>
-          <Link
             to="/tasks"
             className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all"
           >
@@ -112,24 +103,6 @@ export default function NotFound() {
             {t('notFound.lookingFor')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            <Link
-              to="/listings?category=electronics"
-              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              📱 {t('listings.categories.electronics')}
-            </Link>
-            <Link
-              to="/listings?category=vehicles"
-              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              🚗 {t('listings.categories.vehicles')}
-            </Link>
-            <Link
-              to="/listings?category=property"
-              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              🏠 {t('listings.categories.property')}
-            </Link>
             <Link
               to="/tasks"
               className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors"
