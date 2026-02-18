@@ -54,7 +54,7 @@ export const useWorkPage = () => {
   }, []);
 
   // Fetch logic — skip when in mine tab
-  const fetchItems = useCallback(async (tab: MainTab, categories: string[], loc: { lat: number; lng: number } | null, radius: number, isUserRadiusChange: boolean) => {
+  const fetchItems = useCallback(async (tab: MainTab, categories: string[], loc: { lat: number; lng: number } | null, radius: number) => {
     if (tab === 'mine') return; // Mine tab uses its own data source
 
     const version = ++fetchVersionRef.current;
@@ -66,20 +66,18 @@ export const useWorkPage = () => {
 
     try {
       const effectiveRadius = radius === 0 ? 500 : radius;
+      // min_results: 0 disables backend auto-expansion (backend defaults to 5 if omitted)
+      const minResults = userChangedRadius.current ? 0 : DEFAULT_MIN_RESULTS;
 
       const fetchJobs = async (): Promise<WorkItem[]> => {
         if (tab === 'services') return [];
         const baseParams: Record<string, unknown> = { status: 'open' as const };
 
-        // Add location + radius if we have user's location
         if (loc) {
           baseParams.latitude = loc.lat;
           baseParams.longitude = loc.lng;
           baseParams.radius = effectiveRadius;
-          // Only use min_results on initial load
-          if (!isUserRadiusChange) {
-            baseParams.min_results = DEFAULT_MIN_RESULTS;
-          }
+          baseParams.min_results = minResults;
         }
 
         const response = categories.length === 0
@@ -97,9 +95,8 @@ export const useWorkPage = () => {
           baseParams.latitude = loc.lat;
           baseParams.longitude = loc.lng;
           baseParams.radius = effectiveRadius;
-          if (!isUserRadiusChange) {
-            baseParams.min_results = DEFAULT_MIN_RESULTS;
-          }
+          // Note: offerings backend doesn't support min_results,
+          // but extra query params are harmlessly ignored
         }
 
         const response = categories.length === 0
@@ -138,7 +135,7 @@ export const useWorkPage = () => {
   // Fetch on mount and when tab/filters/radius/location change (but not for mine tab)
   useEffect(() => {
     if (mainTab !== 'mine') {
-      fetchItems(mainTab, selectedCategories, userLocation, searchRadius, userChangedRadius.current);
+      fetchItems(mainTab, selectedCategories, userLocation, searchRadius);
     }
   }, [mainTab, selectedCategories, fetchItems, userLocation, searchRadius]);
 
@@ -181,7 +178,7 @@ export const useWorkPage = () => {
   }, [navigate]);
 
   const handleRetry = useCallback(() => {
-    fetchItems(mainTab, selectedCategories, userLocation, searchRadius, userChangedRadius.current);
+    fetchItems(mainTab, selectedCategories, userLocation, searchRadius);
   }, [fetchItems, mainTab, selectedCategories, userLocation, searchRadius]);
 
   const getCategoryInfo = useCallback((categoryKey: string) => {

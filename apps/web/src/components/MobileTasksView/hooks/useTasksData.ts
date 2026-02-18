@@ -24,7 +24,7 @@ interface UseTasksDataOptions {
  * - No spinner for cached data — shows stale content with background refresh
  * - Single API call with comma-separated categories
  * - First load: min_results=5 so users always see some jobs
- * - After user changes radius: strict filtering, no min_results
+ * - After user changes radius: min_results=0 → strict filtering, no expansion
  */
 export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
   const queryClient = useQueryClient();
@@ -66,13 +66,10 @@ export const useTasksData = ({ userLocation }: UseTasksDataOptions) => {
         longitude: userLocation.lng,
         radius: effectiveRequestRadius,
         status: 'open',
+        // min_results: 0 disables backend auto-expansion (backend defaults to 5 if omitted)
+        min_results: userChangedRadius.current ? 0 : DEFAULT_MIN_RESULTS,
         ...(categoryParam && { category: categoryParam }),
       };
-
-      // Only use min_results on initial load (before user touches radius)
-      if (!userChangedRadius.current) {
-        params.min_results = DEFAULT_MIN_RESULTS;
-      }
 
       const response = await getTasks(params as Parameters<typeof getTasks>[0]);
 
