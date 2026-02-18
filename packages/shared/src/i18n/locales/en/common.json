@@ -54,6 +54,7 @@
   "gotIt": "Got it!",
   "and": "and",
   "comingSoon": "Coming soon",
+  "signIn": "Sign in",
   "notifications": {
     "title": "Notifications",
     "unread": "unread",
@@ -69,5 +70,11 @@
     "awaitingConfirmation": "{{count}} task(s) awaiting confirmation",
     "workersMarkedDone": "Workers marked these as done",
     "viewAllActivity": "View all activity"
+  },
+  "header": {
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "userMenu": "User menu",
+    "youHaveNotifications": "You have {{count}} notification(s)"
   }
 }

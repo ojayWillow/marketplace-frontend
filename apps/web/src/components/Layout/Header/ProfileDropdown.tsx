@@ -48,7 +48,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-        aria-label="User menu"
+        aria-label={t('header.userMenu', 'User menu')}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -74,7 +74,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
         <div 
           className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]"
           role="menu"
-          aria-label="User menu"
+          aria-label={t('header.userMenu', 'User menu')}
         >
           {/* User Info */}
           <div className="px-4 py-3 border-b border-gray-100">
@@ -158,7 +158,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
             </Link>
             
             <Link
-              to="/listings/create"
+              to="/offerings/create"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               role="menuitem"
@@ -166,7 +166,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
               <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {t('menu.createListing')}
+              {t('menu.offerService')}
             </Link>
           </div>
           

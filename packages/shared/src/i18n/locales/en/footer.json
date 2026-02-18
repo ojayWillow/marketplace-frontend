@@ -1,7 +1,10 @@
 {
   "rights": "All rights reserved",
+  "allRightsReserved": "All rights reserved.",
   "about": "About",
   "terms": "Terms",
   "privacy": "Privacy",
-  "contact": "Contact Us"
+  "contact": "Contact Us",
+  "location": "Riga, Latvia",
+  "emailAriaLabel": "Send email to info@kolab.lv"
 }
