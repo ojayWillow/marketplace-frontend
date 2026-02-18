@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Task } from '@marketplace/shared';
 import { Offering } from '@marketplace/shared';
 import { getCategoryLabel } from '../../../constants/categories';
+import StarRating from '../../../components/ui/StarRating';
 
 interface RecommendedHelpersProps {
   task: Task;
@@ -64,12 +65,14 @@ export const RecommendedHelpers = ({
                   >
                     {helper.creator_name}
                   </Link>
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-500 text-sm">
-                      {'★'.repeat(Math.floor(helper.creator_rating || 0))}
-                      {'☆'.repeat(5 - Math.floor(helper.creator_rating || 0))}
-                    </span>
-                  </div>
+                  <StarRating
+                    rating={helper.creator_rating || 0}
+                    size="xs"
+                    showValue
+                    reviewCount={helper.creator_review_count || 0}
+                    showCount
+                    compact
+                  />
                 </div>
                 <span className="text-green-600 dark:text-green-400 font-bold">
                   €{helper.price || 0}

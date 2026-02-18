@@ -32,9 +32,6 @@ interface JobPreviewCardProps {
 /**
  * Job preview card — Shows when a job marker is selected on the map.
  * Positioned above the MobileBottomNav (h-14 = 56px + safe-area-inset-bottom).
- *
- * When `hasRealLocation` is false (guest via shared link, no GPS),
- * the distance field shows the job's city instead of a misleading number.
  */
 const JobPreviewCard = ({
   task,
@@ -62,7 +59,6 @@ const JobPreviewCard = ({
 
   const hasRating = task.creator_rating != null;
 
-  // Short city from location string (first part)
   const jobCity = task.location?.split(',')[0]?.trim() || '';
 
   const handleShare = async (e: React.MouseEvent) => {
@@ -102,7 +98,6 @@ const JobPreviewCard = ({
             )}
           </div>
 
-          {/* Distance (real GPS) or city name (no GPS) */}
           <span className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
             {hasRealLocation ? (
               <>📍 {formatDistance(distance)}</>
@@ -212,8 +207,10 @@ const JobPreviewCard = ({
               <StarRating
                 rating={task.creator_rating!}
                 size="xs"
+                showValue
                 reviewCount={task.creator_review_count || 0}
                 showCount
+                compact
               />
             )}
             

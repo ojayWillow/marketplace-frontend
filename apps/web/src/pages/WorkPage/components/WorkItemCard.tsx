@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { WorkItemWithDistance } from '../types';
-import { formatTimeAgo, getDifficultyColor, renderStars, formatItemDistance } from '../utils';
+import { formatTimeAgo, getDifficultyColor, formatItemDistance } from '../utils';
 import { FEATURES } from '../../../constants/featureFlags';
+import StarRating from '../../../components/ui/StarRating';
 
 interface WorkItemCardProps {
   item: WorkItemWithDistance;
@@ -67,12 +68,14 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
           </span>
           <div className="flex items-center gap-1 text-[11px]">
             {hasReviews ? (
-              <>
-                <span className="text-yellow-500 leading-none flex-shrink-0">
-                  {renderStars(item.creator_rating || 0)}
-                </span>
-                <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">({item.creator_review_count})</span>
-              </>
+              <StarRating
+                rating={item.creator_rating || 0}
+                size="xs"
+                showValue
+                reviewCount={item.creator_review_count}
+                showCount
+                compact
+              />
             ) : (
               <span className="text-gray-400 dark:text-gray-500">New user</span>
             )}
