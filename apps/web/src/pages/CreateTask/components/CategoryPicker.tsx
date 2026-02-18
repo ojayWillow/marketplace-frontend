@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { CATEGORY_GROUPS, getCategoryByValue } from '../../../constants/categories';
+import { getCategoryGroups, getCategoryByValue } from '../../../constants/categories';
 
 interface CategoryPickerProps {
   value: string;
@@ -8,13 +8,14 @@ interface CategoryPickerProps {
 
 const CategoryPicker = ({ value, onChange }: CategoryPickerProps) => {
   const { t } = useTranslation();
+  const groups = getCategoryGroups(t);
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         {t('createTask.category', 'Category')} *
       </label>
-      {CATEGORY_GROUPS.map(group => (
+      {groups.map(group => (
         <div key={group.name} className="mb-2.5">
           <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{group.name}</p>
           <div className="flex flex-wrap gap-1.5">
@@ -34,7 +35,7 @@ const CategoryPicker = ({ value, onChange }: CategoryPickerProps) => {
                   }`}
                 >
                   <span className="text-sm">{cat.icon}</span>
-                  <span>{cat.label}</span>
+                  <span>{t(`tasks.categories.${cat.value}`, cat.label)}</span>
                 </button>
               );
             })}
