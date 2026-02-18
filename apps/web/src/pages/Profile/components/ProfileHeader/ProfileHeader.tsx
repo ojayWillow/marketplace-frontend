@@ -189,7 +189,7 @@ export const ProfileHeader = ({
             <div className="md:hidden flex flex-wrap gap-1.5 mt-2">
               {skillsList.map((skill, i) => (
                 <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs rounded-full font-medium">
-                  <span>{skill.icon}</span> {skill.label}
+                  <span>{skill.icon}</span> {t(`tasks.categories.${skill.key}`, skill.label)}
                 </span>
               ))}
             </div>
