@@ -21,6 +21,7 @@ import enListings from './locales/en/listings.json'
 import enMap from './locales/en/map.json'
 import enTasks from './locales/en/tasks.json'
 import enOfferings from './locales/en/offerings.json'
+import enOfferingDetail from './locales/en/offeringDetail.json'
 import enCreateOffering from './locales/en/createOffering.json'
 import enCreateTask from './locales/en/createTask.json'
 import enEditTask from './locales/en/editTask.json'
@@ -51,6 +52,7 @@ import lvListings from './locales/lv/listings.json'
 import lvMap from './locales/lv/map.json'
 import lvTasks from './locales/lv/tasks.json'
 import lvOfferings from './locales/lv/offerings.json'
+import lvOfferingDetail from './locales/lv/offeringDetail.json'
 import lvCreateOffering from './locales/lv/createOffering.json'
 import lvCreateTask from './locales/lv/createTask.json'
 import lvEditTask from './locales/lv/editTask.json'
@@ -81,6 +83,7 @@ import ruListings from './locales/ru/listings.json'
 import ruMap from './locales/ru/map.json'
 import ruTasks from './locales/ru/tasks.json'
 import ruOfferings from './locales/ru/offerings.json'
+import ruOfferingDetail from './locales/ru/offeringDetail.json'
 import ruCreateOffering from './locales/ru/createOffering.json'
 import ruCreateTask from './locales/ru/createTask.json'
 import ruEditTask from './locales/ru/editTask.json'
@@ -112,6 +115,7 @@ const en = {
   map: enMap,
   tasks: enTasks,
   offerings: enOfferings,
+  offeringDetail: enOfferingDetail,
   createOffering: enCreateOffering,
   createTask: enCreateTask,
   editTask: enEditTask,
@@ -143,6 +147,7 @@ const lv = {
   map: lvMap,
   tasks: lvTasks,
   offerings: lvOfferings,
+  offeringDetail: lvOfferingDetail,
   createOffering: lvCreateOffering,
   createTask: lvCreateTask,
   editTask: lvEditTask,
@@ -174,6 +179,7 @@ const ru = {
   map: ruMap,
   tasks: ruTasks,
   offerings: ruOfferings,
+  offeringDetail: ruOfferingDetail,
   createOffering: ruCreateOffering,
   createTask: ruCreateTask,
   editTask: ruEditTask,

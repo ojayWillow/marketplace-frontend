@@ -1,0 +1,11 @@
+{
+  "loading": "Загрузка предложения...",
+  "notFound": "Предложение не найдено",
+  "notFoundDescription": "Это предложение могло быть удалено или больше недоступно.",
+  "browseAll": "Все предложения",
+  "backToQuickHelp": "Назад к Quick Help",
+  "back": "Назад",
+  "aboutThisService": "Об этой услуге",
+  "starting": "Запуск...",
+  "contactName": "Связаться с {{name}}"
+}
