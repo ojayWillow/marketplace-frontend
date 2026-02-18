@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getCategoryIcon } from '../../constants/categories';
 
 interface WorkCardProps {
@@ -11,15 +12,17 @@ interface WorkCardProps {
   image?: string;
 }
 
-const badgeConfig = {
-  offering: { label: 'Offering', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-  task:     { label: 'Task',     text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-  listing:  { label: 'Listing',  text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-} as const;
-
 const routePrefix = { offering: '/offerings', task: '/tasks', listing: '/listings' } as const;
 
 export default function WorkCard({ id, type, title, description, price, category, image }: WorkCardProps) {
+  const { t } = useTranslation();
+
+  const badgeConfig = {
+    offering: { label: t('userProfile.badgeOffering', 'Offering'), text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    task:     { label: t('userProfile.badgeTask', 'Task'),         text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+    listing:  { label: t('userProfile.badgeListing', 'Listing'),   text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+  } as const;
+
   const badge = badgeConfig[type];
 
   const icon = type === 'listing' && image ? (

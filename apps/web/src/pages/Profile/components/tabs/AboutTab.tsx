@@ -155,7 +155,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
                     }`}
                   >
                     <span>{skill.icon}</span>
-                    <span>{skill.label}</span>
+                    <span>{t(`tasks.categories.${skill.key}`, skill.label)}</span>
                     {isSelected && <span className="text-blue-400 ml-0.5">✓</span>}
                   </button>
                 );
@@ -196,7 +196,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
             <div className="flex flex-wrap gap-1.5">
               {displaySkills.map((skill, i) => (
                 <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-sm rounded-full font-medium">
-                  <span>{skill.icon}</span> {skill.label}
+                  <span>{skill.icon}</span> {t(`tasks.categories.${skill.key}`, skill.label)}
                 </span>
               ))}
             </div>

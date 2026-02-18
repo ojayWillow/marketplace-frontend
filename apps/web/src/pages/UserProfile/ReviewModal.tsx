@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ReviewableTransaction {
   type: string;
@@ -17,6 +18,7 @@ interface ReviewModalProps {
 }
 
 export default function ReviewModal({ displayName, reviewableTransactions, onSubmit, onClose }: ReviewModalProps) {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
   const [taskId, setTaskId] = useState(reviewableTransactions[0]?.id || 0);
@@ -37,7 +39,7 @@ export default function ReviewModal({ displayName, reviewableTransactions, onSub
       <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-2xl md:rounded-2xl p-6 animate-in slide-in-from-bottom">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            Review {displayName}
+            {t('userProfile.reviewTitle', 'Review {{name}}', { name: displayName })}
           </h3>
           <button
             onClick={onClose}
@@ -52,7 +54,7 @@ export default function ReviewModal({ displayName, reviewableTransactions, onSub
         <form onSubmit={handleSubmit}>
           {reviewableTransactions.length > 1 && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('userProfile.transaction', 'Transaction')}</label>
               <select
                 value={taskId}
                 onChange={(e) => setTaskId(Number(e.target.value))}
@@ -70,13 +72,13 @@ export default function ReviewModal({ displayName, reviewableTransactions, onSub
           {reviewableTransactions.length === 1 && (
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                For: <span className="font-medium text-gray-900 dark:text-gray-200">{reviewableTransactions[0].title}</span>
+                {t('userProfile.forTransaction', 'For:')} <span className="font-medium text-gray-900 dark:text-gray-200">{reviewableTransactions[0].title}</span>
               </p>
             </div>
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rating</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('userProfile.rating', 'Rating')}</label>
             <div className="flex justify-center gap-1">
               {[1, 2, 3, 4, 5].map(star => (
                 <button
@@ -94,13 +96,13 @@ export default function ReviewModal({ displayName, reviewableTransactions, onSub
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your review</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('userProfile.yourReview', 'Your review')}</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
               className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent text-sm resize-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              placeholder="Share your experience…"
+              placeholder={t('userProfile.reviewPlaceholder', 'Share your experience\u2026')}
               required
             />
           </div>
@@ -111,14 +113,14 @@ export default function ReviewModal({ displayName, reviewableTransactions, onSub
               onClick={onClose}
               className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="flex-1 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              {submitting ? 'Submitting…' : 'Submit'}
+              {submitting ? t('userProfile.submitting', 'Submitting\u2026') : t('userProfile.submit', 'Submit')}
             </button>
           </div>
         </form>
