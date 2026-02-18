@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet default icon issue
@@ -74,6 +75,7 @@ const StarRating = ({ rating }: { rating: number }) => {
 };
 
 const TaskDetail = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
@@ -272,7 +274,8 @@ const TaskDetail = () => {
   const canApply = isAuthenticated && !isCreator && task.status === 'open';
   const canEdit = isCreator && task.status === 'open';
   const showApplications = isCreator && task.status === 'open';
-  const categoryLabel = getCategoryLabel(task.category);
+  const categoryLabelRaw = getCategoryLabel(task.category);
+  const categoryLabel = t(`tasks.categories.${task.category}`, categoryLabelRaw);
   const categoryIcon = getCategoryIcon(task.category);
   const applicantCount = task.pending_applications_count || 0;
   const budget = task.budget || task.reward || 0;
