@@ -2,8 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { divIcon, type LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTranslation } from 'react-i18next';
 import { useAddressSearch } from '../hooks';
 import { GeocodingResult } from '@marketplace/shared';
+import { DEFAULT_LOCATION } from '../../../constants/locations';
 
 interface LocationInputProps {
   location: string;
@@ -15,7 +17,6 @@ interface LocationInputProps {
   locationConfirmed?: boolean;
 }
 
-// Compact SVG drop-pin marker
 const pinIcon = divIcon({
   className: '',
   html: `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,7 +27,6 @@ const pinIcon = divIcon({
   iconAnchor: [10, 28],
 });
 
-// Flies/pans the map when coordinates change from outside (e.g. address selection)
 const MapController = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
   const prevCoords = useRef({ lat, lng });
@@ -42,7 +42,6 @@ const MapController = ({ lat, lng }: { lat: number; lng: number }) => {
   return null;
 };
 
-// Handles map click events
 const MapClickHandler = ({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) => {
   useMapEvents({
     click(e) {
@@ -61,6 +60,7 @@ const LocationInput = ({
   onCoordsChange,
   locationConfirmed = false,
 }: LocationInputProps) => {
+  const { t } = useTranslation();
   const { searching, suggestions, clearSuggestions } = useAddressSearch(location);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [reverseLoading, setReverseLoading] = useState(false);
@@ -83,49 +83,44 @@ const LocationInput = ({
     onCoordsChange(latlng.lat, latlng.lng);
   }, [onCoordsChange]);
 
-  // Clear reverse loading when location text updates (meaning reverse geocode finished)
   useEffect(() => {
     if (location && reverseLoading) {
       setReverseLoading(false);
     }
   }, [location, reverseLoading]);
 
-  // Show suggestions again when user starts typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowSuggestions(true);
     onChange(e);
   };
 
   const handleInputFocus = () => {
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-    }
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     setShowSuggestions(true);
   };
 
   const handleInputBlur = () => {
-    blurTimeoutRef.current = setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
+    blurTimeoutRef.current = setTimeout(() => setShowSuggestions(false), 200);
   };
 
-  // Shorten display name for the confirmation badge
   const shortLocation = location
     ? location.split(',').slice(0, 2).join(',').trim()
     : '';
 
+  const effectiveLat = latitude || DEFAULT_LOCATION.lat;
+  const effectiveLng = longitude || DEFAULT_LOCATION.lng;
+
   return (
     <div>
-      <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-        Your Location *
+      <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {t('createOffering.location', 'Your Location')} *
         {(searching || reverseLoading) && (
-          <span className="text-amber-500 text-xs ml-2 animate-pulse">
-            {reverseLoading ? '(locating...)' : '(searching...)'}
+          <span className="text-amber-500 dark:text-amber-400 text-xs ml-2 animate-pulse">
+            {reverseLoading ? t('createOffering.locating', '(locating...)') : t('createOffering.searching', '(searching...)')}
           </span>
         )}
       </label>
 
-      {/* Search input */}
       <div className="relative mb-2 z-[1000]">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📍</span>
         <input
@@ -137,33 +132,31 @@ const LocationInput = ({
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder="Search address or tap the map"
-          className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+          placeholder={t('createOffering.searchLocation', 'Search address or tap the map')}
+          className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-base sm:text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
           autoComplete="off"
         />
 
-        {/* Suggestions dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-48 overflow-y-auto">
             {suggestions.map((result, index) => (
               <button
                 key={index}
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(result)}
-                className="w-full text-left px-3 py-2 hover:bg-amber-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-900/20 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors"
               >
-                <div className="text-xs text-gray-900 line-clamp-1">{result.display_name}</div>
+                <div className="text-xs text-gray-900 dark:text-gray-100 line-clamp-1">{result.display_name}</div>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Interactive map */}
-      <div className="h-36 sm:h-44 rounded-lg overflow-hidden border border-gray-200 relative">
+      <div className="h-36 sm:h-44 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 relative">
         <MapContainer
-          center={[latitude, longitude]}
+          center={[effectiveLat, effectiveLng]}
           zoom={12}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
@@ -173,9 +166,9 @@ const LocationInput = ({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MapController lat={latitude} lng={longitude} />
+          <MapController lat={effectiveLat} lng={effectiveLng} />
           <Marker
-            position={[latitude, longitude]}
+            position={[effectiveLat, effectiveLng]}
             icon={pinIcon}
             draggable={true}
             eventHandlers={{ dragend: handleMarkerDragEnd }}
@@ -183,37 +176,33 @@ const LocationInput = ({
           <MapClickHandler onMapClick={handleMapClick} />
         </MapContainer>
 
-        {/* Tap hint overlay — shown only when no location set */}
         {!location && !reverseLoading && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none z-[1000]">
-            Tap to set location
+            {t('createOffering.tapToSetLocation', 'Tap to set location')}
           </div>
         )}
 
-        {/* Reverse geocoding loading overlay */}
         {reverseLoading && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber-500/90 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none z-[1000] animate-pulse">
-            Finding address...
+            {t('createOffering.findingAddress', 'Finding address...')}
           </div>
         )}
       </div>
 
-      {/* Confirmed location badge */}
       {locationConfirmed && location && !reverseLoading && (
-        <div className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-lg">
-          <span className="text-green-600 text-xs">✅</span>
-          <p className="text-[11px] text-green-700 font-medium truncate flex-1">
+        <div className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg">
+          <span className="text-amber-600 dark:text-amber-400 text-xs">✅</span>
+          <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium truncate flex-1">
             {shortLocation}
           </p>
-          <p className="text-[10px] text-green-500 shrink-0">
+          <p className="text-[10px] text-amber-500 dark:text-amber-400 shrink-0">
             {latitude.toFixed(4)}, {longitude.toFixed(4)}
           </p>
         </div>
       )}
 
-      {/* Fallback: show raw coords if location text exists but not confirmed */}
       {!locationConfirmed && location && !reverseLoading && (
-        <p className="text-[10px] text-gray-400 mt-1">
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
           {latitude.toFixed(4)}, {longitude.toFixed(4)}
         </p>
       )}
