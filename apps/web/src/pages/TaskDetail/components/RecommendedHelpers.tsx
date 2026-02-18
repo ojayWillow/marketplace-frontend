@@ -32,7 +32,7 @@ export const RecommendedHelpers = ({
     <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden">
       <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4 text-white">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">\u2728</span>
+          <span className="text-2xl">✨</span>
           <div>
             <h2 className="font-bold text-lg">Recommended Helpers</h2>
             <p className="text-amber-100 text-sm">
@@ -75,7 +75,7 @@ export const RecommendedHelpers = ({
                   />
                 </div>
                 <span className="text-green-600 dark:text-green-400 font-bold">
-                  \u20ac{helper.price || 0}
+                  €{helper.price || 0}
                 </span>
               </div>
 
@@ -83,7 +83,7 @@ export const RecommendedHelpers = ({
                 onClick={() => onContactHelper(helper)}
                 className="w-full bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 transition-colors font-medium"
               >
-                \ud83d\udcac Contact
+                💬 Contact
               </button>
             </div>
           ))}
@@ -95,7 +95,7 @@ export const RecommendedHelpers = ({
               to={`/tasks?tab=offerings&category=${task.category}`}
               className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium"
             >
-              View all {helpers.length} helpers \u2192
+              View all {helpers.length} helpers →
             </Link>
           </div>
         )}

@@ -65,26 +65,26 @@ const StarRating: React.FC<StarRatingProps> = ({
     if (fill >= 1) {
       stars.push(
         <span key={i} className="text-yellow-400">
-          \u2605
+          ★
         </span>
       );
     } else if (fill > 0) {
       const percentage = Math.round(fill * 100);
       stars.push(
         <span key={i} className="relative inline-block">
-          <span className="text-gray-300 dark:text-gray-600">\u2605</span>
+          <span className="text-gray-300 dark:text-gray-600">★</span>
           <span
             className="absolute inset-0 text-yellow-400 overflow-hidden"
             style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
           >
-            \u2605
+            ★
           </span>
         </span>
       );
     } else {
       stars.push(
         <span key={i} className="text-gray-300 dark:text-gray-600">
-          \u2605
+          ★
         </span>
       );
     }

@@ -81,7 +81,7 @@ export const TaskReviews = ({
               star <= displayRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
             }`}
           >
-            \u2605
+            ★
           </button>
         ))}
       </div>
@@ -91,7 +91,7 @@ export const TaskReviews = ({
   return (
     <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-md p-6">
       <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-4 flex items-center gap-2">
-        \u2b50 {t('reviews.title')}
+        ⭐ {t('reviews.title')}
         {reviews.length > 0 && (
           <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({reviews.length})</span>
         )}
@@ -105,7 +105,7 @@ export const TaskReviews = ({
               className="w-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 rounded-lg p-4 text-center hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
             >
               <span className="font-medium text-yellow-700 dark:text-yellow-400">
-                \u2b50 {t('reviews.leaveReviewFor', { name: canReview.reviewee?.username })}
+                ⭐ {t('reviews.leaveReviewFor', { name: canReview.reviewee?.username })}
               </span>
             </button>
           ) : (
@@ -156,7 +156,7 @@ export const TaskReviews = ({
                         : 'text-gray-400 dark:text-gray-500'
                   }`}>
                     {contentLength}/{MIN_REVIEW_LENGTH}
-                    {isContentValid && ' \u2713'}
+                    {isContentValid && ' ✓'}
                   </span>
                 </div>
               </div>
@@ -189,14 +189,14 @@ export const TaskReviews = ({
       {canReview && !canReview.can_review && canReview.existing_review && (
         <div className="mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 rounded-lg p-3">
           <p className="text-green-700 dark:text-green-400 flex items-center gap-2 text-sm">
-            <span>\u2705</span> {t('reviews.alreadyReviewed')}
+            <span>✅</span> {t('reviews.alreadyReviewed')}
           </p>
         </div>
       )}
 
       {reviews.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <span className="text-4xl mb-2 block">\ud83d\udcac</span>
+          <span className="text-4xl mb-2 block">💬</span>
           <p className="text-gray-500 dark:text-gray-400">{t('reviews.noReviews')}</p>
         </div>
       ) : (

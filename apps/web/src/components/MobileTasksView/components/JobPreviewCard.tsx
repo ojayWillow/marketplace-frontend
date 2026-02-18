@@ -13,10 +13,10 @@ import StarRating from '../../ui/StarRating';
  */
 const cleanTitle = (title: string): string => {
   return title
-    .replace(/^\s*(\u26a1\s*)?urgent[:\-!\s]*/i, '')
-    .replace(/^\s*(\u26a1\s*)?steidzami[:\-!\s]*/i, '')
-    .replace(/^\s*(\u26a1\s*)?\u0441\u0440\u043e\u0447\u043d\u043e[:\-!\s]*/i, '')
-    .replace(/^\s*\u26a1\s*/, '')
+    .replace(/^\s*(⚡\s*)?urgent[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?steidzami[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?срочно[:\-!\s]*/i, '')
+    .replace(/^\s*⚡\s*/, '')
     .trim() || title;
 };
 
@@ -30,7 +30,7 @@ interface JobPreviewCardProps {
 }
 
 /**
- * Job preview card \u2014 Shows when a job marker is selected on the map.
+ * Job preview card — Shows when a job marker is selected on the map.
  * Positioned above the MobileBottomNav (h-14 = 56px + safe-area-inset-bottom).
  */
 const JobPreviewCard = ({
@@ -92,16 +92,16 @@ const JobPreviewCard = ({
             {isUrgent && (
               <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 items-center justify-center text-[8px] text-white font-bold">\u26a1</span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
               </span>
             )}
           </div>
 
           <span className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
             {hasRealLocation ? (
-              <>\ud83d\udccd {formatDistance(distance)}</>
+              <>📍 {formatDistance(distance)}</>
             ) : (
-              <>\ud83d\udccd {jobCity || t('tasks.locationUnknown', 'Location')}</>
+              <>📍 {jobCity || t('tasks.locationUnknown', 'Location')}</>
             )}
           </span>
 
@@ -109,7 +109,7 @@ const JobPreviewCard = ({
             onClick={onClose}
             className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
-            \u2715
+            ✕
           </button>
         </div>
 
@@ -126,7 +126,7 @@ const JobPreviewCard = ({
                 : 'text-purple-600 dark:text-purple-400'
             }`}
           >
-            \u20ac{budget}
+            €{budget}
           </span>
         </div>
 
@@ -140,7 +140,7 @@ const JobPreviewCard = ({
           {hasRealLocation && (
             <div>
               <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-                {t('tasks.distance', 'ATT\u0100LUMS')}
+                {t('tasks.distance', 'ATTĀLUMS')}
               </div>
               <div className="text-sm font-bold text-gray-700 dark:text-gray-300">
                 {formatDistance(distance)}
@@ -149,7 +149,7 @@ const JobPreviewCard = ({
           )}
           <div className={hasRealLocation ? 'border-x border-gray-200 dark:border-gray-700' : ''}>
             <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-              {t('tasks.posted', 'PUBLIC\u0112TS')}
+              {t('tasks.posted', 'PUBLICĒTS')}
             </div>
             <div className="text-sm font-bold text-gray-700 dark:text-gray-300">
               {task.created_at ? formatTimeAgo(task.created_at) : 'New'}
@@ -167,7 +167,7 @@ const JobPreviewCard = ({
 
         {/* Location */}
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-          <span>\ud83d\udccd</span>
+          <span>📍</span>
           <span className="truncate">
             {task.location?.split(',').slice(0, 2).join(', ') || 'Nearby'}
           </span>
@@ -224,7 +224,7 @@ const JobPreviewCard = ({
             )}
           </div>
           
-          <span className="text-gray-400 dark:text-gray-500 text-xs flex-shrink-0">\u2192</span>
+          <span className="text-gray-400 dark:text-gray-500 text-xs flex-shrink-0">→</span>
         </button>
       </div>
 
@@ -238,7 +238,7 @@ const JobPreviewCard = ({
               : 'bg-blue-500 hover:bg-blue-600'
           }`}
         >
-          {t('tasks.viewAndApply', 'Skat\u012bt un pieteikties')} \u2192
+          {t('tasks.viewAndApply', 'Skatīt un pieteikties')} →
         </button>
         <button
           onClick={handleShare}

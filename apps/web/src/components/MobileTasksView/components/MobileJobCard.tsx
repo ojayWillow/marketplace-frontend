@@ -9,10 +9,10 @@ import StarRating from '../../ui/StarRating';
  */
 const cleanTitle = (title: string): string => {
   return title
-    .replace(/^\s*(\u26a1\s*)?urgent[:\-!\s]*/i, '')
-    .replace(/^\s*(\u26a1\s*)?steidzami[:\-!\s]*/i, '')
-    .replace(/^\s*(\u26a1\s*)?\u0441\u0440\u043e\u0447\u043d\u043e[:\-!\s]*/i, '')
-    .replace(/^\s*\u26a1\s*/, '')
+    .replace(/^\s*(⚡\s*)?urgent[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?steidzami[:\-!\s]*/i, '')
+    .replace(/^\s*(⚡\s*)?срочно[:\-!\s]*/i, '')
+    .replace(/^\s*⚡\s*/, '')
     .trim() || title;
 };
 
@@ -61,12 +61,12 @@ const MobileJobCard = ({
             isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : isUrgent ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'
           }`}
         >
-          {task.icon || '\ud83d\udccb'}
+          {task.icon || '📋'}
         </div>
         {isUrgent && (
           <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 items-center justify-center text-[8px] text-white font-bold">\u26a1</span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
           </span>
         )}
       </div>
@@ -79,8 +79,8 @@ const MobileJobCard = ({
         
         {/* Line 2: Distance and Time */}
         <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          <span>\ud83d\udccd {formatDistance(distance)}</span>
-          <span>\u2022</span>
+          <span>📍 {formatDistance(distance)}</span>
+          <span>•</span>
           <span>{task.created_at ? formatTimeAgo(task.created_at) : 'New'}</span>
         </div>
         
@@ -147,7 +147,7 @@ const MobileJobCard = ({
               : 'text-purple-600 dark:text-purple-400'
           }`}
         >
-          \u20ac{budget}
+          €{budget}
         </span>
       </div>
     </div>
