@@ -13,6 +13,7 @@ export enum NotificationType {
   REVIEW_REMINDER = 'review_reminder',
   TASK_CANCELLED = 'task_cancelled',
   NEW_REVIEW = 'new_review',
+  NEW_TASK_NEARBY = 'new_task_nearby',
 }
 
 // Data fields that can be included in notifications for i18n interpolation
@@ -24,6 +25,13 @@ export interface NotificationData {
   other_party_name?: string;
   is_creator?: boolean;
   rating?: number;
+
+  // Job alerts (new_task_nearby)
+  task_id?: number;
+  category_key?: string;
+  distance_km?: number;
+  budget?: string;
+  location?: string;
 }
 
 export interface Notification {
