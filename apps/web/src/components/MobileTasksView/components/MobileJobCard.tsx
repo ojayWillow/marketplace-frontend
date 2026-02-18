@@ -2,6 +2,7 @@ import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import { FEATURES } from '../../../constants/featureFlags';
+import StarRating from '../../ui/StarRating';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -41,24 +42,6 @@ const MobileJobCard = ({
   const hasRating = task.creator_rating != null;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
-
-  // Render star rating
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<span key={i} className="text-yellow-400">★</span>);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">⯪</span>);
-      } else {
-        stars.push(<span key={i} className="text-gray-300 dark:text-gray-600">★</span>);
-      }
-    }
-    return stars;
-  };
 
   return (
     <div
@@ -126,16 +109,14 @@ const MobileJobCard = ({
             <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
           )}
           
-          {/* Rating with stars */}
+          {/* Rating with proper fractional stars */}
           {hasRating && (
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <div className="flex text-[10px]">
-                {renderStars(task.creator_rating!)}
-              </div>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                ({task.creator_review_count || 0})
-              </span>
-            </div>
+            <StarRating
+              rating={task.creator_rating!}
+              size="xs"
+              reviewCount={task.creator_review_count || 0}
+              showCount
+            />
           )}
           
           {/* Separator before city */}

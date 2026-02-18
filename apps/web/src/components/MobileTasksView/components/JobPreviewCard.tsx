@@ -6,6 +6,7 @@ import { formatTimeAgo } from '../utils/formatting';
 import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories';
 import shareTask from '../../../utils/shareTask';
 import { FEATURES } from '../../../constants/featureFlags';
+import StarRating from '../../ui/StarRating';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -70,23 +71,6 @@ const JobPreviewCard = ({
       setShareState('copied');
       setTimeout(() => setShareState('idle'), 2000);
     }
-  };
-
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<span key={i} className="text-yellow-400">★</span>);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">⯨</span>);
-      } else {
-        stars.push(<span key={i} className="text-gray-300 dark:text-gray-600">★</span>);
-      }
-    }
-    return stars;
   };
 
   return (
@@ -224,14 +208,12 @@ const JobPreviewCard = ({
             )}
             
             {hasRating && (
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <div className="flex text-xs">
-                  {renderStars(task.creator_rating!)}
-                </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  ({task.creator_review_count || 0})
-                </span>
-              </div>
+              <StarRating
+                rating={task.creator_rating!}
+                size="xs"
+                reviewCount={task.creator_review_count || 0}
+                showCount
+              />
             )}
             
             {hasRating && task.creator_city && (
