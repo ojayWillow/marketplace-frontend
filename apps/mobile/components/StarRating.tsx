@@ -9,55 +9,81 @@ interface StarRatingProps {
   showCount?: boolean;
 }
 
-const StarRating: React.FC<StarRatingProps> = ({ 
-  rating, 
-  reviewCount, 
-  size = 14, 
+const StarRating: React.FC<StarRatingProps> = ({
+  rating,
+  reviewCount,
+  size = 14,
   color = '#f59e0b',
-  showCount = true 
+  showCount = true,
 }) => {
-  // Round to nearest 0.5 for display
-  const fraction = rating % 1;
-  const fullStars = fraction >= 0.8 ? Math.ceil(rating) : Math.floor(rating);
-  const hasHalfStar = fraction >= 0.3 && fraction < 0.8;
+  // Clamp rating between 0 and 5
+  const clampedRating = Math.min(Math.max(rating, 0), 5);
+  const fullStars = Math.floor(clampedRating);
+  const fraction = clampedRating - fullStars;
+
+  // Each star character needs a known width so we can clip it precisely.
+  // The star character's visual width is roughly equal to the fontSize.
+  const starWidth = size;
+
+  const renderStar = (key: string, fillPercent: number) => (
+    <View
+      key={key}
+      style={{
+        width: starWidth * fillPercent,
+        height: size + 2,
+        overflow: 'hidden',
+        marginRight: fillPercent === 1 ? 1 : 0,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: size,
+          lineHeight: size + 2,
+          color,
+        }}
+      >
+        ★
+      </Text>
+    </View>
+  );
 
   const renderStars = () => {
     const stars = [];
 
-    // Full stars only
+    // Full stars
     for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <Text key={`full-${i}`} style={[styles.star, { fontSize: size, color, lineHeight: size + 2 }]}>
-          ★
-        </Text>
-      );
+      stars.push(renderStar(`full-${i}`, 1));
     }
 
-    // Half star (shown as a slightly dimmer full star to keep it clean)
-    if (hasHalfStar) {
-      stars.push(
-        <Text key="half" style={[styles.star, { fontSize: size, color, opacity: 0.5, lineHeight: size + 2 }]}>
-          ★
-        </Text>
-      );
+    // Fractional star — only if there is a fraction and we haven't hit 5 full stars
+    if (fraction > 0 && fullStars < 5) {
+      stars.push(renderStar('partial', fraction));
     }
 
-    // No empty stars — that's it, clean and done
+    // No empty/gray placeholder stars — only the filled portion is rendered
 
     return stars;
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.starsContainer}>
-        {renderStars()}
-      </View>
+      <View style={styles.starsContainer}>{renderStars()}</View>
       {/* Show numeric rating for precision */}
-      <Text style={[styles.ratingNumber, { fontSize: size * 0.85, color, lineHeight: size + 2 }]}>
+      <Text
+        style={[
+          styles.ratingNumber,
+          { fontSize: size * 0.85, color, lineHeight: size + 2 },
+        ]}
+      >
         {rating.toFixed(1)}
       </Text>
       {showCount && reviewCount !== undefined && reviewCount > 0 && (
-        <Text style={[styles.count, { fontSize: size * 0.85, lineHeight: size + 2 }]}>
+        <Text
+          style={[
+            styles.count,
+            { fontSize: size * 0.85, lineHeight: size + 2 },
+          ]}
+        >
           ({reviewCount})
         </Text>
       )}
@@ -74,9 +100,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 3,
-  },
-  star: {
-    marginRight: 1,
   },
   ratingNumber: {
     fontWeight: '600',
