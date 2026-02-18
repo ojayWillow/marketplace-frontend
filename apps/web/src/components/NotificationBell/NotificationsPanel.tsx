@@ -27,6 +27,7 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> =
   [NotificationType.REVIEW_REMINDER]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50' },
   [NotificationType.TASK_CANCELLED]: { icon: '❌', color: 'text-red-600', bg: 'bg-red-50' },
   [NotificationType.NEW_REVIEW]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  [NotificationType.NEW_TASK_NEARBY]: { icon: '📍', color: 'text-purple-600', bg: 'bg-purple-50' },
 };
 
 const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50' };
@@ -105,15 +106,33 @@ const getNotificationTitle = (n: Notification, t: (key: string, fallback: string
       const rating = n.data?.rating || 5;
       return t('common.notifications.newReview', 'New {{rating}}-star review for "{{task}}"', { task: taskTitle, rating });
     }
+    case NotificationType.NEW_TASK_NEARBY: {
+      const distanceVal = n.data?.distance_km != null ? `${n.data.distance_km} km` : '';
+      const category = n.data?.category_key || '';
+      return t(
+        'common.notifications.newTaskNearby',
+        'New {{category}} task {{distance}} away',
+        { category, distance: distanceVal }
+      );
+    }
     default:
       return n.title || n.message;
   }
 };
 
 /** Get optional subtitle for richer context */
-const getNotificationSubtitle = (n: Notification): string | null => {
+const getNotificationSubtitle = (n: Notification, t?: (key: string, fallback: string, opts?: any) => string): string | null => {
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
     return n.message || null;
+  }
+  if (n.type === NotificationType.NEW_TASK_NEARBY) {
+    const budget = n.data?.budget;
+    const location = n.data?.location;
+    if (budget && location && t) {
+      return t('common.notifications.newTaskNearbyBudget', '{{budget}} · {{location}}', { budget, location });
+    }
+    if (location) return location;
+    return null;
   }
   return null;
 };
@@ -319,7 +338,7 @@ interface NotificationItemProps {
 const NotificationItem = ({ notification, onClick, t, language }: NotificationItemProps) => {
   const config = getNotificationConfig(notification);
   const hasAction = !!(notification.related_type && notification.related_id);
-  const subtitle = getNotificationSubtitle(notification);
+  const subtitle = getNotificationSubtitle(notification, t);
 
   return (
     <button

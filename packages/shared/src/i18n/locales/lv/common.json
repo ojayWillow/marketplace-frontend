@@ -113,7 +113,18 @@
     "taskCancelled": "\"{{task}}\" tika atcelts",
     "newReview": "Jauna {{rating}} zvaigzņu atsauksme par \"{{task}}\"",
     "bellLabel": "Paziņojumi",
-    "bellLabelUnread": "Paziņojumi ({{count}} nelasīti)"
+    "bellLabelUnread": "Paziņojumi ({{count}} nelasīti)",
+    "newTaskNearby": "Jauns {{category}} darbs {{distance}} attālumā",
+    "newTaskNearbyBudget": "{{budget}} · {{location}}",
+    "jobAlerts": "Darbu paziņojumi",
+    "jobAlertsDesc": "Saņem paziņojumus par jauniem darbiem tavā tuvumā",
+    "radius": "Rādiuss",
+    "radiusKm": "{{value}} km",
+    "categories": "Kategorijas",
+    "allCategories": "Visas kategorijas",
+    "maxCategories": "Maks. {{max}} kategorijas",
+    "jobAlertsSaved": "Darbu paziņojumi atjaunināti",
+    "locationRequired": "Iestati savu atrašanās vietu, lai saņemtu darbu paziņojumus"
   },
   "header": {
     "closeMenu": "Aizvērt izvēlni",

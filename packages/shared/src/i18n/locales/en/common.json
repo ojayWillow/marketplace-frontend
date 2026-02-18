@@ -113,7 +113,18 @@
     "taskCancelled": "\"{{task}}\" was cancelled",
     "newReview": "New {{rating}}-star review for \"{{task}}\"",
     "bellLabel": "Notifications",
-    "bellLabelUnread": "Notifications ({{count}} unread)"
+    "bellLabelUnread": "Notifications ({{count}} unread)",
+    "newTaskNearby": "New {{category}} task {{distance}} away",
+    "newTaskNearbyBudget": "{{budget}} \u00b7 {{location}}",
+    "jobAlerts": "Job Alerts",
+    "jobAlertsDesc": "Get notified about new tasks near you",
+    "radius": "Radius",
+    "radiusKm": "{{value}} km",
+    "categories": "Categories",
+    "allCategories": "All categories",
+    "maxCategories": "Max {{max}} categories",
+    "jobAlertsSaved": "Job alerts updated",
+    "locationRequired": "Set your location to receive job alerts"
   },
   "header": {
     "closeMenu": "Close menu",
