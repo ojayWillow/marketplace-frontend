@@ -201,7 +201,7 @@ const TaskDetail = () => {
   // Handle apply to task
   const handleApplyTask = (applicationMessage: string) => {
     if (!isAuthenticated || !user?.id) {
-      toast.warning('Please login to apply');
+      toast.warning(t('taskDetail.toastLoginToApply'));
       navigate('/welcome');
       return;
     }
@@ -209,13 +209,13 @@ const TaskDetail = () => {
       { taskId: Number(id), message: applicationMessage },
       {
         onSuccess: () => {
-          toast.success('Application submitted! The task owner will review your application.');
+          toast.success(t('taskDetail.toastApplicationSubmitted'));
           setShowApplicationSheet(false);
           setTimeout(() => { navigate('/tasks'); }, 2000);
         },
         onError: (error: any) => {
           console.error('Error applying to task:', error);
-          toast.error(error?.response?.data?.error || 'Failed to apply. Please try again.');
+          toast.error(error?.response?.data?.error || t('taskDetail.toastApplicationFailed'));
         }
       }
     );
@@ -224,7 +224,7 @@ const TaskDetail = () => {
   // Handle message creator
   const handleMessageCreator = () => {
     if (!isAuthenticated) {
-      toast.warning('Please login to send a message');
+      toast.warning(t('taskDetail.toastLoginToMessage'));
       navigate('/welcome');
       return;
     }
@@ -236,8 +236,8 @@ const TaskDetail = () => {
     if (!task) return '';
     const isCreator = user?.id === task.creator_id;
     // Creator reviews the worker, worker reviews the creator
-    if (isCreator) return task.assigned_to_name || 'the worker';
-    return task.creator_name || 'the job owner';
+    if (isCreator) return task.assigned_to_name || t('taskDetail.theWorker');
+    return task.creator_name || t('taskDetail.theJobOwner');
   };
 
   // Loading state
@@ -246,7 +246,7 @@ const TaskDetail = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-3"></div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading job...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('taskDetail.loading')}</p>
         </div>
       </div>
     );
@@ -258,10 +258,10 @@ const TaskDetail = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center px-4">
           <div className="text-5xl mb-3">😕</div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Job Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">This job may have been removed or is no longer available.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('taskDetail.notFound')}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">{t('taskDetail.notFoundDescription')}</p>
           <Link to="/tasks" className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold">
-            Browse All Jobs
+            {t('taskDetail.browseAll')}
           </Link>
         </div>
       </div>
@@ -280,14 +280,14 @@ const TaskDetail = () => {
   const applicantCount = task.pending_applications_count || 0;
   const budget = task.budget || task.reward || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
-  const seoDescription = `${categoryLabel} job${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` in ${task.location}` : ''}. ${task.description?.substring(0, 100)}...`;
+  const seoDescription = `${categoryLabel} ${t('taskDetail.jobSuffix')}${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` ${t('taskDetail.seoIn', { location: task.location })}` : ''}. ${task.description?.substring(0, 100)}...`;
   // Relative time for share messages ("3 days ago")
   const postedDateRelative = task.created_at ? formatTimeAgoLong(task.created_at) : '';
   // Absolute date for the info bar on the detail page ("Feb 4")
   const postedDateAbsolute = task.created_at
     ? new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : '';
-  const applicantLabel = applicantCount > 0 ? `${applicantCount} applied` : 'New';
+  const applicantLabel = applicantCount > 0 ? t('taskDetail.applied', { count: applicantCount }) : t('taskDetail.new');
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
 
   return (
@@ -308,16 +308,16 @@ const TaskDetail = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden md:inline">← Back to Quick Help</span>
-            <span className="md:hidden">Back</span>
+            <span className="hidden md:inline">{t('taskDetail.backToQuickHelp')}</span>
+            <span className="md:hidden">{t('taskDetail.back')}</span>
           </Link>
           <ShareButton
             url={`/tasks/${task.id}`}
             title={task.title}
-            description={`${categoryLabel} job - ${budget} EUR`}
+            description={t('taskDetail.shareBudget', { category: categoryLabel, price: budget })}
             categoryIcon={categoryIcon}
             categoryEmoji={categoryIcon}
-            price={`€${budget}`}
+            price={t('taskDetail.sharePrice', { price: budget })}
             location={shortLocation}
             postedDate={postedDateRelative}
             size="sm"
@@ -338,7 +338,7 @@ const TaskDetail = () => {
                   {categoryLabel}
                 </span>
                 {isUrgent && (
-                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ Urgent</span>
+                  <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ {t('taskDetail.urgent')}</span>
                 )}
               </div>
               <div className="text-2xl font-black">€{budget}</div>
@@ -355,7 +355,7 @@ const TaskDetail = () => {
                   {categoryLabel}
                 </span>
                 {isUrgent && (
-                  <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">Urgent</span>
+                  <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">{t('taskDetail.urgent')}</span>
                 )}
               </div>
               <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
@@ -373,7 +373,7 @@ const TaskDetail = () => {
               </Link>
               <div className="flex items-center gap-1.5 flex-1 min-w-0 text-sm md:flex-col md:items-start md:gap-0.5">
                 <Link to={`/users/${task.creator_id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate md:text-base">
-                  {task.creator_name || 'Unknown'}
+                  {task.creator_name || t('taskDetail.unknown')}
                 </Link>
                 <span className="text-gray-300 dark:text-gray-600 md:hidden">·</span>
                 <div className="flex items-center gap-1">
@@ -385,7 +385,7 @@ const TaskDetail = () => {
                 <button
                   onClick={handleMessageCreator}
                   className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                  title="Send message"
+                  title={t('taskDetail.sendMessage')}
                 >
                   <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -397,7 +397,7 @@ const TaskDetail = () => {
                   to={`/users/${task.creator_id}`}
                   className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
                 >
-                  Profile
+                  {t('taskDetail.profile')}
                 </Link>
               )}
               {isCreator && canEdit && (
@@ -405,7 +405,7 @@ const TaskDetail = () => {
                   to={`/tasks/${task.id}/edit`}
                   className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
                 >
-                  Edit
+                  {t('taskDetail.edit')}
                 </Link>
               )}
             </div>
@@ -416,7 +416,7 @@ const TaskDetail = () => {
 
           {/* Description */}
           <div className="px-4 py-3 md:px-6 md:py-5">
-            <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">About this job</h2>
+            <h2 className="hidden md:block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('taskDetail.aboutThisJob')}</h2>
             <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
               {task.description}
             </p>
@@ -426,18 +426,18 @@ const TaskDetail = () => {
           <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
             <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
               <div className="py-2.5 md:py-3.5 text-center">
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Applicants</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">{t('taskDetail.applicants')}</div>
                 <div className={`text-sm md:text-base font-bold ${applicantCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-green-600 dark:text-green-400'}`}>
                   {applicantLabel}
                 </div>
               </div>
               <div className="py-2.5 md:py-3.5 text-center">
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Difficulty</div>
-                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{task.difficulty || 'Normal'}</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">{t('taskDetail.difficulty')}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{task.difficulty || t('taskDetail.normal')}</div>
               </div>
               <div className="py-2.5 md:py-3.5 text-center">
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Posted</div>
-                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || 'N/A'}</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">{t('taskDetail.posted')}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{postedDateAbsolute || t('taskDetail.na')}</div>
               </div>
             </div>
           </div>
@@ -455,7 +455,7 @@ const TaskDetail = () => {
                   {task.assigned_to_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">Assigned to</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">{t('taskDetail.assignedTo')}</p>
                   <Link to={`/users/${task.assigned_to_id}`} className="font-semibold text-sm md:text-base text-blue-800 dark:text-blue-300 hover:underline">
                     {task.assigned_to_name}
                   </Link>
@@ -482,10 +482,10 @@ const TaskDetail = () => {
           {/* Desktop inline application form */}
           {showApplicationSheet && canApply && (
             <div className="hidden md:block mx-6 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">Apply for this job</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-3">{t('taskDetail.applyForJob')}</h3>
               <textarea
                 id="desktop-apply-textarea"
-                placeholder="Introduce yourself and explain why you're a good fit..."
+                placeholder={t('taskDetail.applyPlaceholder')}
                 className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               />
               <div className="flex gap-2">
@@ -497,13 +497,13 @@ const TaskDetail = () => {
                   disabled={applyMutation.isPending}
                   className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-semibold text-sm"
                 >
-                  {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
+                  {applyMutation.isPending ? t('taskDetail.submitting') : t('taskDetail.submitApplication')}
                 </button>
                 <button
                   onClick={() => setShowApplicationSheet(false)}
                   className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium text-sm"
                 >
-                  Cancel
+                  {t('taskDetail.cancel')}
                 </button>
               </div>
             </div>
@@ -512,32 +512,32 @@ const TaskDetail = () => {
           {/* Status Messages */}
           {isCreator && task.status === 'assigned' && (
             <div className="mx-4 mb-4 md:mx-6 text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              ⏳ Waiting for worker to complete the task
+              {t('taskDetail.statusWaitingWorker')}
             </div>
           )}
           {isAssigned && task.status === 'assigned' && (
             <div className="mx-4 mb-4 md:mx-6 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              💪 You're assigned — mark as done when finished
+              {t('taskDetail.statusAssignedToYou')}
             </div>
           )}
           {isCreator && task.status === 'pending_confirmation' && (
             <div className="mx-4 mb-4 md:mx-6 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              📋 Worker marked this as done — please review and confirm
+              {t('taskDetail.statusWorkerDone')}
             </div>
           )}
           {isAssigned && task.status === 'pending_confirmation' && (
             <div className="mx-4 mb-4 md:mx-6 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              ⏳ Waiting for task owner to confirm completion
+              {t('taskDetail.statusWaitingConfirmation')}
             </div>
           )}
           {task.status === 'completed' && (
             <div className="mx-4 mb-4 md:mx-6 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              ✅ This task has been completed
+              {t('taskDetail.statusCompleted')}
             </div>
           )}
           {task.status === 'cancelled' && (
             <div className="mx-4 mb-4 md:mx-6 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-lg text-center text-sm">
-              This task has been cancelled
+              {t('taskDetail.statusCancelled')}
             </div>
           )}
 
@@ -557,7 +557,7 @@ const TaskDetail = () => {
           {/* Disputed status banner for non-involved users */}
           {task.status === 'disputed' && !isCreator && !isAssigned && (
             <div className="mx-4 mb-4 md:mx-6 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-3 py-2.5 rounded-lg text-center text-sm">
-              ⚠️ This task is under dispute
+              {t('taskDetail.statusDisputed')}
             </div>
           )}
 
@@ -637,7 +637,7 @@ const TaskDetail = () => {
         onClose={() => setShowDisputeSheet(false)}
         onSubmitted={() => {
           setShowDisputeSheet(false);
-          toast.warning('Dispute filed. The other party will be notified.');
+          toast.warning(t('taskDetail.toastDisputeFiled'));
           refetchTask();
           setDisputeKey(prev => prev + 1);
         }}
