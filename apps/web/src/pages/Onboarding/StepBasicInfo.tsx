@@ -1,13 +1,15 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { User, Camera, MapPin, Loader2 } from 'lucide-react'
+import { User, Camera, MapPin, Loader2, ChevronDown } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
+import { COUNTRIES, CITIES, getLocalizedLabel } from '../../../../constants/locations'
 
 interface Props {
   data: {
     username: string
     first_name: string
     last_name: string
+    country: string
     city: string
     avatar_url: string
   }
@@ -16,24 +18,40 @@ interface Props {
 }
 
 export default function StepBasicInfo({ data, onChange, onNext }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { token } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const lang = i18n.language?.split('-')[0] || 'en'
+
+  // Get cities for the selected country
+  const citiesForCountry = data.country ? (CITIES[data.country] || []) : []
+
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!data.username || data.username.length < 3) errs.username = 'Username must be at least 3 characters'
-    if (!/^[a-zA-Z0-9_]+$/.test(data.username || '')) errs.username = 'Letters, numbers, and underscores only'
-    if (!data.first_name?.trim()) errs.first_name = 'First name is required'
-    if (!data.city?.trim()) errs.city = 'City is required'
+    if (!data.username || data.username.length < 3) errs.username = t('onboarding.errors.usernameMin', 'Username must be at least 3 characters')
+    if (data.username && !/^[a-zA-Z0-9_]+$/.test(data.username)) errs.username = t('onboarding.errors.usernameChars', 'Letters, numbers, and underscores only')
+    if (!data.first_name?.trim()) errs.first_name = t('onboarding.errors.firstNameRequired', 'First name is required')
+    if (!data.country) errs.country = t('onboarding.errors.countryRequired', 'Country is required')
+    if (!data.city) errs.city = t('onboarding.errors.cityRequired', 'City is required')
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
   const handleNext = () => {
     if (validate()) onNext()
+  }
+
+  const handleCountryChange = (country: string) => {
+    onChange({ country, city: '' }) // Reset city when country changes
+    setErrors((prev) => ({ ...prev, country: '', city: '' }))
+  }
+
+  const handleCityChange = (city: string) => {
+    onChange({ city })
+    setErrors((prev) => ({ ...prev, city: '' }))
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +74,7 @@ export default function StepBasicInfo({ data, onChange, onNext }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Avatar */}
       <div className="flex justify-center">
         <button
@@ -90,7 +108,10 @@ export default function StepBasicInfo({ data, onChange, onNext }: Props) {
         <input
           type="text"
           value={data.username}
-          onChange={(e) => onChange({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+          onChange={(e) => {
+            onChange({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })
+            setErrors((prev) => ({ ...prev, username: '' }))
+          }}
           placeholder="e.g. john_doe"
           className={`w-full px-4 py-3 rounded-xl border-2 ${errors.username ? 'border-red-500' : 'border-[#2a2a3a]'} bg-[#0a0a0f] text-white focus:outline-none focus:border-blue-500 placeholder-gray-600`}
         />
@@ -106,7 +127,10 @@ export default function StepBasicInfo({ data, onChange, onNext }: Props) {
           <input
             type="text"
             value={data.first_name}
-            onChange={(e) => onChange({ first_name: e.target.value })}
+            onChange={(e) => {
+              onChange({ first_name: e.target.value })
+              setErrors((prev) => ({ ...prev, first_name: '' }))
+            }}
             placeholder="John"
             className={`w-full px-4 py-3 rounded-xl border-2 ${errors.first_name ? 'border-red-500' : 'border-[#2a2a3a]'} bg-[#0a0a0f] text-white focus:outline-none focus:border-blue-500 placeholder-gray-600`}
           />
@@ -126,19 +150,57 @@ export default function StepBasicInfo({ data, onChange, onNext }: Props) {
         </div>
       </div>
 
-      {/* City */}
+      {/* Country */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
           <MapPin className="inline w-4 h-4 mr-1.5" />
+          {t('onboarding.country', 'Country')} *
+        </label>
+        <div className="relative">
+          <select
+            value={data.country}
+            onChange={(e) => handleCountryChange(e.target.value)}
+            className={`w-full px-4 py-3 rounded-xl border-2 ${errors.country ? 'border-red-500' : 'border-[#2a2a3a]'} bg-[#0a0a0f] text-white focus:outline-none focus:border-blue-500 appearance-none cursor-pointer`}
+          >
+            <option value="" disabled className="text-gray-600">
+              {t('onboarding.selectCountry', 'Select country')}
+            </option>
+            {COUNTRIES.map((c) => (
+              <option key={c.value} value={c.value} className="bg-[#0a0a0f]">
+                {getLocalizedLabel(c.label, lang)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+        </div>
+        {errors.country && <p className="mt-1 text-sm text-red-400">{errors.country}</p>}
+      </div>
+
+      {/* City */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1.5">
           {t('onboarding.city', 'City')} *
         </label>
-        <input
-          type="text"
-          value={data.city}
-          onChange={(e) => onChange({ city: e.target.value })}
-          placeholder="Riga"
-          className={`w-full px-4 py-3 rounded-xl border-2 ${errors.city ? 'border-red-500' : 'border-[#2a2a3a]'} bg-[#0a0a0f] text-white focus:outline-none focus:border-blue-500 placeholder-gray-600`}
-        />
+        <div className="relative">
+          <select
+            value={data.city}
+            onChange={(e) => handleCityChange(e.target.value)}
+            disabled={!data.country}
+            className={`w-full px-4 py-3 rounded-xl border-2 ${errors.city ? 'border-red-500' : 'border-[#2a2a3a]'} bg-[#0a0a0f] text-white focus:outline-none focus:border-blue-500 appearance-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            <option value="" disabled className="text-gray-600">
+              {data.country
+                ? t('onboarding.selectCity', 'Select city')
+                : t('onboarding.selectCountryFirst', 'Select a country first')}
+            </option>
+            {citiesForCountry.map((c) => (
+              <option key={c.value} value={c.value} className="bg-[#0a0a0f]">
+                {getLocalizedLabel(c.label, lang)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+        </div>
         {errors.city && <p className="mt-1 text-sm text-red-400">{errors.city}</p>}
       </div>
 
