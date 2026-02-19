@@ -140,7 +140,7 @@
     "jobAlerts": "Job Alerts",
     "jobAlertsDesc": "Get notified about new tasks near you",
     "radius": "Radius",
-    "radiusKm": "{{value}} km",
+    "radiusKm": "km",
     "categories": "Categories",
     "allCategories": "All categories",
     "maxCategories": "Select categories to filter alerts. Leave empty to get alerts for all categories.",

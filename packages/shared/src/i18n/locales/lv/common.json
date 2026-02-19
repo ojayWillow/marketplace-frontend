@@ -140,7 +140,7 @@
     "jobAlerts": "Darbu paziņojumi",
     "jobAlertsDesc": "Saņem paziņojumus par jauniem darbiem tavā tuvumā",
     "radius": "Rādiuss",
-    "radiusKm": "{{value}} km",
+    "radiusKm": "km",
     "categories": "Kategorijas",
     "allCategories": "Visas kategorijas",
     "maxCategories": "Izvēlies kategorijas, lai filtrētu paziņojumus. Atstāj tukšu, lai saņemtu paziņojumus par visām kategorijām.",
