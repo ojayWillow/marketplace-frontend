@@ -48,6 +48,9 @@ const ShareButton = ({
   const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
+  /** Detect mobile viewport */
+  const isMobile = () => window.innerWidth < 768;
+
   /**
    * Build share message.
    * Each detail (price, location, posted date) gets its own line.
@@ -98,6 +101,25 @@ const ShareButton = ({
     setTimeout(() => setIsOpen(false), 250);
   };
 
+  /**
+   * Navigate to a share URL.
+   * On mobile/PWA: use window.location.href to avoid popup blockers.
+   * On desktop: use window.open() for a proper popup experience.
+   */
+  const openShareUrl = (shareUrl: string, popupOptions?: string) => {
+    if (isMobile()) {
+      // Close the sheet first with a small delay, then navigate
+      closeSheet();
+      setTimeout(() => {
+        window.location.href = shareUrl;
+      }, 300);
+    } else {
+      // Desktop: popups work fine
+      window.open(shareUrl, '_blank', popupOptions);
+      closeSheet();
+    }
+  };
+
   // Close on outside click (desktop)
   useEffect(() => {
     if (!isOpen) return;
@@ -125,41 +147,26 @@ const ShareButton = ({
 
   /* ── Share handlers ───────────────────── */
   const shareToWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
-    closeSheet();
+    const shareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    openShareUrl(shareUrl);
   };
   const shareToTelegram = () => {
     // Telegram auto-appends the url param as a link, so use text without URL
-    window.open(
-      `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
-      '_blank',
-    );
-    closeSheet();
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`;
+    openShareUrl(shareUrl);
   };
   const shareToFacebook = () => {
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
-      '_blank',
-      'width=600,height=400',
-    );
-    closeSheet();
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`;
+    openShareUrl(shareUrl, 'width=600,height=400');
   };
   const shareToTwitter = () => {
     // Twitter auto-appends the url param, so use text without URL
-    window.open(
-      `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
-      '_blank',
-      'width=600,height=400',
-    );
-    closeSheet();
+    const shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`;
+    openShareUrl(shareUrl, 'width=600,height=400');
   };
   const shareToLinkedIn = () => {
-    window.open(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`,
-      '_blank',
-      'width=600,height=400',
-    );
-    closeSheet();
+    const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`;
+    openShareUrl(shareUrl, 'width=600,height=400');
   };
   const nativeShare = async () => {
     try {
@@ -252,8 +259,26 @@ const ShareButton = ({
         </div>
       </div>
 
+      {/* ── Native share (promoted to top on mobile) ── */}
+      {canNativeShare && (
+        <div className="px-5 pb-3 md:hidden">
+          <button
+            onClick={nativeShare}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium text-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            {t('share.nativeShare', 'Share via...')}
+          </button>
+        </div>
+      )}
+
       {/* ── Share target grid ── */}
       <div className="px-5 pb-2">
+        {canNativeShare && (
+          <p className="text-xs text-gray-400 font-medium mb-2 md:hidden">{t('share.orShareDirectly', 'Or share directly')}</p>
+        )}
         <div className="grid grid-cols-5 gap-3">
           {targets.map((target) => (
             <button
@@ -295,11 +320,11 @@ const ShareButton = ({
           </span>
         </button>
 
-        {/* Native share (mobile) */}
+        {/* Native share (desktop fallback — shown as secondary on desktop) */}
         {canNativeShare && (
           <button
             onClick={nativeShare}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+            className="hidden md:flex w-full items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
           >
             <div className="w-9 h-9 rounded-xl bg-gray-200 flex items-center justify-center text-gray-600">
               <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
