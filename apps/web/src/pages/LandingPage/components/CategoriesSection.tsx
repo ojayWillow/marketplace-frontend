@@ -4,12 +4,12 @@ const CategoriesSection = () => {
   const { t } = useTranslation();
 
   const categories = [
-    { icon: '🐕', label: t('landing.categories.petCare'), desc: t('landing.categories.petCareDesc') },
+    { icon: '🐕', label: t('landing.categories.care'), desc: t('landing.categories.careDesc') },
     { icon: '📦', label: t('landing.categories.moving'), desc: t('landing.categories.movingDesc') },
     { icon: '🧹', label: t('landing.categories.cleaning'), desc: t('landing.categories.cleaningDesc') },
     { icon: '🚗', label: t('landing.categories.delivery'), desc: t('landing.categories.deliveryDesc') },
-    { icon: '🔧', label: t('landing.categories.repairs'), desc: t('landing.categories.repairsDesc') },
-    { icon: '💻', label: t('landing.categories.techHelp'), desc: t('landing.categories.techHelpDesc') },
+    { icon: '🔧', label: t('landing.categories.handyman'), desc: t('landing.categories.handymanDesc') },
+    { icon: '💻', label: t('landing.categories.tech'), desc: t('landing.categories.techDesc') },
   ];
 
   return (
