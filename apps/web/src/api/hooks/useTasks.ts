@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getTasks, getTask, getMyTasks, createTask, updateTask, applyToTask, withdrawApplication, TasksParams, getCurrentLanguage } from '@marketplace/shared';
+import { getTasks, getTask, getMyTasks, createTask, updateTask, applyToTask, withdrawApplication, TasksParams } from '@marketplace/shared';
 
 // Query keys for cache management
 // Include language in keys that return translated content
