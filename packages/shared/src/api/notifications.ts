@@ -129,6 +129,11 @@ export interface JobAlertPreferences {
   categories: string[];
 }
 
+export interface UpdateJobAlertPayload extends Partial<JobAlertPreferences> {
+  latitude?: number;
+  longitude?: number;
+}
+
 /**
  * Get job alert preferences for current user
  */
@@ -138,10 +143,12 @@ export const getJobAlertPreferences = async (): Promise<{ preferences: JobAlertP
 };
 
 /**
- * Update job alert preferences
+ * Update job alert preferences.
+ * When enabling alerts, include latitude/longitude so the backend
+ * can persist the user's location for geo-matching.
  */
 export const updateJobAlertPreferences = async (
-  prefs: Partial<JobAlertPreferences>
+  prefs: UpdateJobAlertPayload
 ): Promise<{ message: string; preferences: JobAlertPreferences }> => {
   const response = await apiClient.put('/api/notifications/job-alerts', prefs);
   return response.data;
