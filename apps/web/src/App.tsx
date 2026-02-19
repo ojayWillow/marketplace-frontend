@@ -6,6 +6,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import SocketProvider from './components/SocketProvider'
 import ScrollToTop from './components/ScrollToTop'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Loading spinner component
 const PageLoader = () => (
@@ -58,169 +59,171 @@ const AdminDisputes = lazy(() => import('./pages/admin/AdminDisputes'))
 
 function App() {
   return (
-    <SocketProvider>
-      {/* Reset scroll position to top on every route change */}
-      <ScrollToTop />
+    <ErrorBoundary>
+      <SocketProvider>
+        {/* Reset scroll position to top on every route change */}
+        <ScrollToTop />
 
-      <Suspense fallback={<Layout><PageLoader /></Layout>}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            {/* Home - Redirects guests to /welcome, shows map for authenticated */}
-            <Route index element={<Home />} />
-            
-            {/* Landing page - the single entry point for unauthenticated users */}
-            <Route path="welcome" element={<LandingPage />} />
-            
-            {/* Onboarding wizard - requires auth but skips onboarding check */}
-            <Route
-              path="onboarding"
-              element={
-                <ProtectedRoute skipOnboardingCheck skipPhoneCheck>
-                  <OnboardingWizard />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* All auth routes redirect to the landing page (single sign-in flow) */}
-            <Route path="login" element={<Navigate to="/welcome" replace />} />
-            <Route path="register" element={<Navigate to="/welcome" replace />} />
-            <Route path="phone-login" element={<Navigate to="/welcome" replace />} />
-            {/* Verify phone - requires auth but skips phone check to avoid loop */}
-            <Route
-              path="verify-phone"
-              element={
-                <ProtectedRoute skipPhoneCheck skipOnboardingCheck>
-                  <VerifyPhone />
-                </ProtectedRoute>
-              }
-            />
-            {/* Complete profile - redirect to onboarding (legacy route) */}
-            <Route
-              path="complete-profile"
-              element={
-                <ProtectedRoute skipPhoneCheck skipOnboardingCheck>
-                  <Navigate to="/onboarding" replace />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="forgot-password" element={<ForgotPassword />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-            
-            {/* Tasks/Quick Help */}
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="tasks/:id" element={<TaskDetail />} />
-            <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
-            <Route
-              path="tasks/create"
-              element={
-                <ProtectedRoute>
-                  <CreateTask />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="tasks/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditTask />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Offerings routes */}
-            <Route path="offerings/:id" element={<OfferingDetail />} />
-            <Route
-              path="offerings/create"
-              element={
-                <ProtectedRoute>
-                  <CreateOffering />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="offerings/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditOffering />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Work page - requires auth */}
-            <Route
-              path="work"
-              element={
-                <ProtectedRoute>
-                  <WorkPage />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* User Profile & Settings */}
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Messaging */}
-            <Route
-              path="messages"
-              element={
-                <ProtectedRoute>
-                  <Messages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="messages/:id"
-              element={
-                <ProtectedRoute>
-                  <Conversation />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Public user profile */}
-            <Route path="users/:id" element={<UserProfile />} />
-            
-            {/* Legal pages */}
-            <Route path="terms" element={<Terms />} />
-            <Route path="privacy" element={<Privacy />} />
-            
-            {/* 404 catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Route>
+        <Suspense fallback={<Layout><PageLoader /></Layout>}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              {/* Home - Redirects guests to /welcome, shows map for authenticated */}
+              <Route index element={<Home />} />
+              
+              {/* Landing page - the single entry point for unauthenticated users */}
+              <Route path="welcome" element={<LandingPage />} />
+              
+              {/* Onboarding wizard - requires auth but skips onboarding check */}
+              <Route
+                path="onboarding"
+                element={
+                  <ProtectedRoute skipOnboardingCheck skipPhoneCheck>
+                    <OnboardingWizard />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* All auth routes redirect to the landing page (single sign-in flow) */}
+              <Route path="login" element={<Navigate to="/welcome" replace />} />
+              <Route path="register" element={<Navigate to="/welcome" replace />} />
+              <Route path="phone-login" element={<Navigate to="/welcome" replace />} />
+              {/* Verify phone - requires auth but skips phone check to avoid loop */}
+              <Route
+                path="verify-phone"
+                element={
+                  <ProtectedRoute skipPhoneCheck skipOnboardingCheck>
+                    <VerifyPhone />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Complete profile - redirect to onboarding (legacy route) */}
+              <Route
+                path="complete-profile"
+                element={
+                  <ProtectedRoute skipPhoneCheck skipOnboardingCheck>
+                    <Navigate to="/onboarding" replace />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password" element={<ResetPassword />} />
+              
+              {/* Tasks/Quick Help */}
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="tasks/:id" element={<TaskDetail />} />
+              <Route path="quick-help" element={<Navigate to="/tasks" replace />} />
+              <Route
+                path="tasks/create"
+                element={
+                  <ProtectedRoute>
+                    <CreateTask />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="tasks/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditTask />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Offerings routes */}
+              <Route path="offerings/:id" element={<OfferingDetail />} />
+              <Route
+                path="offerings/create"
+                element={
+                  <ProtectedRoute>
+                    <CreateOffering />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="offerings/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditOffering />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Work page - requires auth */}
+              <Route
+                path="work"
+                element={
+                  <ProtectedRoute>
+                    <WorkPage />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* User Profile & Settings */}
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Messaging */}
+              <Route
+                path="messages"
+                element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="messages/:id"
+                element={
+                  <ProtectedRoute>
+                    <Conversation />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Public user profile */}
+              <Route path="users/:id" element={<UserProfile />} />
+              
+              {/* Legal pages */}
+              <Route path="terms" element={<Terms />} />
+              <Route path="privacy" element={<Privacy />} />
+              
+              {/* 404 catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Route>
 
-          {/* Admin Panel */}
-          <Route
-            path="/admin"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <AdminLayout />
-              </Suspense>
-            }
-          >
-            <Route index element={<AdminOverview />} />
-            <Route path="disputes" element={<AdminDisputes />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="subscriptions" element={<AdminSubscriptions />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="jobs" element={<AdminJobs />} />
-            <Route path="offerings" element={<AdminOfferings />} />
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="announcements" element={<AdminAnnouncements />} />
-            <Route path="settings" element={<AdminSettings />} />
-          </Route>
-        </Routes>
-      </Suspense>
-      
-      <PWAInstallPrompt />
-      <PWAUpdatePrompt />
-    </SocketProvider>
+            {/* Admin Panel */}
+            <Route
+              path="/admin"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <AdminLayout />
+                </Suspense>
+              }
+            >
+              <Route index element={<AdminOverview />} />
+              <Route path="disputes" element={<AdminDisputes />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="subscriptions" element={<AdminSubscriptions />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="jobs" element={<AdminJobs />} />
+              <Route path="offerings" element={<AdminOfferings />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+          </Routes>
+        </Suspense>
+        
+        <PWAInstallPrompt />
+        <PWAUpdatePrompt />
+      </SocketProvider>
+    </ErrorBoundary>
   )
 }
 
