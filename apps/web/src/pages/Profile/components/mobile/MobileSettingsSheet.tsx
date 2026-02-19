@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePushNotifications } from '../../../../hooks/usePushNotifications';
 import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/shared';
-import type { JobAlertPreferences } from '@marketplace/shared';
+import type { JobAlertPreferences, UpdateJobAlertPayload } from '@marketplace/shared';
 import { useLogout } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
 import { TASK_CATEGORIES, CATEGORY_ICONS } from '../tabs/settings/settingsConstants';
@@ -31,6 +31,40 @@ const isIOSSafari = () => {
   const isStandalone = ('standalone' in window.navigator) && (window.navigator as any).standalone;
   return isIOS && !isStandalone;
 };
+
+/* ─── Shared location cache (same key & format as useUserLocation / JobAlertSettings) ─── */
+const LOCATION_CACHE_KEY = 'user_last_location';
+const LOCATION_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface CachedLocation {
+  lat: number;
+  lng: number;
+  timestamp: number;
+}
+
+function getCachedLocation(): { lat: number; lng: number } | null {
+  try {
+    const raw = localStorage.getItem(LOCATION_CACHE_KEY);
+    if (!raw) return null;
+
+    const cached: CachedLocation = JSON.parse(raw);
+    if (Date.now() - cached.timestamp > LOCATION_CACHE_MAX_AGE_MS) {
+      localStorage.removeItem(LOCATION_CACHE_KEY);
+      return null;
+    }
+
+    // Basic Latvia bounds check (same as useUserLocation)
+    if (cached.lat < 55 || cached.lat > 58 || cached.lng < 20 || cached.lng > 29) {
+      localStorage.removeItem(LOCATION_CACHE_KEY);
+      return null;
+    }
+
+    return { lat: cached.lat, lng: cached.lng };
+  } catch {
+    return null;
+  }
+}
+/* ─────────────────────────────────────────────────────────────────── */
 
 export const MobileSettingsSheet = ({
   isOpen,
@@ -87,7 +121,10 @@ export const MobileSettingsSheet = ({
     load();
   }, [isOpen]);
 
-  const saveJobAlertPrefs = useCallback(async (newPrefs: Partial<JobAlertPreferences>) => {
+  const saveJobAlertPrefs = useCallback(async (
+    newPrefs: UpdateJobAlertPayload,
+    rollback?: JobAlertPreferences
+  ) => {
     setJobAlertSaving(true);
     setJobAlertError(null);
     setJobAlertSaved(false);
@@ -99,16 +136,91 @@ export const MobileSettingsSheet = ({
       saveTimerRef.current = setTimeout(() => setJobAlertSaved(false), 2500);
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Failed to save';
-      setJobAlertError(msg);
+      if (msg === 'location_required') {
+        setJobAlertError(
+          t('common.notifications.locationRequired', 'Location access is required to receive job alerts. Please allow location access and try again.')
+        );
+      } else {
+        setJobAlertError(msg);
+      }
+      // Revert optimistic update on failure
+      if (rollback) {
+        setJobAlertPrefs(rollback);
+      }
     } finally {
       setJobAlertSaving(false);
     }
-  }, []);
+  }, [t]);
 
-  const handleJobAlertToggle = () => {
-    const next = !jobAlertPrefs.enabled;
+  const handleJobAlertToggle = async () => {
+    const wasEnabled = jobAlertPrefs.enabled;
+    const next = !wasEnabled;
+    const previousPrefs = { ...jobAlertPrefs };
+
+    // Optimistic update
     setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
-    saveJobAlertPrefs({ enabled: next });
+
+    if (next) {
+      // Enabling: try cached location first, then fall back to fresh GPS
+      setJobAlertSaving(true);
+      setJobAlertError(null);
+
+      // 1. Check localStorage cache written by useUserLocation (map view)
+      const cached = getCachedLocation();
+      if (cached) {
+        setJobAlertSaving(false);
+        await saveJobAlertPrefs(
+          { enabled: true, latitude: cached.lat, longitude: cached.lng },
+          previousPrefs
+        );
+        return;
+      }
+
+      // 2. No cache — request fresh geolocation
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('no_geolocation'));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 300000, // 5 min cache is fine
+          });
+        });
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setJobAlertSaving(false);
+        await saveJobAlertPrefs(
+          { enabled: true, latitude: lat, longitude: lng },
+          previousPrefs
+        );
+      } catch (geoErr: any) {
+        setJobAlertSaving(false);
+        // Revert toggle
+        setJobAlertPrefs(previousPrefs);
+
+        if (geoErr?.code === 1) {
+          setJobAlertError(
+            t('common.notifications.locationDenied', 'Location access was denied. Please allow location in your browser settings to enable job alerts.')
+          );
+        } else if (geoErr?.message === 'no_geolocation') {
+          setJobAlertError(
+            t('common.notifications.locationUnavailable', 'Your browser does not support geolocation.')
+          );
+        } else {
+          setJobAlertError(
+            t('common.notifications.locationError', 'Could not determine your location. Please try again.')
+          );
+        }
+      }
+    } else {
+      // Disabling: no location needed
+      saveJobAlertPrefs({ enabled: false }, previousPrefs);
+    }
   };
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
