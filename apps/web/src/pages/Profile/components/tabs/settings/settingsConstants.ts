@@ -1,3 +1,5 @@
+import { FORM_CATEGORIES, getCategoryIcon } from '@marketplace/shared';
+
 export const languages = [
   { code: 'lv', label: 'LV', name: 'Latviešu', flag: '🇱🇻' },
   { code: 'ru', label: 'RU', name: 'Русский', flag: '🇷🇺' },
@@ -31,52 +33,13 @@ export const themeOptions = [
   },
 ];
 
-// All categories used across both tasks and offerings.
-// Task-creation categories: pet-care, moving, shopping, cleaning, delivery,
-//   outdoor, handyman, tutoring, tech-help, other
-// Offering-specific categories: assembly, plumbing, electrical, painting,
-//   care, tech, beauty, events
-export const TASK_CATEGORIES = [
-  'cleaning',
-  'handyman',
-  'delivery',
-  'moving',
-  'outdoor',
-  'pet-care',
-  'tutoring',
-  'tech-help',
-  'shopping',
-  'assembly',
-  'plumbing',
-  'electrical',
-  'painting',
-  'care',
-  'tech',
-  'beauty',
-  'events',
-  'other',
-] as const;
+// Job alert category chips — sourced from shared package (single source of truth).
+// FORM_CATEGORIES has the 15 canonical keys used by Create Task form.
+// This ensures alert prefs use the same keys as tasks in the database.
+export const TASK_CATEGORIES = FORM_CATEGORIES.map(c => c.key);
 
-export const CATEGORY_ICONS: Record<string, string> = {
-  'cleaning': '🧹',
-  'handyman': '🔧',
-  'delivery': '🚗',
-  'moving': '📦',
-  'outdoor': '🌿',
-  'pet-care': '🐕',
-  'tutoring': '📚',
-  'tech-help': '💻',
-  'shopping': '🛒',
-  'assembly': '🪑',
-  'plumbing': '🔩',
-  'electrical': '⚡',
-  'painting': '🎨',
-  'care': '❤️',
-  'tech': '🖥️',
-  'beauty': '💇',
-  'events': '🎉',
-  'other': '📋',
-};
+// Re-export shared icon lookup so JobAlertSettings doesn't need a direct import
+export { getCategoryIcon };
 
 export const isIOSSafari = () => {
   const ua = navigator.userAgent;
