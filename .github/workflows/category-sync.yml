@@ -1,0 +1,21 @@
+name: Category Sync Check
+
+on:
+  pull_request:
+    paths:
+      - 'packages/shared/src/constants/categories.ts'
+      - 'apps/web/src/constants/categories.ts'
+      - 'apps/web/src/pages/Profile/components/tabs/settings/settingsConstants.ts'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/shared/src/constants/categories.ts'
+
+jobs:
+  check-categories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify category alignment
+        run: node scripts/check-category-sync.js
