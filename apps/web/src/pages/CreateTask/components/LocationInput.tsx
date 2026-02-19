@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAddressSearch } from '../hooks';
 import { GeocodingResult } from '@marketplace/shared';
 import { DEFAULT_LOCATION } from '../../../constants/locations';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../../constants/map';
 
 interface LocationInputProps {
   location: string;
@@ -163,8 +164,9 @@ const LocationInput = ({
           zoomControl={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution={MAP_ATTRIBUTION}
+            url={MAP_TILE_URL}
+            {...MAP_TILE_PERF}
           />
           <MapController lat={effectiveLat} lng={effectiveLng} />
           <Marker

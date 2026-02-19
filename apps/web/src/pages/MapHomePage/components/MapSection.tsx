@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { MapMarkers } from '../../Tasks/components/Map';
 import { MapLoadingOverlay } from '../../Tasks/components/Banners';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../../constants/map';
 
 interface MapSectionProps {
   userLocation: { lat: number; lng: number };
@@ -61,7 +62,7 @@ const MapSection = ({
       <div className="relative" style={{ height: '500px' }}>
         <MapLoadingOverlay isLoading={refreshing} searchRadius={searchRadius} />
         <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
-          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_TILE_URL} {...MAP_TILE_PERF} />
           <MapMarkers
             tasks={mapTasks}
             boostedOfferings={mapBoostedOfferings}
