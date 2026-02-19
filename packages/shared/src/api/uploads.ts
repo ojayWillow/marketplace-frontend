@@ -1,4 +1,4 @@
-import api from './client';
+import api, { API_URL } from './client';
 
 export interface UploadResponse {
   message: string;
@@ -9,23 +9,6 @@ export interface UploadResponse {
 export interface StorageStatusResponse {
   configured: boolean;
   provider: string | null;
-}
-
-// Environment-agnostic API URL getter
-const getApiUrl = (): string => {
-  // Expo (React Native)
-  if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL
-  }
-  // Vite (web) - check for window object instead of import.meta
-  if (typeof window !== 'undefined' && (window as any).__VITE_ENV__?.VITE_API_URL) {
-    return (window as any).__VITE_ENV__.VITE_API_URL
-  }
-  // Node.js
-  if (typeof process !== 'undefined' && process.env?.API_URL) {
-    return process.env.API_URL
-  }
-  return 'http://localhost:5000'
 }
 
 /**
@@ -216,7 +199,6 @@ export const getImageUrl = (path: string): string => {
     return path;
   }
   
-  // For local development, prepend the API base URL
-  const baseUrl = getApiUrl();
-  return `${baseUrl}${path}`;
+  // Prepend the API base URL (resolved from client.ts)
+  return `${API_URL}${path}`;
 };
