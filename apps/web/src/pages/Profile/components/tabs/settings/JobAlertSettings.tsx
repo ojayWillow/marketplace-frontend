@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/shared';
 import type { JobAlertPreferences, UpdateJobAlertPayload } from '@marketplace/shared';
-import { TASK_CATEGORIES, CATEGORY_ICONS } from './settingsConstants';
+import { TASK_CATEGORIES, getCategoryIcon } from './settingsConstants';
 
 /* ─── Shared location cache (same key & format as useUserLocation) ─── */
 const LOCATION_CACHE_KEY = 'user_last_location';
@@ -345,7 +345,7 @@ export const JobAlertSettings = () => {
                           } disabled:opacity-50`}
                         >
                           <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 text-base leading-none" role="img" aria-label={cat}>
-                            {CATEGORY_ICONS[cat] || '\uD83D\uDCCB'}
+                            {getCategoryIcon(cat)}
                           </span>
                           <span>{t(`common.categories.${cat}`, cat)}</span>
                           {isSelected && (
