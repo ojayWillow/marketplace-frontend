@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Task } from '@marketplace/shared';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../../constants/map';
 
 interface TaskLocationMapProps {
   task: Task;
@@ -48,8 +49,9 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
           zoomControl={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution={MAP_ATTRIBUTION}
+            url={MAP_TILE_URL}
+            {...MAP_TILE_PERF}
           />
           <Marker position={[task.latitude, task.longitude]} icon={taskIcon}>
             <Popup>

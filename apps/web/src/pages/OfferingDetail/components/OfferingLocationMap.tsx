@@ -2,6 +2,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { OfferingLocationMapProps } from '../types';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../../constants/map';
 
 const offeringIcon = divIcon({
   className: 'custom-offering-icon',
@@ -41,8 +42,9 @@ const OfferingLocationMap = ({ latitude, longitude, safeTitle, safeLocation, ser
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={MAP_ATTRIBUTION}
+          url={MAP_TILE_URL}
+          {...MAP_TILE_PERF}
         />
         <Marker position={[latitude, longitude]} icon={offeringIcon}>
           <Popup>

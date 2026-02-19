@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { useAuthStore, getTask as fetchTaskById } from '@marketplace/shared';
 import { FEATURES } from '../../constants/featureFlags';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../constants/map';
 import { useAuthPrompt } from '../../stores/useAuthPrompt';
 
 import { Task } from './types';
@@ -309,11 +310,9 @@ const MobileTasksView = () => {
             zoomControl={false}
           >
             <TileLayer
-              attribution="&copy; OpenStreetMap"
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              keepBuffer={4}
-              updateWhenZooming={false}
-              updateWhenIdle={true}
+              attribution={MAP_ATTRIBUTION}
+              url={MAP_TILE_URL}
+              {...MAP_TILE_PERF}
             />
             <MapController
               lat={userLocation.lat}
