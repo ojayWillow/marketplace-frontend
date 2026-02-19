@@ -14,8 +14,9 @@ export const useConversations = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: messageKeys.conversations(),
     queryFn: () => getConversations(),
-    staleTime: 1000 * 30, // 30 seconds (messages should be fresh)
-    refetchInterval: 1000 * 60, // Refetch every minute
+    staleTime: 1000 * 60, // 60 seconds
+    refetchInterval: 1000 * 120, // Refetch every 2 minutes (Socket.IO handles real-time)
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
@@ -25,8 +26,9 @@ export const useConversation = (conversationId: number, options?: { enabled?: bo
   return useQuery({
     queryKey: messageKeys.conversation(conversationId),
     queryFn: () => getConversation(conversationId),
-    staleTime: 1000 * 10, // 10 seconds
-    refetchInterval: 1000 * 30, // Refetch every 30 seconds for real-time online status
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 1000 * 60, // Refetch every minute (Socket.IO handles real-time)
+    refetchOnWindowFocus: false,
     enabled: !!conversationId && options?.enabled !== false,
   });
 };
@@ -36,8 +38,9 @@ export const useMessages = (conversationId: number, options?: { enabled?: boolea
   return useQuery({
     queryKey: messageKeys.messages(conversationId),
     queryFn: () => getMessages(conversationId),
-    staleTime: 1000 * 10, // 10 seconds
-    refetchInterval: 1000 * 30, // Refetch every 30 seconds for real-time feel
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 1000 * 60, // Refetch every minute (Socket.IO handles real-time)
+    refetchOnWindowFocus: false,
     enabled: !!conversationId && options?.enabled !== false,
   });
 };
