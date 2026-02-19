@@ -20,6 +20,7 @@ const PageLoader = () => (
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
+const OnboardingWizard = lazy(() => import('./pages/Onboarding'))
 const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
@@ -70,6 +71,16 @@ function App() {
             {/* Landing page - the single entry point for unauthenticated users */}
             <Route path="welcome" element={<LandingPage />} />
             
+            {/* Onboarding wizard - requires auth but skips onboarding check */}
+            <Route
+              path="onboarding"
+              element={
+                <ProtectedRoute skipOnboardingCheck skipPhoneCheck>
+                  <OnboardingWizard />
+                </ProtectedRoute>
+              }
+            />
+            
             {/* All auth routes redirect to the landing page (single sign-in flow) */}
             <Route path="login" element={<Navigate to="/welcome" replace />} />
             <Route path="register" element={<Navigate to="/welcome" replace />} />
@@ -78,17 +89,17 @@ function App() {
             <Route
               path="verify-phone"
               element={
-                <ProtectedRoute skipPhoneCheck>
+                <ProtectedRoute skipPhoneCheck skipOnboardingCheck>
                   <VerifyPhone />
                 </ProtectedRoute>
               }
             />
-            {/* Complete profile - for new users who registered via phone */}
+            {/* Complete profile - redirect to onboarding (legacy route) */}
             <Route
               path="complete-profile"
               element={
-                <ProtectedRoute skipPhoneCheck>
-                  <CompleteProfile />
+                <ProtectedRoute skipPhoneCheck skipOnboardingCheck>
+                  <Navigate to="/onboarding" replace />
                 </ProtectedRoute>
               }
             />

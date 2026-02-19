@@ -5,6 +5,8 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   /** If true, skips phone verification check (for verify-phone page itself) */
   skipPhoneCheck?: boolean;
+  /** If true, skips onboarding check (for onboarding page itself) */
+  skipOnboardingCheck?: boolean;
 }
 
 /**
@@ -14,13 +16,18 @@ interface ProtectedRouteProps {
  * If someone somehow navigates directly to a protected URL while not
  * authenticated, this redirects them to /welcome as a safety net.
  */
-export default function ProtectedRoute({ children, skipPhoneCheck = false }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, skipPhoneCheck = false, skipOnboardingCheck = false }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
 
   // Not logged in → redirect to welcome page
   if (!isAuthenticated) {
     return <Navigate to="/welcome" state={{ from: location }} replace />;
+  }
+
+  // Logged in but onboarding not completed → redirect to onboarding
+  if (!skipOnboardingCheck && user && !user.onboarding_completed) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   // TODO: Re-enable before production launch

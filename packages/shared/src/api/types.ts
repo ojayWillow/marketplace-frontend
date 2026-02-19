@@ -18,6 +18,7 @@ export interface User {
   hourly_rate?: number
   reputation_score?: number
   completion_rate?: number
+  onboarding_completed?: boolean
   created_at: string
   updated_at?: string
 }
