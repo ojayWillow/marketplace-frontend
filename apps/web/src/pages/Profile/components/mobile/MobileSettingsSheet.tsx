@@ -5,7 +5,7 @@ import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/
 import type { JobAlertPreferences, UpdateJobAlertPayload } from '@marketplace/shared';
 import { useLogout } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
-import { TASK_CATEGORIES, CATEGORY_ICONS } from '../tabs/settings/settingsConstants';
+import { TASK_CATEGORIES, getCategoryIcon } from '../tabs/settings/settingsConstants';
 
 interface MobileSettingsSheetProps {
   isOpen: boolean;
@@ -597,7 +597,7 @@ export const MobileSettingsSheet = ({
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                         } disabled:opacity-50`}
                       >
-                        <span className="text-xs">{CATEGORY_ICONS[cat] || '📋'}</span>
+                        <span className="text-xs">{getCategoryIcon(cat)}</span>
                         <span>{t(`common.categories.${cat}`, cat)}</span>
                       </button>
                     );
