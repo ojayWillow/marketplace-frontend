@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/shared';
-import type { JobAlertPreferences } from '@marketplace/shared';
+import type { JobAlertPreferences, UpdateJobAlertPayload } from '@marketplace/shared';
 import { TASK_CATEGORIES, CATEGORY_ICONS } from './settingsConstants';
 
 /* ─── Shared location cache (same key & format as useUserLocation) ─── */
@@ -67,14 +67,14 @@ export const JobAlertSettings = () => {
   }, []);
 
   const saveJobAlertPrefs = useCallback(async (
-    newPrefs: Partial<JobAlertPreferences & { latitude?: number; longitude?: number }>,
+    newPrefs: UpdateJobAlertPayload,
     rollback?: JobAlertPreferences
   ) => {
     setJobAlertSaving(true);
     setJobAlertError(null);
     setJobAlertSaved(false);
     try {
-      const data = await updateJobAlertPreferences(newPrefs as any);
+      const data = await updateJobAlertPreferences(newPrefs);
       setJobAlertPrefs(data.preferences);
       setJobAlertSaved(true);
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -139,7 +139,6 @@ export const JobAlertSettings = () => {
         const lng = position.coords.longitude;
 
         setJobAlertSaving(false);
-        // Send enabled + location together
         await saveJobAlertPrefs(
           { enabled: true, latitude: lat, longitude: lng },
           previousPrefs
@@ -150,7 +149,6 @@ export const JobAlertSettings = () => {
         setJobAlertPrefs(previousPrefs);
 
         if (geoErr?.code === 1) {
-          // PERMISSION_DENIED
           setJobAlertError(
             t('common.notifications.locationDenied', 'Location access was denied. Please allow location in your browser settings to enable job alerts.')
           );
