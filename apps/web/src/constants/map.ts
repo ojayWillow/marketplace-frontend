@@ -1,39 +1,31 @@
 /**
  * Shared map tile configuration.
  *
- * Stadia Alidade Smooth — modern, muted style ideal for marker-heavy maps.
- * Free for non-commercial use; no API key needed in code.
- * Authentication: domain-based (whitelist kolab.lv in Stadia dashboard).
- * localhost works without any auth during development.
+ * OpenStreetMap default tiles — colorful, fast, massive CDN.
+ * No API key, no domain whitelist, no signup needed.
  *
- * Light variant: alidade_smooth
- * Dark variant:  alidade_smooth_dark
- *
- * Docs: https://docs.stadiamaps.com/map-styles/alidade-smooth/
- * Auth: https://docs.stadiamaps.com/authentication/
+ * Docs: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
+ * Usage policy: https://operations.osmfoundation.org/policies/tiles/
  */
 export const MAP_TILE_URL =
-  'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png';
-
-export const MAP_TILE_URL_DARK =
-  'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png';
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 export const MAP_ATTRIBUTION =
-  '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /**
  * Performance props to spread onto every <TileLayer>.
  * - keepBuffer: 8 rows of tiles kept outside viewport (default 2)
  * - updateWhenZooming: false = don't re-request tiles mid-zoom animation
  * - updateWhenIdle: true = update tiles once zoom/pan finishes
- * - maxNativeZoom: 20 = Stadia serves raster tiles up to zoom 20
- * - maxZoom: 22 = allow zooming past 20, Leaflet upscales instead of grey
+ * - maxNativeZoom: 19 = OSM serves raster tiles up to zoom 19
+ * - maxZoom: 22 = allow zooming past 19, Leaflet upscales instead of grey
  */
 export const MAP_TILE_PERF = {
   keepBuffer: 8,
   updateWhenZooming: false,
   updateWhenIdle: true,
-  maxNativeZoom: 20,
+  maxNativeZoom: 19,
   maxZoom: 22,
 } as const;
 
