@@ -4,6 +4,40 @@ import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/
 import type { JobAlertPreferences } from '@marketplace/shared';
 import { TASK_CATEGORIES, CATEGORY_ICONS } from './settingsConstants';
 
+/* ─── Shared location cache (same key & format as useUserLocation) ─── */
+const LOCATION_CACHE_KEY = 'user_last_location';
+const LOCATION_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface CachedLocation {
+  lat: number;
+  lng: number;
+  timestamp: number;
+}
+
+function getCachedLocation(): { lat: number; lng: number } | null {
+  try {
+    const raw = localStorage.getItem(LOCATION_CACHE_KEY);
+    if (!raw) return null;
+
+    const cached: CachedLocation = JSON.parse(raw);
+    if (Date.now() - cached.timestamp > LOCATION_CACHE_MAX_AGE_MS) {
+      localStorage.removeItem(LOCATION_CACHE_KEY);
+      return null;
+    }
+
+    // Basic Latvia bounds check (same as useUserLocation)
+    if (cached.lat < 55 || cached.lat > 58 || cached.lng < 20 || cached.lng > 29) {
+      localStorage.removeItem(LOCATION_CACHE_KEY);
+      return null;
+    }
+
+    return { lat: cached.lat, lng: cached.lng };
+  } catch {
+    return null;
+  }
+}
+/* ─────────────────────────────────────────────────────────────────── */
+
 export const JobAlertSettings = () => {
   const { t } = useTranslation();
 
@@ -72,10 +106,22 @@ export const JobAlertSettings = () => {
     setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
 
     if (next) {
-      // Enabling: get geolocation first, then send with the enable request
+      // Enabling: try cached location first, then fall back to fresh GPS
       setJobAlertSaving(true);
       setJobAlertError(null);
 
+      // 1. Check localStorage cache written by useUserLocation (map view)
+      const cached = getCachedLocation();
+      if (cached) {
+        setJobAlertSaving(false);
+        await saveJobAlertPrefs(
+          { enabled: true, latitude: cached.lat, longitude: cached.lng },
+          previousPrefs
+        );
+        return;
+      }
+
+      // 2. No cache — request fresh geolocation
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           if (!navigator.geolocation) {
