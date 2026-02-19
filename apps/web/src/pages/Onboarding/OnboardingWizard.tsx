@@ -111,7 +111,7 @@ export default function OnboardingWizard() {
       key: 'homescreen',
       component: (
         <StepHomeScreen
-          onNext={() => handleFinish()}
+          onDone={() => handleFinish()}
           onSkip={() => handleFinish()}
         />
       ),
