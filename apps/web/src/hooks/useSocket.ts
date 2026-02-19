@@ -25,7 +25,10 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore, API_URL } from '@marketplace/shared';
 
-// ── Zustand store for socket state (accessible anywhere) ──────────────
+// Dev-only fallback for socket URL
+const DEV_SOCKET_FALLBACK = 'http://localhost:5000';
+
+// ── Zustand store for socket state (accessible anywhere) ────────────────────
 interface SocketState {
   isConnected: boolean;
   presenceMap: Record<number, {
@@ -108,7 +111,7 @@ function setupSocket(token: string, socketUrl: string) {
 
   globalSocket = socket;
 
-  // ─── Connection events ──────────────────────────────────
+  // ─── Connection events ────────────────────────────────────
   socket.on('connect', () => {
     console.debug('[Socket] Connected:', socket.id);
     useSocketStore.getState().setConnected(true);
@@ -124,7 +127,7 @@ function setupSocket(token: string, socketUrl: string) {
     useSocketStore.getState().setConnected(false);
   });
 
-  // ─── Presence events ────────────────────────────────────
+  // ─── Presence events ─────────────────────────────────────
   const handlePresence = (data: any) => {
     if (!data?.user_id) return;
     useSocketStore.getState().updatePresence(data.user_id, {
@@ -166,15 +169,31 @@ export function useSocket() {
   tokenRef.current = token;
 
   const socketUrl = useMemo(() => {
-    if (!API_URL || API_URL === '') {
-      return 'http://localhost:5000';
+    if (API_URL && API_URL !== '') {
+      return API_URL;
     }
-    return API_URL;
+
+    // In development, fall back to localhost with a warning
+    if (import.meta.env.DEV) {
+      console.warn(
+        '[Socket] API_URL is not set. Falling back to',
+        DEV_SOCKET_FALLBACK,
+        '\nSet VITE_API_URL in your .env file to suppress this warning.'
+      );
+      return DEV_SOCKET_FALLBACK;
+    }
+
+    // In production, do not silently connect to localhost
+    console.error(
+      '[Socket] VITE_API_URL environment variable is not configured. '
+      + 'Socket.IO will not connect. Set VITE_API_URL in your deployment environment.'
+    );
+    return '';
   }, []);
 
   // Only depend on isAuthenticated + token — NOT on Zustand actions
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || !token || !socketUrl) {
       cleanupSocket();
       return;
     }
