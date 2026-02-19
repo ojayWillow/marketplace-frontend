@@ -17,6 +17,7 @@ export {
   type GetNotificationsResponse,
   type UnreadCountResponse,
   type JobAlertPreferences,
+  type UpdateJobAlertPayload,
   getNotifications,
   getUnreadCount as getUnreadNotificationCount,
   markAsRead as markNotificationAsRead,
