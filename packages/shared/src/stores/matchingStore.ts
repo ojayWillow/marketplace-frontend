@@ -18,20 +18,21 @@ interface MatchingState {
   // User's offering categories (for matching jobs)
   myOfferingCategories: string[];
   myOfferings: Offering[];
-  
+
   // Notifications
   notifications: MatchNotification[];
   unreadCount: number;
-  
+
   // Last check timestamp
   lastChecked: string | null;
-  
+
   // Actions
   loadMyOfferings: () => Promise<void>;
   addNotification: (notification: Omit<MatchNotification, 'id' | 'createdAt' | 'read'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  reset: () => void;
   isJobMatchingMyOfferings: (jobCategory: string) => boolean;
   getMatchingOfferingsForJob: (jobCategory: string) => Offering[];
 }
@@ -50,7 +51,7 @@ export const useMatchingStore = create<MatchingState>()(
           const response = await getMyOfferings();
           const offerings = response.offerings || [];
           const categories = [...new Set(offerings.map(o => o.category))];
-          
+
           set({
             myOfferings: offerings,
             myOfferingCategories: categories,
@@ -68,7 +69,7 @@ export const useMatchingStore = create<MatchingState>()(
           createdAt: new Date(),
           read: false
         };
-        
+
         set(state => ({
           notifications: [newNotification, ...state.notifications].slice(0, 50), // Keep last 50
           unreadCount: state.unreadCount + 1
@@ -80,7 +81,7 @@ export const useMatchingStore = create<MatchingState>()(
           const notification = state.notifications.find(n => n.id === id);
           if (notification && !notification.read) {
             return {
-              notifications: state.notifications.map(n => 
+              notifications: state.notifications.map(n =>
                 n.id === id ? { ...n, read: true } : n
               ),
               unreadCount: Math.max(0, state.unreadCount - 1)
@@ -101,6 +102,16 @@ export const useMatchingStore = create<MatchingState>()(
         set({
           notifications: [],
           unreadCount: 0
+        });
+      },
+
+      reset: () => {
+        set({
+          myOfferingCategories: [],
+          myOfferings: [],
+          notifications: [],
+          unreadCount: 0,
+          lastChecked: null,
         });
       },
 
