@@ -150,6 +150,7 @@
     "cancelled": "Atcelts"
   },
   "categories": {
+    "all": "Visas kategorijas",
     "cleaning": "Uzkop\u0161ana",
     "moving": "P\u0101rv\u0101k\u0161an\u0101s un cel\u0161ana",
     "assembly": "Mont\u0101\u017ea",
@@ -164,11 +165,7 @@
     "tech": "Tehnisk\u0101 pal\u012bdz\u012bba",
     "beauty": "Skaistumkop\u0161ana",
     "events": "Pas\u0101kumi",
-    "other": "Cits",
-    "all": "Visas kategorijas",
-    "pet-care": "M\u0101jdz\u012bvnieku apr\u016bpe",
-    "shopping": "Iepirk\u0161an\u0101s",
-    "tech-help": "Tehnisk\u0101 pal\u012bdz\u012bba"
+    "other": "Cits"
   },
   "categoryDescriptions": {
     "cleaning": "M\u0101jas uzkop\u0161ana, \u0123ener\u0101lt\u012br\u012b\u0161ana, k\u0101rto\u0161ana",
