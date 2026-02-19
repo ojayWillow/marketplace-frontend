@@ -13,7 +13,7 @@ export default function VerifyPhone() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, updateUser, logout } = useAuthStore()
-  
+
   const [step, setStep] = useState<Step>('phone')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
@@ -22,7 +22,7 @@ export default function VerifyPhone() {
   const [loading, setLoading] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
   const [recaptchaReady, setRecaptchaReady] = useState(false)
-  
+
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null)
@@ -42,21 +42,21 @@ export default function VerifyPhone() {
   // Initialize reCAPTCHA - memoized to prevent recreation
   const initRecaptcha = useCallback(() => {
     if (!recaptchaContainerRef.current || !mountedRef.current) return
-    
+
     // Don't recreate if already exists and is valid
     if (recaptchaVerifierRef.current) {
       setRecaptchaReady(true)
       return
     }
-    
+
     try {
       recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
         size: 'invisible',
         callback: () => {
-          console.log('reCAPTCHA solved')
+          console.debug('reCAPTCHA solved')
         },
         'expired-callback': () => {
-          console.log('reCAPTCHA expired')
+          console.debug('reCAPTCHA expired')
           // Mark as not ready so it will be recreated on next use
           recaptchaVerifierRef.current = null
           setRecaptchaReady(false)
@@ -72,12 +72,12 @@ export default function VerifyPhone() {
   // Initialize on mount
   useEffect(() => {
     mountedRef.current = true
-    
+
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       initRecaptcha()
     }, 100)
-    
+
     return () => {
       mountedRef.current = false
       clearTimeout(timer)
@@ -115,7 +115,7 @@ export default function VerifyPhone() {
     setLoading(true)
 
     const fullPhone = getFullPhoneNumber()
-    
+
     // Basic validation
     if (fullPhone.length < 10) {
       setError('Please enter a valid phone number')
@@ -139,17 +139,17 @@ export default function VerifyPhone() {
         fullPhone,
         recaptchaVerifierRef.current
       )
-      
+
       setConfirmationResult(confirmation)
       setStep('code')
       setResendTimer(60)
-      
+
       // Focus first code input
       setTimeout(() => codeInputRefs.current[0]?.focus(), 100)
     } catch (err: unknown) {
       console.error('Send code error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to send verification code'
-      
+
       if (errorMessage.includes('too-many-requests')) {
         setError('Too many attempts. Please try again later.')
       } else if (errorMessage.includes('invalid-phone-number')) {
@@ -159,7 +159,7 @@ export default function VerifyPhone() {
       } else {
         setError('Failed to send code. Please try again.')
       }
-      
+
       // Reset reCAPTCHA on error
       if (recaptchaVerifierRef.current) {
         try {
@@ -207,7 +207,7 @@ export default function VerifyPhone() {
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault()
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    
+
     if (pastedData.length === 6) {
       const newCode = pastedData.split('')
       setVerificationCode(newCode)
@@ -229,7 +229,7 @@ export default function VerifyPhone() {
       // Verify with Firebase
       const result = await confirmationResult.confirm(code)
       const idToken = await result.user.getIdToken()
-      
+
       // Send to our backend to link phone to existing account
       const response = await api.post('/api/auth/phone/link', {
         idToken,
@@ -242,20 +242,20 @@ export default function VerifyPhone() {
       }
 
       setStep('success')
-      
+
       // Redirect after success
       setTimeout(() => {
         navigate(from, { replace: true })
       }, 2000)
-      
+
     } catch (err: unknown) {
       console.error('Verify code error:', err)
-      
+
       // Check for Axios error with response
       if (err instanceof AxiosError && err.response) {
         const status = err.response.status
         const errorData = err.response.data as { error?: string }
-        
+
         if (status === 409) {
           // Phone already linked to another account
           setError('This phone number is already linked to another account. Please use a different phone number or log in with the existing account.')
@@ -276,7 +276,7 @@ export default function VerifyPhone() {
       } else {
         // Firebase errors
         const errorMessage = err instanceof Error ? err.message : 'Verification failed'
-        
+
         if (errorMessage.includes('invalid-verification-code')) {
           setError('Invalid code. Please check and try again.')
         } else if (errorMessage.includes('code-expired')) {
@@ -285,7 +285,7 @@ export default function VerifyPhone() {
           setError('Verification failed. Please try again.')
         }
       }
-      
+
       // Clear the code inputs on error
       setVerificationCode(['', '', '', '', '', ''])
       codeInputRefs.current[0]?.focus()
@@ -297,7 +297,7 @@ export default function VerifyPhone() {
   // Resend code
   const handleResend = async () => {
     if (resendTimer > 0) return
-    
+
     setError('')
     setLoading(true)
     setVerificationCode(['', '', '', '', '', ''])
@@ -318,7 +318,7 @@ export default function VerifyPhone() {
         getFullPhoneNumber(),
         recaptchaVerifierRef.current
       )
-      
+
       setConfirmationResult(confirmation)
       setResendTimer(60)
       codeInputRefs.current[0]?.focus()
@@ -445,7 +445,7 @@ export default function VerifyPhone() {
                 <Shield className="w-4 h-4" />
                 Verification Code
               </label>
-              
+
               {/* 6-digit code input */}
               <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
                 {verificationCode.map((digit, index) => (
@@ -463,7 +463,7 @@ export default function VerifyPhone() {
                   />
                 ))}
               </div>
-              
+
               <p className="text-gray-500 text-sm text-center mt-4">
                 Enter the 6-digit code sent to your phone
               </p>
@@ -497,7 +497,7 @@ export default function VerifyPhone() {
                 <ArrowLeft className="w-4 h-4" />
                 Change phone number
               </button>
-              
+
               <p className="text-center text-gray-500 text-sm">
                 Didn't receive the code?{' '}
                 {resendTimer > 0 ? (

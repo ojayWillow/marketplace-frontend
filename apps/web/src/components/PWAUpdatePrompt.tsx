@@ -4,7 +4,7 @@ import { RefreshCw, X } from 'lucide-react'
 
 export const PWAUpdatePrompt = () => {
   const { t } = useTranslation()
-  
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -16,10 +16,10 @@ export const PWAUpdatePrompt = () => {
           r.update()
         }, 5 * 60 * 1000)
       }
-      console.log('SW Registered:', swUrl)
+      console.debug('SW Registered:', swUrl)
     },
     onRegisterError(error) {
-      console.log('SW registration error', error)
+      console.warn('SW registration error', error)
     },
   })
 
