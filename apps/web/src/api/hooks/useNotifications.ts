@@ -13,6 +13,7 @@ export const notificationKeys = {
   all: ['notifications'] as const,
   list: () => [...notificationKeys.all, 'list'] as const,
   unreadCount: () => [...notificationKeys.all, 'unread-count'] as const,
+  messagesUnreadCount: () => ['messages', 'unread-count'] as const,
   combined: () => ['combined-unread'] as const,
 };
 
@@ -28,8 +29,9 @@ export const useNotifications = (
   return useQuery({
     queryKey: [...notificationKeys.list(), page, perPage, unreadOnly],
     queryFn: () => getNotifications(page, perPage, unreadOnly),
-    staleTime: 1000 * 30, // 30 seconds
-    refetchInterval: 1000 * 60, // Refetch every minute
+    staleTime: 1000 * 60, // 60 seconds
+    refetchInterval: 1000 * 120, // Refetch every 2 minutes
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
@@ -41,15 +43,17 @@ export const useNotificationUnreadCount = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: getUnreadCount,
-    staleTime: 1000 * 30, // 30 seconds
-    refetchInterval: 1000 * 60, // Refetch every minute
+    staleTime: 1000 * 60, // 60 seconds
+    refetchInterval: 1000 * 120, // Refetch every 2 minutes
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
 
 /**
- * Combined hook to fetch both message and notification unread counts
- * This is useful for showing badges in navigation/menu
+ * Combined hook to fetch both message and notification unread counts.
+ * Uses the same query keys as the individual hooks so React Query
+ * deduplicates the network requests automatically.
  */
 export const useUnreadCounts = (options?: { enabled?: boolean }) => {
   return useQuery({
@@ -68,8 +72,9 @@ export const useUnreadCounts = (options?: { enabled?: boolean }) => {
         total: messagesCount + notificationsData.unread_count,
       };
     },
-    staleTime: 1000 * 30, // 30 seconds
-    refetchInterval: 1000 * 60, // Refetch every minute for real-time feel
+    staleTime: 1000 * 60, // 60 seconds
+    refetchInterval: 1000 * 120, // Refetch every 2 minutes
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
