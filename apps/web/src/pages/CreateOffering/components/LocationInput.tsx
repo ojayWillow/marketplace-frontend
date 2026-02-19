@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAddressSearch } from '../hooks';
 import { GeocodingResult } from '@marketplace/shared';
 import { DEFAULT_LOCATION } from '../../../constants/locations';
-import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../../constants/map';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF, MAP_CONTAINER_PROPS } from '../../../constants/map';
 
 interface LocationInputProps {
   location: string;
@@ -162,6 +162,7 @@ const LocationInput = ({
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
           zoomControl={false}
+          {...MAP_CONTAINER_PROPS}
         >
           <TileLayer
             attribution={MAP_ATTRIBUTION}

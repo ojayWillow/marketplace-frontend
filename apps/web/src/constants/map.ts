@@ -19,12 +19,28 @@ export const MAP_ATTRIBUTION =
 
 /**
  * Performance props to spread onto every <TileLayer>.
- * - keepBuffer: pre-load surrounding tiles (default 2, we use 4)
+ * - keepBuffer: 8 rows of tiles kept outside viewport (default 2)
  * - updateWhenZooming: false = don't re-request tiles mid-zoom animation
  * - updateWhenIdle: true = update tiles once zoom/pan finishes
+ * - maxNativeZoom: 20 = CartoDB serves tiles up to zoom 20
+ * - maxZoom: 22 = allow zooming past 20, Leaflet upscales instead of grey
  */
 export const MAP_TILE_PERF = {
-  keepBuffer: 4,
+  keepBuffer: 8,
   updateWhenZooming: false,
   updateWhenIdle: true,
+  maxNativeZoom: 20,
+  maxZoom: 22,
+} as const;
+
+/**
+ * Props to spread onto every <MapContainer> for smoother zoom.
+ * - zoomSnap: 0.5 = fractional zoom steps (less jarring tile reloads)
+ * - zoomDelta: 0.5 = smaller zoom per scroll wheel click
+ * - wheelPxPerZoomLevel: 120 = smoother scroll zoom sensitivity
+ */
+export const MAP_CONTAINER_PROPS = {
+  zoomSnap: 0.5,
+  zoomDelta: 0.5,
+  wheelPxPerZoomLevel: 120,
 } as const;

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Task } from '@marketplace/shared';
-import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF } from '../../../constants/map';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, MAP_TILE_PERF, MAP_CONTAINER_PROPS } from '../../../constants/map';
 
 interface TaskLocationMapProps {
   task: Task;
@@ -47,6 +47,7 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
           zoomControl={false}
+          {...MAP_CONTAINER_PROPS}
         >
           <TileLayer
             attribution={MAP_ATTRIBUTION}
