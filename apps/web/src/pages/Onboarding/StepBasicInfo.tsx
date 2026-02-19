@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { User, Camera, MapPin, Loader2, ChevronDown } from 'lucide-react'
 import { useAuthStore, apiClient as api } from '@marketplace/shared'
-import { COUNTRIES, CITIES, getLocalizedLabel } from '../../../../constants/locations'
+import { COUNTRIES, CITIES, getLocalizedLabel } from '../../constants/locations'
 
 interface Props {
   data: {
