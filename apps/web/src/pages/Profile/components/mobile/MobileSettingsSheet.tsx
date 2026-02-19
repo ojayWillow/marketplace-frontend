@@ -5,6 +5,7 @@ import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/
 import type { JobAlertPreferences } from '@marketplace/shared';
 import { useLogout } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
+import { TASK_CATEGORIES, CATEGORY_ICONS } from '../tabs/settings/settingsConstants';
 
 interface MobileSettingsSheetProps {
   isOpen: boolean;
@@ -23,32 +24,6 @@ const themeOptions = [
   { value: 'dark' as const, icon: '🌙', labelKey: 'settings.theme.dark', labelDefault: 'Dark' },
   { value: 'system' as const, icon: '🖥️', labelKey: 'settings.theme.system', labelDefault: 'System' },
 ];
-
-const TASK_CATEGORIES = [
-  'pet-care',
-  'moving',
-  'shopping',
-  'cleaning',
-  'delivery',
-  'outdoor',
-  'handyman',
-  'tutoring',
-  'tech-help',
-  'other',
-] as const;
-
-const CATEGORY_ICONS: Record<string, string> = {
-  'pet-care': '🐕',
-  'moving': '📦',
-  'shopping': '🛒',
-  'cleaning': '🧹',
-  'delivery': '🚗',
-  'outdoor': '🌿',
-  'handyman': '🔧',
-  'tutoring': '📚',
-  'tech-help': '💻',
-  'other': '📋',
-};
 
 const isIOSSafari = () => {
   const ua = navigator.userAgent;
@@ -151,7 +126,7 @@ export const MobileSettingsSheet = ({
     if (current.includes(cat)) {
       next = current.filter(c => c !== cat);
     } else {
-      if (current.length >= 10) return;
+      if (current.length >= TASK_CATEGORIES.length) return;
       next = [...current, cat];
     }
     setJobAlertPrefs(prev => ({ ...prev, categories: next }));
@@ -493,7 +468,7 @@ export const MobileSettingsSheet = ({
                   <span className="text-[10px] text-gray-400 dark:text-gray-500">
                     {jobAlertPrefs.categories.length === 0
                       ? t('common.notifications.allCategories', 'All')
-                      : `${jobAlertPrefs.categories.length}/10`}
+                      : `${jobAlertPrefs.categories.length}/${TASK_CATEGORIES.length}`}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -511,7 +486,7 @@ export const MobileSettingsSheet = ({
                         } disabled:opacity-50`}
                       >
                         <span className="text-xs">{CATEGORY_ICONS[cat] || '📋'}</span>
-                        <span>{t(`createTask.categoryDescriptions.${cat}`, cat).split(',')[0]}</span>
+                        <span>{t(`common.categories.${cat}`, cat)}</span>
                       </button>
                     );
                   })}
