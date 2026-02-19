@@ -1,24 +1,5 @@
 import api, { API_URL } from './client';
 
-export interface UploadResponse {
-  message: string;
-  url: string;
-  filename?: string;
-}
-
-export interface StorageStatusResponse {
-  configured: boolean;
-  provider: string | null;
-}
-
-/**
- * Check if storage service is configured
- */
-export const getStorageStatus = async (): Promise<StorageStatusResponse> => {
-  const response = await api.get('/api/uploads/status');
-  return response.data;
-};
-
 /**
  * Create FormData from URI (React Native)
  */
@@ -58,7 +39,7 @@ const createFormDataFromFile = (file: File | Blob, filename?: string): FormData 
 };
 
 // ============================================
-// SPECIFIC UPLOAD FUNCTIONS (Supabase buckets)
+// UPLOAD FUNCTIONS (Supabase buckets)
 // ============================================
 
 /**
@@ -114,77 +95,6 @@ export const uploadChatImageFile = async (file: File | Blob): Promise<string> =>
   const formData = createFormDataFromFile(file);
   const response = await api.post('/api/uploads/chat-image', formData);
   return response.data.url;
-};
-
-// ============================================
-// LEGACY FUNCTIONS (backwards compatibility)
-// ============================================
-
-/**
- * Upload a single image file (web - File object)
- * @deprecated Use uploadTaskImage or uploadChatImage instead
- */
-export const uploadImage = async (file: File | Blob, filename?: string): Promise<UploadResponse> => {
-  const formData = createFormDataFromFile(file, filename);
-  
-  try {
-    const response = await api.post('/api/uploads', formData);
-    return response.data;
-  } catch (error: any) {
-    console.error('Upload error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-/**
- * Upload image from URI (React Native)
- * @deprecated Use uploadTaskImage or uploadChatImage instead
- */
-export const uploadImageFromUri = async (uri: string, filename?: string): Promise<UploadResponse> => {
-  try {
-    console.log('Uploading image from URI:', { uri, filename });
-    
-    const formData = createFormDataFromUri(uri, filename);
-    const response = await api.post('/api/uploads', formData);
-    
-    console.log('Upload successful:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('Image upload error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-/**
- * Upload multiple images
- */
-export const uploadImages = async (files: File[]): Promise<UploadResponse[]> => {
-  const results: UploadResponse[] = [];
-  for (const file of files) {
-    const result = await uploadImage(file);
-    results.push(result);
-  }
-  return results;
-};
-
-/**
- * Upload multiple images from URIs (React Native)
- */
-export const uploadImagesFromUris = async (uris: string[]): Promise<UploadResponse[]> => {
-  const results: UploadResponse[] = [];
-  for (const uri of uris) {
-    const result = await uploadImageFromUri(uri);
-    results.push(result);
-  }
-  return results;
-};
-
-/**
- * Delete an uploaded image
- * Note: For Supabase storage, deletion is handled server-side
- */
-export const deleteImage = async (filename: string): Promise<void> => {
-  await api.delete(`/api/uploads/${filename}`);
 };
 
 /**
