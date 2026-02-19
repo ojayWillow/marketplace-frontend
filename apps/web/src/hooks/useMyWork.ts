@@ -1,25 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuthStore } from '@marketplace/shared';
-import { apiClient } from '@marketplace/shared';
-import { useToastStore } from '@marketplace/shared';
-import { cancelTask, confirmTaskCompletion } from '@marketplace/shared';
-import { deleteOffering } from '@marketplace/shared';
-import type { Task, TaskApplication, TaskMatchCounts, TaskViewMode, TaskStatusFilter } from '@marketplace/shared';
-import type { Offering } from '@marketplace/shared';
+import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAuthStore, apiClient, useToastStore, cancelTask, deleteOffering } from '@marketplace/shared';
+import type { Task, TaskApplication, TaskViewMode, TaskStatusFilter, Offering } from '@marketplace/shared';
 
 /**
  * Shared hook for "my work" data — tasks I created, tasks I applied to, my offerings.
- * Used by both WorkPage (Mine tab) and Profile (desktop tabs).
+ * Used by WorkPage (Mine tab) via useWorkPage.
  */
 export const useMyWork = () => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { user } = useAuthStore();
   const toast = useToastStore();
+  const { t } = useTranslation();
 
   // Data
   const [createdTasks, setCreatedTasks] = useState<Task[]>([]);
   const [myApplications, setMyApplications] = useState<TaskApplication[]>([]);
   const [myOfferings, setMyOfferings] = useState<Offering[]>([]);
-  const [taskMatchCounts, setTaskMatchCounts] = useState<TaskMatchCounts>({});
 
   // Loading
   const [loading, setLoading] = useState(true);
@@ -78,28 +74,28 @@ export const useMyWork = () => {
 
   // Actions
   const handleCancelTask = useCallback(async (taskId: number) => {
-    if (!window.confirm('Are you sure you want to cancel this task?')) return;
+    if (!window.confirm(t('tasks.confirmCancel', 'Are you sure you want to cancel this task?'))) return;
     try {
       await cancelTask(taskId);
-      toast.success('Task cancelled');
+      toast.success(t('tasks.cancelled', 'Task cancelled'));
       fetchTasks();
     } catch (error) {
       console.error('Error cancelling task:', error);
-      toast.error('Failed to cancel task');
+      toast.error(t('tasks.cancelFailed', 'Failed to cancel task'));
     }
-  }, [fetchTasks, toast]);
+  }, [fetchTasks, toast, t]);
 
   const handleDeleteOffering = useCallback(async (offeringId: number) => {
-    if (!window.confirm('Are you sure you want to delete this service offering?')) return;
+    if (!window.confirm(t('offerings.confirmDelete', 'Are you sure you want to delete this service offering?'))) return;
     try {
       await deleteOffering(offeringId);
       setMyOfferings(prev => prev.filter(o => o.id !== offeringId));
-      toast.success('Offering deleted successfully');
+      toast.success(t('offerings.deleted', 'Offering deleted successfully'));
     } catch (error) {
       console.error('Error deleting offering:', error);
-      toast.error('Failed to delete offering');
+      toast.error(t('offerings.deleteFailed', 'Failed to delete offering'));
     }
-  }, [toast]);
+  }, [toast, t]);
 
   // Computed values
   const totalPendingApplicationsOnMyTasks = createdTasks.reduce((sum, task) => {
@@ -112,7 +108,7 @@ export const useMyWork = () => {
     myApplications,
     myOfferings,
     setMyOfferings,
-    taskMatchCounts,
+    taskMatchCounts: {} as Record<string, number>,
     userId: user?.id,
 
     // Loading
