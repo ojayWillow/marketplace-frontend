@@ -24,10 +24,10 @@ export const useNotifications = (isAuthenticated: boolean): UseNotificationsRetu
     acceptedApplications: 0
   });
 
-  const totalNotifications = 
-    notifications.unreadMessages + 
-    notifications.pendingApplications + 
-    notifications.pendingConfirmation + 
+  const totalNotifications =
+    notifications.unreadMessages +
+    notifications.pendingApplications +
+    notifications.pendingConfirmation +
     notifications.acceptedApplications;
 
   // Mark specific notification type as read
@@ -50,17 +50,17 @@ export const useNotifications = (isAuthenticated: boolean): UseNotificationsRetu
   // Fetch notification counts
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     try {
       // Fetch unread messages count
       const messagesResponse = await apiClient.get('/api/messages/unread-count');
       const unreadMessages = messagesResponse.data.unread_count || 0;
-      
+
       // Fetch task notifications (pending applications on my tasks)
       const taskNotificationsResponse = await apiClient.get('/api/tasks/notifications');
       const pendingApplications = taskNotificationsResponse.data.pending_applications || 0;
       const pendingConfirmation = taskNotificationsResponse.data.pending_confirmation || 0;
-      
+
       // Fetch real notifications (for accepted applications - worker side)
       let acceptedApplications = 0;
       try {
@@ -68,9 +68,9 @@ export const useNotifications = (isAuthenticated: boolean): UseNotificationsRetu
         acceptedApplications = notificationsResponse.data.accepted_applications || 0;
       } catch (e) {
         // Notifications API might not be available, that's ok
-        console.log('Notifications API not available');
+        console.debug('Notifications API not available');
       }
-      
+
       setNotifications({
         unreadMessages,
         pendingApplications,

@@ -30,7 +30,7 @@ export const usePhoneAuth = () => {
     }
 
     if (!recaptchaContainerRef.current) {
-      console.log('reCAPTCHA container ref not ready, retrying...');
+      console.debug('reCAPTCHA container ref not ready, retrying...');
       setTimeout(initRecaptcha, 200);
       return;
     }
@@ -43,20 +43,20 @@ export const usePhoneAuth = () => {
     initAttemptedRef.current = true;
 
     try {
-      console.log('Creating INVISIBLE reCAPTCHA verifier...');
+      console.debug('Creating invisible reCAPTCHA verifier...');
       recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
         size: 'invisible',
         callback: () => {
-          console.log('reCAPTCHA verified!');
+          console.debug('reCAPTCHA verified!');
         },
         'expired-callback': () => {
-          console.log('reCAPTCHA expired');
+          console.debug('reCAPTCHA expired');
           setError('Security check expired. Please try again.');
         }
       });
 
       recaptchaVerifierRef.current.render().then(() => {
-        console.log('Invisible reCAPTCHA ready');
+        console.debug('Invisible reCAPTCHA ready');
         setRecaptchaReady(true);
       }).catch((err) => {
         console.error('reCAPTCHA render error:', err);
@@ -132,9 +132,9 @@ export const usePhoneAuth = () => {
     }
 
     try {
-      console.log('Sending verification code to:', fullPhone);
+      console.debug('Sending verification code to:', fullPhone);
       const confirmation = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current);
-      console.log('Code sent successfully!');
+      console.debug('Code sent successfully!');
 
       setConfirmationResult(confirmation);
       setStep('code');
@@ -182,12 +182,12 @@ export const usePhoneAuth = () => {
     setLoading(true);
 
     try {
-      console.log('Verifying code...');
+      console.debug('Verifying code...');
       const result = await confirmationResult.confirm(code);
-      console.log('Firebase verification successful');
+      console.debug('Firebase verification successful');
 
       const idToken = await result.user.getIdToken();
-      console.log('Got Firebase ID token, calling backend...');
+      console.debug('Got Firebase ID token, calling backend...');
 
       const response = await api.post('/api/auth/phone/verify', {
         idToken,

@@ -41,11 +41,11 @@ export const initRecaptcha = (buttonId: string): RecaptchaVerifier => {
     size: 'invisible',
     callback: () => {
       // reCAPTCHA solved - will proceed with sending SMS
-      console.log('reCAPTCHA verified')
+      console.debug('reCAPTCHA verified')
     },
     'expired-callback': () => {
       // Reset reCAPTCHA if expired
-      console.log('reCAPTCHA expired')
+      console.debug('reCAPTCHA expired')
     }
   })
 

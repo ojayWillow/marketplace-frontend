@@ -20,10 +20,10 @@ export const PWAInstallPrompt = () => {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      console.log('SW Registered:', r);
+      console.debug('SW Registered:', r);
     },
     onRegisterError(error) {
-      console.log('SW registration error', error);
+      console.warn('SW registration error', error);
     },
   });
 
@@ -33,9 +33,9 @@ export const PWAInstallPrompt = () => {
     setIsIOS(isIOSDevice);
 
     // Check if already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                          (window.navigator as any).standalone === true;
-    
+
     if (isStandalone) {
       return; // Already installed, don't show prompt
     }
@@ -80,7 +80,7 @@ export const PWAInstallPrompt = () => {
 
     await installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       setShowInstallBanner(false);
     }
@@ -126,7 +126,7 @@ export const PWAInstallPrompt = () => {
   if (showIOSInstructions) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4" onClick={handleDismiss}>
-        <div 
+        <div
           className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm animate-slide-up"
           onClick={(e) => e.stopPropagation()}
         >
@@ -135,7 +135,7 @@ export const PWAInstallPrompt = () => {
             <h3 className="text-lg font-bold text-gray-900">{t('pwa.iosInstructions.title')}</h3>
             <p className="text-gray-600 text-sm mt-1">{t('pwa.iosInstructions.subtitle')}</p>
           </div>
-          
+
           <div className="space-y-4 text-sm">
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="text-2xl">1️⃣</div>
@@ -181,13 +181,13 @@ export const PWAInstallPrompt = () => {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-white border border-gray-200 p-4 rounded-xl shadow-lg z-50 animate-slide-up">
-      <button 
+      <button
         onClick={handleDismiss}
         className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1"
       >
         ✕
       </button>
-      
+
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
           <span className="text-2xl">🤝</span>
@@ -195,14 +195,14 @@ export const PWAInstallPrompt = () => {
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-gray-900">{t('pwa.install.title')}</p>
           <p className="text-sm text-gray-600 mt-0.5">
-            {isIOS 
+            {isIOS
               ? t('pwa.install.subtitleIOS')
               : t('pwa.install.subtitle')
             }
           </p>
         </div>
       </div>
-      
+
       <button
         onClick={handleInstallClick}
         className="w-full mt-3 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
