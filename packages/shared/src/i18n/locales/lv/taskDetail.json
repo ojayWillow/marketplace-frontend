@@ -33,6 +33,12 @@
   "shareBudget": "{{category}} darbs - {{price}} EUR",
   "location": "Atrašanās vieta",
   "openInMaps": "Atvērt kartē →",
+  "difficultyValues": {
+    "easy": "Viegls",
+    "medium": "Vidējs",
+    "hard": "Grūts",
+    "normal": "Normāls"
+  },
   "statusWaitingWorker": "⏳ Gaida, kad izpildītājs pabeigs uzdevumu",
   "statusAssignedToYou": "💪 Tu esi norīkots — atzīmē kā pabeigtu, kad esi pabeidzis",
   "statusWorkerDone": "📋 Izpildītājs atzīmēja kā pabeigtu — lūdzu pārskatiet un apstipriniet",

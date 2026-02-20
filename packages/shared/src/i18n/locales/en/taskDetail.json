@@ -33,6 +33,12 @@
   "shareBudget": "{{category}} job - {{price}} EUR",
   "location": "Location",
   "openInMaps": "Open in Maps →",
+  "difficultyValues": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "normal": "Normal"
+  },
   "statusWaitingWorker": "⏳ Waiting for worker to complete the task",
   "statusAssignedToYou": "💪 You're assigned — mark as done when finished",
   "statusWorkerDone": "📋 Worker marked this as done — please review and confirm",
