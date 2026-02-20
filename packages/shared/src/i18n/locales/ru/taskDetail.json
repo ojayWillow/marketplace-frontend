@@ -45,6 +45,12 @@
   "toastApplicationFailed": "Не удалось подать заявку. Попробуйте снова.",
   "toastLoginToMessage": "Войдите, чтобы отправить сообщение",
   "toastDisputeFiled": "Спор подан. Другая сторона будет уведомлена.",
+  "difficultyValues": {
+    "easy": "Лёгкая",
+    "medium": "Средняя",
+    "hard": "Сложная",
+    "normal": "Обычная"
+  },
   "actions": {
     "pendingReview": "⏳ На рассмотрении",
     "accepted": "✅ Принято",

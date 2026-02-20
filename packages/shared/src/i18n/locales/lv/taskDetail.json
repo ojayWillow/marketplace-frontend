@@ -45,6 +45,12 @@
   "toastApplicationFailed": "Neizdevās pieteikties. Lūdzu mēģiniet vēlreiz.",
   "toastLoginToMessage": "Lūdzu ielogojieties, lai sūtītu ziņu",
   "toastDisputeFiled": "Strīds iesniegts. Otra puse tiks informēta.",
+  "difficultyValues": {
+    "easy": "Viegls",
+    "medium": "Vidējs",
+    "hard": "Grūts",
+    "normal": "Normāls"
+  },
   "actions": {
     "pendingReview": "⏳ Gaida izskatīšanu",
     "accepted": "✅ Apstiprināts",
@@ -81,7 +87,7 @@
     "whatsTheIssue": "Kāda ir problēma?",
     "loadingReasons": "Ielādē iemeslus...",
     "describeIssue": "Aprakstiet problēmu",
-    "describePlaceholder": "Lūdzu detalizēti aprakstiet notikušo (vismaz 20 rakstzīmes)...",
+    "describePlaceholder": "Lūdzu detal izēti aprakstiet notikušo (vismaz 20 rakstzīmes)...",
     "charsMinimum": "{{count}}/20 rakstzīmju minimums",
     "evidencePhotos": "📷 Pierādījumu fotoattēli (neobligāti)",
     "submitDispute": "⚠️ Iesniegt strīdu",
@@ -89,8 +95,8 @@
     "errorTooShort": "Lūdzu norādiet vismaz 20 rakstzīmes, aprakstot problēmu.",
     "errorSubmitFailed": "Neizdevās iesniegt strīdu. Lūdzu mēģiniet vēlreiz.",
     "reasonWorkQuality": "Slikta darba kvalitāte",
-    "reasonNoShow": "Neieradās",
-    "reasonIncomplete": "Nepilnīgs darbs",
+    "reasonNoShow": "Neier adās",
+    "reasonIncomplete": "Nepilniīgs darbs",
     "reasonDifferentWork": "Darbs atšķiras no vienošanās",
     "reasonPayment": "Maksājuma problēma",
     "reasonCommunication": "Komunikācijas problēmas",
