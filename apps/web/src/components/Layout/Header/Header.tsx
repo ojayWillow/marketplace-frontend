@@ -99,54 +99,65 @@ export default function Header() {
             )}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile right side */}
           <div className="md:hidden flex items-center gap-2">
-            {isAuthenticated && (
-              <NotificationBell
-                notifications={notifications}
-                totalNotifications={totalNotifications}
-                onMarkAsRead={markNotificationsAsRead}
-                onClearType={clearNotificationType}
-                isMobile={true}
-              />
+            {isAuthenticated ? (
+              <>
+                {/* Authenticated: Notification bell + Theme + Burger */}
+                <NotificationBell
+                  notifications={notifications}
+                  totalNotifications={totalNotifications}
+                  onMarkAsRead={markNotificationsAsRead}
+                  onClearType={clearNotificationType}
+                  isMobile={true}
+                />
+                
+                <ThemeToggle className="text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50" />
+                
+                <button
+                  className="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label={mobileMenuOpen ? t('header.closeMenu', 'Close menu') : t('header.openMenu', 'Open menu')}
+                  aria-expanded={mobileMenuOpen}
+                  aria-controls="mobile-menu"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    {mobileMenuOpen ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    )}
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Not authenticated (landing page): Theme + Language inline, no burger */}
+                <ThemeToggle className="text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50" />
+                <LanguageSwitcher />
+              </>
             )}
-            
-            <ThemeToggle className="text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50" />
-            
-            <button
-              className="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 dark:hover:bg-gray-700/50"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? t('header.closeMenu', 'Close menu') : t('header.openMenu', 'Open menu')}
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-menu"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        <MobileMenu
-          isOpen={mobileMenuOpen}
-          onClose={() => setMobileMenuOpen(false)}
-          isAuthenticated={isAuthenticated}
-          user={user}
-          notifications={notifications}
-          totalNotifications={totalNotifications}
-          onLogout={logout}
-        />
+        {/* Mobile Navigation - only rendered for authenticated users */}
+        {isAuthenticated && (
+          <MobileMenu
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            isAuthenticated={isAuthenticated}
+            user={user}
+            notifications={notifications}
+            totalNotifications={totalNotifications}
+            onLogout={logout}
+          />
+        )}
       </div>
     </header>
   );
