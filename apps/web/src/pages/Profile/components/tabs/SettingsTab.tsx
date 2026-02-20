@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { ThemeSettings } from './settings/ThemeSettings';
 import { LanguageSettings } from './settings/LanguageSettings';
 import { NotificationSettings } from './settings/NotificationSettings';
-import { JobAlertSettings } from './settings/JobAlertSettings';
 import { LogoutSection } from './settings/LogoutSection';
 
 interface SettingsTabProps {
@@ -24,7 +23,7 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                  <span className="text-lg">❓</span>
+                  <span className="text-lg">\u2753</span>
                 </div>
                 <div className="text-left">
                   <span className="text-base font-medium">
@@ -46,7 +45,6 @@ export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
       <ThemeSettings />
       <LanguageSettings />
       <NotificationSettings />
-      <JobAlertSettings />
       <LogoutSection />
     </div>
   );
