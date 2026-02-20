@@ -17,31 +17,30 @@ export default function Footer() {
           
           {/* Brand Section */}
           <div>
-            {/* Text logo matching header */}
-            <Link to="/" className="inline-block mb-4 group">
-              <span className="font-bold text-2xl text-white group-hover:text-blue-400 transition-colors">
-                kolab
-              </span>
+            {/* 3D logo (already contains kolab text) */}
+            <Link to="/" className="inline-block mb-4">
+              <img 
+                src="/logo.png" 
+                alt="Kolab" 
+                className="h-8 w-auto"
+              />
             </Link>
             
             {/* Tagline */}
-            <p className="text-slate-300 dark:text-slate-300 text-sm leading-relaxed mb-4">
+            <p className="text-slate-300 dark:text-slate-300 text-sm leading-relaxed">
               {t('home.heroSubtitle')}
             </p>
-            
-            {/* Small favicon icon only */}
-            <img 
-              src="/android-chrome-192x192.png" 
-              alt="Kolab icon" 
-              className="w-10 h-10 rounded-xl shadow-lg"
-            />
           </div>
 
           {/* Kolab Links */}
           <nav aria-label="Footer navigation - Kolab">
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5">
-              Kolab
-            </h3>
+            {/* Favicon icon instead of "KOLAB" text */}
+            <img 
+              src="/android-chrome-192x192.png" 
+              alt="" 
+              className="w-8 h-8 rounded-lg shadow-lg mb-5"
+              aria-hidden="true"
+            />
             <ul className="space-y-3" role="list">
               <li>
                 <Link 
