@@ -191,8 +191,8 @@ export const useTaskActions = ({
 
     try {
       const { conversation } = await startConversation(
-        helper.creator_id, 
-        `Hi! I saw your "${helper.title}" offering and I have a job that might interest you: "${task?.title}"`,
+        helper.creator_id,
+        undefined,
         task?.id
       );
       navigate(`/messages/${conversation.id}`);

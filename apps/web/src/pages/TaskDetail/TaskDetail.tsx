@@ -126,17 +126,21 @@ const TaskDetail = () => {
   const [showDisputeSheet, setShowDisputeSheet] = useState(false);
   const [disputeKey, setDisputeKey] = useState(0);
 
-  // Task actions hook
+  // Task actions hook — includes handleMessageCreator which calls
+  // POST /conversations to find-or-create a conversation and then
+  // navigates directly to /messages/:conversationId
   const {
     actionLoading,
     acceptingId,
     rejectingId,
+    messageLoading,
     handleMarkDone,
     handleConfirmDone,
     handleDispute,
     handleCancel,
     handleAcceptApplication,
     handleRejectApplication,
+    handleMessageCreator,
     handleMessageApplicant,
     handleContactHelper,
   } = useTaskActions({
@@ -172,15 +176,11 @@ const TaskDetail = () => {
     );
   };
 
-  // Handle message creator
-  const handleMessageCreator = () => {
-    if (!isAuthenticated) {
-      toast.warning(t('taskDetail.toastLoginToMessage'));
-      navigate('/welcome');
-      return;
-    }
-    navigate(`/messages?userId=${task?.creator_id}`);
-  };
+  // NOTE: handleMessageCreator is now provided by useTaskActions hook above.
+  // It calls POST /conversations to find or create a conversation, then
+  // navigates directly to /messages/:conversationId (the actual conversation).
+  // Previously this function navigated to /messages?userId=... which only
+  // opened the messages list without entering the conversation. (fixes #154)
 
   // Figure out who to review
   const getRevieweeName = (): string => {
@@ -347,12 +347,17 @@ const TaskDetail = () => {
               {!isCreator && (
                 <button
                   onClick={handleMessageCreator}
-                  className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                  disabled={messageLoading}
+                  className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
                   title={t('taskDetail.sendMessage')}
                 >
-                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
+                  {messageLoading ? (
+                    <div className="w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  )}
                 </button>
               )}
               {isCreator && canEdit && (
