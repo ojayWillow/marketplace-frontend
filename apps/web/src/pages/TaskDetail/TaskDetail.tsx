@@ -355,14 +355,6 @@ const TaskDetail = () => {
                   </svg>
                 </button>
               )}
-              {!isCreator && (
-                <Link
-                  to={`/users/${task.creator_id}`}
-                  className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0"
-                >
-                  {t('taskDetail.profile')}
-                </Link>
-              )}
               {isCreator && canEdit && (
                 <Link
                   to={`/tasks/${task.id}/edit`}
