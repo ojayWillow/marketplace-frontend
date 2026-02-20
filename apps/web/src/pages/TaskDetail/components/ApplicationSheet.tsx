@@ -107,7 +107,7 @@ export const ApplicationSheet = ({
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 pb-3">
+          <div className="flex items-center justify-between px-5 pb-4">
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
                 {t('tasks.applyTitle', 'Apply for this job')}
@@ -128,7 +128,7 @@ export const ApplicationSheet = ({
           </div>
 
           {/* Scrollable form content */}
-          <div className="overflow-y-auto overscroll-contain px-5 pb-5" style={{ maxHeight: 'calc(80dvh - 100px)' }}>
+          <div className="overflow-y-auto overscroll-contain px-5 pt-1 pb-5" style={{ maxHeight: 'calc(80dvh - 100px)' }}>
             <textarea
               ref={textareaRef}
               value={message}
