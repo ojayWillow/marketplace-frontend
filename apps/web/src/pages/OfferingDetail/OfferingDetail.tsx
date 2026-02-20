@@ -4,6 +4,7 @@ import { useOffering } from '../../api/hooks';
 import { useAuthStore } from '@marketplace/shared';
 import ShareButton from '../../components/ui/ShareButton';
 import SEOHead from '../../components/ui/SEOHead';
+import ImageGallery from '../../components/ImageGallery';
 import {
   OfferingHeader,
   OfferingProfileRow,
@@ -23,6 +24,13 @@ const OfferingDetail = () => {
   const { user } = useAuthStore();
   const { data: offering, isLoading: loading, error: queryError } = useOffering(Number(id));
   const { contacting, handleContact, handleBoost, isBoosting } = useOfferingActions(offering);
+
+  // Parse offering images — handle both JSON array and fallback
+  const getOfferingImages = (): string[] => {
+    if (!offering?.images) return [];
+    if (Array.isArray(offering.images)) return offering.images.filter(Boolean);
+    return [];
+  };
 
   // Loading state
   if (loading) {
@@ -56,6 +64,7 @@ const OfferingDetail = () => {
   const isOwner = user?.id === offering.creator_id;
   const boostTimeRemaining = getBoostTimeRemaining(offering.boost_expires_at);
   const shortLocation = offering.location?.split(',').slice(0, 2).join(', ') || '';
+  const offeringImages = getOfferingImages();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
@@ -120,6 +129,13 @@ const OfferingDetail = () => {
               <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {safe.safeDescription}
               </p>
+            </div>
+          )}
+
+          {/* Offering images */}
+          {offeringImages.length > 0 && (
+            <div className="px-4 pb-3 md:px-6 md:pb-5">
+              <ImageGallery images={offeringImages} alt={safe.safeTitle} />
             </div>
           )}
 

@@ -23,6 +23,7 @@ import { useToastStore } from '@marketplace/shared';
 import { getCategoryLabel, getCategoryIcon } from '../../constants/categories';
 import SEOHead from '../../components/ui/SEOHead';
 import ShareButton from '../../components/ui/ShareButton';
+import ImageGallery from '../../components/ImageGallery';
 import { FEATURES } from '../../constants/featureFlags';
 import { formatTimeAgoLong } from '../Tasks/utils/taskHelpers';
 
@@ -179,6 +180,14 @@ const TaskDetail = () => {
     return task.creator_name || t('taskDetail.theJobOwner');
   };
 
+  // Parse task images — handle both JSON array and comma-separated string
+  const getTaskImages = (): string[] => {
+    if (!task?.images) return [];
+    if (Array.isArray(task.images)) return task.images.filter(Boolean);
+    if (typeof task.images === 'string') return task.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+    return [];
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -226,6 +235,7 @@ const TaskDetail = () => {
     : '';
   const applicantLabel = applicantCount > 0 ? t('taskDetail.applied', { count: applicantCount }) : t('taskDetail.new');
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
+  const taskImages = getTaskImages();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
@@ -297,7 +307,7 @@ const TaskDetail = () => {
               </div>
               <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
             </div>
-            <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">{task.title}</h1>
+            <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-3">{task.title}</h1>
           </div>
 
           {/* Profile row */}
@@ -358,6 +368,13 @@ const TaskDetail = () => {
               {task.description}
             </p>
           </div>
+
+          {/* Task images */}
+          {taskImages.length > 0 && (
+            <div className="px-4 pb-3 md:px-6 md:pb-5">
+              <ImageGallery images={taskImages} alt={task.title} />
+            </div>
+          )}
 
           {/* Info bar 3 columns */}
           <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
