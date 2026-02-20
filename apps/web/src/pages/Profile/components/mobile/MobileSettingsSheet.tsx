@@ -101,6 +101,9 @@ export const MobileSettingsSheet = ({
   const [jobAlertError, setJobAlertError] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Independent expand/collapse state for the accordion
+  const [isJobAlertExpanded, setIsJobAlertExpanded] = useState(false);
+
   useEffect(() => {
     setShowIOSHelp(isIOSSafari());
   }, []);
@@ -152,7 +155,9 @@ export const MobileSettingsSheet = ({
     }
   }, [t]);
 
-  const handleJobAlertToggle = async () => {
+  const handleJobAlertToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop row click
+
     const wasEnabled = jobAlertPrefs.enabled;
     const next = !wasEnabled;
     const previousPrefs = { ...jobAlertPrefs };
@@ -161,6 +166,9 @@ export const MobileSettingsSheet = ({
     setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
 
     if (next) {
+      // Auto-expand when enabling
+      setIsJobAlertExpanded(true);
+
       // Enabling: try cached location first, then fall back to fresh GPS
       setJobAlertSaving(true);
       setJobAlertError(null);
@@ -200,8 +208,9 @@ export const MobileSettingsSheet = ({
         );
       } catch (geoErr: any) {
         setJobAlertSaving(false);
-        // Revert toggle
+        // Revert toggle and collapse
         setJobAlertPrefs(previousPrefs);
+        setIsJobAlertExpanded(false);
 
         if (geoErr?.code === 1) {
           setJobAlertError(
@@ -218,8 +227,15 @@ export const MobileSettingsSheet = ({
         }
       }
     } else {
-      // Disabling: no location needed
+      // Disabling: collapse and disable
+      setIsJobAlertExpanded(false);
       saveJobAlertPrefs({ enabled: false }, previousPrefs);
+    }
+  };
+
+  const handleJobAlertHeaderClick = () => {
+    if (jobAlertPrefs.enabled) {
+      setIsJobAlertExpanded(prev => !prev);
     }
   };
 
@@ -243,6 +259,17 @@ export const MobileSettingsSheet = ({
     }
     setJobAlertPrefs(prev => ({ ...prev, categories: next }));
     saveJobAlertPrefs({ categories: next });
+  };
+
+  const collapsedJobAlertSummary = () => {
+    const parts: string[] = [];
+    parts.push(`${jobAlertPrefs.radius_km} km`);
+    if (jobAlertPrefs.categories.length === 0) {
+      parts.push(t('common.notifications.allCategories', 'All'));
+    } else {
+      parts.push(`${jobAlertPrefs.categories.length}/${TASK_CATEGORIES.length}`);
+    }
+    return parts.join(' · ');
   };
 
   const handleToggle = async () => {
@@ -483,9 +510,12 @@ export const MobileSettingsSheet = ({
         </div>
 
         {/* ============ JOB ALERTS ============ */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
-          {/* Header row with toggle */}
-          <div className="flex items-center justify-between px-4 py-2.5">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+          {/* Header row (Clickable accordion) */}
+          <div
+            onClick={handleJobAlertHeaderClick}
+            className={`flex items-center justify-between px-4 py-2.5 ${jobAlertPrefs.enabled ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}`}
+          >
             <div className="flex items-center gap-2">
               <span className="text-sm">📍</span>
               <div>
@@ -496,32 +526,46 @@ export const MobileSettingsSheet = ({
                   {jobAlertLoading
                     ? t('common.loading', 'Loading...')
                     : jobAlertPrefs.enabled
-                      ? t('settings.notifications.statusOn', 'Enabled')
+                      ? (isJobAlertExpanded
+                          ? t('settings.notifications.statusOn', 'Enabled')
+                          : collapsedJobAlertSummary()
+                        )
                       : t('settings.notifications.statusOff', 'Disabled')}
                 </p>
               </div>
             </div>
 
-            {!jobAlertLoading && (
-              <button
-                onClick={handleJobAlertToggle}
-                disabled={jobAlertSaving}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  jobAlertSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                } ${
-                  jobAlertPrefs.enabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-                role="switch"
-                aria-checked={jobAlertPrefs.enabled}
-                aria-label="Toggle job alerts"
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                    jobAlertPrefs.enabled ? 'translate-x-6' : 'translate-x-1'
+            <div className="flex items-center gap-2">
+              {!jobAlertLoading && jobAlertPrefs.enabled && (
+                <svg
+                  className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isJobAlertExpanded ? 'rotate-180' : 'rotate-0'}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+              
+              {!jobAlertLoading && (
+                <button
+                  onClick={handleJobAlertToggle}
+                  disabled={jobAlertSaving}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    jobAlertSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  } ${
+                    jobAlertPrefs.enabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
                   }`}
-                />
-              </button>
-            )}
+                  role="switch"
+                  aria-checked={jobAlertPrefs.enabled}
+                  aria-label="Toggle job alerts"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                      jobAlertPrefs.enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Error */}
@@ -540,8 +584,14 @@ export const MobileSettingsSheet = ({
             </div>
           )}
 
-          {/* Expanded settings when enabled */}
-          {!jobAlertLoading && jobAlertPrefs.enabled && (
+          {/* Expanded settings — Animated accordion */}
+          <div
+            className={`transition-all duration-300 ease-in-out ${
+              !jobAlertLoading && jobAlertPrefs.enabled && isJobAlertExpanded
+                ? 'max-h-[800px] opacity-100'
+                : 'max-h-0 opacity-0'
+            }`}
+          >
             <div className="px-4 pb-3 space-y-3">
               {/* Radius slider */}
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -603,12 +653,12 @@ export const MobileSettingsSheet = ({
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5 pb-1">
                   {t('common.notifications.maxCategories', 'Empty = all categories')}
                 </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Log Out */}
