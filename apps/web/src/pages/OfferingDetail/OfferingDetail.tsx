@@ -107,8 +107,6 @@ const OfferingDetail = () => {
             offering={offering}
             safeCreatorName={safe.safeCreatorName}
             isOwner={isOwner}
-            contacting={contacting}
-            onContact={handleContact}
           />
 
           {/* Thin divider — mobile only */}
