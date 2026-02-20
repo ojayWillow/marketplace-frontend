@@ -1,24 +1,25 @@
 /**
  * Shared map tile configuration.
  *
- * OpenStreetMap default tiles — colorful, fast, massive CDN.
- * No API key, no domain whitelist, no signup needed.
+ * Carto Voyager tiles — clean design, fast Cloudflare CDN, free for moderate traffic.
+ * Subdomain sharding ({s} → a/b/c/d) lets the browser open parallel connections
+ * for much faster tile loading vs single-domain OSM tiles.
  *
- * Docs: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
- * Usage policy: https://operations.osmfoundation.org/policies/tiles/
+ * Docs: https://github.com/CartoDB/basemap-styles
+ * Attribution required: https://carto.com/attributions
  */
 export const MAP_TILE_URL =
-  'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
 export const MAP_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /**
  * Performance props to spread onto every <TileLayer>.
  * - keepBuffer: 8 rows of tiles kept outside viewport (default 2)
  * - updateWhenZooming: false = don't re-request tiles mid-zoom animation
  * - updateWhenIdle: true = update tiles once zoom/pan finishes
- * - maxNativeZoom: 19 = OSM serves raster tiles up to zoom 19
+ * - maxNativeZoom: 19 = Carto serves raster tiles up to zoom 19
  * - maxZoom: 22 = allow zooming past 19, Leaflet upscales instead of grey
  */
 export const MAP_TILE_PERF = {

@@ -54,12 +54,18 @@ export const mobileTasksStyles = `
     will-change: transform;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
+    background: #f2efe9;
   }
   .mobile-map-container .leaflet-tile-pane {
     will-change: transform;
   }
   .mobile-map-container .leaflet-marker-pane {
     will-change: transform;
+  }
+
+  /* ── Dark mode map background ──────────────────────────── */
+  .dark .mobile-map-container .leaflet-container {
+    background: #2d3748;
   }
 
   /* ── Pause marker animations during map interaction ────── */

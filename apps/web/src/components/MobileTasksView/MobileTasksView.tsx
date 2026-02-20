@@ -50,9 +50,9 @@ const SkeletonCard = () => (
  *                       4x more intermediate frames during pinch-zoom,
  *                       each triggering tile reloads + marker repositions.
  * - zoomDelta: 1     → match zoomSnap for consistent feel
- * - keepBuffer: 3    → preload 3 rows of tiles outside viewport (not 8).
+ * - keepBuffer: 2    → preload 2 rows of tiles outside viewport.
  *                       Mobile has limited bandwidth + memory; loading
- *                       8 rows of tiles causes decode lag.
+ *                       extra rows of tiles causes decode lag.
  * - preferCanvas: true → hint Leaflet to use canvas renderer where
  *                         possible (CircleMarkers, Polylines). Doesn't
  *                         affect divIcon markers but helps other layers.
@@ -66,7 +66,7 @@ const MOBILE_MAP_PROPS = {
 } as const;
 
 const MOBILE_TILE_PERF = {
-  keepBuffer: 3,
+  keepBuffer: 2,
   updateWhenZooming: false,
   updateWhenIdle: true,
   maxNativeZoom: 19,
