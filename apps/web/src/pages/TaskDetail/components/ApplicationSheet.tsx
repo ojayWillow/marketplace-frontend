@@ -128,7 +128,7 @@ export const ApplicationSheet = ({
           </div>
 
           {/* Scrollable form content — flex-1 + min-h-0 lets it fill remaining space and scroll */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pb-5">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pt-4 pb-5">
             <textarea
               ref={textareaRef}
               value={message}
