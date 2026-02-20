@@ -20,6 +20,7 @@ L.Icon.Default.mergeOptions({
 import { useTask, useApplyToTask } from '../../api/hooks';
 import { useAuthStore } from '@marketplace/shared';
 import { useToastStore } from '@marketplace/shared';
+import { apiClient } from '@marketplace/shared';
 import { getCategoryLabel, getCategoryIcon } from '../../constants/categories';
 import SEOHead from '../../components/ui/SEOHead';
 import ShareButton from '../../components/ui/ShareButton';
@@ -172,14 +173,22 @@ const TaskDetail = () => {
     );
   };
 
-  // Handle message creator
-  const handleMessageCreator = () => {
+  // Handle message creator — create/open conversation and navigate directly into it
+  const handleMessageCreator = async () => {
     if (!isAuthenticated) {
       toast.warning(t('taskDetail.toastLoginToMessage'));
       navigate('/welcome');
       return;
     }
-    navigate(`/messages?userId=${task?.creator_id}`);
+    try {
+      const response = await apiClient.post('/api/messages/conversations', {
+        user_id: task?.creator_id,
+      });
+      navigate(`/messages/${response.data.conversation.id}`);
+    } catch (err: any) {
+      console.error('Error starting conversation:', err);
+      toast.error(err?.response?.data?.error || t('taskDetail.toastMessageFailed', 'Failed to start conversation'));
+    }
   };
 
   // Figure out who to review

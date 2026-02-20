@@ -25,8 +25,6 @@ export interface OfferingProfileRowProps {
   offering: Offering;
   safeCreatorName: string;
   isOwner: boolean;
-  contacting: boolean;
-  onContact: () => void;
 }
 
 export interface OfferingInfoBarProps {
