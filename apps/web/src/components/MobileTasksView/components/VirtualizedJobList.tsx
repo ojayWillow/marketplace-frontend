@@ -11,28 +11,30 @@ interface VirtualizedJobListProps {
 
 /**
  * Estimated height of a single MobileJobCard in pixels.
- * Used for initial placeholder sizing. Doesn't need to be exact —
- * IntersectionObserver handles the actual visibility detection.
  */
 const CARD_HEIGHT_ESTIMATE = 88;
 
 /**
- * How many cards above/below the viewport to keep rendered.
- * Higher = smoother scrolling (fewer pop-ins), more DOM nodes.
- * 5 is a good balance for mobile — ~440px buffer each direction.
+ * How many cards below the visible area to keep rendered.
+ * Cards ABOVE scroll position are always rendered (never culled from top)
+ * to avoid the empty-gap bug when the bottom sheet resizes.
  */
-const BUFFER_COUNT = 5;
+const BUFFER_BELOW = 8;
 
 /**
  * Lightweight virtualized list for the mobile bottom sheet.
  *
- * Instead of rendering all 50+ MobileJobCard components at once,
- * this only renders cards that are near the visible scroll area.
- * Cards outside the viewport are replaced with empty divs of the
- * estimated height to maintain scroll position and scrollbar size.
- *
- * Uses IntersectionObserver (GPU-accelerated, no scroll listener)
- * to track which range of cards is visible.
+ * Key design decisions:
+ * - NEVER cull cards from the top. The bottom sheet changes height
+ *   via translateY, which means the scroll container's full height
+ *   doesn't match what's visible. Culling from the top creates
+ *   empty placeholder gaps that push real cards down.
+ * - Only virtualize cards BELOW the visible window + buffer.
+ *   This is where the actual perf win is (50+ off-screen cards).
+ * - Use scroll events (passive, rAF-throttled) instead of
+ *   IntersectionObserver to avoid stale root bounds after resize.
+ * - Re-evaluate on container resize (ResizeObserver) to handle
+ *   sheet position changes (collapsed → half → full).
  */
 const VirtualizedJobList = memo(function VirtualizedJobList({
   tasks,
@@ -41,94 +43,103 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
   onJobSelect,
 }: VirtualizedJobListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 15 });
+  const rafRef = useRef<number | null>(null);
 
-  // Sentinel refs: we place invisible sentinels at intervals and observe them
-  const sentinelRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  // renderEnd: index up to which we render real cards.
+  // Cards from 0..renderEnd-1 are real, renderEnd..tasks.length are placeholders.
+  const [renderEnd, setRenderEnd] = useState(() => Math.min(20, tasks.length));
 
-  const setSentinelRef = useCallback((index: number, el: HTMLDivElement | null) => {
-    if (el) {
-      sentinelRefs.current.set(index, el);
-    } else {
-      sentinelRefs.current.delete(index);
-    }
-  }, []);
+  const computeRenderEnd = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
+    const scrollTop = container.scrollTop;
+    const containerHeight = container.clientHeight;
+    const visibleBottom = scrollTop + containerHeight;
+
+    // How many cards fit below current scroll position + buffer
+    const lastVisibleIndex = Math.ceil(visibleBottom / CARD_HEIGHT_ESTIMATE);
+    const newEnd = Math.min(tasks.length, lastVisibleIndex + BUFFER_BELOW);
+
+    setRenderEnd((prev) => {
+      // Only grow, never shrink — avoids flickering when scrolling up.
+      // Cards already rendered stay rendered (cheap, already in DOM).
+      return Math.max(prev, newEnd);
+    });
+  }, [tasks.length]);
+
+  // Scroll handler — rAF throttled, passive
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the range of visible sentinels
-        let minVisible = Infinity;
-        let maxVisible = -Infinity;
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        computeRenderEnd();
+        rafRef.current = null;
+      });
+    };
 
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = parseInt(entry.target.getAttribute('data-sentinel-index') || '0', 10);
-            minVisible = Math.min(minVisible, idx);
-            maxVisible = Math.max(maxVisible, idx);
-          }
-        });
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [computeRenderEnd]);
 
-        if (minVisible !== Infinity) {
-          setVisibleRange((prev) => {
-            const newStart = Math.max(0, minVisible - BUFFER_COUNT);
-            const newEnd = Math.min(tasks.length, maxVisible + BUFFER_COUNT + 1);
-            // Only update if range actually changed (avoids re-renders)
-            if (prev.start === newStart && prev.end === newEnd) return prev;
-            return { start: newStart, end: newEnd };
-          });
-        }
-      },
-      {
-        root: container,
-        rootMargin: `${BUFFER_COUNT * CARD_HEIGHT_ESTIMATE}px 0px`,
-        threshold: 0,
-      }
-    );
-
-    // Observe all current sentinels
-    sentinelRefs.current.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [tasks.length]);
-
-  // Reset visible range when tasks change (e.g. new filter)
+  // Re-evaluate when container resizes (sheet position changes)
   useEffect(() => {
-    setVisibleRange({ start: 0, end: Math.min(15, tasks.length) });
-  }, [tasks]);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const ro = new ResizeObserver(() => {
+      computeRenderEnd();
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [computeRenderEnd]);
+
+  // Reset when tasks change (e.g. new filter)
+  useEffect(() => {
+    setRenderEnd(Math.min(20, tasks.length));
+    // Recompute after a tick so container measurements are fresh
+    requestAnimationFrame(() => computeRenderEnd());
+  }, [tasks, computeRenderEnd]);
+
+  // Initial compute on mount
+  useEffect(() => {
+    computeRenderEnd();
+  }, [computeRenderEnd]);
 
   if (tasks.length === 0) return null;
 
-  return (
-    <div ref={containerRef} className="h-full overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
-      {tasks.map((task, index) => {
-        const isInRange = index >= visibleRange.start && index < visibleRange.end;
+  // Total height of placeholder area below rendered cards
+  const placeholderCount = tasks.length - renderEnd;
+  const placeholderHeight = placeholderCount > 0 ? placeholderCount * CARD_HEIGHT_ESTIMATE : 0;
 
-        return (
-          <div key={task.id}>
-            {/* Sentinel div — always rendered, near-zero cost */}
-            <div
-              ref={(el) => setSentinelRef(index, el)}
-              data-sentinel-index={index}
-              style={{ height: 0, overflow: 'hidden' }}
-            />
-            {isInRange ? (
-              <MobileJobCard
-                task={task}
-                userLocation={userLocation}
-                onClick={() => onJobSelect(task)}
-                isSelected={selectedTaskId === task.id}
-              />
-            ) : (
-              // Placeholder — preserves scroll height
-              <div style={{ height: CARD_HEIGHT_ESTIMATE }} />
-            )}
-          </div>
-        );
-      })}
+  return (
+    <div
+      ref={containerRef}
+      className="h-full overflow-y-auto overscroll-contain"
+      style={{ touchAction: 'pan-y' }}
+    >
+      {/* Always render cards 0..renderEnd — never cull from top */}
+      {tasks.slice(0, renderEnd).map((task) => (
+        <MobileJobCard
+          key={task.id}
+          task={task}
+          userLocation={userLocation}
+          onClick={() => onJobSelect(task)}
+          isSelected={selectedTaskId === task.id}
+        />
+      ))}
+
+      {/* Single placeholder block for all remaining cards */}
+      {placeholderHeight > 0 && (
+        <div style={{ height: placeholderHeight }} />
+      )}
+
       <div className="h-4" />
     </div>
   );
