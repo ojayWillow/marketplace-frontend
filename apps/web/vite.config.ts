@@ -90,6 +90,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\/.*/],
         globPatterns: ['**/*.{js,css,html,png}'],
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
