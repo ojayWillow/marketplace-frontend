@@ -21,7 +21,6 @@ export const useOfferingActions = (offering: Offering | undefined) => {
       setContacting(true);
       const response = await apiClient.post('/api/messages/conversations', {
         user_id: offering.creator_id,
-        message: `Hi! I'm interested in your offering: "${offering.title || 'Untitled'}"`
       });
       navigate(`/messages/${response.data.conversation.id}`);
     } catch (err: any) {
