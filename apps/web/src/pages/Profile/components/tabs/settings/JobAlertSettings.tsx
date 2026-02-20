@@ -52,11 +52,15 @@ export const JobAlertSettings = () => {
   const [jobAlertError, setJobAlertError] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Independent expand/collapse state for the accordion
+  const [isExpanded, setIsExpanded] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
         const data = await getJobAlertPreferences();
         setJobAlertPrefs(data.preferences);
+        // Don't auto-expand on load — keep it compact
       } catch (err) {
         console.error('Failed to load job alert prefs:', err);
       } finally {
@@ -97,7 +101,10 @@ export const JobAlertSettings = () => {
     }
   }, [t]);
 
-  const handleJobAlertToggle = async () => {
+  const handleJobAlertToggle = async (e: React.MouseEvent) => {
+    // Stop the click from toggling the accordion too
+    e.stopPropagation();
+
     const wasEnabled = jobAlertPrefs.enabled;
     const next = !wasEnabled;
     const previousPrefs = { ...jobAlertPrefs };
@@ -106,6 +113,9 @@ export const JobAlertSettings = () => {
     setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
 
     if (next) {
+      // Auto-expand when enabling
+      setIsExpanded(true);
+
       // Enabling: try cached location first, then fall back to fresh GPS
       setJobAlertSaving(true);
       setJobAlertError(null);
@@ -145,8 +155,9 @@ export const JobAlertSettings = () => {
         );
       } catch (geoErr: any) {
         setJobAlertSaving(false);
-        // Revert toggle
+        // Revert toggle + collapse
         setJobAlertPrefs(previousPrefs);
+        setIsExpanded(false);
 
         if (geoErr?.code === 1) {
           setJobAlertError(
@@ -163,8 +174,16 @@ export const JobAlertSettings = () => {
         }
       }
     } else {
-      // Disabling: no location needed
+      // Disabling: collapse and turn off
+      setIsExpanded(false);
       saveJobAlertPrefs({ enabled: false }, previousPrefs);
+    }
+  };
+
+  const handleHeaderClick = () => {
+    // Only allow toggling the accordion if alerts are enabled
+    if (jobAlertPrefs.enabled) {
+      setIsExpanded(prev => !prev);
     }
   };
 
@@ -188,6 +207,18 @@ export const JobAlertSettings = () => {
     }
     setJobAlertPrefs(prev => ({ ...prev, categories: next }));
     saveJobAlertPrefs({ categories: next });
+  };
+
+  // Summary text when collapsed but enabled
+  const collapsedSummary = () => {
+    const parts: string[] = [];
+    parts.push(`${jobAlertPrefs.radius_km} km`);
+    if (jobAlertPrefs.categories.length === 0) {
+      parts.push(t('common.notifications.allCategories', 'All categories'));
+    } else {
+      parts.push(`${jobAlertPrefs.categories.length} ${t('common.notifications.categoriesCount', 'categories')}`);
+    }
+    return parts.join(' · ');
   };
 
   return (
@@ -222,10 +253,15 @@ export const JobAlertSettings = () => {
           </div>
         ) : (
           <>
-            {/* Enable / disable toggle */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            {/* Clickable header row — toggle acts as accordion when enabled */}
+            <div
+              onClick={handleHeaderClick}
+              className={`flex items-center justify-between ${
+                jobAlertPrefs.enabled ? 'cursor-pointer' : ''
+              }`}
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                   jobAlertPrefs.enabled
                     ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
@@ -235,36 +271,56 @@ export const JobAlertSettings = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {t('common.notifications.jobAlerts', 'Job Alerts')}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {jobAlertPrefs.enabled
-                      ? t('settings.notifications.statusOn', 'Notifications are enabled')
+                      ? (isExpanded
+                          ? t('settings.notifications.statusOn', 'Notifications are enabled')
+                          : collapsedSummary()
+                        )
                       : t('settings.notifications.statusOff', 'Notifications are disabled')}
                   </p>
                 </div>
               </div>
 
-              <button
-                onClick={handleJobAlertToggle}
-                disabled={jobAlertSaving}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
-                  jobAlertSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                } ${
-                  jobAlertPrefs.enabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-                role="switch"
-                aria-checked={jobAlertPrefs.enabled}
-                aria-label="Toggle job alerts"
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                    jobAlertPrefs.enabled ? 'translate-x-6' : 'translate-x-1'
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Chevron indicator — only visible when enabled */}
+                {jobAlertPrefs.enabled && (
+                  <svg
+                    className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
+                      isExpanded ? 'rotate-180' : 'rotate-0'
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+
+                {/* Toggle switch */}
+                <button
+                  onClick={handleJobAlertToggle}
+                  disabled={jobAlertSaving}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+                    jobAlertSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  } ${
+                    jobAlertPrefs.enabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
                   }`}
-                />
-              </button>
+                  role="switch"
+                  aria-checked={jobAlertPrefs.enabled}
+                  aria-label="Toggle job alerts"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                      jobAlertPrefs.enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
             {/* Error */}
@@ -287,82 +343,86 @@ export const JobAlertSettings = () => {
               </div>
             )}
 
-            {/* Expanded controls when enabled */}
-            {jobAlertPrefs.enabled && (
-              <>
-                {/* Radius slider */}
-                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {t('common.notifications.radius', 'Search radius')}
-                    </label>
-                    <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                      {jobAlertPrefs.radius_km} {t('common.notifications.radiusKm', 'km')}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={50}
-                    step={1}
-                    value={jobAlertPrefs.radius_km}
-                    onChange={handleRadiusChange}
-                    onMouseUp={handleRadiusCommit}
-                    onTouchEnd={handleRadiusCommit}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                  <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>25 km</span>
-                    <span>50 km</span>
-                  </div>
+            {/* Expandable controls — animated accordion */}
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                jobAlertPrefs.enabled && isExpanded
+                  ? 'max-h-[600px] opacity-100'
+                  : 'max-h-0 opacity-0'
+              }`}
+            >
+              {/* Radius slider */}
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('common.notifications.radius', 'Search radius')}
+                  </label>
+                  <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                    {jobAlertPrefs.radius_km} {t('common.notifications.radiusKm', 'km')}
+                  </span>
                 </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={jobAlertPrefs.radius_km}
+                  onChange={handleRadiusChange}
+                  onMouseUp={handleRadiusCommit}
+                  onTouchEnd={handleRadiusCommit}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                />
+                <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  <span>1 km</span>
+                  <span>25 km</span>
+                  <span>50 km</span>
+                </div>
+              </div>
 
-                {/* Category picker */}
-                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {t('common.notifications.categories', 'Categories')}
-                    </label>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {jobAlertPrefs.categories.length === 0
-                        ? t('common.notifications.allCategories', 'All categories')
-                        : `${jobAlertPrefs.categories.length}/${TASK_CATEGORIES.length}`}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {TASK_CATEGORIES.map((cat) => {
-                      const isSelected = jobAlertPrefs.categories.includes(cat);
-                      return (
-                        <button
-                          key={cat}
-                          onClick={() => handleCategoryToggle(cat)}
-                          disabled={jobAlertSaving}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                            isSelected
-                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-700'
-                          } disabled:opacity-50`}
-                        >
-                          <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 text-base leading-none" role="img" aria-label={cat}>
-                            {getCategoryIcon(cat)}
-                          </span>
-                          <span>{t(`common.categories.${cat}`, cat)}</span>
-                          {isSelected && (
-                            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    {t('common.notifications.maxCategories', 'Select categories to filter alerts. Leave empty to get alerts for all categories.')}
-                  </p>
+              {/* Category picker */}
+              <div className="pt-3 mt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('common.notifications.categories', 'Categories')}
+                  </label>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                    {jobAlertPrefs.categories.length === 0
+                      ? t('common.notifications.allCategories', 'All categories')
+                      : `${jobAlertPrefs.categories.length}/${TASK_CATEGORIES.length}`}
+                  </span>
                 </div>
-              </>
-            )}
+                <div className="flex flex-wrap gap-2">
+                  {TASK_CATEGORIES.map((cat) => {
+                    const isSelected = jobAlertPrefs.categories.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => handleCategoryToggle(cat)}
+                        disabled={jobAlertSaving}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-700'
+                        } disabled:opacity-50`}
+                      >
+                        <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 text-base leading-none" role="img" aria-label={cat}>
+                          {getCategoryIcon(cat)}
+                        </span>
+                        <span>{t(`common.categories.${cat}`, cat)}</span>
+                        {isSelected && (
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 pb-1">
+                  {t('common.notifications.maxCategories', 'Select categories to filter alerts. Leave empty to get alerts for all categories.')}
+                </p>
+              </div>
+            </div>
           </>
         )}
       </div>
