@@ -4,6 +4,7 @@ import { useOffering } from '../../api/hooks';
 import { useAuthStore } from '@marketplace/shared';
 import ShareButton from '../../components/ui/ShareButton';
 import SEOHead from '../../components/ui/SEOHead';
+import ImageGallery from '../../components/ui/ImageGallery';
 import {
   OfferingHeader,
   OfferingProfileRow,
@@ -120,6 +121,13 @@ const OfferingDetail = () => {
               <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {safe.safeDescription}
               </p>
+            </div>
+          )}
+
+          {/* Photos */}
+          {offering.images && (Array.isArray(offering.images) ? offering.images.length > 0 : offering.images) && (
+            <div className="px-4 pb-3 md:px-6 md:pb-5">
+              <ImageGallery images={offering.images} alt={safe.safeTitle} />
             </div>
           )}
 

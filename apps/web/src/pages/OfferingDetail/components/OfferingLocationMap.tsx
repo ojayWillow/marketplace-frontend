@@ -33,13 +33,14 @@ const OfferingLocationMap = ({ latitude, longitude, safeTitle, safeLocation, ser
         Open in Maps →
       </a>
     </div>
-    <div className="h-32 md:h-48 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="h-32 md:h-48 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700" style={{ zIndex: 0, isolation: 'isolate' }}>
       <MapContainer
         center={[latitude, longitude]}
         zoom={13}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={false}
         zoomControl={false}
+        dragging={false}
         {...MAP_CONTAINER_PROPS}
       >
         <TileLayer
