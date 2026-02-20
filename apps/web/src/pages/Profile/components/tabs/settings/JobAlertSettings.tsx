@@ -25,7 +25,6 @@ function getCachedLocation(): { lat: number; lng: number } | null {
       return null;
     }
 
-    // Basic Latvia bounds check (same as useUserLocation)
     if (cached.lat < 55 || cached.lat > 58 || cached.lng < 20 || cached.lng > 29) {
       localStorage.removeItem(LOCATION_CACHE_KEY);
       return null;
@@ -36,7 +35,6 @@ function getCachedLocation(): { lat: number; lng: number } | null {
     return null;
   }
 }
-/* ─────────────────────────────────────────────────────────────────── */
 
 export const JobAlertSettings = () => {
   const { t } = useTranslation();
@@ -52,7 +50,6 @@ export const JobAlertSettings = () => {
   const [jobAlertError, setJobAlertError] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Independent expand/collapse state for the accordion
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -60,7 +57,6 @@ export const JobAlertSettings = () => {
       try {
         const data = await getJobAlertPreferences();
         setJobAlertPrefs(data.preferences);
-        // Don't auto-expand on load — keep it compact
       } catch (err) {
         console.error('Failed to load job alert prefs:', err);
       } finally {
@@ -92,7 +88,6 @@ export const JobAlertSettings = () => {
       } else {
         setJobAlertError(msg);
       }
-      // Revert optimistic update on failure
       if (rollback) {
         setJobAlertPrefs(rollback);
       }
@@ -102,25 +97,19 @@ export const JobAlertSettings = () => {
   }, [t]);
 
   const handleJobAlertToggle = async (e: React.MouseEvent) => {
-    // Stop the click from toggling the accordion too
     e.stopPropagation();
 
     const wasEnabled = jobAlertPrefs.enabled;
     const next = !wasEnabled;
     const previousPrefs = { ...jobAlertPrefs };
 
-    // Optimistic update
     setJobAlertPrefs(prev => ({ ...prev, enabled: next }));
 
     if (next) {
-      // Auto-expand when enabling
       setIsExpanded(true);
-
-      // Enabling: try cached location first, then fall back to fresh GPS
       setJobAlertSaving(true);
       setJobAlertError(null);
 
-      // 1. Check localStorage cache written by useUserLocation (map view)
       const cached = getCachedLocation();
       if (cached) {
         setJobAlertSaving(false);
@@ -131,7 +120,6 @@ export const JobAlertSettings = () => {
         return;
       }
 
-      // 2. No cache — request fresh geolocation
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           if (!navigator.geolocation) {
@@ -141,7 +129,7 @@ export const JobAlertSettings = () => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: false,
             timeout: 10000,
-            maximumAge: 300000, // 5 min cache is fine
+            maximumAge: 300000,
           });
         });
 
@@ -155,7 +143,6 @@ export const JobAlertSettings = () => {
         );
       } catch (geoErr: any) {
         setJobAlertSaving(false);
-        // Revert toggle + collapse
         setJobAlertPrefs(previousPrefs);
         setIsExpanded(false);
 
@@ -174,14 +161,12 @@ export const JobAlertSettings = () => {
         }
       }
     } else {
-      // Disabling: collapse and turn off
       setIsExpanded(false);
       saveJobAlertPrefs({ enabled: false }, previousPrefs);
     }
   };
 
   const handleHeaderClick = () => {
-    // Only allow toggling the accordion if alerts are enabled
     if (jobAlertPrefs.enabled) {
       setIsExpanded(prev => !prev);
     }
@@ -209,7 +194,6 @@ export const JobAlertSettings = () => {
     saveJobAlertPrefs({ categories: next });
   };
 
-  // Summary text when collapsed but enabled
   const collapsedSummary = () => {
     const parts: string[] = [];
     parts.push(`${jobAlertPrefs.radius_km} km`);
@@ -218,30 +202,11 @@ export const JobAlertSettings = () => {
     } else {
       parts.push(`${jobAlertPrefs.categories.length} ${t('common.notifications.categoriesCount', 'categories')}`);
     }
-    return parts.join(' · ');
+    return parts.join(' \u00b7 ');
   };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-            <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {t('common.notifications.jobAlerts', 'Job Alerts')}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('common.notifications.jobAlertsDesc', 'Get notified when new tasks are posted near you')}
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="px-6 py-4 space-y-4">
         {jobAlertLoading ? (
           <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
@@ -253,7 +218,7 @@ export const JobAlertSettings = () => {
           </div>
         ) : (
           <>
-            {/* Clickable header row — toggle acts as accordion when enabled */}
+            {/* Single header row: icon + title/subtitle + chevron + toggle */}
             <div
               onClick={handleHeaderClick}
               className={`flex items-center justify-between ${
@@ -272,22 +237,21 @@ export const JobAlertSettings = () => {
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {t('common.notifications.jobAlerts', 'Job Alerts')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {jobAlertPrefs.enabled
                       ? (isExpanded
-                          ? t('settings.notifications.statusOn', 'Notifications are enabled')
+                          ? t('common.notifications.jobAlertsDesc', 'Get notified when new tasks are posted near you')
                           : collapsedSummary()
                         )
-                      : t('settings.notifications.statusOff', 'Notifications are disabled')}
+                      : t('common.notifications.jobAlertsDesc', 'Get notified when new tasks are posted near you')}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Chevron indicator — only visible when enabled */}
                 {jobAlertPrefs.enabled && (
                   <svg
                     className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
@@ -301,7 +265,6 @@ export const JobAlertSettings = () => {
                   </svg>
                 )}
 
-                {/* Toggle switch */}
                 <button
                   onClick={handleJobAlertToggle}
                   disabled={jobAlertSaving}
@@ -343,7 +306,7 @@ export const JobAlertSettings = () => {
               </div>
             )}
 
-            {/* Expandable controls — animated accordion */}
+            {/* Expandable accordion content */}
             <div
               className={`transition-all duration-300 ease-in-out overflow-hidden ${
                 jobAlertPrefs.enabled && isExpanded
@@ -406,7 +369,7 @@ export const JobAlertSettings = () => {
                         } disabled:opacity-50`}
                       >
                         <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 text-base leading-none" role="img" aria-label={cat}>
-                          {CATEGORY_ICONS[cat] || '📋'}
+                          {CATEGORY_ICONS[cat] || '\ud83d\udccb'}
                         </span>
                         <span>{t(`common.categories.${cat}`, cat)}</span>
                         {isSelected && (
