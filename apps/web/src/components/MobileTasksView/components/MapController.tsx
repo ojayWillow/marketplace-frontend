@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useMap } from 'react-leaflet';
 import { Task } from '@marketplace/shared';
 import { useMobileMapStore } from '../stores';
@@ -42,6 +42,7 @@ const MapController = ({
   const hasFitBothPoints = useRef(false);
   const hasHandledSelectedTask = useRef(false);
   const prevRadius = useRef(radius);
+  const invalidatePending = useRef(false);
 
   // --- Persist viewport on every map move/zoom ---
   useEffect(() => {
@@ -59,6 +60,30 @@ const MapController = ({
       map.off('zoomend', saveViewport);
     };
   }, [map, store]);
+
+  // --- Pause CSS animations during map interaction ---
+  // Adds .map-interacting to the map container on movestart,
+  // removes it on moveend. This pauses all infinite keyframe
+  // animations (pulse, urgentPulse) so the browser compositor
+  // can focus entirely on repositioning tiles and markers.
+  useEffect(() => {
+    const container = map.getContainer();
+
+    const onMoveStart = () => {
+      container.classList.add('map-interacting');
+    };
+    const onMoveEnd = () => {
+      container.classList.remove('map-interacting');
+    };
+
+    map.on('movestart', onMoveStart);
+    map.on('moveend', onMoveEnd);
+    return () => {
+      map.off('movestart', onMoveStart);
+      map.off('moveend', onMoveEnd);
+      container.classList.remove('map-interacting');
+    };
+  }, [map]);
 
   // --- Restore viewport on mount (if persisted) ---
   useEffect(() => {
@@ -100,13 +125,25 @@ const MapController = ({
     setTimeout(() => { isSettingView.current = false; }, 700);
   }, [fitBothPoints, map]);
 
-  // Invalidate map size when menu closes or sheet position changes
+  // --- Throttled invalidateSize ---
+  // Coalesces multiple invalidateSize calls into one per frame.
+  const throttledInvalidateSize = useCallback(() => {
+    if (invalidatePending.current) return;
+    invalidatePending.current = true;
+    requestAnimationFrame(() => {
+      map.invalidateSize({ pan: false });
+      invalidatePending.current = false;
+    });
+  }, [map]);
+
+  // Invalidate map size when menu closes (NOT on sheet position change —
+  // sheet drags were triggering this dozens of times per second)
   useEffect(() => {
     const timer = setTimeout(() => {
-      map.invalidateSize({ pan: false });
+      throttledInvalidateSize();
     }, 350);
     return () => clearTimeout(timer);
-  }, [isMenuOpen, sheetPosition, map]);
+  }, [isMenuOpen, throttledInvalidateSize]);
 
   // Handle radius changes and recenter.
   useEffect(() => {
@@ -115,8 +152,6 @@ const MapController = ({
     const radiusChanged = prevRadius.current !== radius;
     prevRadius.current = radius;
 
-    // Only respect the persisted viewport guard when radius hasn't changed.
-    // If radius changed, the user explicitly asked to see a different area.
     if (!radiusChanged && store.mapCenter && store.mapZoom && !recenterTrigger) return;
 
     isSettingView.current = true;
@@ -165,23 +200,23 @@ const MapController = ({
   // Invalidate size on mount
   useEffect(() => {
     const timer = setTimeout(() => {
-      map.invalidateSize();
+      throttledInvalidateSize();
     }, 100);
     return () => clearTimeout(timer);
-  }, [map]);
+  }, [throttledInvalidateSize]);
 
   // Fix map tiles on back-navigation
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         setTimeout(() => {
-          map.invalidateSize({ pan: false });
+          throttledInvalidateSize();
         }, 150);
       }
     };
 
     const handleResize = () => {
-      map.invalidateSize({ pan: false });
+      throttledInvalidateSize();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -193,7 +228,7 @@ const MapController = ({
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, [map]);
+  }, [throttledInvalidateSize]);
 
   return null;
 };

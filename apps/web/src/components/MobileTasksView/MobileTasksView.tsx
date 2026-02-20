@@ -40,8 +40,6 @@ const SkeletonCard = () => (
 );
 
 // ── Memoized map markers ───────────────────────────────────────────
-// Extracted so marker rendering doesn't re-run when bottom sheet
-// state, search input, or other unrelated state changes.
 interface TaskMarkersProps {
   tasksWithOffsets: Task[];
   selectedTaskId: number | null;
@@ -74,7 +72,6 @@ const TaskMarkers = memo(function TaskMarkers({
     </>
   );
 }, (prev, next) => {
-  // Re-render only if tasks or selected task changed
   return (
     prev.tasksWithOffsets === next.tasksWithOffsets &&
     prev.selectedTaskId === next.selectedTaskId
@@ -346,17 +343,19 @@ const MobileTasksView = () => {
 
       <div className="fixed inset-0 flex flex-col">
         {/* Full-screen map */}
-        <div className="absolute inset-0" style={{ zIndex: 1 }}>
+        <div className="absolute inset-0 mobile-map-container" style={{ zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
+            zoomSnap={1}
+            preferCanvas={true}
           >
             <TileLayer
               attribution="&copy; OpenStreetMap"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              keepBuffer={4}
+              keepBuffer={3}
               updateWhenZooming={false}
               updateWhenIdle={true}
             />

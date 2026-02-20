@@ -48,4 +48,28 @@ export const mobileTasksStyles = `
   .urgent-marker {
     z-index: 500 !important;
   }
+
+  /* ── Mobile map GPU acceleration ────────────────────────── */
+  .mobile-map-container .leaflet-container {
+    will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  .mobile-map-container .leaflet-tile-pane {
+    will-change: transform;
+  }
+  .mobile-map-container .leaflet-marker-pane {
+    will-change: transform;
+  }
+
+  /* ── Pause marker animations during map interaction ────── */
+  /* Applied via JS on movestart, removed on moveend.        */
+  /* Frees the compositor from running infinite keyframes     */
+  /* while Leaflet is repositioning tiles + markers.          */
+  .map-interacting .leaflet-marker-icon * {
+    animation-play-state: paused !important;
+  }
+  .map-interacting .user-location-icon * {
+    animation-play-state: paused !important;
+  }
 `;
