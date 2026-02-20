@@ -34,7 +34,7 @@ const TabBar = ({
     { key: 'all', label: t('tasks.tabAll', 'All') },
     { key: 'jobs', label: t('tasks.tabJobs', 'Jobs') },
     { key: 'services', label: t('tasks.tabServices', 'Services') },
-    { key: 'mine', label: t('work.tabMine', 'Mans') },
+    { key: 'mine', label: t('tasks.tabMine', 'Mine') },
   ];
 
   return (
