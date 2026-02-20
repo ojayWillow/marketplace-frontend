@@ -44,7 +44,7 @@ export const useMyWork = () => {
   const fetchApplications = useCallback(async () => {
     setApplicationsLoading(true);
     try {
-      const response = await apiClient.get('/api/tasks/applications/mine');
+      const response = await apiClient.get('/api/tasks/my-applications');
       setMyApplications(response.data.applications || []);
     } catch (e) {
       console.error('Error fetching applications:', e);

@@ -33,6 +33,10 @@ const BUFFER_COUNT = 5;
  *
  * Uses IntersectionObserver (GPU-accelerated, no scroll listener)
  * to track which range of cards is visible.
+ *
+ * A ResizeObserver on the scroll container detects when the bottom
+ * sheet changes size (collapsed → half → full) and re-initializes
+ * the IntersectionObserver with fresh root dimensions.
  */
 const VirtualizedJobList = memo(function VirtualizedJobList({
   tasks,
@@ -42,6 +46,9 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
 }: VirtualizedJobListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 15 });
+
+  // Tracks container resize events to force IntersectionObserver re-init
+  const [resizeGeneration, setResizeGeneration] = useState(0);
 
   // Sentinel refs: we place invisible sentinels at intervals and observe them
   const sentinelRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -54,6 +61,25 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
     }
   }, []);
 
+  // ResizeObserver: detect when the scroll container changes size
+  // (e.g. bottom sheet expanding/collapsing, orientation change, keyboard)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      // Bump generation to force IntersectionObserver re-creation
+      setResizeGeneration((g) => g + 1);
+      // Reset visible range so cards re-appear immediately
+      setVisibleRange({ start: 0, end: Math.min(15, tasks.length) });
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [tasks.length]);
+
+  // IntersectionObserver: track which cards are near the viewport
+  // Re-initializes when tasks change OR when the container resizes
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -93,7 +119,7 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
     sentinelRefs.current.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [tasks.length]);
+  }, [tasks.length, resizeGeneration]);
 
   // Reset visible range when tasks change (e.g. new filter)
   useEffect(() => {
