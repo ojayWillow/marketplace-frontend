@@ -45,6 +45,12 @@
   "toastApplicationFailed": "Failed to apply. Please try again.",
   "toastLoginToMessage": "Please login to send a message",
   "toastDisputeFiled": "Dispute filed. The other party will be notified.",
+  "difficultyValues": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "normal": "Normal"
+  },
   "actions": {
     "pendingReview": "⏳ Pending review",
     "accepted": "✅ Accepted",
