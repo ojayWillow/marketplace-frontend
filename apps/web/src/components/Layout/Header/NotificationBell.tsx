@@ -69,7 +69,7 @@ export const NotificationBell = ({
 
   // Button styles based on mobile or desktop
   const buttonClass = isMobile
-    ? "relative p-2.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center"
+    ? "relative p-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full transition-colors flex items-center justify-center"
     : "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/50";
 
   // Badge styles
@@ -99,8 +99,8 @@ export const NotificationBell = ({
       {totalNotifications === 0 ? (
         <div className="px-4 py-6 text-center text-gray-500 dark:text-slate-400">
           <span className="text-3xl mb-2 block" aria-hidden="true">✨</span>
-          <p className="font-medium">{t('notifications.allCaughtUp', "You're all caught up!")}</p>
-          <p className="text-sm mt-1">{t('notifications.newWillAppear', 'New notifications will appear here')}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{t('notifications.allCaughtUp', "You're all caught up!")}</p>
+          <p className="text-sm mt-1 text-gray-500 dark:text-slate-400">{t('notifications.newWillAppear', 'New notifications will appear here')}</p>
           <button 
             onClick={() => handleNotificationClick('/tasks')}
             className="inline-block mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
@@ -213,7 +213,7 @@ export const NotificationBell = ({
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         
