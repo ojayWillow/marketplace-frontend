@@ -40,9 +40,40 @@ const SkeletonCard = () => (
   </div>
 );
 
-// ── Memoized map markers ───────────────────────────────────────────
-// Extracted so marker rendering doesn't re-run when bottom sheet
-// state, search input, or other unrelated state changes.
+/**
+ * Mobile-specific map config overrides.
+ *
+ * The shared MAP_CONTAINER_PROPS / MAP_TILE_PERF are tuned for desktop
+ * (fractional zoom, large tile buffer). Mobile needs different values:
+ *
+ * - zoomSnap: 1      → whole-number zoom only. Fractional (0.25) creates
+ *                       4x more intermediate frames during pinch-zoom,
+ *                       each triggering tile reloads + marker repositions.
+ * - zoomDelta: 1     → match zoomSnap for consistent feel
+ * - keepBuffer: 3    → preload 3 rows of tiles outside viewport (not 8).
+ *                       Mobile has limited bandwidth + memory; loading
+ *                       8 rows of tiles causes decode lag.
+ * - preferCanvas: true → hint Leaflet to use canvas renderer where
+ *                         possible (CircleMarkers, Polylines). Doesn't
+ *                         affect divIcon markers but helps other layers.
+ */
+const MOBILE_MAP_PROPS = {
+  zoomSnap: 1,
+  zoomDelta: 1,
+  wheelDebounceTime: 80,
+  wheelPxPerZoomLevel: 120,
+  preferCanvas: true,
+} as const;
+
+const MOBILE_TILE_PERF = {
+  keepBuffer: 3,
+  updateWhenZooming: false,
+  updateWhenIdle: true,
+  maxNativeZoom: 19,
+  maxZoom: 22,
+} as const;
+
+// ── Memoized map markers ─────────────────────────────────────
 interface TaskMarkersProps {
   tasksWithOffsets: Task[];
   selectedTaskId: number | null;
@@ -75,7 +106,6 @@ const TaskMarkers = memo(function TaskMarkers({
     </>
   );
 }, (prev, next) => {
-  // Re-render only if tasks or selected task changed
   return (
     prev.tasksWithOffsets === next.tasksWithOffsets &&
     prev.selectedTaskId === next.selectedTaskId
@@ -346,19 +376,19 @@ const MobileTasksView = () => {
       />
 
       <div className="fixed inset-0 flex flex-col">
-        {/* Full-screen map */}
-        <div className="absolute inset-0" style={{ zIndex: 1 }}>
+        {/* Full-screen map — mobile-optimized config */}
+        <div className="absolute inset-0 mobile-map-container" style={{ zIndex: 1 }}>
           <MapContainer
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
-            {...MAP_CONTAINER_PROPS}
+            {...MOBILE_MAP_PROPS}
           >
             <TileLayer
               attribution={MAP_ATTRIBUTION}
               url={MAP_TILE_URL}
-              {...MAP_TILE_PERF}
+              {...MOBILE_TILE_PERF}
             />
             <MapController
               lat={userLocation.lat}
