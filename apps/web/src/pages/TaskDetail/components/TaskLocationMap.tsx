@@ -46,6 +46,9 @@ export const TaskLocationMap = ({ task }: TaskLocationMapProps) => {
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
           zoomControl={false}
+          dragging={false}
+          doubleClickZoom={false}
+          touchZoom={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

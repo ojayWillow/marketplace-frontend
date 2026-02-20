@@ -30,7 +30,7 @@ const ImagePicker = ({
       const fileArray = Array.from(files);
       const validFiles = fileArray.filter((file) => {
         if (!file.type.startsWith('image/')) return false;
-        if (file.size > 10 * 1024 * 1024) return false; // 10MB limit
+        if (file.size > 10 * 1024 * 1024) return false;
         return true;
       });
 
@@ -48,7 +48,6 @@ const ImagePicker = ({
     if (e.target.files) {
       validateAndAddFiles(e.target.files);
     }
-    // Reset so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -74,12 +73,11 @@ const ImagePicker = ({
   return (
     <div>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {label}
         </label>
       )}
 
-      {/* Existing image previews */}
       {existingUrls.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {existingUrls.map((url, i) => (
@@ -87,7 +85,7 @@ const ImagePicker = ({
               <img
                 src={url}
                 alt={`Existing ${i + 1}`}
-                className="w-full h-full object-cover rounded-lg border border-gray-200"
+                className="w-full h-full object-cover rounded-lg border border-gray-200 dark:border-gray-700"
               />
               {onRemoveExisting && (
                 <button
@@ -103,7 +101,6 @@ const ImagePicker = ({
         </div>
       )}
 
-      {/* New image previews */}
       {images.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {images.map((file, i) => (
@@ -111,7 +108,7 @@ const ImagePicker = ({
               <img
                 src={URL.createObjectURL(file)}
                 alt={`New ${i + 1}`}
-                className="w-full h-full object-cover rounded-lg border border-gray-200"
+                className="w-full h-full object-cover rounded-lg border border-gray-200 dark:border-gray-700"
               />
               <button
                 type="button"
@@ -125,7 +122,6 @@ const ImagePicker = ({
         </div>
       )}
 
-      {/* Drop zone / Add button */}
       {canAddMore && (
         <div
           onClick={() => fileInputRef.current?.click()}
@@ -134,14 +130,14 @@ const ImagePicker = ({
           onDragLeave={handleDragLeave}
           className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
             dragOver
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
         >
-          <div className="text-gray-500 text-sm">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
             <span className="text-2xl block mb-1">📷</span>
             <p>{t('imagePicker.dropOrClick', 'Drop images here or click to browse')}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               {t('imagePicker.limit', '{{current}} / {{max}} images (max 10MB each)', {
                 current: totalImages,
                 max: maxImages,
