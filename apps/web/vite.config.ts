@@ -106,13 +106,13 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+            urlPattern: /^https:\/\/.*\.basemaps\.cartocdn\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'map-tiles',
               expiration: {
-                maxEntries: 80,
-                maxAgeSeconds: 60 * 60 * 24 * 7
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 14
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -140,6 +140,30 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Firebase is ~150KB gzipped — isolate it so it's cached
+          // separately and doesn't block initial render
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/messaging'],
+          // Leaflet + react-leaflet — only needed on map pages
+          leaflet: ['leaflet', 'react-leaflet'],
+          // Core vendor libs that rarely change — long-term cached
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@tanstack/react-query',
+            'axios',
+            'zustand',
+          ],
+          // i18n — loaded once, cached forever
+          i18n: ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+        },
+      },
+    },
+  },
   optimizeDeps: {
     exclude: ['react-native']
   },

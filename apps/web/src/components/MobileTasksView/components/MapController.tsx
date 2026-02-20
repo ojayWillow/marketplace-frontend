@@ -43,14 +43,28 @@ const MapController = ({
   const hasHandledSelectedTask = useRef(false);
   const prevRadius = useRef(radius);
   const invalidatePending = useRef(false);
+  const viewportSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // --- Persist viewport on every map move/zoom ---
+  // --- Persist viewport on map move/zoom (debounced) ---
+  // Previously saved on EVERY moveend + zoomend — a single pinch-zoom
+  // fires both events, causing two Zustand updates and two React
+  // re-renders of everything subscribed to useMobileMapStore.
+  // Now debounced: waits 300ms of idle before saving once.
   useEffect(() => {
     const saveViewport = () => {
       if (isSettingView.current) return;
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      store.setMapViewport([center.lat, center.lng], zoom);
+
+      // Clear any pending save — only the last one wins
+      if (viewportSaveTimer.current) {
+        clearTimeout(viewportSaveTimer.current);
+      }
+
+      viewportSaveTimer.current = setTimeout(() => {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        store.setMapViewport([center.lat, center.lng], zoom);
+        viewportSaveTimer.current = null;
+      }, 300);
     };
 
     map.on('moveend', saveViewport);
@@ -58,6 +72,9 @@ const MapController = ({
     return () => {
       map.off('moveend', saveViewport);
       map.off('zoomend', saveViewport);
+      if (viewportSaveTimer.current) {
+        clearTimeout(viewportSaveTimer.current);
+      }
     };
   }, [map, store]);
 

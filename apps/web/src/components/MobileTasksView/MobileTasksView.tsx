@@ -352,13 +352,11 @@ const MobileTasksView = () => {
             zoomControl={false}
             preferCanvas={true}
             {...MAP_CONTAINER_PROPS}
-            zoomSnap={1}
           >
             <TileLayer
               attribution={MAP_ATTRIBUTION}
               url={MAP_TILE_URL}
               {...MAP_TILE_PERF}
-              keepBuffer={3}
             />
             <MapController
               lat={userLocation.lat}

@@ -50,15 +50,12 @@ export const mobileTasksStyles = `
   }
 
   /* ── Mobile map GPU acceleration ────────────────────────── */
-  .mobile-map-container .leaflet-container {
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-  }
+  /* Only promote the tile pane to its own GPU layer.          */
+  /* Previously we had will-change on .leaflet-container,      */
+  /* .leaflet-tile-pane, AND .leaflet-marker-pane — three      */
+  /* overlapping full-screen compositor layers that compete     */
+  /* for GPU memory on mobile devices.                         */
   .mobile-map-container .leaflet-tile-pane {
-    will-change: transform;
-  }
-  .mobile-map-container .leaflet-marker-pane {
     will-change: transform;
   }
 
