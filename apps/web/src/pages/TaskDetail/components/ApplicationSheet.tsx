@@ -93,22 +93,22 @@ export const ApplicationSheet = ({
       >
         <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-        {/* Sheet */}
+        {/* Sheet — use flex-col so header takes natural height, scrollable area fills the rest */}
         <div
           ref={sheetRef}
-          className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
+          className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
             isOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', maxHeight: '80%' }}
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', maxHeight: '80dvh' }}
         >
-          {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-1">
+          {/* Drag handle — flex-shrink-0 keeps it from collapsing */}
+          <div className="flex-shrink-0 flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
           </div>
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 pb-3">
-            <div>
+          {/* Header — flex-shrink-0 so it always shows fully */}
+          <div className="flex-shrink-0 flex items-center justify-between px-5 pb-3">
+            <div className="min-w-0">
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
                 {t('tasks.applyTitle', 'Apply for this job')}
               </h3>
@@ -118,7 +118,7 @@ export const ApplicationSheet = ({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex-shrink-0 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Close"
             >
               <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,8 +127,8 @@ export const ApplicationSheet = ({
             </button>
           </div>
 
-          {/* Scrollable form content */}
-          <div className="overflow-y-auto overscroll-contain px-5 pb-5" style={{ maxHeight: 'calc(80dvh - 100px)' }}>
+          {/* Scrollable form content — flex-1 + min-h-0 lets it fill remaining space and scroll */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pb-5">
             <textarea
               ref={textareaRef}
               value={message}
