@@ -17,11 +17,32 @@ interface ShareButtonProps {
   className?: string;
 }
 
-/* ───────────────────────────────────────────
-   Kolab branded share sheet
-   Mobile  → full-screen bottom sheet
-   Desktop → positioned dropdown
-   ─────────────────────────────────────────── */
+/**
+ * Open a URL reliably on mobile.
+ * window.open() is often blocked on mobile browsers / PWAs when the call
+ * is not in the direct, synchronous click handler stack (e.g. after a
+ * bottom-sheet animation). Fall back to location.href for same-window
+ * navigation, or use <a> click for new-tab targets.
+ */
+const openUrl = (url: string, newTab = true) => {
+  if (newTab) {
+    // Try window.open first
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!w) {
+      // Popup blocked — use a temporary <a> element
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  } else {
+    window.location.href = url;
+  }
+};
+
 const ShareButton = ({
   url,
   title: rawTitle,
@@ -48,46 +69,26 @@ const ShareButton = ({
   const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  /**
-   * Build share message.
-   * Each detail (price, location, posted date) gets its own line.
-   * @param includeUrl — set false for platforms that auto-append the URL
-   *                     (Telegram, Twitter) to avoid showing it twice.
-   */
   const buildShareText = (includeUrl = true) => {
     const lines: string[] = [];
-
-    // Line 1: emoji + title
     const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
     lines.push(titleLine);
-
-    // Blank line after title
     lines.push('');
-
-    // Each detail on its own line
     if (price) lines.push(`\u{1F4B0} ${price}`);
     if (location) lines.push(`\u{1F4CD} ${location}`);
     if (postedDate) lines.push(`\u{23F3} ${postedDate}`);
-
-    // URL line — only when the platform doesn't add it automatically
     if (includeUrl) {
       lines.push('');
       lines.push(`\u{1F449} ${fullUrl}`);
     }
-
-    // Tagline
     lines.push('');
     lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
-
     return lines.join('\n');
   };
 
-  // Full text (with URL) for WhatsApp, copy, etc.
   const shareText = buildShareText(true);
-  // Text without URL for platforms that auto-append it
   const shareTextNoUrl = buildShareText(false);
 
-  // Open / close with animation
   const openSheet = () => {
     setIsOpen(true);
     requestAnimationFrame(() => setIsAnimating(true));
@@ -98,7 +99,6 @@ const ShareButton = ({
     setTimeout(() => setIsOpen(false), 250);
   };
 
-  // Close on outside click (desktop)
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
@@ -115,7 +115,6 @@ const ShareButton = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen]);
 
-  // Lock body scroll on mobile when open
   useEffect(() => {
     if (isOpen && window.innerWidth < 768) {
       document.body.style.overflow = 'hidden';
@@ -125,39 +124,30 @@ const ShareButton = ({
 
   /* ── Share handlers ───────────────────── */
   const shareToWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+    openUrl(`https://wa.me/?text=${encodeURIComponent(shareText)}`);
     closeSheet();
   };
   const shareToTelegram = () => {
-    // Telegram auto-appends the url param as a link, so use text without URL
-    window.open(
+    openUrl(
       `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
-      '_blank',
     );
     closeSheet();
   };
   const shareToFacebook = () => {
-    window.open(
+    openUrl(
       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
-      '_blank',
-      'width=600,height=400',
     );
     closeSheet();
   };
   const shareToTwitter = () => {
-    // Twitter auto-appends the url param, so use text without URL
-    window.open(
+    openUrl(
       `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
-      '_blank',
-      'width=600,height=400',
     );
     closeSheet();
   };
   const shareToLinkedIn = () => {
-    window.open(
+    openUrl(
       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`,
-      '_blank',
-      'width=600,height=400',
     );
     closeSheet();
   };
@@ -205,17 +195,12 @@ const ShareButton = ({
     )},
   ];
 
-  /* ── The share sheet content (reused for mobile + desktop) ── */
+  /* ── The share sheet content ── */
   const sheetContent = (
     <>
-      {/* ── Header with Kolab logo ── */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <div className="flex items-center gap-2.5">
-          <img
-            src="/logo.png"
-            alt="Kolab"
-            className="h-8 w-auto rounded-lg"
-          />
+          <img src="/logo.png" alt="Kolab" className="h-8 w-auto rounded-lg" />
           <span className="text-sm font-bold text-gray-900 tracking-tight">Share</span>
         </div>
         <button
@@ -228,7 +213,6 @@ const ShareButton = ({
         </button>
       </div>
 
-      {/* ── Preview card ── */}
       <div className="mx-5 mb-4 p-3.5 bg-gray-50 rounded-xl border border-gray-100">
         <div className="flex items-start gap-3">
           {categoryIcon && (
@@ -238,21 +222,14 @@ const ShareButton = ({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{title}</p>
-            {price && (
-              <p className="text-sm font-bold text-green-600 mt-1">{price}</p>
-            )}
-            {location && (
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{`\u{1F4CD}`} {location}</p>
-            )}
-            {postedDate && (
-              <p className="text-xs text-gray-400 mt-0.5">{`\u{23F3}`} {postedDate}</p>
-            )}
+            {price && <p className="text-sm font-bold text-green-600 mt-1">{price}</p>}
+            {location && <p className="text-xs text-gray-400 mt-0.5 truncate">{`\u{1F4CD}`} {location}</p>}
+            {postedDate && <p className="text-xs text-gray-400 mt-0.5">{`\u{23F3}`} {postedDate}</p>}
             <p className="text-xs text-gray-300 mt-0.5 truncate">kolab.lv</p>
           </div>
         </div>
       </div>
 
-      {/* ── Share target grid ── */}
       <div className="px-5 pb-2">
         <div className="grid grid-cols-5 gap-3">
           {targets.map((target) => (
@@ -272,9 +249,7 @@ const ShareButton = ({
         </div>
       </div>
 
-      {/* ── Secondary actions ── */}
       <div className="px-5 pt-3 pb-5 space-y-2">
-        {/* Copy link */}
         <button
           onClick={copyLink}
           className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
@@ -295,7 +270,6 @@ const ShareButton = ({
           </span>
         </button>
 
-        {/* Native share (mobile) */}
         {canNativeShare && (
           <button
             onClick={nativeShare}
@@ -313,10 +287,8 @@ const ShareButton = ({
     </>
   );
 
-  /* ── Render ────────────────────────────── */
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Trigger */}
       {variant === 'button' ? (
         <button
           ref={triggerRef}
@@ -341,25 +313,21 @@ const ShareButton = ({
         </button>
       )}
 
-      {/* ── Mobile: bottom sheet via portal ── */}
       {isOpen &&
         createPortal(
           <div className="md:hidden fixed inset-0 z-[9999]">
-            {/* Backdrop */}
             <div
               className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-250 ${
                 isAnimating ? 'opacity-100' : 'opacity-0'
               }`}
               onClick={closeSheet}
             />
-            {/* Sheet */}
             <div
               className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl transition-transform duration-250 ease-out ${
                 isAnimating ? 'translate-y-0' : 'translate-y-full'
               }`}
               style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-gray-300" />
               </div>
@@ -369,7 +337,6 @@ const ShareButton = ({
           document.body,
         )}
 
-      {/* ── Desktop: dropdown popover ── */}
       {isOpen && (
         <div className="hidden md:block absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
           {sheetContent}
