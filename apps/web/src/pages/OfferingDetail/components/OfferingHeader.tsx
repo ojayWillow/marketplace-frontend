@@ -40,7 +40,7 @@ const OfferingHeader = ({ categoryIcon, categoryLabel, priceDisplay, safePriceTy
           )}
         </div>
       </div>
-      <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">{safeTitle}</h1>
+      <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-3">{safeTitle}</h1>
     </div>
   </>
 );

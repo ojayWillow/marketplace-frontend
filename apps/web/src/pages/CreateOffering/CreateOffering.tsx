@@ -11,6 +11,7 @@ import {
   FormTips,
   SuccessModal,
 } from './components';
+import ImagePicker from '../../components/ImagePicker';
 
 const CreateOffering = () => {
   const { t } = useTranslation();
@@ -73,6 +74,13 @@ const CreateOffering = () => {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-base sm:text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
+
+            <ImagePicker
+              images={formData.images}
+              onChange={(imgs) => updateField('images', imgs)}
+              maxImages={5}
+              label={`${t('createOffering.photos', 'Photos')} (${t('common.optional', 'Optional')})`}
+            />
 
             <PriceTypeSelector
               value={formData.price_type}
