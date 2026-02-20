@@ -1,6 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
+import { startConversation } from '@marketplace/shared';
 import { useConversations } from '../api/hooks';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -18,11 +20,36 @@ export default function Messages() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const isMobile = useIsMobile();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [redirecting, setRedirecting] = useState(false);
 
   const { data, isLoading: loading } = useConversations({ enabled: isAuthenticated });
   const conversations = data?.conversations || [];
 
   const dateLocale = localeMap[i18n.language] || i18n.language;
+
+  // Safety net: if ?userId= query param is present (e.g. from legacy links
+  // or other code paths), find or create the conversation and redirect
+  // directly into it. This ensures users always land in the conversation,
+  // not the conversation list. (fixes #154)
+  useEffect(() => {
+    const userId = searchParams.get('userId');
+    if (!userId || !isAuthenticated || redirecting) return;
+
+    const userIdNum = Number(userId);
+    if (isNaN(userIdNum)) return;
+
+    setRedirecting(true);
+    startConversation(userIdNum)
+      .then(({ conversation }) => {
+        navigate(`/messages/${conversation.id}`, { replace: true });
+      })
+      .catch((err) => {
+        console.error('Failed to find/create conversation for userId:', userId, err);
+        setRedirecting(false);
+      });
+  }, [searchParams, isAuthenticated, navigate, redirecting]);
 
   const formatTime = useCallback(
     (dateString: string) => {
@@ -42,7 +69,8 @@ export default function Messages() {
     [t, dateLocale]
   );
 
-  if (loading) return <MessagesSkeleton />;
+  // Show loading while redirecting to conversation from ?userId= param
+  if (loading || redirecting) return <MessagesSkeleton />;
 
   /* ── Mobile ── */
   if (isMobile) {
