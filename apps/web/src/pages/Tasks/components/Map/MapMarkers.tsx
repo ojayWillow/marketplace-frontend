@@ -6,6 +6,7 @@ import { createUserLocationIcon, getJobPriceIcon, getBoostedOfferingIcon } from 
 import { addMarkerOffsets } from '../../utils';
 import MapController from './MapController';
 import LocationPicker from './LocationPicker';
+import LazyPopupMarker from './LazyPopupMarker';
 import JobMapPopup from './JobMapPopup';
 import OfferingMapPopup from './OfferingMapPopup';
 import type { Task, UserLocation } from '@marketplace/shared';
@@ -19,6 +20,42 @@ interface MapMarkersProps {
   onLocationSelect: (lat: number, lng: number) => void;
   searchRadius: number;
 }
+
+// Cache for memoized job icons to avoid re-creating divIcon objects
+// Key: "budget-isUrgent", Value: L.DivIcon
+const jobIconCache = new Map<string, ReturnType<typeof getJobPriceIcon>>();
+const offeringIconCache = new Map<string, ReturnType<typeof getBoostedOfferingIcon>>();
+
+const getCachedJobIcon = (budget: number, isUrgent: boolean) => {
+  const key = `${budget}-${isUrgent}`;
+  if (!jobIconCache.has(key)) {
+    jobIconCache.set(key, getJobPriceIcon(budget, isUrgent));
+  }
+  return jobIconCache.get(key)!;
+};
+
+const getCachedOfferingIcon = (category: string) => {
+  if (!offeringIconCache.has(category)) {
+    offeringIconCache.set(category, getBoostedOfferingIcon(category));
+  }
+  return offeringIconCache.get(category)!;
+};
+
+const POPUP_PROPS_JOB = {
+  maxWidth: 260,
+  minWidth: 240,
+  autoPan: true as const,
+  autoPanPadding: [20, 20] as [number, number],
+  className: 'job-marker-popup',
+};
+
+const POPUP_PROPS_OFFERING = {
+  maxWidth: 260,
+  minWidth: 240,
+  autoPan: true as const,
+  autoPanPadding: [20, 20] as [number, number],
+  className: 'offering-marker-popup',
+};
 
 // Memoized Map Markers Component - updates without re-creating the map
 const MapMarkers = ({ 
@@ -53,53 +90,40 @@ const MapMarkers = ({
         </Popup>
       </Marker>
       
-      {/* Job/Task markers - Price labels */}
+      {/* Job/Task markers - Price labels with lazy popups */}
       {tasksWithOffsets.map((task) => {
         const budget = task.budget || task.reward || 0;
-        const jobIcon = getJobPriceIcon(budget, task.is_urgent);
-        // Use display coordinates (with offset if overlapping) or fall back to original
+        const jobIcon = getCachedJobIcon(budget, task.is_urgent);
         const displayLat = task.displayLatitude || task.latitude;
         const displayLng = task.displayLongitude || task.longitude;
         
         return (
-          <Marker 
-            key={`task-${task.id}`} 
+          <LazyPopupMarker
+            key={`task-${task.id}`}
+            markerKey={`task-${task.id}`}
             position={[displayLat, displayLng]}
             icon={jobIcon}
+            popupProps={POPUP_PROPS_JOB}
           >
-            <Popup
-              maxWidth={260}
-              minWidth={240}
-              autoPan={true}
-              autoPanPadding={[20, 20]}
-              className="job-marker-popup"
-            >
-              <JobMapPopup task={task} userLocation={userLocation} />
-            </Popup>
-          </Marker>
+            <JobMapPopup task={task} userLocation={userLocation} />
+          </LazyPopupMarker>
         );
       })}
       
-      {/* Boosted Offering markers - Category emoji in orange bubble */}
+      {/* Boosted Offering markers - Category emoji with lazy popups */}
       {boostedOfferings.map((offering) => {
-        const offeringIcon = getBoostedOfferingIcon(offering.category);
+        const offeringIcon = getCachedOfferingIcon(offering.category);
         
         return (
-          <Marker 
-            key={`offering-${offering.id}`} 
-            position={[offering.latitude, offering.longitude]} 
+          <LazyPopupMarker
+            key={`offering-${offering.id}`}
+            markerKey={`offering-${offering.id}`}
+            position={[offering.latitude, offering.longitude]}
             icon={offeringIcon}
+            popupProps={POPUP_PROPS_OFFERING}
           >
-            <Popup
-              maxWidth={260}
-              minWidth={240}
-              autoPan={true}
-              autoPanPadding={[20, 20]}
-              className="offering-marker-popup"
-            >
-              <OfferingMapPopup offering={offering} userLocation={userLocation} />
-            </Popup>
-          </Marker>
+            <OfferingMapPopup offering={offering} userLocation={userLocation} />
+          </LazyPopupMarker>
         );
       })}
     </>
