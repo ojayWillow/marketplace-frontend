@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Task } from '@marketplace/shared';
 import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
@@ -24,14 +25,16 @@ interface MobileJobCardProps {
 }
 
 /**
- * Compact job card for the task list
+ * Compact job card for the task list.
+ *
+ * Wrapped in React.memo so it only re-renders when its own props change.
  */
-const MobileJobCard = ({
+const MobileJobCard = memo(function MobileJobCard({
   task,
   userLocation,
   onClick,
   isSelected,
-}: MobileJobCardProps) => {
+}: MobileJobCardProps) {
   const distance = calculateDistance(
     userLocation.lat,
     userLocation.lng,
@@ -93,6 +96,7 @@ const MobileJobCard = ({
                 src={task.creator_avatar} 
                 alt={task.creator_name || 'User'} 
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             ) : (
               <span>{(task.creator_name || 'U')[0].toUpperCase()}</span>
@@ -152,6 +156,20 @@ const MobileJobCard = ({
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparator: only re-render if something the card displays changed
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.userLocation.lat === nextProps.userLocation.lat &&
+    prevProps.userLocation.lng === nextProps.userLocation.lng &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.budget === nextProps.task.budget &&
+    prevProps.task.reward === nextProps.task.reward &&
+    prevProps.task.is_urgent === nextProps.task.is_urgent &&
+    prevProps.task.creator_name === nextProps.task.creator_name &&
+    prevProps.task.creator_rating === nextProps.task.creator_rating
+  );
+});
 
 export default MobileJobCard;
