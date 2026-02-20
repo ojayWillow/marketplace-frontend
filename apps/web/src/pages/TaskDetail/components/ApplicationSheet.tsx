@@ -93,32 +93,32 @@ export const ApplicationSheet = ({
       >
         <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-        {/* Sheet — use flex-col so header takes natural height, scrollable area fills the rest */}
+        {/* Sheet — flex-col so header takes natural height, scrollable area fills the rest */}
         <div
           ref={sheetRef}
           className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
             isOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', maxHeight: '80dvh' }}
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', maxHeight: '85dvh' }}
         >
-          {/* Drag handle — flex-shrink-0 keeps it from collapsing */}
+          {/* Drag handle */}
           <div className="flex-shrink-0 flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
           </div>
 
-          {/* Header — flex-shrink-0 so it always shows fully */}
-          <div className="flex-shrink-0 flex items-center justify-between px-5 pb-3">
+          {/* Header */}
+          <div className="flex-shrink-0 flex items-center justify-between px-5 pb-4">
             <div className="min-w-0">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                 {t('tasks.applyTitle', 'Apply for this job')}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[260px]">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[260px]">
                 {taskTitle}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="flex-shrink-0 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Close"
             >
               <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,25 +127,28 @@ export const ApplicationSheet = ({
             </button>
           </div>
 
-          {/* Scrollable form content — flex-1 + min-h-0 lets it fill remaining space and scroll */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pb-5">
+          {/* Divider between header and form */}
+          <div className="flex-shrink-0 border-t border-gray-100 dark:border-gray-800 mx-5" />
+
+          {/* Scrollable form content — flex-1 + min-h-0 fills remaining space */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pt-4 pb-5">
             <textarea
               ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('tasks.applyPlaceholder', "Hi! I'd be a great fit because...")}
               className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm leading-relaxed resize-none bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              rows={4}
+              rows={5}
               onFocus={(e) => {
                 setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
               }}
             />
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 px-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 px-1">
               {t('tasks.applyHint', 'A short intro helps the job owner pick the right person')}
             </p>
 
             {/* Buttons */}
-            <div className="flex gap-2.5 mt-4">
+            <div className="flex gap-2.5 mt-5">
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
