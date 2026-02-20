@@ -49,6 +49,16 @@ const localeMap: Record<string, string> = {
   ru: 'ru-RU',
 };
 
+/**
+ * Map raw backend difficulty strings to translation keys.
+ */
+const DIFFICULTY_KEY_MAP: Record<string, string> = {
+  easy: 'taskDetail.difficultyValues.easy',
+  medium: 'taskDetail.difficultyValues.medium',
+  hard: 'taskDetail.difficultyValues.hard',
+  normal: 'taskDetail.difficultyValues.normal',
+};
+
 // StarRating: only shows filled stars (+ optional half), no empty stars
 const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
@@ -228,6 +238,11 @@ const TaskDetail = () => {
   const applicantLabel = applicantCount > 0 ? t('taskDetail.applied', { count: applicantCount }) : t('taskDetail.new');
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
 
+  // Translate difficulty value
+  const rawDifficulty = task.difficulty || 'normal';
+  const difficultyKey = DIFFICULTY_KEY_MAP[rawDifficulty.toLowerCase()];
+  const translatedDifficulty = difficultyKey ? t(difficultyKey) : t('taskDetail.normal');
+
   // Parse task images (stored as comma-separated string in DB)
   const taskImages: string[] = (() => {
     if (!task.images) return [];
@@ -388,7 +403,7 @@ const TaskDetail = () => {
               </div>
               <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">{t('taskDetail.difficulty')}</div>
-                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{task.difficulty || t('taskDetail.normal')}</div>
+                <div className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">{translatedDifficulty}</div>
               </div>
               <div className="py-2.5 md:py-3.5 text-center">
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">{t('taskDetail.posted')}</div>
