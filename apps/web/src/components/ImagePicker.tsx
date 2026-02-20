@@ -74,7 +74,7 @@ const ImagePicker = ({
   return (
     <div>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {label}
         </label>
       )}
@@ -87,7 +87,7 @@ const ImagePicker = ({
               <img
                 src={url}
                 alt={`Existing ${i + 1}`}
-                className="w-full h-full object-cover rounded-lg border border-gray-200"
+                className="w-full h-full object-cover rounded-lg border border-gray-200 dark:border-gray-700"
               />
               {onRemoveExisting && (
                 <button
@@ -111,7 +111,7 @@ const ImagePicker = ({
               <img
                 src={URL.createObjectURL(file)}
                 alt={`New ${i + 1}`}
-                className="w-full h-full object-cover rounded-lg border border-gray-200"
+                className="w-full h-full object-cover rounded-lg border border-gray-200 dark:border-gray-700"
               />
               <button
                 type="button"
@@ -134,14 +134,14 @@ const ImagePicker = ({
           onDragLeave={handleDragLeave}
           className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
             dragOver
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
         >
-          <div className="text-gray-500 text-sm">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
             <span className="text-2xl block mb-1">📷</span>
             <p>{t('imagePicker.dropOrClick', 'Drop images here or click to browse')}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               {t('imagePicker.limit', '{{current}} / {{max}} images (max 10MB each)', {
                 current: totalImages,
                 max: maxImages,
