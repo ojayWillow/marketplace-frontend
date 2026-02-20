@@ -77,13 +77,35 @@ export const createUserLocationIcon = () =>
     iconAnchor: [12, 12],
   });
 
+// ── Icon caches ──────────────────────────────────────────────────────
+// Two separate caches: one for normal state, one for selected state.
+// Selected icons have different size/anchor so they can't share entries.
+const iconCache = new Map<string, ReturnType<typeof divIcon>>();
+const selectedIconCache = new Map<string, ReturnType<typeof divIcon>>();
+
 /**
- * Create job price marker icon — compact version
+ * Build the cache key from the visual-differentiating parameters.
+ */
+const iconKey = (budget: number, isUrgent: boolean) => `${budget}-${isUrgent}`;
+
+/**
+ * Create (or return cached) job price marker icon — compact version.
+ *
+ * Icons are cached by budget+urgent for normal state, and separately
+ * for selected state. This avoids creating new L.divIcon objects on
+ * every React render when the task list hasn't changed.
+ *
  * @param budget - Job budget amount
  * @param isSelected - Whether this marker is currently selected
  * @param isUrgent - Whether this job is marked as urgent
  */
 export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false, isUrgent: boolean = false) => {
+  const key = iconKey(budget, isUrgent);
+  const cache = isSelected ? selectedIconCache : iconCache;
+
+  if (cache.has(key)) return cache.get(key)!;
+
+  // Build the icon
   let bgColor = '#22c55e';
   let shadow = '0 2px 4px rgba(0,0,0,0.25)';
   let border = `${isSelected ? 2.5 : 1.5}px solid white`;
@@ -95,7 +117,6 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
     shadow = '0 2px 8px rgba(139, 92, 246, 0.5)';
   }
 
-  // Urgent: red border + red glow
   if (isUrgent) {
     border = `${isSelected ? 2.5 : 1.5}px solid #ef4444`;
     shadow = '0 0 0 1.5px rgba(239, 68, 68, 0.3), ' + shadow;
@@ -111,7 +132,6 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
     ? `background: ${bgColor};`
     : `background-color: ${bgColor};`;
 
-  // Urgent markers get a pulsing ring behind them
   const urgentRing = isUrgent
     ? `<div style="
         position: absolute;
@@ -127,7 +147,7 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
       "></div>`
     : '';
 
-  return divIcon({
+  const icon = divIcon({
     className: `job-price-icon ${isSelected ? 'selected-marker' : ''} ${isUrgent ? 'urgent-marker' : ''}`,
     html: `<div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
       ${urgentRing}
@@ -153,4 +173,7 @@ export const getJobPriceIcon = (budget: number = 0, isSelected: boolean = false,
     iconSize: isSelected ? [55, 28] : [45, 24],
     iconAnchor: isSelected ? [27, 14] : [22, 12],
   });
+
+  cache.set(key, icon);
+  return icon;
 };

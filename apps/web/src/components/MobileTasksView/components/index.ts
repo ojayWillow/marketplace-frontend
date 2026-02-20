@@ -4,3 +4,4 @@ export { default as JobPreviewCard } from './JobPreviewCard';
 export { default as CreateChoiceModal } from './CreateChoiceModal';
 export { default as FilterSheet } from './FilterSheet';
 export { default as FloatingSearchBar } from './FloatingSearchBar';
+export { default as VirtualizedJobList } from './VirtualizedJobList';

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,11 +16,11 @@ import { useTasksData, useUserLocation, useBottomSheet } from './hooks';
 import { useMobileMapStore } from './stores';
 import {
   MapController,
-  MobileJobCard,
   JobPreviewCard,
   CreateChoiceModal,
   FilterSheet,
   FloatingSearchBar,
+  VirtualizedJobList,
 } from './components';
 import CommunityRulesModal, { COMMUNITY_RULES_KEY } from '../QuickHelpIntroModal';
 
@@ -39,6 +39,48 @@ const SkeletonCard = () => (
     </div>
   </div>
 );
+
+// ── Memoized map markers ───────────────────────────────────────────
+// Extracted so marker rendering doesn't re-run when bottom sheet
+// state, search input, or other unrelated state changes.
+interface TaskMarkersProps {
+  tasksWithOffsets: Task[];
+  selectedTaskId: number | null;
+  onMarkerClick: (task: Task) => void;
+}
+
+const TaskMarkers = memo(function TaskMarkers({
+  tasksWithOffsets,
+  selectedTaskId,
+  onMarkerClick,
+}: TaskMarkersProps) {
+  return (
+    <>
+      {tasksWithOffsets.map((task) => {
+        const budget = task.budget || task.reward || 0;
+        const isSelected = selectedTaskId === task.id;
+        return (
+          <Marker
+            key={task.id}
+            position={[
+              task.displayLatitude || task.latitude,
+              task.displayLongitude || task.longitude,
+            ]}
+            icon={getJobPriceIcon(budget, isSelected, FEATURES.URGENT && task.is_urgent)}
+            eventHandlers={{ click: () => onMarkerClick(task) }}
+            zIndexOffset={isSelected ? 1000 : (FEATURES.URGENT && task.is_urgent) ? 500 : 0}
+          />
+        );
+      })}
+    </>
+  );
+}, (prev, next) => {
+  // Re-render only if tasks or selected task changed
+  return (
+    prev.tasksWithOffsets === next.tasksWithOffsets &&
+    prev.selectedTaskId === next.selectedTaskId
+  );
+});
 
 const MobileTasksView = () => {
   const { t } = useTranslation();
@@ -187,61 +229,64 @@ const MobileTasksView = () => {
     return navHeight + visiblePixels + 8;
   }, [navHeight, currentTranslateY, getFullHeight]);
 
-  // --- Event handlers ---
-  const handleRecenter = () => {
+  // --- Event handlers (stable references) ---
+  const handleRecenter = useCallback(() => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
     setShowJobList(true);
     setIsFromDeepLink(false);
     recenterMap();
-  };
+  }, [recenterMap, setStoredSelectedTaskId]);
 
-  const handleJobSelect = (task: Task) => {
+  const handleJobSelect = useCallback((task: Task) => {
     setShowJobList(false);
     setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
     setSelectedTask(task);
-  };
+  }, [setStoredSelectedTaskId]);
 
-  const handleMarkerClick = (task: Task) => {
+  const handleMarkerClick = useCallback((task: Task) => {
     setShowJobList(false);
     setIsFromDeepLink(false);
     setStoredSelectedTaskId(task.id);
     setSelectedTask(task);
-  };
+  }, [setStoredSelectedTaskId]);
 
-  const handleClosePreview = () => {
+  const handleClosePreview = useCallback(() => {
     setSelectedTask(null);
     setStoredSelectedTaskId(null);
     setIsFromDeepLink(false);
     setShowJobList(true);
     resetToCollapsed();
-  };
+  }, [setStoredSelectedTaskId, resetToCollapsed]);
 
-  const handleViewDetails = () => {
+  const handleViewDetails = useCallback(() => {
     if (!selectedTask) return;
     if (!isAuthenticated) {
       showAuth(() => navigate(`/tasks/${selectedTask.id}`));
       return;
     }
     navigate(`/tasks/${selectedTask.id}`);
-  };
+  }, [selectedTask, isAuthenticated, showAuth, navigate]);
 
-  const handleCreatorClick = () => {
+  const handleCreatorClick = useCallback(() => {
     if (selectedTask) {
       const creatorId =
         selectedTask.creator_id || selectedTask.user_id || selectedTask.created_by;
       if (creatorId) navigate(`/users/${creatorId}`);
     }
-  };
+  }, [selectedTask, navigate]);
 
-  const handleCreateClick = () => {
+  const handleCreateClick = useCallback(() => {
     if (!isAuthenticated) {
       navigate('/welcome');
       return;
     }
     setShowCreateModal(true);
-  };
+  }, [isAuthenticated, navigate]);
+
+  // Selected task ID for memoized components
+  const selectedTaskId = selectedTask?.id ?? null;
 
   // --- Empty state for radius filter ---
   const renderEmptyState = () => {
@@ -337,22 +382,11 @@ const MobileTasksView = () => {
               </Popup>
             </Marker>
 
-            {tasksWithOffsets.map((task) => {
-              const budget = task.budget || task.reward || 0;
-              const isSelected = selectedTask?.id === task.id;
-              return (
-                <Marker
-                  key={task.id}
-                  position={[
-                    task.displayLatitude || task.latitude,
-                    task.displayLongitude || task.longitude,
-                  ]}
-                  icon={getJobPriceIcon(budget, isSelected, FEATURES.URGENT && task.is_urgent)}
-                  eventHandlers={{ click: () => handleMarkerClick(task) }}
-                  zIndexOffset={isSelected ? 1000 : (FEATURES.URGENT && task.is_urgent) ? 500 : 0}
-                />
-              );
-            })}
+            <TaskMarkers
+              tasksWithOffsets={tasksWithOffsets}
+              selectedTaskId={selectedTaskId}
+              onMarkerClick={handleMarkerClick}
+            />
           </MapContainer>
         </div>
 
@@ -473,35 +507,26 @@ const MobileTasksView = () => {
               </div>
             </div>
 
-            {/* Jobs list */}
-            <div
-              className="flex-1 overflow-y-auto overscroll-contain"
-              style={{ touchAction: 'pan-y' }}
-            >
-              {loading ? (
-                <div>
-                  <SkeletonCard />
-                  <SkeletonCard />
-                  <SkeletonCard />
-                  <SkeletonCard />
-                </div>
-              ) : filteredTasks.length === 0 ? (
-                renderEmptyState()
-              ) : (
-                <div>
-                  {filteredTasks.map((task) => (
-                    <MobileJobCard
-                      key={task.id}
-                      task={task}
-                      userLocation={userLocation}
-                      onClick={() => handleJobSelect(task)}
-                      isSelected={selectedTask?.id === task.id}
-                    />
-                  ))}
-                  <div className="h-4" />
-                </div>
-              )}
-            </div>
+            {/* Jobs list — virtualized */}
+            {loading ? (
+              <div className="flex-1 overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="flex-1 overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
+                {renderEmptyState()}
+              </div>
+            ) : (
+              <VirtualizedJobList
+                tasks={filteredTasks}
+                userLocation={userLocation}
+                selectedTaskId={selectedTaskId}
+                onJobSelect={handleJobSelect}
+              />
+            )}
           </div>
         )}
       </div>
