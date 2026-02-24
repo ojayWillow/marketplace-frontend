@@ -50,9 +50,6 @@ const localeMap: Record<string, string> = {
   ru: 'ru-RU',
 };
 
-/**
- * Map raw backend difficulty strings to translation keys.
- */
 const DIFFICULTY_KEY_MAP: Record<string, string> = {
   easy: 'taskDetail.difficultyValues.easy',
   medium: 'taskDetail.difficultyValues.medium',
@@ -60,7 +57,6 @@ const DIFFICULTY_KEY_MAP: Record<string, string> = {
   normal: 'taskDetail.difficultyValues.normal',
 };
 
-// StarRating: only shows filled stars (+ optional half), no empty stars
 const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.25;
@@ -99,11 +95,9 @@ const TaskDetail = () => {
 
   const dateLocale = localeMap[i18n.language] || i18n.language;
 
-  // React Query for task data
   const { data: task, isLoading: loading, refetch: refetchTask } = useTask(Number(id));
   const applyMutation = useApplyToTask();
 
-  // Extracted data hook
   const {
     applications,
     applicationsLoading,
@@ -121,13 +115,11 @@ const TaskDetail = () => {
     isAuthenticated,
   });
 
-  // Local UI state
   const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [showDisputeSheet, setShowDisputeSheet] = useState(false);
   const [disputeKey, setDisputeKey] = useState(0);
 
-  // Task actions hook
   const {
     actionLoading,
     acceptingId,
@@ -150,7 +142,6 @@ const TaskDetail = () => {
     onOpenDispute: () => setShowDisputeSheet(true),
   });
 
-  // Handle apply to task
   const handleApplyTask = (applicationMessage: string) => {
     if (!isAuthenticated || !user?.id) {
       toast.warning(t('taskDetail.toastLoginToApply'));
@@ -173,7 +164,6 @@ const TaskDetail = () => {
     );
   };
 
-  // Handle message creator — create/open conversation and navigate directly into it
   const handleMessageCreator = async () => {
     if (!isAuthenticated) {
       toast.warning(t('taskDetail.toastLoginToMessage'));
@@ -191,7 +181,6 @@ const TaskDetail = () => {
     }
   };
 
-  // Figure out who to review
   const getRevieweeName = (): string => {
     if (!task) return '';
     const isCreator = user?.id === task.creator_id;
@@ -199,7 +188,6 @@ const TaskDetail = () => {
     return task.creator_name || t('taskDetail.theJobOwner');
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
@@ -211,7 +199,6 @@ const TaskDetail = () => {
     );
   }
 
-  // Not found state
   if (!task) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
@@ -227,7 +214,6 @@ const TaskDetail = () => {
     );
   }
 
-  // Computed values
   const isCreator = user?.id === task.creator_id;
   const isAssigned = user?.id === task.assigned_to_id;
   const canApply = isAuthenticated && !isCreator && task.status === 'open';
@@ -246,23 +232,9 @@ const TaskDetail = () => {
     : '';
   const applicantLabel = applicantCount > 0 ? t('taskDetail.applied', { count: applicantCount }) : t('taskDetail.new');
   const shortLocation = task.location?.split(',').slice(0, 2).join(',').trim() || '';
-
-  // Translate difficulty value
   const rawDifficulty = task.difficulty || 'normal';
   const difficultyKey = DIFFICULTY_KEY_MAP[rawDifficulty.toLowerCase()];
   const translatedDifficulty = difficultyKey ? t(difficultyKey) : t('taskDetail.normal');
-
-  // Single ShareButton props — one source of truth used in both mobile and desktop headers
-  const shareButtonProps = {
-    url: `/tasks/${task.id}`,
-    title: task.title,
-    description: t('taskDetail.shareBudget', { category: categoryLabel, price: budget }),
-    categoryIcon,
-    categoryEmoji: categoryIcon,
-    price: t('taskDetail.sharePrice', { price: budget }),
-    location: shortLocation,
-    postedDate: postedDateRelative,
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
@@ -275,21 +247,47 @@ const TaskDetail = () => {
         publishedDate={task.created_at || undefined}
       />
 
-      {/* Top bar — back link only, no ShareButton here */}
-      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-50 md:static md:border-b-0">
-        <div className="flex items-center px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
-          <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
+      {/*
+        Top bar — back link on the left, ShareButton on the right.
+        EXACTLY as originally designed (matches the screenshot).
+
+        The only change from the original: z-index raised from z-50 to z-[60].
+        Why: the sticky bar was z-50, and ShareButton's desktop dropdown is
+        also z-50 but was a child of this stacking context, so it got clipped
+        behind the bar itself. z-[60] on the bar means the bar still sits above
+        page content, but the ShareButton dropdown (z-50, portaled to body on
+        mobile, and a sibling div on desktop) now renders freely without being
+        trapped inside a lower stacking context.
+      */}
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-[60] md:static md:border-b-0">
+        <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
+          <Link
+            to="/tasks"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             <span className="hidden md:inline">{t('taskDetail.backToQuickHelp')}</span>
             <span className="md:hidden">{t('taskDetail.back')}</span>
           </Link>
+
+          {/* Single ShareButton — top bar, right side. Original position. */}
+          <ShareButton
+            url={`/tasks/${task.id}`}
+            title={task.title}
+            description={t('taskDetail.shareBudget', { category: categoryLabel, price: budget })}
+            categoryIcon={categoryIcon}
+            categoryEmoji={categoryIcon}
+            price={t('taskDetail.sharePrice', { price: budget })}
+            location={shortLocation}
+            postedDate={postedDateRelative}
+            size="sm"
+          />
         </div>
       </div>
 
       <div className="px-4 pt-3 md:max-w-2xl md:mx-auto md:pt-0">
-        {/* Main card */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800 overflow-hidden">
 
           {/* ===== DESKTOP HEADER ===== */}
@@ -304,15 +302,7 @@ const TaskDetail = () => {
                   <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ {t('taskDetail.urgent')}</span>
                 )}
               </div>
-              {/* SINGLE ShareButton — desktop position: next to price in gradient header */}
-              <div className="flex items-center gap-3">
-                <div className="text-2xl font-black">€{budget}</div>
-                <ShareButton
-                  {...shareButtonProps}
-                  size="sm"
-                  className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
-                />
-              </div>
+              <div className="text-2xl font-black">€{budget}</div>
             </div>
             <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
           </div>
@@ -329,15 +319,7 @@ const TaskDetail = () => {
                   <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">{t('taskDetail.urgent')}</span>
                 )}
               </div>
-              {/* SINGLE ShareButton — mobile position: top-right of card header, next to price */}
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
-                <ShareButton
-                  {...shareButtonProps}
-                  variant="icon"
-                  size="sm"
-                />
-              </div>
+              <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-3">{task.title}</h1>
           </div>
@@ -382,7 +364,6 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Thin divider mobile only */}
           <div className="border-t border-gray-100 dark:border-gray-800 mx-4 md:hidden" />
 
           {/* Description */}
@@ -400,7 +381,7 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Info bar 3 columns */}
+          {/* Info bar */}
           <div className="mx-4 mb-3 md:mx-6 md:mb-5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
             <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
               <div className="py-2.5 md:py-3.5 text-center">
@@ -425,7 +406,7 @@ const TaskDetail = () => {
             <TaskLocationMap task={task} />
           </div>
 
-          {/* Assigned Worker Info */}
+          {/* Assigned Worker */}
           {task.assigned_to_name && (
             <div className="mx-4 mb-4 md:mx-6 md:mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
               <div className="flex items-center gap-2.5">
@@ -442,7 +423,7 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Applications (Owner View) */}
+          {/* Applications */}
           {showApplications && (
             <div className="px-4 pb-4 md:px-6 md:pb-5">
               <TaskApplications
@@ -457,7 +438,6 @@ const TaskDetail = () => {
             </div>
           )}
 
-          {/* Desktop inline application form */}
           {showApplicationSheet && canApply && (
             <DesktopApplicationForm
               onSubmit={handleApplyTask}
@@ -466,14 +446,12 @@ const TaskDetail = () => {
             />
           )}
 
-          {/* Status banners */}
           <TaskStatusBanner
             status={task.status}
             isCreator={isCreator}
             isAssigned={isAssigned}
           />
 
-          {/* Dispute details section */}
           {task.status === 'disputed' && (isCreator || isAssigned) && (
             <DisputeSection
               key={disputeKey}
@@ -486,7 +464,6 @@ const TaskDetail = () => {
             />
           )}
 
-          {/* Desktop inline action button */}
           <div className="hidden md:block px-6 pb-6">
             <TaskActionButtons
               task={task}
@@ -504,7 +481,6 @@ const TaskDetail = () => {
           </div>
         </div>
 
-        {/* Recommended Helpers */}
         {task.status === 'open' && user?.id === task.creator_id && (
           <RecommendedHelpers
             task={task}
@@ -514,7 +490,6 @@ const TaskDetail = () => {
           />
         )}
 
-        {/* Reviews */}
         {task.status === 'completed' && (
           <TaskReviews
             taskId={Number(id)}
@@ -528,7 +503,6 @@ const TaskDetail = () => {
         )}
       </div>
 
-      {/* Mobile bottom sheet for applying */}
       <div className="md:hidden">
         <ApplicationSheet
           isOpen={showApplicationSheet}
@@ -539,7 +513,6 @@ const TaskDetail = () => {
         />
       </div>
 
-      {/* Review bottom sheet */}
       <ReviewSheet
         isOpen={showReviewSheet}
         onClose={() => {
@@ -556,7 +529,6 @@ const TaskDetail = () => {
         revieweeName={getRevieweeName()}
       />
 
-      {/* Dispute bottom sheet */}
       <DisputeSheet
         isOpen={showDisputeSheet}
         onClose={() => setShowDisputeSheet(false)}
@@ -570,7 +542,6 @@ const TaskDetail = () => {
         taskTitle={task.title}
       />
 
-      {/* Sticky bottom action bar MOBILE ONLY */}
       {!showApplicationSheet && !showReviewSheet && !showDisputeSheet && (
         <div
           className="fixed left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-40 shadow-lg dark:shadow-gray-950/50 md:hidden"
