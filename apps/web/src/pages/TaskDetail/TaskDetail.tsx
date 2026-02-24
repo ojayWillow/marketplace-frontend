@@ -252,6 +252,18 @@ const TaskDetail = () => {
   const difficultyKey = DIFFICULTY_KEY_MAP[rawDifficulty.toLowerCase()];
   const translatedDifficulty = difficultyKey ? t(difficultyKey) : t('taskDetail.normal');
 
+  // Single ShareButton props — one source of truth used in both mobile and desktop headers
+  const shareButtonProps = {
+    url: `/tasks/${task.id}`,
+    title: task.title,
+    description: t('taskDetail.shareBudget', { category: categoryLabel, price: budget }),
+    categoryIcon,
+    categoryEmoji: categoryIcon,
+    price: t('taskDetail.sharePrice', { price: budget }),
+    location: shortLocation,
+    postedDate: postedDateRelative,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-36 md:pb-8">
       <SEOHead
@@ -263,9 +275,9 @@ const TaskDetail = () => {
         publishedDate={task.created_at || undefined}
       />
 
-      {/* Top bar */}
+      {/* Top bar — back link only, no ShareButton here */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-50 md:static md:border-b-0">
-        <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
+        <div className="flex items-center px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
           <Link to="/tasks" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -273,17 +285,6 @@ const TaskDetail = () => {
             <span className="hidden md:inline">{t('taskDetail.backToQuickHelp')}</span>
             <span className="md:hidden">{t('taskDetail.back')}</span>
           </Link>
-          <ShareButton
-            url={`/tasks/${task.id}`}
-            title={task.title}
-            description={t('taskDetail.shareBudget', { category: categoryLabel, price: budget })}
-            categoryIcon={categoryIcon}
-            categoryEmoji={categoryIcon}
-            price={t('taskDetail.sharePrice', { price: budget })}
-            location={shortLocation}
-            postedDate={postedDateRelative}
-            size="sm"
-          />
         </div>
       </div>
 
@@ -303,7 +304,15 @@ const TaskDetail = () => {
                   <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ {t('taskDetail.urgent')}</span>
                 )}
               </div>
-              <div className="text-2xl font-black">€{budget}</div>
+              {/* SINGLE ShareButton — desktop position: next to price in gradient header */}
+              <div className="flex items-center gap-3">
+                <div className="text-2xl font-black">€{budget}</div>
+                <ShareButton
+                  {...shareButtonProps}
+                  size="sm"
+                  className="!bg-white/20 !border-white/30 !text-white hover:!bg-white/30"
+                />
+              </div>
             </div>
             <h1 className="text-xl font-bold leading-tight">{task.title}</h1>
           </div>
@@ -320,7 +329,15 @@ const TaskDetail = () => {
                   <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">{t('taskDetail.urgent')}</span>
                 )}
               </div>
-              <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
+              {/* SINGLE ShareButton — mobile position: top-right of card header, next to price */}
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
+                <ShareButton
+                  {...shareButtonProps}
+                  variant="icon"
+                  size="sm"
+                />
+              </div>
             </div>
             <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-3">{task.title}</h1>
           </div>
