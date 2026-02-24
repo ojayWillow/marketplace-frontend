@@ -99,9 +99,13 @@ const ShareButton = ({
     setTimeout(() => setIsOpen(false), 250);
   };
 
+  // FIX #2: Use 'pointerup' instead of 'mousedown' for outside-click detection.
+  // 'mousedown' fires before the click is processed, so clicking a share button
+  // could trigger this handler (when focus shifts to the new tab) and close the
+  // sheet before openUrl() has a chance to run.
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node) &&
@@ -111,8 +115,8 @@ const ShareButton = ({
         closeSheet();
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('pointerup', handler);
+    return () => document.removeEventListener('pointerup', handler);
   }, [isOpen]);
 
   useEffect(() => {
@@ -123,33 +127,37 @@ const ShareButton = ({
   }, [isOpen]);
 
   /* ── Share handlers ───────────────────── */
+  // FIX #1: Delay closeSheet() by 300ms so window.open() has time to fire
+  // before the sheet unmounts and body overflow/scroll is restored.
+  // On iOS Safari and Android WebView, synchronous closeSheet() after
+  // window.open() causes the OS to cancel the outbound navigation.
   const shareToWhatsApp = () => {
     openUrl(`https://wa.me/?text=${encodeURIComponent(shareText)}`);
-    closeSheet();
+    setTimeout(closeSheet, 300);
   };
   const shareToTelegram = () => {
     openUrl(
       `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
     );
-    closeSheet();
+    setTimeout(closeSheet, 300);
   };
   const shareToFacebook = () => {
     openUrl(
       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
     );
-    closeSheet();
+    setTimeout(closeSheet, 300);
   };
   const shareToTwitter = () => {
     openUrl(
       `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`,
     );
-    closeSheet();
+    setTimeout(closeSheet, 300);
   };
   const shareToLinkedIn = () => {
     openUrl(
       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`,
     );
-    closeSheet();
+    setTimeout(closeSheet, 300);
   };
   const nativeShare = async () => {
     try {
@@ -326,7 +334,9 @@ const ShareButton = ({
               className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl transition-transform duration-250 ease-out ${
                 isAnimating ? 'translate-y-0' : 'translate-y-full'
               }`}
-              style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+              // FIX #3: Account for the sticky mobile nav height so bottom
+              // share buttons are not clipped or intercepted by the nav bar.
+              style={{ paddingBottom: 'max(env(safe-area-inset-bottom), calc(var(--nav-total-height, 64px) + 16px))' }}
             >
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-gray-300" />
