@@ -34,6 +34,16 @@ const SentryFallback = () => (
   </div>
 )
 
+// TODO: REMOVE THIS — temporary Sentry onboarding test button
+const SentryTestButton = () => (
+  <button
+    onClick={() => { throw new Error('This is your first error!'); }}
+    style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 9999, padding: '8px 16px', background: 'red', color: 'white', borderRadius: '8px', fontSize: '12px' }}
+  >
+    Sentry Test
+  </button>
+)
+
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -78,6 +88,9 @@ function App() {
       <SocketProvider>
         {/* Reset scroll position to top on every route change */}
         <ScrollToTop />
+
+        {/* TODO: REMOVE THIS — temporary Sentry onboarding test */}
+        <SentryTestButton />
 
         <Suspense fallback={<Layout><PageLoader /></Layout>}>
           <Routes>
