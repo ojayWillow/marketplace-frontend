@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 
@@ -64,10 +64,6 @@ const ShareButton = ({
   const shareTextNoUrl = buildShareText(false);
 
   // ── Precompute share hrefs ────────────────────────────────────────────────
-  // Built as plain strings so they are ready before any user interaction.
-  // Using real <a href> elements (not window.open) means the browser treats
-  // these as genuine user-initiated navigations — bypassing popup blockers
-  // on iOS Safari, Android Chrome and every PWA / in-app WebView.
   const waHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const tgHref = `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`;
   const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`;
@@ -79,13 +75,12 @@ const ShareButton = ({
     requestAnimationFrame(() => setIsAnimating(true));
   };
 
-  const closeSheet = () => {
+  const closeSheet = useCallback(() => {
     setIsAnimating(false);
     setTimeout(() => setIsOpen(false), 250);
-  };
+  }, []);
 
   // Outside-click: close when tapping the backdrop or anywhere outside the sheet.
-  // Uses pointerup (not mousedown) so it doesn't fire before a click is processed.
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: PointerEvent) => {
@@ -100,7 +95,23 @@ const ShareButton = ({
     };
     document.addEventListener('pointerup', handler);
     return () => document.removeEventListener('pointerup', handler);
-  }, [isOpen]);
+  }, [isOpen, closeSheet]);
+
+  // Auto-close the sheet when the user returns from a share target.
+  // When a share link opens WhatsApp/Telegram/etc, the browser tab loses
+  // visibility. When the user comes back, visibilitychange fires and we
+  // dismiss the sheet cleanly — no race condition, no DOM teardown during
+  // navigation.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onReturn = () => {
+      if (document.visibilityState === 'visible') {
+        closeSheet();
+      }
+    };
+    document.addEventListener('visibilitychange', onReturn);
+    return () => document.removeEventListener('visibilitychange', onReturn);
+  }, [isOpen, closeSheet]);
 
   useEffect(() => {
     if (isOpen && window.innerWidth < 768) {
@@ -136,7 +147,6 @@ const ShareButton = ({
   const iconSizeClasses = { sm: 'w-8 h-8 text-sm', md: 'w-10 h-10 text-base', lg: 'w-12 h-12 text-lg' };
 
   /* ── Share targets config ──────────────── */
-  // href is a plain string — rendered as a real <a> tag in the sheet grid.
   const targets = [
     {
       label: 'WhatsApp',
@@ -227,7 +237,7 @@ const ShareButton = ({
         </div>
       </div>
 
-      {/* Share targets — real <a> anchors, not buttons with window.open() */}
+      {/* Share targets — real <a> anchors, browser handles navigation */}
       <div className="px-5 pb-2">
         <div className="grid grid-cols-5 gap-3">
           {targets.map((target) => (
@@ -238,12 +248,11 @@ const ShareButton = ({
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 group"
               onClick={(e) => {
-                // Stop the click from reaching the document pointerup
-                // outside-close handler — prevents race condition where
-                // the sheet unmounts before the browser processes the
-                // anchor navigation.
+                // Prevent the outside-click handler from closing the sheet
+                // before the browser processes the anchor navigation.
+                // Do NOT close the sheet here — the visibilitychange listener
+                // handles auto-dismiss when the user returns from the share target.
                 e.stopPropagation();
-                setTimeout(closeSheet, 300);
               }}
             >
               <div
@@ -334,13 +343,6 @@ const ShareButton = ({
               }`}
               onClick={closeSheet}
             />
-            {/*
-              Sheet container.
-              onPointerDown + onClick stopPropagation ensures taps anywhere
-              inside the sheet do NOT reach the document-level pointerup
-              outside-close handler, which would otherwise close the sheet
-              and cancel the anchor navigation before the browser acts on it.
-            */}
             <div
               className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl transition-transform duration-250 ease-out ${
                 isAnimating ? 'translate-y-0' : 'translate-y-full'
