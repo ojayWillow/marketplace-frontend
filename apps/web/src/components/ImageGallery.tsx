@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ImageGalleryProps {
-  images: string[];
+  images: string[] | string | null | undefined;
   alt?: string;
 }
 
@@ -10,9 +10,16 @@ interface ImageGalleryProps {
  * Read-only image gallery for detail pages (TaskDetail, OfferingDetail).
  * Shows horizontal scroll strip with tap-to-expand fullscreen lightbox.
  */
-const ImageGallery = ({ images, alt = 'Image' }: ImageGalleryProps) => {
+const ImageGallery = ({ images: rawImages, alt = 'Image' }: ImageGalleryProps) => {
   const { t } = useTranslation();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Normalise: API may return a string, null, or undefined instead of an array.
+  const images: string[] = Array.isArray(rawImages)
+    ? rawImages.filter((u) => typeof u === 'string' && u.length > 0)
+    : typeof rawImages === 'string' && rawImages.length > 0
+      ? [rawImages]
+      : [];
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -41,7 +48,7 @@ const ImageGallery = ({ images, alt = 'Image' }: ImageGalleryProps) => {
     [closeLightbox, goNext, goPrev]
   );
 
-  if (!images || images.length === 0) return null;
+  if (images.length === 0) return null;
 
   if (images.length === 1) {
     return (
