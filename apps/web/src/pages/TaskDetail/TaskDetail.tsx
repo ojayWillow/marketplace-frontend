@@ -249,15 +249,7 @@ const TaskDetail = () => {
 
       {/*
         Top bar — back link on the left, ShareButton on the right.
-        EXACTLY as originally designed (matches the screenshot).
-
-        The only change from the original: z-index raised from z-50 to z-[60].
-        Why: the sticky bar was z-50, and ShareButton's desktop dropdown is
-        also z-50 but was a child of this stacking context, so it got clipped
-        behind the bar itself. z-[60] on the bar means the bar still sits above
-        page content, but the ShareButton dropdown (z-50, portaled to body on
-        mobile, and a sibling div on desktop) now renders freely without being
-        trapped inside a lower stacking context.
+        z-[60] so the ShareButton dropdown isn't clipped.
       */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-[60] md:static md:border-b-0">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
@@ -272,16 +264,9 @@ const TaskDetail = () => {
             <span className="md:hidden">{t('taskDetail.back')}</span>
           </Link>
 
-          {/* Single ShareButton — top bar, right side. Original position. */}
+          {/* ShareButton — now uses the task object for unified URL/text logic */}
           <ShareButton
-            url={`/tasks/${task.id}`}
-            title={task.title}
-            description={t('taskDetail.shareBudget', { category: categoryLabel, price: budget })}
-            categoryIcon={categoryIcon}
-            categoryEmoji={categoryIcon}
-            price={t('taskDetail.sharePrice', { price: budget })}
-            location={shortLocation}
-            postedDate={postedDateRelative}
+            task={task}
             size="sm"
           />
         </div>
