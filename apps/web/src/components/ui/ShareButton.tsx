@@ -100,7 +100,9 @@ const ShareButton = ({
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   // ── Precompute share hrefs ────────────────────────────────────────────
-  const waHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  // Use api.whatsapp.com/send instead of wa.me — wa.me mangles multi-byte
+  // UTF-8 emoji characters during its redirect, displaying them as ◆/�.
+  const waHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
   const tgHref = `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`;
   const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`;
   const xHref  = `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`;
