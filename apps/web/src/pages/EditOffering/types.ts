@@ -11,6 +11,8 @@ export interface EditOfferingFormData {
   experience: string;
   service_radius: string;
   status: string;
+  images: File[];
+  existingImageUrls: string[];
 }
 
 export const INITIAL_EDIT_FORM: EditOfferingFormData = {
@@ -26,6 +28,8 @@ export const INITIAL_EDIT_FORM: EditOfferingFormData = {
   experience: '',
   service_radius: '25',
   status: 'active',
+  images: [],
+  existingImageUrls: [],
 };
 
 export const PRICE_TYPES = [
