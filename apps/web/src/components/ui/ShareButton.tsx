@@ -1,10 +1,62 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
+import { Task, getCategoryIcon as getCategoryIconShared } from '@marketplace/shared';
+
+/* ── Share-text builder (mirrors utils/shareTask.ts) ───────────────────── */
+
+const buildShareUrl = (taskId: number): string => {
+  return `${window.location.origin}/?task=${taskId}`;
+};
+
+const shortAddress = (location?: string): string => {
+  if (!location) return '';
+  return location.split(',').slice(0, 2).join(',').trim();
+};
+
+const formatPostedTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+};
+
+const buildShareTextFromTask = (task: Task, includeUrl = true): string => {
+  const budget = task.budget || task.reward || 0;
+  const address = shortAddress(task.location);
+  const categoryEmoji = getCategoryIconShared(task.category);
+  const url = buildShareUrl(task.id);
+  const lines: string[] = [];
+  const titleLine = categoryEmoji ? `${categoryEmoji} ${task.title}` : task.title;
+  lines.push(titleLine);
+  lines.push('');
+  if (budget > 0) lines.push(`\u{1F4B0} \u20AC${budget}`);
+  if (address) lines.push(`\u{1F4CD} ${address}`);
+  if (task.created_at) lines.push(`\u{23F3} ${formatPostedTime(task.created_at)}`);
+  if (includeUrl) {
+    lines.push('');
+    lines.push(`\u{1F449} ${url}`);
+  }
+  lines.push('');
+  lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
+  return lines.join('\n');
+};
+
+/* ── Component ─────────────────────────────────────────────────────────── */
 
 interface ShareButtonProps {
-  url: string;
-  title: string;
+  /** When a Task object is provided, URL + text are derived from shareTask logic. */
+  task?: Task;
+  /** Fallback URL when no task object is available. */
+  url?: string;
+  title?: string;
   description?: string;
   image?: string;
   categoryIcon?: string;
@@ -18,8 +70,9 @@ interface ShareButtonProps {
 }
 
 const ShareButton = ({
+  task,
   url,
-  title: rawTitle,
+  title: rawTitle = '',
   description: rawDescription = '',
   image,
   categoryIcon,
@@ -38,32 +91,58 @@ const ShareButton = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const title = rawTitle || '';
-  const description = rawDescription || '';
-  const fullUrl = (url || '').startsWith('http') ? url : `${window.location.origin}${url || ''}`;
+  /* ── Derive share payload ─────────────────────────────────────────────── */
+
+  const { fullUrl, shareText, shareTextNoUrl, displayTitle, displayPrice, displayLocation, displayPosted, displayCategoryIcon } = useMemo(() => {
+    if (task) {
+      const taskUrl = buildShareUrl(task.id);
+      const budget = task.budget || task.reward || 0;
+      return {
+        fullUrl: taskUrl,
+        shareText: buildShareTextFromTask(task, true),
+        shareTextNoUrl: buildShareTextFromTask(task, false),
+        displayTitle: task.title,
+        displayPrice: budget > 0 ? `\u20AC${budget}` : undefined,
+        displayLocation: shortAddress(task.location),
+        displayPosted: task.created_at ? formatPostedTime(task.created_at) : undefined,
+        displayCategoryIcon: getCategoryIconShared(task.category) || categoryIcon,
+      };
+    }
+
+    // Legacy prop-based path
+    const legacyUrl = (url || '').startsWith('http') ? url! : `${window.location.origin}${url || ''}`;
+    const title = rawTitle || '';
+    const buildLegacyText = (includeUrl = true) => {
+      const lines: string[] = [];
+      const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
+      lines.push(titleLine);
+      lines.push('');
+      if (price) lines.push(`\u{1F4B0} ${price}`);
+      if (location) lines.push(`\u{1F4CD} ${location}`);
+      if (postedDate) lines.push(`\u{23F3} ${postedDate}`);
+      if (includeUrl) {
+        lines.push('');
+        lines.push(`\u{1F449} ${legacyUrl}`);
+      }
+      lines.push('');
+      lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
+      return lines.join('\n');
+    };
+    return {
+      fullUrl: legacyUrl,
+      shareText: buildLegacyText(true),
+      shareTextNoUrl: buildLegacyText(false),
+      displayTitle: title,
+      displayPrice: price,
+      displayLocation: location,
+      displayPosted: postedDate,
+      displayCategoryIcon: categoryIcon,
+    };
+  }, [task, url, rawTitle, categoryEmoji, categoryIcon, price, location, postedDate]);
+
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  const buildShareText = (includeUrl = true) => {
-    const lines: string[] = [];
-    const titleLine = categoryEmoji ? `${categoryEmoji} ${title}` : title;
-    lines.push(titleLine);
-    lines.push('');
-    if (price) lines.push(`\u{1F4B0} ${price}`);
-    if (location) lines.push(`\u{1F4CD} ${location}`);
-    if (postedDate) lines.push(`\u{23F3} ${postedDate}`);
-    if (includeUrl) {
-      lines.push('');
-      lines.push(`\u{1F449} ${fullUrl}`);
-    }
-    lines.push('');
-    lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
-    return lines.join('\n');
-  };
-
-  const shareText = buildShareText(true);
-  const shareTextNoUrl = buildShareText(false);
-
-  // ── Precompute share hrefs ────────────────────────────────────────────────
+  // ── Precompute share hrefs ────────────────────────────────────────────
   const waHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const tgHref = `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareTextNoUrl)}`;
   const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`;
@@ -80,7 +159,7 @@ const ShareButton = ({
     setTimeout(() => setIsOpen(false), 250);
   }, []);
 
-  // Outside-click: close when tapping the backdrop or anywhere outside the sheet.
+  // Outside-click
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: PointerEvent) => {
@@ -97,11 +176,7 @@ const ShareButton = ({
     return () => document.removeEventListener('pointerup', handler);
   }, [isOpen, closeSheet]);
 
-  // Auto-close the sheet when the user returns from a share target.
-  // When a share link opens WhatsApp/Telegram/etc, the browser tab loses
-  // visibility. When the user comes back, visibilitychange fires and we
-  // dismiss the sheet cleanly — no race condition, no DOM teardown during
-  // navigation.
+  // Auto-close on return from share target
   useEffect(() => {
     if (!isOpen) return;
     const onReturn = () => {
@@ -122,17 +197,17 @@ const ShareButton = ({
 
   const nativeShare = async () => {
     try {
-      await navigator.share({ title, text: description, url: fullUrl });
+      await navigator.share({ title: displayTitle, text: shareText });
     } catch (_) {}
     closeSheet();
   };
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(fullUrl);
+      await navigator.clipboard.writeText(shareText);
     } catch {
       const ta = document.createElement('textarea');
-      ta.value = fullUrl;
+      ta.value = shareText;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
@@ -222,16 +297,16 @@ const ShareButton = ({
       {/* Preview card */}
       <div className="mx-5 mb-4 p-3.5 bg-gray-50 rounded-xl border border-gray-100">
         <div className="flex items-start gap-3">
-          {categoryIcon && (
+          {displayCategoryIcon && (
             <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center text-lg flex-shrink-0 shadow-sm">
-              {categoryIcon}
+              {displayCategoryIcon}
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{title}</p>
-            {price && <p className="text-sm font-bold text-green-600 mt-1">{price}</p>}
-            {location && <p className="text-xs text-gray-400 mt-0.5 truncate">{'\u{1F4CD}'} {location}</p>}
-            {postedDate && <p className="text-xs text-gray-400 mt-0.5">{'\u{23F3}'} {postedDate}</p>}
+            <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{displayTitle}</p>
+            {displayPrice && <p className="text-sm font-bold text-green-600 mt-1">{displayPrice}</p>}
+            {displayLocation && <p className="text-xs text-gray-400 mt-0.5 truncate">{'\u{1F4CD}'} {displayLocation}</p>}
+            {displayPosted && <p className="text-xs text-gray-400 mt-0.5">{'\u{23F3}'} {displayPosted}</p>}
             <p className="text-xs text-gray-300 mt-0.5 truncate">kolab.lv</p>
           </div>
         </div>
@@ -248,10 +323,6 @@ const ShareButton = ({
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 group"
               onClick={(e) => {
-                // Prevent the outside-click handler from closing the sheet
-                // before the browser processes the anchor navigation.
-                // Do NOT close the sheet here — the visibilitychange listener
-                // handles auto-dismiss when the user returns from the share target.
                 e.stopPropagation();
               }}
             >
