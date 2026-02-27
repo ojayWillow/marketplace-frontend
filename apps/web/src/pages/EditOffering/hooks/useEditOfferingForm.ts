@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { updateOffering, geocodeAddress, GeocodingResult, useAuthStore, useToastStore } from '@marketplace/shared';
+import { updateOffering, geocodeAddress, GeocodingResult, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
 import { useOffering } from '../../../api/hooks';
 import { EditOfferingFormData, INITIAL_EDIT_FORM } from '../types';
 
@@ -52,6 +52,8 @@ export const useEditOfferingForm = () => {
         experience: offering.experience || '',
         service_radius: '25',
         status: offering.status || 'active',
+        images: [],
+        existingImageUrls: offering.images || [],
       });
       setFormInitialized(true);
     }
@@ -107,6 +109,27 @@ export const useEditOfferingForm = () => {
     setAddressSuggestions([]);
   };
 
+  const removeExistingImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      existingImageUrls: prev.existingImageUrls.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Upload new images and return their URLs
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      try {
+        const url = await uploadTaskImageFile(file);
+        urls.push(url);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    }
+    return urls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -131,13 +154,26 @@ export const useEditOfferingForm = () => {
     if (formData.price_type !== 'negotiable') {
       const priceNum = formData.price ? parseFloat(formData.price) : 0;
       if (!formData.price || isNaN(priceNum) || priceNum < 10 || priceNum > 10000) {
-        toast.error(t('editOffering.priceRange', 'Price must be between €10 and €10,000'));
+        toast.error(t('editOffering.priceRange', 'Price must be between \u20AC10 and \u20AC10,000'));
         return;
       }
     }
 
     setSaving(true);
     try {
+      // Upload new images if any
+      let newImageUrls: string[] = [];
+      if (formData.images.length > 0) {
+        toast.info(t('editOffering.uploadingImages', 'Uploading images...'));
+        newImageUrls = await uploadImages(formData.images);
+        if (newImageUrls.length < formData.images.length) {
+          toast.warning(t('editOffering.someImagesFailed', 'Some images failed to upload, but continuing with update.'));
+        }
+      }
+
+      // Combine existing (kept) images with newly uploaded ones
+      const allImageUrls = [...formData.existingImageUrls, ...newImageUrls];
+
       const updateData = {
         title: formData.title,
         description: formData.description,
@@ -150,6 +186,7 @@ export const useEditOfferingForm = () => {
         availability: formData.availability || undefined,
         experience: formData.experience || undefined,
         status: formData.status as 'active' | 'paused' | 'closed',
+        images: allImageUrls.length > 0 ? allImageUrls : undefined,
       };
 
       await updateOffering(Number(id), updateData);
@@ -174,6 +211,7 @@ export const useEditOfferingForm = () => {
     handleChange,
     updateField,
     selectAddress,
+    removeExistingImage,
     handleSubmit,
     navigate,
   };

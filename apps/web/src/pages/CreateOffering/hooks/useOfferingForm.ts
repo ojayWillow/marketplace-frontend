@@ -162,7 +162,7 @@ export const useOfferingForm = () => {
         availability: formData.availability || undefined,
         experience: formData.experience || undefined,
         service_radius: parseFloat(formData.service_radius) || 25,
-        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
       const response = await createOffering(offeringData);

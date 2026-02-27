@@ -8,6 +8,8 @@ export interface EditTaskFormData {
   longitude: number;
   deadline: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  images: File[];
+  existingImageUrls: string[];
 }
 
 export const INITIAL_EDIT_TASK_FORM: EditTaskFormData = {
@@ -20,4 +22,6 @@ export const INITIAL_EDIT_TASK_FORM: EditTaskFormData = {
   longitude: 24.1052,
   deadline: '',
   difficulty: 'medium',
+  images: [],
+  existingImageUrls: [],
 };

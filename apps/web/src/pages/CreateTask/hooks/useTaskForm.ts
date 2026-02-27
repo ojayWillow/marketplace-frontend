@@ -201,7 +201,7 @@ export const useTaskForm = () => {
         deadline,
         difficulty: formData.difficulty,
         is_urgent: formData.is_urgent,
-        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
       await createTask(taskData);
