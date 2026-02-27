@@ -1,53 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { Task, getCategoryIcon as getCategoryIconShared } from '@marketplace/shared';
-
-/* ── Share-text builder (mirrors utils/shareTask.ts) ───────────────────── */
-
-const buildShareUrl = (taskId: number): string => {
-  return `${window.location.origin}/?task=${taskId}`;
-};
-
-const shortAddress = (location?: string): string => {
-  if (!location) return '';
-  return location.split(',').slice(0, 2).join(',').trim();
-};
-
-const formatPostedTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-};
-
-const buildShareTextFromTask = (task: Task, includeUrl = true): string => {
-  const budget = (task as any).budget || (task as any).reward || 0;
-  const address = shortAddress(task.location);
-  const categoryEmoji = getCategoryIconShared(task.category);
-  const url = buildShareUrl(task.id);
-  const lines: string[] = [];
-  const titleLine = categoryEmoji ? `${categoryEmoji} ${task.title}` : task.title;
-  lines.push(titleLine);
-  lines.push('');
-  if (budget > 0) lines.push(`\u{1F4B0} \u20AC${budget}`);
-  if (address) lines.push(`\u{1F4CD} ${address}`);
-  if (task.created_at) lines.push(`\u{23F3} ${formatPostedTime(task.created_at)}`);
-  if (includeUrl) {
-    lines.push('');
-    lines.push(`\u{1F449} ${url}`);
-  }
-  lines.push('');
-  lines.push('Kolab \u2014 Pelni naudu pal\u012Bdzot citiem \u{1F680}');
-  return lines.join('\n');
-};
+import { Task, getCategoryIcon } from '@marketplace/shared';
+import { buildShareUrl, buildShareText, shortAddress, formatPostedTime } from '../../utils/shareTask';
 
 /* ── Component ─────────────────────────────────────────────────────────── */
 
@@ -96,17 +51,18 @@ const ShareButton = ({
 
   const { fullUrl, shareText, shareTextNoUrl, displayTitle, displayPrice, displayLocation, displayPosted, displayCategoryIcon } = useMemo(() => {
     if (task) {
+      // Use the exact same helpers the Home tab uses
       const taskUrl = buildShareUrl(task.id);
       const budget = (task as any).budget || (task as any).reward || 0;
       return {
         fullUrl: taskUrl,
-        shareText: buildShareTextFromTask(task, true),
-        shareTextNoUrl: buildShareTextFromTask(task, false),
+        shareText: buildShareText(task, true),
+        shareTextNoUrl: buildShareText(task, false),
         displayTitle: task.title,
         displayPrice: budget > 0 ? `\u20AC${budget}` : undefined,
         displayLocation: shortAddress(task.location),
         displayPosted: task.created_at ? formatPostedTime(task.created_at) : undefined,
-        displayCategoryIcon: getCategoryIconShared(task.category) || categoryIcon,
+        displayCategoryIcon: getCategoryIcon(task.category) || categoryIcon,
       };
     }
 
