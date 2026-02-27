@@ -29,7 +29,7 @@ const formatPostedTime = (dateString: string): string => {
 };
 
 const buildShareTextFromTask = (task: Task, includeUrl = true): string => {
-  const budget = task.budget || task.reward || 0;
+  const budget = (task as any).budget || (task as any).reward || 0;
   const address = shortAddress(task.location);
   const categoryEmoji = getCategoryIconShared(task.category);
   const url = buildShareUrl(task.id);
@@ -90,13 +90,14 @@ const ShareButton = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   /* ── Derive share payload ─────────────────────────────────────────────── */
 
   const { fullUrl, shareText, shareTextNoUrl, displayTitle, displayPrice, displayLocation, displayPosted, displayCategoryIcon } = useMemo(() => {
     if (task) {
       const taskUrl = buildShareUrl(task.id);
-      const budget = task.budget || task.reward || 0;
+      const budget = (task as any).budget || (task as any).reward || 0;
       return {
         fullUrl: taskUrl,
         shareText: buildShareTextFromTask(task, true),
@@ -159,21 +160,27 @@ const ShareButton = ({
     setTimeout(() => setIsOpen(false), 250);
   }, []);
 
-  // Outside-click
+  // Outside-click: close only when tapping outside BOTH the trigger AND the sheet.
+  // The sheet is portaled to document.body so it's not a DOM child of dropdownRef.
+  // We must check sheetRef separately.
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: PointerEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
-        closeSheet();
-      }
+      const target = e.target as Node;
+
+      // Inside trigger wrapper? Keep open.
+      if (triggerRef.current && triggerRef.current.contains(target)) return;
+
+      // Inside the portaled sheet? Keep open.
+      if (sheetRef.current && sheetRef.current.contains(target)) return;
+
+      // Inside the desktop dropdown? Keep open.
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+
+      closeSheet();
     };
-    document.addEventListener('pointerup', handler);
-    return () => document.removeEventListener('pointerup', handler);
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
   }, [isOpen, closeSheet]);
 
   // Auto-close on return from share target
@@ -322,9 +329,6 @@ const ShareButton = ({
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 group"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
             >
               <div
                 className={`w-12 h-12 rounded-2xl ${target.color} text-white flex items-center justify-center shadow-sm group-hover:scale-105 group-active:scale-95 transition-transform`}
@@ -415,12 +419,11 @@ const ShareButton = ({
               onClick={closeSheet}
             />
             <div
+              ref={sheetRef}
               className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl transition-transform duration-250 ease-out ${
                 isAnimating ? 'translate-y-0' : 'translate-y-full'
               }`}
               style={{ paddingBottom: 'max(env(safe-area-inset-bottom), calc(var(--nav-total-height, 64px) + 16px))' }}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-gray-300" />
@@ -435,8 +438,6 @@ const ShareButton = ({
       {isOpen && (
         <div
           className="hidden md:block absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
         >
           {sheetContent}
         </div>
