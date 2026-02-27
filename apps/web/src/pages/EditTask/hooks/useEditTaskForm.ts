@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { geocodeAddress, GeocodingResult, useAuthStore, useToastStore, apiClient } from '@marketplace/shared';
+import { geocodeAddress, GeocodingResult, useAuthStore, useToastStore, apiClient, uploadTaskImageFile } from '@marketplace/shared';
 import { useTask } from '../../../api/hooks';
 import { EditTaskFormData, INITIAL_EDIT_TASK_FORM } from '../types';
 
@@ -57,6 +57,8 @@ export const useEditTaskForm = () => {
         longitude: task.longitude || 24.1052,
         deadline: task.deadline ? task.deadline.slice(0, 16) : '',
         difficulty: task.difficulty || 'medium',
+        images: [],
+        existingImageUrls: task.images || [],
       });
       setFormInitialized(true);
     }
@@ -106,6 +108,10 @@ export const useEditTaskForm = () => {
     }));
   };
 
+  const updateField = <K extends keyof EditTaskFormData>(field: K, value: EditTaskFormData[K]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const selectAddress = (result: GeocodingResult) => {
     locationTouched.current = false;
     setFormData(prev => ({
@@ -115,6 +121,27 @@ export const useEditTaskForm = () => {
       longitude: parseFloat(result.lon),
     }));
     setAddressSuggestions([]);
+  };
+
+  const removeExistingImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      existingImageUrls: prev.existingImageUrls.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Upload new images and return their URLs
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      try {
+        const url = await uploadTaskImageFile(file);
+        urls.push(url);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    }
+    return urls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,12 +167,25 @@ export const useEditTaskForm = () => {
     // Budget range validation
     const budgetNum = formData.budget ? parseFloat(formData.budget) : 0;
     if (!formData.budget || isNaN(budgetNum) || budgetNum < 10 || budgetNum > 10000) {
-      toast.error(t('editTask.budgetRange', 'Budget must be between €10 and €10,000'));
+      toast.error(t('editTask.budgetRange', 'Budget must be between \u20AC10 and \u20AC10,000'));
       return;
     }
 
     setSaving(true);
     try {
+      // Upload new images if any
+      let newImageUrls: string[] = [];
+      if (formData.images.length > 0) {
+        toast.info(t('editTask.uploadingImages', 'Uploading images...'));
+        newImageUrls = await uploadImages(formData.images);
+        if (newImageUrls.length < formData.images.length) {
+          toast.warning(t('editTask.someImagesFailed', 'Some images failed to upload, but continuing with update.'));
+        }
+      }
+
+      // Combine existing (kept) images with newly uploaded ones
+      const allImageUrls = [...formData.existingImageUrls, ...newImageUrls];
+
       const updateData = {
         title: formData.title,
         description: formData.description,
@@ -156,6 +196,7 @@ export const useEditTaskForm = () => {
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
         deadline: formData.deadline || undefined,
         difficulty: formData.difficulty,
+        images: allImageUrls.length > 0 ? allImageUrls : undefined,
       };
 
       await apiClient.put(`/api/tasks/${id}`, updateData);
@@ -178,7 +219,9 @@ export const useEditTaskForm = () => {
     searchingAddress,
     addressSuggestions,
     handleChange,
+    updateField,
     selectAddress,
+    removeExistingImage,
     handleSubmit,
     navigate,
   };
