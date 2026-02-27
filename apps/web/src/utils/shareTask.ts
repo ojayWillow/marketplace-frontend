@@ -5,7 +5,7 @@ import { getCategoryIcon } from '@marketplace/shared';
  * Build the deep-link URL that opens the map with a specific job selected.
  * Format: https://<host>/?task=<taskId>
  */
-const buildShareUrl = (taskId: number): string => {
+export const buildShareUrl = (taskId: number): string => {
   const base = window.location.origin;
   return `${base}/?task=${taskId}`;
 };
@@ -14,7 +14,7 @@ const buildShareUrl = (taskId: number): string => {
  * Format a short address from the full location string.
  * e.g. "Rīga, Centrs, Brīvības iela 100, LV-1001" → "Rīga, Centrs"
  */
-const shortAddress = (location?: string): string => {
+export const shortAddress = (location?: string): string => {
   if (!location) return '';
   return location.split(',').slice(0, 2).join(',').trim();
 };
@@ -23,7 +23,7 @@ const shortAddress = (location?: string): string => {
  * Format a date string as relative time for share messages.
  * e.g. "Just now", "5m ago", "2h ago", "3d ago", or "15 Feb"
  */
-const formatPostedTime = (dateString: string): string => {
+export const formatPostedTime = (dateString: string): string => {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -43,7 +43,7 @@ const formatPostedTime = (dateString: string): string => {
  * This ensures the shared message looks identical regardless of where the
  * user triggers the share (map card, task detail, etc.).
  */
-const buildShareText = (task: Task, includeUrl = true): string => {
+export const buildShareText = (task: Task, includeUrl = true): string => {
   const budget = task.budget || task.reward || 0;
   const address = shortAddress(task.location);
   const categoryEmoji = getCategoryIcon(task.category);
