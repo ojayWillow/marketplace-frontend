@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "turbo dev",
     "dev:web": "pnpm --filter @marketplace/web dev",
-    "dev:mobile": "pnpm --filter @marketplace/mobile dev",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test"
