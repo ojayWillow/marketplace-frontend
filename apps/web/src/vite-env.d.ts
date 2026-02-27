@@ -13,6 +13,10 @@ declare module 'virtual:pwa-register/react' {
     onRegisterError?: (error: any) => void;
   }
 
+
+  interface ImportMetaEnv {
+  readonly VITE_SENTRY_DSN: string;
+}
   export function useRegisterSW(options?: RegisterSWOptions): {
     needRefresh: [boolean, Dispatch<SetStateAction<boolean>>];
     offlineReady: [boolean, Dispatch<SetStateAction<boolean>>];
