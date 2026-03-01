@@ -23,13 +23,10 @@ import {
 } from './hooks';
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
 import { MobileSettingsSheet } from './components/mobile/MobileSettingsSheet';
-import CommunityRulesModal from '../../components/QuickHelpIntroModal';
 
 const Profile = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-
-  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   const {
     profile,
@@ -124,7 +121,7 @@ const Profile = () => {
   const hasTasks = createdTasks.length > 0 || myApplications.length > 0;
   const hasReviews = reviews.length > 0;
 
-  // Mobile layout — clean identity card + reviews only
+  // Mobile layout
   if (isMobile) {
     return (
       <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-950 animate-page-enter">
@@ -158,17 +155,10 @@ const Profile = () => {
           fileInputRef={avatarPicker.fileInputRef}
         />
 
-        <CommunityRulesModal
-          isOpen={showHowItWorks}
-          onClose={() => setShowHowItWorks(false)}
-          showCheckboxes={false}
-        />
-
         {/* Full-screen settings sheet */}
         <MobileSettingsSheet
           isOpen={showMobileSettings}
           onClose={() => setShowMobileSettings(false)}
-          onHowItWorks={() => setShowHowItWorks(true)}
         />
 
         <div className="flex-1 overflow-y-auto">
@@ -228,12 +218,6 @@ const Profile = () => {
           onFileUpload={avatarPicker.handleFileUpload}
           onTriggerFileInput={avatarPicker.triggerFileInput}
           fileInputRef={avatarPicker.fileInputRef}
-        />
-
-        <CommunityRulesModal
-          isOpen={showHowItWorks}
-          onClose={() => setShowHowItWorks(false)}
-          showCheckboxes={false}
         />
 
         <ProfileTabs
@@ -299,9 +283,7 @@ const Profile = () => {
         )}
 
         {activeTab === 'settings' && (
-          <SettingsTab
-            onHowItWorks={() => setShowHowItWorks(true)}
-          />
+          <SettingsTab />
         )}
       </div>
     </div>

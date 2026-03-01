@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePushNotifications } from '../../../../../hooks/usePushNotifications';
-import { getPushSubscriptions, getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/shared';
+import { getJobAlertPreferences, updateJobAlertPreferences } from '@marketplace/shared';
 import type { JobAlertPreferences, UpdateJobAlertPayload } from '@marketplace/shared';
 import { isIOSSafari, isIOSPWA, TASK_CATEGORIES, CATEGORY_ICONS } from './settingsConstants';
 
@@ -46,11 +46,8 @@ export const NotificationSettings = () => {
     error: pushError,
     subscribe,
     unsubscribe,
-    testNotification,
   } = usePushNotifications();
 
-  const [testSent, setTestSent] = useState(false);
-  const [testLoading, setTestLoading] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
 
   /* ─── Job alert state ─── */
@@ -93,7 +90,6 @@ export const NotificationSettings = () => {
   /* ─── Push toggle ─── */
   const handlePushToggle = async () => {
     if (isSubscribed) {
-      // Turning push off → also disable job alerts
       if (jobAlertPrefs.enabled) {
         const prev = { ...jobAlertPrefs };
         setJobAlertPrefs(p => ({ ...p, enabled: false }));
@@ -107,20 +103,6 @@ export const NotificationSettings = () => {
       await unsubscribe();
     } else {
       await subscribe();
-    }
-  };
-
-  /* ─── Test notification ─── */
-  const handleTestNotification = async () => {
-    setTestLoading(true);
-    try {
-      await testNotification();
-      setTestSent(true);
-      setTimeout(() => setTestSent(false), 3000);
-    } catch (err) {
-      console.error('Failed to send test notification:', err);
-    } finally {
-      setTestLoading(false);
     }
   };
 
@@ -343,9 +325,7 @@ export const NotificationSettings = () => {
           </div>
         )}
 
-        {/* ════════════════════════════════════════════
-            MASTER PUSH TOGGLE
-           ════════════════════════════════════════════ */}
+        {/* MASTER PUSH TOGGLE */}
         {canShowToggle && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -395,13 +375,11 @@ export const NotificationSettings = () => {
           <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{pushError}</p>
         )}
 
-        {/* ════════════════════════════════════════════
-            CONTENT WHEN PUSH IS ON
-           ════════════════════════════════════════════ */}
+        {/* CONTENT WHEN PUSH IS ON */}
         {pushIsOn && (
           <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-700">
 
-            {/* ─── JOB ALERTS SUB-SECTION ─── */}
+            {/* JOB ALERTS SUB-SECTION */}
             <div className="rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
               {jobAlertLoading ? (
                 <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500 px-4 py-3">
@@ -589,32 +567,6 @@ export const NotificationSettings = () => {
                     </div>
                   </div>
                 </>
-              )}
-            </div>
-
-            {/* ─── TEST NOTIFICATION ─── */}
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-              <button
-                onClick={handleTestNotification}
-                disabled={testLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {testLoading ? (
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                )}
-                {t('settings.notifications.sendTest', 'Send test notification')}
-              </button>
-              {testSent && (
-                <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                  \u2705 {t('settings.notifications.testSent', 'Test notification sent! Check your device.')}
-                </p>
               )}
             </div>
 
