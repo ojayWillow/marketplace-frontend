@@ -30,5 +30,16 @@ export default function ProtectedRoute({ children, skipPhoneCheck = false }: Pro
   //   return <Navigate to="/verify-phone" state={{ from: location }} replace />;
   // }
 
+  // Logged in but onboarding not completed → redirect to complete-profile
+  // Skip this check for pages that are part of the onboarding flow itself
+  if (
+    !skipPhoneCheck &&
+    user &&
+    !user.onboarding_completed &&
+    user.username?.startsWith('user_')
+  ) {
+    return <Navigate to="/complete-profile" replace />;
+  }
+
   return <>{children}</>;
 }

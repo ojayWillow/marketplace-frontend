@@ -171,10 +171,6 @@ export default function CompleteProfile() {
     if (step > 1) setStep(s => s - 1)
   }
 
-  const handleSkip = () => {
-    navigate('/tasks', { replace: true })
-  }
-
   // ── Submit ─────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
@@ -748,15 +744,6 @@ export default function CompleteProfile() {
               )}
             </button>
           </div>
-
-          {/* Skip option */}
-          <button
-            onClick={handleSkip}
-            disabled={loading}
-            className="w-full mt-3 py-3 text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {t('auth.skipForNow', 'Skip for now')}
-          </button>
         </div>
 
         {/* Privacy note */}
