@@ -276,18 +276,6 @@ export const ProfileHeader = ({
           >
             👋 {t('profile.quickActions.offerService')}
           </Link>
-          <Link
-            to="/listings/create"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded-full text-sm font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-          >
-            🏷️ {t('profile.quickActions.sellItem')}
-          </Link>
-          <Link
-            to="/favorites"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-400 rounded-full text-sm font-medium hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
-          >
-            ❤️ {t('profile.quickActions.favorites')}
-          </Link>
         </div>
       )}
     </div>

@@ -10,7 +10,6 @@ import {
 } from './components';
 import {
   AboutTab,
-  ListingsTab,
   OfferingsTab,
   TasksTab,
   ReviewsTab,
@@ -262,14 +261,6 @@ const Profile = () => {
             formData={formData}
             onChange={handleChange}
             onFormDataChange={handleFormDataChange}
-          />
-        )}
-
-        {activeTab === 'listings' && (
-          <ListingsTab
-            listings={myListings}
-            loading={listingsLoading}
-            onDelete={actions.handleDeleteListing}
           />
         )}
 

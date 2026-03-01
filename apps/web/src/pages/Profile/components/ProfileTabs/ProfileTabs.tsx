@@ -58,10 +58,6 @@ export const ProfileTabs = ({
         {t('profile.tabs.services')} {hasContent.offerings && <span className="text-gray-400 dark:text-gray-500">({counts.offerings})</span>}
       </button>
       
-      <button onClick={() => onTabChange('listings')} className={tabClass('listings')}>
-        {t('profile.tabs.listings')} {hasContent.listings && <span className="text-gray-400 dark:text-gray-500">({counts.listings})</span>}
-      </button>
-      
       {(hasContent.reviews || !viewOnly) && (
         <button onClick={() => onTabChange('reviews')} className={tabClass('reviews')}>
           {t('profile.tabs.reviews')} ({counts.reviews})
