@@ -248,21 +248,20 @@ const TaskDetail = () => {
       />
 
       {/*
-        Top bar — back link on the left, ShareButton on the right.
+        Top bar — back button on the left, ShareButton on the right.
         z-[60] so the ShareButton dropdown isn't clipped.
       */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-[60] md:static md:border-b-0">
         <div className="flex items-center justify-between px-4 py-2.5 md:max-w-2xl md:mx-auto md:py-4">
-          <Link
-            to="/tasks"
+          <button
+            onClick={() => navigate(-1)}
             className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden md:inline">{t('taskDetail.backToQuickHelp')}</span>
-            <span className="md:hidden">{t('taskDetail.back')}</span>
-          </Link>
+            {t('taskDetail.back')}
+          </button>
 
           {/* ShareButton — now uses the task object for unified URL/text logic */}
           <ShareButton
