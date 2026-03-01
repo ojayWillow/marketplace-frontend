@@ -8,7 +8,6 @@ import {
   LocationInput,
   BudgetInput,
   UrgentToggle,
-  FormTips,
 } from './components';
 import ImagePicker from '../../components/ImagePicker';
 import { FEATURES } from '../../constants/featureFlags';
@@ -125,9 +124,6 @@ const CreateTask = () => {
                 onChange={(u) => updateField('is_urgent', u)}
               />
             )}
-
-            {/* Tips */}
-            <FormTips category={formData.category} />
 
             {/* Submit */}
             <div className="flex gap-2 pt-1">
