@@ -17,22 +17,21 @@ interface NotificationsPanelProps {
 }
 
 // Icon + color per notification type
-const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  [NotificationType.NEW_APPLICATION]: { icon: '📩', color: 'text-blue-600', bg: 'bg-blue-50' },
-  [NotificationType.APPLICATION_ACCEPTED]: { icon: '🎉', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.APPLICATION_REJECTED]: { icon: '😔', color: 'text-gray-600', bg: 'bg-gray-50' },
-  [NotificationType.TASK_MARKED_DONE]: { icon: '📋', color: 'text-amber-600', bg: 'bg-amber-50' },
-  [NotificationType.TASK_COMPLETED]: { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' },
-  [NotificationType.TASK_DISPUTED]: { icon: '⚠️', color: 'text-red-600', bg: 'bg-red-50' },
-  [NotificationType.REVIEW_REMINDER]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  [NotificationType.TASK_CANCELLED]: { icon: '❌', color: 'text-red-600', bg: 'bg-red-50' },
-  [NotificationType.NEW_REVIEW]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  [NotificationType.NEW_TASK_NEARBY]: { icon: '📍', color: 'text-purple-600', bg: 'bg-purple-50' },
+const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string; darkBg: string }> = {
+  [NotificationType.NEW_APPLICATION]: { icon: '📩', color: 'text-blue-600', bg: 'bg-blue-50', darkBg: 'dark:bg-blue-900/30' },
+  [NotificationType.APPLICATION_ACCEPTED]: { icon: '🎉', color: 'text-green-600', bg: 'bg-green-50', darkBg: 'dark:bg-green-900/30' },
+  [NotificationType.APPLICATION_REJECTED]: { icon: '😔', color: 'text-gray-600', bg: 'bg-gray-50', darkBg: 'dark:bg-gray-800' },
+  [NotificationType.TASK_MARKED_DONE]: { icon: '📋', color: 'text-amber-600', bg: 'bg-amber-50', darkBg: 'dark:bg-amber-900/30' },
+  [NotificationType.TASK_COMPLETED]: { icon: '✅', color: 'text-green-600', bg: 'bg-green-50', darkBg: 'dark:bg-green-900/30' },
+  [NotificationType.TASK_DISPUTED]: { icon: '⚠️', color: 'text-red-600', bg: 'bg-red-50', darkBg: 'dark:bg-red-900/30' },
+  [NotificationType.REVIEW_REMINDER]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50', darkBg: 'dark:bg-yellow-900/30' },
+  [NotificationType.TASK_CANCELLED]: { icon: '❌', color: 'text-red-600', bg: 'bg-red-50', darkBg: 'dark:bg-red-900/30' },
+  [NotificationType.NEW_REVIEW]: { icon: '⭐', color: 'text-yellow-600', bg: 'bg-yellow-50', darkBg: 'dark:bg-yellow-900/30' },
+  [NotificationType.NEW_TASK_NEARBY]: { icon: '📍', color: 'text-purple-600', bg: 'bg-purple-50', darkBg: 'dark:bg-purple-900/30' },
 };
 
-const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50' };
+const DEFAULT_CONFIG = { icon: '🔔', color: 'text-gray-600', bg: 'bg-gray-50', darkBg: 'dark:bg-gray-800' };
 
-/** Relative time label — uses i18n translations from tasks.time.* */
 const timeAgo = (dateStr: string, t: (key: string, fallback: string, opts?: any) => string, language?: string): string => {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
@@ -48,14 +47,12 @@ const timeAgo = (dateStr: string, t: (key: string, fallback: string, opts?: any)
   return new Date(dateStr).toLocaleDateString(locale);
 };
 
-/** Check if a date is today */
 const isToday = (dateStr: string): boolean => {
   const d = new Date(dateStr);
   const now = new Date();
   return d.toDateString() === now.toDateString();
 };
 
-/** Get the navigation path for a notification */
 const getNotificationPath = (notification: Notification): string | null => {
   if (notification.related_type === 'task' && notification.related_id) {
     return `/tasks/${notification.related_id}`;
@@ -63,18 +60,16 @@ const getNotificationPath = (notification: Notification): string | null => {
   return null;
 };
 
-/** Get icon config — resolved disputes get a different icon/color */
 const getNotificationConfig = (n: Notification) => {
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
-    return { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' };
+    return { icon: '✅', color: 'text-green-600', bg: 'bg-green-50', darkBg: 'dark:bg-green-900/30' };
   }
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Response Received') {
-    return { icon: '💬', color: 'text-amber-600', bg: 'bg-amber-50' };
+    return { icon: '💬', color: 'text-amber-600', bg: 'bg-amber-50', darkBg: 'dark:bg-amber-900/30' };
   }
   return TYPE_CONFIG[n.type] || DEFAULT_CONFIG;
 };
 
-/** Get a short i18n-aware title based on type */
 const getNotificationTitle = (n: Notification, t: (key: string, fallback: string, opts?: any) => string): string => {
   const taskTitle = n.data?.task_title || '';
 
@@ -120,7 +115,6 @@ const getNotificationTitle = (n: Notification, t: (key: string, fallback: string
   }
 };
 
-/** Get optional subtitle for richer context */
 const getNotificationSubtitle = (n: Notification, t?: (key: string, fallback: string, opts?: any) => string): string | null => {
   if (n.type === NotificationType.TASK_DISPUTED && n.title === 'Dispute Resolved') {
     return n.message || null;
@@ -143,7 +137,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   const { isAuthenticated } = useAuthStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications when panel is open
   const { data, isLoading } = useNotifications(1, 30, false, { enabled: isAuthenticated && isOpen });
   const notifications = data?.notifications ?? [];
   const unreadCount = data?.unread_count ?? 0;
@@ -151,7 +144,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
-  // Close when clicking backdrop
   useEffect(() => {
     if (!isOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -166,7 +158,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
     };
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -191,7 +182,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
     markAllAsRead.mutate();
   };
 
-  // Group notifications
   const todayNotifications = notifications.filter((n) => isToday(n.created_at));
   const earlierNotifications = notifications.filter((n) => !isToday(n.created_at));
 
@@ -204,10 +194,10 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         }`}
       />
 
-      {/* Panel — slides up from bottom on mobile */}
+      {/* Panel */}
       <div
         ref={panelRef}
-        className={`fixed left-0 right-0 bottom-0 z-[201] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed left-0 right-0 bottom-0 z-[201] bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl dark:shadow-gray-950/50 transition-transform duration-300 ease-out ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{
@@ -216,9 +206,9 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               🔔 {t('common.notifications.title', 'Notifications')}
             </h2>
             {unreadCount > 0 && (
@@ -231,14 +221,14 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-blue-600 font-medium hover:text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               >
                 {t('common.notifications.markAllRead', 'Mark all read')}
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label={t('common.close', 'Close')}
             >
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,7 +240,7 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
 
         {/* Drag handle */}
         <div className="flex justify-center py-1">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
         </div>
 
         {/* Content */}
@@ -259,10 +249,10 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
             <div className="px-4 py-6 space-y-3">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex gap-3 animate-pulse">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
+                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                   <div className="flex-1">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
                   </div>
                 </div>
               ))}
@@ -270,20 +260,19 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
           ) : notifications.length === 0 ? (
             <div className="text-center py-12 px-4">
               <div className="text-4xl mb-3">🔔</div>
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 {t('common.notifications.empty', 'No notifications yet')}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {t('common.notifications.emptyDesc', "You'll see updates about your tasks and applications here")}
               </p>
             </div>
           ) : (
             <div className="pb-4">
-              {/* Today section */}
               {todayNotifications.length > 0 && (
                 <>
                   <div className="px-4 pt-3 pb-1">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                       {t('common.notifications.today', 'Today')}
                     </span>
                   </div>
@@ -299,11 +288,10 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
                 </>
               )}
 
-              {/* Earlier section */}
               {earlierNotifications.length > 0 && (
                 <>
                   <div className="px-4 pt-3 pb-1">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                       {t('common.notifications.earlier', 'Earlier')}
                     </span>
                   </div>
@@ -327,7 +315,6 @@ export const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps)
   );
 };
 
-/* ── Single notification row ── */
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;
@@ -343,43 +330,39 @@ const NotificationItem = ({ notification, onClick, t, language }: NotificationIt
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors active:bg-gray-50 ${
-        !notification.is_read ? 'bg-blue-50/40' : ''
+      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors active:bg-gray-50 dark:active:bg-gray-800 ${
+        !notification.is_read ? 'bg-blue-50/40 dark:bg-blue-900/20' : ''
       } ${hasAction ? 'cursor-pointer' : 'cursor-default'}`}
     >
-      {/* Type icon */}
-      <div className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0 text-lg`}>
+      <div className={`w-10 h-10 rounded-full ${config.bg} ${config.darkBg} flex items-center justify-center flex-shrink-0 text-lg`}>
         {config.icon}
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <p className={`text-sm leading-snug ${
-          !notification.is_read ? 'font-semibold text-gray-900' : 'text-gray-700'
+          !notification.is_read ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'
         }`}>
           {getNotificationTitle(notification, t)}
         </p>
         {subtitle && (
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
             {subtitle}
           </p>
         )}
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
           {timeAgo(notification.created_at, t, language)}
         </p>
       </div>
 
-      {/* Unread dot */}
       {!notification.is_read && (
         <div className="flex-shrink-0 mt-2">
           <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
         </div>
       )}
 
-      {/* Action arrow */}
       {hasAction && (
         <div className="flex-shrink-0 mt-1.5">
-          <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>

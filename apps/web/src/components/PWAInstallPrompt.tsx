@@ -127,20 +127,20 @@ export const PWAInstallPrompt = () => {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4" onClick={handleDismiss}>
         <div 
-          className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm animate-slide-up"
+          className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm animate-slide-up"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="text-center mb-4">
             <div className="text-4xl mb-2">📲</div>
-            <h3 className="text-lg font-bold text-gray-900">{t('pwa.iosInstructions.title')}</h3>
-            <p className="text-gray-600 text-sm mt-1">{t('pwa.iosInstructions.subtitle')}</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('pwa.iosInstructions.title')}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{t('pwa.iosInstructions.subtitle')}</p>
           </div>
           
           <div className="space-y-4 text-sm">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="text-2xl">1️⃣</div>
               <div>
-                <p className="text-gray-900">
+                <p className="text-gray-900 dark:text-gray-100">
                   {t('pwa.iosInstructions.step1')}{' '}
                   <span className="inline-flex items-center">
                     <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
@@ -151,23 +151,23 @@ export const PWAInstallPrompt = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="text-2xl">2️⃣</div>
               <div>
-                <p className="text-gray-900">{t('pwa.iosInstructions.step2')}</p>
+                <p className="text-gray-900 dark:text-gray-100">{t('pwa.iosInstructions.step2')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="text-2xl">3️⃣</div>
               <div>
-                <p className="text-gray-900">{t('pwa.iosInstructions.step3')}</p>
+                <p className="text-gray-900 dark:text-gray-100">{t('pwa.iosInstructions.step3')}</p>
               </div>
             </div>
           </div>
 
           <button
             onClick={handleDismiss}
-            className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            className="w-full mt-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             {t('pwa.install.understood')}
           </button>
@@ -180,21 +180,21 @@ export const PWAInstallPrompt = () => {
   if (!showInstallBanner) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-white border border-gray-200 p-4 rounded-xl shadow-lg z-50 animate-slide-up">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4 rounded-xl shadow-lg dark:shadow-gray-950/50 z-50 animate-slide-up">
       <button 
         onClick={handleDismiss}
-        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1"
+        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
       >
         ✕
       </button>
       
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
           <span className="text-2xl">🤝</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900">{t('pwa.install.title')}</p>
-          <p className="text-sm text-gray-600 mt-0.5">
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{t('pwa.install.title')}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
             {isIOS 
               ? t('pwa.install.subtitleIOS')
               : t('pwa.install.subtitle')

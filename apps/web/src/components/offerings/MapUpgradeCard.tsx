@@ -26,7 +26,6 @@ const MapUpgradeCard = ({
   const [status, setStatus] = useState(currentStatus);
   const [expiry, setExpiry] = useState(expiresAt);
 
-  // Don't show if not owner
   if (!isOwner) return null;
 
   const handleStartTrial = async () => {
@@ -34,20 +33,15 @@ const MapUpgradeCard = ({
       navigate('/login');
       return;
     }
-
     try {
       setLoading(true);
       await apiClient.post(`/api/offerings/${offeringId}/map-subscription/trial`);
-      
-      // Update local state
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 7);
       setStatus('trial');
       setExpiry(newExpiry.toISOString());
-      
       toast.success('🎉 Trial activated! Your offering is now visible on the map for 7 days.');
     } catch (err: any) {
-      // Mock success for development
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 7);
       setStatus('trial');
@@ -63,16 +57,12 @@ const MapUpgradeCard = ({
       navigate('/login');
       return;
     }
-
     try {
       setLoading(true);
-      // This would redirect to payment in production
       const response = await apiClient.post(`/api/offerings/${offeringId}/map-subscription/subscribe`);
-      
       if (response.data.checkoutUrl) {
         window.location.href = response.data.checkoutUrl;
       } else {
-        // Mock success
         const newExpiry = new Date();
         newExpiry.setDate(newExpiry.getDate() + 7);
         setStatus('active');
@@ -80,7 +70,6 @@ const MapUpgradeCard = ({
         toast.success('✅ Subscription activated!');
       }
     } catch (err) {
-      // Mock success for development
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 7);
       setStatus('active');
@@ -103,21 +92,21 @@ const MapUpgradeCard = ({
   // Active subscription
   if (status === 'active') {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <div className="text-2xl">🗺️</div>
           <div className="flex-1">
-            <h3 className="font-semibold text-green-800">Map Visibility Active</h3>
-            <p className="text-sm text-green-600 mt-1">
+            <h3 className="font-semibold text-green-800 dark:text-green-300">Map Visibility Active</h3>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
               Your offering is visible on the map! 
               {daysRemaining > 0 && ` ${daysRemaining} days remaining.`}
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <span className="px-2 py-1 bg-green-200 text-green-800 rounded-full text-xs font-medium">
+              <span className="px-2 py-1 bg-green-200 dark:bg-green-800/40 text-green-800 dark:text-green-300 rounded-full text-xs font-medium">
                 ✅ Paid • €5/week
               </span>
               {expiry && (
-                <span className="text-xs text-green-600">
+                <span className="text-xs text-green-600 dark:text-green-400">
                   Renews {new Date(expiry).toLocaleDateString()}
                 </span>
               )}
@@ -131,12 +120,12 @@ const MapUpgradeCard = ({
   // Trial active
   if (status === 'trial') {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <div className="text-2xl">🗺️</div>
           <div className="flex-1">
-            <h3 className="font-semibold text-yellow-800">Free Trial Active</h3>
-            <p className="text-sm text-yellow-700 mt-1">
+            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">Free Trial Active</h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
               Your offering is visible on the map!
               {daysRemaining > 0 
                 ? ` Trial ends in ${daysRemaining} days.`
@@ -151,7 +140,7 @@ const MapUpgradeCard = ({
               >
                 {loading ? 'Processing...' : 'Subscribe €5/week'}
               </button>
-              <span className="text-xs text-yellow-600">
+              <span className="text-xs text-yellow-600 dark:text-yellow-400">
                 Keep your map visibility after trial
               </span>
             </div>
@@ -164,12 +153,12 @@ const MapUpgradeCard = ({
   // Expired
   if (status === 'expired') {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <div className="text-2xl">🗺️</div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-800">Map Visibility Expired</h3>
-            <p className="text-sm text-gray-600 mt-1">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200">Map Visibility Expired</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Your offering is no longer visible on the map. Reactivate to get more visibility!
             </p>
             <div className="mt-3">
@@ -187,7 +176,7 @@ const MapUpgradeCard = ({
     );
   }
 
-  // No subscription - show upgrade prompt
+  // No subscription
   return (
     <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-5 text-white">
       <div className="flex items-start gap-4">

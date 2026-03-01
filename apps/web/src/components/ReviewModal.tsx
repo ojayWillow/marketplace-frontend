@@ -99,7 +99,7 @@ export const ReviewModal = ({
             onMouseEnter={() => setHoverRating(star)}
             onMouseLeave={() => setHoverRating(0)}
             className={`text-3xl cursor-pointer hover:scale-110 transition-transform ${
-              star <= displayRating ? 'text-yellow-400' : 'text-gray-300'
+              star <= displayRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
             }`}
           >
             ★
@@ -143,7 +143,7 @@ export const ReviewModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-gray-950/50 max-w-md w-full overflow-hidden">
         {/* Review Step */}
         {step === 'review' && (
           <>
@@ -155,14 +155,14 @@ export const ReviewModal = ({
             
             <div className="p-6">
               {/* Task info */}
-              <div className="bg-gray-50 rounded-lg p-3 mb-4 text-center">
-                <p className="text-sm text-gray-500">For task:</p>
-                <p className="font-medium text-gray-900">{taskTitle}</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">For task:</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{taskTitle}</p>
               </div>
               
               <div className="mb-4">
                 {renderStars()}
-                <p className="text-center text-sm text-gray-500 mt-2">
+                <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
                   {getRatingLabel(hoverRating || reviewRating)}
                 </p>
               </div>
@@ -173,8 +173,8 @@ export const ReviewModal = ({
                   onChange={(e) => setReviewContent(e.target.value)}
                   onBlur={() => setTouched(true)}
                   placeholder={t('reviews.placeholder')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px] resize-none ${
-                    showError ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-h-[100px] resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
+                    showError ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-700'
                   }`}
                 />
                 <div className="flex justify-between items-center mt-2">
@@ -188,17 +188,17 @@ export const ReviewModal = ({
                         {t('reviews.charsRemaining', { count: charsRemaining })}
                       </p>
                     ) : (
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-gray-400 dark:text-gray-500 text-sm">
                         {t('reviews.helpOthers')}
                       </p>
                     )}
                   </div>
                   <span className={`text-sm font-medium ${
                     isContentValid 
-                      ? 'text-green-600' 
+                      ? 'text-green-600 dark:text-green-400' 
                       : contentLength > 0 
-                        ? 'text-yellow-600' 
-                        : 'text-gray-400'
+                        ? 'text-yellow-600 dark:text-yellow-400' 
+                        : 'text-gray-400 dark:text-gray-500'
                   }`}>
                     {contentLength}/{MIN_REVIEW_LENGTH}
                     {isContentValid && ' ✓'}
@@ -210,14 +210,14 @@ export const ReviewModal = ({
                 <button
                   onClick={() => handleClose(false)}
                   disabled={loading}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-colors"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitReview}
                   disabled={loading || !isContentValid}
-                  className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed font-medium transition-colors"
                 >
                   {loading ? t('reviews.submitting') : `⭐ ${t('reviews.submit')}`}
                 </button>
@@ -230,8 +230,8 @@ export const ReviewModal = ({
         {step === 'success' && (
           <div className="p-8 text-center">
             <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Thank You!</h2>
-            <p className="text-gray-600">Your review has been submitted.</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Thank You!</h2>
+            <p className="text-gray-600 dark:text-gray-400">Your review has been submitted.</p>
           </div>
         )}
       </div>

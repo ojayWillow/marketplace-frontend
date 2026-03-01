@@ -9,13 +9,13 @@ const ErrorState = ({ error, onRetry }: ErrorStateProps) => {
   const { t } = useTranslation();
   
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center bg-white p-8 rounded-xl shadow-lg">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+      <div className="text-center bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg dark:shadow-gray-950/50 border border-transparent dark:border-gray-800">
         <div className="text-5xl mb-4">⚠️</div>
-        <div className="text-2xl font-bold text-red-600 mb-2">
+        <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">
           {t('tasks.errorTitle', 'Oops!')}
         </div>
-        <div className="text-gray-600 mb-4">{error}</div>
+        <div className="text-gray-600 dark:text-gray-400 mb-4">{error}</div>
         <button 
           onClick={onRetry} 
           className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors"
