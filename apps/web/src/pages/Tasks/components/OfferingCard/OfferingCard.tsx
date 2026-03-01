@@ -27,14 +27,14 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
   return (
     <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
       isBoosted
-        ? 'border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 hover:border-amber-400 ring-1 ring-amber-200'
-        : 'border-gray-200 hover:border-amber-300'
+        ? 'border-amber-300 dark:border-amber-500/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 hover:border-amber-400 ring-1 ring-amber-200 dark:ring-amber-700/40'
+        : 'border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-500/50 dark:bg-gray-900'
     }`}>
       <Link to={`/offerings/${offering.id}`} className="block">
         {/* Boosted badge */}
         {isBoosted && (
-          <div className="flex items-center gap-2 mb-2 text-amber-700">
-            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-200 to-orange-200 rounded text-xs font-semibold">🔥 {t('offerings.boostedOnMap', 'Boosted - Visible on map!')}</span>
+          <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400">
+            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-200 to-orange-200 dark:from-amber-800/40 dark:to-orange-800/40 rounded text-xs font-semibold">🔥 {t('offerings.boostedOnMap', 'Boosted - Visible on map!')}</span>
           </div>
         )}
 
@@ -42,7 +42,7 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
           {/* Avatar */}
           <div className="flex-shrink-0">
             {offering.creator_avatar ? (
-              <img src={offering.creator_avatar} alt={offering.creator_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-amber-200" />
+              <img src={offering.creator_avatar} alt={offering.creator_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-amber-200 dark:border-amber-700" />
             ) : (
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg sm:text-xl font-bold">
                 {offering.creator_name?.charAt(0)?.toUpperCase() || '?'}
@@ -52,19 +52,19 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{offering.title}</h4>
-            <p className="text-xs text-gray-500 mb-1">{t('offerings.provider', 'by')} {offering.creator_name}</p>
+            <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm sm:text-base">{offering.title}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('offerings.provider', 'by')} {offering.creator_name}</p>
 
             {/* Rating */}
             {offering.creator_rating !== undefined && offering.creator_rating > 0 && (
               <div className="flex items-center gap-1 mb-2">
                 <StarRating rating={offering.creator_rating} />
-                <span className="text-xs sm:text-sm text-gray-500">({offering.creator_review_count || 0})</span>
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">({offering.creator_review_count || 0})</span>
               </div>
             )}
 
             {/* Price - GREEN (money color) */}
-            <div className="text-base sm:text-lg font-bold text-green-600 mb-2">
+            <div className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400 mb-2">
               €{offering.price || 0}
               {offering.price_type === 'hourly' && t('common.perHour', '/hr')}
               {offering.price_type === 'fixed' && ` ${t('common.fixed', 'fixed')}`}
@@ -73,8 +73,8 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
 
             {/* Category & Distance - Orange badge */}
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded">{getCategoryLabel(offering.category)}</span>
-              <span className="text-gray-500">📍 {distance.toFixed(1)}km</span>
+              <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded">{getCategoryLabel(offering.category)}</span>
+              <span className="text-gray-500 dark:text-gray-400">📍 {distance.toFixed(1)}km</span>
             </div>
           </div>
         </div>
