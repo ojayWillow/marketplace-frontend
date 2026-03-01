@@ -1,8 +1,3 @@
-/**
- * MapLoadingOverlay - Shows loading state on the map when filters change
- * This provides instant feedback when users change radius or other filters
- */
-
 import { useTranslation } from 'react-i18next';
 
 interface MapLoadingOverlayProps {
@@ -23,9 +18,9 @@ const MapLoadingOverlay = ({ isLoading, message }: MapLoadingOverlayProps) => {
         backdropFilter: 'blur(2px)'
       }}
     >
-      <div className="bg-white rounded-xl shadow-lg px-6 py-4 flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-950/50 px-6 py-4 flex items-center gap-3">
         <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full" />
-        <span className="font-medium text-gray-700">
+        <span className="font-medium text-gray-700 dark:text-gray-300">
           {message || t('map.loading', 'Loading...')}
         </span>
       </div>

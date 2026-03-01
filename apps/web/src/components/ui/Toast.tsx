@@ -12,26 +12,26 @@ export interface ToastProps {
 
 const typeStyles: Record<ToastType, { bg: string; icon: string; iconBg: string; border: string }> = {
   success: {
-    bg: 'bg-green-50',
-    border: 'border-green-300',
+    bg: 'bg-green-50 dark:bg-green-900/30',
+    border: 'border-green-300 dark:border-green-700',
     iconBg: 'bg-green-500 text-white',
     icon: '✓',
   },
   error: {
-    bg: 'bg-red-50',
-    border: 'border-red-300',
+    bg: 'bg-red-50 dark:bg-red-900/30',
+    border: 'border-red-300 dark:border-red-700',
     iconBg: 'bg-red-500 text-white',
     icon: '✗',
   },
   warning: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-300',
+    bg: 'bg-amber-50 dark:bg-amber-900/30',
+    border: 'border-amber-300 dark:border-amber-700',
     iconBg: 'bg-amber-500 text-white',
     icon: '⚠',
   },
   info: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-300',
+    bg: 'bg-blue-50 dark:bg-blue-900/30',
+    border: 'border-blue-300 dark:border-blue-700',
     iconBg: 'bg-blue-500 text-white',
     icon: 'ℹ',
   },
@@ -66,10 +66,10 @@ export default function Toast({ id, message, type, duration = 4000, onClose }: T
       <span className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-base font-bold flex-shrink-0 ${styles.iconBg}`}>
         {styles.icon}
       </span>
-      <p className="flex-1 text-gray-800 font-medium text-sm">{message}</p>
+      <p className="flex-1 text-gray-800 dark:text-gray-200 font-medium text-sm">{message}</p>
       <button
         onClick={handleClose}
-        className="text-gray-400 hover:text-gray-600 text-lg sm:text-xl font-bold flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-lg sm:text-xl font-bold flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         aria-label="Close notification"
       >
         ×
