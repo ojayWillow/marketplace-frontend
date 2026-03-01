@@ -44,9 +44,6 @@ export const MobileMenu = ({
         <NavLink to="/" end className={navLinkClass} onClick={onClose}>
           {t('common.home')}
         </NavLink>
-        <NavLink to="/tasks" className={navLinkClass} onClick={onClose}>
-          {t('common.quickHelp')}
-        </NavLink>
         {isAuthenticated && (
           <>
             <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
