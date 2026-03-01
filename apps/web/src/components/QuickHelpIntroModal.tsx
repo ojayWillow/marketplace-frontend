@@ -55,7 +55,7 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
       {/* Full-screen modal */}
       <div className="fixed inset-0 z-[10000] bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-y-auto">
         <div className="min-h-full px-4 py-6 sm:py-8 flex flex-col items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl dark:shadow-gray-950/50 w-full max-w-md">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-6 text-center rounded-t-2xl relative">
               {/* Close button — only when re-viewing */}
@@ -83,10 +83,10 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                 {communityRules.map((rule, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl"
                   >
                     <span className="text-2xl flex-shrink-0">{rule.icon}</span>
-                    <span className="text-sm sm:text-base font-medium text-gray-800">
+                    <span className="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200">
                       {rule.text}
                     </span>
                   </div>
@@ -100,9 +100,9 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                     type="checkbox"
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
-                    className="mt-0.5 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+                    className="mt-0.5 w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
                   />
-                  <span className="text-sm text-gray-700 group-hover:text-gray-900 leading-snug">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 leading-snug">
                     {t('community.agreeText', 'I agree to the Community Rules,')}{' '}
                     <button
                       type="button"
@@ -110,7 +110,7 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                         e.preventDefault();
                         setShowTermsModal(true);
                       }}
-                      className="text-blue-600 hover:text-blue-700 underline font-medium"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline font-medium"
                     >
                       {t('community.termsLink', 'Terms of Service & Privacy Policy')}
                     </button>
@@ -125,7 +125,7 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                 className={`w-full py-3.5 rounded-xl font-bold text-base text-white transition-all ${
                   canContinue
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]'
-                    : 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                 }`}
               >
                 {showCheckboxes
@@ -138,7 +138,7 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
 
               {/* Footer hint — only on first time */}
               {showCheckboxes && (
-                <p className="text-center text-xs text-gray-400 mt-4">
+                <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
                   {t('community.accessLater', 'You can review these rules anytime from the')}{' '}
                   <span className="font-medium">❓ {t('quickHelp.howItWorks', 'How it works')}</span>{' '}
                   {t('common.button', 'button')}
@@ -152,15 +152,15 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
       {/* Terms & Privacy sub-modal */}
       {showTermsModal && (
         <div className="fixed inset-0 z-[10001] bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl dark:shadow-gray-950/50 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {t('community.termsModalTitle', 'Terms of Service & Privacy Policy')}
               </h3>
               <button
                 onClick={() => setShowTermsModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none"
               >
                 ×
               </button>
@@ -168,12 +168,12 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              <div className="prose prose-sm max-w-none">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">{t('community.tosHeading', 'Terms of Service')}</h4>
-                <p className="text-gray-700 mb-4">
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('community.tosHeading', 'Terms of Service')}</h4>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
                   {t('community.tosIntro', 'By using Kolab, you agree to use the platform responsibly and in good faith. You agree to:')}
                 </p>
-                <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-6">
+                <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300 mb-6">
                   <li>{t('community.tosAccurateInfo', 'Provide accurate information in your job postings or service offerings')}</li>
                   <li>{t('community.tosCompleteJobs', 'Complete jobs you commit to as a helper')}</li>
                   <li>{t('community.tosPayFairly', 'Pay helpers fairly and promptly for completed work')}</li>
@@ -182,11 +182,11 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                   <li>{t('community.tosReportIssues', 'Report any issues or disputes through proper channels')}</li>
                 </ul>
 
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">{t('community.privacyHeading', 'Privacy Policy')}</h4>
-                <p className="text-gray-700 mb-4">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('community.privacyHeading', 'Privacy Policy')}</h4>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
                   {t('community.privacyIntro', 'We respect your privacy and are committed to protecting your personal data.')}
                 </p>
-                <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-6">
+                <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300 mb-6">
                   <li><strong>{t('community.privacyCollect', 'Information we collect:')}</strong> {t('community.privacyCollectDesc', 'Profile information, location data (for showing nearby jobs), job/offering details, messages between users')}</li>
                   <li><strong>{t('community.privacyUse', 'How we use it:')}</strong> {t('community.privacyUseDesc', 'To connect job posters with helpers, show relevant opportunities, facilitate communication, and improve the service')}</li>
                   <li><strong>{t('community.privacyShare', 'Data sharing:')}</strong> {t('community.privacyShareDesc', 'We do not sell your personal data. Location and profile info is shared with other users only as needed for the service (e.g., showing your job on the map)')}</li>
@@ -194,21 +194,21 @@ const CommunityRulesModal = ({ isOpen, onClose, showCheckboxes = true }: Communi
                   <li><strong>{t('community.privacySecurity', 'Security:')}</strong> {t('community.privacySecurityDesc', 'We use industry-standard security measures to protect your data')}</li>
                 </ul>
 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {t('community.fullDetailsText', 'For full details, visit our')}{' '}
-                  <Link to="/terms" className="text-blue-600 hover:underline">{t('community.termsOfServiceLink', 'Terms of Service')}</Link>
+                  <Link to="/terms" className="text-blue-600 dark:text-blue-400 hover:underline">{t('community.termsOfServiceLink', 'Terms of Service')}</Link>
                   {' '}{t('common.and', 'and')}{' '}
-                  <Link to="/privacy" className="text-blue-600 hover:underline">{t('community.privacyPolicyLink', 'Privacy Policy')}</Link>
+                  <Link to="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">{t('community.privacyPolicyLink', 'Privacy Policy')}</Link>
                   {' '}{t('community.pagesText', 'pages.')}
                 </p>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
               <button
                 onClick={() => setShowTermsModal(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-gray-700"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg font-medium text-gray-700 dark:text-gray-300"
               >
                 {t('common.close', 'Close')}
               </button>
