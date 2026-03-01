@@ -95,6 +95,11 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
+  const handleStartEditing = () => {
+    setEditing(true);
+    setActiveTab('about');
+  };
+
   if (loading) {
     return <LoadingState />;
   }
@@ -195,7 +200,7 @@ const Profile = () => {
     );
   }
 
-  // Desktop layout — unchanged
+  // Desktop layout
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-6 animate-page-enter">
       <div className="max-w-4xl mx-auto px-4">
@@ -205,7 +210,7 @@ const Profile = () => {
           editing={editing}
           saving={saving}
           totalTasksCompleted={totalTasksCompleted}
-          onEdit={() => setEditing(true)}
+          onEdit={handleStartEditing}
           onCancel={() => setEditing(false)}
           onSave={handleSave}
           onChangeAvatar={() => avatarPicker.setShowAvatarPicker(true)}
@@ -231,18 +236,6 @@ const Profile = () => {
           onClose={() => setShowHowItWorks(false)}
           showCheckboxes={false}
         />
-
-        {editing && (
-          <div className="mb-4">
-            <AboutTab
-              profile={profile}
-              editing={editing}
-              formData={formData}
-              onChange={handleChange}
-              onFormDataChange={handleFormDataChange}
-            />
-          </div>
-        )}
 
         <ProfileTabs
           activeTab={activeTab}
