@@ -85,10 +85,10 @@ const LocationModal = ({
   return (
     <div 
       ref={modalRef}
-      className="absolute top-full left-0 right-0 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+      className="absolute top-full left-0 right-0 mt-2 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-gray-950/50 z-50"
     >
       <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           📍 {t('tasks.changeLocation', 'Change Location')}
         </label>
         <input 
@@ -96,23 +96,23 @@ const LocationModal = ({
           value={addressSearch} 
           onChange={(e) => handleAddressInputChange(e.target.value)} 
           placeholder={t('tasks.searchAddress', 'Search address or city...')} 
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500" 
           autoFocus
         />
         {searchingAddress && (
-          <span className="text-sm text-gray-500 mt-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {t('common.loading', 'Searching...')}
           </span>
         )}
       </div>
       
       {showSuggestions && suggestions.length > 0 && (
-        <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+        <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
           {suggestions.map((suggestion, index) => (
             <button 
               key={index} 
               onClick={() => selectSuggestion(suggestion)} 
-              className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b last:border-b-0 text-sm"
+              className="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b dark:border-gray-700 last:border-b-0 text-sm"
             >
               {suggestion.display_name}
             </button>
@@ -120,18 +120,18 @@ const LocationModal = ({
         </div>
       )}
       
-      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
         {manualLocationSet && (
           <button 
             onClick={onResetToAuto} 
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
             {t('tasks.resetLocation', 'Reset to auto-detect')}
           </button>
         )}
         <button 
           onClick={onClose} 
-          className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          className="ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
         >
           {t('common.close', 'Close')}
         </button>
