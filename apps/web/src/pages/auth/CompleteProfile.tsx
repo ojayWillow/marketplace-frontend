@@ -660,7 +660,7 @@ export default function CompleteProfile() {
                 <span className="text-gray-600">({t('onboarding.alertCatHint', 'empty = all')})</span>
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {AVAILABLE_SKILLS.slice(0, 8).map(skill => {
+                {AVAILABLE_SKILLS.map(skill => {
                   const isSelected = data.jobAlertCategories.includes(skill.key)
                   return (
                     <button
