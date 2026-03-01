@@ -4,4 +4,3 @@ export { default as DeadlinePicker } from './DeadlinePicker';
 export { default as LocationInput } from './LocationInput';
 export { default as BudgetInput } from './BudgetInput';
 export { default as UrgentToggle } from './UrgentToggle';
-export { default as FormTips } from './FormTips';
