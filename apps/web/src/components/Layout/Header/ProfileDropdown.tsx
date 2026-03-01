@@ -47,7 +47,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         aria-label={t('header.userMenu', 'User menu')}
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -56,30 +56,30 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
           <img 
             src={user.avatar_url || user.profile_picture_url} 
             alt="" 
-            className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
+            className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center ring-2 ring-gray-200" aria-hidden="true">
-            <span className="text-gray-500 text-sm font-medium">
+          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700" aria-hidden="true">
+            <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
               {user?.username?.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
         <div 
-          className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]"
+          className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700 py-2 z-[9999]"
           role="menu"
           aria-label={t('header.userMenu', 'User menu')}
         >
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
           </div>
           
           {/* Menu Items */}
@@ -87,7 +87,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
             <Link
               to="/profile"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               role="menuitem"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -99,7 +99,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
             <Link
               to="/profile?tab=tasks"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               role="menuitem"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -107,7 +107,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
               </svg>
               {t('menu.myTasks')}
               {taskNotificationCount > 0 && (
-                <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-600 rounded-full">
+                <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
                   {taskNotificationCount}
                 </span>
               )}
@@ -116,7 +116,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
             <Link
               to="/profile?tab=listings"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               role="menuitem"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -128,7 +128,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
             <Link
               to="/messages"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               role="menuitem"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -136,7 +136,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
               </svg>
               {t('menu.messages')}
               {notifications.unreadMessages > 0 && (
-                <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
+                <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
                   {notifications.unreadMessages}
                 </span>
               )}
@@ -144,11 +144,11 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
           </div>
           
           {/* Quick Actions */}
-          <div className="border-t border-gray-100 py-1" role="none">
+          <div className="border-t border-gray-100 dark:border-gray-800 py-1" role="none">
             <Link
               to="/tasks/create"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               role="menuitem"
             >
               <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -160,7 +160,7 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
             <Link
               to="/offerings/create"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               role="menuitem"
             >
               <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -171,13 +171,13 @@ export const ProfileDropdown = ({ user, notifications, onLogout }: ProfileDropdo
           </div>
           
           {/* Logout */}
-          <div className="border-t border-gray-100 py-1" role="none">
+          <div className="border-t border-gray-100 dark:border-gray-800 py-1" role="none">
             <button
               onClick={() => {
                 setIsOpen(false);
                 onLogout();
               }}
-              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
               role="menuitem"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
