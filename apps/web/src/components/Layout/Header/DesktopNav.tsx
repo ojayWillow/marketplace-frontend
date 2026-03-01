@@ -1,6 +1,3 @@
-import { NavLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
     ? 'bg-primary-100 text-primary-700'
@@ -8,13 +5,8 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export const DesktopNav = () => {
-  const { t } = useTranslation();
-
   return (
     <nav className="hidden md:flex items-center space-x-1" aria-label="Main navigation">
-      <NavLink to="/" end className={navLinkClass}>
-        {t('common.home')}
-      </NavLink>
     </nav>
   );
 };

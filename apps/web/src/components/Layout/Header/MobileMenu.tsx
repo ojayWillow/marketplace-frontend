@@ -41,9 +41,6 @@ export const MobileMenu = ({
       aria-label="Mobile navigation"
     >
       <nav className="flex flex-col space-y-2">
-        <NavLink to="/" end className={navLinkClass} onClick={onClose}>
-          {t('common.home')}
-        </NavLink>
         {isAuthenticated && (
           <>
             <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
