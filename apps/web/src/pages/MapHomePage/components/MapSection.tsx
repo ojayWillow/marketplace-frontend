@@ -1,7 +1,23 @@
 import { useTranslation } from 'react-i18next';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { useEffect } from 'react';
 import { MapMarkers } from '../../Tasks/components/Map';
 import { MapLoadingOverlay } from '../../Tasks/components/Banners';
+
+// Cleanup component to stop Leaflet animations on unmount
+const MapCleanup = () => {
+  const map = useMap();
+  useEffect(() => {
+    return () => {
+      try {
+        map.stop();
+      } catch {
+        // map may already be removed
+      }
+    };
+  }, [map]);
+  return null;
+};
 
 interface MapSectionProps {
   userLocation: { lat: number; lng: number };
@@ -61,6 +77,7 @@ const MapSection = ({
       <div className="relative" style={{ height: '500px' }}>
         <MapLoadingOverlay isLoading={refreshing} searchRadius={searchRadius} />
         <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <MapCleanup />
           <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <MapMarkers
             tasks={mapTasks}

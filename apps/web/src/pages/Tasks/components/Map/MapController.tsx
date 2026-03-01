@@ -8,18 +8,15 @@ interface MapControllerProps {
   radius: number;
 }
 
-// Map component that handles recentering and zoom based on radius
 const MapController = ({ lat, lng, radius }: MapControllerProps) => {
   const map = useMap();
 
   useEffect(() => {
-    // Calculate zoom level based on radius
-    // 0 = All Latvia, use zoom 7 and center on Latvia
-    // Otherwise zoom based on radius
+    if (!map || !map.getContainer()) return;
+
     if (radius === 0) {
       map.setView([LATVIA_CENTER.lat, LATVIA_CENTER.lng], LATVIA_ZOOM);
     } else {
-      // Zoom levels: 5km=13, 10km=12, 25km=11, 50km=10, 100km=9
       let zoom = 13;
       if (radius <= 5) zoom = 13;
       else if (radius <= 10) zoom = 12;
@@ -31,6 +28,19 @@ const MapController = ({ lat, lng, radius }: MapControllerProps) => {
       map.setView([lat, lng], zoom);
     }
   }, [lat, lng, radius, map]);
+
+  // Stop all animations and clean up on unmount to prevent _leaflet_pos errors
+  useEffect(() => {
+    return () => {
+      if (map) {
+        try {
+          map.stop();
+        } catch {
+          // map may already be removed
+        }
+      }
+    };
+  }, [map]);
 
   return null;
 };
