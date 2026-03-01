@@ -15,9 +15,6 @@ export const DesktopNav = () => {
       <NavLink to="/" end className={navLinkClass}>
         {t('common.home')}
       </NavLink>
-      <NavLink to="/tasks" className={navLinkClass}>
-        {t('common.quickHelp')}
-      </NavLink>
     </nav>
   );
 };
