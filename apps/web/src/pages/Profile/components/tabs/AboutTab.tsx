@@ -15,7 +15,7 @@ export const AboutTab = ({ profile, editing, formData, onChange, onFormDataChang
   const { t, i18n } = useTranslation();
 
   const isPlaceholderEmail = (email: string) => {
-    return email.includes('@phone.tirgus.local');
+    return email.includes('@phone.kolab.local');
   };
 
   const displayEmail = profile.email && !isPlaceholderEmail(profile.email) ? profile.email : null;
