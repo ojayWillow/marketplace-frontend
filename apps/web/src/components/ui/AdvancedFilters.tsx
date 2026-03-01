@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 export interface FilterValues {
   minPrice: number;
   maxPrice: number;
-  distance: number; // 0 = all
+  distance: number;
   datePosted: 'all' | 'today' | 'week' | 'month';
   category: string;
 }
@@ -18,7 +18,6 @@ interface AdvancedFiltersProps {
   variant?: 'jobs' | 'offerings' | 'listings';
 }
 
-// Custom dual range slider component
 const DualRangeSlider = ({
   min,
   max,
@@ -55,30 +54,25 @@ const DualRangeSlider = ({
   useEffect(() => {
     const handleMove = (clientX: number) => {
       if (!dragging || !trackRef.current) return;
-      
       const rect = trackRef.current.getBoundingClientRect();
       const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
       const rawValue = min + (percent / 100) * (max - min);
       const value = Math.round(rawValue / step) * step;
-
       if (dragging === 'min') {
         onChange(Math.min(value, maxValue - step), maxValue);
       } else {
         onChange(minValue, Math.max(value, minValue + step));
       }
     };
-
     const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX);
     const handleTouchMove = (e: TouchEvent) => handleMove(e.touches[0].clientX);
     const handleEnd = () => setDragging(null);
-
     if (dragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleTouchMove);
       document.addEventListener('touchend', handleEnd);
     }
-
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleEnd);
@@ -91,17 +85,17 @@ const DualRangeSlider = ({
     blue: {
       track: 'bg-blue-500',
       thumb: 'border-blue-500 hover:border-blue-600',
-      thumbActive: 'border-blue-600 ring-2 ring-blue-200'
+      thumbActive: 'border-blue-600 ring-2 ring-blue-200 dark:ring-blue-800'
     },
     amber: {
       track: 'bg-amber-500',
       thumb: 'border-amber-500 hover:border-amber-600',
-      thumbActive: 'border-amber-600 ring-2 ring-amber-200'
+      thumbActive: 'border-amber-600 ring-2 ring-amber-200 dark:ring-amber-800'
     },
     green: {
       track: 'bg-green-500',
       thumb: 'border-green-500 hover:border-green-600',
-      thumbActive: 'border-green-600 ring-2 ring-green-200'
+      thumbActive: 'border-green-600 ring-2 ring-green-200 dark:ring-green-800'
     }
   };
 
@@ -109,15 +103,11 @@ const DualRangeSlider = ({
 
   return (
     <div className="relative pt-6 pb-2">
-      {/* Value labels */}
-      <div className="absolute -top-1 left-0 right-0 flex justify-between text-xs font-medium text-gray-700">
-        <span className="bg-white px-1">{formatValue(minValue)}</span>
-        <span className="bg-white px-1">{formatValue(maxValue)}</span>
+      <div className="absolute -top-1 left-0 right-0 flex justify-between text-xs font-medium text-gray-700 dark:text-gray-300">
+        <span className="bg-white dark:bg-gray-900 px-1">{formatValue(minValue)}</span>
+        <span className="bg-white dark:bg-gray-900 px-1">{formatValue(maxValue)}</span>
       </div>
-      
-      {/* Track */}
-      <div ref={trackRef} className="relative h-2 bg-gray-200 rounded-full cursor-pointer">
-        {/* Active range */}
+      <div ref={trackRef} className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer">
         <div
           className={`absolute h-full ${colors.track} rounded-full`}
           style={{
@@ -125,20 +115,16 @@ const DualRangeSlider = ({
             width: `${getPercent(maxValue) - getPercent(minValue)}%`
           }}
         />
-        
-        {/* Min thumb */}
         <div
-          className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-2 rounded-full cursor-grab active:cursor-grabbing transition-shadow ${
+          className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-gray-200 border-2 rounded-full cursor-grab active:cursor-grabbing transition-shadow ${
             dragging === 'min' ? colors.thumbActive : colors.thumb
           }`}
           style={{ left: `calc(${getPercent(minValue)}% - 10px)` }}
           onMouseDown={handleMouseDown('min')}
           onTouchStart={handleTouchStart('min')}
         />
-        
-        {/* Max thumb */}
         <div
-          className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-2 rounded-full cursor-grab active:cursor-grabbing transition-shadow ${
+          className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-gray-200 border-2 rounded-full cursor-grab active:cursor-grabbing transition-shadow ${
             dragging === 'max' ? colors.thumbActive : colors.thumb
           }`}
           style={{ left: `calc(${getPercent(maxValue)}% - 10px)` }}
@@ -146,9 +132,7 @@ const DualRangeSlider = ({
           onTouchStart={handleTouchStart('max')}
         />
       </div>
-
-      {/* Scale markers */}
-      <div className="flex justify-between mt-1 text-[10px] text-gray-400">
+      <div className="flex justify-between mt-1 text-[10px] text-gray-400 dark:text-gray-500">
         <span>{formatValue(min)}</span>
         <span>{formatValue(max)}</span>
       </div>
@@ -156,7 +140,6 @@ const DualRangeSlider = ({
   );
 };
 
-// Single range slider for distance
 const SingleRangeSlider = ({
   min,
   max,
@@ -175,20 +158,16 @@ const SingleRangeSlider = ({
   accentColor?: 'blue' | 'amber' | 'red';
 }) => {
   const { t } = useTranslation();
-  
   const colorClasses = {
     blue: 'accent-blue-500',
     amber: 'accent-amber-500',
     red: 'accent-red-500'
   };
-
-  // Find closest step
   const getClosestStep = (val: number) => {
     return steps.reduce((prev, curr) => 
       Math.abs(curr - val) < Math.abs(prev - val) ? curr : prev
     );
   };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = parseInt(e.target.value);
     onChange(getClosestStep(rawValue));
@@ -197,7 +176,7 @@ const SingleRangeSlider = ({
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {value === 0 ? t('tasks.allLatvia', 'All Latvia') : formatValue(value)}
         </span>
       </div>
@@ -207,11 +186,11 @@ const SingleRangeSlider = ({
         max={max}
         value={value}
         onChange={handleChange}
-        className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${colorClasses[accentColor]}`}
+        className={`w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer ${colorClasses[accentColor]}`}
       />
-      <div className="flex justify-between text-[10px] text-gray-400">
+      <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
         {steps.map((step, i) => (
-          <span key={step} className={value === step ? 'text-gray-700 font-medium' : ''}>
+          <span key={step} className={value === step ? 'text-gray-700 dark:text-gray-300 font-medium' : ''}>
             {step === 0 ? '🇱🇻' : `${step}km`}
           </span>
         ))}
@@ -229,11 +208,8 @@ export default function AdvancedFilters({
   variant = 'jobs'
 }: AdvancedFiltersProps) {
   const { t } = useTranslation();
-
   const accentColor = variant === 'offerings' ? 'amber' : 'blue';
-
-  const distanceSteps = [5, 10, 25, 50, 100, 0]; // 0 = all
-
+  const distanceSteps = [5, 10, 25, 50, 100, 0];
   const dateOptions = [
     { value: 'all', label: t('filters.anyTime', 'Any time') },
     { value: 'today', label: t('filters.today', 'Today') },
@@ -244,19 +220,15 @@ export default function AdvancedFilters({
   const handlePriceChange = (min: number, max: number) => {
     onChange({ ...filters, minPrice: min, maxPrice: max });
   };
-
   const handleDistanceChange = (distance: number) => {
     onChange({ ...filters, distance });
   };
-
   const handleDateChange = (date: 'all' | 'today' | 'week' | 'month') => {
     onChange({ ...filters, datePosted: date });
   };
-
   const handleCategoryChange = (category: string) => {
     onChange({ ...filters, category });
   };
-
   const resetFilters = () => {
     onChange({
       minPrice: 0,
@@ -266,7 +238,6 @@ export default function AdvancedFilters({
       category: 'all'
     });
   };
-
   const hasActiveFilters = 
     filters.minPrice > 0 || 
     filters.maxPrice < maxPriceLimit || 
@@ -274,24 +245,22 @@ export default function AdvancedFilters({
 
   return (
     <div className="space-y-5">
-      {/* Header with reset */}
       <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <span>⚙️</span> {t('filters.advancedFilters', 'Advanced Filters')}
         </h3>
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
-            className="text-sm text-gray-500 hover:text-gray-700 underline"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline"
           >
             {t('filters.reset', 'Reset')}
           </button>
         )}
       </div>
 
-      {/* Price Range */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           💰 {variant === 'jobs' ? t('filters.budget', 'Budget') : t('filters.price', 'Price')}
         </label>
         <DualRangeSlider
@@ -306,9 +275,8 @@ export default function AdvancedFilters({
         />
       </div>
 
-      {/* Distance */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           📍 {t('filters.distance', 'Distance')}
         </label>
         <SingleRangeSlider
@@ -322,9 +290,8 @@ export default function AdvancedFilters({
         />
       </div>
 
-      {/* Date Posted */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           📅 {t('filters.datePosted', 'Date posted')}
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -337,7 +304,7 @@ export default function AdvancedFilters({
                   ? variant === 'offerings'
                     ? 'bg-amber-500 text-white'
                     : 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {option.label}
@@ -346,16 +313,15 @@ export default function AdvancedFilters({
         </div>
       </div>
 
-      {/* Category (optional) */}
       {showCategory && categoryOptions.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             🏷️ {t('filters.category', 'Category')}
           </label>
           <select
             value={filters.category}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 ${
+            className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 ${
               variant === 'offerings' ? 'focus:ring-amber-500' : 'focus:ring-blue-500'
             } focus:border-transparent`}
           >
@@ -368,25 +334,24 @@ export default function AdvancedFilters({
         </div>
       )}
 
-      {/* Active filters summary */}
       {hasActiveFilters && (
         <div className={`p-3 rounded-lg text-sm ${
-          variant === 'offerings' ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-800'
+          variant === 'offerings' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
         }`}>
           <span className="font-medium">{t('filters.activeFilters', 'Active filters')}:</span>
           <div className="flex flex-wrap gap-2 mt-2">
             {filters.minPrice > 0 && (
-              <span className="px-2 py-1 bg-white rounded text-xs">
+              <span className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs">
                 {t('filters.minPrice', 'Min')}: €{filters.minPrice}
               </span>
             )}
             {filters.maxPrice < maxPriceLimit && (
-              <span className="px-2 py-1 bg-white rounded text-xs">
+              <span className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs">
                 {t('filters.maxPrice', 'Max')}: €{filters.maxPrice}
               </span>
             )}
             {filters.datePosted !== 'all' && (
-              <span className="px-2 py-1 bg-white rounded text-xs">
+              <span className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs">
                 📅 {dateOptions.find(d => d.value === filters.datePosted)?.label}
               </span>
             )}
@@ -397,16 +362,13 @@ export default function AdvancedFilters({
   );
 }
 
-// Utility function to filter items by date
 export const filterByDate = <T extends { created_at?: string }>(
   items: T[],
   dateFilter: 'all' | 'today' | 'week' | 'month'
 ): T[] => {
   if (dateFilter === 'all') return items;
-
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
   let cutoffDate: Date;
   switch (dateFilter) {
     case 'today':
@@ -421,14 +383,12 @@ export const filterByDate = <T extends { created_at?: string }>(
     default:
       return items;
   }
-
   return items.filter(item => {
     if (!item.created_at) return true;
     return new Date(item.created_at) >= cutoffDate;
   });
 };
 
-// Utility function to filter items by price range
 export const filterByPrice = <T extends { budget?: number; reward?: number; price?: number }>(
   items: T[],
   minPrice: number,
