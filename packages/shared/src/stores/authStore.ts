@@ -6,13 +6,12 @@ import type { Session } from '@supabase/supabase-js';
 interface AuthState {
   user: User | null;
   session: Session | null;
+  /** Legacy JWT from backend (phone login). Used until backend returns Supabase sessions. */
+  legacyToken: string | null;
   isAuthenticated: boolean;
   isPhoneVerified: boolean;
   isInitialized: boolean;
   _hasHydrated: boolean;
-
-  // Computed
-  readonly token: string | null;
 
   // Helpers
   needsPhoneVerification: () => boolean;
@@ -33,17 +32,20 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   session: null,
+  legacyToken: null,
   isAuthenticated: false,
   isPhoneVerified: false,
   isInitialized: false,
-  _hasHydrated: true, // No longer using zustand/persist, always hydrated
+  _hasHydrated: true,
 
-  get token() {
-    return get().session?.access_token ?? null;
-  },
-
+  /**
+   * Get the best available token:
+   * 1. Supabase session access_token (preferred, auto-refreshed)
+   * 2. Legacy backend JWT (phone login fallback)
+   */
   getToken: () => {
-    return get().session?.access_token ?? null;
+    const { session, legacyToken } = get();
+    return session?.access_token ?? legacyToken;
   },
 
   setHasHydrated: () => {},
@@ -55,14 +57,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   /**
-   * Set auth from a Supabase session + local user.
-   * Also used by the phone login flow which gets a legacy JWT
-   * from the backend — in that case we store the user but
-   * session stays null until a Supabase session is established.
+   * Set auth from backend response (phone login flow).
+   * Stores the legacy JWT so the API interceptor can use it
+   * until the backend returns Supabase sessions (#52).
    */
-  setAuth: (user, _token) => {
+  setAuth: (user, token) => {
     set({
       user,
+      legacyToken: token,
       isAuthenticated: true,
       isPhoneVerified: user.phone_verified ?? false,
     });
@@ -71,7 +73,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   setSession: (session) => {
     set({
       session,
-      isAuthenticated: session !== null,
+      isAuthenticated: session !== null || get().legacyToken !== null,
     });
   },
 
@@ -97,10 +99,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({
       user: null,
       session: null,
+      legacyToken: null,
       isAuthenticated: false,
       isPhoneVerified: false,
     });
-    // Clean up any legacy storage
     try {
       localStorage.removeItem('auth-storage');
     } catch (_) {}
@@ -108,18 +110,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   /**
    * Initialize auth: restore Supabase session and listen for changes.
-   * Call this once at app startup (e.g., in App.tsx or main.tsx).
+   * Call once at app startup (App.tsx).
    * Returns an unsubscribe function.
    */
   initAuth: async () => {
-    const { setSession, setUser } = get();
-
-    // 1. Restore existing session
+    // 1. Restore existing Supabase session
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        setSession(session);
-        // Sync local user from backend
+        set({ session, isAuthenticated: true });
         await syncLocalUser(session.access_token, set);
       }
     } catch (e) {
@@ -128,13 +127,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     set({ isInitialized: true });
 
-    // 2. Listen for auth state changes (login, logout, token refresh)
+    // 2. Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.debug('[Auth] State change:', event);
-        setSession(session);
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          set({ session, isAuthenticated: true, legacyToken: null });
           if (session) {
             await syncLocalUser(session.access_token, set);
           }
@@ -144,6 +143,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           set({
             user: null,
             session: null,
+            legacyToken: null,
             isAuthenticated: false,
             isPhoneVerified: false,
           });
@@ -156,15 +156,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 }));
 
 /**
- * Call backend /auth/sync-user to ensure local user exists
- * and get the full user profile.
+ * Call backend /auth/sync-user to get/create the local user profile.
  */
 async function syncLocalUser(
   accessToken: string,
   set: (state: Partial<AuthState>) => void
 ) {
   try {
-    // Dynamic import to avoid circular dependency with apiClient
     const { default: apiClient } = await import('../api/client');
     const response = await apiClient.post(
       '/api/auth/sync-user',
@@ -183,5 +181,4 @@ async function syncLocalUser(
   }
 }
 
-// Legacy export for createAuthStore (no longer needed but keeps imports working)
 export const createAuthStore = () => useAuthStore;
