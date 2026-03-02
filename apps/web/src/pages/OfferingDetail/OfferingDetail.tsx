@@ -13,7 +13,7 @@ import {
   OfferingDetailsSection,
   OfferingBoostSection,
   OfferingLocationMap,
-  MatchingJobsSection,
+  // MatchingJobsSection — disabled: will be a premium feature
   HowItWorksSection,
 } from './components';
 import { useOfferingActions } from './hooks';
@@ -177,12 +177,17 @@ const OfferingDetail = () => {
           )}
         </div>
 
-        {/* Matching Jobs & How it works — only for the offering owner */}
+        {/* MatchingJobsSection — disabled: will be a premium feature
         {isOwner && (
           <>
             <MatchingJobsSection offering={offering} userId={user?.id} />
-            <HowItWorksSection />
           </>
+        )}
+        */}
+
+        {/* How it works — keep visible for all */}
+        {isOwner && (
+          <HowItWorksSection />
         )}
       </div>
 
