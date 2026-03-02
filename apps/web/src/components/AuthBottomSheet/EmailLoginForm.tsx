@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Eye, EyeOff, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useLogin } from '../../hooks/useAuth';
+import { useAuthStore } from '@marketplace/shared';
+import { supabase } from '../../lib/supabase';
 
 interface EmailLoginFormProps {
   onBack: () => void;
@@ -12,15 +13,37 @@ interface EmailLoginFormProps {
 
 export default function EmailLoginForm({ onBack, onClose, onSuccess }: EmailLoginFormProps) {
   const { t } = useTranslation();
-  const login = useLogin();
+  const { initAuth } = useAuthStore();
   const [emailForm, setEmailForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login.mutate(emailForm, {
-      onSuccess: () => onSuccess(),
-    });
+    setIsPending(true);
+    setIsError(false);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: emailForm.email,
+        password: emailForm.password,
+      });
+
+      if (error) {
+        setIsError(true);
+        setIsPending(false);
+        return;
+      }
+
+      // Re-init auth store with the new session
+      await initAuth();
+      onSuccess();
+    } catch {
+      setIsError(true);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -34,7 +57,7 @@ export default function EmailLoginForm({ onBack, onClose, onSuccess }: EmailLogi
         {t('auth.backToPhone', 'Back to phone sign in')}
       </button>
 
-      {login.isError && (
+      {isError && (
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
           <p className="text-red-600 dark:text-red-400 text-sm text-center">
             {t('auth.loginError', 'Invalid email or password')}
@@ -88,10 +111,10 @@ export default function EmailLoginForm({ onBack, onClose, onSuccess }: EmailLogi
         </div>
         <button
           type="submit"
-          disabled={login.isPending}
+          disabled={isPending}
           className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
         >
-          {login.isPending ? (
+          {isPending ? (
             <><Loader2 className="w-5 h-5 animate-spin" /> {t('auth.signingIn', 'Signing in...')}</>
           ) : (
             <>{t('auth.signInWithEmail', 'Sign in with Email')} <ArrowRight className="w-5 h-5" /></>
