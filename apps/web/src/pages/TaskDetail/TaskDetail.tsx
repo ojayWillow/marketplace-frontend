@@ -41,6 +41,7 @@ import {
   DisputeSection,
   TaskStatusBanner,
   DesktopApplicationForm,
+  TaskPremiumSection,
 } from './components';
 import { useTaskActions, useTaskDetailData } from './hooks';
 
@@ -384,6 +385,17 @@ const TaskDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Premium section — Urgent + Promote buttons for task creator */}
+          {isCreator && task.status === 'open' && (
+            <TaskPremiumSection
+              taskId={task.id}
+              isUrgentActive={(task as any).is_urgent_active}
+              urgentExpiresAt={(task as any).urgent_expires_at}
+              isPromoteActive={(task as any).is_promote_active}
+              promotedExpiresAt={(task as any).promoted_expires_at}
+            />
+          )}
 
           {/* Location map */}
           <div className="px-4 pb-4 md:px-6 md:pb-6">
