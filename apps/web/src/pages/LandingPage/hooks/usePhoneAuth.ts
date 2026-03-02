@@ -90,11 +90,16 @@ export const usePhoneAuth = () => {
     }
   }, [otpValue, confirmationResult, loading]);
 
-  const formatPhone = (phone: string) => {
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length <= 2) return cleaned;
-    if (cleaned.length <= 4) return `${cleaned.slice(0, 2)} ${cleaned.slice(2)}`;
-    return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5, 8)}`;
+  const formatPhone = (digits: string) => {
+    const d = digits.replace(/\D/g, '').slice(0, 8);
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return `${d.slice(0, 2)} ${d.slice(2)}`;
+    return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 8)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newRaw = e.target.value.replace(/\D/g, '').slice(0, 8);
+    setPhoneNumber(newRaw);
   };
 
   const getFullPhone = () => {
@@ -203,10 +208,6 @@ export const usePhoneAuth = () => {
       } = response.data;
 
       if (token_type === 'supabase' && access_token && refresh_token) {
-        // Set Supabase session — onAuthStateChange will fire SIGNED_IN
-        // and syncLocalUser will fetch the user profile automatically.
-        // We also set the user immediately so navigation works without
-        // waiting for the async sync.
         if (userData) {
           setUser(userData);
         }
@@ -216,7 +217,6 @@ export const usePhoneAuth = () => {
         });
         console.log('Supabase session set successfully');
       } else if (access_token && userData) {
-        // Legacy fallback — backend couldn't generate Supabase session
         setAuth(userData, access_token);
       }
 
@@ -269,6 +269,7 @@ export const usePhoneAuth = () => {
     recaptchaContainerRef,
     otpInputRef,
     formatPhone,
+    handlePhoneChange,
     getFullPhone,
     handleSendCode,
     handleOtpChange,
