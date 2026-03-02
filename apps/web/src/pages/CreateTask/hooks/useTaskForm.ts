@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createTask, geocodeAddress, GeocodingResult, reverseGeocode, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
+import { createTask, createPaymentOrder, geocodeAddress, GeocodingResult, reverseGeocode, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
 import { TaskFormData, INITIAL_TASK_FORM } from '../types';
 
 /**
@@ -204,7 +204,30 @@ export const useTaskForm = () => {
         images: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
-      await createTask(taskData);
+      const response = await createTask(taskData);
+      const createdTaskId = response?.task?.id || response?.id;
+
+      // If premium was selected, trigger payment flow
+      if (formData.premium_type && createdTaskId) {
+        try {
+          toast.info(t('premium.redirectingToPayment', 'Redirecting to payment...'));
+          const paymentResponse = await createPaymentOrder({
+            type: formData.premium_type,
+            target_id: createdTaskId,
+          });
+          // Redirect to Revolut checkout
+          if (paymentResponse.checkout_url) {
+            window.location.href = paymentResponse.checkout_url;
+            return; // Don't navigate — Revolut will redirect back
+          }
+        } catch (paymentError: any) {
+          console.error('Payment order failed:', paymentError);
+          toast.warning(
+            t('premium.paymentFailed', 'Task created but payment failed. You can add premium later from the task page.')
+          );
+        }
+      }
+
       toast.success(t('createTask.success', 'Task created successfully! It will now appear in Quick Help.'));
       navigate('/tasks');
     } catch (error: any) {

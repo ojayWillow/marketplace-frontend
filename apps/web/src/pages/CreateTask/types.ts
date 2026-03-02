@@ -1,3 +1,5 @@
+import type { PaymentType } from '@marketplace/shared';
+
 export interface TaskFormData {
   title: string;
   description: string;
@@ -10,6 +12,7 @@ export interface TaskFormData {
   deadlineTime: string;
   difficulty: string;
   is_urgent: boolean;
+  premium_type: PaymentType | null;
   images: File[];
 }
 
@@ -25,6 +28,7 @@ export const INITIAL_TASK_FORM: TaskFormData = {
   deadlineTime: '',
   difficulty: 'medium',
   is_urgent: false,
+  premium_type: null,
   images: [],
 };
 

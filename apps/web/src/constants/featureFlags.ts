@@ -4,5 +4,5 @@
  */
 export const FEATURES = {
   /** Show the "Urgent" toggle on task creation / detail pages */
-  URGENT: false,
+  URGENT: true,
 } as const;

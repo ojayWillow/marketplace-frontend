@@ -7,10 +7,9 @@ import {
   DeadlinePicker,
   LocationInput,
   BudgetInput,
-  UrgentToggle,
 } from './components';
 import ImagePicker from '../../components/ImagePicker';
-import { FEATURES } from '../../constants/featureFlags';
+import PremiumOptions from '../../components/PremiumOptions';
 
 const CreateTask = () => {
   const { t } = useTranslation();
@@ -117,13 +116,15 @@ const CreateTask = () => {
               onChange={(d) => updateField('difficulty', d)}
             />
 
-            {/* 9. Urgent — hidden until feature is launched */}
-            {FEATURES.URGENT && (
-              <UrgentToggle
-                value={formData.is_urgent}
-                onChange={(u) => updateField('is_urgent', u)}
-              />
-            )}
+            {/* 9. Premium Options (Urgent / Promote) */}
+            <PremiumOptions
+              mode="task"
+              selected={formData.premium_type}
+              onChange={(type) => {
+                updateField('premium_type', type);
+                updateField('is_urgent', type === 'urgent_task');
+              }}
+            />
 
             {/* Submit */}
             <div className="flex gap-2 pt-1">
@@ -134,7 +135,9 @@ const CreateTask = () => {
               >
                 {loading
                   ? t('createTask.creating', 'Creating...')
-                  : t('createTask.createButton', '⚡ Create Task')}
+                  : formData.premium_type
+                    ? `${formData.premium_type === 'urgent_task' ? '⚡' : '⭐'} ${t('createTask.createAndPay', 'Create & Pay')}`
+                    : t('createTask.createButton', '⚡ Create Task')}
               </button>
               <button
                 type="button"
