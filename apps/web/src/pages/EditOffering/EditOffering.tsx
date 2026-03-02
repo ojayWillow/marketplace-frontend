@@ -42,7 +42,7 @@ const EditOffering = () => {
       <div className="max-w-3xl mx-auto px-4">
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-gray-900/50 p-6">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl">\u270F\uFE0F</span>
+            <span className="text-3xl">✏️</span>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               {t('editOffering.title', 'Edit Service Offering')}
             </h1>
