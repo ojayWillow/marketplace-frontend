@@ -1,97 +1,187 @@
-import { create, StateCreator } from 'zustand';
-import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { create } from 'zustand';
 import type { User } from '../api/types';
-import { storage as defaultStorage } from './storage';
+import { supabase } from '../services/supabaseClient';
+import type { Session } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  // Phone verification status
   isPhoneVerified: boolean;
-  // Hydration tracking
+  isInitialized: boolean;
   _hasHydrated: boolean;
-  setHasHydrated: (value: boolean) => void;
+
+  // Computed
+  readonly token: string | null;
+
   // Helpers
   needsPhoneVerification: () => boolean;
+  getToken: () => string | null;
+
   // Actions
   setAuth: (user: User, token: string) => void;
-  updateUser: (user: Partial<User>) => void;
-  logout: () => void;
+  setSession: (session: Session | null) => void;
+  setUser: (user: User | null) => void;
+  updateUser: (userData: Partial<User>) => void;
+  logout: () => Promise<void>;
+  initAuth: () => Promise<() => void>;
+
+  // Hydration (kept for backward compat)
+  setHasHydrated: (value: boolean) => void;
 }
 
-const authStateCreator: StateCreator<AuthState> = (set, get) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
-  token: null,
+  session: null,
   isAuthenticated: false,
   isPhoneVerified: false,
-  _hasHydrated: false,
+  isInitialized: false,
+  _hasHydrated: true, // No longer using zustand/persist, always hydrated
 
-  setHasHydrated: (value) => set({ _hasHydrated: value }),
+  get token() {
+    return get().session?.access_token ?? null;
+  },
 
-  // Check if user needs to verify phone
+  getToken: () => {
+    return get().session?.access_token ?? null;
+  },
+
+  setHasHydrated: () => {},
+
   needsPhoneVerification: () => {
     const { isAuthenticated, user } = get();
     if (!isAuthenticated || !user) return false;
     return !user.phone_verified;
   },
 
-  setAuth: (user, token) =>
+  /**
+   * Set auth from a Supabase session + local user.
+   * Also used by the phone login flow which gets a legacy JWT
+   * from the backend — in that case we store the user but
+   * session stays null until a Supabase session is established.
+   */
+  setAuth: (user, _token) => {
     set({
       user,
-      token,
       isAuthenticated: true,
       isPhoneVerified: user.phone_verified ?? false,
-    }),
+    });
+  },
 
-  // Update user data (e.g., after phone verification)
+  setSession: (session) => {
+    set({
+      session,
+      isAuthenticated: session !== null,
+    });
+  },
+
+  setUser: (user) => {
+    set({
+      user,
+      isPhoneVerified: user?.phone_verified ?? false,
+    });
+  },
+
   updateUser: (userData) =>
     set((state) => ({
       user: state.user ? { ...state.user, ...userData } : null,
       isPhoneVerified: userData.phone_verified ?? state.isPhoneVerified,
     })),
 
-  logout: () =>
+  logout: async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('[Auth] Supabase signOut error:', e);
+    }
     set({
       user: null,
-      token: null,
+      session: null,
       isAuthenticated: false,
       isPhoneVerified: false,
-    }),
-});
+    });
+    // Clean up any legacy storage
+    try {
+      localStorage.removeItem('auth-storage');
+    } catch (_) {}
+  },
 
-// Factory function to create auth store with custom storage
-export const createAuthStore = (storageAdapter: StateStorage) => {
-  return create<AuthState>()(
-    persist(authStateCreator, {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => storageAdapter),
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-        isAuthenticated: state.isAuthenticated,
-        isPhoneVerified: state.isPhoneVerified,
-      }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
-    })
-  );
-};
+  /**
+   * Initialize auth: restore Supabase session and listen for changes.
+   * Call this once at app startup (e.g., in App.tsx or main.tsx).
+   * Returns an unsubscribe function.
+   */
+  initAuth: async () => {
+    const { setSession, setUser } = get();
 
-// Default store using the default storage (web: localStorage, mobile: fallback)
-export const useAuthStore = create<AuthState>()(
-  persist(authStateCreator, {
-    name: 'auth-storage',
-    storage: createJSONStorage(() => defaultStorage),
-    partialize: (state) => ({
-      user: state.user,
-      token: state.token,
-      isAuthenticated: state.isAuthenticated,
-      isPhoneVerified: state.isPhoneVerified,
-    }),
-    onRehydrateStorage: () => (state) => {
-      state?.setHasHydrated(true);
-    },
-  })
-);
+    // 1. Restore existing session
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSession(session);
+        // Sync local user from backend
+        await syncLocalUser(session.access_token, set);
+      }
+    } catch (e) {
+      console.error('[Auth] Failed to restore session:', e);
+    }
+
+    set({ isInitialized: true });
+
+    // 2. Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.debug('[Auth] State change:', event);
+        setSession(session);
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session) {
+            await syncLocalUser(session.access_token, set);
+          }
+        }
+
+        if (event === 'SIGNED_OUT') {
+          set({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            isPhoneVerified: false,
+          });
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  },
+}));
+
+/**
+ * Call backend /auth/sync-user to ensure local user exists
+ * and get the full user profile.
+ */
+async function syncLocalUser(
+  accessToken: string,
+  set: (state: Partial<AuthState>) => void
+) {
+  try {
+    // Dynamic import to avoid circular dependency with apiClient
+    const { default: apiClient } = await import('../api/client');
+    const response = await apiClient.post(
+      '/api/auth/sync-user',
+      {},
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const user = response.data.user;
+    if (user) {
+      set({
+        user,
+        isPhoneVerified: user.phone_verified ?? false,
+      });
+    }
+  } catch (e) {
+    console.error('[Auth] Failed to sync local user:', e);
+  }
+}
+
+// Legacy export for createAuthStore (no longer needed but keeps imports working)
+export const createAuthStore = () => useAuthStore;
