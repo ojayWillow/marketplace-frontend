@@ -21,16 +21,12 @@ const CreateOffering = () => {
     loading,
     showSuccessModal,
     createdOfferingId,
-    activating,
-    isBoosted,
     locationConfirmed,
     updateField,
     handleChange,
     selectAddress,
     setCoordsFromMap,
     handleSubmit,
-    handleBoostTrial,
-    handleViewOnMap,
     closeModalAndNavigate,
   } = useOfferingForm();
 
@@ -149,10 +145,6 @@ const CreateOffering = () => {
       {showSuccessModal && (
         <SuccessModal
           createdOfferingId={createdOfferingId}
-          isBoosted={isBoosted}
-          activating={activating}
-          onBoost={handleBoostTrial}
-          onViewOnMap={handleViewOnMap}
           onNavigate={closeModalAndNavigate}
         />
       )}

@@ -8,8 +8,8 @@ import apiClient from './client';
 export type PaymentType =
   | 'boost_offering'    // €1 — 24h map boost for offerings
   | 'urgent_task'       // €2 — 24h urgent badge for tasks
-  | 'promote_offering'  // €5 — 72h promoted placement for offerings
-  | 'promote_task';     // €5 — 72h promoted placement for tasks
+  | 'promote_offering'  // €5 — 3 days promoted placement for offerings
+  | 'promote_task';     // €5 — 3 days promoted placement for tasks
 
 export interface CreatePaymentOrderParams {
   type: PaymentType;
@@ -31,10 +31,10 @@ export interface PaymentStatusResponse {
 
 // Price map (display only — backend enforces the real prices)
 export const PAYMENT_PRICES: Record<PaymentType, { amount: string; label: string; duration: string }> = {
-  boost_offering:  { amount: '€1',  label: 'Boost',   duration: '24h' },
-  urgent_task:     { amount: '€2',  label: 'Urgent',  duration: '24h' },
-  promote_offering:{ amount: '€5',  label: 'Promote', duration: '72h' },
-  promote_task:    { amount: '€5',  label: 'Promote', duration: '72h' },
+  boost_offering:  { amount: '€1',  label: 'Boost',   duration: '1 day' },
+  urgent_task:     { amount: '€2',  label: 'Urgent',  duration: '1 day' },
+  promote_offering:{ amount: '€5',  label: 'Promote', duration: '3 days' },
+  promote_task:    { amount: '€5',  label: 'Promote', duration: '3 days' },
 };
 
 /**
