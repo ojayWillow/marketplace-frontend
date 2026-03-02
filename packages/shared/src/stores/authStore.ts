@@ -6,49 +6,32 @@ import type { Session } from '@supabase/supabase-js';
 interface AuthState {
   user: User | null;
   session: Session | null;
-  /** Legacy JWT from backend (phone login). Used until backend returns Supabase sessions. */
-  legacyToken: string | null;
   isAuthenticated: boolean;
   isPhoneVerified: boolean;
   isInitialized: boolean;
-  _hasHydrated: boolean;
 
   // Helpers
   needsPhoneVerification: () => boolean;
   getToken: () => string | null;
 
   // Actions
-  setAuth: (user: User, token: string) => void;
   setSession: (session: Session | null) => void;
   setUser: (user: User | null) => void;
   updateUser: (userData: Partial<User>) => void;
   logout: () => Promise<void>;
   initAuth: () => Promise<() => void>;
-
-  // Hydration (kept for backward compat)
-  setHasHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   session: null,
-  legacyToken: null,
   isAuthenticated: false,
   isPhoneVerified: false,
   isInitialized: false,
-  _hasHydrated: true,
 
-  /**
-   * Get the best available token:
-   * 1. Supabase session access_token (preferred, auto-refreshed)
-   * 2. Legacy backend JWT (phone login fallback)
-   */
   getToken: () => {
-    const { session, legacyToken } = get();
-    return session?.access_token ?? legacyToken;
+    return get().session?.access_token ?? null;
   },
-
-  setHasHydrated: () => {},
 
   needsPhoneVerification: () => {
     const { isAuthenticated, user } = get();
@@ -56,24 +39,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     return !user.phone_verified;
   },
 
-  /**
-   * Set auth from backend response (phone login flow).
-   * Stores the legacy JWT so the API interceptor can use it
-   * until the backend returns Supabase sessions (#52).
-   */
-  setAuth: (user, token) => {
-    set({
-      user,
-      legacyToken: token,
-      isAuthenticated: true,
-      isPhoneVerified: user.phone_verified ?? false,
-    });
-  },
-
   setSession: (session) => {
     set({
       session,
-      isAuthenticated: session !== null || get().legacyToken !== null,
+      isAuthenticated: session !== null,
     });
   },
 
@@ -99,20 +68,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({
       user: null,
       session: null,
-      legacyToken: null,
       isAuthenticated: false,
       isPhoneVerified: false,
     });
-    try {
-      localStorage.removeItem('auth-storage');
-    } catch (_) {}
   },
 
-  /**
-   * Initialize auth: restore Supabase session and listen for changes.
-   * Call once at app startup (App.tsx).
-   * Returns an unsubscribe function.
-   */
   initAuth: async () => {
     // 1. Restore existing Supabase session
     try {
@@ -133,7 +93,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         console.debug('[Auth] State change:', event);
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          set({ session, isAuthenticated: true, legacyToken: null });
+          set({ session, isAuthenticated: true });
           if (session) {
             await syncLocalUser(session.access_token, set);
           }
@@ -143,7 +103,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           set({
             user: null,
             session: null,
-            legacyToken: null,
             isAuthenticated: false,
             isPhoneVerified: false,
           });
