@@ -1,10 +1,11 @@
 /**
- * Offering premium section — replaces the old free boost button.
- * Shows paid Boost (€1/24h) and Promote (€5/72h) buttons.
+ * Offering premium section — shows paid Boost and Promote buttons.
+ * Includes expiry countdown banners for active features.
  * Only visible to the offering owner.
  */
 import { useTranslation } from 'react-i18next';
 import PaymentButton from '../../../components/PaymentButton';
+import PremiumExpiryBanner from '../../../components/PremiumExpiryBanner';
 import { Offering } from '@marketplace/shared';
 
 interface OfferingPremiumSectionProps {
@@ -22,6 +23,15 @@ const OfferingBoostSection = ({ offering }: OfferingPremiumSectionProps) => {
       <h3 className="font-bold text-xs text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-1">
         🚀 {t('offering.premium.title', 'Boost & Promote')}
       </h3>
+
+      {/* Live countdown banners for active features */}
+      <PremiumExpiryBanner
+        items={[
+          { type: 'boost', isActive: !!offering.is_boost_active, expiresAt: offering.boost_expires_at || null },
+          { type: 'promote', isActive: !!offering.is_promote_active, expiresAt: offering.promoted_expires_at || null },
+        ]}
+      />
+
       <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
         {t('offering.premium.desc', 'Get more visibility for your offering')}
       </p>

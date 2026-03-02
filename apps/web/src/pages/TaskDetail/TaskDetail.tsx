@@ -25,6 +25,7 @@ import { getCategoryLabel, getCategoryIcon } from '../../constants/categories';
 import SEOHead from '../../components/ui/SEOHead';
 import ShareButton from '../../components/ui/ShareButton';
 import ImageGallery from '../../components/ImageGallery';
+import PremiumBadge from '../../components/PremiumBadge';
 import { FEATURES } from '../../constants/featureFlags';
 import { formatTimeAgoLong } from '../Tasks/utils/taskHelpers';
 
@@ -225,6 +226,7 @@ const TaskDetail = () => {
   const applicantCount = task.pending_applications_count || 0;
   const budget = task.budget || task.reward || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
+  const isPromoted = (task as any).is_promote_active;
   const seoDescription = `${categoryLabel} ${t('taskDetail.jobSuffix')}${task.budget ? ` - ${task.budget} EUR` : ''}${task.location ? ` ${t('taskDetail.seoIn', { location: task.location })}` : ''}. ${task.description?.substring(0, 100)}...`;
   const postedDateRelative = task.created_at ? formatTimeAgoLong(task.created_at) : '';
   const postedDateAbsolute = task.created_at
@@ -284,6 +286,9 @@ const TaskDetail = () => {
                 {isUrgent && (
                   <span className="px-2.5 py-1 bg-red-500/80 rounded-full text-xs font-bold">⚡ {t('taskDetail.urgent')}</span>
                 )}
+                {isPromoted && (
+                  <span className="px-2.5 py-1 bg-yellow-500/80 rounded-full text-xs font-bold">⭐ {t('taskDetail.promoted', 'Promoted')}</span>
+                )}
               </div>
               <div className="text-2xl font-black">€{budget}</div>
             </div>
@@ -301,11 +306,22 @@ const TaskDetail = () => {
                 {isUrgent && (
                   <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold">{t('taskDetail.urgent')}</span>
                 )}
+                {isPromoted && (
+                  <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 rounded-full text-xs font-bold">⭐ {t('taskDetail.promoted', 'Promoted')}</span>
+                )}
               </div>
               <span className="text-xl font-black text-green-600 dark:text-green-400">€{budget}</span>
             </div>
             <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-3">{task.title}</h1>
           </div>
+
+          {/* Premium badges for non-creators */}
+          {!isCreator && (isUrgent || isPromoted) && (
+            <div className="px-4 pb-2 md:px-6 flex gap-2">
+              {isPromoted && <PremiumBadge type="promoted" />}
+              {isUrgent && <PremiumBadge type="urgent" />}
+            </div>
+          )}
 
           {/* Profile row */}
           <div className="px-4 pb-3 md:px-6 md:pt-5 md:pb-5 md:border-b md:border-gray-200 md:dark:border-gray-700">
