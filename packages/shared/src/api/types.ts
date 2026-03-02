@@ -22,23 +22,6 @@ export interface User {
   updated_at?: string
 }
 
-export interface AuthResponse {
-  access_token: string
-  user: User
-}
-
-export interface LoginCredentials {
-  email: string
-  password: string
-}
-
-export interface RegisterData {
-  username: string
-  email: string
-  password: string
-  phone?: string
-}
-
 // Seller info for listing detail view
 export interface SellerInfo {
   id: number
