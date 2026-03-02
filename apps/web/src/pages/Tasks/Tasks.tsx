@@ -10,7 +10,7 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
 import { useAuthStore } from '@marketplace/shared';
 import { useMatchingStore } from '@marketplace/shared';
-import { CATEGORY_OPTIONS } from '../../constants/categories';
+import { getCategoryOptions } from '../../constants/categories';
 import CompactFilterBar from '../../components/ui/CompactFilterBar';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileTasksView from '../../components/MobileTasksView';
@@ -101,6 +101,9 @@ const DesktopTasksView = () => {
   useEffect(() => {
     if (isAuthenticated) loadMyOfferings();
   }, [isAuthenticated, loadMyOfferings]);
+
+  // Translated category options
+  const translatedCategoryOptions = getCategoryOptions(t);
 
   // Handlers
   const handleLocationSelect = (lat: number, lng: number, name?: string) => {
@@ -202,7 +205,7 @@ const DesktopTasksView = () => {
             locationName={locationName}
             onLocationClick={() => setShowLocationModal(!showLocationModal)}
             maxPriceLimit={500}
-            categoryOptions={CATEGORY_OPTIONS}
+            categoryOptions={translatedCategoryOptions}
             variant={activeTab === 'offerings' ? 'offerings' : 'jobs'}
           />
           <LocationModal
