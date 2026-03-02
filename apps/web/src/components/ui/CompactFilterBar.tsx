@@ -105,6 +105,11 @@ const CompactFilterBar = ({
     return `${prefix}: €${filters.minPrice}-${filters.maxPrice}`;
   };
 
+  // Translate a category value to its localized label
+  const translateCategory = (value: string, fallback: string) => {
+    return t(`tasks.categories.${value}`, fallback);
+  };
+
   // Get display label for category
   const getCategoryLabel = () => {
     const prefix = t('filters.category', 'Category');
@@ -112,7 +117,7 @@ const CompactFilterBar = ({
       return prefix;
     }
     const cat = categoryOptions.find(c => c.value === filters.category);
-    return `${prefix}: ${cat ? cat.label : filters.category}`;
+    return `${prefix}: ${cat ? translateCategory(cat.value, cat.label) : filters.category}`;
   };
 
   // Get display label for posted date
@@ -311,7 +316,7 @@ const CompactFilterBar = ({
                     `}
                   >
                     {cat.icon && <span className="mr-2">{cat.icon}</span>}
-                    {cat.label}
+                    {translateCategory(cat.value, cat.label)}
                   </button>
                 ))}
               </div>
