@@ -26,21 +26,24 @@ export const apiClient = axios.create({
   baseURL: API_URL,
 })
 
-// Request interceptor - get token from Supabase session (auto-refreshed)
+// Request interceptor — attach auth token
+// Priority: 1) Already set header  2) Supabase session  3) Legacy backend JWT
 apiClient.interceptors.request.use(
   async (config) => {
-    // Skip if Authorization header is already set (e.g., by syncLocalUser)
     if (!config.headers.Authorization) {
+      // Try Supabase session first (auto-refreshed)
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
           config.headers.Authorization = `Bearer ${session.access_token}`;
         }
-      } catch (_) {
-        // Supabase not available — try legacy token from store
-        const token = useAuthStore.getState().session?.access_token;
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+      } catch (_) {}
+
+      // Fall back to legacy token (phone login before backend #52)
+      if (!config.headers.Authorization) {
+        const legacyToken = useAuthStore.getState().legacyToken;
+        if (legacyToken) {
+          config.headers.Authorization = `Bearer ${legacyToken}`;
         }
       }
     }

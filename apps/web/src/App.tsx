@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/react";
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from '@marketplace/shared'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
@@ -73,6 +74,14 @@ const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 const AdminDisputes = lazy(() => import('./pages/admin/AdminDisputes'))
 
 function App() {
+  // Initialize Supabase auth: restore session + listen for changes
+  useEffect(() => {
+    const unsubscribePromise = useAuthStore.getState().initAuth();
+    return () => {
+      unsubscribePromise.then(fn => fn());
+    };
+  }, []);
+
   return (
     <Sentry.ErrorBoundary fallback={<SentryFallback />}>
       <SocketProvider>
