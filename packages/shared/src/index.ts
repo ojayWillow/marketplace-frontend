@@ -36,6 +36,7 @@ export { useToastStore } from './stores/toastStore';
 
 // Service exports
 export { socketService } from './services/socket';
+export { supabase } from './services/supabaseClient';
 
 // i18n removed - was causing 404 errors and layout issues
 // export { default as i18n } from './i18n';
