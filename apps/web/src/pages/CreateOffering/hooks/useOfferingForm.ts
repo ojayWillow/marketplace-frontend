@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createOffering, boostOffering, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
+import { createOffering, createPaymentOrder, useAuthStore, useToastStore, uploadTaskImageFile } from '@marketplace/shared';
 import { GeocodingResult, reverseGeocode } from '@marketplace/shared';
 import { OfferingFormData, INITIAL_FORM_DATA } from '../types';
 
@@ -15,8 +15,6 @@ export const useOfferingForm = () => {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdOfferingId, setCreatedOfferingId] = useState<number | null>(null);
-  const [activating, setActivating] = useState(false);
-  const [isBoosted, setIsBoosted] = useState(false);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
 
   // Redirect if not authenticated
@@ -35,7 +33,6 @@ export const useOfferingForm = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // If user manually edits the location text, un-confirm until they pick again
     if (name === 'location') {
       setLocationConfirmed(false);
     }
@@ -54,14 +51,12 @@ export const useOfferingForm = () => {
 
   // When user taps the map or drags the pin — reverse geocode to get address
   const setCoordsFromMap = useCallback(async (lat: number, lng: number) => {
-    // Immediately update coordinates so pin moves
     setFormData(prev => ({
       ...prev,
       latitude: lat,
       longitude: lng,
     }));
 
-    // Reverse geocode to get the address string
     try {
       const result = await reverseGeocode(lat, lng);
       if (result?.display_name) {
@@ -75,8 +70,6 @@ export const useOfferingForm = () => {
       }
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
-      // Still keep the coords even if reverse geocode fails
-      // Generate a fallback location string
       setFormData(prev => ({
         ...prev,
         location: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
@@ -166,7 +159,29 @@ export const useOfferingForm = () => {
       };
 
       const response = await createOffering(offeringData);
-      setCreatedOfferingId(response.offering?.id || response.id || null);
+      const offeringId = response.offering?.id || response.id || null;
+      setCreatedOfferingId(offeringId);
+
+      // If premium was selected, trigger payment flow
+      if (formData.premium_type && offeringId) {
+        try {
+          toast.info(t('premium.redirectingToPayment', 'Redirecting to payment...'));
+          const paymentResponse = await createPaymentOrder({
+            type: formData.premium_type,
+            target_id: offeringId,
+          });
+          if (paymentResponse.checkout_url) {
+            window.location.href = paymentResponse.checkout_url;
+            return; // Don't show success modal — Revolut will redirect back
+          }
+        } catch (paymentError: any) {
+          console.error('Payment order failed:', paymentError);
+          toast.warning(
+            t('premium.paymentFailed', 'Offering created but payment failed. You can add premium later from the offering page.')
+          );
+        }
+      }
+
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Error creating offering:', error);
@@ -174,27 +189,6 @@ export const useOfferingForm = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleBoostTrial = async () => {
-    if (!createdOfferingId) return;
-
-    setActivating(true);
-    try {
-      await boostOffering(createdOfferingId);
-      setIsBoosted(true);
-      toast.success(t('createOffering.boostActivated', '🚀 Boost activated! Your service is now visible on the map.'));
-    } catch (error: any) {
-      console.error('Error boosting offering:', error);
-      toast.error(error?.response?.data?.error || t('createOffering.boostError', 'Failed to activate boost. Please try again.'));
-    } finally {
-      setActivating(false);
-    }
-  };
-
-  const handleViewOnMap = () => {
-    setShowSuccessModal(false);
-    navigate('/tasks?tab=offerings');
   };
 
   const closeModalAndNavigate = (path: string) => {
@@ -207,16 +201,12 @@ export const useOfferingForm = () => {
     loading,
     showSuccessModal,
     createdOfferingId,
-    activating,
-    isBoosted,
     locationConfirmed,
     updateField,
     handleChange,
     selectAddress,
     setCoordsFromMap,
     handleSubmit,
-    handleBoostTrial,
-    handleViewOnMap,
     closeModalAndNavigate,
   };
 };

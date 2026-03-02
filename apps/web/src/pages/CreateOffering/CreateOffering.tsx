@@ -12,6 +12,7 @@ import {
   SuccessModal,
 } from './components';
 import ImagePicker from '../../components/ImagePicker';
+import PremiumOptions from '../../components/PremiumOptions';
 
 const CreateOffering = () => {
   const { t } = useTranslation();
@@ -122,13 +123,24 @@ const CreateOffering = () => {
 
             <FormTips category={formData.category} />
 
+            {/* Premium Options (Boost / Promote) */}
+            <PremiumOptions
+              mode="offering"
+              selected={formData.premium_type}
+              onChange={(type) => updateField('premium_type', type)}
+            />
+
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 bg-amber-500 text-white py-2.5 px-4 rounded-xl hover:bg-amber-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed font-semibold text-sm shadow-sm"
               >
-                {loading ? t('createOffering.creating', 'Creating...') : `✨ ${t('createOffering.createButton', 'Publish')}`}
+                {loading
+                  ? t('createOffering.creating', 'Creating...')
+                  : formData.premium_type
+                    ? `${formData.premium_type === 'boost_offering' ? '🚀' : '⭐'} ${t('createOffering.createAndPay', 'Publish & Pay')}`
+                    : `✨ ${t('createOffering.createButton', 'Publish')}`}
               </button>
               <button
                 type="button"

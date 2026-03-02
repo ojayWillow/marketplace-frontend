@@ -1,3 +1,5 @@
+import type { PaymentType } from '@marketplace/shared';
+
 export interface OfferingFormData {
   title: string;
   description: string;
@@ -10,6 +12,7 @@ export interface OfferingFormData {
   availability: string;
   experience: string;
   service_radius: string;
+  premium_type: PaymentType | null;
   images: File[];
 }
 
@@ -25,6 +28,7 @@ export const INITIAL_FORM_DATA: OfferingFormData = {
   availability: '',
   experience: '',
   service_radius: '25',
+  premium_type: null,
   images: [],
 };
 
@@ -37,6 +41,8 @@ export const DAYS_OF_WEEK = [
   { key: 'sat', label: 'S' },
   { key: 'sun', label: 'S' },
 ] as const;
+
+export const DAYS_OF_WEEK_LABELS = DAYS_OF_WEEK;
 
 export const TIME_SLOTS = [
   { key: 'morning', label: 'Morning', desc: '8–12' },
