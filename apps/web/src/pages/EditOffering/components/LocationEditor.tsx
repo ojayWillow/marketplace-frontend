@@ -18,6 +18,9 @@ const LocationEditor = ({
 }: LocationEditorProps) => {
   const { t } = useTranslation();
 
+  // Only show suggestions when user is actively searching (not when location is already selected)
+  const showSuggestions = addressSuggestions.length > 0 && searchingAddress;
+
   return (
     <div className="relative">
       <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -38,7 +41,7 @@ const LocationEditor = ({
         autoComplete="off"
       />
 
-      {addressSuggestions.length > 0 && (
+      {showSuggestions && (
         <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-60 overflow-y-auto">
           {addressSuggestions.map((result, index) => (
             <button
@@ -53,9 +56,9 @@ const LocationEditor = ({
         </div>
       )}
 
-      {location && (
+      {location && latitude !== 0 && longitude !== 0 && (
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          \uD83D\uDCCD {t('editOffering.coordinates', 'Coordinates')}: {latitude.toFixed(4)}, {longitude.toFixed(4)}
+          📍 {t('editOffering.coordinates', 'Coordinates')}: {latitude.toFixed(4)}, {longitude.toFixed(4)}
         </p>
       )}
     </div>

@@ -34,7 +34,7 @@ import {
   TaskApplications,
   TaskActionButtons,
   TaskReviews,
-  RecommendedHelpers,
+  // RecommendedHelpers — disabled: will be a premium feature
   ApplicationSheet,
   ReviewSheet,
   DisputeSheet,
@@ -103,8 +103,7 @@ const TaskDetail = () => {
     applications,
     applicationsLoading,
     fetchApplications,
-    recommendedHelpers,
-    helpersLoading,
+    // recommendedHelpers and helpersLoading — disabled for now (premium feature)
     reviews,
     canReview,
     fetchReviews,
@@ -264,7 +263,6 @@ const TaskDetail = () => {
             {t('taskDetail.back')}
           </button>
 
-          {/* ShareButton — now uses the task object for unified URL/text logic */}
           <ShareButton
             task={task}
             size="sm"
@@ -477,6 +475,7 @@ const TaskDetail = () => {
           </div>
         </div>
 
+        {/* RecommendedHelpers — disabled for now, will be a premium feature
         {task.status === 'open' && user?.id === task.creator_id && (
           <RecommendedHelpers
             task={task}
@@ -485,6 +484,7 @@ const TaskDetail = () => {
             onContactHelper={handleContactHelper}
           />
         )}
+        */}
 
         {task.status === 'completed' && (
           <TaskReviews
