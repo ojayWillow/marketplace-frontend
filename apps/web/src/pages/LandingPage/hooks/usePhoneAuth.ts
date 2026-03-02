@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore, apiClient as api } from '@marketplace/shared';
+import { useAuthStore, apiClient as api, supabase } from '@marketplace/shared';
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../../../lib/firebase';
 import type { ConfirmationResult } from '../../../lib/firebase';
 
 export const usePhoneAuth = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const { setAuth, setUser } = useAuthStore();
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -194,15 +194,36 @@ export const usePhoneAuth = () => {
         phoneNumber: getFullPhone()
       });
 
-      const { access_token, user: userData, is_new_user } = response.data;
+      const {
+        access_token,
+        refresh_token,
+        token_type,
+        user: userData,
+        is_new_user,
+      } = response.data;
 
-      if (access_token && userData) {
-        setAuth(userData, access_token);
-        if (is_new_user || userData.username?.startsWith('user_')) {
-          navigate('/complete-profile');
-        } else {
-          navigate('/');
+      if (token_type === 'supabase' && access_token && refresh_token) {
+        // Set Supabase session — onAuthStateChange will fire SIGNED_IN
+        // and syncLocalUser will fetch the user profile automatically.
+        // We also set the user immediately so navigation works without
+        // waiting for the async sync.
+        if (userData) {
+          setUser(userData);
         }
+        await supabase.auth.setSession({
+          access_token,
+          refresh_token,
+        });
+        console.log('Supabase session set successfully');
+      } else if (access_token && userData) {
+        // Legacy fallback — backend couldn't generate Supabase session
+        setAuth(userData, access_token);
+      }
+
+      if (is_new_user || userData?.username?.startsWith('user_')) {
+        navigate('/complete-profile');
+      } else {
+        navigate('/');
       }
     } catch (err: unknown) {
       console.error('Verify error:', err);

@@ -5,7 +5,7 @@ import {
   User, Mail, ArrowRight, ArrowLeft, Loader2, CheckCircle,
   MapPin, Wrench, Bell, Check, X
 } from 'lucide-react'
-import { useAuthStore } from '@marketplace/shared'
+import { useAuthStore, supabase } from '@marketplace/shared'
 import { apiClient as api } from '@marketplace/shared'
 import { COUNTRIES, CITIES, AVAILABLE_SKILLS, getLocalizedLabel } from '../../constants/locations'
 
@@ -44,7 +44,7 @@ const STEP_LABELS = [
 export default function CompleteProfile() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { user, token, isAuthenticated, setAuth } = useAuthStore()
+  const { user, isAuthenticated, setUser, getToken } = useAuthStore()
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -78,6 +78,7 @@ export default function CompleteProfile() {
   // ── Auth guard ─────────────────────────────────────────────────────
 
   useEffect(() => {
+    const token = getToken()
     if (!isAuthenticated || !token) {
       navigate('/login', { replace: true })
       return
@@ -87,7 +88,7 @@ export default function CompleteProfile() {
         navigate('/tasks', { replace: true })
       }
     }
-  }, [isAuthenticated, token, user, navigate])
+  }, [isAuthenticated, user, navigate, getToken])
 
   // Pre-fill email if real
   useEffect(() => {
@@ -196,15 +197,23 @@ export default function CompleteProfile() {
         }
       }
 
-      const res = await api.put('/api/auth/complete-registration', payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await api.put('/api/auth/complete-registration', payload)
 
-      const { access_token, user: updatedUser } = res.data
-      if (updatedUser && access_token) {
-        setAuth(updatedUser, access_token)
-      } else if (updatedUser) {
-        setAuth(updatedUser, token!)
+      const {
+        access_token,
+        refresh_token,
+        token_type,
+        user: updatedUser,
+      } = res.data
+
+      // Update local user state immediately for navigation
+      if (updatedUser) {
+        setUser(updatedUser)
+      }
+
+      // Set fresh Supabase session (backend returns new tokens after onboarding)
+      if (token_type === 'supabase' && access_token && refresh_token) {
+        await supabase.auth.setSession({ access_token, refresh_token })
       }
 
       // Request push notification permission if opted in
