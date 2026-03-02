@@ -60,7 +60,7 @@ export const useMyWork = () => {
   const fetchOfferings = useCallback(async () => {
     setOfferingsLoading(true);
     try {
-      const response = await apiClient.get('/api/offerings/mine');
+      const response = await apiClient.get('/api/offerings/my');
       setMyOfferings(response.data.offerings || []);
     } catch (e) {
       console.error('Error fetching offerings:', e);

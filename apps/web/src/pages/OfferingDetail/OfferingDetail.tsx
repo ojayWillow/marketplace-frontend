@@ -177,11 +177,13 @@ const OfferingDetail = () => {
           )}
         </div>
 
-        {/* Matching Jobs */}
-        <MatchingJobsSection offering={offering} userId={user?.id} />
-
-        {/* How it works */}
-        <HowItWorksSection />
+        {/* Matching Jobs & How it works — only for the offering owner */}
+        {isOwner && (
+          <>
+            <MatchingJobsSection offering={offering} userId={user?.id} />
+            <HowItWorksSection />
+          </>
+        )}
       </div>
 
       {/* Fixed bottom action bar — MOBILE ONLY */}
