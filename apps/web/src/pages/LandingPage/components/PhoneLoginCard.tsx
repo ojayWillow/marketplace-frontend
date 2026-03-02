@@ -72,7 +72,6 @@ const PhoneLoginCard = () => {
   const { t } = useTranslation();
   const {
     phoneNumber,
-    setPhoneNumber,
     step,
     otpValue,
     loading,
@@ -81,6 +80,7 @@ const PhoneLoginCard = () => {
     recaptchaContainerRef,
     otpInputRef,
     formatPhone,
+    handlePhoneChange,
     getFullPhone,
     handleSendCode,
     handleOtpChange,
@@ -120,7 +120,7 @@ const PhoneLoginCard = () => {
               <input
                 type="tel"
                 value={formatPhone(phoneNumber)}
-                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                onChange={handlePhoneChange}
                 placeholder="20 000 000"
                 className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-50 dark:bg-[#0f0f1a] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-600/50 focus:border-blue-500 focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 text-base sm:text-lg tracking-wide"
                 maxLength={11}
