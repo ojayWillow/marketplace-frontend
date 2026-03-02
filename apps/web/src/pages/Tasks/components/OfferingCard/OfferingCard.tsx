@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getCategoryLabel } from '../../../../constants/categories';
 import { calculateDistance } from '../../utils/taskHelpers';
+import PremiumBadge from '../../../../components/PremiumBadge';
 import type { OfferingCardProps } from './OfferingCard.types';
 
 // Star Rating helper component
@@ -23,18 +24,22 @@ export const OfferingCard = ({ offering, userLocation }: OfferingCardProps) => {
   const { t } = useTranslation();
   const distance = calculateDistance(userLocation.lat, userLocation.lng, offering.latitude, offering.longitude);
   const isBoosted = offering.is_boost_active;
+  const isPromoted = (offering as any).is_promote_active;
 
   return (
     <div className={`relative block border rounded-lg p-4 hover:shadow-md transition-all ${
       isBoosted
         ? 'border-amber-300 dark:border-amber-500/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 hover:border-amber-400 ring-1 ring-amber-200 dark:ring-amber-700/40'
-        : 'border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-500/50 dark:bg-gray-900'
+        : isPromoted
+          ? 'border-yellow-300 dark:border-yellow-500/50 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 hover:border-yellow-400 ring-1 ring-yellow-200 dark:ring-yellow-700/40'
+          : 'border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-500/50 dark:bg-gray-900'
     }`}>
       <Link to={`/offerings/${offering.id}`} className="block">
-        {/* Boosted badge */}
-        {isBoosted && (
-          <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400">
-            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-200 to-orange-200 dark:from-amber-800/40 dark:to-orange-800/40 rounded text-xs font-semibold">🔥 {t('offerings.boostedOnMap', 'Boosted - Visible on map!')}</span>
+        {/* Premium badges */}
+        {(isBoosted || isPromoted) && (
+          <div className="flex items-center gap-2 mb-2">
+            {isPromoted && <PremiumBadge type="promoted" />}
+            {isBoosted && <PremiumBadge type="boosted" />}
           </div>
         )}
 

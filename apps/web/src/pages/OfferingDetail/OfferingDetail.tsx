@@ -5,6 +5,7 @@ import { useAuthStore } from '@marketplace/shared';
 import ShareButton from '../../components/ui/ShareButton';
 import SEOHead from '../../components/ui/SEOHead';
 import ImageGallery from '../../components/ImageGallery';
+import PremiumBadge from '../../components/PremiumBadge';
 import {
   OfferingHeader,
   OfferingProfileRow,
@@ -23,7 +24,7 @@ const OfferingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
   const { data: offering, isLoading: loading, error: queryError } = useOffering(Number(id));
-  const { contacting, handleContact, handleBoost, isBoosting } = useOfferingActions(offering);
+  const { contacting, handleContact } = useOfferingActions(offering);
 
   // Loading state
   if (loading) {
@@ -55,7 +56,6 @@ const OfferingDetail = () => {
 
   const safe = getSafeValues(offering, t);
   const isOwner = user?.id === offering.creator_id;
-  const boostTimeRemaining = getBoostTimeRemaining(offering.boost_expires_at);
   const shortLocation = offering.location?.split(',').slice(0, 2).join(', ') || '';
 
   return (
@@ -103,6 +103,14 @@ const OfferingDetail = () => {
             safeTitle={safe.safeTitle}
           />
 
+          {/* Premium badges for non-owners */}
+          {!isOwner && ((offering as any).is_boost_active || (offering as any).is_promote_active) && (
+            <div className="px-4 pb-2 md:px-6 flex gap-2">
+              {(offering as any).is_promote_active && <PremiumBadge type="promoted" />}
+              {(offering as any).is_boost_active && <PremiumBadge type="boosted" />}
+            </div>
+          )}
+
           <OfferingProfileRow
             offering={offering}
             safeCreatorName={safe.safeCreatorName}
@@ -140,13 +148,9 @@ const OfferingDetail = () => {
             availability={offering.availability}
           />
 
+          {/* Premium section — only for the owner */}
           {isOwner && (
-            <OfferingBoostSection
-              offering={offering}
-              boostTimeRemaining={boostTimeRemaining}
-              onBoost={handleBoost}
-              isBoosting={isBoosting}
-            />
+            <OfferingBoostSection offering={offering} />
           )}
 
           {offering.latitude && offering.longitude && (

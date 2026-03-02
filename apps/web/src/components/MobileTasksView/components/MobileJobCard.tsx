@@ -4,10 +4,8 @@ import { calculateDistance, formatDistance } from '../utils/distance';
 import { formatTimeAgo } from '../utils/formatting';
 import { FEATURES } from '../../../constants/featureFlags';
 import StarRating from '../../ui/StarRating';
+import PremiumBadge from '../../PremiumBadge';
 
-/**
- * Strip common "urgent" prefixes users may have manually typed in titles.
- */
 const cleanTitle = (title: string): string => {
   return title
     .replace(/^\s*(⚡\s*)?urgent[:\-!\s]*/i, '')
@@ -18,17 +16,15 @@ const cleanTitle = (title: string): string => {
 };
 
 interface MobileJobCardProps {
-  task: Task;
+  task: Task & {
+    is_promote_active?: boolean;
+    is_urgent_active?: boolean;
+  };
   userLocation: { lat: number; lng: number };
   onClick?: () => void;
   isSelected?: boolean;
 }
 
-/**
- * Compact job card for the task list.
- *
- * Wrapped in React.memo so it only re-renders when its own props change.
- */
 const MobileJobCard = memo(function MobileJobCard({
   task,
   userLocation,
@@ -44,6 +40,8 @@ const MobileJobCard = memo(function MobileJobCard({
   const budget = task.budget || task.reward || 0;
   const hasRating = task.creator_rating != null;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
+  const isPromoted = !!(task as any).is_promote_active;
+  const isUrgentActive = !!(task as any).is_urgent_active;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   return (
@@ -52,7 +50,9 @@ const MobileJobCard = memo(function MobileJobCard({
       className={`flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 cursor-pointer transition-colors ${
         isSelected
           ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500'
-          : isUrgent
+          : isPromoted
+          ? 'bg-yellow-50/40 dark:bg-yellow-900/10 border-l-4 border-l-yellow-500'
+          : isUrgent || isUrgentActive
           ? 'bg-red-50/40 dark:bg-red-900/10 border-l-4 border-l-red-500'
           : 'bg-white dark:bg-gray-900'
       }`}
@@ -61,24 +61,42 @@ const MobileJobCard = memo(function MobileJobCard({
       <div className="relative">
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-            isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : isUrgent ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'
+            isSelected ? 'bg-blue-100 dark:bg-blue-900/30'
+            : isPromoted ? 'bg-yellow-50 dark:bg-yellow-900/20'
+            : isUrgent || isUrgentActive ? 'bg-red-50 dark:bg-red-900/20'
+            : 'bg-blue-50 dark:bg-blue-900/20'
           }`}
         >
           {task.icon || '📋'}
         </div>
-        {isUrgent && (
+        {(isUrgent || isUrgentActive) && (
           <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
           </span>
         )}
+        {isPromoted && !isUrgent && !isUrgentActive && (
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-yellow-500 items-center justify-center text-[8px] text-white font-bold">⭐</span>
+          </span>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
-        {/* Line 1: Title (cleaned) */}
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
-          {displayTitle}
-        </h3>
+        {/* Line 1: Title + badges */}
+        <div className="flex items-center gap-1.5">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+            {displayTitle}
+          </h3>
+        </div>
+
+        {/* Premium badges */}
+        {(isPromoted || isUrgentActive) && (
+          <div className="flex gap-1 mt-0.5">
+            {isPromoted && <PremiumBadge type="promoted" />}
+            {isUrgentActive && <PremiumBadge type="urgent" />}
+          </div>
+        )}
         
         {/* Line 2: Distance and Time */}
         <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -89,7 +107,6 @@ const MobileJobCard = memo(function MobileJobCard({
         
         {/* Line 3: Creator with avatar, name, rating, and city */}
         <div className="flex items-center gap-1.5 mt-1 text-xs">
-          {/* Avatar */}
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 overflow-hidden">
             {task.creator_avatar ? (
               <img 
@@ -102,18 +119,12 @@ const MobileJobCard = memo(function MobileJobCard({
               <span>{(task.creator_name || 'U')[0].toUpperCase()}</span>
             )}
           </div>
-          
-          {/* Name */}
           <span className="font-medium text-gray-700 dark:text-gray-300 truncate">
             {task.creator_name || 'Anonymous'}
           </span>
-          
-          {/* Separator if rating or city exists */}
           {(hasRating || task.creator_city) && (
             <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
           )}
-          
-          {/* Rating with proper fractional stars + numeric value + count */}
           {hasRating && (
             <StarRating
               rating={task.creator_rating!}
@@ -124,13 +135,9 @@ const MobileJobCard = memo(function MobileJobCard({
               compact
             />
           )}
-          
-          {/* Separator before city */}
           {hasRating && task.creator_city && (
             <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
           )}
-          
-          {/* City */}
           {task.creator_city && (
             <span className="text-gray-500 dark:text-gray-400 truncate">
               {task.creator_city}
@@ -142,7 +149,7 @@ const MobileJobCard = memo(function MobileJobCard({
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <span
           className={`text-lg font-bold ${
-            isUrgent
+            isUrgent || isUrgentActive
               ? 'text-red-600 dark:text-red-400'
               : budget <= 25
               ? 'text-green-600 dark:text-green-400'
@@ -157,7 +164,6 @@ const MobileJobCard = memo(function MobileJobCard({
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparator: only re-render if something the card displays changed
   return (
     prevProps.task.id === nextProps.task.id &&
     prevProps.isSelected === nextProps.isSelected &&
@@ -167,6 +173,8 @@ const MobileJobCard = memo(function MobileJobCard({
     prevProps.task.budget === nextProps.task.budget &&
     prevProps.task.reward === nextProps.task.reward &&
     prevProps.task.is_urgent === nextProps.task.is_urgent &&
+    (prevProps.task as any).is_promote_active === (nextProps.task as any).is_promote_active &&
+    (prevProps.task as any).is_urgent_active === (nextProps.task as any).is_urgent_active &&
     prevProps.task.creator_name === nextProps.task.creator_name &&
     prevProps.task.creator_rating === nextProps.task.creator_rating
   );
