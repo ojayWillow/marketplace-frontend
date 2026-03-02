@@ -7,6 +7,7 @@ import { getCategoryIcon, getCategoryLabel } from '../../../constants/categories
 import shareTask from '../../../utils/shareTask';
 import { FEATURES } from '../../../constants/featureFlags';
 import StarRating from '../../ui/StarRating';
+import PremiumBadge from '../../PremiumBadge';
 
 /**
  * Strip common "urgent" prefixes users may have manually typed in titles.
@@ -21,7 +22,10 @@ const cleanTitle = (title: string): string => {
 };
 
 interface JobPreviewCardProps {
-  task: Task;
+  task: Task & {
+    is_promote_active?: boolean;
+    is_urgent_active?: boolean;
+  };
   userLocation: { lat: number; lng: number };
   hasRealLocation: boolean;
   onViewDetails: () => void;
@@ -55,6 +59,8 @@ const JobPreviewCard = ({
   const categoryLabel = t(`tasks.categories.${task.category}`, categoryLabelRaw);
   const applicantsCount = task.pending_applications_count || 0;
   const isUrgent = FEATURES.URGENT && task.is_urgent;
+  const isPromoted = !!(task as any).is_promote_active;
+  const isUrgentActive = !!(task as any).is_urgent_active;
   const displayTitle = isUrgent ? cleanTitle(task.title) : task.title;
 
   const hasRating = task.creator_rating != null;
@@ -78,8 +84,12 @@ const JobPreviewCard = ({
         maxHeight: '55vh',
       }}
     >
-      {isUrgent && (
+      {/* Top accent bar: urgent (red) or promoted (gold) */}
+      {(isUrgent || isUrgentActive) && (
         <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 animate-pulse flex-shrink-0" />
+      )}
+      {isPromoted && !isUrgent && !isUrgentActive && (
+        <div className="h-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 flex-shrink-0" />
       )}
 
       <div className="px-4 pt-4 pb-2 overflow-y-auto flex-1 min-h-0">
@@ -90,10 +100,15 @@ const JobPreviewCard = ({
               <span>{categoryIcon}</span>
               <span>{categoryLabel}</span>
             </span>
-            {isUrgent && (
+            {(isUrgent || isUrgentActive) && (
               <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 items-center justify-center text-[8px] text-white font-bold">⚡</span>
+              </span>
+            )}
+            {isPromoted && !isUrgent && !isUrgentActive && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-yellow-500 items-center justify-center text-[8px] text-white font-bold">⭐</span>
               </span>
             )}
           </div>
@@ -118,7 +133,7 @@ const JobPreviewCard = ({
         <div className="text-center mb-1">
           <span
             className={`text-3xl font-bold ${
-              isUrgent
+              isUrgent || isUrgentActive
                 ? 'text-red-600 dark:text-red-400'
                 : budget <= 25
                 ? 'text-green-600 dark:text-green-400'
@@ -135,6 +150,14 @@ const JobPreviewCard = ({
         <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg text-center mb-2 line-clamp-2">
           {displayTitle}
         </h3>
+
+        {/* Premium badges */}
+        {(isPromoted || isUrgentActive) && (
+          <div className="flex justify-center gap-2 mb-2">
+            {isPromoted && <PremiumBadge type="promoted" />}
+            {isUrgentActive && <PremiumBadge type="urgent" />}
+          </div>
+        )}
 
         {/* Stats row */}
         <div className={`grid ${hasRealLocation ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-center`}>
@@ -234,8 +257,10 @@ const JobPreviewCard = ({
         <button
           onClick={onViewDetails}
           className={`flex-1 py-3 px-4 rounded-xl text-base font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
-            isUrgent
+            isUrgent || isUrgentActive
               ? 'bg-red-500 hover:bg-red-600'
+              : isPromoted
+              ? 'bg-yellow-500 hover:bg-yellow-600'
               : 'bg-blue-500 hover:bg-blue-600'
           }`}
         >
