@@ -54,6 +54,7 @@ const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Conversation = lazy(() => import('./pages/Conversation'))
 const WorkPage = lazy(() => import('./pages/WorkPage'))
+const PaymentCallback = lazy(() => import('./pages/PaymentCallback'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Legal pages
@@ -161,6 +162,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Payment callback - handles return from Revolut checkout */}
+              <Route path="payment/callback" element={<PaymentCallback />} />
               
               {/* Work page - requires auth */}
               <Route
