@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Eye, EyeOff, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@marketplace/shared';
-import { supabase } from '../../lib/supabase';
+import { useAuthStore, supabase } from '@marketplace/shared';
 
 interface EmailLoginFormProps {
   onBack: () => void;
