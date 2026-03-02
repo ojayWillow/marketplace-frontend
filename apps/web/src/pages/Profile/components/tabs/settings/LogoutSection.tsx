@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLogout } from '../../../../../hooks/useAuth';
+import { useAuthStore } from '@marketplace/shared';
 
 export const LogoutSection = () => {
   const { t } = useTranslation();
-  const logout = useLogout();
+  const { logout } = useAuthStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
