@@ -30,11 +30,16 @@ export interface PaymentStatusResponse {
 }
 
 // Price map (display only — backend enforces the real prices)
+// TODO: Restore real prices before launch:
+//   boost_offering:   { amount: '€1',  ... }
+//   urgent_task:      { amount: '€2',  ... }
+//   promote_offering: { amount: '€5',  ... }
+//   promote_task:     { amount: '€5',  ... }
 export const PAYMENT_PRICES: Record<PaymentType, { amount: string; label: string; duration: string }> = {
-  boost_offering:  { amount: '€1',  label: 'Boost',   duration: '1 day' },
-  urgent_task:     { amount: '€2',  label: 'Urgent',  duration: '1 day' },
-  promote_offering:{ amount: '€5',  label: 'Promote', duration: '3 days' },
-  promote_task:    { amount: '€5',  label: 'Promote', duration: '3 days' },
+  boost_offering:  { amount: 'FREE',  label: 'Boost',   duration: '1 day' },
+  urgent_task:     { amount: 'FREE',  label: 'Urgent',  duration: '1 day' },
+  promote_offering:{ amount: 'FREE',  label: 'Promote', duration: '3 days' },
+  promote_task:    { amount: 'FREE',  label: 'Promote', duration: '3 days' },
 };
 
 /**
