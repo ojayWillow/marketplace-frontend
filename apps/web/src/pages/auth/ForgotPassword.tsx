@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { apiClient } from '@marketplace/shared'
+import { supabase } from '@marketplace/shared'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -14,10 +14,24 @@ export default function ForgotPassword() {
     setError('')
 
     try {
-      await apiClient.post('/api/auth/forgot-password', { email })
+      const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+
+      if (supabaseError) {
+        throw supabaseError
+      }
+
       setSent(true)
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Failed to send reset email. Please try again.')
+      // Don't reveal whether email exists (security best practice)
+      // Supabase may return an error for non-existent emails depending on config
+      if (err?.message?.includes('rate limit')) {
+        setError('Too many requests. Please wait a moment and try again.')
+      } else {
+        // Show success anyway to not leak email existence
+        setSent(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -37,7 +51,7 @@ export default function ForgotPassword() {
               Check Your Email
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>. 
+              If an account with <strong>{email}</strong> exists, we've sent a password reset link.
               Please check your inbox and click the link to reset your password.
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">

@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { supabase } from '@marketplace/shared'
 import { apiClient } from '@marketplace/shared'
 
-// Eye icons as simple SVG components
+// Eye icons
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.64 0 8.577 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.007-9.963-7.178z" />
@@ -16,17 +17,14 @@ const EyeSlashIcon = () => (
   </svg>
 )
 
-// Password strength calculator
 const calculatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
   let score = 0;
-  
   if (password.length >= 6) score += 1;
   if (password.length >= 8) score += 1;
   if (password.length >= 12) score += 1;
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
   if (/\d/.test(password)) score += 1;
   if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
-  
   if (score <= 2) return { score, label: 'Weak', color: 'bg-red-500' };
   if (score <= 4) return { score, label: 'Medium', color: 'bg-yellow-500' };
   return { score, label: 'Strong', color: 'bg-green-500' };
@@ -35,8 +33,8 @@ const calculatePasswordStrength = (password: string): { score: number; label: st
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const token = searchParams.get('token')
-  
+  const legacyToken = searchParams.get('token')
+
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -44,32 +42,84 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [hasSupabaseSession, setHasSupabaseSession] = useState(false)
+  const [sessionLoading, setSessionLoading] = useState(true)
 
   const passwordStrength = useMemo(() => calculatePasswordStrength(password), [password])
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0
   const isValid = password.length >= 6 && passwordsMatch
 
+  // Check for Supabase recovery session (user clicked email link)
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setHasSupabaseSession(true);
+        }
+      } catch (_) {}
+      setSessionLoading(false);
+    };
+
+    // Listen for PASSWORD_RECOVERY event from Supabase URL hash
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        setHasSupabaseSession(true);
+        setSessionLoading(false);
+      }
+    });
+
+    checkSession();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isValid || !token) return
+    if (!isValid) return
 
     setLoading(true)
     setError('')
 
     try {
-      await apiClient.post('/api/auth/reset-password', { token, password })
+      if (hasSupabaseSession) {
+        // Supabase flow: user has active recovery session
+        const { error: supabaseError } = await supabase.auth.updateUser({ password });
+        if (supabaseError) throw supabaseError;
+      } else if (legacyToken) {
+        // Legacy flow: token-based reset (for old reset links)
+        await apiClient.post('/api/auth/reset-password', { token: legacyToken, password });
+      } else {
+        setError('Invalid reset link. Please request a new one.');
+        setLoading(false);
+        return;
+      }
+
       setSuccess(true)
-      // Redirect to login after 3 seconds
-      setTimeout(() => navigate('/login'), 3000)
+      setTimeout(() => navigate('/welcome'), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Failed to reset password. The link may have expired.')
+      const msg = err?.response?.data?.error || err?.message || 'Failed to reset password.';
+      if (msg.includes('expired') || msg.includes('invalid')) {
+        setError('This reset link has expired. Please request a new one.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  // No token provided
-  if (!token) {
+  // Loading session check
+  if (sessionLoading) {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  // No token and no Supabase session
+  if (!legacyToken && !hasSupabaseSession) {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full">
@@ -112,16 +162,16 @@ export default function ResetPassword() {
               Password Reset Successfully!
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Your password has been changed. You can now login with your new password.
+              Your password has been changed. You can now sign in with your new password.
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Redirecting to login...
+              Redirecting...
             </p>
             <Link
-              to="/login"
+              to="/welcome"
               className="block w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium text-center"
             >
-              Go to Login
+              Go to Sign In
             </Link>
           </div>
         </div>
@@ -154,7 +204,6 @@ export default function ResetPassword() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* New Password */}
             <div>
               <label htmlFor="password" className="label dark:text-gray-300">
                 New Password
@@ -180,7 +229,6 @@ export default function ResetPassword() {
                 </button>
               </div>
               
-              {/* Password Strength */}
               {password.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center gap-2 mb-1">
@@ -201,7 +249,6 @@ export default function ResetPassword() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="label dark:text-gray-300">
                 Confirm New Password
@@ -261,10 +308,10 @@ export default function ResetPassword() {
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Remember your password?{' '}
             <Link
-              to="/login"
+              to="/welcome"
               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
             >
-              Back to Login
+              Back to Sign In
             </Link>
           </p>
         </div>
