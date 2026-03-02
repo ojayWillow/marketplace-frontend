@@ -9,3 +9,4 @@ export { DisputeSheet } from './DisputeSheet';
 export { DisputeSection } from './DisputeSection';
 export { TaskStatusBanner } from './TaskStatusBanner';
 export { DesktopApplicationForm } from './DesktopApplicationForm';
+export { default as TaskPremiumSection } from './TaskPremiumSection';
