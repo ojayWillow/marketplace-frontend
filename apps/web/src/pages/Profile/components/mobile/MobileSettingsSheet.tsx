@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLogout } from '../../../../hooks/useAuth';
+import { useAuthStore } from '@marketplace/shared';
 import { useTheme } from '../../../../hooks/useTheme';
 import { NotificationSettings } from '../tabs/settings/NotificationSettings';
 
@@ -28,7 +28,7 @@ export const MobileSettingsSheet = ({
   onHowItWorks,
 }: MobileSettingsSheetProps) => {
   const { t, i18n } = useTranslation();
-  const logout = useLogout();
+  const { logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const currentLang = i18n.language;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
