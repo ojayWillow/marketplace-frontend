@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@marketplace/shared';
-import { useLogout } from '../../../hooks/useAuth';
 import LanguageSwitcher from '../LanguageSwitcher';
 import ThemeToggle from '../../ui/ThemeToggle';
 
@@ -16,8 +15,7 @@ import { useNotifications } from './hooks/useNotifications';
 
 export default function Header() {
   const { t } = useTranslation();
-  const { isAuthenticated, user } = useAuthStore();
-  const logout = useLogout();
+  const { isAuthenticated, user, logout } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { 
