@@ -64,6 +64,7 @@ const LocationInput = ({
   const { searching, suggestions, clearSuggestions } = useAddressSearch(location);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [reverseLoading, setReverseLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSelect = (result: GeocodingResult) => {
@@ -81,6 +82,24 @@ const LocationInput = ({
     const latlng = e.target.getLatLng();
     setReverseLoading(true);
     onCoordsChange(latlng.lat, latlng.lng);
+  }, [onCoordsChange]);
+
+  const handleUseMyLocation = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        setReverseLoading(true);
+        onCoordsChange(lat, lng);
+        setGeoLoading(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   }, [onCoordsChange]);
 
   useEffect(() => {
@@ -133,9 +152,31 @@ const LocationInput = ({
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={t('createOffering.searchLocation', 'Search address or tap the map')}
-          className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-base sm:text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
+          className="w-full pl-8 pr-28 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-base sm:text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
           autoComplete="off"
         />
+
+        {navigator.geolocation && (
+          <button
+            type="button"
+            onClick={handleUseMyLocation}
+            disabled={geoLoading}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-md transition-colors disabled:opacity-50"
+          >
+            {geoLoading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                <span className="hidden sm:inline">{t('createOffering.detecting', 'Detecting...')}</span>
+              </>
+            ) : (
+              <>
+                <span>📍</span>
+                <span className="hidden sm:inline">{t('createOffering.useMyLocation', 'My Location')}</span>
+                <span className="sm:hidden">{t('createOffering.useMyLocationShort', 'My Loc')}</span>
+              </>
+            )}
+          </button>
+        )}
 
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-gray-900/50 max-h-48 overflow-y-auto">
