@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@marketplace/shared';
 import { useToastStore } from '@marketplace/shared';
 import { apiClient } from '@marketplace/shared';
+import { useTranslation } from 'react-i18next';
 
 interface MapUpgradeCardProps {
   offeringId: number;
@@ -19,6 +20,7 @@ const MapUpgradeCard = ({
   expiresAt,
   isOwner 
 }: MapUpgradeCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const toast = useToastStore();
@@ -40,13 +42,13 @@ const MapUpgradeCard = ({
       newExpiry.setDate(newExpiry.getDate() + 7);
       setStatus('trial');
       setExpiry(newExpiry.toISOString());
-      toast.success('🎉 Trial activated! Your offering is now visible on the map for 7 days.');
+      toast.success('🎉 ' + t('premium.mapSubscription.trialDescription', 'Your offering is now visible on the map!'));
     } catch (err: any) {
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 7);
       setStatus('trial');
       setExpiry(newExpiry.toISOString());
-      toast.success('🎉 Trial activated! Your offering is now visible on the map for 7 days.');
+      toast.success('🎉 ' + t('premium.mapSubscription.trialDescription', 'Your offering is now visible on the map!'));
     } finally {
       setLoading(false);
     }
@@ -67,14 +69,14 @@ const MapUpgradeCard = ({
         newExpiry.setDate(newExpiry.getDate() + 7);
         setStatus('active');
         setExpiry(newExpiry.toISOString());
-        toast.success('✅ Subscription activated!');
+        toast.success('✅ ' + t('premium.mapSubscription.active', 'Map Visibility Active'));
       }
     } catch (err) {
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 7);
       setStatus('active');
       setExpiry(newExpiry.toISOString());
-      toast.success('✅ Subscription activated! (Demo mode)');
+      toast.success('✅ ' + t('premium.mapSubscription.active', 'Map Visibility Active') + ' (Demo)');
     } finally {
       setLoading(false);
     }
@@ -96,18 +98,19 @@ const MapUpgradeCard = ({
         <div className="flex items-start gap-3">
           <div className="text-2xl">🗺️</div>
           <div className="flex-1">
-            <h3 className="font-semibold text-green-800 dark:text-green-300">Map Visibility Active</h3>
+            <h3 className="font-semibold text-green-800 dark:text-green-300">{t('premium.mapSubscription.active', 'Map Visibility Active')}</h3>
             <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-              Your offering is visible on the map! 
-              {daysRemaining > 0 && ` ${daysRemaining} days remaining.`}
+              {t('premium.mapSubscription.activeDescription', 'Your offering is visible on the map!')}
+              {' '}
+              {daysRemaining > 0 && t('premium.mapSubscription.daysRemaining', '{{days}} days remaining.', { days: daysRemaining })}
             </p>
             <div className="mt-3 flex items-center gap-2">
               <span className="px-2 py-1 bg-green-200 dark:bg-green-800/40 text-green-800 dark:text-green-300 rounded-full text-xs font-medium">
-                ✅ Paid • €5/week
+                ✅ {t('premium.mapSubscription.paidLabel', 'Paid • €{{price}}/week', { price: 5 })}
               </span>
               {expiry && (
                 <span className="text-xs text-green-600 dark:text-green-400">
-                  Renews {new Date(expiry).toLocaleDateString()}
+                  {t('premium.mapSubscription.renews', 'Renews {{date}}', { date: new Date(expiry).toLocaleDateString() })}
                 </span>
               )}
             </div>
@@ -124,12 +127,13 @@ const MapUpgradeCard = ({
         <div className="flex items-start gap-3">
           <div className="text-2xl">🗺️</div>
           <div className="flex-1">
-            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">Free Trial Active</h3>
+            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">{t('premium.mapSubscription.trialActive', 'Free Trial Active')}</h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-              Your offering is visible on the map!
+              {t('premium.mapSubscription.trialDescription', 'Your offering is visible on the map!')}
+              {' '}
               {daysRemaining > 0 
-                ? ` Trial ends in ${daysRemaining} days.`
-                : ' Trial ends today!'
+                ? t('premium.mapSubscription.trialEndsIn', 'Trial ends in {{days}} days.', { days: daysRemaining })
+                : t('premium.mapSubscription.trialEndsToday', 'Trial ends today!')
               }
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -138,10 +142,10 @@ const MapUpgradeCard = ({
                 disabled={loading}
                 className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-medium disabled:opacity-50"
               >
-                {loading ? 'Processing...' : 'Subscribe €5/week'}
+                {loading ? t('common.processing', 'Processing...') : t('premium.mapSubscription.subscribe', 'Subscribe €{{price}}/week', { price: 5 })}
               </button>
               <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                Keep your map visibility after trial
+                {t('premium.mapSubscription.keepVisibility', 'Keep your map visibility after trial')}
               </span>
             </div>
           </div>
@@ -157,9 +161,9 @@ const MapUpgradeCard = ({
         <div className="flex items-start gap-3">
           <div className="text-2xl">🗺️</div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200">Map Visibility Expired</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200">{t('premium.mapSubscription.expired', 'Map Visibility Expired')}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Your offering is no longer visible on the map. Reactivate to get more visibility!
+              {t('premium.mapSubscription.expiredDescription', 'Your offering is no longer visible on the map. Reactivate to get more visibility!')}
             </p>
             <div className="mt-3">
               <button
@@ -167,7 +171,7 @@ const MapUpgradeCard = ({
                 disabled={loading}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium disabled:opacity-50"
               >
-                {loading ? 'Processing...' : 'Reactivate €5/week'}
+                {loading ? t('common.processing', 'Processing...') : t('premium.mapSubscription.reactivate', 'Reactivate €{{price}}/week', { price: 5 })}
               </button>
             </div>
           </div>
@@ -182,9 +186,9 @@ const MapUpgradeCard = ({
       <div className="flex items-start gap-4">
         <div className="text-3xl">🗺️</div>
         <div className="flex-1">
-          <h3 className="font-bold text-lg">Get Found on the Map!</h3>
+          <h3 className="font-bold text-lg">{t('premium.mapSubscription.title', 'Get Found on the Map!')}</h3>
           <p className="text-blue-100 mt-1 text-sm">
-            People browse the map to find services nearby. Make your offering visible and get more customers!
+            {t('premium.mapSubscription.description', 'People browse the map to find services nearby. Make your offering visible and get more customers!')}
           </p>
           
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -193,17 +197,17 @@ const MapUpgradeCard = ({
               disabled={loading}
               className="px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 font-semibold disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Activating...' : '✨ Try 7 Days FREE'}
+              {loading ? t('common.processing', 'Activating...') : '✨ ' + t('premium.mapSubscription.tryFree', 'Try 7 Days FREE')}
             </button>
             <div className="text-blue-100 text-sm">
-              Then €5/week
+              {t('premium.mapSubscription.thenPrice', 'Then €{{price}}/week', { price: 5 })}
             </div>
           </div>
           
           <div className="mt-4 flex items-center gap-4 text-sm text-blue-100">
-            <span>✅ Appear on map</span>
-            <span>✅ More visibility</span>
-            <span>✅ Cancel anytime</span>
+            <span>✅ {t('premium.mapSubscription.features.appearOnMap', 'Appear on map')}</span>
+            <span>✅ {t('premium.mapSubscription.features.moreVisibility', 'More visibility')}</span>
+            <span>✅ {t('premium.mapSubscription.features.cancelAnytime', 'Cancel anytime')}</span>
           </div>
         </div>
       </div>

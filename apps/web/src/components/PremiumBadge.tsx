@@ -19,19 +19,19 @@ const BADGE_CONFIG: Record<BadgeType, { icon: string; colorClass: string; labelK
   promoted: {
     icon: '\u2B50',
     colorClass: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    labelKey: 'badge.promoted',
+    labelKey: 'premium.badge.promoted',
     defaultLabel: 'Promoted',
   },
   urgent: {
     icon: '\u26A1',
     colorClass: 'bg-orange-100 text-orange-800 border-orange-200',
-    labelKey: 'badge.urgent',
+    labelKey: 'premium.badge.urgent',
     defaultLabel: 'Urgent',
   },
   boosted: {
     icon: '\u{1F680}',
     colorClass: 'bg-purple-100 text-purple-800 border-purple-200',
-    labelKey: 'badge.boosted',
+    labelKey: 'premium.badge.boosted',
     defaultLabel: 'Boosted',
   },
 };

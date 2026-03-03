@@ -71,7 +71,7 @@ export default function PaymentCallback() {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center p-6">
           <p className="text-xl mb-2">🤔</p>
-          <p className="text-gray-600">{t('payment.noOrderId', 'No payment order found.')}</p>
+          <p className="text-gray-600">{t('premium.payment.noOrderId', 'No payment order found.')}</p>
           <button
             onClick={() => navigate('/', { replace: true })}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -91,20 +91,20 @@ export default function PaymentCallback() {
 
         {/* Status title */}
         <h1 className={`text-2xl font-bold mb-2 ${statusInfo.color}`}>
-          {status === 'pending' && t('payment.processing', 'Processing payment...')}
-          {status === 'completed' && t('payment.success', 'Payment successful!')}
-          {status === 'failed' && t('payment.failed', 'Payment failed')}
-          {status === 'cancelled' && t('payment.cancelled', 'Payment cancelled')}
+          {status === 'pending' && t('premium.payment.processing', 'Processing payment...')}
+          {status === 'completed' && t('premium.payment.success', 'Payment successful!')}
+          {status === 'failed' && t('premium.payment.failed', 'Payment failed')}
+          {status === 'cancelled' && t('premium.payment.cancelled', 'Payment cancelled')}
         </h1>
 
         {/* Description */}
         <p className="text-gray-500 mb-6">
-          {status === 'pending' && t('payment.pendingDesc', 'Please wait while we confirm your payment...')}
+          {status === 'pending' && t('premium.payment.pendingDesc', 'Please wait while we confirm your payment...')}
           {status === 'completed' && paymentLabel && (
-            <>{paymentLabel} {t('payment.activated', 'has been activated!')} 🎉</>
+            <>{paymentLabel} {t('premium.payment.activated', 'has been activated!')} 🎉</>
           )}
-          {status === 'failed' && t('payment.failedDesc', 'Something went wrong. You were not charged.')}
-          {status === 'cancelled' && t('payment.cancelledDesc', 'The payment was cancelled. You were not charged.')}
+          {status === 'failed' && t('premium.payment.failedDesc', 'Something went wrong. You were not charged.')}
+          {status === 'cancelled' && t('premium.payment.cancelledDesc', 'The payment was cancelled. You were not charged.')}
         </p>
 
         {/* Spinner for pending */}
@@ -117,7 +117,7 @@ export default function PaymentCallback() {
         {/* Auto-redirect countdown */}
         {status === 'completed' && redirectCountdown !== null && (
           <p className="text-sm text-gray-400 mb-4">
-            {t('payment.redirecting', 'Redirecting in {{seconds}}s...', { seconds: redirectCountdown })}
+            {t('premium.payment.redirecting', 'Redirecting in {{seconds}}s...', { seconds: redirectCountdown })}
           </p>
         )}
 
@@ -129,7 +129,7 @@ export default function PaymentCallback() {
                 onClick={() => navigate(getRedirectPath(data.payment_type, data.target_id), { replace: true })}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {t('payment.viewItem', 'View item')}
+                {t('premium.payment.viewItem', 'View item')}
               </button>
             )}
             <button
@@ -144,7 +144,7 @@ export default function PaymentCallback() {
         {/* Error state */}
         {isError && (
           <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-            {t('payment.errorPolling', 'Could not check payment status. Please try refreshing.')}
+            {t('premium.payment.errorPolling', 'Could not check payment status. Please try refreshing.')}
           </div>
         )}
       </div>
