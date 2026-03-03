@@ -10,11 +10,12 @@ interface OfferingsTabProps {
   offerings: Offering[];
   loading: boolean;
   onDelete?: (id: number) => void;
+  onToggleStatus?: (id: number, currentStatus: string) => void;
   viewOnly?: boolean;
   compact?: boolean;
 }
 
-export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false, compact = false }: OfferingsTabProps) => {
+export const OfferingsTab = ({ offerings, loading, onDelete, onToggleStatus, viewOnly = false, compact = false }: OfferingsTabProps) => {
   const { t } = useTranslation();
   const [showMapTipDismissed, setShowMapTipDismissed] = useState(() => {
     return localStorage.getItem('mapTipDismissed') === 'true';
@@ -86,7 +87,7 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false, c
       ) : (
         <div className="space-y-2.5">
           {displayOfferings.map(offering => (
-            <div key={offering.id} className={`${compact ? 'p-3' : 'p-3 md:p-4'} border border-gray-100 dark:border-gray-700 rounded-lg hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors`}>
+            <div key={offering.id} className={`${compact ? 'p-3' : 'p-3 md:p-4'} border border-gray-100 dark:border-gray-700 rounded-lg hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors ${offering.status === 'paused' ? 'opacity-60' : ''}`}>
               <div>
                 <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span className="text-sm">{getCategoryIcon(offering.category)}</span>
@@ -119,6 +120,20 @@ export const OfferingsTab = ({ offerings, loading, onDelete, viewOnly = false, c
                       <Link to={`/offerings/${offering.id}/edit`} className="px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
                         {t('profile.servicesTab.edit')}
                       </Link>
+                      {onToggleStatus && (offering.status === 'active' || offering.status === 'paused') && (
+                        <button
+                          onClick={() => onToggleStatus(offering.id, offering.status)}
+                          className={`px-2.5 py-1 text-xs rounded-md font-medium ${
+                            offering.status === 'active'
+                              ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30'
+                              : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
+                          }`}
+                        >
+                          {offering.status === 'active'
+                            ? t('profile.servicesTab.pause', 'Pause')
+                            : t('profile.servicesTab.resume', 'Resume')}
+                        </button>
+                      )}
                       {onDelete && (
                         <button onClick={() => onDelete(offering.id)} className="px-2.5 py-1 text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 font-medium ml-auto">
                           {t('profile.servicesTab.delete')}

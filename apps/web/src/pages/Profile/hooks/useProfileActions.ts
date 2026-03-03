@@ -3,7 +3,7 @@ import { apiClient } from '@marketplace/shared';
 import { listingsApi, type Listing } from '@marketplace/shared';
 import { reviewsApi } from '@marketplace/shared';
 import { cancelTask, confirmTaskCompletion } from '@marketplace/shared';
-import { deleteOffering, Offering } from '@marketplace/shared';
+import { deleteOffering, pauseOffering, activateOffering, Offering } from '@marketplace/shared';
 import type { Review } from '@marketplace/shared';
 
 interface UseProfileActionsProps {
@@ -46,6 +46,27 @@ export const useProfileActions = ({
     } catch (error) {
       console.error('Error deleting offering:', error);
       toast.error('Failed to delete offering');
+    }
+  };
+
+  const handleToggleOfferingStatus = async (offeringId: number, currentStatus: string) => {
+    try {
+      const updated = currentStatus === 'active'
+        ? await pauseOffering(offeringId)
+        : await activateOffering(offeringId);
+
+      setMyOfferings(prev =>
+        prev.map(o => (o.id === offeringId ? { ...o, status: updated.status } : o))
+      );
+
+      toast.success(
+        updated.status === 'paused'
+          ? 'Offering paused'
+          : 'Offering activated'
+      );
+    } catch (error) {
+      console.error('Error toggling offering status:', error);
+      toast.error('Failed to update offering status');
     }
   };
 
@@ -102,6 +123,7 @@ export const useProfileActions = ({
   return {
     handleDeleteListing,
     handleDeleteOffering,
+    handleToggleOfferingStatus,
     handleCancelTask,
     handleConfirmTask,
     handleWithdrawApplication,

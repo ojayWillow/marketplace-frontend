@@ -260,6 +260,7 @@ const Profile = () => {
             offerings={myOfferings}
             loading={offeringsLoading}
             onDelete={actions.handleDeleteOffering}
+            onToggleStatus={actions.handleToggleOfferingStatus}
           />
         )}
 
