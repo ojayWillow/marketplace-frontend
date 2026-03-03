@@ -13,7 +13,6 @@ import {
   OfferingsTab,
   TasksTab,
   ReviewsTab,
-  SettingsTab,
 } from './components/tabs';
 import {
   useProfileData,
@@ -23,6 +22,7 @@ import {
 } from './hooks';
 import { MobileReviewsSection } from './components/mobile/MobileReviewsSection';
 import { MobileSettingsSheet } from './components/mobile/MobileSettingsSheet';
+import { DesktopSettingsPanel } from './components/DesktopSettingsPanel';
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -72,6 +72,7 @@ const Profile = () => {
 
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showMobileSettings, setShowMobileSettings] = useState(false);
+  const [showDesktopSettings, setShowDesktopSettings] = useState(false);
 
   useEffect(() => {
     if (profile?.username) {
@@ -155,7 +156,6 @@ const Profile = () => {
           fileInputRef={avatarPicker.fileInputRef}
         />
 
-        {/* Full-screen settings sheet */}
         <MobileSettingsSheet
           isOpen={showMobileSettings}
           onClose={() => setShowMobileSettings(false)}
@@ -203,6 +203,7 @@ const Profile = () => {
           onCancel={() => setEditing(false)}
           onSave={handleSave}
           onChangeAvatar={() => avatarPicker.setShowAvatarPicker(true)}
+          onOpenSettings={() => setShowDesktopSettings(true)}
         />
 
         <AvatarPicker
@@ -218,6 +219,12 @@ const Profile = () => {
           onFileUpload={avatarPicker.handleFileUpload}
           onTriggerFileInput={avatarPicker.triggerFileInput}
           fileInputRef={avatarPicker.fileInputRef}
+        />
+
+        {/* Desktop Settings Slide-over */}
+        <DesktopSettingsPanel
+          isOpen={showDesktopSettings}
+          onClose={() => setShowDesktopSettings(false)}
         />
 
         <ProfileTabs
@@ -280,10 +287,6 @@ const Profile = () => {
             onDeleteReview={actions.handleDeleteReview}
             setReviews={setReviews}
           />
-        )}
-
-        {activeTab === 'settings' && (
-          <SettingsTab />
         )}
       </div>
     </div>

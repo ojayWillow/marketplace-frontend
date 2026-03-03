@@ -38,7 +38,6 @@ export const ProfileHeader = ({
 }: ProfileHeaderProps) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { clearAuth } = useAuthStore();
 
   const memberSince = new Date(profile.created_at).toLocaleDateString(
     i18n.language === 'lv' ? 'lv-LV' : i18n.language === 'ru' ? 'ru-RU' : 'en-US',
@@ -58,18 +57,6 @@ export const ProfileHeader = ({
     viewOnly ? (profile.avatar_url || profile.profile_picture_url) : (formData.avatar_url || profile.avatar_url || profile.profile_picture_url)
   );
 
-  const handleLogout = async () => {
-    try {
-      clearAuth();
-      setTimeout(() => {
-        navigate('/welcome', { replace: true });
-      }, 100);
-    } catch (error) {
-      console.error('Logout error:', error);
-      navigate('/welcome', { replace: true });
-    }
-  };
-
   const isPlaceholderEmail = (email: string) => {
     return email.includes('@phone.tirgus.local');
   };
@@ -79,13 +66,13 @@ export const ProfileHeader = ({
   const skillsList = profile.skills
     ? profile.skills.split(',').map(s => s.trim()).filter(Boolean).map(key => {
         const found = AVAILABLE_SKILLS.find(sk => sk.key === key);
-        return found || { key, label: key, icon: '📋' };
+        return found || { key, label: key, icon: '\ud83d\udccb' };
       })
     : [];
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
-      {/* Mobile top bar — Settings (left) + Notification Bell (right) */}
+      {/* Mobile top bar \u2014 Settings (left) + Notification Bell (right) */}
       {!viewOnly && !editing && (
         <div className="md:hidden flex items-center justify-between -mt-2 -mx-2 mb-2">
           {onOpenSettings ? (
@@ -145,7 +132,7 @@ export const ProfileHeader = ({
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{profile.username}</h1>
             {profile.is_verified && (
               <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded-full font-medium">
-                ✓ {t('profile.verified')}
+                \u2713 {t('profile.verified')}
               </span>
             )}
           </div>
@@ -157,7 +144,7 @@ export const ProfileHeader = ({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
             {(profile.city || profile.country) && (
               <span className="flex items-center gap-1">
-                📍 {[profile.city, profile.country].filter(Boolean).join(', ')}
+                \ud83d\udccd {[profile.city, profile.country].filter(Boolean).join(', ')}
               </span>
             )}
             <span>{t('profile.memberSince', { date: memberSince })}</span>
@@ -166,7 +153,7 @@ export const ProfileHeader = ({
           {/* Stats inline */}
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-1">
-              <span className="text-yellow-500">★</span>
+              <span className="text-yellow-500">\u2605</span>
               <span className="font-semibold text-gray-900 dark:text-gray-100">{profile.average_rating?.toFixed(1) || '0.0'}</span>
               <span className="text-gray-400 dark:text-gray-500 text-sm">({profile.reviews_count || 0})</span>
             </div>
@@ -200,12 +187,12 @@ export const ProfileHeader = ({
             <div className="md:hidden flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500 dark:text-gray-400">
               {displayEmail && (
                 <span className="flex items-center gap-1">
-                  📧 {displayEmail}
+                  \ud83d\udce7 {displayEmail}
                 </span>
               )}
               {profile.phone && (
                 <span className="flex items-center gap-1">
-                  📱 {profile.phone}
+                  \ud83d\udcf1 {profile.phone}
                 </span>
               )}
             </div>
@@ -221,7 +208,7 @@ export const ProfileHeader = ({
                 disabled={messageLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 flex items-center gap-2"
               >
-                💬 {messageLoading ? t('profile.messageLoading') : t('profile.message')}
+                \ud83d\udcac {messageLoading ? t('profile.messageLoading') : t('profile.message')}
               </button>
             )
           ) : (
@@ -233,12 +220,19 @@ export const ProfileHeader = ({
                 >
                   {t('profile.editProfile')}
                 </button>
-                <button
-                  onClick={handleLogout}
-                  className="hidden md:block px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium"
-                >
-                  🚪 {t('profile.logout')}
-                </button>
+                {/* Desktop gear icon for settings */}
+                {onOpenSettings && (
+                  <button
+                    onClick={onOpenSettings}
+                    className="hidden md:flex p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    aria-label={t('profile.tabs.settings', 'Settings')}
+                  >
+                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                )}
               </div>
             ) : (
               <div className="flex gap-2">
@@ -268,13 +262,13 @@ export const ProfileHeader = ({
             to="/tasks/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
           >
-            📋 {t('profile.quickActions.postJob')}
+            \ud83d\udccb {t('profile.quickActions.postJob')}
           </Link>
           <Link
             to="/offerings/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
           >
-            👋 {t('profile.quickActions.offerService')}
+            \ud83d\udc4b {t('profile.quickActions.offerService')}
           </Link>
         </div>
       )}

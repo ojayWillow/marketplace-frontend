@@ -10,15 +10,15 @@ interface MobileSettingsSheetProps {
 }
 
 const languages = [
-  { code: 'lv', label: 'LV', name: 'Latviešu', flag: '🇱🇻' },
-  { code: 'ru', label: 'RU', name: 'Русский', flag: '🇷🇺' },
-  { code: 'en', label: 'EN', name: 'English', flag: '🇬🇧' },
+  { code: 'lv', label: 'LV', name: 'Latvie\u0161u', flag: '\ud83c\uddf1\ud83c\uddfb' },
+  { code: 'ru', label: 'RU', name: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439', flag: '\ud83c\uddf7\ud83c\uddfa' },
+  { code: 'en', label: 'EN', name: 'English', flag: '\ud83c\uddec\ud83c\udde7' },
 ];
 
 const themeOptions = [
-  { value: 'light' as const, icon: '☀️', labelKey: 'settings.theme.light', labelDefault: 'Light' },
-  { value: 'dark' as const, icon: '🌙', labelKey: 'settings.theme.dark', labelDefault: 'Dark' },
-  { value: 'system' as const, icon: '🖥️', labelKey: 'settings.theme.system', labelDefault: 'System' },
+  { value: 'light' as const, icon: '\u2600\ufe0f', labelKey: 'settings.theme.light', labelDefault: 'Light' },
+  { value: 'dark' as const, icon: '\ud83c\udf19', labelKey: 'settings.theme.dark', labelDefault: 'Dark' },
+  { value: 'system' as const, icon: '\ud83d\udda5\ufe0f', labelKey: 'settings.theme.system', labelDefault: 'System' },
 ];
 
 export const MobileSettingsSheet = ({
@@ -73,54 +73,10 @@ export const MobileSettingsSheet = ({
       {/* Content */}
       <div className="overflow-y-auto h-[calc(100vh-52px)] px-4 py-3 space-y-3 pb-16">
 
-        {/* Listings — Coming Soon Teaser */}
-        <div className="relative overflow-hidden rounded-xl border border-purple-200 dark:border-purple-800/40 bg-gradient-to-br from-purple-50 via-white to-amber-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-amber-950/30">
-          <div className="absolute top-2.5 right-2.5">
-            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950 rounded-full">
-              {t('common.comingSoon', 'Coming soon')}
-            </span>
-          </div>
-
-          <div className="px-4 pt-3 pb-3">
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-                <span className="text-base">🏪</span>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {t('settings.listings.teaserTitle', 'Market')}
-                </h3>
-                <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
-                  {t('settings.listings.teaserSubtitle', 'Buy, sell, bid')}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
-              {t('settings.listings.teaserDescription', 'Soon you\'ll be able to sell your items, auction goods, and find the best deals in your area.')}
-            </p>
-
-            <div className="flex flex-wrap gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                🏷️ {t('settings.listings.featureSell', 'Sell')}
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                🔨 {t('settings.listings.featureBid', 'Bid')}
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                📦 {t('settings.listings.featureItems', 'Items')}
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
-                📍 {t('settings.listings.featureLocal', 'In your area')}
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Appearance */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm">🎨</span>
+            <span className="text-sm">\ud83c\udfa8</span>
             <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {t('settings.theme.title', 'Appearance')}
             </span>
@@ -151,7 +107,7 @@ export const MobileSettingsSheet = ({
         {/* Language */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm">🌐</span>
+            <span className="text-sm">\ud83c\udf10</span>
             <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {t('settings.language.title', 'Language')}
             </span>
@@ -179,7 +135,7 @@ export const MobileSettingsSheet = ({
           </div>
         </div>
 
-        {/* Notifications */}
+        {/* Notifications - compact expandable */}
         <NotificationSettings />
 
         {/* Log Out */}
@@ -187,7 +143,7 @@ export const MobileSettingsSheet = ({
           onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
-          <span className="text-sm">🚪</span>
+          <span className="text-sm">\ud83d\udeaa</span>
           <span className="text-sm font-medium">
             {t('settings.logout.button', 'Log Out')}
           </span>
