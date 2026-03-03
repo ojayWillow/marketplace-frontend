@@ -1,0 +1,64 @@
+{
+  "badge": {
+    "promoted": "Promoted",
+    "boosted": "Boosted",
+    "urgent": "Urgent"
+  },
+  "boost": {
+    "title": "Boost Your Listing",
+    "description": "Get more visibility — boosted listings appear higher in search results",
+    "activate": "Boost Now",
+    "active": "Boost Active",
+    "expired": "Boost Expired",
+    "expiresIn": "Expires in {{days}} days",
+    "pricePerWeek": "€{{price}}/week"
+  },
+  "promote": {
+    "title": "Promote Your Listing",
+    "description": "Maximum visibility — promoted listings appear first with a special badge",
+    "activate": "Promote Now",
+    "active": "Promotion Active",
+    "expired": "Promotion Expired",
+    "expiresIn": "Expires in {{days}} days",
+    "pricePerWeek": "€{{price}}/week"
+  },
+  "mapSubscription": {
+    "title": "Get Found on the Map!",
+    "description": "People browse the map to find services nearby. Make your offering visible and get more customers!",
+    "tryFree": "Try 7 Days FREE",
+    "subscribe": "Subscribe €{{price}}/week",
+    "thenPrice": "Then €{{price}}/week",
+    "features": {
+      "appearOnMap": "Appear on map",
+      "moreVisibility": "More visibility",
+      "cancelAnytime": "Cancel anytime"
+    },
+    "trialActive": "Free Trial Active",
+    "trialDescription": "Your offering is visible on the map!",
+    "trialEndsIn": "Trial ends in {{days}} days.",
+    "trialEndsToday": "Trial ends today!",
+    "keepVisibility": "Keep your map visibility after trial",
+    "active": "Map Visibility Active",
+    "activeDescription": "Your offering is visible on the map!",
+    "daysRemaining": "{{days}} days remaining.",
+    "paidLabel": "Paid • €{{price}}/week",
+    "renews": "Renews {{date}}",
+    "expired": "Map Visibility Expired",
+    "expiredDescription": "Your offering is no longer visible on the map. Reactivate to get more visibility!",
+    "reactivate": "Reactivate €{{price}}/week"
+  },
+  "payment": {
+    "processing": "Processing payment...",
+    "success": "Payment successful!",
+    "failed": "Payment failed",
+    "cancelled": "Payment cancelled",
+    "pendingDesc": "Please wait while we confirm your payment...",
+    "activated": "has been activated!",
+    "failedDesc": "Something went wrong. You were not charged.",
+    "cancelledDesc": "The payment was cancelled. You were not charged.",
+    "redirecting": "Redirecting in {{seconds}}s...",
+    "viewItem": "View item",
+    "noOrderId": "No payment order found.",
+    "errorPolling": "Could not check payment status. Please try refreshing."
+  }
+}

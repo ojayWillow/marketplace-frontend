@@ -1,0 +1,64 @@
+{
+  "badge": {
+    "promoted": "Reklamēts",
+    "boosted": "Uzlabots",
+    "urgent": "Steidzami"
+  },
+  "boost": {
+    "title": "Uzlabot savu sludinājumu",
+    "description": "Iegūstiet lielāku redzamību — uzlabotie sludinājumi parādās augstāk meklēšanas rezultātos",
+    "activate": "Uzlabot tagad",
+    "active": "Uzlabojums aktīvs",
+    "expired": "Uzlabojums beidzies",
+    "expiresIn": "Beidzas pēc {{days}} dienām",
+    "pricePerWeek": "€{{price}}/nedēļā"
+  },
+  "promote": {
+    "title": "Reklamēt savu sludinājumu",
+    "description": "Maksimāla redzamība — reklamētie sludinājumi parādās pirmie ar īpašu zīmi",
+    "activate": "Reklamēt tagad",
+    "active": "Reklāma aktīva",
+    "expired": "Reklāma beigusies",
+    "expiresIn": "Beidzas pēc {{days}} dienām",
+    "pricePerWeek": "€{{price}}/nedēļā"
+  },
+  "mapSubscription": {
+    "title": "Parādieties kartē!",
+    "description": "Cilvēki pārlūko karti, lai atrastu pakalpojumus tuvumā. Padariet savu piedāvājumu redzamu un piesaistiet vairāk klientu!",
+    "tryFree": "Izmēģināt 7 dienas BEZMAKSAS",
+    "subscribe": "Abonēt €{{price}}/nedēļā",
+    "thenPrice": "Pēc tam €{{price}}/nedēļā",
+    "features": {
+      "appearOnMap": "Parādīties kartē",
+      "moreVisibility": "Lielāka redzamība",
+      "cancelAnytime": "Atceliet jebkurā laikā"
+    },
+    "trialActive": "Bezmaksas izmēģinājums aktīvs",
+    "trialDescription": "Jūsu piedāvājums ir redzams kartē!",
+    "trialEndsIn": "Izmēģinājums beidzas pēc {{days}} dienām.",
+    "trialEndsToday": "Izmēģinājums beidzas šodien!",
+    "keepVisibility": "Saglabājiet kartes redzamību pēc izmēģinājuma",
+    "active": "Kartes redzamība aktīva",
+    "activeDescription": "Jūsu piedāvājums ir redzams kartē!",
+    "daysRemaining": "Atlikušas {{days}} dienas.",
+    "paidLabel": "Apmaksāts • €{{price}}/nedēļā",
+    "renews": "Atjaunojas {{date}}",
+    "expired": "Kartes redzamība beigusies",
+    "expiredDescription": "Jūsu piedāvājums vairs nav redzams kartē. Aktivizējiet atkārtoti, lai iegūtu lielāku redzamību!",
+    "reactivate": "Aktivizēt atkārtoti €{{price}}/nedēļā"
+  },
+  "payment": {
+    "processing": "Apstrādā maksājumu...",
+    "success": "Maksājums veiksmīgs!",
+    "failed": "Maksājums neizdevās",
+    "cancelled": "Maksājums atcelts",
+    "pendingDesc": "Lūdzu, uzgaidiet, kamēr apstiprinām jūsu maksājumu...",
+    "activated": "ir aktivizēts!",
+    "failedDesc": "Kaut kas nogāja greizi. Nauda netika ieturēta.",
+    "cancelledDesc": "Maksājums tika atcelts. Nauda netika ieturēta.",
+    "redirecting": "Pāradresē pēc {{seconds}}s...",
+    "viewItem": "Skatīt sludinājumu",
+    "noOrderId": "Maksājuma pasūtījums nav atrasts.",
+    "errorPolling": "Nevarēja pārbaudīt maksājuma statusu. Lūdzu, mēģiniet atsvaidzināt."
+  }
+}
