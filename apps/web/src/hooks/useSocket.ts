@@ -161,7 +161,8 @@ function setupSocket(token: string, socketUrl: string) {
 
 // ── React hook ────────────────────────────────────────────────────────
 export function useSocket() {
-  const { token, isAuthenticated } = useAuthStore();
+  const { getToken, isAuthenticated } = useAuthStore();
+  const token = getToken();
   const tokenRef = useRef(token);
   tokenRef.current = token;
 
