@@ -32,6 +32,7 @@ import enLanding from './locales/en/landing.json'
 import enCommunity from './locales/en/community.json'
 import enSettings from './locales/en/settings.json'
 import enPwa from './locales/en/pwa.json'
+import enPremium from './locales/en/premium.json'
 
 // Import Latvian translations
 import lvCommon from './locales/lv/common.json'
@@ -63,6 +64,7 @@ import lvLanding from './locales/lv/landing.json'
 import lvCommunity from './locales/lv/community.json'
 import lvSettings from './locales/lv/settings.json'
 import lvPwa from './locales/lv/pwa.json'
+import lvPremium from './locales/lv/premium.json'
 
 // Import Russian translations
 import ruCommon from './locales/ru/common.json'
@@ -94,6 +96,7 @@ import ruLanding from './locales/ru/landing.json'
 import ruCommunity from './locales/ru/community.json'
 import ruSettings from './locales/ru/settings.json'
 import ruPwa from './locales/ru/pwa.json'
+import ruPremium from './locales/ru/premium.json'
 
 // Combine all translations per language
 const en = {
@@ -126,6 +129,7 @@ const en = {
   community: enCommunity,
   settings: enSettings,
   pwa: enPwa,
+  premium: enPremium,
 }
 
 const lv = {
@@ -158,6 +162,7 @@ const lv = {
   community: lvCommunity,
   settings: lvSettings,
   pwa: lvPwa,
+  premium: lvPremium,
 }
 
 const ru = {
@@ -190,6 +195,7 @@ const ru = {
   community: ruCommunity,
   settings: ruSettings,
   pwa: ruPwa,
+  premium: ruPremium,
 }
 
 const resources = {
