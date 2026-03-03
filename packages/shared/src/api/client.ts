@@ -50,12 +50,24 @@ apiClient.interceptors.request.use(
 // Response interceptor - handle 401
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const url = error.config?.url || ''
     const isAuthEndpoint = url.includes('/auth/')
     const isOptionalEndpoint = url.includes('/tasks/my')
+    const isPushEndpoint = url.includes('/push/')
     
-    if (error.response?.status === 401 && !isAuthEndpoint && !isOptionalEndpoint) {
+    if (error.response?.status === 401 && !isAuthEndpoint && !isOptionalEndpoint && !isPushEndpoint) {
+      // Try refreshing the session before logging out
+      try {
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        if (session && !refreshError) {
+          // Retry the original request with the new token
+          error.config.headers.Authorization = `Bearer ${session.access_token}`;
+          return apiClient.request(error.config);
+        }
+      } catch (_) {}
+      
+      // If refresh also failed, then logout
       useAuthStore.getState().logout()
     }
     return Promise.reject(error)
