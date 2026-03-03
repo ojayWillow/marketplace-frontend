@@ -4,13 +4,18 @@ import { useEffect } from 'react';
 import { MapMarkers } from '../../Tasks/components/Map';
 import { MapLoadingOverlay } from '../../Tasks/components/Banners';
 
-// Cleanup component to stop Leaflet animations on unmount
+// Cleanup component to fully tear down Leaflet on unmount.
+// Without this, the zoom CSS-transition "transitionend" callback fires
+// after React has removed the DOM container, causing:
+//   "Cannot read properties of undefined (reading '_leaflet_pos')"
 const MapCleanup = () => {
   const map = useMap();
   useEffect(() => {
     return () => {
       try {
-        map.stop();
+        map.stop();           // cancel in-flight animations
+        map.off();            // remove all event listeners
+        map.remove();         // detach from DOM + clear timers
       } catch {
         // map may already be removed
       }
