@@ -7,7 +7,6 @@ import { NotificationSettings } from '../tabs/settings/NotificationSettings';
 interface MobileSettingsSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onHowItWorks?: () => void;
 }
 
 const languages = [
@@ -25,7 +24,6 @@ const themeOptions = [
 export const MobileSettingsSheet = ({
   isOpen,
   onClose,
-  onHowItWorks,
 }: MobileSettingsSheetProps) => {
   const { t, i18n } = useTranslation();
   const { logout } = useAuthStore();
@@ -42,7 +40,6 @@ export const MobileSettingsSheet = ({
     logout();
   };
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -78,7 +75,6 @@ export const MobileSettingsSheet = ({
 
         {/* Listings — Coming Soon Teaser */}
         <div className="relative overflow-hidden rounded-xl border border-purple-200 dark:border-purple-800/40 bg-gradient-to-br from-purple-50 via-white to-amber-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-amber-950/30">
-          {/* Decorative badge */}
           <div className="absolute top-2.5 right-2.5">
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950 rounded-full">
               {t('common.comingSoon', 'Coming soon')}
@@ -104,7 +100,6 @@ export const MobileSettingsSheet = ({
               {t('settings.listings.teaserDescription', 'Soon you\'ll be able to sell your items, auction goods, and find the best deals in your area.')}
             </p>
 
-            {/* Feature preview chips */}
             <div className="flex flex-wrap gap-1.5">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-gray-800/70 rounded-full text-[10px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50">
                 🏷️ {t('settings.listings.featureSell', 'Sell')}
@@ -121,22 +116,6 @@ export const MobileSettingsSheet = ({
             </div>
           </div>
         </div>
-
-        {/* How it works */}
-        {onHowItWorks && (
-          <button
-            onClick={onHowItWorks}
-            className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <span className="text-sm">❓</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1 text-left">
-              {t('settings.howItWorks.title', 'How it works')}
-            </span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
 
         {/* Appearance */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -200,7 +179,7 @@ export const MobileSettingsSheet = ({
           </div>
         </div>
 
-        {/* Unified Notifications (push + job alerts in one card) */}
+        {/* Notifications */}
         <NotificationSettings />
 
         {/* Log Out */}

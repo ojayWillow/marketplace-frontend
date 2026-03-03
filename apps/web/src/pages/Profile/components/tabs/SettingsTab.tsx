@@ -1,13 +1,9 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { ThemeSettings } from './settings/ThemeSettings';
 import { LanguageSettings } from './settings/LanguageSettings';
 import { NotificationSettings } from './settings/NotificationSettings';
 import { LogoutSection } from './settings/LogoutSection';
-
-interface SettingsTabProps {
-  onHowItWorks?: () => void;
-}
 
 const MarketplaceTeaser = () => {
   const { t } = useTranslation();
@@ -63,39 +59,12 @@ const MarketplaceTeaser = () => {
   );
 };
 
-export const SettingsTab = ({ onHowItWorks }: SettingsTabProps) => {
-  const { t } = useTranslation();
-
+export const SettingsTab = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Main settings card — compact rows */}
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div className="px-4 py-2 divide-y divide-gray-100 dark:divide-gray-700/50">
-          {/* How It Works */}
-          {onHowItWorks && (
-            <button
-              onClick={onHowItWorks}
-              className="w-full flex items-center justify-between py-3 px-1 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                  <span className="text-sm">❓</span>
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {t('settings.howItWorks.title', 'How it works')}
-                  </span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {t('settings.howItWorks.description', 'Learn how Kolab works')}
-                  </p>
-                </div>
-              </div>
-              <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-
           <MarketplaceTeaser />
           <ThemeSettings />
           <LanguageSettings />
