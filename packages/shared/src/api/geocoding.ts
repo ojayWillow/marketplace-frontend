@@ -1,7 +1,9 @@
 /**
- * Geocoding service using OpenStreetMap Nominatim API
- * Converts addresses to latitude/longitude coordinates
+ * Geocoding service - proxied through our backend to avoid CORS issues.
+ * Backend forwards requests to OpenStreetMap Nominatim.
  */
+
+import { apiClient } from './client';
 
 export interface GeocodingResult {
   lat: string;
@@ -22,29 +24,15 @@ export interface GeocodingResult {
  * @returns Promise with geocoding results
  */
 export const geocodeAddress = async (address: string): Promise<GeocodingResult[]> => {
-  const baseUrl = 'https://nominatim.openstreetmap.org/search';
-  
-  const params = new URLSearchParams({
-    q: address,
-    format: 'json',
-    addressdetails: '1',
-    limit: '5',
-    countrycodes: 'lv', // Limit to Latvia for better results
-  });
-
   try {
-    const response = await fetch(`${baseUrl}?${params.toString()}`, {
-      headers: {
-        'User-Agent': 'Marketplace-App/1.0', // Required by Nominatim
-      },
+    const params = new URLSearchParams({
+      q: address,
+      limit: '5',
+      countrycodes: 'lv',
     });
 
-    if (!response.ok) {
-      throw new Error('Geocoding request failed');
-    }
-
-    const data = await response.json();
-    return data;
+    const response = await apiClient.get(`/geocode?${params.toString()}`);
+    return response.data;
   } catch (error) {
     console.error('Geocoding error:', error);
     throw error;
@@ -58,28 +46,14 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult[]
  * @returns Promise with address information
  */
 export const reverseGeocode = async (lat: number, lon: number): Promise<GeocodingResult> => {
-  const baseUrl = 'https://nominatim.openstreetmap.org/reverse';
-  
-  const params = new URLSearchParams({
-    lat: lat.toString(),
-    lon: lon.toString(),
-    format: 'json',
-    addressdetails: '1',
-  });
-
   try {
-    const response = await fetch(`${baseUrl}?${params.toString()}`, {
-      headers: {
-        'User-Agent': 'Marketplace-App/1.0',
-      },
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
     });
 
-    if (!response.ok) {
-      throw new Error('Reverse geocoding request failed');
-    }
-
-    const data = await response.json();
-    return data;
+    const response = await apiClient.get(`/reverse-geocode?${params.toString()}`);
+    return response.data;
   } catch (error) {
     console.error('Reverse geocoding error:', error);
     throw error;
