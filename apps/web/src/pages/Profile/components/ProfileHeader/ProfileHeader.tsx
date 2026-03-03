@@ -66,13 +66,13 @@ export const ProfileHeader = ({
   const skillsList = profile.skills
     ? profile.skills.split(',').map(s => s.trim()).filter(Boolean).map(key => {
         const found = AVAILABLE_SKILLS.find(sk => sk.key === key);
-        return found || { key, label: key, icon: '\ud83d\udccb' };
+        return found || { key, label: key, icon: '📋' };
       })
     : [];
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
-      {/* Mobile top bar \u2014 Settings (left) + Notification Bell (right) */}
+      {/* Mobile top bar — Settings (left) + Notification Bell (right) */}
       {!viewOnly && !editing && (
         <div className="md:hidden flex items-center justify-between -mt-2 -mx-2 mb-2">
           {onOpenSettings ? (
@@ -132,7 +132,7 @@ export const ProfileHeader = ({
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{profile.username}</h1>
             {profile.is_verified && (
               <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded-full font-medium">
-                \u2713 {t('profile.verified')}
+                {'✓'} {t('profile.verified')}
               </span>
             )}
           </div>
@@ -144,7 +144,7 @@ export const ProfileHeader = ({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
             {(profile.city || profile.country) && (
               <span className="flex items-center gap-1">
-                \ud83d\udccd {[profile.city, profile.country].filter(Boolean).join(', ')}
+                {'📍'} {[profile.city, profile.country].filter(Boolean).join(', ')}
               </span>
             )}
             <span>{t('profile.memberSince', { date: memberSince })}</span>
@@ -153,7 +153,7 @@ export const ProfileHeader = ({
           {/* Stats inline */}
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-1">
-              <span className="text-yellow-500">\u2605</span>
+              <span className="text-yellow-500">{'⭐'}</span>
               <span className="font-semibold text-gray-900 dark:text-gray-100">{profile.average_rating?.toFixed(1) || '0.0'}</span>
               <span className="text-gray-400 dark:text-gray-500 text-sm">({profile.reviews_count || 0})</span>
             </div>
@@ -187,12 +187,12 @@ export const ProfileHeader = ({
             <div className="md:hidden flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500 dark:text-gray-400">
               {displayEmail && (
                 <span className="flex items-center gap-1">
-                  \ud83d\udce7 {displayEmail}
+                  {'📧'} {displayEmail}
                 </span>
               )}
               {profile.phone && (
                 <span className="flex items-center gap-1">
-                  \ud83d\udcf1 {profile.phone}
+                  {'📱'} {profile.phone}
                 </span>
               )}
             </div>
@@ -208,7 +208,7 @@ export const ProfileHeader = ({
                 disabled={messageLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:bg-gray-400 flex items-center gap-2"
               >
-                \ud83d\udcac {messageLoading ? t('profile.messageLoading') : t('profile.message')}
+                {'💬'} {messageLoading ? t('profile.messageLoading') : t('profile.message')}
               </button>
             )
           ) : (
@@ -262,13 +262,13 @@ export const ProfileHeader = ({
             to="/tasks/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
           >
-            \ud83d\udccb {t('profile.quickActions.postJob')}
+            {'📋'} {t('profile.quickActions.postJob')}
           </Link>
           <Link
             to="/offerings/create"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
           >
-            \ud83d\udc4b {t('profile.quickActions.offerService')}
+            {'👋'} {t('profile.quickActions.offerService')}
           </Link>
         </div>
       )}
