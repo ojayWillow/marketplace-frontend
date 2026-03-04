@@ -82,22 +82,11 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         return;
       }
       
-      // No browser subscription - check if user has granted permission
-      // AND has previously enabled notifications (stored preference)
-      const storedPreference = localStorage.getItem(getStorageKey());
-      
-      if (currentPermission === 'granted' && storedPreference === 'true') {
-        // Permission granted and user previously enabled - show as subscribed
-        // (This handles the case where VAPID key isn't configured)
-        setIsSubscribed(true);
-      } else if (currentPermission === 'denied') {
-        // Permission was denied - definitely not subscribed
-        setIsSubscribed(false);
+      // No browser subscription exists — not subscribed regardless of permission
+      if (currentPermission === 'denied') {
         localStorage.removeItem(getStorageKey());
-      } else {
-        // Default state or permission revoked
-        setIsSubscribed(false);
       }
+      setIsSubscribed(false);
     } catch (err) {
       console.error('Error checking subscription:', err);
     }
@@ -147,9 +136,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         return false;
       }
 
-      // Permission granted - save user preference immediately
-      localStorage.setItem(getStorageKey(), 'true');
-
       // Get VAPID public key from server
       let vapidPublicKey: string | null = null;
       try {
@@ -160,11 +146,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
       if (!vapidPublicKey) {
         // Permission was granted but server doesn't have VAPID configured
-        // Still mark as subscribed since user wants notifications
-        console.warn('Push notifications not configured on server - permission granted but subscription pending');
-        setIsSubscribed(true);
+        // Cannot create a real subscription without VAPID key
+        console.warn('Push notifications not configured on server - VAPID key missing');
+        setError('Push notifications are not configured on the server. Please try again later.');
+        setIsSubscribed(false);
+        localStorage.removeItem(getStorageKey());
         setIsLoading(false);
-        return true;
+        return false;
       }
 
       // Get service worker registration
@@ -189,22 +177,17 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         // Still consider subscribed since browser subscription exists
       }
 
+      // Only mark as subscribed when we have a real browser push subscription
+      localStorage.setItem(getStorageKey(), 'true');
       setIsSubscribed(true);
       setIsLoading(false);
       return true;
     } catch (err) {
       console.error('Error subscribing to push:', err);
       setError(err instanceof Error ? err.message : 'Failed to subscribe');
+      setIsSubscribed(false);
+      localStorage.removeItem(getStorageKey());
       setIsLoading(false);
-      
-      // Even if subscription failed, check if permission was granted
-      // and update state accordingly
-      if (Notification.permission === 'granted') {
-        localStorage.setItem(getStorageKey(), 'true');
-        setIsSubscribed(true);
-        return true;
-      }
-      
       return false;
     }
   }, [isSupported, isAuthenticated, getStorageKey]);

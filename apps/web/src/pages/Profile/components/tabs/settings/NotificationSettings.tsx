@@ -190,7 +190,8 @@ export const NotificationSettings = () => {
       } catch (geoErr: any) {
         setJobAlertSaving(false);
         setJobAlertPrefs(previousPrefs);
-        setIsJobAlertExpanded(false);
+        // Keep section expanded so the error message is visible to the user
+        // setIsJobAlertExpanded(false); — removed: was hiding the error
         if (geoErr?.code === 1) {
           setJobAlertError(t('common.notifications.locationDenied', 'Location access was denied. Please allow location in your browser settings to enable job alerts.'));
         } else if (geoErr?.message === 'no_geolocation') {
@@ -442,11 +443,12 @@ export const NotificationSettings = () => {
                           role="switch"
                           aria-checked={jobAlertPrefs.enabled}
                         >
-                          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${jobAlertPrefs.enabled ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+                          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${jobAlertPrefs.enabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                         </button>
                       </div>
                     </div>
 
+                    {/* Job alert error — shown outside collapsible area so it's always visible */}
                     {jobAlertError && (
                       <div className="mx-3 mb-2 flex items-start gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/40">
                         <svg className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
