@@ -34,18 +34,18 @@
   "categories": {
     "title": "Популярные задания",
     "subtitle": "Люди в вашем районе получают помощь с...",
-    "petCare": "Питомцы",
-    "petCareDesc": "Прогулки, присмотр",
+    "care": "Уход за питомцами",
+    "careDesc": "Прогулки, присмотр",
     "moving": "Переезд",
     "movingDesc": "Мебель, коробки",
     "cleaning": "Уборка",
     "cleaningDesc": "Дом, офис",
     "delivery": "Доставка",
     "deliveryDesc": "Забрать и доставить",
-    "repairs": "Ремонт",
-    "repairsDesc": "Мелкий ремонт",
-    "techHelp": "IT помощь",
-    "techHelpDesc": "Настройка, поддержка"
+    "handyman": "Ремонт",
+    "handymanDesc": "Мелкий ремонт",
+    "tech": "IT помощь",
+    "techDesc": "Настройка, поддержка"
   },
   "trust": {
     "title": "Основано на доверии",
