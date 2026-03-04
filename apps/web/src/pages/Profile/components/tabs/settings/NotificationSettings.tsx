@@ -190,8 +190,6 @@ export const NotificationSettings = () => {
       } catch (geoErr: any) {
         setJobAlertSaving(false);
         setJobAlertPrefs(previousPrefs);
-        // Keep section expanded so the error message is visible to the user
-        // setIsJobAlertExpanded(false); — removed: was hiding the error
         if (geoErr?.code === 1) {
           setJobAlertError(t('common.notifications.locationDenied', 'Location access was denied. Please allow location in your browser settings to enable job alerts.'));
         } else if (geoErr?.message === 'no_geolocation') {
@@ -561,7 +559,7 @@ export const NotificationSettings = () => {
                 </button>
                 {testSent && (
                   <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    \u2705 {t('settings.notifications.testSent', 'Sent!')}
+                    {'✅'} {t('settings.notifications.testSent', 'Sent!')}
                   </p>
                 )}
               </div>
