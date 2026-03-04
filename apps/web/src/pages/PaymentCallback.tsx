@@ -1,11 +1,11 @@
 /**
- * PaymentCallback page — handles return from Revolut checkout.
+ * PaymentCallback page — handles return from Stripe Checkout.
  *
- * URL: /payment/callback?order_id=xxx
+ * URL: /payment/callback?session_id=xxx
  *
  * Flow:
- * 1. Extract order_id from query params
- * 2. Poll GET /api/payments/status/:order_id every 2s
+ * 1. Extract session_id from query params
+ * 2. Poll GET /api/payments/status/:session_id every 2s
  * 3. Show spinner while pending
  * 4. On 'completed' → success message + redirect to the item
  * 5. On 'failed'/'cancelled' → error message + link back
@@ -34,10 +34,11 @@ export default function PaymentCallback() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const orderId = searchParams.get('order_id');
+  // Support both session_id (Stripe) and order_id (legacy) for backwards compatibility
+  const sessionId = searchParams.get('session_id') || searchParams.get('order_id');
 
-  const { data, isLoading, isError } = usePaymentStatus(orderId, {
-    enabled: !!orderId,
+  const { data, isLoading, isError } = usePaymentStatus(sessionId, {
+    enabled: !!sessionId,
   });
 
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
@@ -65,8 +66,8 @@ export default function PaymentCallback() {
     return () => clearTimeout(timer);
   }, [redirectCountdown, data, navigate]);
 
-  // No order_id in URL
-  if (!orderId) {
+  // No session_id in URL
+  if (!sessionId) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center p-6">
