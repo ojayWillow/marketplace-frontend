@@ -52,7 +52,7 @@ export const MobileSettingsSheet = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-950 animate-slide-in-right">
+    <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-950 animate-slide-in-right" style={{ height: '100dvh' }}>
       {/* Header */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 z-10">
         <div className="flex items-center gap-3 px-4 py-3">
@@ -71,7 +71,7 @@ export const MobileSettingsSheet = ({
       </div>
 
       {/* Content */}
-      <div className="overflow-y-auto overflow-x-hidden h-[calc(100vh-52px)] px-4 py-3 space-y-3 pb-16">
+      <div className="overflow-y-auto overflow-x-hidden overscroll-contain -webkit-overflow-scrolling-touch px-4 py-3 space-y-3 pb-32" style={{ height: 'calc(100dvh - 52px)' }}>
 
         {/* Appearance */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
