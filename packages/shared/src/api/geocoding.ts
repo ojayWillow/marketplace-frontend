@@ -31,7 +31,7 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult[]
       countrycodes: 'lv',
     });
 
-    const response = await apiClient.get(`/geocode?${params.toString()}`);
+    const response = await apiClient.get(`/api/geocode?${params.toString()}`);
     return response.data;
   } catch (error) {
     console.error('Geocoding error:', error);
@@ -52,7 +52,7 @@ export const reverseGeocode = async (lat: number, lon: number): Promise<Geocodin
       lon: lon.toString(),
     });
 
-    const response = await apiClient.get(`/reverse-geocode?${params.toString()}`);
+    const response = await apiClient.get(`/api/reverse-geocode?${params.toString()}`);
     return response.data;
   } catch (error) {
     console.error('Reverse geocoding error:', error);
