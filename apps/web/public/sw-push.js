@@ -1,10 +1,9 @@
 /**
- * Service Worker for Push Notifications
- * Handles incoming push notifications and notification clicks
+ * Push notification handlers for the Service Worker.
+ * Imported by Workbox via importScripts — do NOT add install/activate
+ * listeners here because Workbox already manages them through
+ * skipWaiting + clientsClaim in vite.config.ts.
  */
-
-// Cache name for offline assets
-const CACHE_NAME = 'kolab-v1';
 
 // Handle push events
 self.addEventListener('push', function(event) {
@@ -43,11 +42,7 @@ self.addEventListener('push', function(event) {
     tag: data.tag,
     data: data.data,
     vibrate: [100, 50, 100],
-    requireInteraction: false,
-    actions: [
-      { action: 'open', title: 'Open' },
-      { action: 'close', title: 'Close' }
-    ]
+    requireInteraction: false
   });
   
   event.waitUntil(promiseChain);
@@ -75,7 +70,6 @@ self.addEventListener('notificationclick', function(event) {
     // Check if there's already a window open
     for (let i = 0; i < windowClients.length; i++) {
       const client = windowClients[i];
-      // If we already have a window, focus it and navigate
       if ('focus' in client) {
         return client.focus().then(function(focusedClient) {
           if ('navigate' in focusedClient) {
@@ -96,18 +90,4 @@ self.addEventListener('notificationclick', function(event) {
 // Handle notification close
 self.addEventListener('notificationclose', function(event) {
   console.log('[Service Worker] Notification closed:', event);
-});
-
-// Handle service worker install
-self.addEventListener('install', function(event) {
-  console.log('[Service Worker] Installing...');
-  // Skip waiting to activate immediately
-  self.skipWaiting();
-});
-
-// Handle service worker activation
-self.addEventListener('activate', function(event) {
-  console.log('[Service Worker] Activating...');
-  // Claim all clients immediately
-  event.waitUntil(clients.claim());
 });
