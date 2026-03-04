@@ -10,15 +10,15 @@ interface MobileSettingsSheetProps {
 }
 
 const languages = [
-  { code: 'lv', label: 'LV', name: 'Latvie\u0161u', flag: '\ud83c\uddf1\ud83c\uddfb' },
-  { code: 'ru', label: 'RU', name: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439', flag: '\ud83c\uddf7\ud83c\uddfa' },
-  { code: 'en', label: 'EN', name: 'English', flag: '\ud83c\uddec\ud83c\udde7' },
+  { code: 'lv', label: 'LV', name: 'Latviešu', flag: '🇱🇻' },
+  { code: 'ru', label: 'RU', name: 'Русский', flag: '🇷🇺' },
+  { code: 'en', label: 'EN', name: 'English', flag: '🇬🇧' },
 ];
 
 const themeOptions = [
-  { value: 'light' as const, icon: '\u2600\ufe0f', labelKey: 'settings.theme.light', labelDefault: 'Light' },
-  { value: 'dark' as const, icon: '\ud83c\udf19', labelKey: 'settings.theme.dark', labelDefault: 'Dark' },
-  { value: 'system' as const, icon: '\ud83d\udda5\ufe0f', labelKey: 'settings.theme.system', labelDefault: 'System' },
+  { value: 'light' as const, icon: '☀️', labelKey: 'settings.theme.light', labelDefault: 'Light' },
+  { value: 'dark' as const, icon: '🌙', labelKey: 'settings.theme.dark', labelDefault: 'Dark' },
+  { value: 'system' as const, icon: '🖥️', labelKey: 'settings.theme.system', labelDefault: 'System' },
 ];
 
 export const MobileSettingsSheet = ({
@@ -76,7 +76,7 @@ export const MobileSettingsSheet = ({
         {/* Appearance */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm">\ud83c\udfa8</span>
+            <span className="text-sm">{'🎨'}</span>
             <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {t('settings.theme.title', 'Appearance')}
             </span>
@@ -107,7 +107,7 @@ export const MobileSettingsSheet = ({
         {/* Language */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm">\ud83c\udf10</span>
+            <span className="text-sm">{'🌐'}</span>
             <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {t('settings.language.title', 'Language')}
             </span>
@@ -143,7 +143,7 @@ export const MobileSettingsSheet = ({
           onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
-          <span className="text-sm">\ud83d\udeaa</span>
+          <span className="text-sm">{'🚪'}</span>
           <span className="text-sm font-medium">
             {t('settings.logout.button', 'Log Out')}
           </span>
