@@ -88,7 +88,7 @@ export default function PaymentButton({
     const timeLeft = getTimeRemaining();
     return (
       <div className={`inline-flex items-center gap-1.5 ${sizeClasses} bg-green-100 text-green-700 rounded-lg font-medium ${className}`}>
-        <span>\u2705</span>
+        <span>✅</span>
         <span>{priceInfo.label} {t('payment.active', 'Active')}</span>
         {timeLeft && <span className="text-green-500 text-xs">({timeLeft})</span>}
       </div>
