@@ -1,6 +1,6 @@
 /**
- * API functions for Revolut payment integration.
- * Handles creating payment orders and polling for status.
+ * API functions for Stripe payment integration.
+ * Handles creating checkout sessions and polling for status.
  */
 import apiClient from './client';
 
@@ -17,7 +17,7 @@ export interface CreatePaymentOrderParams {
 }
 
 export interface CreatePaymentOrderResponse {
-  order_id: string;
+  order_id: string;      // Stripe session ID (returned as order_id for compat)
   checkout_url: string;
   payment_id: number;
 }
@@ -26,24 +26,19 @@ export interface PaymentStatusResponse {
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
   payment_type: PaymentType;
   target_id: number;
-  revolut_order_id: string;
+  stripe_session_id: string;
 }
 
 // Price map (display only — backend enforces the real prices)
-// TODO: Restore real prices before production launch:
-//   boost_offering:   { amount: '€1',  ... }
-//   urgent_task:      { amount: '€2',  ... }
-//   promote_offering: { amount: '€5',  ... }
-//   promote_task:     { amount: '€5',  ... }
 export const PAYMENT_PRICES: Record<PaymentType, { amount: string; label: string; duration: string }> = {
-  boost_offering:  { amount: '€0.01', label: 'Boost',   duration: '1 day' },
-  urgent_task:     { amount: '€0.01', label: 'Urgent',  duration: '1 day' },
-  promote_offering:{ amount: '€0.01', label: 'Promote', duration: '3 days' },
-  promote_task:    { amount: '€0.01', label: 'Promote', duration: '3 days' },
+  boost_offering:  { amount: '€1',  label: 'Boost',   duration: '1 day' },
+  urgent_task:     { amount: '€2',  label: 'Urgent',  duration: '1 day' },
+  promote_offering:{ amount: '€5',  label: 'Promote', duration: '3 days' },
+  promote_task:    { amount: '€5',  label: 'Promote', duration: '3 days' },
 };
 
 /**
- * Create a payment order via Revolut.
+ * Create a Stripe Checkout Session via the backend.
  * Returns a checkout_url the user should be redirected to.
  */
 export const createPaymentOrder = async (
@@ -54,11 +49,11 @@ export const createPaymentOrder = async (
 };
 
 /**
- * Poll the payment status after redirect back from checkout.
+ * Poll the payment status after redirect back from Stripe Checkout.
  */
 export const getPaymentStatus = async (
-  orderId: string
+  sessionId: string
 ): Promise<PaymentStatusResponse> => {
-  const response = await apiClient.get(`/api/payments/status/${orderId}`);
+  const response = await apiClient.get(`/api/payments/status/${sessionId}`);
   return response.data;
 };
