@@ -9,7 +9,7 @@
  * The button:
  * 1. Shows the price and action label
  * 2. On click, creates a payment order via the API
- * 3. Redirects to Revolut checkout (or in dev mode, straight to callback)
+ * 3. Redirects to Stripe checkout
  * 4. If already active, shows "Active" state and disables
  */
 import { useState } from 'react';
@@ -63,7 +63,6 @@ export default function PaymentButton({
         type,
         target_id: targetId,
       });
-      // Redirect to Revolut checkout (or local callback in dev mode)
       window.location.href = result.checkout_url;
     } catch (err: any) {
       const msg = err?.response?.data?.error || t('payment.createError', 'Could not start payment');
