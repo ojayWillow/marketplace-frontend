@@ -71,7 +71,7 @@ export const MobileSettingsSheet = ({
       </div>
 
       {/* Content */}
-      <div className="overflow-y-auto h-[calc(100vh-52px)] px-4 py-3 space-y-3 pb-16">
+      <div className="overflow-y-auto overflow-x-hidden h-[calc(100vh-52px)] px-4 py-3 space-y-3 pb-16">
 
         {/* Appearance */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
