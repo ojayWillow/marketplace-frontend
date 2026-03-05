@@ -59,8 +59,17 @@ const WorkItemCard = ({ item, categoryInfo, onClick }: WorkItemCardProps) => {
 
       {/* Creator info */}
       <div className="flex gap-2 mb-2">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-          {(item.creator_name || 'A').charAt(0).toUpperCase()}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+          {item.creator_avatar ? (
+            <img
+              src={item.creator_avatar}
+              alt={item.creator_name || 'User'}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            (item.creator_name || 'A').charAt(0).toUpperCase()
+          )}
         </div>
         <div className="flex flex-col justify-center gap-0.5 min-w-0">
           <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
