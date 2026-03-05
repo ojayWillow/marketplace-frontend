@@ -40,7 +40,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-// ── Memoized map markers ───────────────────────────────────────────
+// ── Memoized map markers ─────────────────────────────────────────────────────────────
 interface TaskMarkersProps {
   tasksWithOffsets: Task[];
   selectedTaskId: number | null;
@@ -136,6 +136,7 @@ const MobileTasksView = () => {
     handleTouchMove,
     handleTouchEnd,
     resetToCollapsed,
+    expandOneStep,
   } = useBottomSheet();
 
   // --- Local UI state ---
@@ -523,6 +524,8 @@ const MobileTasksView = () => {
                 userLocation={userLocation}
                 selectedTaskId={selectedTaskId}
                 onJobSelect={handleJobSelect}
+                sheetPosition={sheetPosition}
+                onExpandSheet={expandOneStep}
               />
             )}
           </div>
