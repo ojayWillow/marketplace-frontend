@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback, memo } from 'react';
 import { Task } from '@marketplace/shared';
+import { SheetPosition } from '../types';
 import MobileJobCard from './MobileJobCard';
 
 interface VirtualizedJobListProps {
@@ -7,46 +8,33 @@ interface VirtualizedJobListProps {
   userLocation: { lat: number; lng: number };
   selectedTaskId: number | null;
   onJobSelect: (task: Task) => void;
+  sheetPosition: SheetPosition;
+  onExpandSheet: () => void;
 }
 
-/**
- * Estimated height of a single MobileJobCard in pixels.
- */
 const CARD_HEIGHT_ESTIMATE = 88;
-
-/**
- * How many cards below the visible area to keep rendered.
- * Cards ABOVE scroll position are always rendered (never culled from top)
- * to avoid the empty-gap bug when the bottom sheet resizes.
- */
 const BUFFER_BELOW = 8;
 
 /**
  * Lightweight virtualized list for the mobile bottom sheet.
  *
- * Key design decisions:
- * - NEVER cull cards from the top. The bottom sheet changes height
- *   via translateY, which means the scroll container's full height
- *   doesn't match what's visible. Culling from the top creates
- *   empty placeholder gaps that push real cards down.
- * - Only virtualize cards BELOW the visible window + buffer.
- *   This is where the actual perf win is (50+ off-screen cards).
- * - Use scroll events (passive, rAF-throttled) instead of
- *   IntersectionObserver to avoid stale root bounds after resize.
- * - Re-evaluate on container resize (ResizeObserver) to handle
- *   sheet position changes (collapsed → half → full).
+ * Scroll behavior adapts to sheet position:
+ * - collapsed: scrolling disabled, taps still work
+ * - half: scrolling enabled, but swiping up at scrollTop=0 expands the sheet
+ * - full: free scrolling
  */
 const VirtualizedJobList = memo(function VirtualizedJobList({
   tasks,
   userLocation,
   selectedTaskId,
   onJobSelect,
+  sheetPosition,
+  onExpandSheet,
 }: VirtualizedJobListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ y: number; scrollTop: number } | null>(null);
 
-  // renderEnd: index up to which we render real cards.
-  // Cards from 0..renderEnd-1 are real, renderEnd..tasks.length are placeholders.
   const [renderEnd, setRenderEnd] = useState(() => Math.min(20, tasks.length));
 
   const computeRenderEnd = useCallback(() => {
@@ -57,15 +45,10 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
     const containerHeight = container.clientHeight;
     const visibleBottom = scrollTop + containerHeight;
 
-    // How many cards fit below current scroll position + buffer
     const lastVisibleIndex = Math.ceil(visibleBottom / CARD_HEIGHT_ESTIMATE);
     const newEnd = Math.min(tasks.length, lastVisibleIndex + BUFFER_BELOW);
 
-    setRenderEnd((prev) => {
-      // Only grow, never shrink — avoids flickering when scrolling up.
-      // Cards already rendered stay rendered (cheap, already in DOM).
-      return Math.max(prev, newEnd);
-    });
+    setRenderEnd((prev) => Math.max(prev, newEnd));
   }, [tasks.length]);
 
   // Scroll handler — rAF throttled, passive
@@ -100,10 +83,9 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
     return () => ro.disconnect();
   }, [computeRenderEnd]);
 
-  // Reset when tasks change (e.g. new filter)
+  // Reset when tasks change
   useEffect(() => {
     setRenderEnd(Math.min(20, tasks.length));
-    // Recompute after a tick so container measurements are fresh
     requestAnimationFrame(() => computeRenderEnd());
   }, [tasks, computeRenderEnd]);
 
@@ -112,19 +94,56 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
     computeRenderEnd();
   }, [computeRenderEnd]);
 
+  // Touch handlers: intercept upward swipe at scrollTop=0 when sheet is not full
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
+    touchStartRef.current = {
+      y: e.touches[0].clientY,
+      scrollTop: container.scrollTop,
+    };
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (sheetPosition === 'full') return;
+    if (!touchStartRef.current) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const deltaY = touchStartRef.current.y - e.touches[0].clientY; // positive = swiping up
+
+    // If at the top of the list and swiping up, prevent scroll and expand sheet
+    if (deltaY > 10 && touchStartRef.current.scrollTop <= 0 && container.scrollTop <= 0) {
+      e.preventDefault();
+      onExpandSheet();
+      touchStartRef.current = null;
+    }
+  }, [sheetPosition, onExpandSheet]);
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartRef.current = null;
+  }, []);
+
   if (tasks.length === 0) return null;
 
-  // Total height of placeholder area below rendered cards
   const placeholderCount = tasks.length - renderEnd;
   const placeholderHeight = placeholderCount > 0 ? placeholderCount * CARD_HEIGHT_ESTIMATE : 0;
+
+  const isCollapsed = sheetPosition === 'collapsed';
 
   return (
     <div
       ref={containerRef}
       className="h-full overflow-y-auto overscroll-contain"
-      style={{ touchAction: 'pan-y' }}
+      style={{
+        touchAction: isCollapsed ? 'none' : 'pan-y',
+        overflowY: isCollapsed ? 'hidden' : 'auto',
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      {/* Always render cards 0..renderEnd — never cull from top */}
       {tasks.slice(0, renderEnd).map((task) => (
         <MobileJobCard
           key={task.id}
@@ -135,7 +154,6 @@ const VirtualizedJobList = memo(function VirtualizedJobList({
         />
       ))}
 
-      {/* Single placeholder block for all remaining cards */}
       {placeholderHeight > 0 && (
         <div style={{ height: placeholderHeight }} />
       )}
