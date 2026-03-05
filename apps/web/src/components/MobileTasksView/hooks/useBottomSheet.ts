@@ -151,6 +151,15 @@ export const useBottomSheet = () => {
     setSheetPosition('collapsed');
   }, []);
 
+  /** Expand the sheet by one step: collapsed → half → full */
+  const expandOneStep = useCallback(() => {
+    setSheetPosition((prev) => {
+      if (prev === 'collapsed') return 'half';
+      if (prev === 'half') return 'full';
+      return prev;
+    });
+  }, []);
+
   return {
     sheetPosition,
     sheetHeight,
@@ -162,5 +171,6 @@ export const useBottomSheet = () => {
     handleTouchMove,
     handleTouchEnd,
     resetToCollapsed,
+    expandOneStep,
   };
 };
