@@ -9,6 +9,8 @@ export interface WorkItem {
   budget?: number;
   price?: number;
   creator_name?: string;
+  creator_avatar?: string;
+  creator_city?: string;
   created_at: string;
   location?: string;
   latitude?: number;
