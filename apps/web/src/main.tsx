@@ -43,7 +43,10 @@ window.addEventListener('error', (e) => {
 });
 
 window.addEventListener('unhandledrejection', (e) => {
-  const msg = e.reason?.message || '';
+  const reason = e.reason;
+  const msg = reason?.message || String(reason || '');
+
+  // Chunk loading errors — auto-reload (KOLAB-WEB-2, 3, 5)
   if (
     msg.includes('Failed to fetch dynamically imported module') ||
     msg.includes('error loading dynamically imported module') ||
@@ -56,6 +59,21 @@ window.addEventListener('unhandledrejection', (e) => {
       sessionStorage.setItem(reloadKey, String(now));
       window.location.reload();
     }
+    return;
+  }
+
+  // reCAPTCHA timeout rejections — suppress (KOLAB-WEB-9, KOLAB-WEB-8)
+  // Firebase reCAPTCHA rejects with plain string "Timeout" or "Timeout (u)"
+  if (typeof reason === 'string' && reason.startsWith('Timeout')) {
+    e.preventDefault();
+    return;
+  }
+
+  // IndexedDB connection lost — suppress (KOLAB-WEB-C)
+  // iOS Safari kills IndexedDB connections when app is backgrounded
+  if (msg.includes('Indexed Database') || msg.includes('IndexedDB')) {
+    e.preventDefault();
+    return;
   }
 });
 

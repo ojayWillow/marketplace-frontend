@@ -23,6 +23,20 @@ export function initSentry() {
       'error loading dynamically imported module',
       // Leaflet cleanup race condition (KOLAB-WEB-4)
       '_leaflet_pos',
+      // IndexedDB connection lost on iOS Safari (KOLAB-WEB-C)
+      // iOS aggressively kills IndexedDB connections when backgrounded
+      'Connection to Indexed Database server lost',
+      'IndexedDB',
+      // reCAPTCHA timeout — Firebase SDK rejects with string "Timeout" (KOLAB-WEB-9, KOLAB-WEB-8)
+      /^Timeout/,
+      /Non-Error promise rejection captured with value: Timeout/,
+      // Service worker load failure on Safari (KOLAB-WEB-B)
+      'Script.*load failed',
+      /sw\.js.*load failed/,
+      // reCAPTCHA null.style crash — known Firebase SDK bug (KOLAB-WEB-A)
+      // https://github.com/firebase/firebase-js-sdk/issues/8844
+      /Cannot read properties of null \(reading 'style'\)/,
+      'recaptcha__',
     ],
     beforeSend(event) {
       if (import.meta.env.DEV) return null;

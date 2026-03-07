@@ -23,6 +23,14 @@ export const usePhoneAuth = () => {
   const initAttemptedRef = useRef(false);
   const recaptchaContainerRef = useRef<HTMLDivElement>(null);
 
+  /** Safely clear the reCAPTCHA verifier (prevents null.style crash) */
+  const clearRecaptchaVerifier = useCallback(() => {
+    if (recaptchaVerifierRef.current) {
+      try { recaptchaVerifierRef.current.clear(); } catch (_) { /* ignore */ }
+      recaptchaVerifierRef.current = null;
+    }
+  }, []);
+
   const initRecaptcha = useCallback(() => {
     if (initAttemptedRef.current && recaptchaVerifierRef.current) {
       setRecaptchaReady(true);
@@ -35,11 +43,7 @@ export const usePhoneAuth = () => {
       return;
     }
 
-    if (recaptchaVerifierRef.current) {
-      try { recaptchaVerifierRef.current.clear(); } catch (e) { /* ignore */ }
-      recaptchaVerifierRef.current = null;
-    }
-
+    clearRecaptchaVerifier();
     initAttemptedRef.current = true;
 
     try {
@@ -55,19 +59,29 @@ export const usePhoneAuth = () => {
         }
       });
 
-      recaptchaVerifierRef.current.render().then(() => {
-        console.log('Invisible reCAPTCHA ready');
-        setRecaptchaReady(true);
-      }).catch((err) => {
-        console.error('reCAPTCHA render error:', err);
-        setRecaptchaReady(true);
-      });
+      // Wrap render() in a timeout race to prevent unhandled "Timeout" rejections
+      // (KOLAB-WEB-9, KOLAB-WEB-8)
+      const renderPromise = recaptchaVerifierRef.current.render();
+      const timeoutPromise = new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error('reCAPTCHA render timed out')), 15000)
+      );
+
+      Promise.race([renderPromise, timeoutPromise])
+        .then(() => {
+          console.log('Invisible reCAPTCHA ready');
+          setRecaptchaReady(true);
+        })
+        .catch((err) => {
+          console.warn('reCAPTCHA render error (non-fatal):', err?.message || err);
+          // Still allow the user to try — reCAPTCHA may load lazily
+          setRecaptchaReady(true);
+        });
     } catch (err) {
       console.error('reCAPTCHA init error:', err);
       initAttemptedRef.current = false;
       setRecaptchaReady(true);
     }
-  }, []);
+  }, [clearRecaptchaVerifier]);
 
   useEffect(() => {
     if (step === 'phone') {
@@ -76,13 +90,13 @@ export const usePhoneAuth = () => {
     }
   }, [initRecaptcha, step]);
 
+  // Cleanup on unmount — clear BEFORE React removes DOM nodes
+  // (prevents KOLAB-WEB-A: reCAPTCHA trying to access .style on removed elements)
   useEffect(() => {
     return () => {
-      if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear(); } catch (e) { /* ignore */ }
-      }
+      clearRecaptchaVerifier();
     };
-  }, []);
+  }, [clearRecaptchaVerifier]);
 
   useEffect(() => {
     if (otpValue.length === 6 && confirmationResult && !loading) {
@@ -164,10 +178,7 @@ export const usePhoneAuth = () => {
       }
 
       initAttemptedRef.current = false;
-      if (recaptchaVerifierRef.current) {
-        try { recaptchaVerifierRef.current.clear(); } catch (e) { /* ignore */ }
-        recaptchaVerifierRef.current = null;
-      }
+      clearRecaptchaVerifier();
       setTimeout(initRecaptcha, 500);
     } finally {
       setLoading(false);
@@ -220,6 +231,12 @@ export const usePhoneAuth = () => {
         setAuth(userData, access_token);
       }
 
+      // IMPORTANT: Clear reCAPTCHA verifier BEFORE navigating away.
+      // This prevents KOLAB-WEB-A where reCAPTCHA's internal setTimeout
+      // tries to access .style on DOM elements that no longer exist
+      // after React unmounts the LandingPage component.
+      clearRecaptchaVerifier();
+
       if (is_new_user || userData?.username?.startsWith('user_')) {
         navigate('/complete-profile');
       } else {
@@ -251,10 +268,7 @@ export const usePhoneAuth = () => {
     setConfirmationResult(null);
     setRecaptchaReady(false);
     initAttemptedRef.current = false;
-    if (recaptchaVerifierRef.current) {
-      try { recaptchaVerifierRef.current.clear(); } catch (e) { /* ignore */ }
-      recaptchaVerifierRef.current = null;
-    }
+    clearRecaptchaVerifier();
     setTimeout(initRecaptcha, 300);
   };
 
