@@ -1,5 +1,12 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  setPersistence,
+} from 'firebase/auth'
 import type { ConfirmationResult } from 'firebase/auth'
 
 const firebaseConfig = {
@@ -15,6 +22,14 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
+
+// Gracefully handle iOS Safari IndexedDB AbortError.
+// Firebase defaults to indexedDB persistence which fails in iOS Private Browsing,
+// in-app browsers (Instagram, Facebook), and when racing with SW registration.
+setPersistence(auth, indexedDBLocalPersistence).catch(() => {
+  // Fallback to localStorage when IndexedDB is blocked/aborted
+  return setPersistence(auth, browserLocalPersistence)
+})
 
 // Re-export Firebase Auth types and functions for use in components
 export { RecaptchaVerifier, signInWithPhoneNumber }
