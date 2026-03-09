@@ -27,6 +27,10 @@ export function initSentry() {
       // iOS aggressively kills IndexedDB connections when backgrounded
       'Connection to Indexed Database server lost',
       'IndexedDB',
+      // Firebase IndexedDB AbortError on iOS Safari (idb-open)
+      // Triggered in Private Browsing, in-app browsers, or SW registration race
+      'The operation was aborted',
+      /idb-open/,
       // reCAPTCHA timeout — Firebase SDK rejects with string "Timeout" (KOLAB-WEB-9, KOLAB-WEB-8)
       /^Timeout/,
       /Non-Error promise rejection captured with value: Timeout/,
