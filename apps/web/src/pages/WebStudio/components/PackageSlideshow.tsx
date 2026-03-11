@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import type { WebPackage } from '../../../constants/webPackages';
+
+export interface Slide {
+  label: string;
+  url: string;
+  description: string;
+}
 
 interface Props {
-  slides: WebPackage['slides'];
+  slides: Slide[];
 }
 
 export default function PackageSlideshow({ slides }: Props) {
@@ -14,44 +19,77 @@ export default function PackageSlideshow({ slides }: Props) {
   const slide = slides[current];
 
   return (
-    <div className="relative rounded-xl overflow-hidden select-none">
-      {/* Slide */}
-      <div
-        className={`bg-gradient-to-br ${slide.bg} h-48 flex flex-col items-center justify-center text-white p-6 transition-all duration-300`}
-      >
-        <span className="text-5xl mb-3">{slide.icon}</span>
-        <p className="font-semibold text-lg text-center">{slide.label}</p>
-        <p className="text-sm text-white/80 text-center mt-1">{slide.description}</p>
+    <div className="flex flex-col">
+      {/* Browser mockup frame */}
+      <div className="rounded-t-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+        {/* Browser chrome bar */}
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-200 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
+          <span className="w-3 h-3 rounded-full bg-red-400" />
+          <span className="w-3 h-3 rounded-full bg-yellow-400" />
+          <span className="w-3 h-3 rounded-full bg-green-400" />
+          <div className="flex-1 mx-3 bg-white dark:bg-gray-600 rounded-md px-3 py-0.5 text-xs text-gray-400 dark:text-gray-300 truncate">
+            {slide.url}
+          </div>
+        </div>
+
+        {/* iframe preview — scaled down to fit */}
+        <div className="relative w-full overflow-hidden" style={{ height: '220px' }}>
+          <iframe
+            key={slide.url}
+            src={slide.url}
+            title={slide.label}
+            className="absolute top-0 left-0 border-0"
+            style={{
+              width: '1280px',
+              height: '900px',
+              transform: 'scale(0.38)',
+              transformOrigin: 'top left',
+              pointerEvents: 'none',
+            }}
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+          />
+        </div>
       </div>
 
-      {/* Arrows */}
-      <button
-        onClick={prev}
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
-        aria-label="Iepriekšējais"
-      >
-        ‹
-      </button>
-      <button
-        onClick={next}
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
-        aria-label="Nākamais"
-      >
-        ›
-      </button>
+      {/* Slide label + description */}
+      <div className="bg-gray-50 dark:bg-gray-800/60 border-x border-b border-gray-200 dark:border-gray-700 rounded-b-xl px-4 py-2.5 flex items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{slide.label}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-400">{slide.description}</p>
+        </div>
 
-      {/* Dot indicators */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {slides.map((_, i) => (
+        {/* Arrows + dots */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              i === current ? 'bg-white scale-125' : 'bg-white/40'
-            }`}
-            aria-label={`Slaids ${i + 1}`}
-          />
-        ))}
+            onClick={prev}
+            className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm transition-colors"
+            aria-label="Iepriekšējais"
+          >
+            ‹
+          </button>
+          <div className="flex gap-1">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  i === current
+                    ? 'bg-gray-700 dark:bg-white scale-125'
+                    : 'bg-gray-300 dark:bg-gray-500'
+                }`}
+                aria-label={`Slaids ${i + 1}`}
+              />
+            ))}
+          </div>
+          <button
+            onClick={next}
+            className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm transition-colors"
+            aria-label="Nākamais"
+          >
+            ›
+          </button>
+        </div>
       </div>
     </div>
   );

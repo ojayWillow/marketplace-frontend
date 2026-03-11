@@ -10,8 +10,10 @@ export default function PackageCard({ pkg }: Props) {
     <div
       className={`flex flex-col rounded-2xl border-2 ${pkg.borderColor} bg-white dark:bg-gray-900 shadow-lg overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl`}
     >
-      {/* Slideshow at top */}
-      <PackageSlideshow slides={pkg.slides} />
+      {/* Live iframe slideshow at top */}
+      <div className="p-3 pb-0">
+        <PackageSlideshow slides={pkg.slides} />
+      </div>
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-6">
@@ -42,7 +44,7 @@ export default function PackageCard({ pkg }: Props) {
 
         {/* CTA */}
         <a
-          href="mailto:info@kolab.lv?subject=Web Studio - pakete: ${pkg.name}"
+          href={`mailto:info@kolab.lv?subject=Web Studio - pakete: ${pkg.name}`}
           className={`w-full text-center py-3 px-4 rounded-xl text-white font-semibold text-sm transition-colors ${pkg.buttonColor}`}
         >
           Sazināties

@@ -1,3 +1,5 @@
+import type { Slide } from '../pages/WebStudio/components/PackageSlideshow';
+
 export interface WebPackage {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ export interface WebPackage {
   borderColor: string;
   buttonColor: string;
   features: string[];
-  slides: { label: string; bg: string; icon: string; description: string }[];
+  slides: Slide[];
 }
 
 export interface AddOn {
@@ -40,10 +42,16 @@ export const WEB_PACKAGES: WebPackage[] = [
       'Piegāde 5–7 darba dienu laikā',
     ],
     slides: [
-      { label: 'Hero sekcija', bg: 'from-emerald-400 to-green-500', icon: '🏠', description: 'Spēcīgs pirmais iespaids — virsraksts, apraksts un CTA poga' },
-      { label: 'Par mums', bg: 'from-green-400 to-teal-500', icon: '👋', description: 'Iepazīstini klientus ar sevi un savu uzņēmumu' },
-      { label: 'Kontaktforma', bg: 'from-teal-400 to-emerald-500', icon: '✉️', description: 'Vienkārša forma, lai klienti var sazināties' },
-      { label: 'Mobilā versija', bg: 'from-emerald-500 to-green-600', icon: '📱', description: 'Perfekti izskatās uz visām ierīcēm' },
+      {
+        label: 'Frizētava — vienkārša un eleganta',
+        url: 'https://hair-salon-webpage.vercel.app/',
+        description: 'Tīrs vienas lapas dizains ar booking formu',
+      },
+      {
+        label: 'Ziedu veikals — radošs un spilgts',
+        url: 'https://bloom-flower-shop.vercel.app/',
+        description: 'Vizuāli pievilcīga landing page mazam veikalam',
+      },
     ],
   },
   {
@@ -66,11 +74,16 @@ export const WEB_PACKAGES: WebPackage[] = [
       'Piegāde 10–14 darba dienu laikā',
     ],
     slides: [
-      { label: 'Sākumlapa', bg: 'from-blue-400 to-indigo-500', icon: '🌐', description: 'Profesionāla sākumlapa ar navigāciju un sekcijām' },
-      { label: 'Pakalpojumi', bg: 'from-indigo-400 to-blue-500', icon: '⚙️', description: 'Skaidri parādīti visi tavi pakalpojumi' },
-      { label: 'Portfolio', bg: 'from-blue-500 to-cyan-500', icon: '🖼️', description: 'Vizuāla darbu galerija ar filtriem' },
-      { label: 'Blogs', bg: 'from-cyan-400 to-blue-500', icon: '✍️', description: 'Rakstu sadaļa, kas palīdz SEO un uzticamībai' },
-      { label: 'Kontakti', bg: 'from-indigo-500 to-blue-600', icon: '📍', description: 'Kontaktforma, adrese un Google Maps' },
+      {
+        label: 'Auto serviss — profesionāls un uzticams',
+        url: 'https://autopro-riga.vercel.app/',
+        description: 'Pilnvērtīga uzņēmuma vietne ar vairākām sekcijām',
+      },
+      {
+        label: 'Konditorejas mājas lapa',
+        url: 'https://tortes-namins.vercel.app/',
+        description: 'Radošs dizains ar interaktīvo tortes veidotāju',
+      },
     ],
   },
   {
@@ -93,11 +106,16 @@ export const WEB_PACKAGES: WebPackage[] = [
       'Piegāde 3–5 nedēļu laikā',
     ],
     slides: [
-      { label: 'Pielāgots dizains', bg: 'from-violet-400 to-purple-500', icon: '🎨', description: 'Unikāls dizains, kas atspoguļo tava zīmola identitāti' },
-      { label: 'E-komercija', bg: 'from-purple-400 to-violet-500', icon: '🛒', description: 'Pilnvērtīgs veikals ar produktu pārvaldību un maksājumiem' },
-      { label: 'Rezervēšana', bg: 'from-violet-500 to-pink-500', icon: '📅', description: 'Online rezervēšanas sistēma ar kalendāru' },
-      { label: 'Analītika', bg: 'from-pink-400 to-violet-500', icon: '📊', description: 'Detalizēta statistika par apmeklētājiem un pārdošanu' },
-      { label: 'Ātrums', bg: 'from-violet-500 to-purple-600', icon: '⚡', description: '95+ Google PageSpeed rezultāts — ātra ielāde visur' },
+      {
+        label: 'Beauty studio — pilna booking sistēma',
+        url: 'https://estee-city-beauty.vercel.app/',
+        description: 'Pilnvērtīga rezervēšanas sistēma ar kalendāru',
+      },
+      {
+        label: 'Samantina — augstākā klase',
+        url: 'https://samantina.vercel.app/',
+        description: 'Premium dizains ar pilnu funkcionalitāti',
+      },
     ],
   },
 ];
