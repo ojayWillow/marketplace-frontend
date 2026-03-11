@@ -1,4 +1,8 @@
-import type { Slide } from '../pages/WebStudio/components/PackageSlideshow';
+export interface Slide {
+  label: string;
+  url: string;
+  description: string;
+}
 
 export interface WebPackage {
   id: string;
@@ -7,6 +11,7 @@ export interface WebPackage {
   price: string;
   priceNote: string;
   color: string;
+  dotColor: string;
   badgeColor: string;
   borderColor: string;
   buttonColor: string;
@@ -29,6 +34,7 @@ export const WEB_PACKAGES: WebPackage[] = [
     price: 'no €299',
     priceNote: 'vienreizējs maksājums',
     color: 'from-emerald-500 to-green-600',
+    dotColor: 'bg-emerald-400',
     badgeColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
     borderColor: 'border-emerald-200 dark:border-emerald-800',
     buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
@@ -61,6 +67,7 @@ export const WEB_PACKAGES: WebPackage[] = [
     price: 'no €799',
     priceNote: 'vienreizējs maksājums',
     color: 'from-blue-500 to-indigo-600',
+    dotColor: 'bg-blue-400',
     badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
     borderColor: 'border-blue-200 dark:border-blue-800',
     buttonColor: 'bg-blue-600 hover:bg-blue-700',
@@ -93,6 +100,7 @@ export const WEB_PACKAGES: WebPackage[] = [
     price: 'no €1499',
     priceNote: 'vienreizējs maksājums',
     color: 'from-violet-500 to-purple-600',
+    dotColor: 'bg-violet-400',
     badgeColor: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
     borderColor: 'border-violet-200 dark:border-violet-800',
     buttonColor: 'bg-violet-600 hover:bg-violet-700',
@@ -112,7 +120,7 @@ export const WEB_PACKAGES: WebPackage[] = [
         description: 'Pilnvērtīga rezervēšanas sistēma ar kalendāru',
       },
       {
-        label: 'Samantina — augstākā klase',
+        label: 'Samantina — premium klase',
         url: 'https://samantina.vercel.app/',
         description: 'Premium dizains ar pilnu funkcionalitāti',
       },

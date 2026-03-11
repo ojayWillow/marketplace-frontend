@@ -14,16 +14,20 @@ export default function WebStudio() {
       <div className="relative max-w-6xl mx-auto px-4 py-16 sm:py-20">
         {/* Header */}
         <div className="text-center mb-14">
+          <span className="inline-block bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4">
+            Kolab Web Studio
+          </span>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Mājas lapa tavam uzņēmumam
           </h1>
           <p className="text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
             Profesionālas vietnes jauniem uzņēmumiem. Skaidras cenas, ātri rezultāti.
+            Atvērt katru piemēru un pieredzi to tieši šeit.
           </p>
         </div>
 
-        {/* Package cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+        {/* Package cards — stacked vertically for full experience */}
+        <div className="flex flex-col gap-10 mb-20">
           {WEB_PACKAGES.map((pkg) => (
             <PackageCard key={pkg.id} pkg={pkg} />
           ))}
