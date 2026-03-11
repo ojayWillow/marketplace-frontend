@@ -11,10 +11,12 @@ export interface WebPackage {
   price: string;
   priceNote: string;
   color: string;
+  labelColor: string;
   dotColor: string;
   badgeColor: string;
   borderColor: string;
   buttonColor: string;
+  icon: string;
   features: string[];
   slides: Slide[];
 }
@@ -33,14 +35,16 @@ export const WEB_PACKAGES: WebPackage[] = [
     tagline: 'Ideāls sākums jaunam uzņēmumam',
     price: 'no €299',
     priceNote: 'vienreizējs maksājums',
+    icon: '🌱',
     color: 'from-emerald-500 to-green-600',
+    labelColor: 'text-emerald-400',
     dotColor: 'bg-emerald-400',
-    badgeColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-    borderColor: 'border-emerald-200 dark:border-emerald-800',
+    badgeColor: 'bg-emerald-100 text-emerald-700',
+    borderColor: 'border-emerald-200',
     buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
     features: [
       'Vienas lapas vietne',
-      'Hero sekcija ar aicinājumu rīkoties',
+      'Hero sekcija ar CTA',
       'Par mums bloks',
       'Kontaktforma',
       'Sociālo tīklu saites',
@@ -49,14 +53,9 @@ export const WEB_PACKAGES: WebPackage[] = [
     ],
     slides: [
       {
-        label: 'Frizētava — vienkārša un eleganta',
-        url: 'https://hair-salon-webpage.vercel.app/',
-        description: 'Tīrs vienas lapas dizains ar booking formu',
-      },
-      {
-        label: 'Ziedu veikals — radošs un spilgts',
+        label: 'Bloom — ziedu veikals',
         url: 'https://bloom-flower-shop.vercel.app/',
-        description: 'Vizuāli pievilcīga landing page mazam veikalam',
+        description: 'Vienkārša un pievilcīga vienas lapas vietne',
       },
     ],
   },
@@ -66,10 +65,12 @@ export const WEB_PACKAGES: WebPackage[] = [
     tagline: 'Pilnvērtīga klātbūtne internetā',
     price: 'no €799',
     priceNote: 'vienreizējs maksājums',
+    icon: '🚀',
     color: 'from-blue-500 to-indigo-600',
+    labelColor: 'text-blue-400',
     dotColor: 'bg-blue-400',
-    badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    borderColor: 'border-blue-200 dark:border-blue-800',
+    badgeColor: 'bg-blue-100 text-blue-700',
+    borderColor: 'border-blue-200',
     buttonColor: 'bg-blue-600 hover:bg-blue-700',
     features: [
       'Vairāku lapu vietne (līdz 6 lapām)',
@@ -77,19 +78,14 @@ export const WEB_PACKAGES: WebPackage[] = [
       'Blogs un rakstu sadaļa',
       'Kontaktu lapa ar karti',
       'Pamata SEO optimizācija',
-      'Google Analytics integrācija',
+      'Google Analytics',
       'Piegāde 10–14 darba dienu laikā',
     ],
     slides: [
       {
-        label: 'Auto serviss — profesionāls un uzticams',
+        label: 'AutoPro Rīga — auto serviss',
         url: 'https://autopro-riga.vercel.app/',
-        description: 'Pilnvērtīga uzņēmuma vietne ar vairākām sekcijām',
-      },
-      {
-        label: 'Konditorejas mājas lapa',
-        url: 'https://tortes-namins.vercel.app/',
-        description: 'Radošs dizains ar interaktīvo tortes veidotāju',
+        description: 'Profesionāla vairāku lapu vietne ar booking',
       },
     ],
   },
@@ -99,30 +95,27 @@ export const WEB_PACKAGES: WebPackage[] = [
     tagline: 'Augstas veiktspējas risinājums',
     price: 'no €1499',
     priceNote: 'vienreizējs maksājums',
+    icon: '⚡',
     color: 'from-violet-500 to-purple-600',
+    labelColor: 'text-violet-400',
     dotColor: 'bg-violet-400',
-    badgeColor: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-    borderColor: 'border-violet-200 dark:border-violet-800',
+    badgeColor: 'bg-violet-100 text-violet-700',
+    borderColor: 'border-violet-200',
     buttonColor: 'bg-violet-600 hover:bg-violet-700',
     features: [
       'Pilnībā pielāgota vietne',
       'E-komercija vai rezervēšanas sistēma',
       'Maksājumu integrācija',
-      'Uzlabota SEO + Google Search Console',
-      'Ātruma un veiktspējas optimizācija',
+      'Uzlabota SEO optimizācija',
+      'Ātruma optimizācija',
       'Prioritārs atbalsts',
       'Piegāde 3–5 nedēļu laikā',
     ],
     slides: [
       {
-        label: 'Beauty studio — pilna booking sistēma',
+        label: 'Estēe City Beauty — booking sistēma',
         url: 'https://estee-city-beauty.vercel.app/',
         description: 'Pilnvērtīga rezervēšanas sistēma ar kalendāru',
-      },
-      {
-        label: 'Samantina — premium klase',
-        url: 'https://samantina.vercel.app/',
-        description: 'Premium dizains ar pilnu funkcionalitāti',
       },
     ],
   },
@@ -144,7 +137,7 @@ export const ADD_ONS: AddOn[] = [
   {
     icon: '📱',
     title: 'Sociālo mediju veidnes',
-    description: 'Canva veidnes Instagram, Facebook un LinkedIn publicēšanai',
+    description: 'Canva veidnes Instagram, Facebook un LinkedIn',
     price: 'no €79',
   },
   {
@@ -156,7 +149,7 @@ export const ADD_ONS: AddOn[] = [
   {
     icon: '📧',
     title: 'Domēns & E-pasts',
-    description: 'Domēna reģistrācija un profesionāls e-pasts (info@tavsuznemums.lv)',
+    description: 'Domēna reģistrācija un profesionāls e-pasts',
     price: 'no €39/gadā',
   },
 ];
