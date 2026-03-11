@@ -11,7 +11,9 @@ export interface WebPackage {
   description: string;
   price: string;
   priceNote: string;
-  color: string;
+  gradientFrom: string;
+  gradientTo: string;
+  shadowColor: string;
   labelColor: string;
   dotColor: string;
   badgeColor: string;
@@ -38,7 +40,9 @@ export const WEB_PACKAGES: WebPackage[] = [
     price: 'no €299',
     priceNote: 'vienreizējs maksājums',
     icon: '🌱',
-    color: 'from-emerald-500 to-green-600',
+    gradientFrom: '#10b981',
+    gradientTo: '#059669',
+    shadowColor: 'rgba(16,185,129,0.3)',
     labelColor: 'text-emerald-400',
     dotColor: 'bg-emerald-400',
     badgeColor: 'bg-emerald-100 text-emerald-700',
@@ -69,7 +73,9 @@ export const WEB_PACKAGES: WebPackage[] = [
     price: 'no €799',
     priceNote: 'vienreizējs maksājums',
     icon: '🚀',
-    color: 'from-blue-500 to-indigo-600',
+    gradientFrom: '#3b82f6',
+    gradientTo: '#4f46e5',
+    shadowColor: 'rgba(59,130,246,0.3)',
     labelColor: 'text-blue-400',
     dotColor: 'bg-blue-400',
     badgeColor: 'bg-blue-100 text-blue-700',
@@ -100,7 +106,9 @@ export const WEB_PACKAGES: WebPackage[] = [
     price: 'no €1499',
     priceNote: 'vienreizējs maksājums',
     icon: '⚡',
-    color: 'from-violet-500 to-purple-600',
+    gradientFrom: '#8b5cf6',
+    gradientTo: '#7c3aed',
+    shadowColor: 'rgba(139,92,246,0.3)',
     labelColor: 'text-violet-400',
     dotColor: 'bg-violet-400',
     badgeColor: 'bg-violet-100 text-violet-700',
