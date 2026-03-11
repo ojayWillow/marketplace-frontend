@@ -8,6 +8,7 @@ export interface WebPackage {
   id: string;
   name: string;
   tagline: string;
+  description: string;
   price: string;
   priceNote: string;
   color: string;
@@ -32,7 +33,8 @@ export const WEB_PACKAGES: WebPackage[] = [
   {
     id: 'starter',
     name: 'Starter',
-    tagline: 'Ideāls sākums jaunam uzņēmumam',
+    tagline: 'Tava pirmā profesionālā vietne',
+    description: 'Ideāls risinājums, ja tikko sāc savu uzņēmumu un vajag vienkāršu, skaistu un ātri gatavu mājas lapu. Klienti uzreiz redz, kas tu esi un kā ar tevi sazināties.',
     price: 'no €299',
     priceNote: 'vienreizējs maksājums',
     icon: '🌱',
@@ -44,11 +46,11 @@ export const WEB_PACKAGES: WebPackage[] = [
     buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
     features: [
       'Vienas lapas vietne',
-      'Hero sekcija ar CTA',
+      'Hero sekcija ar aicinājumu rīkoties',
       'Par mums bloks',
       'Kontaktforma',
       'Sociālo tīklu saites',
-      'Mobilajām ierīcēm draudzīgs',
+      'Mobilajām ierīcēm draudzīgs dizains',
       'Piegāde 5–7 darba dienu laikā',
     ],
     slides: [
@@ -63,6 +65,7 @@ export const WEB_PACKAGES: WebPackage[] = [
     id: 'business',
     name: 'Business',
     tagline: 'Pilnvērtīga klātbūtne internetā',
+    description: 'Piemērots uzņēmumiem, kas vēlas izcelties. Vairākas lapas, profesionāls dizains, SEO optimizācija un viss nepieciešāmais, lai piesaistītu jaunus klientus tiešsaistē.',
     price: 'no €799',
     priceNote: 'vienreizējs maksājums',
     icon: '🚀',
@@ -78,7 +81,7 @@ export const WEB_PACKAGES: WebPackage[] = [
       'Blogs un rakstu sadaļa',
       'Kontaktu lapa ar karti',
       'Pamata SEO optimizācija',
-      'Google Analytics',
+      'Google Analytics integrācija',
       'Piegāde 10–14 darba dienu laikā',
     ],
     slides: [
@@ -93,6 +96,7 @@ export const WEB_PACKAGES: WebPackage[] = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Augstas veiktspējas risinājums',
+    description: 'Piemērots uzņēmumiem, kas vēlas maksimālu rezultātu. Pilna rezervēšanas vai e-komercijas sistēma, ātrums, SEO un prioritārs atbalsts — viss vienā paketē.',
     price: 'no €1499',
     priceNote: 'vienreizējs maksājums',
     icon: '⚡',
@@ -106,8 +110,8 @@ export const WEB_PACKAGES: WebPackage[] = [
       'Pilnībā pielāgota vietne',
       'E-komercija vai rezervēšanas sistēma',
       'Maksājumu integrācija',
-      'Uzlabota SEO optimizācija',
-      'Ātruma optimizācija',
+      'Uzlabota SEO + Google Search Console',
+      'Ātruma un veiktspējas optimizācija',
       'Prioritārs atbalsts',
       'Piegāde 3–5 nedēļu laikā',
     ],
