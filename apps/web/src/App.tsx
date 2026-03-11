@@ -38,7 +38,6 @@ const SentryFallback = () => (
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
-const WebStudio = lazy(() => import('./pages/WebStudio'))
 const VerifyPhone = lazy(() => import('./pages/auth/VerifyPhone'))
 const CompleteProfile = lazy(() => import('./pages/auth/CompleteProfile'))
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'))
@@ -98,9 +97,6 @@ function App() {
               
               {/* Landing page - the single entry point for unauthenticated users */}
               <Route path="welcome" element={<LandingPage />} />
-
-              {/* Web Studio - hidden unlisted page for web creation packages */}
-              <Route path="web-studio" element={<WebStudio />} />
               
               {/* All auth routes redirect to the landing page (single sign-in flow) */}
               <Route path="login" element={<Navigate to="/welcome" replace />} />
