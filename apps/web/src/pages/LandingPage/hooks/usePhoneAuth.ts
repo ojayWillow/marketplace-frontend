@@ -23,15 +23,20 @@ export const usePhoneAuth = () => {
   const initAttemptedRef = useRef(false);
   const recaptchaContainerRef = useRef<HTMLDivElement>(null);
 
-  /** Safely clear the reCAPTCHA verifier (prevents null.style crash) */
+  /** Safely clear the reCAPTCHA verifier AND reset initAttempted flag */
   const clearRecaptchaVerifier = useCallback(() => {
     if (recaptchaVerifierRef.current) {
       try { recaptchaVerifierRef.current.clear(); } catch (_) { /* ignore */ }
       recaptchaVerifierRef.current = null;
     }
+    // Always reset this so the next initRecaptcha call does a fresh render
+    // instead of bailing out early — fixes "already rendered" crash
+    initAttemptedRef.current = false;
+    setRecaptchaReady(false);
   }, []);
 
   const initRecaptcha = useCallback(() => {
+    // Already initialised and verifier is still alive — nothing to do
     if (initAttemptedRef.current && recaptchaVerifierRef.current) {
       setRecaptchaReady(true);
       return;
@@ -43,7 +48,12 @@ export const usePhoneAuth = () => {
       return;
     }
 
-    clearRecaptchaVerifier();
+    // Clear any leftover widget in the DOM before creating a new verifier
+    if (recaptchaVerifierRef.current) {
+      try { recaptchaVerifierRef.current.clear(); } catch (_) { /* ignore */ }
+      recaptchaVerifierRef.current = null;
+    }
+
     initAttemptedRef.current = true;
 
     try {
@@ -56,11 +66,12 @@ export const usePhoneAuth = () => {
         'expired-callback': () => {
           console.log('reCAPTCHA expired');
           setError('Security check expired. Please try again.');
+          // Full reset so next attempt gets a fresh verifier
+          clearRecaptchaVerifier();
+          setTimeout(initRecaptcha, 300);
         }
       });
 
-      // Wrap render() in a timeout race to prevent unhandled "Timeout" rejections
-      // (KOLAB-WEB-9, KOLAB-WEB-8)
       const renderPromise = recaptchaVerifierRef.current.render();
       const timeoutPromise = new Promise<void>((_, reject) =>
         setTimeout(() => reject(new Error('reCAPTCHA render timed out')), 15000)
@@ -73,7 +84,6 @@ export const usePhoneAuth = () => {
         })
         .catch((err) => {
           console.warn('reCAPTCHA render error (non-fatal):', err?.message || err);
-          // Still allow the user to try — reCAPTCHA may load lazily
           setRecaptchaReady(true);
         });
     } catch (err) {
@@ -90,8 +100,7 @@ export const usePhoneAuth = () => {
     }
   }, [initRecaptcha, step]);
 
-  // Cleanup on unmount — clear BEFORE React removes DOM nodes
-  // (prevents KOLAB-WEB-A: reCAPTCHA trying to access .style on removed elements)
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       clearRecaptchaVerifier();
@@ -133,12 +142,14 @@ export const usePhoneAuth = () => {
       return;
     }
 
+    // If verifier was cleared (e.g. after a previous error), reinitialise it
     if (!recaptchaVerifierRef.current && recaptchaContainerRef.current) {
       try {
         recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
           size: 'invisible'
         });
         await recaptchaVerifierRef.current.render();
+        initAttemptedRef.current = true;
       } catch (err) {
         console.error('Failed to reinitialize reCAPTCHA:', err);
       }
@@ -177,7 +188,7 @@ export const usePhoneAuth = () => {
         setError('Failed to send code. Please try again.');
       }
 
-      initAttemptedRef.current = false;
+      // Full clear + re-init so next attempt gets a clean verifier
       clearRecaptchaVerifier();
       setTimeout(initRecaptcha, 500);
     } finally {
@@ -231,10 +242,6 @@ export const usePhoneAuth = () => {
         setAuth(userData, access_token);
       }
 
-      // IMPORTANT: Clear reCAPTCHA verifier BEFORE navigating away.
-      // This prevents KOLAB-WEB-A where reCAPTCHA's internal setTimeout
-      // tries to access .style on DOM elements that no longer exist
-      // after React unmounts the LandingPage component.
       clearRecaptchaVerifier();
 
       if (is_new_user || userData?.username?.startsWith('user_')) {
@@ -266,8 +273,6 @@ export const usePhoneAuth = () => {
     setOtpValue('');
     setError('');
     setConfirmationResult(null);
-    setRecaptchaReady(false);
-    initAttemptedRef.current = false;
     clearRecaptchaVerifier();
     setTimeout(initRecaptcha, 300);
   };
